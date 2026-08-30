@@ -45,7 +45,7 @@ TIERS_URL = "https://eloboard.co.kr/api/tiers"
 UPDATE_EXISTING_NICKNAME = False
 UPDATE_EXISTING_RACE = True
 UPDATE_EXISTING_TIER = True
-UPDATE_EXISTING_TEAM = True
+UPDATE_EXISTING_TEAM = False
 
 # race 값 변환 맵 (필요에 따라 추가/수정)
 RACE_MAP = {
