@@ -94,16 +94,8 @@ button.danger { background: #fdeaea; color: #c0392b; padding: 6px 12px; font-siz
 button.danger:hover { background: #fadada; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-#status {
-  font-size: 13px;
-  font-weight: 600;
-  color: #8a8d97;
-  white-space: pre-wrap;
-  margin-top: 12px;
-  min-height: 18px;
-}
-#status.error { color: #c0392b; }
-#status.success { color: #0f8a4c; }
+#status-inline.error { color: #c0392b; }
+#status-inline.success { color: #0f8a4c; }
 
 .row-count { display: block; font-size: 11px; font-weight: 800; color: #a4a8b2; text-align: right; margin-bottom: 12px; }
 
@@ -174,7 +166,6 @@ td input:focus, td select:focus { outline: none; border-color: #4a5ce0; backgrou
         <button id="load-btn">불러오기</button>
       </div>
     </div>
-    <div id="status"></div>
   </div>
 
   <div class="card" id="editor-card" style="display:none;">
@@ -235,13 +226,12 @@ function getToken() {
   return sessionStorage.getItem('starts_admin_token') || '';
 }
 
+const STATUS_MAX_LEN = 60;
+
 function setStatus(msg, type) {
-  const el = document.getElementById('status');
-  el.textContent = msg;
-  el.className = type || '';
-  
   const inlineEl = document.getElementById('status-inline');
-  inlineEl.textContent = type === 'error' ? '토큰 오류 발생' : (type === 'success' ? '완료' : msg);
+  inlineEl.textContent = msg.length > STATUS_MAX_LEN ? msg.slice(0, STATUS_MAX_LEN) + '…' : msg;
+  inlineEl.className = type || '';
 }
 
 document.getElementById('token-input').value = getToken();
@@ -250,7 +240,7 @@ document.getElementById('save-token-btn').addEventListener('click', () => {
   const v = document.getElementById('token-input').value.trim();
   if (!v) { alert('토큰을 입력하세요'); return; }
   sessionStorage.setItem('starts_admin_token', v);
-  document.getElementById('status-inline').textContent = '토큰 저장됨';
+  setStatus('토큰 저장됨', 'success');
 });
 
 async function ghFetch(path, options) {
