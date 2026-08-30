@@ -865,7 +865,7 @@ def main():
     team_colors = {team: get_team_topbar_color(team) for team in all_team_names}
     team_colors["FA"], team_colors["휴면"] = "#8b8f99", "#8b8f99"
 
-    index_html = generate_html("팀별 현황", "", False, "", static_info, team_colors, all_dates)
+    index_html = generate_html("스타대학", "", False, "", static_info, team_colors, all_dates)
     OUTPUT_INDEX.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_INDEX, "w", encoding="utf-8") as f: f.write(index_html)
 
