@@ -338,7 +338,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       balloon: {{ field: 'balloons', label: '별풍선', unit: '별풍선', format: v => v ? v.toLocaleString('ko-KR') : '', excludeRoles: true, rankByFemale: false, source: '풍고', url: 'https://poonggo.com' }},
       broadcast: {{ field: 'broadcast_seconds', label: '방송시간', unit: '방송시간', format: formatTime, excludeRoles: true, rankByFemale: false, source: '풍고', url: 'https://poonggo.com' }},
       viewer: {{ field: 'cumulative_viewers', label: '누적시청자', unit: '누적시청자', format: v => v ? v.toLocaleString('ko-KR') : '', excludeRoles: true, rankByFemale: false, source: '풍고', url: 'https://poonggo.com' }},
-      sponsor: {{ field: 'sponsor_games', label: '스폰판수', unit: '스폰판수', format: v => v ? v + '판' : '', excludeRoles: true, rankByFemale: true, source: 'ELO', url: 'https://eloboard.com/' }}
+      sponsor: {{ field: 'sponsor_games', label: '스폰판수', unit: '스폰판수', format: v => v ? v + '판' : '', excludeRoles: true, rankByFemale: true, source: 'Elo', url: 'https://eloboard.co.kr/' }}
   }};
 
   function soopPhotoUrl(id) {{
@@ -725,7 +725,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       }}
 
       document.title = (member.nickname || tid) + ' 프로필';
-      document.getElementById('top-meta-text').innerHTML = '업데이트 ' + data.updated_at + ' · 출처: <a href="https://poonggo.com" target="_blank" class="source-link">풍고</a>, <a href="https://eloboard.com" target="_blank" class="source-link">ELO</a> <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
+      document.getElementById('top-meta-text').innerHTML = '업데이트 ' + data.updated_at + ' · 출처: <a href="https://poonggo.com" target="_blank" class="source-link">풍고</a>, <a href="https://eloboard.co.kr/" target="_blank" class="source-link">Elo</a> <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
   }}
 
   function renderCalendar() {{
