@@ -1,1 +1,58 @@
+name: Update all stats
 
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-stats
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # print()가 stdout으로 가면 GitHub Actions 로그 캡처 환경에서 버퍼링돼서
+    # stderr(경고/에러)보다 늦게 찍혀 로그 순서가 실제 실행 순서와 어긋날 수
+    # 있다 - PYTHONUNBUFFERED=1로 stdout도 즉시 흘려보내게 한다.
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download self-hosted font (once)
+        run: python scripts/download_font.py
+
+      # 별풍선(풍고)과 스폰전적(엘로보드)을 한 스크립트 안에서 순서 걱정 없이 처리한다
+      # 아카이빙/월확정/오늘자 수집을 전부 update_data.py가 조율한다
+
+      - name: Update data (풍고 + 엘로보드)
+        run: python scripts/update_data.py
+
+      - name: Generate pages
+        run: python scripts/generate_pages.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --quiet --cached; then
+            echo "변경 없음 - 커밋 생략"
+            exit 0
+          fi
+          git commit -m "데이터 갱신 (풍고+엘로보드): $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push || (sleep 5 && git pull --rebase origin "${GITHUB_REF_NAME}" && git push)
