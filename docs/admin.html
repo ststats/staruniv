@@ -161,7 +161,7 @@ td input:focus, td select:focus { outline: none; border-color: #4a5ce0; backgrou
     <span class="top-meta-group">
       <a class="back-link" href="index.html">전체페이지</a>
       <span class="top-meta-sep">·</span>
-      <span class="top-meta" id="status-inline">대기 중</span>
+      <span class="top-meta" id="status-inline">토큰 대기 중</span>
     </span>
   </div>
 
@@ -241,7 +241,7 @@ function setStatus(msg, type) {
   el.className = type || '';
   
   const inlineEl = document.getElementById('status-inline');
-  inlineEl.textContent = type === 'error' ? '오류 발생' : (type === 'success' ? '완료' : msg);
+  inlineEl.textContent = type === 'error' ? '토큰 오류 발생' : (type === 'success' ? '완료' : msg);
 }
 
 document.getElementById('token-input').value = getToken();
