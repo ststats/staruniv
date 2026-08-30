@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STSTATS 어드민</title>
+<link rel="icon" type="image/webp" href="./logos/index.webp">
+<link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: block;
+  src: url('fonts/PretendardVariable.woff2') format('woff2-variations');
+}
+
+html { scrollbar-gutter: stable; }
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard Variable', sans-serif;
+  background: #f4f5f7;
+  margin: 0;
+  padding: 20px 10px;
+  color: #1a1d29;
+}
+
+.page-wrap { max-width: 1080px; margin: 0 auto; }
+
+/* 1. Top Bar - 메인 페이지 CSS 클래스 완벽 동일 적용 */
+.top-bar { max-width: 1080px; margin: 0 auto 16px; background: #fff; border-radius: 20px; padding: 16px 20px; min-height: 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 4px 12px rgba(20,20,30,0.05); }
+.month-select-group { display: inline-flex; align-items: center; gap: 6px; position: relative; }
+.top-date-btn { background: transparent; border: none; font-size: 20px; font-weight: 800; color: #141821; padding: 2px 0; font-family: inherit; display:flex; align-items:center; gap: 6px; }
+.top-date-select { font-size: 20px; font-weight: 800; color: #4a5ce0; border: none; background: transparent; padding: 2px 0; }
+
+.top-meta-group { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.back-link { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: #8a8d97; text-decoration: none; }
+.back-link:hover { color: #4a5ce0; }
+.top-meta-sep { color: #c2c5cc; font-size: 10px; }
+.top-meta { font-size: 10px; color: #a4a8b2; white-space: nowrap; }
+
+/* 2. 어드민 페이지 전용 Card 및 입력 UI */
+.card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 8px 24px rgba(20,20,30,0.06);
+}
+
+.field-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.field-row.nowrap { flex-wrap: nowrap; } 
+.field-row + .field-row { margin-top: 14px; }
+.field-label { font-size: 13px; color: #1a1d29; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+.input-fluid { flex: 1; min-width: 0; } 
+.btn-group { display: flex; gap: 8px; flex-shrink: 0; white-space: nowrap; }
+
+input[type=text], input[type=password], select {
+  padding: 10px 14px;
+  border: 1px solid #eef0f2;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  background: #fbfbfc;
+  color: #1a1d29;
+  transition: all 0.2s ease;
+}
+input[type=text]:focus, input[type=password]:focus, select:focus {
+  outline: none;
+  border-color: #4a5ce0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(74, 92, 224, 0.1);
+}
+
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  background: #4a5ce0;
+  color: #fff;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+button:hover { background: #3d4ecf; }
+button.secondary { background: #eef0f2; color: #1a1d29; }
+button.secondary:hover { background: #e2e4ea; }
+button.danger { background: #fdeaea; color: #c0392b; padding: 6px 12px; font-size: 12px; }
+button.danger:hover { background: #fadada; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#status {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a8d97;
+  white-space: pre-wrap;
+  margin-top: 12px;
+  min-height: 18px;
+}
+#status.error { color: #c0392b; }
+#status.success { color: #0f8a4c; }
+
+.row-count { display: block; font-size: 11px; font-weight: 800; color: #a4a8b2; text-align: right; margin-bottom: 12px; }
+
+.table-wrap {
+  max-height: 65vh;
+  overflow: auto;
+  border: 1px solid #f0f1f4;
+  border-radius: 16px;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+}
+table { width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 13px; }
+thead th {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 2px solid #f0f1f4;
+  color: #a4a8b2;
+  font-weight: 800;
+  font-size: 13px;
+  position: sticky;
+  top: 0;
+  background: #fafbfc;
+  white-space: nowrap;
+  z-index: 10;
+}
+tbody td { padding: 6px 8px; border-bottom: 1px solid #f5f6f8; }
+tbody tr:hover { background: #fbfbfc; }
+.col-del { min-width: 70px; text-align: center; }
+
+td input, td select {
+  width: 100%;
+  min-width: 110px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+}
+td select { min-width: 80px; }
+td input[data-field="id"], td input[data-field="nickname"] { min-width: 130px; }
+td input[data-field="info_updated_at"] { min-width: 120px; }
+
+td input:hover, td select:hover { border-color: #eef0f2; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+td input:focus, td select:focus { outline: none; border-color: #4a5ce0; background: #fff; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="top-bar">
+    <span class="month-select-group">
+      <span class="top-date-btn" style="cursor: default;">STSTATS 어드민</span>
+      <span class="top-meta" style="margin-left: 2px;">members.json 편집</span>
+    </span>
+    <span class="top-meta-group">
+      <a class="back-link" href="index.html">← 전체페이지로 가기</a>
+      <span class="top-meta-sep">·</span>
+      <span class="top-meta" id="status-inline">대기 중</span>
+    </span>
+  </div>
+
+  <div class="card">
+    <div class="field-row nowrap">
+      <label class="field-label">토큰</label>
+      <input type="password" id="token-input" class="input-fluid" placeholder="ghp_...">
+      <div class="btn-group">
+        <button class="secondary" id="save-token-btn">토큰 저장</button>
+        <button id="load-btn">불러오기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="editor-card" style="display:none;">
+    <div class="field-row" style="margin-bottom:12px;">
+      <input type="text" id="search-input" class="input-fluid" placeholder="닉네임 / 아이디 / 팀 검색">
+      <div class="btn-group">
+        <button class="secondary" id="add-btn">+ 새 멤버 추가</button>
+      </div>
+    </div>
+    
+    <div class="row-count" id="row-count"></div>
+    
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>아이디</th>
+            <th>엘로ID</th>
+            <th>닉네임</th>
+            <th>성별</th>
+            <th>생일</th>
+            <th>직책</th>
+            <th>팀</th>
+            <th>종족</th>
+            <th>티어</th>
+            <th>수정일</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    
+    <div class="field-row" style="margin-top:20px;">
+      <input type="text" id="commit-msg" class="input-fluid" placeholder="커밋 메시지 (비우면 자동)">
+      <div class="btn-group">
+        <button class="secondary" id="save-only-btn">저장</button>
+        <button id="save-btn">저장 + 워크플로우 실행</button>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+
+</div>
+
+<script>
+const OWNER = 'ststats';
+const REPO = 'ststats';
+const BRANCH = 'main';
+const FILE_PATH = 'data/members.json';
+const WORKFLOW_FILE = 'update-stats.yml';
+
+let members = [];
+let fileSha = null;
+
+const FIELDS = ['id', 'elo_id', 'nickname', 'gender', 'birthdate', 'role', 'team', 'race', 'tier', 'info_updated_at'];
+
+function getToken() {
+  return sessionStorage.getItem('starts_admin_token') || '';
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = type || '';
+  
+  const inlineEl = document.getElementById('status-inline');
+  inlineEl.textContent = type === 'error' ? '오류 발생' : (type === 'success' ? '완료' : msg);
+}
+
+document.getElementById('token-input').value = getToken();
+
+document.getElementById('save-token-btn').addEventListener('click', () => {
+  const v = document.getElementById('token-input').value.trim();
+  if (!v) { alert('토큰을 입력하세요'); return; }
+  sessionStorage.setItem('starts_admin_token', v);
+  document.getElementById('status-inline').textContent = '토큰 저장됨';
+});
+
+async function ghFetch(path, options) {
+  const token = getToken();
+  if (!token) throw new Error('먼저 토큰을 저장하세요');
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}${path}`, {
+    ...options,
+    headers: {
+      'Authorization': 'token ' + token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(options && options.headers ? options.headers : {}),
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`GitHub API ${res.status}: ${text.slice(0, 300)}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function b64EncodeUtf8(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUtf8(str) {
+  return decodeURIComponent(escape(atob(str)));
+}
+
+document.getElementById('load-btn').addEventListener('click', async () => {
+  setStatus('불러오는 중...', '');
+  try {
+    const data = await ghFetch(`/contents/${FILE_PATH}?ref=${BRANCH}`, { method: 'GET' });
+    fileSha = data.sha;
+    const parsed = JSON.parse(b64DecodeUtf8(data.content));
+    members = parsed.members || [];
+    document.getElementById('editor-card').style.display = '';
+    renderTable();
+    setStatus(`불러옴: ${members.length}명 (sha ${fileSha.slice(0, 7)})`, 'success');
+  } catch (e) {
+    setStatus('불러오기 실패: ' + e.message, 'error');
+  }
+});
+
+function escapeAttr(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function renderTable() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const tbody = document.getElementById('table-body');
+  let shown = 0;
+  let html = '';
+
+  members.forEach((m, idx) => {
+    if (q) {
+      const hay = (m.nickname + ' ' + m.id + ' ' + m.team).toLowerCase();
+      if (!hay.includes(q)) return;
+    }
+    shown++;
+    
+    html += `<tr>`;
+    
+    FIELDS.forEach((field) => {
+      if (field === 'gender') {
+        html += `<td><select data-idx="${idx}" data-field="gender">
+          <option value="m"${m.gender === 'm' ? ' selected' : ''}>m</option>
+          <option value="f"${m.gender === 'f' ? ' selected' : ''}>f</option>
+        </select></td>`;
+      } else {
+        html += `<td><input type="text" data-idx="${idx}" data-field="${field}" value="${escapeAttr(m[field])}"></td>`;
+      }
+    });
+    
+    html += `<td><button class="danger" data-action="delete" data-idx="${idx}">삭제</button></td></tr>`;
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('row-count').textContent = `${shown} / ${members.length}명 표시 중`;
+}
+
+document.getElementById('table-body').addEventListener('change', (e) => {
+  const field = e.target.dataset.field;
+  if (!field) return;
+  const idx = Number(e.target.dataset.idx);
+  members[idx][field] = e.target.value === '' ? null : e.target.value;
+});
+
+document.getElementById('table-body').addEventListener('click', (e) => {
+  if (e.target.dataset.action !== 'delete') return;
+  const idx = Number(e.target.dataset.idx);
+  const m = members[idx];
+  if (!confirm(`${m.nickname || m.id} 삭제할까요?`)) return;
+  members.splice(idx, 1);
+  renderTable();
+});
+
+let searchDebounceTimer = null;
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(renderTable, 150);
+});
+
+document.getElementById('add-btn').addEventListener('click', () => {
+  const blank = {};
+  FIELDS.forEach((f) => { blank[f] = f === 'gender' ? 'm' : ''; });
+  const now = new Date();
+  const pad2 = (n) => String(n).padStart(2, '0');
+  blank.info_updated_at = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  members.unshift(blank);
+  document.getElementById('search-input').value = '';
+  renderTable();
+});
+
+async function commitMembers() {
+  const content = JSON.stringify({ members }, null, 2);
+  const msgInput = document.getElementById('commit-msg').value.trim();
+  const message = msgInput || `어드민 페이지에서 members.json 수정 (${members.length}명)`;
+
+  const putRes = await ghFetch(`/contents/${FILE_PATH}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      message,
+      content: b64EncodeUtf8(content),
+      sha: fileSha,
+      branch: BRANCH,
+    }),
+  });
+  fileSha = putRes.content.sha;
+}
+
+function confirmIfMissingFields() {
+  const missing = members.filter((m) => !m.id || !m.nickname);
+  if (missing.length > 0) {
+    return confirm(`아이디 또는 닉네임이 비어있는 항목이 ${missing.length}개 있습니다. 그래도 저장할까요?`);
+  }
+  return true;
+}
+
+document.getElementById('save-only-btn').addEventListener('click', async () => {
+  if (!confirmIfMissingFields()) return;
+
+  setStatus('저장 중...', '');
+  document.getElementById('save-only-btn').disabled = true;
+  document.getElementById('save-btn').disabled = true;
+  try {
+    await commitMembers();
+    setStatus(`저장 완료 (${members.length}명, ${new Date().toLocaleString('ko-KR')})`, 'success');
+  } catch (e) {
+    setStatus('저장 실패: ' + e.message, 'error');
+  } finally {
+    document.getElementById('save-only-btn').disabled = false;
+    document.getElementById('save-btn').disabled = false;
+  }
+});
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+  if (!confirmIfMissingFields()) return;
+
+  setStatus('저장 중...', '');
+  document.getElementById('save-only-btn').disabled = true;
+  document.getElementById('save-btn').disabled = true;
+  try {
+    await commitMembers();
+    setStatus('커밋 완료. 워크플로우 실행 중...', 'success');
+
+    await ghFetch(`/actions/workflows/${WORKFLOW_FILE}/dispatches`, {
+      method: 'POST',
+      body: JSON.stringify({ ref: BRANCH }),
+    });
+    setStatus(`저장 완료 + 워크플로우 실행됨 (${members.length}명, ${new Date().toLocaleString('ko-KR')})`, 'success');
+  } catch (e) {
+    setStatus('저장 실패: ' + e.message, 'error');
+  } finally {
+    document.getElementById('save-only-btn').disabled = false;
+    document.getElementById('save-btn').disabled = false;
+  }
+});
+</script>
+</body>
+</html>
