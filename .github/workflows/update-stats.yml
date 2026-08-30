@@ -41,9 +41,9 @@ jobs:
       # 전체를 막지 않도록 continue-on-error로 둔다 - members.json 갱신이 밀리는
       # 것보다, 그날의 별풍선/스폰전적 수집(기존 멤버 대상)이 아예 안 도는 게 더
       # 큰 손실이라서다.
-      - name: Sync members.json from EloBoard tiers
+      - name: Sync members.json tiers
         continue-on-error: true
-        run: python scripts/sync_members_from_eloboard.py
+        run: python scripts/sync_members.py
 
       # 별풍선(풍고)과 스폰전적(엘로보드)을 한 스크립트 안에서 순서 걱정 없이 처리한다
       # 아카이빙/월확정/오늘자 수집을 전부 update_data.py가 조율한다
