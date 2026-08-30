@@ -231,7 +231,7 @@ const STATUS_MAX_LEN = 60;
 function setStatus(msg, type) {
   const inlineEl = document.getElementById('status-inline');
   inlineEl.textContent = msg.length > STATUS_MAX_LEN ? msg.slice(0, STATUS_MAX_LEN) + '…' : msg;
-  inlineEl.className = type || '';
+  inlineEl.className = 'top-meta' + (type ? ' ' + type : '');
 }
 
 document.getElementById('token-input').value = getToken();
