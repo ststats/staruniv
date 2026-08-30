@@ -581,9 +581,10 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       const upd = (currentMetric === 'sponsor' && data.sponsor_updated_at) ? data.sponsor_updated_at : data.updated_at;
 
       const validTeams = new Set(data.members.map(m=>m.team).filter(t => t && t !== 'FA' && t !== '휴면'));
+      const inquiryHtml = TARGET_TEAM ? '' : ' <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
       document.getElementById('top-meta-text').innerHTML = validTeams.size + '팀 · ' +
         data.members.filter(m => m.team && m.team !== 'FA' && m.team !== '휴면').length +
-        '명 · 업데이트 ' + upd + ' · 출처: <a href="'+def.url+'" target="_blank" class="source-link">'+def.source+'</a> <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
+        '명 · 업데이트 ' + upd + ' · 출처: <a href="'+def.url+'" target="_blank" class="source-link">'+def.source+'</a>' + inquiryHtml;
 
       const roleLegend = document.getElementById('role-legend-item');
       if(roleLegend) roleLegend.style.display = def.excludeRoles ? '' : 'none';
@@ -720,7 +721,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       }}
 
       document.title = (member.nickname || tid) + ' 프로필';
-      document.getElementById('top-meta-text').innerHTML = '업데이트 ' + data.updated_at + ' · 출처: <a href="https://poonggo.com" target="_blank" class="source-link">풍고</a>, <a href="https://eloboard.co.kr/" target="_blank" class="source-link">Elo</a> <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
+      document.getElementById('top-meta-text').innerHTML = '업데이트 ' + data.updated_at + ' · 출처: <a href="https://poonggo.com" target="_blank" class="source-link">풍고</a>, <a href="https://eloboard.co.kr/" target="_blank" class="source-link">Elo</a>';
   }}
 
   function renderCalendar() {{
