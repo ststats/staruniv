@@ -47,7 +47,7 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
     계속 집계한다.
     """
     offset = 0
-    combined_dict = defaultdict(lambda: {"id": None, "sponsor_games": 0, "sponsor_wins": 0, "sponsor_losses": 0})
+    combined_dict = defaultdict(lambda: {"id": None, "sponsor_wins": 0, "sponsor_losses": 0})
 
     print(f"[요청] {start_date} ~ {end_date} 기간 전적 수집 시작...")
 
@@ -86,7 +86,6 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
                     if combined_dict[elo_id]["id"] is None:
                         combined_dict[elo_id]["id"] = elo_id
 
-                    combined_dict[elo_id]["sponsor_games"] += 1
                     if result == "win":
                         combined_dict[elo_id]["sponsor_wins"] += 1
                     else:

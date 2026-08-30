@@ -345,6 +345,15 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       return `https://profile.img.sooplive.com/LOGO/${{(id || '').substring(0, 2)}}/${{id}}/${{id}}.jpg`;
   }}
 
+  function withDerivedFields(data) {{
+      // sponsor_games는 저장 단계에서 뺐다(sponsor_wins + sponsor_losses랑 100% 같은 값이라
+      // 중복 저장할 이유가 없음) - 대신 각 날짜 데이터를 불러올 때마다 한 번씩 계산해서
+      // 채워 넣는다. metricDefs.sponsor.field가 'sponsor_games'를 범용적으로 m[def.field]
+      // 식으로 읽는 구조라, 여기서 한 번만 채워두면 나머지 코드는 그대로 써도 된다.
+      (data.members || []).forEach(m => {{ m.sponsor_games = (m.sponsor_wins || 0) + (m.sponsor_losses || 0); }});
+      return data;
+  }}
+
   function formatTime(sec) {{
       if (!sec) return '';
       let h = Math.floor(sec / 3600);
@@ -399,7 +408,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       }}
 
       AVAILABLE_DATES.slice(1, 4).forEach(d => {{
-          fetch(LOGO_PREFIX + 'data/daily/' + d + '.json').then(r=>r.json()).then(data => fetchedData[d] = data).catch(()=>{{}});
+          fetch(LOGO_PREFIX + 'data/daily/' + d + '.json').then(r=>r.json()).then(data => fetchedData[d] = withDerivedFields(data)).catch(()=>{{}});
       }});
 
       if (TARGET_TEAM && !IS_PROFILE) {{
@@ -446,7 +455,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
           fetch(LOGO_PREFIX + 'data/daily/' + currentDateStr + '.json')
               .then(r => r.json())
               .then(data => {{
-                  fetchedData[currentDateStr] = data;
+                  fetchedData[currentDateStr] = withDerivedFields(data);
                   IS_PROFILE ? renderProfile(data) : renderDashboard(data);
               }})
               .catch(e => {{
@@ -521,7 +530,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       if (!prevData) {{
           try {{
               const res = await fetch(LOGO_PREFIX + 'data/daily/' + prevDate + '.json');
-              prevData = await res.json();
+              prevData = withDerivedFields(await res.json());
               fetchedData[prevDate] = prevData;
           }} catch (e) {{ return; }}
       }}

@@ -165,7 +165,6 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
             elo_id = m.get("elo_id")
             src = lookup.get(str(elo_id)) if elo_id is not None else None
             if src:
-                m["sponsor_games"] = src["sponsor_games"]
                 m["sponsor_wins"] = src["sponsor_wins"]
                 m["sponsor_losses"] = src["sponsor_losses"]
                 changed = True
@@ -215,7 +214,6 @@ def main():
             mid = om.get("id")
             if mid:
                 existing_sponsor[mid] = {
-                    "sponsor_games": om.get("sponsor_games", 0),
                     "sponsor_wins": om.get("sponsor_wins", 0),
                     "sponsor_losses": om.get("sponsor_losses", 0),
                 }
@@ -265,7 +263,7 @@ def main():
         elo_id = m.get("elo_id")
         bd = balloon_data.get(member_id) if member_id else None
         sd = sponsor_data.get(str(elo_id)) if elo_id is not None else None
-        existing = existing_sponsor.get(member_id, {"sponsor_games": 0, "sponsor_wins": 0, "sponsor_losses": 0})
+        existing = existing_sponsor.get(member_id, {"sponsor_wins": 0, "sponsor_losses": 0})
 
         out_members.append({
             "id": member_id,
@@ -275,11 +273,9 @@ def main():
             "team": m.get("team"),
             "race": m.get("race"),
             "tier": m.get("tier"),
-            "info_updated_at": m.get("info_updated_at"),
             "balloons": bd["balloons"] if bd else 0,
             "broadcast_seconds": bd["broadcast_seconds"] if bd else 0,
             "cumulative_viewers": bd["cumulative_viewers"] if bd else 0,
-            "sponsor_games": sd["sponsor_games"] if sd else existing["sponsor_games"],
             "sponsor_wins": sd["sponsor_wins"] if sd else existing["sponsor_wins"],
             "sponsor_losses": sd["sponsor_losses"] if sd else existing["sponsor_losses"],
         })
