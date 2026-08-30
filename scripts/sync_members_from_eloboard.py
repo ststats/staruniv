@@ -45,7 +45,7 @@ TIERS_URL = "https://eloboard.co.kr/api/tiers"
 UPDATE_EXISTING_NICKNAME = False
 UPDATE_EXISTING_RACE = True
 UPDATE_EXISTING_TIER = True
-UPDATE_EXISTING_TEAM = False
+UPDATE_EXISTING_TEAM = True
 
 # race 값 변환 맵 (필요에 따라 추가/수정)
 RACE_MAP = {
@@ -56,12 +56,22 @@ RACE_MAP = {
 }
 
 
+def normalize_tier(label):
+    """API가 주는 티어 label에서 "티어" 접미사를 뗀다 - 예: "1티어" -> "1".
+    이 프로젝트의 tier 값은 "갓/킹/잭/조커/스페이드/0~8/유스"처럼 접미사 없는
+    형태를 쓰기 때문(README 참고). "갓"처럼 애초에 "티어"가 안 붙은 label은
+    그대로 통과된다."""
+    if isinstance(label, str) and label.endswith("티어"):
+        return label[:-len("티어")].strip()
+    return label
+
+
 def flatten_players(api_data: dict) -> list:
     """API 구조는 티어별 그룹 형태이므로 모든 플레이어를 하나의 리스트로 펼치면서
-    각 플레이어에 current_tier(그 그룹의 label)를 붙여준다."""
+    각 플레이어에 current_tier(그 그룹의 label, "티어" 접미사는 뗀 값)를 붙여준다."""
     players = []
     for tier_obj in api_data.get("tiers") or []:
-        tier_label = tier_obj.get("label")
+        tier_label = normalize_tier(tier_obj.get("label"))
         for player in tier_obj.get("players") or []:
             players.append({**player, "current_tier": tier_label})
     return players
