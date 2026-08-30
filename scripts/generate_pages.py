@@ -411,6 +411,18 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
           fetch(LOGO_PREFIX + 'data/daily/' + d + '.json').then(r=>r.json()).then(data => fetchedData[d] = withDerivedFields(data)).catch(()=>{{}});
       }});
 
+      if (IS_PROFILE && document.referrer) {{
+          // 프로필 페이지의 뒤로가기 목적지는 어디서 들어왔는지에 따라 갈린다:
+          // 팀페이지에서 왔으면 그 팀페이지로, 그 외(전체페이지 등)엔 늘 전체페이지로.
+          // 링크 자체는 (숨기지 않고) 항상 보인다 - 목적지만 갈릴 뿐이다.
+          try {{
+              const ref = new URL(document.referrer);
+              if (ref.origin === window.location.origin && ref.pathname.endsWith('team.html')) {{
+                  document.getElementById('back-link').href = document.referrer;
+              }}
+          }} catch(e) {{}}
+      }}
+
       applyData();
   }});
 
