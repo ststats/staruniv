@@ -221,10 +221,10 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
         target_team_js = f'"{team_name_str}"'
 
     if is_profile:
-        back_link_html = '<a href="#" id="back-link" class="back-link" style="display:none;">← 뒤로가기</a>'
-        back_sep_html = '<span class="top-meta-sep" id="back-sep" style="display:none;">·</span>'
-    elif target_team:
         back_link_html = f'<a href="{logo_prefix}index.html" id="back-link" class="back-link">← 뒤로가기</a>'
+        back_sep_html = '<span class="top-meta-sep" id="back-sep">·</span>'
+    elif target_team:
+        back_link_html = f'<a href="{logo_prefix}index.html" id="back-link" class="back-link">전체페이지</a>'
         back_sep_html = '<span class="top-meta-sep" id="back-sep">·</span>'
     else:
         back_link_html = ""
@@ -410,32 +410,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       AVAILABLE_DATES.slice(1, 4).forEach(d => {{
           fetch(LOGO_PREFIX + 'data/daily/' + d + '.json').then(r=>r.json()).then(data => fetchedData[d] = withDerivedFields(data)).catch(()=>{{}});
       }});
-
-      if (TARGET_TEAM && !IS_PROFILE) {{
-          let cameFromMain = false;
-          if (document.referrer) {{
-              try {{
-                  let ref = new URL(document.referrer);
-                  cameFromMain = (ref.origin === window.location.origin) && (ref.pathname.endsWith('/') || ref.pathname.endsWith('index.html'));
-              }} catch(e) {{}}
-          }}
-          if (!cameFromMain) {{
-              document.getElementById('back-link').style.display = 'none';
-              document.getElementById('back-sep').style.display = 'none';
-          }}
-      }}
-
-      if (IS_PROFILE) {{
-          if (document.referrer) {{
-              try {{
-                  if (new URL(document.referrer).origin === window.location.origin) {{
-                      document.getElementById('back-link').href = document.referrer;
-                      document.getElementById('back-link').style.display = '';
-                      document.getElementById('back-sep').style.display = '';
-                  }}
-              }} catch(e) {{}}
-          }}
-      }}
 
       applyData();
   }});
