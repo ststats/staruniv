@@ -33,7 +33,6 @@ def main():
         print("[경고] 수집된 데이터가 없습니다. 스크립트를 종료합니다.")
         sys.exit(1)
 
-    # elo_id를 키로 가지는 딕셔너리로 변환
     sponsor_dict = {item["id"]: item for item in sponsor_list if item.get("id")}
     changed = False
 
@@ -47,7 +46,6 @@ def main():
                 changed = True
 
     if changed:
-        # 타임스탬프는 건드리지 않고 파일만 덮어씀
         atomic_write_json(archive_path, archive_data)
         print(f"[완료] {archive_path.name} 파일에 8월 스폰전적 정정이 성공적으로 반영되었습니다. (타임스탬프 유지)")
     else:
