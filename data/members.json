@@ -7,7 +7,7 @@
       "birthdate": "1992-06-15",
       "gender": "m",
       "race": "테란",
-      "tier": "킹",
+      "tier": "갓",
       "team": "JSA",
       "role": "",
       "info_updated_at": null
@@ -451,7 +451,7 @@
       "birthdate": "1996-10-18",
       "gender": "f",
       "race": "테란",
-      "tier": "7",
+      "tier": "8",
       "team": "흑카데미",
       "role": "",
       "info_updated_at": null
@@ -487,7 +487,7 @@
       "birthdate": "2003-10-24",
       "gender": "f",
       "race": "테란",
-      "tier": "8",
+      "tier": "베이비",
       "team": "흑카데미",
       "role": "",
       "info_updated_at": null
@@ -3775,7 +3775,7 @@
       "birthdate": "1992-08-14",
       "gender": "m",
       "race": "프로토스",
-      "tier": "킹",
+      "tier": "갓",
       "team": "휴면",
       "role": "",
       "info_updated_at": null
@@ -9415,7 +9415,7 @@
       "birthdate": "1995-05-16",
       "gender": "f",
       "race": "저그",
-      "tier": "8",
+      "tier": "베이비",
       "team": "휴면",
       "role": "",
       "info_updated_at": null
