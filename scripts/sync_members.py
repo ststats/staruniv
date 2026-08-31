@@ -76,10 +76,13 @@ def flatten_players(api_data: dict) -> list:
     return players
 
 
-def main():
+def main(argv=None):
+    """argv=None이면 sys.argv[1:]를 읽는다 - convert_members_xlsx.py와 같은 이유로,
+    테스트에서 main(argv=[])처럼 명시적으로 넘기면 pytest 자체 옵션(-v 등)과
+    충돌하지 않는다."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="파일을 실제로 바꾸지 않고 변경될 내용만 출력")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     local_data = {"members": []}
     if MEMBERS_PATH.exists():

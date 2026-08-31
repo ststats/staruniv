@@ -197,10 +197,14 @@ def resolve_conflict(xlsx_fields: dict, json_fields: dict, base_fields: dict | N
     return xlsx_fields, False
 
 
-def main():
+def main(argv=None):
+    """argv=None이면(평소 CLI 실행) sys.argv[1:]를 읽는다. pytest 같은 테스트
+    러너가 자기 옵션(-v 등)을 sys.argv에 남겨둔 채로 main()을 직접 호출하면
+    argparse가 그걸 이 스크립트의 옵션으로 착각해서 죽는데, 테스트에서
+    main(argv=[])처럼 명시적으로 넘겨주면 그 문제가 안 생긴다."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="파일을 실제로 바꾸지 않고 결과만 출력")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if not XLSX_PATH.exists():
         print(f"[건너뜀] {XLSX_PATH} 가 없습니다 - members.json은 그대로 둡니다.", file=sys.stderr)
