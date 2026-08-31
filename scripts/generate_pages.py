@@ -209,11 +209,13 @@ MOBILE_CSS = """
 
 def clean_value(v): return None if str(v).strip() in PLACEHOLDER_VALUES else v
 
-def generate_html(title, target_team, is_profile, logo_prefix, static_info, team_colors, all_dates, team_from_url=False):
+def generate_html(title, target_team, is_profile, logo_prefix, static_info, team_colors, team_from_url=False):
     font_url = f"{logo_prefix}fonts/PretendardVariable.woff2"
     static_json = json.dumps(static_info, ensure_ascii=False)
     colors_json = json.dumps(team_colors, ensure_ascii=False)
-    dates_json = json.dumps(all_dates)
+    # AVAILABLE_DATES는 이 함수가 반환하는 큰 HTML 문자열 안에 직접 넣지 않는다
+    # (아래 dates.js 관련 설명 참고) - 대신 main()이 별도의 작은 data/dates.js
+    # 파일로 저장하고, 이 HTML은 그 파일을 <script src>로 동기 로드해서 쓴다.
     if team_from_url:
         target_team_js = "new URLSearchParams(window.location.search).get('team') || \"\""
     else:
@@ -325,11 +327,19 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
         <span id="role-legend-item"><span class="sw" style="background:#fadada;"></span>수장/전력외</span>
         <span>🎂 생일</span></div>"""
 
-    js_code = f"""<script>
+    js_code = f"""<script src="{logo_prefix}data/dates.js"></script>
+<script>
 (function () {{
   const STATIC_INFO = {static_json};
   const TEAM_COLORS = {colors_json};
-  const AVAILABLE_DATES = {dates_json};
+  // AVAILABLE_DATES는 여기서 선언하지 않는다 - 이 <script> 태그보다 앞서 동기
+  // 로드되는 <script src="...data/dates.js">가 window.AVAILABLE_DATES를 이미
+  // 채워놨고, 이 IIFE 스코프 체인이 그 전역 변수를 그대로 찾아 쓴다(즉 아래
+  // 코드에서 쓰는 AVAILABLE_DATES는 사실 window.AVAILABLE_DATES다). 매일
+  // 늘어나는 날짜 목록을 이 큰 HTML 안에 직접 박아넣으면 파일 전체가 매일
+  // git에 다시 커밋되기 때문에, 작은 별도 파일로 뺐다 - 로딩 타이밍은 동기
+  // <script src>라 전혀 안 바뀐다(fetch였다면 비동기라 아래 코드 전체를 다시
+  // 짜야 했을 것).
   const TARGET_TEAM = {target_team_js};
   const LOGO_PREFIX = "{logo_prefix}";
   const IS_PROFILE = {'true' if is_profile else 'false'};
@@ -840,6 +850,15 @@ def main():
         if existing.name not in expected_files:
             existing.unlink()
 
+    # AVAILABLE_DATES는 매일 늘어나므로 index.html/team.html/profile.html
+    # 본문에는 더 이상 안 박아넣는다(생성부의 generate_html/js_code 참고) -
+    # 이 작은 파일 하나만 매일 바뀌고, 세 HTML은 실제 템플릿/로고색/로스터가
+    # 바뀐 날에만 다시 쓰인다. window.AVAILABLE_DATES로 선언해서, HTML의
+    # <script src="...data/dates.js">가 메인 <script>보다 앞서 동기 로드되면
+    # 곧바로 전역 변수로 쓸 수 있다.
+    dates_js_content = "window.AVAILABLE_DATES = " + json.dumps(all_dates) + ";\n"
+    _write_if_changed(DOCS_DIR / "data" / "dates.js", dates_js_content)
+
     with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
         members_data = json.load(f).get("members", [])
 
@@ -861,24 +880,26 @@ def main():
         if mid:
             static_info[mid] = {"gender": m.get("gender", "m"), "birthdate": clean_value(m.get("birthdate"))}
 
-    team_colors = {team: get_team_topbar_color(team) for team in all_team_names}
+    team_colors = {team: get_team_topbar_color(team) for team in sorted(all_team_names)}
     team_colors["FA"], team_colors["휴면"] = "#8b8f99", "#8b8f99"
 
-    index_html = generate_html("스타대학", "", False, "", static_info, team_colors, all_dates)
+    index_html = generate_html("스타대학", "", False, "", static_info, team_colors)
     OUTPUT_INDEX.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_INDEX, "w", encoding="utf-8") as f: f.write(index_html)
+    _write_if_changed(OUTPUT_INDEX, index_html)
 
     if OUTPUT_TEAMS_DIR.exists():
         shutil.rmtree(OUTPUT_TEAMS_DIR)
 
     if all_team_names:
-        any_team = next(iter(all_team_names))
-        team_html = generate_html("팀별 현황", any_team, False, "", static_info, team_colors, all_dates,
+        any_team = sorted(all_team_names)[0]  # set 순회 순서는 프로세스마다 달라지므로
+        # (해시 랜덤화) 매번 같은 팀이 뽑히도록 정렬해서 고른다 - team_from_url=True라
+        # 실제 렌더링엔 어느 팀이 뽑히는지 자체는 영향 없지만, 그래도 재현 가능하게.
+        team_html = generate_html("팀별 현황", any_team, False, "", static_info, team_colors,
                                    team_from_url=True)
-        with open(OUTPUT_TEAM_PATH, "w", encoding="utf-8") as f: f.write(team_html)
+        _write_if_changed(OUTPUT_TEAM_PATH, team_html)
 
-    profile_html = generate_html("프로필", "", True, "", static_info, team_colors, all_dates)
-    with open(OUTPUT_PROFILE_PATH, "w", encoding="utf-8") as f: f.write(profile_html)
+    profile_html = generate_html("프로필", "", True, "", static_info, team_colors)
+    _write_if_changed(OUTPUT_PROFILE_PATH, profile_html)
 
 if __name__ == "__main__":
     main()

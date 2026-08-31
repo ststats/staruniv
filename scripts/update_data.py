@@ -26,7 +26,10 @@ fetch_poonggo_data.py와 fetch_eloboard_data.py는 이제 순수하게 "데이�
 import sys
 import json
 
-from _common import ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range
+from _common import (
+    ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range,
+    atomic_write_json, safe_read_json, validate_and_clean_members,
+)
 from fetch_poonggo_data import fetch_poonggo_monthly
 from fetch_eloboard_data import aggregate_period_data
 
@@ -50,8 +53,7 @@ def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     archive_path = ARCHIVE_DIR / f"{prev_date}.json"
     if not archive_path.exists():
-        with open(archive_path, "w", encoding="utf-8") as f:
-            json.dump(prev_latest, f, ensure_ascii=False, indent=2)
+        atomic_write_json(archive_path, prev_latest)
 
 
 def apply_member_updates_to_archives(members: list):
@@ -80,13 +82,7 @@ def apply_member_updates_to_archives(members: list):
     if not updates or not ARCHIVE_DIR.exists():
         return
 
-    applied = {}
-    if APPLIED_CORRECTIONS_PATH.exists():
-        try:
-            with open(APPLIED_CORRECTIONS_PATH, "r", encoding="utf-8") as f:
-                applied = json.load(f)
-        except Exception:
-            applied = {}
+    applied = safe_read_json(APPLIED_CORRECTIONS_PATH, default={})
 
     pending = {mid: upd for mid, upd in updates.items() if applied.get(mid) != upd}
     if not pending:
@@ -100,10 +96,8 @@ def apply_member_updates_to_archives(members: list):
             continue
         changed = False
 
-        try:
-            with open(archive_path, "r", encoding="utf-8") as f:
-                arch_data = json.load(f)
-        except Exception:
+        arch_data = safe_read_json(archive_path, default=None)
+        if arch_data is None:
             continue
 
         for am in arch_data.get("members", []):
@@ -117,13 +111,11 @@ def apply_member_updates_to_archives(members: list):
                             changed = True
 
         if changed:
-            with open(archive_path, "w", encoding="utf-8") as f:
-                json.dump(arch_data, f, ensure_ascii=False, indent=2)
+            atomic_write_json(archive_path, arch_data)
             print(f"[소급적용] {file_date}.json 파일에 멤버 정보 업데이트 반영됨")
 
     applied.update(pending)
-    with open(APPLIED_CORRECTIONS_PATH, "w", encoding="utf-8") as f:
-        json.dump(applied, f, ensure_ascii=False, indent=2)
+    atomic_write_json(APPLIED_CORRECTIONS_PATH, applied)
 
 
 def _index_by_elo_id(sponsor_list: list) -> dict:
@@ -146,11 +138,9 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
         print(f"[경고] {archive_path.name} 파일이 없어 월 확정을 건너뜁니다.", file=sys.stderr)
         return
 
-    try:
-        with open(archive_path, "r", encoding="utf-8") as f:
-            archive = json.load(f)
-    except Exception as e:
-        print(f"[오류] 아카이브 파일을 읽을 수 없습니다: {e}", file=sys.stderr)
+    archive = safe_read_json(archive_path, default=None)
+    if archive is None:
+        print(f"[오류] 아카이브 파일을 읽을 수 없습니다: {archive_path.name}", file=sys.stderr)
         return
 
     changed = False
@@ -195,8 +185,7 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
 
     if changed:
         archive["updated_at"] = now.strftime(DATETIME_FORMAT) + " (월 확정치)"
-        with open(archive_path, "w", encoding="utf-8") as f:
-            json.dump(archive, f, ensure_ascii=False, indent=2)
+        atomic_write_json(archive_path, archive)
         print(f"[완료] {archive_path.name} 확정됨")
 
 
@@ -207,11 +196,12 @@ def main():
 
     with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
         config = json.load(f)
-    members = config["members"]
-    # id를 항상 문자열로 강제한다 - members.json에 숫자로 저장된 id가 섞여
-    # 있으면(예: 순수 숫자로만 된 SOOP ID를 엑셀에서 텍스트 서식 없이 입력한
-    # 경우) fetch_poonggo_monthly의 ",".join(ids)에서 TypeError가 난다.
-    all_ids = [str(m["id"]) for m in members if m.get("id")]
+    # 각 레코드가 최소 스키마(id/nickname)를 만족하는지 검사하고, 문제 있는
+    # 레코드는 걸러낸다 - xlsx/EloBoard API/admin.html 중 어느 한 곳이라도
+    # 이상한 값을 넣으면(오늘도 숫자 id, 문자열 "null" 등 실제로 있었음) 그
+    # 레코드 하나 때문에 전체 갱신이 통째로 죽는 일이 없도록 한다.
+    members = validate_and_clean_members(config.get("members", []))
+    all_ids = [m["id"] for m in members]  # validate_and_clean_members가 이미 문자열로 강제해둠
 
     now = kst_now()
     year, month = now.year, now.month
@@ -224,11 +214,7 @@ def main():
     # 읽고 있었다).
     prev_latest = None
     if OUTPUT_PATH.exists():
-        try:
-            with open(OUTPUT_PATH, "r", encoding="utf-8") as f:
-                prev_latest = json.load(f)
-        except Exception:
-            prev_latest = None
+        prev_latest = safe_read_json(OUTPUT_PATH, default=None)
 
     prev_year = prev_month = None
     sponsor_updated_at = sponsor_month = None
@@ -295,7 +281,7 @@ def main():
         out_members.append({
             "id": member_id,
             "elo_id": elo_id,
-            "nickname": m["nickname"],
+            "nickname": m.get("nickname") or member_id,
             "role": m.get("role"),
             "team": m.get("team"),
             "race": m.get("race"),
@@ -320,8 +306,7 @@ def main():
         result["sponsor_month"] = sponsor_month
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    atomic_write_json(OUTPUT_PATH, result)
 
     print(f"[완료] {OUTPUT_PATH.name} 갱신됨 (별풍선 {len(balloon_data)}명, 스폰전적 {len(sponsor_data)}명)")
 

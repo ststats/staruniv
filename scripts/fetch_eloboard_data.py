@@ -26,6 +26,12 @@ from collections import defaultdict
 
 PAGE_LIMIT = 200
 SLEEP_BETWEEN_PAGES_SEC = 0.5
+# 이론상 API 응답이 정렬 가정과 다르게 오거나(더 이상 과거로 못 내려가는 상태)
+# 종료 조건이 어긋나면 while True가 끝없이 돌면서 워크플로우 전체 시간(25분
+# 타임아웃)을 다 잡아먹을 수 있다 - 그러면 그날은 별풍선 수집도, 페이지 생성도,
+# 커밋도 전혀 안 된다. 충분히 넉넉하지만(200명 x 2000페이지 = 40만 건) 무한
+# 루프는 막아주는 상한선을 둔다.
+MAX_PAGES = 2000
 
 
 def aggregate_period_data(start_date: str, end_date: str) -> list:
@@ -47,11 +53,19 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
     계속 집계한다.
     """
     offset = 0
+    page_count = 0
     combined_dict = defaultdict(lambda: {"id": None, "sponsor_wins": 0, "sponsor_losses": 0})
 
     print(f"[요청] {start_date} ~ {end_date} 기간 전적 수집 시작...")
 
     while True:
+        page_count += 1
+        if page_count > MAX_PAGES:
+            print(f"[오류] {MAX_PAGES}페이지를 넘겨도 종료 조건에 도달 못 함 - "
+                  f"정렬 가정이 깨졌거나 API 문제로 보입니다. 지금까지 모은 데이터는 "
+                  f"불완전하므로 이번 수집 전체를 실패 처리합니다.", file=sys.stderr)
+            return []
+
         url = f"https://eloboard.co.kr/api/matches?limit={PAGE_LIMIT}&offset={offset}"
         matches = fetch_json(url, label=f"엘로보드(offset={offset})")
         if matches is None:

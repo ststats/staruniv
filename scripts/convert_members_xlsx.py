@@ -47,13 +47,15 @@ xlsx 파일 자체가 없으면 두 방향 다 에러로 죽지 않고 조용히
 """
 
 import sys
+import os
 import json
 import argparse
+import tempfile
 from datetime import datetime
 
 from openpyxl import load_workbook
 
-from _common import ROOT
+from _common import ROOT, atomic_write_json, safe_read_json, validate_and_clean_members
 
 XLSX_PATH = ROOT / "data" / "members.xlsx"
 MEMBERS_PATH = ROOT / "data" / "members.json"
@@ -165,7 +167,20 @@ def write_xlsx(update_rows: dict, append_rows: list) -> None:
             parse_date_for_xlsx(m.get("info_updated_at")),
         ))
 
-    wb.save(XLSX_PATH)
+    # wb.save()도 json.dump()와 똑같이 대상 파일에 직접 쓰는 방식이라, 쓰는
+    # 도중에 중단되면 xlsx 파일 자체가 깨질 수 있다(엑셀에서 열리지도 않는
+    # 상태) - 임시 파일에 먼저 저장하고 다 되면 os.replace()로 바꿔치기한다.
+    fd, tmp_path = tempfile.mkstemp(dir=XLSX_PATH.parent, prefix=f".{XLSX_PATH.name}.", suffix=".tmp")
+    os.close(fd)
+    try:
+        wb.save(tmp_path)
+        os.replace(tmp_path, XLSX_PATH)
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def resolve_conflict(xlsx_fields: dict, json_fields: dict, base_fields: dict | None) -> tuple:
@@ -201,24 +216,21 @@ def main():
 
     local_data = {"members": []}
     if MEMBERS_PATH.exists():
-        with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
-            local_data = json.load(f)
+        local_data = safe_read_json(MEMBERS_PATH, default={"members": []})
 
-    # 예전 버그로 이미 숫자 타입 id가 저장돼있을 수 있다 - 전부 문자열로 정규화.
-    normalized_count = 0
-    for m in local_data.get("members", []):
-        if m.get("id") is not None and not isinstance(m["id"], str):
-            m["id"] = str(m["id"])
-            normalized_count += 1
-    if normalized_count:
-        print(f"[정리] members.json에서 숫자 타입 id {normalized_count}개를 문자열로 정규화함", file=sys.stderr)
+    # id 숫자 타입 정규화, elo_id 정수 강제, id/nickname 없는 레코드 제외 등을
+    # 여기서 한 번에 처리한다 - convert_members_xlsx.py가 워크플로우에서 제일
+    # 먼저 members.json을 만지는 스크립트라, 여기서 걸러두면 뒤따르는
+    # sync_members.py/update_data.py는 항상 정리된 데이터를 받는다.
+    before_count = len(local_data.get("members", []))
+    local_data["members"] = validate_and_clean_members(local_data.get("members", []))
+    dropped = before_count - len(local_data["members"])
+    if dropped:
+        print(f"[정리] members.json에서 스키마 문제로 {dropped}명 제외됨", file=sys.stderr)
 
-    member_map = {m["id"]: m for m in local_data.get("members", []) if m.get("id")}
+    member_map = {m["id"]: m for m in local_data["members"]}
 
-    baseline = {}
-    if BASELINE_PATH.exists():
-        with open(BASELINE_PATH, "r", encoding="utf-8") as f:
-            baseline = json.load(f)
+    baseline = safe_read_json(BASELINE_PATH, default={})
 
     all_ids = set(xlsx_members) | set(member_map)
 
@@ -292,8 +304,7 @@ def main():
         print(f"[경고] {soop_id}: xlsx와 json이 동시에 바뀌어 충돌 - xlsx 값을 기본 채택함. "
               f"xlsx={xlsx_fields} / json(무시됨)={json_fields}", file=sys.stderr)
 
-    with open(MEMBERS_PATH, "w", encoding="utf-8") as f:
-        json.dump(local_data, f, ensure_ascii=False, indent=2)
+    atomic_write_json(MEMBERS_PATH, local_data)
     print(f"[완료] members.json 동기화됨 (갱신 {len(json_updates)}명, 신규 {len(added_to_json)}명, "
           f"총 {len(local_data['members'])}명)")
 
@@ -303,8 +314,7 @@ def main():
     else:
         print("[완료] xlsx 쪽 변경 없음")
 
-    with open(BASELINE_PATH, "w", encoding="utf-8") as f:
-        json.dump(new_baseline, f, ensure_ascii=False, indent=2)
+    atomic_write_json(BASELINE_PATH, new_baseline)
 
 
 if __name__ == "__main__":

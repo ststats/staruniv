@@ -31,10 +31,9 @@ continue-on-error로 감싸져 있어서, 이 스크립트가 실패해도(엘�
 """
 
 import sys
-import json
 import argparse
 
-from _common import ROOT, fetch_json
+from _common import ROOT, fetch_json, atomic_write_json, safe_read_json, validate_and_clean_members
 
 MEMBERS_PATH = ROOT / "data" / "members.json"
 TIERS_URL = "https://eloboard.co.kr/api/tiers"
@@ -43,9 +42,9 @@ TIERS_URL = "https://eloboard.co.kr/api/tiers"
 # 스위치. False로 두면 그 필드는 API에 뭐가 오든 기존 값을 그대로 유지한다.
 # (신규 멤버 추가에는 영향 없음 - 새로 추가되는 사람은 항상 API 값으로 채워진다.)
 UPDATE_EXISTING_NICKNAME = False
-UPDATE_EXISTING_RACE = False
+UPDATE_EXISTING_RACE = True
 UPDATE_EXISTING_TIER = True
-UPDATE_EXISTING_TEAM = False
+UPDATE_EXISTING_TEAM = True
 
 # race 값 변환 맵 (필요에 따라 추가/수정)
 RACE_MAP = {
@@ -84,10 +83,10 @@ def main():
 
     local_data = {"members": []}
     if MEMBERS_PATH.exists():
-        with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
-            local_data = json.load(f)
+        local_data = safe_read_json(MEMBERS_PATH, default={"members": []})
 
-    member_map = {m["id"]: m for m in local_data.get("members", []) if m.get("id")}
+    local_data["members"] = validate_and_clean_members(local_data.get("members", []))
+    member_map = {m["id"]: m for m in local_data["members"]}
 
     print(f"[시작] {TIERS_URL} 조회 중...")
     api_data = fetch_json(TIERS_URL, label="엘로보드 티어 목록")
@@ -148,8 +147,7 @@ def main():
         print(f"[dry-run 완료] 갱신 {len(updated)}명, 신규 추가 {len(added)}명 (파일은 안 건드림)")
         return
 
-    with open(MEMBERS_PATH, "w", encoding="utf-8") as f:
-        json.dump(local_data, f, ensure_ascii=False, indent=2)
+    atomic_write_json(MEMBERS_PATH, local_data)
 
     print(f"[완료] members.json 갱신됨 (기존 정보 갱신 {len(updated)}명, 신규 추가 {len(added)}명)")
 
