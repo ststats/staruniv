@@ -233,13 +233,21 @@ def main():
         prev_year, prev_month = prev_latest.get("year"), prev_latest.get("month")
         sponsor_updated_at = prev_latest.get("sponsor_updated_at")
         sponsor_month = prev_latest.get("sponsor_month")
-        for om in prev_latest.get("members", []):
-            mid = om.get("id")
-            if mid:
-                existing_sponsor[mid] = {
-                    "sponsor_wins": om.get("sponsor_wins", 0),
-                    "sponsor_losses": om.get("sponsor_losses", 0),
-                }
+        # 폴백용 "기존 스폰전적"은 그게 이번 달 것일 때만 의미가 있다. 예를 들어
+        # 8/31->9/1로 넘어가는 첫 실행에서 엘로보드 조회가 실패하면, prev_latest는
+        # 아직 8월 누적치를 들고 있는데 그걸 그대로 폴백으로 쓰면 "9월인데 8월
+        # 스폰전적이 그대로 보이는" 상태가 된다 - sponsor_month가 이번 달과 다르면
+        # 아예 채우지 않아서, 아래 existing_sponsor.get(...)의 기본값(0승 0패)이
+        # 대신 쓰이게 한다.
+        current_month_str = f"{year:04d}-{month:02d}"
+        if sponsor_month == current_month_str:
+            for om in prev_latest.get("members", []):
+                mid = om.get("id")
+                if mid:
+                    existing_sponsor[mid] = {
+                        "sponsor_wins": om.get("sponsor_wins", 0),
+                        "sponsor_losses": om.get("sponsor_losses", 0),
+                    }
 
     # 1. 날짜 전환 아카이빙 - 아직 오늘자 데이터를 하나도 안 가져온 상태라, 어제
     #    마지막 상태 그대로 안전하게 확정된다.
