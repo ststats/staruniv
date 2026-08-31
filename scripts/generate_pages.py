@@ -90,8 +90,8 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .team-card-topbar { height: 6px; background: #4a5ce0; }
 .team-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #f2f3f5; gap: 8px; flex-wrap: wrap; }
 .team-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.team-link { display: flex; align-items: center; gap: 10px; min-width: 0; color: inherit; text-decoration: none; }
-.team-link:hover .team-name { text-decoration: underline; }
+.team-link { color: inherit; text-decoration: none; }
+.team-link:hover { text-decoration: underline; }
 .team-logo { width: 28px; height: 28px; border-radius: 10px; object-fit: contain; flex-shrink: 0; }
 .team-name { font-size: 16px; font-weight: 800; color: #141821; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .team-count { font-size: 10px; color: #a4a8b2; font-weight: 500; white-space: nowrap; }
@@ -184,7 +184,7 @@ MOBILE_CSS = """
     .team-card { border-radius: 10px; }
     .team-card-topbar { height: 3px; }
     .team-header { padding: 6px 8px; gap: 4px; }
-    .team-header-left, .team-link { gap: 5px; }
+    .team-header-left { gap: 5px; }
     .team-logo { width: 14px; height: 14px; border-radius: 5px; }
     .team-name { font-size: 8px; }
     .team-count { font-size: 5px; }
@@ -691,8 +691,9 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
           targetTeamStats.forEach(ts => {{
               const logoHtml = `<img src="${{LOGO_PREFIX}}logos/${{ts.name}}.webp" class="team-logo" alt="" onerror="this.style.display='none'">`;
               const topColor = TEAM_COLORS[ts.name] || '#4a5ce0';
-              const headerLeft = TARGET_TEAM ? `<div class="team-header-left">${{logoHtml}}<span class="team-name">${{ts.name}}</span><span class="team-count">총 ${{ts.males.length + ts.females.length}}명 · 남 ${{ts.males.length}} · 여 ${{ts.females.length}}</span></div>`
-                  : `<a class="team-link" href="team.html?team=${{encodeURIComponent(ts.name)}}&date=${{currentDateStr}}&metric=${{currentMetric}}">${{logoHtml}}<span class="team-name">${{ts.name}}</span><span class="team-count">총 ${{ts.males.length + ts.females.length}}명 · 남 ${{ts.males.length}} · 여 ${{ts.females.length}}</span></a>`;
+              const countHtml = `<span class="team-count">총 ${{ts.males.length + ts.females.length}}명 · 남 ${{ts.males.length}} · 여 ${{ts.females.length}}</span>`;
+              const headerLeft = TARGET_TEAM ? `<div class="team-header-left">${{logoHtml}}<span class="team-name">${{ts.name}}</span>${{countHtml}}</div>`
+                  : `<div class="team-header-left">${{logoHtml}}<a class="team-link team-name" href="team.html?team=${{encodeURIComponent(ts.name)}}&date=${{currentDateStr}}&metric=${{currentMetric}}">${{ts.name}}</a>${{countHtml}}</div>`;
               const rankSlot = TARGET_TEAM ? '' : `<span class="rank-badge-slot" data-team="${{ts.name}}"></span>`;
 
               const makeRows = (list, padLen) => {{
@@ -704,8 +705,10 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 
                       const isBday = m._bday && parseInt(m._bday.split('-')[1], 10) === monthNum;
                       const liveDot = m.id ? `<span class="live-dot" data-live-id="${{m.id}}"></span>` : '';
-                      const nameInner = liveDot + m.nickname + (isBday ? '<span class="bday-mark">🎂</span>' : '');
-                      const nameContent = m.id ? `<a class="member-name-link" href="${{LOGO_PREFIX}}profile.html?id=${{m.id}}&date=${{currentDateStr}}">${{nameInner}}</a>` : nameInner;
+                      const bdayMark = isBday ? '<span class="bday-mark">🎂</span>' : '';
+                      const nameContent = m.id
+                          ? `${{liveDot}}<a class="member-name-link" href="${{LOGO_PREFIX}}profile.html?id=${{m.id}}&date=${{currentDateStr}}">${{m.nickname}}</a>${{bdayMark}}`
+                          : liveDot + m.nickname + bdayMark;
                       return `<div class="member-row ${{cClass.join(' ')}}"><span class="member-name">${{nameContent}}</span><span class="member-value">${{def.format(m._val)}}</span></div>`;
                   }}).join('');
 
