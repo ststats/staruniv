@@ -184,7 +184,10 @@ def main():
     with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
         config = json.load(f)
     members = config["members"]
-    all_ids = [m["id"] for m in members if m.get("id")]
+    # id를 항상 문자열로 강제한다 - members.json에 숫자로 저장된 id가 섞여
+    # 있으면(예: 순수 숫자로만 된 SOOP ID를 엑셀에서 텍스트 서식 없이 입력한
+    # 경우) fetch_poonggo_monthly의 ",".join(ids)에서 TypeError가 난다.
+    all_ids = [str(m["id"]) for m in members if m.get("id")]
 
     now = kst_now()
     year, month = now.year, now.month

@@ -61,12 +61,13 @@ SHEET_NAME = "members"
 
 GENDER_MAP = {"남자": "m", "여자": "f"}
 GENDER_MAP_REVERSE = {"m": "남자", "f": "여자"}
-PLACEHOLDER_VALUES = {"체크", "TODO", "?", "미정", ""}
+PLACEHOLDER_VALUES = {"체크", "todo", "?", "미정", "", "null", "none", "n/a", "na"}
 
 
 def clean(value):
-    """"체크"류 임시 문자열이나 빈 문자열을 null로 정규화한다. 그 외 값은 그대로 통과."""
-    if isinstance(value, str) and value.strip() in PLACEHOLDER_VALUES:
+    """"체크"/"null"류 임시 문자열이나 빈 문자열을 null로 정규화한다(대소문자
+    구분 안 함). 그 외 값은 그대로 통과."""
+    if isinstance(value, str) and value.strip().lower() in PLACEHOLDER_VALUES:
         return None
     return value
 
@@ -100,6 +101,12 @@ def parse_xlsx_members(ws) -> list:
         if not nickname or not soop_id:
             print(f"[건너뜀] {row_idx}행: 이름 또는 SOOP ID가 비어있음", file=sys.stderr)
             continue
+
+        # SOOP ID가 순수 숫자면(예: "163830") 엑셀/openpyxl이 문자열이 아니라
+        # int로 읽어들인다 - 그대로 두면 members.json에 숫자로 저장되고, 나중에
+        # ",".join(all_ids) 같은 문자열 전제 코드가 TypeError로 죽는다. 항상
+        # 문자열로 강제해서 이 문제를 원천 차단한다.
+        soop_id = str(soop_id)
 
         tier = clean(tier)
         rows.append({
@@ -163,6 +170,19 @@ def main():
     if MEMBERS_PATH.exists():
         with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
             local_data = json.load(f)
+
+    # 예전 버그로 인해 이미 members.json에 숫자 타입 id가 저장돼있을 수 있다
+    # (순수 숫자로만 된 SOOP ID를 엑셀에서 텍스트 서식 없이 읽은 경우). 그대로
+    # 두면 xlsx가 주는 문자열 id랑 매칭이 안 돼서 같은 사람이 중복으로 추가될
+    # 수 있으므로, 여기서 전부 문자열로 정규화하고 넘어간다.
+    normalized_count = 0
+    for m in local_data.get("members", []):
+        if m.get("id") is not None and not isinstance(m["id"], str):
+            m["id"] = str(m["id"])
+            normalized_count += 1
+    if normalized_count:
+        print(f"[정리] members.json에서 숫자 타입 id {normalized_count}개를 문자열로 정규화함", file=sys.stderr)
+
     member_map = {m["id"]: m for m in local_data.get("members", []) if m.get("id")}
 
     # 1단계: xlsx -> json
