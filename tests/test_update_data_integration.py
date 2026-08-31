@@ -9,6 +9,7 @@ monkeypatch로 가짜 함수로 바꿔치기해서, 순수하게 오케스트레
 """
 
 import json
+import datetime
 
 import update_data
 
@@ -116,3 +117,56 @@ class TestMainEndToEnd:
         assert archived.exists()
         archived_data = json.loads(archived.read_text(encoding="utf-8"))
         assert archived_data["members"][0]["balloons"] == 999  # 어제 스냅샷 그대로 보존
+
+    def test_sponsor_stats_reset_on_month_change_when_collection_fails(self, tmp_path, monkeypatch):
+        """8/31->9/1처럼 달이 바뀐 첫 실행에서 엘로보드 수집이 실패하면(sponsor_list
+        비어있음), "기존 값 유지" 폴백이 지난달 누적치를 새 달 데이터인 것처럼
+        그대로 보여주면 안 된다 - 0승 0패로 리셋돼야 한다."""
+        members_path, output_path, archive_dir = _setup(tmp_path, monkeypatch)
+
+        # "어제"(8/31) 상태: 8월 스폰전적 20승 5패가 쌓여있음
+        yesterday_snapshot = {
+            "date": "2026-08-31", "year": 2026, "month": 8,
+            "sponsor_month": "2026-08", "sponsor_updated_at": "2026-08-31 23:00:00",
+            "members": [{"id": "a1", "elo_id": 1, "nickname": "닉네임", "balloons": 100,
+                         "broadcast_seconds": 10, "cumulative_viewers": 5,
+                         "sponsor_wins": 20, "sponsor_losses": 5}],
+        }
+        output_path.write_text(json.dumps(yesterday_snapshot, ensure_ascii=False), encoding="utf-8")
+
+        monkeypatch.setattr(update_data, "kst_now", lambda: datetime.datetime(2026, 9, 1, 1, 0, 0))
+        monkeypatch.setattr(update_data, "fetch_poonggo_monthly",
+                             lambda year, month, ids: {"a1": {"balloons": 0, "broadcast_seconds": 0, "cumulative_viewers": 0}})
+        monkeypatch.setattr(update_data, "aggregate_period_data", lambda start, end: [])  # 9월 첫날, 수집 실패
+
+        update_data.main()
+
+        result = json.loads(output_path.read_text(encoding="utf-8"))
+        assert result["members"][0]["sponsor_wins"] == 0
+        assert result["members"][0]["sponsor_losses"] == 0
+
+    def test_sponsor_stats_preserved_within_same_month_when_collection_fails(self, tmp_path, monkeypatch):
+        """같은 달 안에서 수집이 실패하면(위와 대조) 기존 값이 정상적으로
+        보존돼야 한다 - 위 테스트가 "무조건 리셋"이 아니라 "월이 바뀔 때만
+        리셋"임을 확인하기 위한 대조군."""
+        members_path, output_path, archive_dir = _setup(tmp_path, monkeypatch)
+
+        yesterday_snapshot = {
+            "date": "2026-09-14", "year": 2026, "month": 9,
+            "sponsor_month": "2026-09", "sponsor_updated_at": "2026-09-14 23:00:00",
+            "members": [{"id": "a1", "elo_id": 1, "nickname": "닉네임", "balloons": 100,
+                         "broadcast_seconds": 10, "cumulative_viewers": 5,
+                         "sponsor_wins": 10, "sponsor_losses": 3}],
+        }
+        output_path.write_text(json.dumps(yesterday_snapshot, ensure_ascii=False), encoding="utf-8")
+
+        monkeypatch.setattr(update_data, "kst_now", lambda: datetime.datetime(2026, 9, 15, 1, 0, 0))
+        monkeypatch.setattr(update_data, "fetch_poonggo_monthly",
+                             lambda year, month, ids: {"a1": {"balloons": 0, "broadcast_seconds": 0, "cumulative_viewers": 0}})
+        monkeypatch.setattr(update_data, "aggregate_period_data", lambda start, end: [])
+
+        update_data.main()
+
+        result = json.loads(output_path.read_text(encoding="utf-8"))
+        assert result["members"][0]["sponsor_wins"] == 10
+        assert result["members"][0]["sponsor_losses"] == 3
