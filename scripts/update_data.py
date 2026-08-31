@@ -184,7 +184,8 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
                 changed = True
 
     if changed:
-        archive["updated_at"] = now.strftime(DATETIME_FORMAT) + " (월 확정치)"
+        archive["updated_at"] = now.strftime(DATETIME_FORMAT)
+        archive["sponsor_updated_at"] = now.strftime(DATETIME_FORMAT)
         atomic_write_json(archive_path, archive)
         print(f"[완료] {archive_path.name} 확정됨")
 
