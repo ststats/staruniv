@@ -289,7 +289,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       <div class="profile-row">
         <span class="profile-row-label">방송국</span>
         <a id="profile-station-link" href="#" target="_blank" rel="noopener">
-          <img class="profile-station-icon" src="{logo_prefix}logos/soop-logo.jpg" alt="방송국 바로가기" onerror="this.style.display='none'">
+          <img class="profile-station-icon" src="{logo_prefix}logos/숲로고.webp" alt="방송국 바로가기" onerror="this.style.display='none'">
         </a>
       </div>
     </div>
@@ -783,7 +783,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 
     include_mobile_css = not is_profile and not target_team
     mobile_css_block = MOBILE_CSS if include_mobile_css else ""
-    return f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><link rel="icon" type="image/webp" href="{logo_prefix}logos/index.webp"><link rel="preload" href="{font_url}" as="font" type="font/woff2" crossorigin><style>@font-face {{ font-family: 'Pretendard Variable'; font-weight: 45 920; font-style: normal; font-display: block; src: url('{font_url}') format('woff2-variations'); }} {PAGE_CSS} {mobile_css_block}</style></head><body>{top_bar_html}{body_html}{legend_html}{js_code}</body></html>"""
+    return f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><link rel="icon" type="image/webp" href="{logo_prefix}logos/파비콘.webp"><link rel="preload" href="{font_url}" as="font" type="font/woff2" crossorigin><style>@font-face {{ font-family: 'Pretendard Variable'; font-weight: 45 920; font-style: normal; font-display: block; src: url('{font_url}') format('woff2-variations'); }} {PAGE_CSS} {mobile_css_block}</style></head><body>{top_bar_html}{body_html}{legend_html}{js_code}</body></html>"""
 
 def _write_if_changed(dst_path: Path, content: str) -> None:
     """content가 이미 dst_path에 똑같이 들어있으면 아무것도 안 쓰고 건너뛴다.
