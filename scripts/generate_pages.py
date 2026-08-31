@@ -829,8 +829,8 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       }}
   }}
 
-  document.getElementById('cal-prev').onclick = function() {{ viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); }};
-  document.getElementById('cal-next').onclick = function() {{ viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); }};
+  document.getElementById('cal-prev').onclick = function() {{ viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); renderCalendar(); }};
+  document.getElementById('cal-next').onclick = function() {{ viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); }};
 
   calBtn.onclick = function(e) {{
       e.stopPropagation();
