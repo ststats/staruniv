@@ -41,7 +41,7 @@ class TestMainEndToEnd:
             ["조기석", "sharpragu", 3, None, "남자", "테란", "갓", "JSA", None, None],
         ])
 
-        cmx.main()
+        cmx.main(argv=[])
 
         assert members_path.exists()
         data = json.loads(members_path.read_text(encoding="utf-8"))
@@ -57,14 +57,14 @@ class TestMainEndToEnd:
         _make_xlsx(xlsx_path, [
             ["조기석", "sharpragu", 3, None, "남자", "테란", "갓", "JSA", None, None],
         ])
-        cmx.main()  # 1차 실행 - baseline 생성
+        cmx.main(argv=[])  # 1차 실행 - baseline 생성
 
         # admin.html이 members.json의 team을 직접 고쳤다고 가정
         data = json.loads(members_path.read_text(encoding="utf-8"))
         data["members"][0]["team"] = "ADMIN수정팀"
         members_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
-        cmx.main()  # 2차 실행 - xlsx로 반영돼야 함
+        cmx.main(argv=[])  # 2차 실행 - xlsx로 반영돼야 함
 
         wb = load_workbook(xlsx_path, data_only=True)
         ws = wb["members"]
@@ -76,7 +76,7 @@ class TestMainEndToEnd:
         _make_xlsx(xlsx_path, [
             ["조기석", "sharpragu", 3, None, "남자", "테란", "갓", "JSA", None, None],
         ])
-        cmx.main()
+        cmx.main(argv=[])
 
         # sync_members.py가 새 멤버를 json에만 추가했다고 가정
         data = json.loads(members_path.read_text(encoding="utf-8"))
@@ -87,7 +87,7 @@ class TestMainEndToEnd:
         })
         members_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
-        cmx.main()
+        cmx.main(argv=[])
 
         wb = load_workbook(xlsx_path, data_only=True)
         ws = wb["members"]
@@ -101,10 +101,10 @@ class TestMainEndToEnd:
         _make_xlsx(xlsx_path, [
             ["조기석", "sharpragu", 3, None, "남자", "테란", "갓", "JSA", None, None],
         ])
-        cmx.main()
+        cmx.main(argv=[])
         first_json = members_path.read_text(encoding="utf-8")
 
-        cmx.main()  # 아무것도 안 바뀐 채로 재실행
+        cmx.main(argv=[])  # 아무것도 안 바뀐 채로 재실행
         second_json = members_path.read_text(encoding="utf-8")
 
         assert first_json == second_json
@@ -112,5 +112,5 @@ class TestMainEndToEnd:
     def test_missing_xlsx_does_not_crash(self, tmp_path, monkeypatch):
         xlsx_path, members_path, baseline_path = _setup(tmp_path, monkeypatch)
         # xlsx 파일을 아예 안 만듦
-        cmx.main()  # 예외 없이 끝나야 함
+        cmx.main(argv=[])  # 예외 없이 끝나야 함
         assert not members_path.exists()  # json도 안 건드려짐
