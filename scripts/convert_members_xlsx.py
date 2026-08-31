@@ -1,45 +1,45 @@
 """
-data/members.xlsx (사람이 직접 관리하는 엑셀 명단)와 data/members.json을 양방향으로
-동기화하는 스크립트. sync_members.py(EloBoard 티어 API로 병합)와 같은 성격 - 전부
-update-stats.yml 안에서 매일 자동으로 돌아도 안전하도록 "통째로 덮어쓰기"가 아니라
-"id 기준 병합"으로 동작한다.
+data/members.xlsx (사람이 직접 관리하는 엑셀 명단)와 data/members.json을 진짜
+양방향으로("어디서 고치든 최신 게 반영") 동기화하는 스크립트.
 
-1단계 (xlsx -> json, 기존 로직):
-  - xlsx에 있는 사람 -> members.json에 이미 있으면 nickname/elo_id/birthdate/gender/
-    race/tier/team/role을 xlsx 값으로 갱신한다.
-  - info_updated_at은 xlsx의 "수정일" 컬럼에서 가져오되, **그 셀이 비어있으면
-    건드리지 않고 기존 값을 그대로 보존한다.** ("수정일"을 채운 사람만 xlsx가
-    기준이 되고, 안 채운 대다수는 admin.html 등에서 넣어둔 기존 값이 매일 자동
-    실행 때마다 null로 리셋되는 걸 막기 위함 - "수정일" 컬럼이 아직 전원 공란인
-    상태에서 무조건 덮어쓰면 기존에 쌓아둔 값이 하루 만에 전부 날아간다.)
-  - xlsx에 있는데 members.json엔 없는 사람 -> 새로 추가(info_updated_at은 "수정일"
-    셀 값 또는 없으면 null).
-  - members.json에는 있는데 xlsx엔 없는 사람 -> 이 단계에서는 그대로 둔다(삭제
-    하지 않는다).
+핵심 문제: xlsx와 json 둘 다 사람이 직접 고칠 수 있는데(xlsx는 엑셀로, json은
+admin.html로), 둘 다 "값이 있음"이라 어느 쪽이 최신인지 값만 보고는 판단할 수
+없다. info_updated_at("수정일")은 이 판단에 쓸 수 없다 - 그건 아카이브 소급
+정정 전용 필드라, 동기화 승자 판단에 갖다 쓰면 그때마다 의도치 않게 과거
+아카이브까지 소급 수정돼버린다.
 
-2단계 (json -> xlsx, 신규):
-  - 1단계가 끝난 시점의 members.json 기준으로, xlsx에는 없던 사람(admin.html이나
-    sync_members.py가 추가한 사람 등)을 xlsx 맨 아래에 새 행으로 추가한다.
-  - 채워 넣는 건 xlsx가 갖고 있는 10개 컬럼(이름/SOOP ID/ELO ID/생년월일/성별/
-    종족/티어/소속/직책/수정일)뿐이다. 그 뒤에 있는 엑셀 전용 관리 컬럼(연혁/
-    시작일/ELO 등록일/티어표 등록일/각 티어 승급일 등)은 members.json에 대응
-    정보가 아예 없으므로 빈 칸으로 남긴다 - 사람이 나중에 직접 채워야 한다.
-  - 기존 행은 절대 건드리지 않는다(값 수정도, 서식도) - 새 행 추가만 한다.
+그래서 "지난 성공적인 동기화 직후의 상태"를 스냅샷(data/members_sync_baseline.json)
+으로 저장해두고, 이번 실행에서 xlsx/json 각각을 그 스냅샷과 비교해서 "어느 쪽이
+그 사이에 바뀌었는지"를 3-way diff로 판단한다:
+  - xlsx만 바뀜 -> xlsx 값을 json에 반영
+  - json만 바뀜(예: admin.html로 수정) -> json 값을 xlsx에 반영
+  - 둘 다 바뀌었고 서로 다름(충돌) -> xlsx를 기본으로 채택하되 [경고]로 명확히
+    알린다(사람이 확인하고 필요하면 직접 정리하도록)
+  - 둘 다 안 바뀜 -> 아무것도 안 함
+동기화 대상은 nickname/elo_id/birthdate/gender/race/tier/team/role 8개 필드다.
+
+info_updated_at("수정일")은 이 3-way 병합과 완전히 별개로, 기존 규칙 그대로
+유지한다: xlsx의 "수정일" 셀이 채워져 있으면 그 값으로 json을 갱신하고, 비어있으면
+기존 json 값을 그대로 보존한다(admin.html에서 넣어둔 값이 매일 자동 실행 때마다
+사라지지 않도록).
+
+신규/삭제 처리:
+  - xlsx에만 있는 사람(신규) -> json에 추가
+  - json에만 있는 사람(신규) -> xlsx에 새 행으로 추가
+  - 스냅샷엔 있었는데 한쪽에서 사라진 사람 -> 삭제로 취급하지 않는다(이 프로젝트
+    전반의 정책과 동일 - 자동으로 사람을 지우지 않음). 어느 한쪽에 남아있는
+    정보를 기준으로 다시 채워질 수 있다.
 
 엑셀 시트("members") 컬럼 매핑:
   이름 <-> nickname, SOOP ID <-> id, ELO ID <-> elo_id, 생년월일 <-> birthdate,
   성별(남자/여자) <-> gender(m/f), 종족 <-> race, 티어 <-> tier(문자열로 통일),
   소속 <-> team, 직책 <-> role(비어있으면 ""), 수정일 <-> info_updated_at
-  (단, info_updated_at은 위에서 설명한 "비어있으면 보존" 예외 적용)
 
-"체크"처럼 확인 전 임시로 박아둔 문자열은 xlsx -> json 방향에서 null로 정규화한다
-(README 컨벤션). json -> xlsx 방향에서는 반대로 None 값을 빈 칸으로 남긴다(다시
-"체크" 같은 임시 문자열을 만들어내지 않는다).
+"체크"/"null"처럼 확인 전 임시로 박아둔 문자열은 xlsx -> json 방향에서 null로
+정규화한다(대소문자 구분 없음). json -> xlsx 방향에서는 반대로 None 값을 빈
+칸으로 남긴다.
 
-xlsx 파일 자체가 없으면(아직 한 번도 안 올려졌거나 매일 자동 실행 중 일시적으로
-빠진 경우) 두 방향 다 에러로 죽지 않고 조용히 건너뛴다 - members.json은 원래
-xlsx 없이도 정상 운영되던 파일이라, 이 스크립트가 optional한 보강 소스로
-취급되어야 한다.
+xlsx 파일 자체가 없으면 두 방향 다 에러로 죽지 않고 조용히 건너뛴다.
 
 실행:
   python scripts/convert_members_xlsx.py --dry-run   (미리보기, 파일 안 바꿈)
@@ -57,7 +57,10 @@ from _common import ROOT
 
 XLSX_PATH = ROOT / "data" / "members.xlsx"
 MEMBERS_PATH = ROOT / "data" / "members.json"
+BASELINE_PATH = ROOT / "data" / "members_sync_baseline.json"
 SHEET_NAME = "members"
+
+CORE_FIELDS = ["nickname", "elo_id", "birthdate", "gender", "race", "tier", "team", "role"]
 
 GENDER_MAP = {"남자": "m", "여자": "f"}
 GENDER_MAP_REVERSE = {"m": "남자", "f": "여자"}
@@ -72,7 +75,7 @@ def clean(value):
     return value
 
 
-def format_birthdate(value):
+def format_date(value):
     value = clean(value)
     if value is None:
         return None
@@ -81,10 +84,9 @@ def format_birthdate(value):
     return str(value).strip() or None
 
 
-def parse_birthdate_for_xlsx(value):
+def parse_date_for_xlsx(value):
     """members.json의 "YYYY-MM-DD" 문자열을 엑셀에 넣을 datetime으로 되돌린다.
-    형식이 안 맞거나 None이면 빈 칸(None)으로 남긴다 - 억지로 문자열을 넣지
-    않는다(엑셀 원본이 datetime 타입 셀을 쓰고 있어서 형식을 맞춰준다)."""
+    형식이 안 맞거나 None이면 빈 칸(None)으로 남긴다."""
     if not value:
         return None
     try:
@@ -93,8 +95,9 @@ def parse_birthdate_for_xlsx(value):
         return None
 
 
-def parse_xlsx_members(ws) -> list:
-    rows = []
+def parse_xlsx_members(ws) -> dict:
+    """id -> {core_fields..., info_updated_at} 딕셔너리로 반환."""
+    rows = {}
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         nickname, soop_id, elo_id, birthdate, gender, race, tier, team, role, updated_at = row[:10]
 
@@ -102,47 +105,64 @@ def parse_xlsx_members(ws) -> list:
             print(f"[건너뜀] {row_idx}행: 이름 또는 SOOP ID가 비어있음", file=sys.stderr)
             continue
 
-        # SOOP ID가 순수 숫자면(예: "163830") 엑셀/openpyxl이 문자열이 아니라
-        # int로 읽어들인다 - 그대로 두면 members.json에 숫자로 저장되고, 나중에
-        # ",".join(all_ids) 같은 문자열 전제 코드가 TypeError로 죽는다. 항상
-        # 문자열로 강제해서 이 문제를 원천 차단한다.
+        # SOOP ID가 순수 숫자면 엑셀/openpyxl이 문자열이 아니라 int로 읽어들인다.
+        # 항상 문자열로 강제해서 이후 매칭/직렬화 문제를 원천 차단한다.
         soop_id = str(soop_id)
-
         tier = clean(tier)
-        rows.append({
-            "id": soop_id,
+
+        rows[soop_id] = {
             "nickname": nickname,
             "elo_id": elo_id if elo_id is not None else None,
-            "birthdate": format_birthdate(birthdate),
+            "birthdate": format_date(birthdate),
             "gender": GENDER_MAP.get(gender, gender),
             "race": clean(race),
             "tier": str(tier) if tier is not None else None,
             "team": clean(team),
             "role": role if role else "",
-            "info_updated_at": format_birthdate(updated_at),  # 날짜 포맷 규칙이 생년월일과 동일해서 재사용
-        })
+            "info_updated_at": format_date(updated_at),
+        }
     return rows
 
 
-def append_missing_to_xlsx(missing_members: list) -> None:
-    """members.json에는 있는데 xlsx엔 없던 멤버들을 xlsx 맨 아래에 새 행으로
-    추가한다. 기존 행/서식은 절대 안 건드리고, ws.append()로 새 행만 붙인다."""
-    wb = load_workbook(XLSX_PATH)  # data_only=False (기본값) - 저장을 위해 별도로 다시 연다
+def core(fields: dict) -> dict:
+    return {k: fields.get(k) for k in CORE_FIELDS}
+
+
+def write_xlsx(update_rows: dict, append_rows: list) -> None:
+    """update_rows: {soop_id: core_fields} - 기존 행을 이 값으로 갱신(수정일은 안 건드림).
+    append_rows: [{"id":..., **core_fields, "info_updated_at":...}] - 새 행 추가."""
+    wb = load_workbook(XLSX_PATH)  # data_only=False - 저장을 위해 다시 연다
     ws = wb[SHEET_NAME]
 
-    for m in missing_members:
-        gender_kr = GENDER_MAP_REVERSE.get(m.get("gender"), m.get("gender"))
+    if update_rows:
+        for row in ws.iter_rows(min_row=2):
+            cell_id = row[1].value
+            cell_id = str(cell_id) if cell_id is not None else None
+            fields = update_rows.get(cell_id)
+            if not fields:
+                continue
+            row[0].value = fields.get("nickname")
+            row[2].value = fields.get("elo_id")
+            row[3].value = parse_date_for_xlsx(fields.get("birthdate"))
+            row[4].value = GENDER_MAP_REVERSE.get(fields.get("gender"), fields.get("gender"))
+            row[5].value = fields.get("race")
+            row[6].value = fields.get("tier")
+            row[7].value = fields.get("team")
+            row[8].value = fields.get("role") or None
+            # "수정일"(row[9])은 이 3-way 병합과 무관한 필드라 여기서 건드리지 않는다.
+
+    for m in append_rows:
         ws.append((
             m.get("nickname"),
             m.get("id"),
             m.get("elo_id"),
-            parse_birthdate_for_xlsx(m.get("birthdate")),
-            gender_kr,
+            parse_date_for_xlsx(m.get("birthdate")),
+            GENDER_MAP_REVERSE.get(m.get("gender"), m.get("gender")),
             m.get("race"),
             m.get("tier"),
             m.get("team"),
             m.get("role") or None,
-            parse_birthdate_for_xlsx(m.get("info_updated_at")),
+            parse_date_for_xlsx(m.get("info_updated_at")),
         ))
 
     wb.save(XLSX_PATH)
@@ -162,19 +182,15 @@ def main():
         print(f"[오류] '{SHEET_NAME}' 시트를 찾을 수 없습니다. (있는 시트: {wb.sheetnames})", file=sys.stderr)
         sys.exit(1)
 
-    xlsx_rows = parse_xlsx_members(wb[SHEET_NAME])
-    xlsx_ids = {row["id"] for row in xlsx_rows}
-    print(f"[준비] {XLSX_PATH.name}에서 {len(xlsx_rows)}명 확인")
+    xlsx_members = parse_xlsx_members(wb[SHEET_NAME])
+    print(f"[준비] {XLSX_PATH.name}에서 {len(xlsx_members)}명 확인")
 
     local_data = {"members": []}
     if MEMBERS_PATH.exists():
         with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
             local_data = json.load(f)
 
-    # 예전 버그로 인해 이미 members.json에 숫자 타입 id가 저장돼있을 수 있다
-    # (순수 숫자로만 된 SOOP ID를 엑셀에서 텍스트 서식 없이 읽은 경우). 그대로
-    # 두면 xlsx가 주는 문자열 id랑 매칭이 안 돼서 같은 사람이 중복으로 추가될
-    # 수 있으므로, 여기서 전부 문자열로 정규화하고 넘어간다.
+    # 예전 버그로 이미 숫자 타입 id가 저장돼있을 수 있다 - 전부 문자열로 정규화.
     normalized_count = 0
     for m in local_data.get("members", []):
         if m.get("id") is not None and not isinstance(m["id"], str):
@@ -185,62 +201,105 @@ def main():
 
     member_map = {m["id"]: m for m in local_data.get("members", []) if m.get("id")}
 
-    # 1단계: xlsx -> json
-    updated, added = [], []
-    for row in xlsx_rows:
-        soop_id = row["id"]
-        existing = member_map.get(soop_id)
-        xlsx_info_updated_at = row["info_updated_at"]
-        core_fields = {k: v for k, v in row.items() if k not in ("id", "info_updated_at")}
+    baseline = {}
+    if BASELINE_PATH.exists():
+        with open(BASELINE_PATH, "r", encoding="utf-8") as f:
+            baseline = json.load(f)
 
-        if existing:
-            before = {k: existing.get(k) for k in core_fields}
-            before_info_updated_at = existing.get("info_updated_at")
-            existing.update(core_fields)
+    all_ids = set(xlsx_members) | set(member_map)
 
-            info_changed = False
-            if xlsx_info_updated_at is not None and before_info_updated_at != xlsx_info_updated_at:
-                existing["info_updated_at"] = xlsx_info_updated_at
-                info_changed = True
-            # "수정일" 셀이 비어있으면(xlsx_info_updated_at is None) 기존 값을 그대로
-            # 둔다 - admin.html 등에서 넣어둔 값이 매일 자동 실행 때마다 지워지지
-            # 않게 하기 위함.
+    json_updates, xlsx_updates, added_to_json, added_to_xlsx, conflicts = [], {}, [], [], []
+    new_baseline = {}
 
-            if before != core_fields or info_changed:
-                if info_changed:
-                    before["info_updated_at"] = before_info_updated_at
-                    core_fields["info_updated_at"] = existing["info_updated_at"]
-                updated.append((soop_id, before, core_fields))
-        else:
-            new_member = dict(row)  # id/core_fields/info_updated_at(수정일 값 또는 None) 전부 포함
+    for soop_id in all_ids:
+        in_xlsx = soop_id in xlsx_members
+        in_json = soop_id in member_map
+
+        if in_xlsx and in_json:
+            xlsx_fields = core(xlsx_members[soop_id])
+            json_fields = core(member_map[soop_id])
+            base_fields = baseline.get(soop_id)
+
+            xlsx_changed = base_fields is None or xlsx_fields != base_fields
+            json_changed = base_fields is not None and json_fields != base_fields
+            # 스냅샷이 아예 없던 첫 실행에서는 예전과 동일하게 xlsx를 기본으로
+            # 채택한다(xlsx_changed=True, json_changed=False) - 하위 호환.
+
+            if xlsx_changed and json_changed and xlsx_fields != json_fields:
+                conflicts.append((soop_id, xlsx_fields, json_fields))
+                winner = xlsx_fields  # 충돌 시 기본값: xlsx
+            elif json_changed and not xlsx_changed:
+                winner = json_fields
+            else:
+                winner = xlsx_fields
+
+            if json_fields != winner:
+                member_map[soop_id].update(winner)
+                json_updates.append((soop_id, json_fields, winner))
+            if xlsx_fields != winner:
+                xlsx_updates[soop_id] = winner
+
+            # info_updated_at은 3-way 병합과 무관하게 기존 규칙 그대로: xlsx
+            # "수정일"이 채워져 있을 때만 반영, 비어있으면 기존 json 값 보존.
+            xlsx_info_updated_at = xlsx_members[soop_id]["info_updated_at"]
+            if xlsx_info_updated_at is not None:
+                member_map[soop_id]["info_updated_at"] = xlsx_info_updated_at
+
+            new_baseline[soop_id] = winner
+
+        elif in_xlsx and not in_json:
+            fields = core(xlsx_members[soop_id])
+            new_member = dict(fields)
+            new_member["id"] = soop_id
+            new_member["info_updated_at"] = xlsx_members[soop_id]["info_updated_at"]
             local_data.setdefault("members", []).append(new_member)
             member_map[soop_id] = new_member
-            added.append((soop_id, row["nickname"]))
+            added_to_json.append((soop_id, fields["nickname"]))
+            new_baseline[soop_id] = fields
 
-    # 2단계: json -> xlsx (xlsx엔 없었던 사람들)
-    missing_from_xlsx = [m for m in local_data.get("members", []) if m.get("id") not in xlsx_ids]
+        elif in_json and not in_xlsx:
+            fields = core(member_map[soop_id])
+            append_obj = dict(fields)
+            append_obj["id"] = soop_id
+            append_obj["info_updated_at"] = member_map[soop_id].get("info_updated_at")
+            added_to_xlsx.append(append_obj)
+            new_baseline[soop_id] = fields
+        # 스냅샷엔 있었는데 이번엔 둘 다에서 사라진 경우 -> new_baseline에서 자연히
+        # 빠짐(더 이상 추적 안 함). 삭제로 취급해 어느 파일도 건드리지 않는다.
 
     if args.dry_run:
-        for soop_id, before, after in updated:
+        for soop_id, before, after in json_updates:
             print(f"  [json 갱신 예정] {soop_id}: {before} -> {after}")
-        for soop_id, nickname in added:
+        for soop_id, fields in xlsx_updates.items():
+            print(f"  [xlsx 갱신 예정] {soop_id}: -> {fields}")
+        for soop_id, nickname in added_to_json:
             print(f"  [json 추가 예정] {soop_id} ({nickname})")
-        for m in missing_from_xlsx:
-            print(f"  [xlsx 추가 예정] {m.get('id')} ({m.get('nickname')})")
-        print(f"[dry-run 완료] json 갱신 {len(updated)}명 / json 추가 {len(added)}명 / "
-              f"xlsx 추가 {len(missing_from_xlsx)}명 (파일은 안 건드림)")
+        for m in added_to_xlsx:
+            print(f"  [xlsx 추가 예정] {m['id']} ({m['nickname']})")
+        for soop_id, xlsx_fields, json_fields in conflicts:
+            print(f"  [충돌!] {soop_id}: xlsx={xlsx_fields} vs json={json_fields} -> xlsx 값을 기본 채택")
+        print(f"[dry-run 완료] json 갱신 {len(json_updates)} / xlsx 갱신 {len(xlsx_updates)} / "
+              f"json 추가 {len(added_to_json)} / xlsx 추가 {len(added_to_xlsx)} / 충돌 {len(conflicts)}건 "
+              f"(파일은 안 건드림)")
         return
+
+    for soop_id, xlsx_fields, json_fields in conflicts:
+        print(f"[경고] {soop_id}: xlsx와 json이 동시에 바뀌어 충돌 - xlsx 값을 기본 채택함. "
+              f"xlsx={xlsx_fields} / json(무시됨)={json_fields}", file=sys.stderr)
 
     with open(MEMBERS_PATH, "w", encoding="utf-8") as f:
         json.dump(local_data, f, ensure_ascii=False, indent=2)
-    print(f"[완료] members.json 병합됨 (기존 정보 갱신 {len(updated)}명, 신규 추가 {len(added)}명, "
+    print(f"[완료] members.json 동기화됨 (갱신 {len(json_updates)}명, 신규 {len(added_to_json)}명, "
           f"총 {len(local_data['members'])}명)")
 
-    if missing_from_xlsx:
-        append_missing_to_xlsx(missing_from_xlsx)
-        print(f"[완료] members.xlsx에 {len(missing_from_xlsx)}명 추가됨")
+    if xlsx_updates or added_to_xlsx:
+        write_xlsx(xlsx_updates, added_to_xlsx)
+        print(f"[완료] members.xlsx 동기화됨 (갱신 {len(xlsx_updates)}명, 신규 추가 {len(added_to_xlsx)}명)")
     else:
-        print("[완료] xlsx에 추가할 신규 인원 없음")
+        print("[완료] xlsx 쪽 변경 없음")
+
+    with open(BASELINE_PATH, "w", encoding="utf-8") as f:
+        json.dump(new_baseline, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
