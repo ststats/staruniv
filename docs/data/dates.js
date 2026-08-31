@@ -1,1 +1,0 @@
-window.AVAILABLE_DATES = ["2026-08-31"];
