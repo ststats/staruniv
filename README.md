@@ -53,6 +53,8 @@ ststats/
 │   ├── team.html             ← 팀별 페이지 (?team=팀이름 으로 전 팀 대응, 파일 하나)
 │   ├── profile.html          ← 개인 프로필 페이지
 │   ├── data/
+│   │   ├── dates.js              ← 날짜 선택 UI용 전체 날짜 목록만 담은 작은 파일
+│   │   │                            (아래 "내부 동기화 상태 파일" 참고)
 │   │   └── daily/
 │   │       └── YYYY-MM-DD.json  ← 브라우저가 날짜 선택시 fetch()로 불러오는 원본 데이터
 │   │                              (data/latest.json + data/archive/*.json을 그대로 복사한 것,
@@ -62,7 +64,9 @@ ststats/
 │   └── logos/
 │       └── {팀이름}.webp    ← 팀 로고 (있으면 자동 표시, 없으면 텍스트만)
 ├── tests/
-│   └── test_*.py             ← 핵심 순수 함수/동기화 로직 단위 테스트 (아래 "테스트" 참고)
+│   ├── test_*.py                  ← 단위 테스트 (개별 순수 함수)
+│   └── test_*_integration.py      ← 통합 테스트 (main() 전체 흐름을 임시 파일로 재현)
+│                                     둘 다 아래 "테스트" 참고
 └── .github/workflows/
     ├── update-stats.yml       ← 데이터 갱신 전체(멤버 동기화 + 풍고+엘로보드 + 페이지 생성) -
     │                             수동 버튼 또는 외부 스케줄러가 workflow_dispatch로 트리거
@@ -221,6 +225,29 @@ API가 최신 → 과거 순으로 정렬해서 응답한다고 가정합니다.
 불완전하다는 뜻이므로 부분 데이터를 저장하는 대신 빈 결과를 반환해 `update_data.py`가
 기존 값을 유지하도록 합니다.
 
+## 안정성 관련 안전장치
+
+여러 소스(xlsx/EloBoard API/admin.html)가 같은 파일들을 건드릴 수 있는 구조라,
+아래 안전장치들을 공용으로 넣어뒀습니다:
+
+- **원자적 쓰기** (`_common.atomic_write_json`, `.xlsx` 저장용 동일 패턴) —
+  `members.json`/`latest.json`/아카이브/`.xlsx` 전부 직접 쓰지 않고, 임시 파일에
+  먼저 다 쓴 다음 `os.replace()`로 한 번에 바꿔치기합니다. 워크플로우가 쓰는
+  도중에 죽어도(타임아웃, 강제취소 등) 원본 파일은 쓰기 시작 전 상태 그대로
+  안전하게 남습니다.
+- **안전한 읽기** (`_common.safe_read_json`) — 스냅샷 파일이 없거나 깨져있어도
+  예외를 던지는 대신 기본값으로 대체하고 경고만 남깁니다. 실수로 지워지거나
+  손상된 상태 파일 하나 때문에 전체 파이프라인이 계속 실패하는 일을 막습니다.
+- **멤버 스키마 검증** (`_common.validate_and_clean_members`) — `id`/`nickname`이
+  없는 레코드는 제외하고, `id`는 문자열로, `elo_id`는 정수로 강제 변환합니다.
+  `update_data.py`/`sync_members.py`/`convert_members_xlsx.py`가 `members.json`을
+  읽을 때마다 거쳐가서, 레코드 하나가 이상해도 나머지 전원의 그날 데이터 갱신이
+  통째로 죽지 않습니다.
+- **엘로보드 페이지네이션 상한선** (`fetch_eloboard_data.MAX_PAGES`) — API 정렬
+  가정이 깨지는 등의 이유로 종료 조건에 영영 도달 못 하면, 무한정 도는 대신
+  일정 페이지 수에서 실패로 처리하고 끝냅니다(그래야 워크플로우 전체 시간을
+  다 잡아먹고 그날 아무 것도 못 하는 최악의 상황을 막습니다).
+
 ## 내부 동기화 상태 파일
 
 `data/` 안에 사람이 직접 안 건드리는 자동 생성 파일이 두 개 있습니다 - 지워도 다음
@@ -238,12 +265,27 @@ API가 최신 → 과거 순으로 정렬해서 응답한다고 가정합니다.
   매 실행마다 그 날짜 이후 아카이브 전체를 다시 훑게 되는데(아카이브는 계속 쌓이므로
   실행 시간이 계속 늘어남), 이 스냅샷 덕분에 실제로 새로 바뀐 보정 건에 대해서만
   다시 훑습니다.
+- **`docs/data/dates.js`** — 사이트가 브라우저에서 날짜 선택 UI를 그릴 때 쓰는
+  전체 날짜 목록(`window.AVAILABLE_DATES = [...]`)만 담은 작은 파일입니다. 이걸
+  `index.html`/`team.html`/`profile.html` 안에 직접 박아넣지 않고 `<script src>`로
+  동기 로드하게 분리해뒀습니다 - 안 그러면 매일 날짜가 하나씩 늘어날 때마다 CSS/JS
+  다 포함된 큰 HTML 3개(각 45~50KB급) 전체가 매일 다시 커밋돼서, 실제로 바뀐 것도
+  없이 레포 용량만 계속 불어납니다. `_write_if_changed`가 이제 이 세 HTML 파일에도
+  적용돼있어서, 로스터/디자인이 실제로 안 바뀐 날은 커밋 자체가 안 생깁니다.
 
 ## 테스트
 
-`tests/`에 까다로운 순수 로직(날짜/문자열 정규화, 티어 라벨 변환, xlsx↔json 3-way
-병합 충돌 판단, 소급 정정 스킵 로직 등) 위주로 pytest 테스트가 있습니다. push/PR마다
-`.github/workflows/tests.yml`이 자동으로 돌립니다. 로컬에서 직접 돌리려면:
+`tests/`에 두 종류의 pytest 테스트가 있습니다:
+- **단위 테스트** (`test_common.py`, `test_convert_members_xlsx.py`, `test_sync_members.py`,
+  `test_update_data.py`) — 까다로운 순수 로직(날짜/문자열 정규화, 티어 라벨 변환,
+  xlsx↔json 3-way 병합 충돌 판단, 소급 정정 스킵 로직 등) 하나하나를 검증합니다.
+- **통합 테스트** (`test_update_data_integration.py`, `test_convert_members_xlsx_integration.py`)
+  — 임시 디렉터리에 실제 파일을 만들어두고 `main()` 전체를 그대로 돌려서, 여러
+  함수가 실제로 올바르게 엮여 도는지 확인합니다(예: "admin.html에서 json을 고치면
+  다음 실행에서 xlsx에도 반영되는지"처럼 여러 컴포넌트가 맞물려야 검증되는 시나리오).
+
+push/PR마다 `.github/workflows/tests.yml`이 자동으로 돌립니다. 로컬에서 직접
+돌리려면:
 
 ```
 pip install -r requirements.txt pytest
