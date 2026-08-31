@@ -2643,7 +2643,7 @@
     {
       "nickname": "빵체리",
       "id": "kysvic2",
-      "elo_id": null,
+      "elo_id": 6487,
       "birthdate": "2003-09-18",
       "gender": "f",
       "race": "프로토스",
@@ -2703,7 +2703,7 @@
     {
       "nickname": "강구열",
       "id": "kuyol",
-      "elo_id": null,
+      "elo_id": 6488,
       "birthdate": "1988-02-23",
       "gender": "m",
       "race": "테란",
@@ -2787,7 +2787,7 @@
     {
       "nickname": "요괴버스",
       "id": "j4141h",
-      "elo_id": null,
+      "elo_id": 6485,
       "birthdate": "2003-03-24",
       "gender": "f",
       "race": "테란",
@@ -2799,7 +2799,7 @@
     {
       "nickname": "럭키위키",
       "id": "viwi05",
-      "elo_id": null,
+      "elo_id": 6486,
       "birthdate": "2005-05-27",
       "gender": "f",
       "race": "저그",
@@ -2811,7 +2811,7 @@
     {
       "nickname": "이나",
       "id": "nmirifo7795",
-      "elo_id": null,
+      "elo_id": 6489,
       "birthdate": "2001-05-01",
       "gender": "f",
       "race": "프로토스",
@@ -3039,7 +3039,7 @@
     {
       "nickname": "김봉실",
       "id": "tjr2770",
-      "elo_id": null,
+      "elo_id": 6481,
       "birthdate": "1995-02-13",
       "gender": "m",
       "race": "프로토스",
@@ -3111,7 +3111,7 @@
     {
       "nickname": "져지현",
       "id": "quaestor1",
-      "elo_id": null,
+      "elo_id": 6482,
       "birthdate": "1994-11-07",
       "gender": "m",
       "race": "저그",
@@ -3796,7 +3796,7 @@
       "nickname": "유진우",
       "id": "rjsrkdgkwk12",
       "elo_id": 68,
-      "birthdate": null,
+      "birthdate": "1994-12-06",
       "gender": "m",
       "race": "저그",
       "tier": "킹",
