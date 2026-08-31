@@ -40,7 +40,11 @@ jobs:
       # 보존된다. xlsx 파일 자체가 없으면 조용히 건너뛰므로 continue-on-error도
       # 딱히 필요 없지만, 혹시 모를 파싱 오류가 나머지 파이프라인을 막지 않도록
       # 안전하게 감싸둔다.
-      - name: Merge members.xlsx into members.json
+      # members.xlsx와 members.json을 양방향으로 동기화한다(3-way 병합 -
+      # data/members_sync_baseline.json에 저장해둔 지난 동기화 스냅샷과 비교해서
+      # 어느 쪽이 바뀌었는지 판단). admin.html에서 고친 내용도 이 스텝을 거쳐
+      # xlsx에 반영된다. 실패해도 워크플로우 전체를 막지 않도록 continue-on-error.
+      - name: Sync members.xlsx <-> members.json
         continue-on-error: true
         run: python scripts/convert_members_xlsx.py
 
