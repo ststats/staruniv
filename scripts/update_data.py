@@ -175,13 +175,24 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
         # sponsor_list의 "id"는 elo_id(숫자 문자열)다. archive의 각 멤버는 latest.json이
         # 저장될 때부터 자기 elo_id를 이미 갖고 있으므로(out_members 구성부 참고), 별도
         # 매핑 테이블 없이 archive 멤버의 elo_id로 바로 조회한다.
+        #
+        # 재조회가 성공했는데(sponsor_list가 비어있지 않은데) 특정 멤버가 lookup에
+        # 없는 경우 -> 그 달에 그 사람은 진짜 0판이라는 뜻이다(API가 참가자만
+        # 돌려주고 0판인 사람은 아예 안 준다). 이런 사람의 기존 값을 그대로
+        # 놔두면(예전 코드), 한 번 잘못된 값이 섞여 들어갔을 때(예: 부분적으로만
+        # 매칭된 조회 결과) 그 이후 "성공"한 조회에서도 계속 대물림되는 문제가
+        # 있었다 - 그래서 재조회가 성공한 이상 매칭 안 된 사람은 명시적으로
+        # 0승 0패로 확정한다(기존 값을 참조하지 않음). 재조회 자체가 실패했을
+        # 때(위 if not sponsor_list 분기)만 기존 값을 그대로 보존한다.
         lookup = _index_by_elo_id(sponsor_list)
         for m in archive.get("members", []):
             elo_id = m.get("elo_id")
             src = lookup.get(str(elo_id)) if elo_id is not None else None
-            if src:
-                m["sponsor_wins"] = src["sponsor_wins"]
-                m["sponsor_losses"] = src["sponsor_losses"]
+            new_wins = src["sponsor_wins"] if src else 0
+            new_losses = src["sponsor_losses"] if src else 0
+            if m.get("sponsor_wins") != new_wins or m.get("sponsor_losses") != new_losses:
+                m["sponsor_wins"] = new_wins
+                m["sponsor_losses"] = new_losses
                 changed = True
                 sponsor_changed = True
 
@@ -267,6 +278,7 @@ def main():
         raise SystemExit("[오류] 별풍선 데이터를 가져오지 못했습니다.")
 
     sponsor_data = {}
+    sponsor_collection_succeeded = False
     start_date, end_date = get_month_date_range(now)
     print(f"[수집] 엘로보드 스폰전적 ({start_date}~{end_date})...")
     try:
@@ -278,6 +290,7 @@ def main():
         # sponsor_list의 "id"는 elo_id(숫자 문자열) 그대로다. 별도 변환 없이 elo_id를
         # 키로 저장해두고, out_members를 만들 때 각 멤버의 elo_id로 바로 조회한다.
         sponsor_data = _index_by_elo_id(sponsor_list)
+        sponsor_collection_succeeded = True
         sponsor_updated_at = now.strftime(DATETIME_FORMAT)
         # 실제로 이번달 스폰전적을 성공적으로 가져왔을 때만 sponsor_month를
         # 이번달로 갱신한다 - 수집이 실패한 실행에서는 sponsor_month를 건드리지
@@ -294,7 +307,20 @@ def main():
         elo_id = m.get("elo_id")
         bd = balloon_data.get(member_id) if member_id else None
         sd = sponsor_data.get(str(elo_id)) if elo_id is not None else None
-        existing = existing_sponsor.get(member_id, {"sponsor_wins": 0, "sponsor_losses": 0})
+
+        if sd:
+            sponsor_wins, sponsor_losses = sd["sponsor_wins"], sd["sponsor_losses"]
+        elif sponsor_collection_succeeded:
+            # 이번 조회는 성공했는데(sponsor_list가 비어있지 않았는데) 이 사람만
+            # 없음 -> 그 달 진짜 0판이라는 뜻이다(API가 참가자만 돌려주고 0판인
+            # 사람은 아예 안 준다). existing(기존 값)을 참조하지 않고 명시적으로
+            # 0으로 확정한다 - 그래야 한 번 잘못된 값이 섞여 들어가도(예: 이전에
+            # 일부만 매칭된 조회) 다음 성공한 조회에서 저절로 정정된다.
+            sponsor_wins, sponsor_losses = 0, 0
+        else:
+            # 이번 조회 자체가 실패했을 때만 기존 값을 그대로 보존한다.
+            existing = existing_sponsor.get(member_id, {"sponsor_wins": 0, "sponsor_losses": 0})
+            sponsor_wins, sponsor_losses = existing["sponsor_wins"], existing["sponsor_losses"]
 
         out_members.append({
             "id": member_id,
@@ -307,8 +333,8 @@ def main():
             "balloons": bd["balloons"] if bd else 0,
             "broadcast_seconds": bd["broadcast_seconds"] if bd else 0,
             "cumulative_viewers": bd["cumulative_viewers"] if bd else 0,
-            "sponsor_wins": sd["sponsor_wins"] if sd else existing["sponsor_wins"],
-            "sponsor_losses": sd["sponsor_losses"] if sd else existing["sponsor_losses"],
+            "sponsor_wins": sponsor_wins,
+            "sponsor_losses": sponsor_losses,
         })
 
     result = {
