@@ -168,6 +168,20 @@ def write_xlsx(update_rows: dict, append_rows: list) -> None:
     wb.save(XLSX_PATH)
 
 
+def resolve_conflict(xlsx_fields: dict, json_fields: dict, base_fields: dict | None) -> tuple:
+    """xlsx/json 3-way 병합의 승자 판단 로직. base_fields는 지난 동기화 스냅샷
+    (없으면 None - 첫 실행이라 하위 호환으로 xlsx를 기본 채택).
+    반환값: (winner_fields, is_conflict)."""
+    xlsx_changed = base_fields is None or xlsx_fields != base_fields
+    json_changed = base_fields is not None and json_fields != base_fields
+
+    if xlsx_changed and json_changed and xlsx_fields != json_fields:
+        return xlsx_fields, True  # 충돌 시 기본값: xlsx
+    if json_changed and not xlsx_changed:
+        return json_fields, False
+    return xlsx_fields, False
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="파일을 실제로 바꾸지 않고 결과만 출력")
@@ -220,18 +234,9 @@ def main():
             json_fields = core(member_map[soop_id])
             base_fields = baseline.get(soop_id)
 
-            xlsx_changed = base_fields is None or xlsx_fields != base_fields
-            json_changed = base_fields is not None and json_fields != base_fields
-            # 스냅샷이 아예 없던 첫 실행에서는 예전과 동일하게 xlsx를 기본으로
-            # 채택한다(xlsx_changed=True, json_changed=False) - 하위 호환.
-
-            if xlsx_changed and json_changed and xlsx_fields != json_fields:
+            winner, is_conflict = resolve_conflict(xlsx_fields, json_fields, base_fields)
+            if is_conflict:
                 conflicts.append((soop_id, xlsx_fields, json_fields))
-                winner = xlsx_fields  # 충돌 시 기본값: xlsx
-            elif json_changed and not xlsx_changed:
-                winner = json_fields
-            else:
-                winner = xlsx_fields
 
             if json_fields != winner:
                 member_map[soop_id].update(winner)
