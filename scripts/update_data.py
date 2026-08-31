@@ -144,6 +144,7 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
         return
 
     changed = False
+    sponsor_changed = False
 
     # 별풍선/방송시간/누적시청자 재확정
     print(f"[확정] {prev_year}년 {prev_month}월 별풍선 재조회 중...")
@@ -182,12 +183,20 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
                 m["sponsor_wins"] = src["sponsor_wins"]
                 m["sponsor_losses"] = src["sponsor_losses"]
                 changed = True
+                sponsor_changed = True
 
     if changed:
         archive["updated_at"] = now.strftime(DATETIME_FORMAT)
-        archive["sponsor_updated_at"] = now.strftime(DATETIME_FORMAT)
+        if sponsor_changed:
+            # 별풍선 재확정만 성공하고 스폰전적은 실패했을 수도 있어서(위의 각 경고
+            # 참고), updated_at 하나로는 스폰전적이 실제로 언제 확정됐는지 구분이
+            # 안 됐다. latest.json이 이미 쓰고 있는 것과 같은 방식으로 스폰전적
+            # 확정 시각을 따로 남긴다.
+            archive["sponsor_updated_at"] = now.strftime(DATETIME_FORMAT)
         atomic_write_json(archive_path, archive)
-        print(f"[완료] {archive_path.name} 확정됨")
+        print(f"[완료] {archive_path.name} 확정됨 (별풍선 반영: {changed}, 스폰전적 반영: {sponsor_changed})")
+    else:
+        print(f"[정보] {archive_path.name} - 별풍선/스폰전적 둘 다 반영할 변경사항 없음 (기존 값 그대로 유지)")
 
 
 def main():
