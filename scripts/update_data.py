@@ -33,6 +33,7 @@ from fetch_eloboard_data import aggregate_period_data
 MEMBERS_PATH = ROOT / "data" / "members.json"
 OUTPUT_PATH = ROOT / "data" / "latest.json"
 ARCHIVE_DIR = ROOT / "data" / "archive"
+APPLIED_CORRECTIONS_PATH = ROOT / "data" / "archive_corrections_applied.json"
 
 
 def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
@@ -54,7 +55,14 @@ def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
 
 
 def apply_member_updates_to_archives(members: list):
-    """members.json에 info_updated_at이 있는 멤버의 정보를 그 날짜 이후의 모든 아카이브에 소급 적용합니다."""
+    """members.json에 info_updated_at이 있는 멤버의 정보를 그 날짜 이후의 모든 아카이브에 소급 적용합니다.
+
+    한 번이라도 소급 정정 대상이 생기면 그 이후로는 매 실행마다 그 날짜 이후의
+    아카이브 전체를 다시 훑게 되는데, 아카이브는 매일 계속 쌓이므로 그대로 두면
+    실행 시간이 시간이 갈수록 계속 늘어난다. data/archive_corrections_applied.json에
+    "지난번에 이미 완전히 반영한 보정 내용"을 스냅샷으로 남겨두고, 이번 실행에서
+    그때랑 완전히 똑같은 사람은 건너뛴다 - 그러면 실제로 새로 생기거나 바뀐
+    보정 건에 대해서만, 그 사람의 update_date 이후 아카이브만 훑으면 된다."""
     updates = {}
     for m in members:
         update_date = m.get("info_updated_at")
@@ -72,7 +80,19 @@ def apply_member_updates_to_archives(members: list):
     if not updates or not ARCHIVE_DIR.exists():
         return
 
-    earliest_update_date = min(u["update_date"] for u in updates.values())
+    applied = {}
+    if APPLIED_CORRECTIONS_PATH.exists():
+        try:
+            with open(APPLIED_CORRECTIONS_PATH, "r", encoding="utf-8") as f:
+                applied = json.load(f)
+        except Exception:
+            applied = {}
+
+    pending = {mid: upd for mid, upd in updates.items() if applied.get(mid) != upd}
+    if not pending:
+        return  # 지난번과 완전히 동일한 보정 내용 - 아카이브를 다시 훑을 필요 없음
+
+    earliest_update_date = min(u["update_date"] for u in pending.values())
 
     for archive_path in ARCHIVE_DIR.glob("*.json"):
         file_date = archive_path.stem  # YYYY-MM-DD
@@ -88,8 +108,8 @@ def apply_member_updates_to_archives(members: list):
 
         for am in arch_data.get("members", []):
             mid = am.get("id")
-            if mid in updates:
-                upd = updates[mid]
+            if mid in pending:
+                upd = pending[mid]
                 if file_date >= upd["update_date"]:
                     for key in ["team", "tier", "role", "race", "nickname", "elo_id"]:
                         if am.get(key) != upd[key]:
@@ -100,6 +120,10 @@ def apply_member_updates_to_archives(members: list):
             with open(archive_path, "w", encoding="utf-8") as f:
                 json.dump(arch_data, f, ensure_ascii=False, indent=2)
             print(f"[소급적용] {file_date}.json 파일에 멤버 정보 업데이트 반영됨")
+
+    applied.update(pending)
+    with open(APPLIED_CORRECTIONS_PATH, "w", encoding="utf-8") as f:
+        json.dump(applied, f, ensure_ascii=False, indent=2)
 
 
 def _index_by_elo_id(sponsor_list: list) -> dict:

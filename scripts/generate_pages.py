@@ -840,17 +840,20 @@ def main():
         if existing.name not in expected_files:
             existing.unlink()
 
-    all_team_names = set()
-    for d_str in all_dates:
-        with open(DOCS_DATA_DIR / f"{d_str}.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-            for m in data.get("members", []):
-                t = m.get("team")
-                if t and t not in ("FA", "휴면", "미분류"):
-                    all_team_names.add(t)
-
     with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
         members_data = json.load(f).get("members", [])
+
+    # 팀 이름 목록은 과거 아카이브를 전부 뒤지지 않고 members.json(현재 로스터)
+    # 하나만 보고 뽑는다 - 예전엔 all_dates 전체(수백~수천 개로 계속 불어나는
+    # 아카이브 파일)를 매번 읽고 파싱했는데, 사실 팀 이름은 members.json에도
+    # 똑같이 다 있다. 클라이언트 JS(TEAM_COLORS[team] || 기본색)에 이미 폴백이
+    # 있어서, 지금은 없어진 옛날 팀 이름이 여기 안 잡혀도 과거 날짜를 볼 때
+    # 기본색으로만 대체될 뿐 깨지지 않는다 - 그 정도 트레이드오프로 매일 실행
+    # 시간이 아카이브 개수에 비례해서 계속 늘어나는 걸 막는다.
+    all_team_names = {
+        m.get("team") for m in members_data
+        if m.get("team") and m.get("team") not in ("FA", "휴면", "미분류")
+    }
 
     static_info = {}
     for m in members_data:
