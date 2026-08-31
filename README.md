@@ -22,24 +22,31 @@
 
 ```
 ststats/
-├── requirements.txt          ← 파이썬 의존성 전체(Pillow + requests) - 레포 루트에 있어야 pip 캐시가 동작함
+├── requirements.txt          ← 파이썬 의존성 전체(Pillow + requests + openpyxl) - 레포 루트에 있어야 pip 캐시가 동작함
 ├── data/
-│   ├── members.json         ← 스트리머 명단 (직접 관리하는 파일 - 이 프로젝트의 뼈대)
+│   ├── members.json                     ← 스트리머 명단 (자동화가 실제로 읽는 기준 파일)
+│   ├── members.xlsx                     ← (선택) 사람이 엑셀로 관리하는 명단 원본 - 있으면
+│   │                                        members.json과 양방향 동기화됨, 없어도 무방
+│   ├── members_sync_baseline.json       ← (자동 생성) xlsx<->json 동기화 내부 상태 - 아래
+│   │                                        "내부 동기화 상태 파일" 참고
+│   ├── archive_corrections_applied.json ← (자동 생성) 소급 정정 내부 상태 - 아래 참고
 │   ├── latest.json          ← 오늘 수집 결과 (자동 생성)
 │   └── archive/
 │       └── YYYY-MM-DD.json  ← 지난 날짜들의 스냅샷 (자동 생성, 그 당시 팀 구성 그대로 보존)
 ├── scripts/
-│   ├── _common.py               ← ROOT 경로, 시간/숫자 헬퍼, 공용 HTTP 재시도 헬퍼(fetch_json) 등
-│   │                                여러 스크립트가 같이 쓰는 유틸리티 모음
-│   ├── download_font.py         ← Pretendard 폰트 self-host용 최초 1회 다운로드
-│   ├── fetch_poonggo_data.py    ← 풍고 API에서 별풍선/방송시간/누적시청자를 "가져오기만" 하는 순수 함수
-│   │                                (언제 저장할지, 아카이브를 어떻게 할지는 전혀 모름)
-│   ├── fetch_eloboard_data.py   ← EloBoard API에서 스폰전적을 "가져오기만" 하는 순수 함수
-│   │                                (마찬가지로 저장/아카이브는 전혀 관여 안 함)
-│   ├── update_data.py           ← 위 둘을 호출해서 데이터를 합치고, 아카이빙·월 확정(별풍선+
-│   │                                스폰전적 둘 다)·소급 정정·latest.json 저장까지 전부 조율하는
-│   │                                오케스트레이터 - 실제 데이터 갱신은 이 스크립트 하나로 끝남
-│   └── generate_pages.py        ← data/*.json을 docs/data/daily/로 복사하고, 전체/팀별/프로필 뼈대 HTML 생성
+│   ├── _common.py                  ← ROOT 경로, 시간/숫자 헬퍼, 공용 HTTP 재시도 헬퍼(fetch_json) 등
+│   │                                   여러 스크립트가 같이 쓰는 유틸리티 모음
+│   ├── download_font.py            ← Pretendard 폰트 self-host용 최초 1회 다운로드
+│   ├── convert_members_xlsx.py     ← data/members.xlsx <-> data/members.json 양방향 동기화
+│   ├── sync_members.py             ← EloBoard 티어 목록 API에서 신규 멤버 자동 추가/일부 필드 갱신
+│   ├── fetch_poonggo_data.py       ← 풍고 API에서 별풍선/방송시간/누적시청자를 "가져오기만" 하는 순수 함수
+│   │                                   (언제 저장할지, 아카이브를 어떻게 할지는 전혀 모름)
+│   ├── fetch_eloboard_data.py      ← EloBoard API에서 스폰전적을 "가져오기만" 하는 순수 함수
+│   │                                   (마찬가지로 저장/아카이브는 전혀 관여 안 함)
+│   ├── update_data.py              ← 위 둘을 호출해서 데이터를 합치고, 아카이빙·월 확정(별풍선+
+│   │                                   스폰전적 둘 다)·소급 정정·latest.json 저장까지 전부 조율하는
+│   │                                   오케스트레이터 - 실제 데이터 갱신은 이 스크립트 하나로 끝남
+│   └── generate_pages.py           ← data/*.json을 docs/data/daily/로 복사하고, 전체/팀별/프로필 뼈대 HTML 생성
 ├── docs/
 │   ├── index.html           ← 전체 페이지 (GitHub Pages가 이 폴더를 서빙)
 │   ├── admin.html            ← 멤버 관리 어드민 페이지 (GitHub API로 직접 커밋)
@@ -54,8 +61,12 @@ ststats/
 │   │   └── PretendardVariable.woff2  ← self-host 폰트 (최초 1회 자동 다운로드)
 │   └── logos/
 │       └── {팀이름}.webp    ← 팀 로고 (있으면 자동 표시, 없으면 텍스트만)
+├── tests/
+│   └── test_*.py             ← 핵심 순수 함수/동기화 로직 단위 테스트 (아래 "테스트" 참고)
 └── .github/workflows/
-    └── update-stats.yml       ← 풍고+엘로보드 데이터 갱신 (수동 버튼 또는 외부 스케줄러가 workflow_dispatch로 트리거)
+    ├── update-stats.yml       ← 데이터 갱신 전체(멤버 동기화 + 풍고+엘로보드 + 페이지 생성) -
+    │                             수동 버튼 또는 외부 스케줄러가 workflow_dispatch로 트리거
+    └── tests.yml               ← push/PR마다 pytest 자동 실행
 ```
 
 ## 데이터 소스 두 곳
@@ -209,6 +220,35 @@ API가 최신 → 과거 순으로 정렬해서 응답한다고 가정합니다.
 `_common.fetch_json()`이 자동으로 재시도하고, 그래도 실패하면 지금까지 모은 데이터가
 불완전하다는 뜻이므로 부분 데이터를 저장하는 대신 빈 결과를 반환해 `update_data.py`가
 기존 값을 유지하도록 합니다.
+
+## 내부 동기화 상태 파일
+
+`data/` 안에 사람이 직접 안 건드리는 자동 생성 파일이 두 개 있습니다 - 지워도 다음
+실행에서 다시 만들어지지만, 지우면 아래 설명한 최적화가 그 시점부터 다시 시작됩니다
+(데이터가 틀어지진 않고, 그냥 한 번 더 전체를 훑게 될 뿐입니다).
+
+- **`data/members_sync_baseline.json`** — `convert_members_xlsx.py`가 xlsx↔json을
+  양방향 동기화할 때 쓰는 스냅샷입니다. xlsx와 json 둘 다 사람이 고칠 수 있어서,
+  "지난번 동기화 직후엔 이 사람 정보가 이랬다"를 기억해뒀다가 이번 실행에서 어느
+  쪽이 그 사이에 바뀌었는지 판단하는 데 씁니다(3-way 병합). 이 파일이 없으면
+  처음 한 번은 xlsx가 무조건 기준이 됩니다.
+- **`data/archive_corrections_applied.json`** — `update_data.py`가 `info_updated_at`
+  소급 정정을 아카이브에 반영할 때, "이 사람의 이 보정 내용은 이미 다 반영해뒀다"를
+  기억해두는 파일입니다. 이게 없으면 소급 정정이 한 번이라도 걸린 사람이 생길 때마다
+  매 실행마다 그 날짜 이후 아카이브 전체를 다시 훑게 되는데(아카이브는 계속 쌓이므로
+  실행 시간이 계속 늘어남), 이 스냅샷 덕분에 실제로 새로 바뀐 보정 건에 대해서만
+  다시 훑습니다.
+
+## 테스트
+
+`tests/`에 까다로운 순수 로직(날짜/문자열 정규화, 티어 라벨 변환, xlsx↔json 3-way
+병합 충돌 판단, 소급 정정 스킵 로직 등) 위주로 pytest 테스트가 있습니다. push/PR마다
+`.github/workflows/tests.yml`이 자동으로 돌립니다. 로컬에서 직접 돌리려면:
+
+```
+pip install -r requirements.txt pytest
+pytest
+```
 
 ## 수동으로 즉시 갱신하고 싶을 때
 
