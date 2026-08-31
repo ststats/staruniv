@@ -631,7 +631,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
           const liveDot = m.id ? `<span class="live-dot" data-live-id="${{m.id}}"></span>` : '';
           const inner = `${{photoImg}}${{liveDot}}<span class="member-name">${{m.nickname}}</span>`;
           return m.id
-              ? `<div class="fa-bar-item"><a href="${{LOGO_PREFIX}}profile.html?id=${{m.id}}">${{inner}}</a></div>`
+              ? `<div class="fa-bar-item"><a href="${{LOGO_PREFIX}}profile.html?id=${{m.id}}&date=${{currentDateStr}}">${{inner}}</a></div>`
               : `<div class="fa-bar-item"><span class="fa-bar-static">${{inner}}</span></div>`;
       }}).join('');
 
@@ -705,7 +705,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
                       const isBday = m._bday && parseInt(m._bday.split('-')[1], 10) === monthNum;
                       const liveDot = m.id ? `<span class="live-dot" data-live-id="${{m.id}}"></span>` : '';
                       const nameInner = liveDot + m.nickname + (isBday ? '<span class="bday-mark">🎂</span>' : '');
-                      const nameContent = m.id ? `<a class="member-name-link" href="${{LOGO_PREFIX}}profile.html?id=${{m.id}}">${{nameInner}}</a>` : nameInner;
+                      const nameContent = m.id ? `<a class="member-name-link" href="${{LOGO_PREFIX}}profile.html?id=${{m.id}}&date=${{currentDateStr}}">${{nameInner}}</a>` : nameInner;
                       return `<div class="member-row ${{cClass.join(' ')}}"><span class="member-name">${{nameContent}}</span><span class="member-value">${{def.format(m._val)}}</span></div>`;
                   }}).join('');
 
