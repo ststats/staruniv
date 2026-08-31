@@ -64,6 +64,13 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .member-name-link:hover { text-decoration: underline; }
 .member-row.tier1 .member-name, .member-row.tier5 .member-name, .member-row.tier10 .member-name, .member-row.excluded .member-name { font-weight: 700; color: #1a1d29; }
 .bday-mark { font-size: 8px; opacity: 0.75; flex-shrink: 0; }
+.live-dot { display: none; flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #e53935; box-shadow: 0 0 0 rgba(229,57,53,0.6); animation: live-dot-pulse 1.4s infinite; }
+.live-dot.is-live { display: inline-block; }
+@keyframes live-dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(229,57,53,0.55); }
+  70% { box-shadow: 0 0 0 5px rgba(229,57,53,0); }
+  100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+}
 .member-value { font-size: 12px; color: #6b6f79; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; flex-shrink: 0; padding-left: 8px; }
 .member-row.tier1 .member-value { color: #4a5ce0; font-weight: 700; }
 .member-row.tier5 .member-value { color: #0f8a5c; font-weight: 700; }
@@ -201,6 +208,56 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 
   function soopPhotoUrl(id) {
       return `https://profile.img.sooplive.com/LOGO/${(id || '').substring(0, 2)}/${id}/${id}.jpg`;
+  }
+
+  // SOOP(구 아프리카TV)의 비공식 공개 엔드포인트로 방송중 여부를 직접 브라우저에서
+  // 조회한다 - 공식 오픈 API는 파트너십 심사가 필요해서 이 프로젝트 규모에선 못
+  // 쓴다. bjapi.afreecatv.com/api/{id}/station이 방송중이면 "broad" 필드가
+  // 객체로, 아니면 null로 온다고 알려져 있다(스트리밍 도구들이 실제로 이렇게 씀) -
+  // 다만 CORS 허용 여부나 정확한 응답 형태를 이 자리에서 직접 확인할 방법이 없어서,
+  // 응답 형태가 실제와 다르면 라이브 판정 로직만 손보면 된다. 실패(CORS 차단/네트워크
+  // 오류 등)는 그냥 "라이브 아님"으로 조용히 넘어간다 - 페이지 나머지가 깨지면 안 되니까.
+  const liveStatusCache = {};
+  const LIVE_CHECK_CONCURRENCY = 12; // 한 번에 너무 많은 요청을 동시에 쏘지 않도록 제한
+
+  async function checkIsLive(soopId) {
+      if (soopId in liveStatusCache) return liveStatusCache[soopId];
+      try {
+          const res = await fetch(`https://bjapi.afreecatv.com/api/${soopId}/station`);
+          if (!res.ok) { liveStatusCache[soopId] = false; return false; }
+          const data = await res.json();
+          const isLive = !!(data && data.broad);
+          liveStatusCache[soopId] = isLive;
+          return isLive;
+      } catch (e) {
+          liveStatusCache[soopId] = false;
+          return false;
+      }
+  }
+
+  async function refreshLiveDots() {
+      const dotEls = Array.from(document.querySelectorAll('.live-dot[data-live-id]'));
+      if (dotEls.length === 0) return;
+
+      // 같은 id가 여러 곳(FA바 + 팀카드 등)에 동시에 나올 수 있으니 id 기준으로만
+      // 한 번씩 조회하고, 결과를 그 id를 쓰는 모든 점에 반영한다.
+      const idToEls = {};
+      dotEls.forEach(el => {
+          const id = el.dataset.liveId;
+          (idToEls[id] = idToEls[id] || []).push(el);
+      });
+      const ids = Object.keys(idToEls);
+
+      let cursor = 0;
+      async function worker() {
+          while (cursor < ids.length) {
+              const id = ids[cursor++];
+              const isLive = await checkIsLive(id);
+              if (isLive) idToEls[id].forEach(el => el.classList.add('is-live'));
+          }
+      }
+      const workers = Array.from({ length: Math.min(LIVE_CHECK_CONCURRENCY, ids.length) }, worker);
+      await Promise.all(workers);
   }
 
   function withDerivedFields(data) {
@@ -416,7 +473,8 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       const itemsHtml = faMembers.map(m => {
           const photoUrl = soopPhotoUrl(m.id);
           const photoImg = `<img class="fa-bar-photo" src="${photoUrl}" alt="" onerror="this.style.visibility='hidden'">`;
-          const inner = `${photoImg}<span class="member-name">${m.nickname}</span>`;
+          const liveDot = m.id ? `<span class="live-dot" data-live-id="${m.id}"></span>` : '';
+          const inner = `${photoImg}${liveDot}<span class="member-name">${m.nickname}</span>`;
           return m.id
               ? `<div class="fa-bar-item"><a href="${LOGO_PREFIX}profile.html?id=${m.id}">${inner}</a></div>`
               : `<div class="fa-bar-item"><span class="fa-bar-static">${inner}</span></div>`;
@@ -490,7 +548,8 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
                       if (tier) cClass.push(tier);
 
                       const isBday = m._bday && parseInt(m._bday.split('-')[1], 10) === monthNum;
-                      const nameInner = m.nickname + (isBday ? '<span class="bday-mark">🎂</span>' : '');
+                      const liveDot = m.id ? `<span class="live-dot" data-live-id="${m.id}"></span>` : '';
+                      const nameInner = liveDot + m.nickname + (isBday ? '<span class="bday-mark">🎂</span>' : '');
                       const nameContent = m.id ? `<a class="member-name-link" href="${LOGO_PREFIX}profile.html?id=${m.id}">${nameInner}</a>` : nameInner;
                       return `<div class="member-row ${cClass.join(' ')}"><span class="member-name">${nameContent}</span><span class="member-value">${def.format(m._val)}</span></div>`;
                   }).join('');
@@ -520,6 +579,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       attachRankBadges(teamStats, currentDateStr, currentMetric);
       renderFaBar(data);
       if (TARGET_TEAM) document.title = TARGET_TEAM + ' 현황';
+      refreshLiveDots();
   }
 
   function renderProfile(data) {
