@@ -28,13 +28,14 @@ CDN의 "다이나믹 서브셋" 방식(unicode-range로 브라우저가 알아�
 
 import sys
 import json
+import hashlib
 import subprocess
 import tempfile
 from pathlib import Path
 
 import requests
 
-from _common import ROOT
+from _common import ROOT, safe_read_json, atomic_write_json
 
 FONT_URL = (
     "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/"
@@ -44,6 +45,13 @@ OUTPUT_PATH = ROOT / "docs" / "fonts" / "PretendardVariable.woff2"
 MEMBERS_PATH = ROOT / "data" / "members.json"
 ARCHIVE_DIR = ROOT / "data" / "archive"
 DOCS_DIR = ROOT / "docs"
+# 매번 문자를 다시 스캔하는 것 자체는 가벼운데(멤버 수가 많아야 수백~수천
+# 정도), 그 결과로 2.3MB 원본을 새로 받고 fonttools 서브셋을 돌리는 건
+# 무겁다 - 문자 구성이 바뀐 게 없는 날(대부분의 날)까지 매번 이 무거운
+# 작업을 반복할 이유가 없다. 그래서 이 프로젝트의 다른 곳들(members_sync_baseline.json,
+# archive_corrections_applied.json)처럼 스냅샷을 남겨서, 이전 실행이랑
+# 문자 구성이 완전히 같으면 다운로드+서브셋 자체를 건너뛴다.
+CHARS_SNAPSHOT_PATH = ROOT / "data" / "font_subset_chars_hash.json"
 
 MEMBER_TEXT_FIELDS = ("nickname", "team", "race", "tier", "role")
 
@@ -99,6 +107,16 @@ def main():
     chars = collect_used_characters()
     print(f"[준비] 실제 사용 문자 {len(chars)}개 확인")
 
+    # 문자 구성이 지난 실행이랑 완전히 같으면(대부분의 날이 그렇다 - 로스터나
+    # 페이지 UI 문구가 매일 바뀌는 게 아니므로), 서브셋 결과도 어차피 똑같이
+    # 나올 거라 무거운 다운로드+서브셋 작업 자체를 건너뛴다. 기존
+    # docs/fonts/PretendardVariable.woff2는 지난 실행 결과 그대로 남는다.
+    chars_hash = hashlib.sha256("".join(sorted(chars)).encode("utf-8")).hexdigest()
+    snapshot = safe_read_json(CHARS_SNAPSHOT_PATH, default={})
+    if snapshot.get("hash") == chars_hash and OUTPUT_PATH.exists():
+        print("[건너뜀] 지난 실행과 사용 문자 구성이 완전히 동일함 - 폰트 재생성 생략")
+        return
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_full = Path(tmpdir) / "PretendardVariable-full.woff2"
 
@@ -134,6 +152,10 @@ def main():
 
     size_kb = OUTPUT_PATH.stat().st_size / 1024
     print(f"[완료] {OUTPUT_PATH} 생성됨 ({size_kb:.1f}KB, 원본 대비 대폭 축소)")
+
+    # 서브셋 성공한 뒤에만 스냅샷을 갱신한다 - 중간에 실패했으면 다음 실행에서
+    # 다시 시도해야 하므로, 실패한 실행의 해시를 "완료됨"으로 잘못 남기면 안 된다.
+    atomic_write_json(CHARS_SNAPSHOT_PATH, {"hash": chars_hash, "char_count": len(chars)})
 
 
 if __name__ == "__main__":
