@@ -191,7 +191,6 @@ MOBILE_CSS = """
     .nav-chevron { font-size: 7px; display: inline-flex; align-items: center; vertical-align: middle; }
     .top-meta { font-size: 5px; white-space: normal; }
     .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .grid.single-team { grid-template-columns: 1fr; max-width: 480px; }
     .team-card { border-radius: 10px; }
     .team-card-topbar { height: 3px; }
     .team-header { padding: 6px 8px; gap: 4px; }
@@ -609,7 +608,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
           }} else {{
               const prevRank = prevRanks[s.name];
               if (curRank < prevRank) slot.innerHTML = '<span class="rank-change up">▲' + (prevRank - curRank) + '</span>';
-              else if (curRank > prevRank) slot.innerHTML = '<span class="rank-change down">▼' + (prevRank - curRank) + '</span>';
+              else if (curRank > prevRank) slot.innerHTML = '<span class="rank-change down">▼' + (curRank - prevRank) + '</span>';
               else slot.innerHTML = '<span class="rank-change same">-</span>';
           }}
       }});
