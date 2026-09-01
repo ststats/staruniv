@@ -9683,6 +9683,18 @@
       "team": "휴면",
       "role": "",
       "info_updated_at": null
+    },
+    {
+      "nickname": "미상(elo_6199)",
+      "id": "elo_6199",
+      "elo_id": 6199,
+      "birthdate": null,
+      "gender": "",
+      "race": "",
+      "tier": "",
+      "team": "",
+      "role": "",
+      "info_updated_at": null
     }
   ]
 }
