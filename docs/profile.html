@@ -93,7 +93,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .profile-photo-img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #f2f3f5; flex-shrink: 0; }
 #profile-live-embed { padding: 0 16px 12px; }
 .profile-live-row { display: flex; align-items: center; gap: 10px; }
-.profile-live-thumb-link { display: block; position: relative; width: 96px; flex-shrink: 0; border-radius: 8px; overflow: hidden; }
+.profile-live-thumb-link { display: block; position: relative; width: 160px; flex-shrink: 0; border-radius: 8px; overflow: hidden; }
 .profile-live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #1a1d29; }
 .profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
 .profile-live-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
@@ -648,10 +648,11 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
                   if (broadStart) {
                       const startDate = new Date(broadStart.replace(' ', 'T'));
                       if (!isNaN(startDate.getTime())) {
-                          const hhmm = broadStart.split(' ')[1] ? broadStart.split(' ')[1].slice(0, 5) : '';
-                          if (hhmm) metaParts.push(hhmm + ' 시작');
                           const elapsedSec = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 1000));
-                          metaParts.push(formatTime(elapsedSec) + ' 방송중');
+                          const eh = Math.floor(elapsedSec / 3600);
+                          const em = Math.floor((elapsedSec % 3600) / 60);
+                          const elapsedText = eh > 0 ? `${eh}시간 ${em}분` : `${em}분`;
+                          metaParts.push(elapsedText + ' 방송중');
                       }
                   }
                   liveEmbedEl.innerHTML = `
