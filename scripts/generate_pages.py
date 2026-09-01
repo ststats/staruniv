@@ -380,28 +380,24 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       return `https://profile.img.sooplive.com/LOGO/${{(id || '').substring(0, 2)}}/${{id}}/${{id}}.jpg`;
   }}
 
-  const liveStatusCache = {{}};
-  const LIVE_CHECK_CONCURRENCY = 12;
-
-  async function checkIsLive(soopId) {{
-      if (soopId in liveStatusCache) return liveStatusCache[soopId];
-      let result = null;
+  // 프로필 페이지는 한 번에 딱 한 명만 조회하면 되니 bjapi.afreecatv.com을
+  // 그 한 명에 대해서만 직접, 실시간으로 조회한다(Worker 프록시를 거칠
+  // 이유가 없음 - 1명 조회에 프록시가 SOOP 목록을 훑는 게 오히려 비효율).
+  // 팀/전체 페이지(최대 250명 동시)는 아래 refreshLiveDots()에서 별도로
+  // Cloudflare Worker 프록시를 통해 조회한다.
+  async function checkIsLiveRealtime(soopId) {{
       try {{
           const res = await fetch(`https://bjapi.afreecatv.com/api/${{soopId}}/station`);
-          if (res.ok) {{
-              const data = await res.json();
-              if (data && data.broad) {{
-                  result = {{
-                      broad: data.broad,
-                      broadStart: (data.station && data.station.broad_start) || null,
-                  }};
-              }}
-          }}
+          if (!res.ok) return null;
+          const data = await res.json();
+          if (!data || !data.broad) return null;
+          return {{
+              broad: data.broad,
+              broadStart: (data.station && data.station.broad_start) || null,
+          }};
       }} catch (e) {{
-          result = null;
+          return null;
       }}
-      liveStatusCache[soopId] = result;
-      return result;
   }}
 
   function escapeHtml(s) {{
@@ -444,6 +440,14 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       liveFitResizeTimer = setTimeout(refitLiveTexts, 150);
   }});
 
+  // 팀/전체 페이지의 점 표시는 Cloudflare Worker 프록시(live-status-worker.js,
+  // 배포 후 아래 URL을 실제 워커 주소로 바꿔야 함)를 딱 1번만 호출한다 - 그
+  // 워커가 대신 SOOP 전체 라이브 목록을 서버 대 서버로 훑어서(브라우저 CORS
+  // 제약 없음) 우리가 요청한 아이디들만 걸러 돌려준다. 브라우저가 SOOP한테
+  // 250번 직접 요청하던 것을, "우리 워커한테 1번"으로 줄이면서도 매 요청마다
+  // 그 순간 기준으로 새로 계산하니 지연 없이 실시간이다.
+  const LIVE_STATUS_PROXY_URL = "https://lingering-moon-4997.252nds.workers.dev/";
+
   async function refreshLiveDots() {{
       const dotEls = Array.from(document.querySelectorAll('.live-dot[data-live-id]'));
       if (dotEls.length === 0) return;
@@ -455,16 +459,18 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       }});
       const ids = Object.keys(idToEls);
 
-      let cursor = 0;
-      async function worker() {{
-          while (cursor < ids.length) {{
-              const id = ids[cursor++];
-              const isLive = await checkIsLive(id);
-              if (isLive) idToEls[id].forEach(el => el.classList.add('is-live'));
-          }}
+      try {{
+          const res = await fetch(`${{LIVE_STATUS_PROXY_URL}}?ids=${{encodeURIComponent(ids.join(','))}}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const live = data.live || {{}};
+          ids.forEach(id => {{
+              if (live[id]) idToEls[id].forEach(el => el.classList.add('is-live'));
+          }});
+      }} catch (e) {{
+          // 프록시 호출이 실패해도(워커 아직 미배포, 네트워크 오류 등) 점을 그냥
+          // 안 켜는 걸로 조용히 넘어간다 - 페이지 나머지가 깨지면 안 되니까.
       }}
-      const workers = Array.from({{ length: Math.min(LIVE_CHECK_CONCURRENCY, ids.length) }}, worker);
-      await Promise.all(workers);
   }}
 
   function withDerivedFields(data) {{
@@ -810,7 +816,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 
       const liveEmbedEl = document.getElementById('profile-live-embed');
       if (tid) {{
-          checkIsLive(tid).then(result => {{
+          checkIsLiveRealtime(tid).then(result => {{
               if (result) {{
                   const {{ broad, broadStart }} = result;
                   const viewerText = broad.current_sum_viewer != null
