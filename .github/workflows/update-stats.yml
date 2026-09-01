@@ -64,6 +64,14 @@ jobs:
       - name: Generate pages
         run: python scripts/generate_pages.py
 
+      # generate_pages.py 이후에 돌아야 한다 - docs/*.html을 스캔해서 실제
+      # 사용된 문자를 확인하기 때문. 폰트 다운로드가 실패해도(외부 CDN 문제
+      # 등) 사이트 나머지가 안 깨지게 continue-on-error로 둔다 - 이 경우
+      # docs/fonts/PretendardVariable.woff2가 이전 실행 결과 그대로 남는다.
+      - name: Subset font
+        continue-on-error: true
+        run: python scripts/subset_font.py
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
