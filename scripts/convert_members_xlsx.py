@@ -130,16 +130,25 @@ def core(fields: dict) -> dict:
     return {k: fields.get(k) for k in CORE_FIELDS}
 
 
-def write_xlsx(update_rows: dict, append_rows: list) -> None:
+def write_xlsx(update_rows: dict, append_rows: list, delete_ids: set | None = None) -> None:
     """update_rows: {soop_id: core_fields} - 기존 행을 이 값으로 갱신(수정일은 안 건드림).
-    append_rows: [{"id":..., **core_fields, "info_updated_at":...}] - 새 행 추가."""
+    append_rows: [{"id":..., **core_fields, "info_updated_at":...}] - 새 행 추가.
+    delete_ids: 이 id에 해당하는 행을 통째로 지운다 - admin.html에서 사람의
+    id가 바뀌어서(예: "미상(elo_N)" -> 실제 아이디) xlsx에만 예전 id로 남아있게
+    된 오래된 행을 정리할 때 쓴다(안 지우면 매번 다시 json에 되살아나는
+    버그가 있었음)."""
+    delete_ids = delete_ids or set()
     wb = load_workbook(XLSX_PATH)  # data_only=False - 저장을 위해 다시 연다
     ws = wb[SHEET_NAME]
 
-    if update_rows:
+    if update_rows or delete_ids:
+        rows_to_delete = []
         for row in ws.iter_rows(min_row=2):
             cell_id = row[1].value
             cell_id = str(cell_id) if cell_id is not None else None
+            if cell_id in delete_ids:
+                rows_to_delete.append(row[0].row)
+                continue
             fields = update_rows.get(cell_id)
             if not fields:
                 continue
@@ -152,6 +161,11 @@ def write_xlsx(update_rows: dict, append_rows: list) -> None:
             row[7].value = fields.get("team")
             row[8].value = fields.get("role") or None
             # "수정일"(row[9])은 이 3-way 병합과 무관한 필드라 여기서 건드리지 않는다.
+
+        # 뒤에서부터(행 번호가 큰 것부터) 지워야, 먼저 지운 행 때문에 아직
+        # 안 지운 행들의 번호가 밀리는 문제가 안 생긴다.
+        for row_idx in sorted(rows_to_delete, reverse=True):
+            ws.delete_rows(row_idx)
 
     for m in append_rows:
         ws.append((
@@ -234,11 +248,29 @@ def main(argv=None):
 
     member_map = {m["id"]: m for m in local_data["members"]}
 
+    # elo_id -> 현재 json에서의 id. admin.html에서 "미상(elo_N)" 임시 프로필의
+    # id를 실제 SOOP 아이디로 바꿔치기하면(nickname/team 등도 같이 채움), 그
+    # 사람은 json에서 새 id로 존재하게 되는데 - xlsx는 여전히 예전 id(elo_N)로
+    # 그 사람을 기억하고 있다(admin.html은 xlsx를 안 건드리므로). 이 룩업이
+    # 있어야 "xlsx에는 있는데 json엔 없는" 경우를 만났을 때, 그게 진짜 삭제된
+    # 사람인지 아니면 그냥 id가 바뀐 사람인지 구분할 수 있다.
+    def _norm_elo_id(v):
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return None
+
+    json_elo_id_to_id = {
+        eid: sid for sid, m in member_map.items()
+        if (eid := _norm_elo_id(m.get("elo_id"))) is not None
+    }
+
     baseline = safe_read_json(BASELINE_PATH, default={})
 
     all_ids = set(xlsx_members) | set(member_map)
 
     json_updates, xlsx_updates, added_to_json, added_to_xlsx, conflicts = [], {}, [], [], []
+    stale_xlsx_ids = []
     new_baseline = {}
 
     for soop_id in all_ids:
@@ -269,6 +301,17 @@ def main(argv=None):
             new_baseline[soop_id] = winner
 
         elif in_xlsx and not in_json:
+            xlsx_elo_id = _norm_elo_id(xlsx_members[soop_id].get("elo_id"))
+            renamed_to = json_elo_id_to_id.get(xlsx_elo_id) if xlsx_elo_id is not None else None
+            if renamed_to is not None:
+                # 이 xlsx 행은 admin.html 등에서 id가 바뀐 사람의 예전 흔적이다
+                # (같은 elo_id를 가진 진짜 레코드가 이미 json에 다른 id로 존재).
+                # 예전처럼 이걸 json에 다시 만들어내면(= "미상" 중복 생성 버그),
+                # 매번 이 검사를 할 때마다 계속 되살아난다 - 그래서 json에
+                # 되살리지 않고, 대신 xlsx 쪽의 이 오래된 행 자체를 지운다.
+                stale_xlsx_ids.append(soop_id)
+                continue
+
             fields = core(xlsx_members[soop_id])
             new_member = dict(fields)
             new_member["id"] = soop_id
@@ -297,11 +340,13 @@ def main(argv=None):
             print(f"  [json 추가 예정] {soop_id} ({nickname})")
         for m in added_to_xlsx:
             print(f"  [xlsx 추가 예정] {m['id']} ({m['nickname']})")
+        for soop_id in stale_xlsx_ids:
+            print(f"  [xlsx 삭제 예정] {soop_id} (id가 바뀌어 json엔 이미 다른 id로 존재 - 예전 흔적 정리)")
         for soop_id, xlsx_fields, json_fields in conflicts:
             print(f"  [충돌!] {soop_id}: xlsx={xlsx_fields} vs json={json_fields} -> xlsx 값을 기본 채택")
         print(f"[dry-run 완료] json 갱신 {len(json_updates)} / xlsx 갱신 {len(xlsx_updates)} / "
-              f"json 추가 {len(added_to_json)} / xlsx 추가 {len(added_to_xlsx)} / 충돌 {len(conflicts)}건 "
-              f"(파일은 안 건드림)")
+              f"json 추가 {len(added_to_json)} / xlsx 추가 {len(added_to_xlsx)} / xlsx 삭제 {len(stale_xlsx_ids)} / "
+              f"충돌 {len(conflicts)}건 (파일은 안 건드림)")
         return
 
     for soop_id, xlsx_fields, json_fields in conflicts:
@@ -312,9 +357,10 @@ def main(argv=None):
     print(f"[완료] members.json 동기화됨 (갱신 {len(json_updates)}명, 신규 {len(added_to_json)}명, "
           f"총 {len(local_data['members'])}명)")
 
-    if xlsx_updates or added_to_xlsx:
-        write_xlsx(xlsx_updates, added_to_xlsx)
-        print(f"[완료] members.xlsx 동기화됨 (갱신 {len(xlsx_updates)}명, 신규 추가 {len(added_to_xlsx)}명)")
+    if xlsx_updates or added_to_xlsx or stale_xlsx_ids:
+        write_xlsx(xlsx_updates, added_to_xlsx, delete_ids=set(stale_xlsx_ids))
+        print(f"[완료] members.xlsx 동기화됨 (갱신 {len(xlsx_updates)}명, 신규 추가 {len(added_to_xlsx)}명, "
+              f"오래된 행 삭제 {len(stale_xlsx_ids)}명)")
     else:
         print("[완료] xlsx 쪽 변경 없음")
 
