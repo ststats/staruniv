@@ -427,7 +427,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
           } else {
               const prevRank = prevRanks[s.name];
               if (curRank < prevRank) slot.innerHTML = '<span class="rank-change up">▲' + (prevRank - curRank) + '</span>';
-              else if (curRank > prevRank) slot.innerHTML = '<span class="rank-change down">▼' + (prevRank - curRank) + '</span>';
+              else if (curRank > prevRank) slot.innerHTML = '<span class="rank-change down">▼' + (curRank - prevRank) + '</span>';
               else slot.innerHTML = '<span class="rank-change same">-</span>';
           }
       });
