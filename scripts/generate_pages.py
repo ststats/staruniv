@@ -143,12 +143,13 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 
 .profile-photo-img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #f2f3f5; flex-shrink: 0; }
 #profile-live-embed { padding: 0 16px 12px; }
-.profile-live-thumb-link { display: block; position: relative; border-radius: 10px; overflow: hidden; }
+.profile-live-row { display: flex; align-items: center; gap: 10px; }
+.profile-live-thumb-link { display: block; position: relative; width: 96px; flex-shrink: 0; border-radius: 8px; overflow: hidden; }
 .profile-live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #1a1d29; }
-.profile-live-badge { position: absolute; top: 8px; left: 8px; background: #e53935; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.profile-live-info { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; }
+.profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
+.profile-live-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .profile-live-title { font-size: 13px; font-weight: 700; color: #1a1d29; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.profile-live-viewer { font-size: 11px; color: #6b6f79; }
+.profile-live-meta { font-size: 11px; color: #6b6f79; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
 .profile-row-label { color: #6b6f79; font-weight: 600; }
 .profile-row-value { font-weight: 700; color: #1a1d29; }
@@ -377,30 +378,37 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
   // 조회한다 - 공식 오픈 API는 파트너십 심사가 필요해서 이 프로젝트 규모에선 못
   // 쓴다. bjapi.afreecatv.com/api/{{id}}/station이 방송중이면 "broad" 필드가
   // 객체(broad_no/broad_title/current_sum_viewer 등)로, 아니면 null로 온다
-  // (스트리밍 도구들이 실제로 이렇게 씀, 실제 응답으로 직접 확인함). 실패(CORS
-  // 차단/네트워크 오류 등)는 그냥 "라이브 아님(null)"으로 조용히 넘어간다 -
-  // 페이지 나머지가 깨지면 안 되니까.
+  // (스트리밍 도구들이 실제로 이렇게 씀, 실제 응답으로 직접 확인함). 방송
+  // 시작시각은 broad 안이 아니라 최상위 "station.broad_start"에 따로 있다.
+  // 실패(CORS 차단/네트워크 오류 등)는 그냥 "라이브 아님(null)"으로 조용히
+  // 넘어간다 - 페이지 나머지가 깨지면 안 되니까.
   //
-  // 캐시에는 boolean이 아니라 broad 객체 자체(없으면 null)를 저장한다 - 점
-  // 표시(is-live 여부)는 그냥 truthy 체크만 하면 되지만, 프로필 페이지는
-  // 여기서 방송 제목/시청자 수/방송번호(썸네일용)까지 그대로 꺼내 쓴다.
+  // 캐시에는 boolean이 아니라 {{broad, broadStart}} 객체(방송 중 아니면 null)를
+  // 저장한다 - 점 표시(is-live 여부)는 그냥 truthy 체크만 하면 되지만, 프로필
+  // 페이지는 여기서 방송 제목/시청자 수/방송번호(썸네일용)/시작시각까지 그대로
+  // 꺼내 쓴다.
   const liveStatusCache = {{}};
   const LIVE_CHECK_CONCURRENCY = 12; // 한 번에 너무 많은 요청을 동시에 쏘지 않도록 제한
 
   async function checkIsLive(soopId) {{
       if (soopId in liveStatusCache) return liveStatusCache[soopId];
-      let broad = null;
+      let result = null;
       try {{
           const res = await fetch(`https://bjapi.afreecatv.com/api/${{soopId}}/station`);
           if (res.ok) {{
               const data = await res.json();
-              broad = (data && data.broad) ? data.broad : null;
+              if (data && data.broad) {{
+                  result = {{
+                      broad: data.broad,
+                      broadStart: (data.station && data.station.broad_start) || null,
+                  }};
+              }}
           }}
       }} catch (e) {{
-          broad = null;
+          result = null;
       }}
-      liveStatusCache[soopId] = broad;
-      return broad;
+      liveStatusCache[soopId] = result;
+      return result;
   }}
 
   function escapeHtml(s) {{
@@ -776,26 +784,39 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       photoImg.onload = function() {{ this.style.visibility = ''; }};
       photoImg.src = soopPhotoUrl(tid);
 
-      // 방송 중이면 그 사람 프로필에 실제 재생 화면 대신 정지 썸네일 + 방송정보(제목/
-      // 시청자수)를 보여준다. 썸네일 URL은 liveimg.sooplive.co.kr/m/{{broad_no}}
-      // 패턴이고, 클릭하면 실제 방송(play.sooplive.co.kr/{{아이디}})으로 새 탭에서
-      // 이동한다. checkIsLive는 위쪽 라이브 점 표시 기능이랑 똑같은 함수를 그대로
-      // 재사용한다 - 같은 API/캐시를 공유하고, 이제 boolean이 아니라 broad 객체
-      // 자체(없으면 null)를 돌려준다.
+      // 방송 중이면 그 사람 프로필에 실제 재생 화면 대신 정지 썸네일(왼쪽) +
+      // 방송정보(오른쪽: 제목/시청자수/경과시간/시작시각)를 가로로 배치해서 컴팩트하게
+      // 보여준다. 썸네일 URL은 liveimg.sooplive.co.kr/m/{{broad_no}} 패턴이고, 클릭하면
+      // 실제 방송(play.sooplive.co.kr/{{아이디}})으로 새 탭에서 이동한다. 방송 시작시각은
+      // broad 안이 아니라 station.broad_start에 있어서 checkIsLive가 따로 같이 돌려준다.
+      // checkIsLive는 위쪽 라이브 점 표시 기능이랑 똑같은 함수를 그대로 재사용한다 -
+      // 같은 API/캐시를 공유.
       const liveEmbedEl = document.getElementById('profile-live-embed');
       if (tid) {{
-          checkIsLive(tid).then(broad => {{
-              if (broad) {{
-                  const viewerText = broad.current_sum_viewer != null
-                      ? broad.current_sum_viewer.toLocaleString('ko-KR') + '명 시청 중' : '';
+          checkIsLive(tid).then(result => {{
+              if (result) {{
+                  const {{ broad, broadStart }} = result;
+                  const metaParts = [];
+                  if (broad.current_sum_viewer != null) metaParts.push(broad.current_sum_viewer.toLocaleString('ko-KR') + '명 시청 중');
+                  if (broadStart) {{
+                      const startDate = new Date(broadStart.replace(' ', 'T'));
+                      if (!isNaN(startDate.getTime())) {{
+                          const hhmm = broadStart.split(' ')[1] ? broadStart.split(' ')[1].slice(0, 5) : '';
+                          if (hhmm) metaParts.push(hhmm + ' 시작');
+                          const elapsedSec = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 1000));
+                          metaParts.push(formatTime(elapsedSec) + ' 방송중');
+                      }}
+                  }}
                   liveEmbedEl.innerHTML = `
-                    <a class="profile-live-thumb-link" href="https://play.sooplive.co.kr/${{tid}}" target="_blank" rel="noopener">
-                      <img class="profile-live-thumb" src="https://liveimg.sooplive.co.kr/m/${{broad.broad_no}}" alt="방송 화면">
-                      <span class="profile-live-badge">LIVE</span>
-                    </a>
-                    <div class="profile-live-info">
-                      <span class="profile-live-title">${{escapeHtml(broad.broad_title)}}</span>
-                      ${{viewerText ? `<span class="profile-live-viewer">${{escapeHtml(viewerText)}}</span>` : ''}}
+                    <div class="profile-live-row">
+                      <a class="profile-live-thumb-link" href="https://play.sooplive.co.kr/${{tid}}" target="_blank" rel="noopener">
+                        <img class="profile-live-thumb" src="https://liveimg.sooplive.co.kr/m/${{broad.broad_no}}" alt="방송 화면">
+                        <span class="profile-live-badge">LIVE</span>
+                      </a>
+                      <div class="profile-live-info">
+                        <span class="profile-live-title">${{escapeHtml(broad.broad_title)}}</span>
+                        <span class="profile-live-meta">${{escapeHtml(metaParts.join(' · '))}}</span>
+                      </div>
                     </div>`;
                   liveEmbedEl.style.display = '';
               }} else {{
