@@ -515,7 +515,11 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
               const makeRows = (list, padLen) => {
                   let rHtml = list.map(m => {
                       let cClass = [];
-                      if (!m._counted && m._val !== 0) cClass.push('excluded');
+                      // ★ 수정됨: 수장/전력외는 값이 0이어도 무조건 붉은색(excluded) 처리
+                      if (def.excludeRoles && ['수장', '전력외'].includes(m.role)) {
+                          cClass.push('excluded');
+                      }
+                      
                       const tier = tiers[m.nickname + '|' + m.team];
                       if (tier) cClass.push(tier);
 
