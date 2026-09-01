@@ -218,6 +218,7 @@ MOBILE_CSS = """
     .member-col-label .col-label-text, .member-col-label .unit-label { font-size: 6px; }
     .member-row { padding: 4px 8px; min-height: 14px; border-left-width: 2px; }
     .live-dot { left: 2px; width: 2px; height: 2px; --live-dot-spread: 1.5px; }
+    .fa-bar-item .live-dot { width: 2px; height: 2px; }
     .member-name { font-size: 6px; gap: 3px; }
     .member-name-link { gap: 3px; }
     .bday-mark { font-size: 4px; }
