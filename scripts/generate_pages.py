@@ -115,10 +115,10 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .member-name-link:hover { text-decoration: underline; }
 .member-row.tier1 .member-name, .member-row.tier5 .member-name, .member-row.tier10 .member-name, .member-row.excluded .member-name { font-weight: 700; color: #1a1d29; }
 .bday-mark { font-size: 8px; opacity: 0.75; flex-shrink: 0; }
-.live-dot { display: none; position: absolute; left: 5px; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%; background: #e53935; animation: live-dot-pulse 1.4s infinite; --live-dot-spread: 2px; }
+.live-dot { display: none; position: absolute; left: 5px; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%; background: #e53935; animation: live-dot-pulse 1.4s infinite; --live-dot-spread: 3px; }
 .live-dot.is-live { display: block; }
 @keyframes live-dot-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(229,57,53,0.45); }
+  0% { box-shadow: 0 0 0 0 rgba(229,57,53,0.55); }
   70% { box-shadow: 0 0 0 var(--live-dot-spread) rgba(229,57,53,0); }
   100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
 }
@@ -192,7 +192,7 @@ MOBILE_CSS = """
     .member-col-label { font-size: 6px; padding: 5px 8px 4px; }
     .member-col-label .col-label-text, .member-col-label .unit-label { font-size: 6px; }
     .member-row { padding: 4px 8px; min-height: 14px; border-left-width: 2px; }
-    .live-dot { left: 2px; width: 2px; height: 2px; --live-dot-spread: 1px; }
+    .live-dot { left: 2px; width: 2px; height: 2px; --live-dot-spread: 1.5px; }
     .member-name { font-size: 6px; gap: 3px; }
     .member-name-link { gap: 3px; }
     .bday-mark { font-size: 4px; }
