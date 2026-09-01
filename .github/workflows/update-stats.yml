@@ -32,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Download self-hosted font (once)
-        run: python scripts/download_font.py
-
       # members.xlsx(있으면)를 members.json에 먼저 병합한다 - id 기준 병합이라
       # xlsx에 없는 멤버(admin.html/EloBoard 동기화로 추가된 사람 등)는 그대로
       # 보존된다. xlsx 파일 자체가 없으면 조용히 건너뛰므로 continue-on-error도
