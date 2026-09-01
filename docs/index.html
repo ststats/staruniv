@@ -96,7 +96,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .profile-live-thumb-link { display: block; position: relative; width: 234px; flex-shrink: 0; border-radius: 8px; overflow: hidden; }
 .profile-live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #1a1d29; }
 .profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
-.profile-live-info { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; flex: 1; padding: 2px 0; }
+.profile-live-info { display: grid; grid-template-rows: repeat(4, 1fr); align-items: center; min-width: 0; flex: 1; padding: 2px 0; }
 .profile-live-title { font-size: 13px; font-weight: 700; color: #1a1d29; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 .profile-live-viewer, .profile-live-elapsed { font-size: 12px; font-weight: 600; color: #6b6f79; text-align: right; }
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
@@ -678,6 +678,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
                         <span class="profile-live-badge">LIVE</span>
                       </a>
                       <div class="profile-live-info">
+                        <span></span>
                         <span class="profile-live-title">${escapeHtml(broad.broad_title)}</span>
                         <span class="profile-live-viewer">${escapeHtml(viewerText)}</span>
                         <span class="profile-live-elapsed">${escapeHtml(elapsedText)}</span>
