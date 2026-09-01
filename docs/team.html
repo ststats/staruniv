@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>팀별 현황</title><link rel="icon" type="image/webp" href="logos/파비콘.webp"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" /><style>
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>팀별 현황</title><link rel="icon" type="image/webp" href="logos/파비콘.webp"><link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin><style>@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-style: normal; font-display: block; src: url('fonts/PretendardVariable.woff2') format('woff2-variations'); } 
 html { scrollbar-gutter: stable; }
 * { box-sizing: border-box; }
 body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; margin: 0; padding: 20px 10px; color: #1a1d29; }
@@ -403,7 +403,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       const teams = {};
       members.forEach(m => {
           const t = m.team || '미분류';
-          if (['FA', '휴면'].includes(t)) return;
+          if (['FA', '휴면', '미분류'].includes(t)) return;
           if (!teams[t]) teams[t] = [];
           teams[t].push(m);
       });
@@ -536,7 +536,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
           const v = m[def.field] || 0;
           if (v === 0) return false;
           if (def.excludeRoles && ['수장', '전력외'].includes(m.role)) return false;
-          if (['FA', '휴면'].includes(m.team)) return false;
+          if (!m.team || ['FA', '휴면'].includes(m.team)) return false;
           return true;
       }).sort((a,b) => (b[def.field] || 0) - (a[def.field] || 0));
 
