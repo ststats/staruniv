@@ -1,0 +1,140 @@
+"""
+Pretendard Variable 전체 파일(약 2.3MB - 모든 굵기 + 완성형 한글 11,172자
+전부 포함)을 다운로드해서, 이 사이트가 실제로 표시하는 문자만 추려낸 훨씬
+작은 서브셋(docs/fonts/PretendardVariable.woff2)으로 만든다.
+
+CDN의 "다이나믹 서브셋" 방식(unicode-range로 브라우저가 알아서 필요한 조각만
+받게 하는 것)도 검토했는데, 그건 font-display 값을 CDN이 이미 고정해둬서
+우리가 못 바꾼다. 여기선 자체호스팅이라 font-display도 우리가 원하는 값
+(optional - 깜빡임 없이, 느리면 그냥 기본 글꼴로)을 그대로 쓸 수 있다.
+
+실제로 쓰는 문자를 매번 다시 스캔해서 서브셋을 새로 만들기 때문에, 로스터가
+바뀌어서(신규 멤버 추가 등) 새로운 한글 음절이 필요해져도 다음 실행에서
+자동으로 반영된다 - 파일을 고정해두고 잊어버리는 방식이 아니다.
+
+문자 수집 범위:
+  1. 현재 로스터(members.json)의 닉네임/소속/종족/티어/직책
+  2. 과거 아카이브(archive/*.json) 전체 - 지금은 로스터에 없지만 과거 날짜를
+     browsing할 때 여전히 표시될 수 있는 사람들의 닉네임/팀 이름을 놓치지
+     않기 위함
+  3. generate_pages.py가 만든 docs/*.html - 고정 UI 문구(제목, 라벨, 안내
+     텍스트 등)
+  4. 기본 라틴/숫자/기호 + 자주 쓰는 한글 자모(안전판 - 위 스캔에서 혹시
+     놓친 게 있어도 최소한 이 정도는 항상 포함)
+
+주의: 이 스크립트는 generate_pages.py가 끝난 뒤에 실행돼야 한다(3번 범위가
+방금 생성된 HTML을 스캔하기 때문).
+"""
+
+import sys
+import json
+import subprocess
+import tempfile
+from pathlib import Path
+
+import requests
+
+from _common import ROOT
+
+FONT_URL = (
+    "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/"
+    "packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2"
+)
+OUTPUT_PATH = ROOT / "docs" / "fonts" / "PretendardVariable.woff2"
+MEMBERS_PATH = ROOT / "data" / "members.json"
+ARCHIVE_DIR = ROOT / "data" / "archive"
+DOCS_DIR = ROOT / "docs"
+
+MEMBER_TEXT_FIELDS = ("nickname", "team", "race", "tier", "role")
+
+# 위 스캔에서 혹시 놓친 문자가 있어도 최소한 이 정도는 항상 포함해두는 안전판.
+BASE_CHARS = (
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+    "abcdefghijklmnopqrstuvwxyz{|}~"
+    "ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㄲㄸㅃㅆㅉㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣㅐㅔㅘㅙㅚㅝㅞㅟㅢ"
+)
+
+
+def _add_member_text(chars: set, members: list) -> None:
+    for m in members:
+        for field in MEMBER_TEXT_FIELDS:
+            v = m.get(field)
+            if v:
+                chars.update(str(v))
+
+
+def collect_used_characters() -> set:
+    chars = set(BASE_CHARS)
+
+    if MEMBERS_PATH.exists():
+        try:
+            with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            _add_member_text(chars, data.get("members", []))
+        except Exception as e:
+            print(f"[경고] members.json 읽기 실패, 건너뜀: {e}", file=sys.stderr)
+
+    if ARCHIVE_DIR.exists():
+        for p in ARCHIVE_DIR.glob("*.json"):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                _add_member_text(chars, data.get("members", []))
+            except Exception:
+                continue  # 아카이브 파일 하나 깨져있다고 전체를 멈출 이유는 없음
+
+    if DOCS_DIR.exists():
+        for p in DOCS_DIR.glob("*.html"):
+            try:
+                chars.update(p.read_text(encoding="utf-8"))
+            except Exception as e:
+                print(f"[경고] {p.name} 읽기 실패, 건너뜀: {e}", file=sys.stderr)
+
+    # 출력 불가능한 제어문자 등은 폰트에 넣을 필요 없음(공백은 이미 BASE_CHARS에 있어 예외 처리)
+    chars = {c for c in chars if c == " " or c.isprintable()}
+    return chars
+
+
+def main():
+    chars = collect_used_characters()
+    print(f"[준비] 실제 사용 문자 {len(chars)}개 확인")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_full = Path(tmpdir) / "PretendardVariable-full.woff2"
+
+        print("[다운로드] Pretendard Variable 전체 파일 받는 중...")
+        try:
+            resp = requests.get(FONT_URL, timeout=60)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            print(f"[오류] 폰트 원본 다운로드 실패: {e}", file=sys.stderr)
+            sys.exit(1)
+        tmp_full.write_bytes(resp.content)
+        print(f"[완료] {len(resp.content) / 1024 / 1024:.2f}MB 다운로드됨")
+
+        unicodes = ",".join(f"U+{ord(c):04X}" for c in sorted(chars))
+
+        OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        cmd = [
+            sys.executable, "-m", "fontTools.subset",
+            str(tmp_full),
+            f"--unicodes={unicodes}",
+            f"--output-file={OUTPUT_PATH}",
+            "--flavor=woff2",
+        ]
+        print(f"[서브셋] fonttools로 {len(chars)}개 문자만 추려내는 중...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"[오류] 서브셋 실패:\n{result.stderr}", file=sys.stderr)
+            sys.exit(1)
+
+    if not OUTPUT_PATH.exists():
+        print("[오류] 서브셋 결과 파일이 생성되지 않았습니다.", file=sys.stderr)
+        sys.exit(1)
+
+    size_kb = OUTPUT_PATH.stat().st_size / 1024
+    print(f"[완료] {OUTPUT_PATH} 생성됨 ({size_kb:.1f}KB, 원본 대비 대폭 축소)")
+
+
+if __name__ == "__main__":
+    main()
