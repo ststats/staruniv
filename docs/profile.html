@@ -3,8 +3,8 @@ html { scrollbar-gutter: stable; }
 * { box-sizing: border-box; }
 body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; margin: 0; padding: 20px 10px; color: #1a1d29; }
 .top-bar { max-width: 1080px; margin: 0 auto 16px; background: #fff; border-radius: 20px; padding: 16px 20px; min-height: 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 4px 12px rgba(20,20,30,0.05); }
-.month-select-group { display: inline-flex; align-items: center; gap: 6px; position: relative; }
-.top-date-btn { background: transparent; border: none; font-size: 20px; font-weight: 800; color: #141821; cursor: pointer; padding: 2px 0; font-family: inherit; display:flex; align-items:center; gap: 6px; }
+.month-select-group { display: inline-flex; align-items: center; gap: 6px; position: relative; vertical-align: middle; }
+.top-date-btn { background: transparent; border: none; font-size: 20px; font-weight: 800; color: #141821; cursor: pointer; padding: 2px 0; font-family: inherit; display: inline-flex; align-items: center; vertical-align: middle; gap: 6px; line-height: 1.2; }
 .top-date-btn:hover { color: #4a5ce0; }
 .cal-popup { display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 16px; z-index: 100; width: 260px; }
 .cal-popup.show { display: block; }
@@ -18,12 +18,12 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .cal-date.active { background: #4a5ce0; color: #fff; }
 .cal-date.disabled { color: #d1d4d8; cursor: not-allowed; background: transparent; pointer-events: none; font-weight: 400; }
 
-.select-wrapper { position: relative; display: inline-flex; align-items: center; gap: 6px; visibility: hidden; font-weight: 800; }
+.select-wrapper { position: relative; display: inline-flex; align-items: center; vertical-align: middle; gap: 6px; visibility: hidden; font-weight: 800; }
 .select-wrapper.ready { visibility: visible; }
-.top-date-select { font-size: 20px; font-weight: 800; color: #141821; border: none; background: transparent; cursor: pointer; font-family: inherit; padding: 2px 0; appearance: none; -webkit-appearance: none; -moz-appearance: none; }
+.top-date-select { font-size: 20px; font-weight: 800; color: #141821; border: none; background: transparent; cursor: pointer; font-family: inherit; padding: 0; line-height: 1.2; vertical-align: middle; appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 .top-date-select:hover { color: #4a5ce0; }
 .select-wrapper .nav-chevron { pointer-events: none; }
-.nav-chevron { font-size: 14px; color: #c2c5cc; user-select: none; }
+.nav-chevron { font-size: 14px; color: #c2c5cc; user-select: none; display: inline-flex; align-items: center; vertical-align: middle; }
 
 .back-link { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: #8a8d97; text-decoration: none; }
 .back-link:hover { color: #4a5ce0; }
@@ -97,21 +97,6 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .profile-live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #1a1d29; }
 .profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
 
-/* 
-  방송 제목/시청자수/방송시간 오른쪽 정렬 + 잘림 처리
-  CSS text-align:right + text-overflow:ellipsis 조합은, 텍스트가 잘려서
-  "..."이 붙을 때 그 "..."이 컨테이너 오른쪽 끝에 정확히 안 붙고 살짝 밀려
-  보이는 문제가 있다(직접 확인함). CSS만으로 고치는 방법(direction:rtl 트릭
-  등)을 여러 번 시도했지만 이 환경에서 실제 브라우저 검증 없이는 계속
-  틀렸고, 고정 글자 수로 미리 자르는 방법도 시도했지만 컨테이너 폭이
-  화면마다/창 크기마다 유동적이라 정확히 안 맞았다. 그래서 최종적으로는
-  fitTextToWidth()(아래 JS)가 el.scrollWidth/clientWidth로 실제 렌더링된
-  폭을 직접 재서 넘치는 만큼 한 글자씩 줄이는 방식으로 넣는다 - 그러니 여기
-  CSS는 잘림 계산을 브라우저의 text-overflow에 맡기지 않고, white-space:nowrap
-  + overflow:hidden만 있으면 된다(폭 측정을 위해 줄바꿈은 막아야 하고,
-  overflow:hidden은 혹시 계산이 살짝 어긋났을 때 넘치는 부분이 안 보이게
-  하는 안전장치).
-*/
 .profile-live-info { display: flex; flex-direction: column; justify-content: space-evenly; min-width: 0; flex: 1; padding: 2px 0 2px 8px; }
 .profile-live-title { width: 100%; text-align: right; white-space: nowrap; overflow: hidden; padding-right: 4px; font-size: 13px; font-weight: 700; color: #1a1d29; line-height: 1.3; }
 .profile-live-viewer, .profile-live-elapsed { width: 100%; text-align: right; white-space: nowrap; overflow: hidden; padding-right: 2px; font-size: 12px; font-weight: 600; color: #6b6f79; line-height: 1.3; }
@@ -230,11 +215,6 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       return `https://profile.img.sooplive.com/LOGO/${(id || '').substring(0, 2)}/${id}/${id}.jpg`;
   }
 
-  // 프로필 페이지는 한 번에 딱 한 명만 조회하면 되니 bjapi.afreecatv.com을
-  // 그 한 명에 대해서만 직접, 실시간으로 조회한다(Worker 프록시를 거칠
-  // 이유가 없음 - 1명 조회에 프록시가 SOOP 목록을 훑는 게 오히려 비효율).
-  // 팀/전체 페이지(최대 250명 동시)는 아래 refreshLiveDots()에서 별도로
-  // Cloudflare Worker 프록시를 통해 조회한다.
   async function checkIsLiveRealtime(soopId) {
       try {
           const res = await fetch(`https://bjapi.afreecatv.com/api/${soopId}/station`);
@@ -250,22 +230,6 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       }
   }
 
-  function escapeHtml(s) {
-      return String(s == null ? '' : s)
-          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  // CSS의 text-align:right + text-overflow:ellipsis 조합은 텍스트가 잘려서
-  // "..."이 붙을 때 그 "..."이 컨테이너 오른쪽 끝에 딱 안 붙고 살짝 밀려
-  // 보이는 문제가 있다(직접 확인함). 글자 수를 고정해서 미리 자르는 방법도
-  // 시도했었는데, 화면/컨테이너 폭이 유동적이라(모바일/PC, 창 크기 등) 고정
-  // 글자 수로는 정확히 안 맞는다는 지적을 받았다 - 맞는 말이라, 아예
-  // "실제로 렌더링된 폭을 재서, 넘치면 한 글자씩 줄이는" 방식으로 바꿨다.
-  // el.scrollWidth(내용이 실제로 필요로 하는 폭)가 el.clientWidth(실제 보이는
-  // 칸의 폭)보다 크면 한 글자씩 지우면서 다시 재는 걸 반복한다 - 화면 크기가
-  // 뭐든 항상 실제 가용 공간에 맞춰 잘리고, 창 크기가 바뀌면(resize 이벤트)
-  // 다시 계산한다. textContent로 직접 넣으므로 HTML 이스케이프도 자동으로
-  // 처리된다(innerHTML이 아니라서 별도 escapeHtml 불필요).
   function fitTextToWidth(el, fullText) {
       fullText = fullText || '';
       el.dataset.fullText = fullText;
@@ -290,12 +254,6 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       liveFitResizeTimer = setTimeout(refitLiveTexts, 150);
   });
 
-  // 팀/전체 페이지의 점 표시는 Cloudflare Worker 프록시(live-status-worker.js,
-  // 배포 후 아래 URL을 실제 워커 주소로 바꿔야 함)를 딱 1번만 호출한다 - 그
-  // 워커가 대신 SOOP 전체 라이브 목록을 서버 대 서버로 훑어서(브라우저 CORS
-  // 제약 없음) 우리가 요청한 아이디들만 걸러 돌려준다. 브라우저가 SOOP한테
-  // 250번 직접 요청하던 것을, "우리 워커한테 1번"으로 줄이면서도 매 요청마다
-  // 그 순간 기준으로 새로 계산하니 지연 없이 실시간이다.
   const LIVE_STATUS_PROXY_URL = "https://staruniv.252nds.workers.dev/";
 
   async function refreshLiveDots() {
@@ -317,10 +275,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
           ids.forEach(id => {
               if (live[id]) idToEls[id].forEach(el => el.classList.add('is-live'));
           });
-      } catch (e) {
-          // 프록시 호출이 실패해도(워커 아직 미배포, 네트워크 오류 등) 점을 그냥
-          // 안 켜는 걸로 조용히 넘어간다 - 페이지 나머지가 깨지면 안 되니까.
-      }
+      } catch (e) {}
   }
 
   function withDerivedFields(data) {
@@ -502,7 +457,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
           } else {
               const prevRank = prevRanks[s.name];
               if (curRank < prevRank) slot.innerHTML = '<span class="rank-change up">▲' + (prevRank - curRank) + '</span>';
-              else if (curRank > prevRank) slot.innerHTML = '<span class="rank-change down">▼' + (curRank - prevRank) + '</span>';
+              else if (curRank > prevRank) slot.innerHTML = '<span class="rank-change down">▼' + (prevRank - curRank) + '</span>';
               else slot.innerHTML = '<span class="rank-change same">-</span>';
           }
       });
@@ -694,10 +649,6 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
                       </div>
                     </div>`;
                   liveEmbedEl.style.display = '';
-                  // innerHTML로 빈 칸을 만든 다음 textContent로 채운다 - fitTextToWidth가
-                  // el.scrollWidth/clientWidth를 재려면 먼저 실제 DOM에 있고 보이는
-                  // 상태여야 하므로(위에서 display=''를 먼저 함), HTML 문자열 안에서
-                  // 바로 잘라 넣지 않고 이 순서로 처리한다.
                   fitTextToWidth(liveEmbedEl.querySelector('.profile-live-title'), broad.broad_title);
                   fitTextToWidth(liveEmbedEl.querySelector('.profile-live-viewer'), viewerText);
                   fitTextToWidth(liveEmbedEl.querySelector('.profile-live-elapsed'), elapsedText);
