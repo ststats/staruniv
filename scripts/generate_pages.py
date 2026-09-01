@@ -151,12 +151,12 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 /* 
   Webkit 브라우저의 줄임표 잘림 버그 완벽 차단 로직
   1. padding-left: 8px -> 썸네일과 너무 붙지 않게 공간 확보
-  2. padding-right: 4px -> 브라우저가 ...을 그릴 픽셀 공간 넉넉히 확보 (짜투리 잘림 방지)
+  2. padding-right: 6px -> 브라우저가 ...을 그릴 픽셀 공간 넉넉히 확보 (짜투리 잘림 방지)
   3. word-break: break-word -> break-all을 빼서 브라우저가 줄임표를 문자 중간으로 착각하고 끊어버리는 현상 방지
   4. line-height: 1.3 -> 세로로 위아래가 짤려서 마침표처럼 보이는 현상 방지
 */
 .profile-live-info { display: flex; flex-direction: column; justify-content: space-evenly; min-width: 0; flex: 1; padding: 2px 0 2px 8px; }
-.profile-live-title { width: 100%; text-align: right; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; padding-right: 4px; font-size: 13px; font-weight: 700; color: #1a1d29; line-height: 1.3; }
+.profile-live-title { width: 100%; text-align: right; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; padding-right: 6px; font-size: 13px; font-weight: 700; color: #1a1d29; line-height: 1.3; }
 .profile-live-viewer, .profile-live-elapsed { width: 100%; text-align: right; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; padding-right: 2px; font-size: 12px; font-weight: 600; color: #6b6f79; line-height: 1.3; }
 
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
