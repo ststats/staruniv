@@ -40,7 +40,7 @@ def _add_unknown_elo_players(combined_dict: dict) -> None:
         if elo_id_str not in existing_elo_ids and elo_id_str != "None":
             new_member = {
                 "nickname": f"미상(elo_{elo_id_str})",
-                "id": "",  # 아프리카TV 아이디 빈칸
+                "id": f"elo_{elo_id_str}",  # 아프리카TV 아이디 빈칸
                 "elo_id": int(elo_id_str),
                 "birthdate": None,
                 "gender": "", # 성별 빈칸
