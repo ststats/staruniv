@@ -36,7 +36,11 @@ ststats/
 ├── scripts/
 │   ├── _common.py                  ← ROOT 경로, 시간/숫자 헬퍼, 공용 HTTP 재시도 헬퍼(fetch_json) 등
 │   │                                   여러 스크립트가 같이 쓰는 유틸리티 모음
-│   ├── download_font.py            ← Pretendard 폰트 self-host용 최초 1회 다운로드
+│   ├── subset_font.py               ← Pretendard 전체 폰트를 다운로드해서, 실제 로스터+아카이브+
+│   │                                   생성된 HTML에서 쓰이는 문자만 추려 훨씬 작은 서브셋
+│   │                                   (docs/fonts/PretendardVariable.woff2)으로 만든다.
+│   │                                   generate_pages.py 다음에 실행돼야 한다(생성된 HTML을
+│   │                                   스캔하기 때문)
 │   ├── convert_members_xlsx.py     ← data/members.xlsx <-> data/members.json 양방향 동기화
 │   ├── sync_members.py             ← EloBoard 티어 목록 API에서 신규 멤버 자동 추가/일부 필드 갱신
 │   ├── fetch_poonggo_data.py       ← 풍고 API에서 별풍선/방송시간/누적시청자를 "가져오기만" 하는 순수 함수
@@ -319,6 +323,31 @@ pytest
 
 저장소 → **Actions** 탭 → **Update all stats** 워크플로우 선택 → **Run workflow** 버튼
 (풍고+엘로보드 둘 다 이 워크플로우 하나로 갱신됩니다)
+
+## 라이브 방송 표시 (이 저장소 밖에 있는 외부 인프라 의존)
+
+전체/팀 페이지의 라이브 점 표시, 프로필 페이지의 방송 중 정보는 이 저장소
+안의 GitHub Actions만으로는 안 돌아간다 - **Cloudflare Worker + Workers KV +
+외부 크론 서비스(cron-job.org)** 조합으로 별도 운영되고 있다. 이 저장소를
+클론해서 그대로 배포해도 이 기능만은 저절로 안 켜지고, 아래 인프라를 따로
+셋업해야 한다:
+
+1. **`live-status-worker.js`**를 Cloudflare Workers에 배포(대시보드에서 코드
+   붙여넣고 Deploy)
+2. Workers KV 네임스페이스를 만들어서 워커에 바인딩(변수 이름 `SOOP_KV`)
+3. **cron-job.org**(또는 비슷한 외부 크론 서비스)에서 2분마다
+   `https://{워커주소}/?cron_key={비밀키}`를 호출하도록 등록 - 이 호출이
+   워커의 `runCronUpdate()`를 실행시켜서, SOOP 전체 라이브 목록을 훑어
+   로스터와 대조한 결과를 KV에 저장한다
+4. `generate_pages.py`의 `LIVE_STATUS_PROXY_URL` 상수가 그 워커 주소를
+   가리켜야 한다
+
+동작 원리: 방문자의 브라우저가 각자 SOOP에 개별 조회하는 대신(로스터 규모만큼
+요청이 방문자 수에 비례해 계속 늘어나는 구조라 위험했음), 워커 하나가 대신
+SOOP을 미리 훑어 KV에 캐시해두고 방문자는 그 캐시만 읽어간다. `fetch_live_status.py` /
+`update-live-status.yml`(GitHub Actions로 이 작업을 대신 하려던 예전 시도)은
+이제 이 방식으로 완전히 대체되어 실제로는 안 쓰인다 - 참고용으로만 저장소에
+남아있다.
 
 ## 참고
 
