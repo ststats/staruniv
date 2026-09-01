@@ -97,10 +97,10 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .profile-live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #1a1d29; }
 .profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
 
-/* Grid 구조에서 minmax(0, 1fr)로 요소 팽창을 완벽 차단. 자식들은 무조건 폭 100% 안에서 정렬됨 */
-.profile-live-info { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(3, 1fr); align-items: center; min-width: 0; flex: 1; padding: 2px 0; }
-.profile-live-title { font-size: 13px; font-weight: 700; color: #1a1d29; width: 100%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.profile-live-viewer, .profile-live-elapsed { font-size: 12px; font-weight: 600; color: #6b6f79; width: 100%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 브라우저 text-overflow 우측 여백 버그를 원천 차단하는 -webkit-line-clamp 방식 적용 */
+.profile-live-info { display: flex; flex-direction: column; justify-content: space-evenly; min-width: 0; flex: 1; padding: 2px 0; }
+.profile-live-title { width: 100%; text-align: right; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; font-size: 13px; font-weight: 700; color: #1a1d29; }
+.profile-live-viewer, .profile-live-elapsed { width: 100%; text-align: right; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; font-size: 12px; font-weight: 600; color: #6b6f79; }
 
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
 .profile-row-label { color: #6b6f79; font-weight: 600; }
@@ -561,8 +561,9 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
               const makeRows = (list, padLen) => {
                   let rHtml = list.map(m => {
                       let cClass = [];
-                      // ★ 수정됨: 수장/전력외는 값이 0이어도 무조건 붉은색(excluded) 처리
                       if (def.excludeRoles && ['수장', '전력외'].includes(m.role)) {
+                          cClass.push('excluded');
+                      } else if (!m._counted && m._val !== 0) {
                           cClass.push('excluded');
                       }
                       
