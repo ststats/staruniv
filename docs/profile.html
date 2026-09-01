@@ -91,6 +91,8 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .stat-card.total-avg .stat-value { color: #26215c; }
 
 .profile-photo-img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #f2f3f5; flex-shrink: 0; }
+#profile-live-embed { padding: 0 16px 12px; }
+#profile-live-embed iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; }
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
 .profile-row-label { color: #6b6f79; font-weight: 600; }
 .profile-row-value { font-weight: 700; color: #1a1d29; }
@@ -150,6 +152,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
         <span class="team-name" id="profile-nickname"></span>
       </div>
     </div>
+    <div id="profile-live-embed" style="display:none;"></div>
     <div class="profile-info">
       <div class="profile-row"><span class="profile-row-label">성별</span><span class="profile-row-value" id="profile-gender"></span></div>
       <div class="profile-row"><span class="profile-row-label">생년월일</span><span class="profile-row-value" id="profile-birthdate"></span></div>
@@ -596,7 +599,8 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
           return;
       }
 
-      const sInfo = STATIC_INFO[tid] || {gender:'m', birthdate:'-'};
+      document.getElementById('profile-topbar').style.background = TEAM_COLORS[member.team] || '#4a5ce0';
+      document.getElementById('profile-nickname').textContent = member.nickname || '';
       document.getElementById('profile-card').style.display = '';
 
       const photoImg = document.getElementById('profile-photo');
@@ -604,8 +608,24 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       photoImg.onload = function() { this.style.visibility = ''; };
       photoImg.src = soopPhotoUrl(tid);
 
-      document.getElementById('profile-topbar').style.background = TEAM_COLORS[member.team] || '#4a5ce0';
-      document.getElementById('profile-nickname').textContent = member.nickname || '';
+      // 방송 중이면 그 사람 프로필에 실제 방송 화면을 띄운다. play.sooplive.co.kr/{아이디}로
+      // 들어가면 방송번호(broad_no) 없이도 그 사람의 "지금 하고 있는 방송"이 자동으로 잡혀서
+      // iframe으로 재생된다(실제 브라우저에서 확인함). checkIsLive는 위쪽 라이브 점 표시
+      // 기능이랑 똑같은 함수를 그대로 재사용한다 - 같은 API/캐시를 공유.
+      const liveEmbedEl = document.getElementById('profile-live-embed');
+      if (tid) {
+          checkIsLive(tid).then(isLive => {
+              if (isLive) {
+                  liveEmbedEl.innerHTML = `<iframe src="https://play.sooplive.co.kr/${tid}" allowfullscreen></iframe>`;
+                  liveEmbedEl.style.display = '';
+              } else {
+                  liveEmbedEl.innerHTML = '';
+                  liveEmbedEl.style.display = 'none';
+              }
+          });
+      }
+
+      const sInfo = STATIC_INFO[tid] || {gender:'m', birthdate:'-'};
       document.getElementById('profile-gender').textContent = sInfo.gender === 'f' ? '여' : '남';
       document.getElementById('profile-birthdate').textContent = sInfo.birthdate || '-';
       document.getElementById('profile-team').textContent = member.team || '-';
