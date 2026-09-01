@@ -312,7 +312,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
   // 제약 없음) 우리가 요청한 아이디들만 걸러 돌려준다. 브라우저가 SOOP한테
   // 250번 직접 요청하던 것을, "우리 워커한테 1번"으로 줄이면서도 매 요청마다
   // 그 순간 기준으로 새로 계산하니 지연 없이 실시간이다.
-  const LIVE_STATUS_PROXY_URL = "https://lingering-moon-4997.252nds.workers.dev/";
+  const LIVE_STATUS_PROXY_URL = "https://staruniv.252nds.workers.dev/";
 
   async function refreshLiveDots() {
       const dotEls = Array.from(document.querySelectorAll('.live-dot[data-live-id]'));
