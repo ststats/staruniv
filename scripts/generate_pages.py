@@ -149,29 +149,23 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
 
 /* 
-  방송 제목/시청자수/방송시간 한 줄 말줄임(ellipsis) + 오른쪽 정렬
-  1) -webkit-box + -webkit-line-clamp를 썼었는데, -webkit-box는 사실 레거시
-     flexbox라서 text-align이 아예 안 먹힌다(가로 정렬을 하려면
-     -webkit-box-align 같은 별도 속성이 필요하지 text-align으론 안 됨).
-  2) 그래서 표준 overflow:hidden + text-overflow:ellipsis + white-space:nowrap
-     조합으로 바꿨는데, text-align:right랑 text-overflow:ellipsis를 같이 쓰면
-     텍스트가 잘려서 "..."이 붙을 때 오른쪽 끝에 픽셀 단위로 딱 안 붙고 살짝
-     밀리는 브라우저(특히 Webkit) 버그가 있다.
-  3) 그 버그의 표준 우회법이 direction:rtl 트릭이다 - 컨테이너를 RTL로 두면
-     잘림/정렬 계산 기준이 바뀌면서 오른쪽 끝에 정확히 붙는다. 이때
-     text-align은 반드시 논리적 값인 start를 써야 한다("left"는 방향과
-     무관하게 항상 물리적 왼쪽을 의미해서 direction:rtl을 줘도 그대로 왼쪽에
-     붙어버린다 - 실제로 겪은 버그. RTL에서 start는 오른쪽으로 해석된다).
-     대신 원본 텍스트가 한글/영문 섞여도 글자 순서가 이상하게 재배열되면
-     안 되므로, unicode-bidi: plaintext를 같이 줘서 실제 표시 순서는 텍스트
-     내용 자체(유니코드 양방향 알고리즘)로 판단하게 한다 - 컨테이너의 강제
-     RTL 방향은 잘림 계산에만 영향을 주고, 글자 순서 자체는 안 바뀐다.
-  - padding-right -> 브라우저가 "..."을 그릴 픽셀 공간 확보(짜투리 잘림 방지)
-  - line-height: 1.3 -> 세로로 위아래가 짤려서 마침표처럼 보이는 현상 방지
+  방송 제목/시청자수/방송시간 오른쪽 정렬 + 잘림 처리
+  CSS text-align:right + text-overflow:ellipsis 조합은, 텍스트가 잘려서
+  "..."이 붙을 때 그 "..."이 컨테이너 오른쪽 끝에 정확히 안 붙고 살짝 밀려
+  보이는 문제가 있다(직접 확인함). CSS만으로 고치는 방법(direction:rtl 트릭
+  등)을 여러 번 시도했지만 이 환경에서 실제 브라우저 검증 없이는 계속
+  틀렸고, 고정 글자 수로 미리 자르는 방법도 시도했지만 컨테이너 폭이
+  화면마다/창 크기마다 유동적이라 정확히 안 맞았다. 그래서 최종적으로는
+  fitTextToWidth()(아래 JS)가 el.scrollWidth/clientWidth로 실제 렌더링된
+  폭을 직접 재서 넘치는 만큼 한 글자씩 줄이는 방식으로 넣는다 - 그러니 여기
+  CSS는 잘림 계산을 브라우저의 text-overflow에 맡기지 않고, white-space:nowrap
+  + overflow:hidden만 있으면 된다(폭 측정을 위해 줄바꿈은 막아야 하고,
+  overflow:hidden은 혹시 계산이 살짝 어긋났을 때 넘치는 부분이 안 보이게
+  하는 안전장치).
 */
 .profile-live-info { display: flex; flex-direction: column; justify-content: space-evenly; min-width: 0; flex: 1; padding: 2px 0 2px 8px; }
-.profile-live-title { width: 100%; direction: rtl; unicode-bidi: plaintext; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 4px; font-size: 13px; font-weight: 700; color: #1a1d29; line-height: 1.3; }
-.profile-live-viewer, .profile-live-elapsed { width: 100%; direction: rtl; unicode-bidi: plaintext; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 2px; font-size: 12px; font-weight: 600; color: #6b6f79; line-height: 1.3; }
+.profile-live-title { width: 100%; text-align: right; white-space: nowrap; overflow: hidden; padding-right: 4px; font-size: 13px; font-weight: 700; color: #1a1d29; line-height: 1.3; }
+.profile-live-viewer, .profile-live-elapsed { width: 100%; text-align: right; white-space: nowrap; overflow: hidden; padding-right: 2px; font-size: 12px; font-weight: 600; color: #6b6f79; line-height: 1.3; }
 
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
 .profile-row-label { color: #6b6f79; font-weight: 600; }
@@ -414,6 +408,41 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       return String(s == null ? '' : s)
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }}
+
+  // CSS의 text-align:right + text-overflow:ellipsis 조합은 텍스트가 잘려서
+  // "..."이 붙을 때 그 "..."이 컨테이너 오른쪽 끝에 딱 안 붙고 살짝 밀려
+  // 보이는 문제가 있다(직접 확인함). 글자 수를 고정해서 미리 자르는 방법도
+  // 시도했었는데, 화면/컨테이너 폭이 유동적이라(모바일/PC, 창 크기 등) 고정
+  // 글자 수로는 정확히 안 맞는다는 지적을 받았다 - 맞는 말이라, 아예
+  // "실제로 렌더링된 폭을 재서, 넘치면 한 글자씩 줄이는" 방식으로 바꿨다.
+  // el.scrollWidth(내용이 실제로 필요로 하는 폭)가 el.clientWidth(실제 보이는
+  // 칸의 폭)보다 크면 한 글자씩 지우면서 다시 재는 걸 반복한다 - 화면 크기가
+  // 뭐든 항상 실제 가용 공간에 맞춰 잘리고, 창 크기가 바뀌면(resize 이벤트)
+  // 다시 계산한다. textContent로 직접 넣으므로 HTML 이스케이프도 자동으로
+  // 처리된다(innerHTML이 아니라서 별도 escapeHtml 불필요).
+  function fitTextToWidth(el, fullText) {{
+      fullText = fullText || '';
+      el.dataset.fullText = fullText;
+      el.textContent = fullText;
+      if (!fullText || el.scrollWidth <= el.clientWidth) return;
+      let text = fullText;
+      while (text.length > 1 && el.scrollWidth > el.clientWidth) {{
+          text = text.slice(0, -1);
+          el.textContent = text + '…';
+      }}
+  }}
+
+  function refitLiveTexts() {{
+      document.querySelectorAll('#profile-live-embed [data-full-text]').forEach(el => {{
+          fitTextToWidth(el, el.dataset.fullText);
+      }});
+  }}
+
+  let liveFitResizeTimer = null;
+  window.addEventListener('resize', () => {{
+      clearTimeout(liveFitResizeTimer);
+      liveFitResizeTimer = setTimeout(refitLiveTexts, 150);
+  }});
 
   async function refreshLiveDots() {{
       const dotEls = Array.from(document.querySelectorAll('.live-dot[data-live-id]'));
@@ -803,12 +832,19 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
                         <span class="profile-live-badge">LIVE</span>
                       </a>
                       <div class="profile-live-info">
-                        <span class="profile-live-title">${{escapeHtml(broad.broad_title)}}</span>
-                        <span class="profile-live-viewer">${{escapeHtml(viewerText)}}</span>
-                        <span class="profile-live-elapsed">${{escapeHtml(elapsedText)}}</span>
+                        <span class="profile-live-title"></span>
+                        <span class="profile-live-viewer"></span>
+                        <span class="profile-live-elapsed"></span>
                       </div>
                     </div>`;
                   liveEmbedEl.style.display = '';
+                  // innerHTML로 빈 칸을 만든 다음 textContent로 채운다 - fitTextToWidth가
+                  // el.scrollWidth/clientWidth를 재려면 먼저 실제 DOM에 있고 보이는
+                  // 상태여야 하므로(위에서 display=''를 먼저 함), HTML 문자열 안에서
+                  // 바로 잘라 넣지 않고 이 순서로 처리한다.
+                  fitTextToWidth(liveEmbedEl.querySelector('.profile-live-title'), broad.broad_title);
+                  fitTextToWidth(liveEmbedEl.querySelector('.profile-live-viewer'), viewerText);
+                  fitTextToWidth(liveEmbedEl.querySelector('.profile-live-elapsed'), elapsedText);
               }} else {{
                   liveEmbedEl.innerHTML = '';
                   liveEmbedEl.style.display = 'none';
