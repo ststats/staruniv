@@ -245,7 +245,6 @@ MOBILE_CSS = """
 def clean_value(v): return None if str(v).strip() in PLACEHOLDER_VALUES else v
 
 def generate_html(title, target_team, is_profile, logo_prefix, static_info, team_colors, team_from_url=False):
-    font_url = f"{logo_prefix}fonts/PretendardVariable.woff2"
     static_json = json.dumps(static_info, ensure_ascii=False)
     colors_json = json.dumps(team_colors, ensure_ascii=False)
     if team_from_url:
@@ -968,7 +967,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 
     include_mobile_css = not is_profile and not target_team
     mobile_css_block = MOBILE_CSS if include_mobile_css else ""
-    return f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><link rel="icon" type="image/webp" href="{logo_prefix}logos/파비콘.webp"><link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" /><style>{PAGE_CSS} {mobile_css_block}</style></head><body>{top_bar_html}{body_html}{legend_html}{js_code}</body></html>"""
+    return f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><link rel="icon" type="image/webp" href="{logo_prefix}logos/파비콘.webp"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" /><style>{PAGE_CSS} {mobile_css_block}</style></head><body>{top_bar_html}{body_html}{legend_html}{js_code}</body></html>"""
 
 def _write_if_changed(dst_path: Path, content: str) -> None:
     if dst_path.exists():
