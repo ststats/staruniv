@@ -66,17 +66,13 @@ ststats/
 │   │                              (data/latest.json + data/archive/*.json을 그대로 복사한 것,
 │   │                               매 실행마다 통째로 새로 채움 - 원본이 지워지면 여기도 같이 지워짐)
 │   ├── fonts/
-│   │   └── PretendardVariable.woff2  ← self-host 폰트 (최초 1회 자동 다운로드)
+│   │   └── PretendardVariable.woff2  ← self-host 폰트 (매일 실제 쓰는 문자만 서브셋해서 생성)
 │   └── logos/
 │       └── {팀이름}.webp    ← 팀 로고 (있으면 자동 표시, 없으면 텍스트만)
-├── tests/
-│   ├── test_*.py                  ← 단위 테스트 (개별 순수 함수)
-│   └── test_*_integration.py      ← 통합 테스트 (main() 전체 흐름을 임시 파일로 재현)
-│                                     둘 다 아래 "테스트" 참고
 └── .github/workflows/
-    ├── update-stats.yml       ← 데이터 갱신 전체(멤버 동기화 + 풍고+엘로보드 + 페이지 생성) -
-    │                             수동 버튼 또는 외부 스케줄러가 workflow_dispatch로 트리거
-    └── tests.yml               ← push/PR마다 pytest 자동 실행
+    └── update-stats.yml       ← 데이터 갱신 전체(멤버 동기화 + 풍고+엘로보드 + 페이지 생성 +
+                                  폰트 서브셋) - 수동 버튼 또는 외부 스케줄러가
+                                  workflow_dispatch로 트리거
 ```
 
 ## 데이터 소스 두 곳
@@ -299,25 +295,6 @@ API가 최신 → 과거 순으로 정렬해서 응답한다고 가정합니다.
   다 포함된 큰 HTML 3개(각 45~50KB급) 전체가 매일 다시 커밋돼서, 실제로 바뀐 것도
   없이 레포 용량만 계속 불어납니다. `_write_if_changed`가 이제 이 세 HTML 파일에도
   적용돼있어서, 로스터/디자인이 실제로 안 바뀐 날은 커밋 자체가 안 생깁니다.
-
-## 테스트
-
-`tests/`에 두 종류의 pytest 테스트가 있습니다:
-- **단위 테스트** (`test_common.py`, `test_convert_members_xlsx.py`, `test_sync_members.py`,
-  `test_update_data.py`) — 까다로운 순수 로직(날짜/문자열 정규화, 티어 라벨 변환,
-  xlsx↔json 3-way 병합 충돌 판단, 소급 정정 스킵 로직 등) 하나하나를 검증합니다.
-- **통합 테스트** (`test_update_data_integration.py`, `test_convert_members_xlsx_integration.py`)
-  — 임시 디렉터리에 실제 파일을 만들어두고 `main()` 전체를 그대로 돌려서, 여러
-  함수가 실제로 올바르게 엮여 도는지 확인합니다(예: "admin.html에서 json을 고치면
-  다음 실행에서 xlsx에도 반영되는지"처럼 여러 컴포넌트가 맞물려야 검증되는 시나리오).
-
-push/PR마다 `.github/workflows/tests.yml`이 자동으로 돌립니다. 로컬에서 직접
-돌리려면:
-
-```
-pip install -r requirements.txt pytest
-pytest
-```
 
 ## 수동으로 즉시 갱신하고 싶을 때
 
