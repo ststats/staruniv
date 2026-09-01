@@ -344,10 +344,9 @@ pytest
 
 동작 원리: 방문자의 브라우저가 각자 SOOP에 개별 조회하는 대신(로스터 규모만큼
 요청이 방문자 수에 비례해 계속 늘어나는 구조라 위험했음), 워커 하나가 대신
-SOOP을 미리 훑어 KV에 캐시해두고 방문자는 그 캐시만 읽어간다. `fetch_live_status.py` /
-`update-live-status.yml`(GitHub Actions로 이 작업을 대신 하려던 예전 시도)은
-이제 이 방식으로 완전히 대체되어 실제로는 안 쓰인다 - 참고용으로만 저장소에
-남아있다.
+SOOP을 미리 훑어 KV에 캐시해두고 방문자는 그 캐시만 읽어간다. 이 방식을 채택하기
+전에 GitHub Actions로 같은 작업(`fetch_live_status.py` / `update-live-status.yml`)을
+대신 시도했었는데, 완전히 대체되어 저장소에서 삭제했다(git 히스토리에서는 조회 가능).
 
 ## 참고
 
