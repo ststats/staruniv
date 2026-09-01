@@ -147,9 +147,9 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 .profile-live-thumb-link { display: block; position: relative; width: 176px; flex-shrink: 0; border-radius: 8px; overflow: hidden; }
 .profile-live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #1a1d29; }
 .profile-live-badge { position: absolute; top: 4px; left: 4px; background: #e53935; color: #fff; font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px; }
-.profile-live-info { display: flex; flex-direction: column; justify-content: space-evenly; align-items: flex-end; min-width: 0; flex: 1; padding: 2px 0; }
-.profile-live-title { display: block; max-width: 100%; font-size: 13px; font-weight: 700; color: #1a1d29; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-.profile-live-viewer, .profile-live-elapsed { font-size: 12px; font-weight: 600; color: #6b6f79; text-align: right; }
+.profile-live-info { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; min-width: 0; flex: 1; padding: 4px 0; }
+.profile-live-title { max-width: 100%; font-size: 13px; font-weight: 700; color: #1a1d29; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-live-viewer, .profile-live-elapsed { max-width: 100%; font-size: 12px; font-weight: 600; color: #6b6f79; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #f2f3f5; }
 .profile-row-label { color: #6b6f79; font-weight: 600; }
 .profile-row-value { font-weight: 700; color: #1a1d29; }
@@ -231,9 +231,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
     font_url = f"{logo_prefix}fonts/PretendardVariable.woff2"
     static_json = json.dumps(static_info, ensure_ascii=False)
     colors_json = json.dumps(team_colors, ensure_ascii=False)
-    # AVAILABLE_DATES는 이 함수가 반환하는 큰 HTML 문자열 안에 직접 넣지 않는다
-    # (아래 dates.js 관련 설명 참고) - 대신 main()이 별도의 작은 data/dates.js
-    # 파일로 저장하고, 이 HTML은 그 파일을 <script src>로 동기 로드해서 쓴다.
     if team_from_url:
         target_team_js = "new URLSearchParams(window.location.search).get('team') || \"\""
     else:
@@ -351,14 +348,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 (function () {{
   const STATIC_INFO = {static_json};
   const TEAM_COLORS = {colors_json};
-  // AVAILABLE_DATES는 여기서 선언하지 않는다 - 이 <script> 태그보다 앞서 동기
-  // 로드되는 <script src="...data/dates.js">가 window.AVAILABLE_DATES를 이미
-  // 채워놨고, 이 IIFE 스코프 체인이 그 전역 변수를 그대로 찾아 쓴다(즉 아래
-  // 코드에서 쓰는 AVAILABLE_DATES는 사실 window.AVAILABLE_DATES다). 매일
-  // 늘어나는 날짜 목록을 이 큰 HTML 안에 직접 박아넣으면 파일 전체가 매일
-  // git에 다시 커밋되기 때문에, 작은 별도 파일로 뺐다 - 로딩 타이밍은 동기
-  // <script src>라 전혀 안 바뀐다(fetch였다면 비동기라 아래 코드 전체를 다시
-  // 짜야 했을 것).
   const TARGET_TEAM = {target_team_js};
   const LOGO_PREFIX = "{logo_prefix}";
   const IS_PROFILE = {'true' if is_profile else 'false'};
@@ -374,21 +363,8 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       return `https://profile.img.sooplive.com/LOGO/${{(id || '').substring(0, 2)}}/${{id}}/${{id}}.jpg`;
   }}
 
-  // SOOP(구 아프리카TV)의 비공식 공개 엔드포인트로 방송중 여부를 직접 브라우저에서
-  // 조회한다 - 공식 오픈 API는 파트너십 심사가 필요해서 이 프로젝트 규모에선 못
-  // 쓴다. bjapi.afreecatv.com/api/{{id}}/station이 방송중이면 "broad" 필드가
-  // 객체(broad_no/broad_title/current_sum_viewer 등)로, 아니면 null로 온다
-  // (스트리밍 도구들이 실제로 이렇게 씀, 실제 응답으로 직접 확인함). 방송
-  // 시작시각은 broad 안이 아니라 최상위 "station.broad_start"에 따로 있다.
-  // 실패(CORS 차단/네트워크 오류 등)는 그냥 "라이브 아님(null)"으로 조용히
-  // 넘어간다 - 페이지 나머지가 깨지면 안 되니까.
-  //
-  // 캐시에는 boolean이 아니라 {{broad, broadStart}} 객체(방송 중 아니면 null)를
-  // 저장한다 - 점 표시(is-live 여부)는 그냥 truthy 체크만 하면 되지만, 프로필
-  // 페이지는 여기서 방송 제목/시청자 수/방송번호(썸네일용)/시작시각까지 그대로
-  // 꺼내 쓴다.
   const liveStatusCache = {{}};
-  const LIVE_CHECK_CONCURRENCY = 12; // 한 번에 너무 많은 요청을 동시에 쏘지 않도록 제한
+  const LIVE_CHECK_CONCURRENCY = 12;
 
   async function checkIsLive(soopId) {{
       if (soopId in liveStatusCache) return liveStatusCache[soopId];
@@ -420,8 +396,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       const dotEls = Array.from(document.querySelectorAll('.live-dot[data-live-id]'));
       if (dotEls.length === 0) return;
 
-      // 같은 id가 여러 곳(FA바 + 팀카드 등)에 동시에 나올 수 있으니 id 기준으로만
-      // 한 번씩 조회하고, 결과를 그 id를 쓰는 모든 점에 반영한다.
       const idToEls = {{}};
       dotEls.forEach(el => {{
           const id = el.dataset.liveId;
@@ -442,10 +416,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
   }}
 
   function withDerivedFields(data) {{
-      // sponsor_games는 저장 단계에서 뺐다(sponsor_wins + sponsor_losses랑 100% 같은 값이라
-      // 중복 저장할 이유가 없음) - 대신 각 날짜 데이터를 불러올 때마다 한 번씩 계산해서
-      // 채워 넣는다. metricDefs.sponsor.field가 'sponsor_games'를 범용적으로 m[def.field]
-      // 식으로 읽는 구조라, 여기서 한 번만 채워두면 나머지 코드는 그대로 써도 된다.
       (data.members || []).forEach(m => {{ m.sponsor_games = (m.sponsor_wins || 0) + (m.sponsor_losses || 0); }});
       return data;
   }}
@@ -508,9 +478,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       }});
 
       if (IS_PROFILE && document.referrer) {{
-          // 프로필 페이지의 뒤로가기 목적지는 어디서 들어왔는지에 따라 갈린다:
-          // 팀페이지에서 왔으면 그 팀페이지로, 그 외(전체페이지 등)엔 늘 전체페이지로.
-          // 링크 자체는 (숨기지 않고) 항상 보인다 - 목적지만 갈릴 뿐이다.
           try {{
               const ref = new URL(document.referrer);
               if (ref.origin === window.location.origin && ref.pathname.endsWith('team.html')) {{
@@ -784,13 +751,6 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
       photoImg.onload = function() {{ this.style.visibility = ''; }};
       photoImg.src = soopPhotoUrl(tid);
 
-      // 방송 중이면 그 사람 프로필에 실제 재생 화면 대신 정지 썸네일(왼쪽) +
-      // 방송정보(오른쪽: 제목/시청자수/경과시간/시작시각)를 가로로 배치해서 컴팩트하게
-      // 보여준다. 썸네일 URL은 liveimg.sooplive.co.kr/m/{{broad_no}} 패턴이고, 클릭하면
-      // 실제 방송(play.sooplive.co.kr/{{아이디}})으로 새 탭에서 이동한다. 방송 시작시각은
-      // broad 안이 아니라 station.broad_start에 있어서 checkIsLive가 따로 같이 돌려준다.
-      // checkIsLive는 위쪽 라이브 점 표시 기능이랑 똑같은 함수를 그대로 재사용한다 -
-      // 같은 API/캐시를 공유.
       const liveEmbedEl = document.getElementById('profile-live-embed');
       if (tid) {{
           checkIsLive(tid).then(result => {{
@@ -941,22 +901,16 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
     return f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><link rel="icon" type="image/webp" href="{logo_prefix}logos/파비콘.webp"><link rel="preload" href="{font_url}" as="font" type="font/woff2" crossorigin><style>@font-face {{ font-family: 'Pretendard Variable'; font-weight: 45 920; font-style: normal; font-display: block; src: url('{font_url}') format('woff2-variations'); }} {PAGE_CSS} {mobile_css_block}</style></head><body>{top_bar_html}{body_html}{legend_html}{js_code}</body></html>"""
 
 def _write_if_changed(dst_path: Path, content: str) -> None:
-    """content가 이미 dst_path에 똑같이 들어있으면 아무것도 안 쓰고 건너뛴다.
-    한 번 확정된 과거 날짜 파일은 거의 다시 안 바뀌므로(소급 정정/월 확정 등
-    드문 경우 제외), 매번 전부 다시 쓰는 것보다 디스크 I/O가 훨씬 줄어든다."""
     if dst_path.exists():
         try:
             if dst_path.read_text(encoding="utf-8") == content:
                 return
         except Exception:
-            pass  # 기존 파일을 못 읽었으면 그냥 새로 씀
+            pass
     with open(dst_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-
 def _copy_if_changed(src_path: Path, dst_path: Path) -> None:
-    """src_path 내용이 dst_path와 이미 동일하면(크기부터 다르면 바로 판단, 크기가
-    같으면 실제 내용까지 비교) 복사를 건너뛴다."""
     if dst_path.exists() and dst_path.stat().st_size == src_path.stat().st_size:
         try:
             if dst_path.read_bytes() == src_path.read_bytes():
@@ -964,7 +918,6 @@ def _copy_if_changed(src_path: Path, dst_path: Path) -> None:
         except Exception:
             pass
     shutil.copy(src_path, dst_path)
-
 
 def main():
     DOCS_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -987,33 +940,17 @@ def main():
     all_dates = sorted(list(set(all_dates)), reverse=True)
     if not all_dates: return
 
-    # docs/data/daily/에는 있는데 이제 원본(data/latest.json + data/archive/*.json)엔
-    # 없는 파일(고아 파일)은 지운다 - 통째로 지우고 새로 만들던 예전 방식이 자동으로
-    # 해주던 정리를, 이제는 명시적으로 해줘야 한다.
     expected_files = {f"{d_str}.json" for d_str in all_dates}
     for existing in DOCS_DATA_DIR.glob("*.json"):
         if existing.name not in expected_files:
             existing.unlink()
 
-    # AVAILABLE_DATES는 매일 늘어나므로 index.html/team.html/profile.html
-    # 본문에는 더 이상 안 박아넣는다(생성부의 generate_html/js_code 참고) -
-    # 이 작은 파일 하나만 매일 바뀌고, 세 HTML은 실제 템플릿/로고색/로스터가
-    # 바뀐 날에만 다시 쓰인다. window.AVAILABLE_DATES로 선언해서, HTML의
-    # <script src="...data/dates.js">가 메인 <script>보다 앞서 동기 로드되면
-    # 곧바로 전역 변수로 쓸 수 있다.
     dates_js_content = "window.AVAILABLE_DATES = " + json.dumps(all_dates) + ";\n"
     _write_if_changed(DOCS_DIR / "data" / "dates.js", dates_js_content)
 
     with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
         members_data = json.load(f).get("members", [])
 
-    # 팀 이름 목록은 과거 아카이브를 전부 뒤지지 않고 members.json(현재 로스터)
-    # 하나만 보고 뽑는다 - 예전엔 all_dates 전체(수백~수천 개로 계속 불어나는
-    # 아카이브 파일)를 매번 읽고 파싱했는데, 사실 팀 이름은 members.json에도
-    # 똑같이 다 있다. 클라이언트 JS(TEAM_COLORS[team] || 기본색)에 이미 폴백이
-    # 있어서, 지금은 없어진 옛날 팀 이름이 여기 안 잡혀도 과거 날짜를 볼 때
-    # 기본색으로만 대체될 뿐 깨지지 않는다 - 그 정도 트레이드오프로 매일 실행
-    # 시간이 아카이브 개수에 비례해서 계속 늘어나는 걸 막는다.
     all_team_names = {
         m.get("team") for m in members_data
         if m.get("team") and m.get("team") not in ("FA", "휴면", "미분류")
@@ -1036,9 +973,7 @@ def main():
         shutil.rmtree(OUTPUT_TEAMS_DIR)
 
     if all_team_names:
-        any_team = sorted(all_team_names)[0]  # set 순회 순서는 프로세스마다 달라지므로
-        # (해시 랜덤화) 매번 같은 팀이 뽑히도록 정렬해서 고른다 - team_from_url=True라
-        # 실제 렌더링엔 어느 팀이 뽑히는지 자체는 영향 없지만, 그래도 재현 가능하게.
+        any_team = sorted(all_team_names)[0]
         team_html = generate_html("팀별 현황", any_team, False, "", static_info, team_colors,
                                    team_from_url=True)
         _write_if_changed(OUTPUT_TEAM_PATH, team_html)
