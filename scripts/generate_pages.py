@@ -1022,6 +1022,14 @@ def main():
     with open(MEMBERS_PATH, "r", encoding="utf-8") as f:
         members_data = json.load(f).get("members", [])
 
+    # 라이브 상태 프록시(Cloudflare Worker)가 몇 분마다 미리 로스터 전체를
+    # 훑어서 캐시를 채워두는 데 쓰는 파일 - 현재 로스터 SOOP 아이디 목록만
+    # 담은 작은 배열이다. live-status-worker.js의 scheduled() 핸들러(Cron
+    # Trigger)가 이 파일을 주기적으로 fetch해서 어떤 사람들을 미리 조회해둘지
+    # 알아낸다.
+    roster_ids = sorted({m.get("id") for m in members_data if m.get("id")})
+    _write_if_changed(DOCS_DIR / "data" / "roster_ids.json", json.dumps(roster_ids, ensure_ascii=False))
+
     all_team_names = {
         m.get("team") for m in members_data
         if m.get("team") and m.get("team") not in ("FA", "휴면", "미분류")
