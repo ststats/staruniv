@@ -35,27 +35,23 @@ jobs:
       # members.xlsx가 로스터의 유일한 원본이다(admin.html도 이제 xlsx를 직접
       # 읽고 쓴다 - 더 이상 members.json을 직접 고치는 창구가 없다). 그래서
       # xlsx -> json은 예전처럼 "어느 쪽이 바뀌었나 판단하는 3-way 병합"이 아니라
-      # 그냥 "지금 xlsx 내용 그대로 json을 다시 씀" 한 방향뿐이다 - 이 워크플로우
-      # 안에서 xlsx가 바뀔 때마다(sync_members.py, 아래 Update data 안의
-      # fetch_eloboard_data.py) 그 직후에 한 번씩 다시 돌려서, json이 항상 그
-      # 시점의 xlsx를 그대로 반영하게 한다. xlsx 자체가 없으면 조용히 건너뛰므로
-      # continue-on-error도 딱히 필요 없지만, 혹시 모를 파싱 오류가 나머지
-      # 파이프라인을 막지 않도록 안전하게 감싸둔다.
-      - name: Sync members.xlsx -> members.json (1차)
-        continue-on-error: true
-        run: python scripts/convert_members_xlsx.py
-
-      # members.xlsx를 EloBoard 티어 목록 기준으로 동기화한다(admin.html이 그
-      # 사이 고친 내용을 먼저 반영해둔 상태 위에서 진행) - 이 스텝이 Update
-      # data보다 앞에 있어야, 오늘 새로 추가된 멤버의 별풍선/스폰전적도 같은 날
-      # 바로 수집된다. 실패해도(예: 엘로보드 API 일시 장애) 워크플로우 전체를
-      # 막지 않도록 continue-on-error로 둔다 - xlsx 갱신이 밀리는 것보다, 그날의
-      # 별풍선/스폰전적 수집(기존 멤버 대상)이 아예 안 도는 게 더 큰 손실이라서다.
+      # 그냥 "지금 xlsx 내용 그대로 json을 다시 씀" 한 방향뿐이다.
+      #
+      # convert_members_xlsx.py는 이 워크플로우 안에서 xlsx가 실제로 바뀌는
+      # 지점(sync_members.py, 아래 Update data 안의 fetch_eloboard_data.py)
+      # 직후에만 한 번씩 돌리면 충분하다 - sync_members.py 자신이 매번
+      # xlsx를 직접 새로 읽으므로(load_xlsx_members()), admin.html이 그
+      # 사이 커밋한 수정사항도 별도로 미리 한 번 더 convert할 필요 없이
+      # 자동으로 반영된다. 그래서 여기선 sync_members.py를 먼저 돌리고,
+      # convert는 그 직후 딱 한 번만(2번째 pull 이후에도 필요한
+      # Update data 앞에서 한 번 더) 돌린다 - 예전엔 sync_members.py 앞에도
+      # 한 번 더 돌렸었는데(admin 수정 즉시 반영용), 실제로는 불필요한
+      # 중복이었다.
       - name: Sync members.xlsx tiers (EloBoard API)
         continue-on-error: true
         run: python scripts/sync_members.py
 
-      - name: Sync members.xlsx -> members.json (2차, tiers 반영)
+      - name: Sync members.xlsx -> members.json (1차, admin 수정 + tiers 반영)
         continue-on-error: true
         run: python scripts/convert_members_xlsx.py
 
@@ -82,7 +78,7 @@ jobs:
       # Update data가 xlsx에 "미상" 임시 프로필을 새로 추가했을 수 있으니,
       # generate_pages.py가 최신 로스터로 사이트를 만들 수 있도록 한 번 더
       # xlsx -> json 동기화한다.
-      - name: Sync members.xlsx -> members.json (3차, 신규 미상 반영)
+      - name: Sync members.xlsx -> members.json (2차, 신규 미상 반영)
         continue-on-error: true
         run: python scripts/convert_members_xlsx.py
 
