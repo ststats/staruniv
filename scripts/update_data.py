@@ -25,6 +25,7 @@ fetch_poonggo_data.py와 fetch_eloboard_data.py는 이제 순수하게 "데이�
 
 import sys
 import json
+from datetime import datetime, timedelta
 
 from _common import (
     ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range,
@@ -38,30 +39,31 @@ MEMBERS_PATH = ROOT / "data" / "members.json"
 OUTPUT_PATH = ROOT / "data" / "latest.json"
 ARCHIVE_DIR = ROOT / "data" / "archive"
 APPLIED_CORRECTIONS_PATH = ROOT / "data" / "archive_corrections_applied.json"
+# archive_corrections_applied.json이 무한정 커지지 않도록, 더 이상 안 쓰이는
+# 기록을 이 기간(개월) 지나면 정리한다 - _prune_stale_corrections 참고.
+PRUNE_GRACE_MONTHS = 6
 
 
-def _add_unknown_elo_players(sponsor_list: list) -> None:
+def _collect_unknown_elo_players(sponsor_list: list, existing_elo_ids: set) -> dict:
     """엘로보드에서 수집된 스폰전적(aggregate_period_data()의 반환값)의 elo_id
-    중 members.xlsx에 없는 신규 ID가 있다면, 빈칸 프로필을 자동으로 생성하여
-    xlsx에 추가한다.
+    중 existing_elo_ids에 없는 신규 ID를 찾아, elo_id(문자열)를 키로 하는
+    빈칸 프로필 dict를 반환한다.
 
-    fetch_eloboard_data.py는 "가져오기만" 하는 순수 함수이므로, 그 수집
-    결과를 갖고 뭘 할지(신규 인원을 xlsx에 등록할지)는 오케스트레이터인 이
-    파일이 결정한다. xlsx가 로스터의 유일한 원본이므로(members.json은
-    convert_members_xlsx.py가 xlsx로부터 파생시킴), 여기서 xlsx를 직접
-    건드린다. 자동 생성된 임시 프로필은 id가 "elo_{elo_id}" 형태의 가짜
-    SOOP 아이디라, 나중에 관리자가 admin.html에서 진짜 정보로 채워 넣어야
-    완전해진다."""
-    if not XLSX_PATH.exists():
-        print("[경고] members.xlsx가 없어 신규 인원 자동 등록을 건너뜁니다.", file=sys.stderr)
-        return
+    xlsx를 직접 열고/쓰지 않는 순수 함수다 - 한 번의 워크플로우 실행 안에서
+    이 함수가 여러 번(월 확정용 재조회 + 오늘자 수집, confirm_previous_month_
+    if_needed()와 main() 양쪽) 불릴 수 있는데, 매번 xlsx를 열고 파싱하고
+    저장하면 무거운 파일 I/O가 불필요하게 여러 번 발생한다. 대신 여기서는
+    메모리 상의 existing_elo_ids 집합만 갱신하고(발견한 신규 id를 즉시
+    추가해서, 이 함수를 두 번 이상 연달아 불러도 같은 elo_id가 중복으로
+    안 담긴다), 실제 xlsx 쓰기는 호출부(main())가 모든 호출이 끝난 뒤 딱
+    한 번만 처리한다.
 
-    member_map = load_xlsx_members()
-    existing_elo_ids = {
-        str(fields["elo_id"]) for fields in member_map.values() if fields.get("elo_id") is not None
-    }
-
-    appends = []
+    리스트가 아니라 elo_id 키의 dict로 반환하는 이유: existing_elo_ids로
+    이미 중복을 막고 있지만, 혹시 모를 예상 밖의 타이밍/API 이슈로 같은
+    elo_id가 여러 경로로 유입되더라도 dict는 같은 키에 다시 쓰면 그냥
+    덮어써질 뿐이라 중복 생성 자체가 구조적으로 불가능하다(리스트였다면
+    append가 반복될 경우 같은 사람이 여러 번 들어갈 수 있었다)."""
+    new_members = {}
     for item in sponsor_list:
         elo_id_str = item.get("id")
         if elo_id_str and elo_id_str not in existing_elo_ids:
@@ -77,13 +79,10 @@ def _add_unknown_elo_players(sponsor_list: list) -> None:
                 "role": "",
                 "info_updated_at": None,
             }
-            appends.append(new_member)
+            new_members[elo_id_str] = new_member
             existing_elo_ids.add(elo_id_str)
-            print(f"[알림] 새로운 임시 프로필 추가됨: {new_member['nickname']}")
-
-    if appends:
-        write_xlsx({}, appends)
-        print(f"[완료] 총 {len(appends)}명의 신규 임시 프로필이 members.xlsx에 추가되었습니다.")
+            print(f"[알림] 새로운 임시 프로필 발견됨: {new_member['nickname']}")
+    return new_members
 
 
 def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
@@ -103,7 +102,32 @@ def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
         atomic_write_json(archive_path, prev_latest)
 
 
-def apply_member_updates_to_archives(members: list):
+def _prune_stale_corrections(applied: dict, updates: dict, today_date_str: str) -> dict:
+    """archive_corrections_applied.json이 무한정 커지는 걸 막기 위한 정리(gc).
+
+    applied에 있는데 updates(현재 로스터에서 여전히 info_updated_at이 설정된
+    사람들)에는 없는 항목만 정리 대상 후보로 삼는다 - 아직 updates에 남아있는
+    항목을 지우면, 다음 실행에서 캐시 미스로 똑같은 아카이브를 또 훑게 되어
+    캐시를 두는 의미 자체가 없어진다(속도 최적화가 무력화됨). 후보 중에서도
+    update_date가 PRUNE_GRACE_MONTHS 이상 지난 것만 실제로 지운다 - 방금 막
+    로스터에서 빠진 사람의 정보가 어떤 이유로든 다시 필요해지는 극단적인
+    경우에 대비한 안전판이다."""
+    cutoff = (
+        datetime.strptime(today_date_str, "%Y-%m-%d") - timedelta(days=PRUNE_GRACE_MONTHS * 30)
+    ).strftime("%Y-%m-%d")
+    pruned = {}
+    removed = 0
+    for mid, upd in applied.items():
+        if mid in updates or upd.get("update_date", "") >= cutoff:
+            pruned[mid] = upd
+        else:
+            removed += 1
+    if removed:
+        print(f"[정리] archive_corrections_applied.json에서 오래된 기록 {removed}건 정리됨")
+    return pruned
+
+
+def apply_member_updates_to_archives(members: list, today_date_str: str):
     """members.json에 info_updated_at이 있는 멤버의 정보를 그 날짜 이후의 모든 아카이브에 소급 적용합니다.
 
     한 번이라도 소급 정정 대상이 생기면 그 이후로는 매 실행마다 그 날짜 이후의
@@ -162,6 +186,7 @@ def apply_member_updates_to_archives(members: list):
             print(f"[소급적용] {file_date}.json 파일에 멤버 정보 업데이트 반영됨")
 
     applied.update(pending)
+    applied = _prune_stale_corrections(applied, updates, today_date_str)
     atomic_write_json(APPLIED_CORRECTIONS_PATH, applied)
 
 
@@ -172,10 +197,14 @@ def _index_by_elo_id(sponsor_list: list) -> dict:
     return {item["id"]: item for item in sponsor_list if item.get("id")}
 
 
-def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month, all_ids, now):
+def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month, all_ids, now, existing_elo_ids, new_members_acc):
     """달이 바뀐 첫 실행에서, 지난달 마지막 날 아카이브 파일 하나에 별풍선(풍고
     재조회)과 스폰전적(엘로보드 재조회) 둘 다 확정 적용한다. archive_previous_day_
-    if_needed()가 먼저 호출된 뒤라 이 아카이브 파일은 항상 이미 존재한다."""
+    if_needed()가 먼저 호출된 뒤라 이 아카이브 파일은 항상 이미 존재한다.
+
+    existing_elo_ids/new_members_acc는 main()이 xlsx를 딱 한 번만 읽고
+    쓰기 위해 넘겨주는 공유 상태다 - 자세한 이유는 _collect_unknown_elo_players
+    참고."""
     if not prev_year or not prev_month or (prev_year, prev_month) == (new_year, new_month):
         return
 
@@ -219,7 +248,7 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
     if not sponsor_list:
         print(f"[경고] {prev_year}년 {prev_month}월 스폰전적 재조회 결과가 비어있음 - 기존 값 유지", file=sys.stderr)
     else:
-        _add_unknown_elo_players(sponsor_list)
+        new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids))
         # sponsor_list의 "id"는 elo_id(숫자 문자열)다. archive의 각 멤버는 latest.json이
         # 저장될 때부터 자기 elo_id를 이미 갖고 있으므로(out_members 구성부 참고), 별도
         # 매핑 테이블 없이 archive 멤버의 elo_id로 바로 조회한다.
@@ -308,15 +337,30 @@ def main():
                         "sponsor_losses": om.get("sponsor_losses", 0),
                     }
 
+    # xlsx는 이번 실행에서 딱 한 번만 읽고(existing_elo_ids), 신규 인원이
+    # 있으면 이 실행이 끝날 때 딱 한 번만 쓴다(new_members_acc) -
+    # confirm_previous_month_if_needed()와 아래 오늘자 수집 둘 다 신규
+    # elo_id를 발견할 수 있는데, 그때마다 xlsx를 열고/파싱하고/저장하면
+    # 무거운 파일 I/O가 불필요하게 여러 번 발생한다.
+    existing_elo_ids = set()
+    if XLSX_PATH.exists():
+        existing_elo_ids = {
+            str(fields["elo_id"]) for fields in load_xlsx_members().values()
+            if fields.get("elo_id") is not None
+        }
+    else:
+        print("[경고] members.xlsx가 없어 신규 인원 자동 등록을 건너뜁니다.", file=sys.stderr)
+    new_members_acc = {}
+
     # 1. 날짜 전환 아카이빙 - 아직 오늘자 데이터를 하나도 안 가져온 상태라, 어제
     #    마지막 상태 그대로 안전하게 확정된다.
     archive_previous_day_if_needed(prev_latest, today_date_str)
 
     # 2. 월 전환 확정 - 별풍선/스폰전적 둘 다, 방금 1번에서 이미 만들어졌을 아카이브에.
-    confirm_previous_month_if_needed(prev_year, prev_month, year, month, all_ids, now)
+    confirm_previous_month_if_needed(prev_year, prev_month, year, month, all_ids, now, existing_elo_ids, new_members_acc)
 
     # 3. 소급 정정 적용
-    apply_member_updates_to_archives(members)
+    apply_member_updates_to_archives(members, today_date_str)
 
     # 4. 오늘자 데이터 새로 수집 (풍고/엘로보드 순서는 이제 상관없다 - 둘 다 latest.json을
     #    직접 안 건드리는 순수 fetch라서)
@@ -335,7 +379,7 @@ def main():
         print(f"[경고] 엘로보드 수집 중 오류: {e} - 기존 스폰전적 유지", file=sys.stderr)
         sponsor_list = []
     if sponsor_list:
-        _add_unknown_elo_players(sponsor_list)
+        new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids))
         # sponsor_list의 "id"는 elo_id(숫자 문자열) 그대로다. 별도 변환 없이 elo_id를
         # 키로 저장해두고, out_members를 만들 때 각 멤버의 elo_id로 바로 조회한다.
         sponsor_data = _index_by_elo_id(sponsor_list)
@@ -402,6 +446,12 @@ def main():
     atomic_write_json(OUTPUT_PATH, result)
 
     print(f"[완료] {OUTPUT_PATH.name} 갱신됨 (별풍선 {len(balloon_data)}명, 스폰전적 {len(sponsor_data)}명)")
+
+    # 이번 실행 동안 발견된 신규 elo_id가 있으면(월 확정 재조회 + 오늘자 수집
+    # 둘 다에서 나온 걸 다 모아서) 여기서 딱 한 번만 xlsx에 쓴다.
+    if new_members_acc:
+        write_xlsx({}, list(new_members_acc.values()))
+        print(f"[완료] 총 {len(new_members_acc)}명의 신규 임시 프로필이 members.xlsx에 추가되었습니다.")
 
 
 if __name__ == "__main__":

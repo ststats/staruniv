@@ -21,7 +21,12 @@ MEMBERS_PATH = ROOT / "data" / "members.json"
 DOCS_DIR = ROOT / "docs"
 SCRIPTS_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = SCRIPTS_DIR / "templates"
-_jinja_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), keep_trailing_newline=True)
+_jinja_env = Environment(
+    loader=FileSystemLoader(TEMPLATES_DIR),
+    keep_trailing_newline=True,
+    trim_blocks=True,    # {% %} 태그 바로 뒤의 개행을 제거(안 그러면 {% if %}/{% include %}처럼
+    lstrip_blocks=True,  # 아무것도 안 그리는 태그가 있던 줄이 그냥 빈 줄로 출력에 남는다)
+)
 DOCS_DATA_DIR = DOCS_DIR / "data" / "daily"
 LOGOS_DIR = DOCS_DIR / "logos"
 OUTPUT_INDEX = DOCS_DIR / "index.html"
@@ -79,13 +84,6 @@ def get_team_topbar_color(team_name: str, cache: dict) -> str:
     cache[team_name] = {"hash": file_hash, "color": color}
     return color
 
-# 예전엔 이 자리에 CSS 전체가 파이썬 문자열로 하드코딩되어 있었다 - 이제
-# templates/style.css, templates/mobile.css로 분리되어 있다. 맨 앞에 "\n"을
-# 붙이는 이유: 원래 PAGE_CSS = """<개행>...""" 형태의 삼중따옴표 문자열은
-# 여는 """ 바로 뒤의 개행이 문자열 값에 포함되어 있었다 - f-string 조립
-# 결과가 한 글자도 안 바뀌도록, 파일로 분리된 지금도 그 개행을 그대로 살린다.
-PAGE_CSS = "\n" + (TEMPLATES_DIR / "style.css").read_text(encoding="utf-8")
-MOBILE_CSS = "\n" + (TEMPLATES_DIR / "mobile.css").read_text(encoding="utf-8")
 def clean_value(v): return None if str(v).strip() in PLACEHOLDER_VALUES else v
 
 def generate_html(title, target_team, is_profile, logo_prefix, static_info, team_colors, team_from_url=False):
@@ -206,10 +204,26 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 
 
     include_mobile_css = not is_profile and not target_team
-    page_css = PAGE_CSS
-    mobile_css_block = MOBILE_CSS if include_mobile_css else ""
     template = _jinja_env.get_template("page.html.j2")
-    return template.render(**locals())
+    return template.render(
+        back_link_html=back_link_html,
+        back_sep_html=back_sep_html,
+        body_html=body_html,
+        colors_json=colors_json,
+        font_url=font_url,
+        include_mobile_css=include_mobile_css,
+        is_profile=is_profile,
+        legend_html=legend_html,
+        logo_prefix=logo_prefix,
+        static_info=static_info,
+        static_json=static_json,
+        target_team=target_team,
+        target_team_js=target_team_js,
+        team_colors=team_colors,
+        team_from_url=team_from_url,
+        title=title,
+        top_bar_html=top_bar_html,
+    )
 
 def _write_if_changed(dst_path: Path, content: str) -> None:
     if dst_path.exists():
