@@ -24,11 +24,12 @@
 ststats/
 ├── requirements.txt          ← 파이썬 의존성 전체(Pillow + requests + openpyxl) - 레포 루트에 있어야 pip 캐시가 동작함
 ├── data/
-│   ├── members.json                     ← 스트리머 명단 (자동화가 실제로 읽는 기준 파일)
-│   ├── members.xlsx                     ← (선택) 사람이 엑셀로 관리하는 명단 원본 - 있으면
-│   │                                        members.json과 양방향 동기화됨, 없어도 무방
-│   ├── members_sync_baseline.json       ← (자동 생성) xlsx<->json 동기화 내부 상태 - 아래
-│   │                                        "내부 동기화 상태 파일" 참고
+│   ├── members.xlsx                     ← 로스터의 유일한 원본(source of truth). admin.html도
+│   │                                        이제 이 파일을 직접 읽고 쓴다(SheetJS로 브라우저에서
+│   │                                        바로 파싱)
+│   ├── members.json                     ← (자동 생성) members.xlsx로부터 매번 새로 만들어지는
+│   │                                        파생 결과물 - 나머지 파이프라인(update_data.py,
+│   │                                        generate_pages.py 등)은 이 파일을 읽는다
 │   ├── archive_corrections_applied.json ← (자동 생성) 소급 정정 내부 상태 - 아래 참고
 │   ├── latest.json          ← 오늘 수집 결과 (자동 생성)
 │   └── archive/
@@ -41,8 +42,10 @@ ststats/
 │   │                                   (docs/fonts/PretendardVariable.woff2)으로 만든다.
 │   │                                   generate_pages.py 다음에 실행돼야 한다(생성된 HTML을
 │   │                                   스캔하기 때문)
-│   ├── convert_members_xlsx.py     ← data/members.xlsx <-> data/members.json 양방향 동기화
+│   ├── convert_members_xlsx.py     ← members.xlsx(유일한 원본)로부터 members.json을 매번
+│   │                                   새로 만들어내는 단방향 변환(더 이상 병합이 아님)
 │   ├── sync_members.py             ← EloBoard 티어 목록 API에서 신규 멤버 자동 추가/일부 필드 갱신
+│   │                                   (members.xlsx를 직접 읽고 씀)
 │   ├── fetch_poonggo_data.py       ← 풍고 API에서 별풍선/방송시간/누적시청자를 "가져오기만" 하는 순수 함수
 │   │                                   (언제 저장할지, 아카이브를 어떻게 할지는 전혀 모름)
 │   ├── fetch_eloboard_data.py      ← EloBoard API에서 스폰전적을 가져온다. 스폰전적 자체는
@@ -239,14 +242,16 @@ API가 최신 → 과거 순으로 정렬해서 응답한다고 가정합니다.
 
 **이건 이 프로젝트의 일반 원칙(아래 두 문단 참고)에 대한 의도적인 예외입니다** - 원래
 `fetch_*.py`류 스크립트는 "가져오기만 하고 저장/아카이브는 전혀 관여 안 함"이 원칙이라
-`update_data.py` 같은 오케스트레이터만 `members.json`을 쓰는 게 기본 구조인데,
-`fetch_eloboard_data.py`만 예외적으로 `members.json`을 직접 씁니다. 자동 생성된 임시
-프로필은 `id`가 진짜 SOOP 아이디가 아니라서(사진/방송 임베드 등은 그냥 조용히 안 뜸)
-관리자가 나중에 진짜 정보로 채워 넣거나(admin.html/xlsx) 병합해줘야 완전해집니다.
+`update_data.py` 같은 오케스트레이터만 파일을 쓰는 게 기본 구조인데,
+`fetch_eloboard_data.py`만 예외적으로 `members.xlsx`(로스터의 유일한 원본)를 직접 씁니다.
+자동 생성된 임시 프로필은 `id`가 진짜 SOOP 아이디가 아니라서(사진/방송 임베드 등은 그냥
+조용히 안 뜸) 관리자가 나중에 admin.html에서 진짜 정보로 채워 넣어야 완전해집니다.
 
 또한 이 등록은 members.json이 **이미 메모리에 로드된 이후**(`update_data.py`의 `main()`
 시작부에서 한 번 읽음) 실행되므로, 그날 새로 발견된 사람의 별풍선/스폰전적은 당일에는
-아직 안 잡히고 **다음 실행부터** 정상적으로 수집됩니다.
+아직 안 잡히고 **다음 실행부터** 정상적으로 수집됩니다(다만 로스터 표시 자체는 같은
+실행 안에서 `Sync members.xlsx -> members.json (3차)` 스텝이 한 번 더 돌아서 그날 바로
+반영됩니다 - 아래 워크플로우 설명 참고).
 
 ## 안정성 관련 안전장치
 
@@ -273,15 +278,10 @@ API가 최신 → 과거 순으로 정렬해서 응답한다고 가정합니다.
 
 ## 내부 동기화 상태 파일
 
-`data/` 안에 사람이 직접 안 건드리는 자동 생성 파일이 두 개 있습니다 - 지워도 다음
-실행에서 다시 만들어지지만, 지우면 아래 설명한 최적화가 그 시점부터 다시 시작됩니다
-(데이터가 틀어지진 않고, 그냥 한 번 더 전체를 훑게 될 뿐입니다).
+`data/` 안에 사람이 직접 안 건드리는 자동 생성 파일이 있습니다 - 지워도 다음 실행에서
+다시 만들어지지만, 지우면 아래 설명한 최적화가 그 시점부터 다시 시작됩니다(데이터가
+틀어지진 않고, 그냥 한 번 더 전체를 훑게 될 뿐입니다).
 
-- **`data/members_sync_baseline.json`** — `convert_members_xlsx.py`가 xlsx↔json을
-  양방향 동기화할 때 쓰는 스냅샷입니다. xlsx와 json 둘 다 사람이 고칠 수 있어서,
-  "지난번 동기화 직후엔 이 사람 정보가 이랬다"를 기억해뒀다가 이번 실행에서 어느
-  쪽이 그 사이에 바뀌었는지 판단하는 데 씁니다(3-way 병합). 이 파일이 없으면
-  처음 한 번은 xlsx가 무조건 기준이 됩니다.
 - **`data/archive_corrections_applied.json`** — `update_data.py`가 `info_updated_at`
   소급 정정을 아카이브에 반영할 때, "이 사람의 이 보정 내용은 이미 다 반영해뒀다"를
   기억해두는 파일입니다. 이게 없으면 소급 정정이 한 번이라도 걸린 사람이 생길 때마다
