@@ -103,15 +103,28 @@ def collect_used_characters() -> set:
     return chars
 
 
+# 캐시 판단에 문자 구성뿐 아니라 이 버전 번호도 같이 넣는다 - 문자 구성이
+# 하나도 안 바뀌어도, fonttools 서브셋 명령어 자체(예: --layout-features
+# 옵션)가 바뀌면 예전 캐시가 여전히 "완전히 동일함"으로 잘못 판단해서
+# 재생성을 건너뛰어 버린다. 서브셋 로직을 고칠 때마다 이 숫자를 올려서,
+# 다음 실행에서 확실히 한 번은 다시 만들어지게 한다.
+SUBSET_LOGIC_VERSION = 2  # v2: --layout-features+=tnum,lnum 추가(별풍선 등 숫자 폭이
+                          # 안 맞던 문제 수정 - v1은 이 옵션이 없어서 tabular-nums가
+                          # 실제로는 작동 안 했었음)
+
+
 def main():
     chars = collect_used_characters()
     print(f"[준비] 실제 사용 문자 {len(chars)}개 확인")
 
-    # 문자 구성이 지난 실행이랑 완전히 같으면(대부분의 날이 그렇다 - 로스터나
-    # 페이지 UI 문구가 매일 바뀌는 게 아니므로), 서브셋 결과도 어차피 똑같이
-    # 나올 거라 무거운 다운로드+서브셋 작업 자체를 건너뛴다. 기존
-    # docs/fonts/PretendardVariable.woff2는 지난 실행 결과 그대로 남는다.
-    chars_hash = hashlib.sha256("".join(sorted(chars)).encode("utf-8")).hexdigest()
+    # 문자 구성 + 서브셋 로직 버전이 지난 실행이랑 완전히 같으면(대부분의 날이
+    # 그렇다 - 로스터나 페이지 UI 문구, 서브셋 로직 자체가 매일 바뀌는 게
+    # 아니므로), 서브셋 결과도 어차피 똑같이 나올 거라 무거운 다운로드+서브셋
+    # 작업 자체를 건너뛴다. 기존 docs/fonts/PretendardVariable.woff2는 지난
+    # 실행 결과 그대로 남는다.
+    chars_hash = hashlib.sha256(
+        f"{SUBSET_LOGIC_VERSION}:{''.join(sorted(chars))}".encode("utf-8")
+    ).hexdigest()
     snapshot = safe_read_json(CHARS_SNAPSHOT_PATH, default={})
     if snapshot.get("hash") == chars_hash and OUTPUT_PATH.exists():
         print("[건너뜀] 지난 실행과 사용 문자 구성이 완전히 동일함 - 폰트 재생성 생략")
@@ -139,6 +152,14 @@ def main():
             f"--unicodes={unicodes}",
             f"--output-file={OUTPUT_PATH}",
             "--flavor=woff2",
+            # fonttools의 기본 --layout-features 값은 tnum(탭 숫자 - 모든 숫자가
+            # 똑같은 폭을 갖게 하는 OpenType 기능)을 자동으로는 안 챙긴다 - 이걸
+            # 빼먹으면 사이트 CSS의 font-variant-numeric: tabular-nums가 있어도
+            # 실제 폰트 파일에 그 기능이 없어서 무용지물이 되고, 숫자마다 폭이
+            # 달라져서 별풍선 수치 같은 게 줄이 안 맞고 들쭉날쭉해 보인다.
+            # lnum(ライニング 숫자, 소문자 x-height 안에 갇히지 않는 일반적인
+            # 숫자 형태)도 같이 챙겨서 숫자 스타일이 서브셋 전후로 안 바뀌게 한다.
+            "--layout-features+=tnum,lnum",
         ]
         print(f"[서브셋] fonttools로 {len(chars)}개 문자만 추려내는 중...")
         result = subprocess.run(cmd, capture_output=True, text=True)
