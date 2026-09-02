@@ -1,29 +1,27 @@
 """
-EloBoard의 티어 목록 API(/api/tiers)를 조회해서 data/members.json을 최신 정보로
-동기화하는 스크립트. members.js(Node.js로 작성된 원본)를 이 레포의 나머지 스크립트와
-스타일을 맞춰 Python으로 옮긴 것 - 공용 HTTP 재시도 헬퍼(_common.fetch_json)를 쓰고,
-로그 형식([시작]/[완료]/[경고])도 update_data.py 등과 통일했다.
+EloBoard의 티어 목록 API(/api/tiers)를 조회해서 data/members.xlsx를 최신
+정보로 동기화하는 스크립트.
+
+data/members.xlsx가 로스터의 유일한 원본이므로(members.json은
+convert_members_xlsx.py가 xlsx로부터 매번 새로 파생시키는 결과물), 이
+스크립트도 xlsx를 직접 읽고 쓴다. members.json은 여기서 아예 건드리지 않는다
+- update-stats.yml에서 이 스크립트 다음에 convert_members_xlsx.py가 돌면서
+자동으로 반영된다.
 
 동작:
 1. EloBoard API에서 티어별 플레이어 목록을 가져와 평탄화(flatten)한다
    (API 구조 예시: {{"tiers": [{{"key": "god", "label": "갓", "players": [...]}}, ...]}})
-2. soop_id(=members.json의 "id") 기준으로 기존 멤버와 매칭:
-   - 이미 있는 멤버 -> nickname/race/tier/team을 API 값으로 갱신할지는 파일 맨 위
+2. soop_id 기준으로 xlsx의 기존 행과 매칭:
+   - 이미 있는 사람 -> nickname/race/tier/team을 API 값으로 갱신할지는 파일 맨 위
      UPDATE_EXISTING_* 스위치로 필드별 on/off 가능(기본: 닉네임은 꺼짐, 나머지는 켜짐).
-     elo_id/birthdate/gender/role/info_updated_at처럼 이 프로젝트에서 사람이 직접
-     관리하는 필드는 이 스위치들과 무관하게 항상 건드리지 않는다.
-   - 없는 멤버 -> 새로 추가. 이 스위치들과 무관하게 항상 API 값으로 채운다.
-     birthdate는 확인 전이므로 "체크" 같은 임시 문자열이 아니라 null로 넣는다
-     (README에 정리된 프로젝트 컨벤션 - null이 아닌 임시 문자열은 나중에 실제
-     값으로 채우는 걸 잊기 쉬워서 지양한다).
-3. members.json에 그대로 다시 저장한다.
+     elo_id/birthdate/gender/role/수정일처럼 사람이 직접 관리하는 필드는 이
+     스위치들과 무관하게 항상 건드리지 않는다.
+   - 없는 사람 -> xlsx에 새 행으로 추가. 이 스위치들과 무관하게 항상 API 값으로 채운다.
+     birthdate는 확인 전이므로 "체크" 같은 임시 문자열이 아니라 빈 칸으로 남긴다.
+3. 바뀐 게 있으면 xlsx에 다시 저장한다.
 
-members.json은 admin.html에서 사람이 직접 관리하는 원본 파일이지만, update-stats.yml
-안에서 매일 자동으로도 실행된다(Update data 스텝보다 먼저 돌아서, 그날 새로 추가된
-멤버의 별풍선/스폰전적도 같은 날 바로 수집되게 한다). 그 자동 실행은
-continue-on-error로 감싸져 있어서, 이 스크립트가 실패해도(엘로보드 API 일시 장애 등)
-나머지 데이터 수집엔 영향을 주지 않는다. 필요하면 .github/workflows/sync-members.yml로
-수동 실행 + dry-run 미리보기도 가능하다.
+xlsx가 아예 없으면(최초 셋업 전) 에러로 종료한다 - 이 경우엔 사람이 먼저
+엑셀 파일을 만들어야 한다.
 
 실행:
   python scripts/sync_members.py --dry-run   (미리보기, 파일 안 바꿈)
@@ -33,18 +31,17 @@ continue-on-error로 감싸져 있어서, 이 스크립트가 실패해도(엘�
 import sys
 import argparse
 
-from _common import ROOT, fetch_json, atomic_write_json, safe_read_json, validate_and_clean_members
+from _common import fetch_json, XLSX_PATH, load_xlsx_members, write_xlsx
 
-MEMBERS_PATH = ROOT / "data" / "members.json"
 TIERS_URL = "https://eloboard.co.kr/api/tiers"
 
-# 기존 멤버(이미 members.json에 있는 사람)를 API 값으로 갱신할지 필드별로 켜고 끄는
+# 기존 사람(이미 xlsx에 있는 사람)을 API 값으로 갱신할지 필드별로 켜고 끄는
 # 스위치. False로 두면 그 필드는 API에 뭐가 오든 기존 값을 그대로 유지한다.
-# (신규 멤버 추가에는 영향 없음 - 새로 추가되는 사람은 항상 API 값으로 채워진다.)
+# (신규 추가에는 영향 없음 - 새로 추가되는 사람은 항상 API 값으로 채워진다.)
 UPDATE_EXISTING_NICKNAME = False
-UPDATE_EXISTING_RACE = False
-UPDATE_EXISTING_TIER = False
-UPDATE_EXISTING_TEAM = False
+UPDATE_EXISTING_RACE = True
+UPDATE_EXISTING_TIER = True
+UPDATE_EXISTING_TEAM = True
 
 # race 값 변환 맵 (필요에 따라 추가/수정)
 RACE_MAP = {
@@ -77,30 +74,29 @@ def flatten_players(api_data: dict) -> list:
 
 
 def main(argv=None):
-    """argv=None이면 sys.argv[1:]를 읽는다 - convert_members_xlsx.py와 같은 이유로,
-    테스트에서 main(argv=[])처럼 명시적으로 넘기면 pytest 자체 옵션(-v 등)과
-    충돌하지 않는다."""
+    """argv=None이면 sys.argv[1:]를 읽는다 - 테스트에서 main(argv=[])처럼
+    명시적으로 넘기면 pytest 자체 옵션(-v 등)과 충돌하지 않는다."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="파일을 실제로 바꾸지 않고 변경될 내용만 출력")
     args = parser.parse_args(argv)
 
-    local_data = {"members": []}
-    if MEMBERS_PATH.exists():
-        local_data = safe_read_json(MEMBERS_PATH, default={"members": []})
+    if not XLSX_PATH.exists():
+        print(f"[오류] {XLSX_PATH}가 없습니다. 먼저 엑셀 파일을 만들어주세요.", file=sys.stderr)
+        sys.exit(1)
 
-    local_data["members"] = validate_and_clean_members(local_data.get("members", []))
-    member_map = {m["id"]: m for m in local_data["members"]}
+    member_map = load_xlsx_members()
 
     print(f"[시작] {TIERS_URL} 조회 중...")
     api_data = fetch_json(TIERS_URL, label="엘로보드 티어 목록")
     if api_data is None:
-        print("[오류] 엘로보드 API 조회 실패 - members.json을 건드리지 않고 종료합니다.", file=sys.stderr)
+        print("[오류] 엘로보드 API 조회 실패 - xlsx를 건드리지 않고 종료합니다.", file=sys.stderr)
         sys.exit(1)
 
     api_players = flatten_players(api_data)
-    print(f"[준비] API에서 {len(api_players)}명 확인, 기존 members.json엔 {len(member_map)}명")
+    print(f"[준비] API에서 {len(api_players)}명 확인, 기존 xlsx엔 {len(member_map)}명")
 
-    updated, added = [], []
+    updates = {}
+    appends = []
     for api_player in api_players:
         soop_id = api_player.get("soop_id")
         if not soop_id:
@@ -112,23 +108,25 @@ def main(argv=None):
         existing = member_map.get(soop_id)
         if existing:
             before = (existing.get("nickname"), existing.get("race"), existing.get("tier"), existing.get("team"))
+            new_fields = dict(existing)
             if UPDATE_EXISTING_NICKNAME:
-                existing["nickname"] = api_player.get("name") or existing.get("nickname")
+                new_fields["nickname"] = api_player.get("name") or existing.get("nickname")
             if UPDATE_EXISTING_RACE:
-                existing["race"] = converted_race or existing.get("race")
+                new_fields["race"] = converted_race or existing.get("race")
             if UPDATE_EXISTING_TIER:
-                existing["tier"] = api_player.get("current_tier") or existing.get("tier")
+                new_fields["tier"] = api_player.get("current_tier") or existing.get("tier")
             if UPDATE_EXISTING_TEAM:
-                existing["team"] = team_name if team_name != "" else existing.get("team")
-            # elo_id/birthdate/gender/role/info_updated_at은 이 스위치들과 무관하게
-            # 항상 사람이 직접 관리하는 필드라 여기서 절대 안 건드린다.
-            after = (existing.get("nickname"), existing.get("race"), existing.get("tier"), existing.get("team"))
+                new_fields["team"] = team_name if team_name != "" else existing.get("team")
+            # elo_id/birthdate/gender/role/수정일은 이 스위치들과 무관하게
+            # 항상 사람이 직접 관리하는 필드라 여기서 절대 안 건드린다
+            # (dict(existing)로 복사해왔으니 손 안 댄 필드는 원래 값 그대로다).
+            after = (new_fields.get("nickname"), new_fields.get("race"), new_fields.get("tier"), new_fields.get("team"))
             if before != after:
-                updated.append((soop_id, before, after))
+                updates[soop_id] = new_fields
         else:
             new_member = {
-                "nickname": api_player.get("name"),
                 "id": soop_id,
+                "nickname": api_player.get("name"),
                 "elo_id": api_player.get("player_id"),
                 "birthdate": None,
                 "gender": "f" if api_player.get("division") == "women" else "m",
@@ -138,21 +136,21 @@ def main(argv=None):
                 "role": "",
                 "info_updated_at": None,
             }
-            local_data.setdefault("members", []).append(new_member)
-            member_map[soop_id] = new_member
-            added.append((soop_id, new_member["nickname"]))
+            appends.append(new_member)
 
     if args.dry_run:
-        for soop_id, before, after in updated:
-            print(f"  [갱신 예정] {soop_id}: {before} -> {after}")
-        for soop_id, nickname in added:
-            print(f"  [추가 예정] {soop_id} ({nickname})")
-        print(f"[dry-run 완료] 갱신 {len(updated)}명, 신규 추가 {len(added)}명 (파일은 안 건드림)")
+        for soop_id, fields in updates.items():
+            print(f"  [갱신 예정] {soop_id}: -> {fields}")
+        for m in appends:
+            print(f"  [추가 예정] {m['id']} ({m['nickname']})")
+        print(f"[dry-run 완료] 갱신 {len(updates)}명, 신규 추가 {len(appends)}명 (파일은 안 건드림)")
         return
 
-    atomic_write_json(MEMBERS_PATH, local_data)
-
-    print(f"[완료] members.json 갱신됨 (기존 정보 갱신 {len(updated)}명, 신규 추가 {len(added)}명)")
+    if updates or appends:
+        write_xlsx(updates, appends)
+        print(f"[완료] members.xlsx 갱신됨 (기존 정보 갱신 {len(updates)}명, 신규 추가 {len(appends)}명)")
+    else:
+        print("[완료] 변경 없음")
 
 
 if __name__ == "__main__":

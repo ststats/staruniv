@@ -23,6 +23,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import requests
+from openpyxl import load_workbook
 
 # scripts/_common.py 기준으로 두 단계 위(레포 루트)
 ROOT = Path(__file__).resolve().parent.parent
@@ -220,3 +221,146 @@ def validate_and_clean_members(members: list) -> list:
         cleaned.append(m)
 
     return cleaned
+
+
+# ---------------------------------------------------------------------------
+# xlsx 관련 공용 헬퍼
+#
+# data/members.xlsx가 로스터의 유일한 원본(source of truth)이다. 예전엔
+# xlsx/members.json 양쪽에서 편집 가능해서 3-way 병합이 필요했는데, admin.html도
+# 이제 xlsx를 직접 읽고 쓰도록 바뀌어서 편집 창구가 xlsx 하나로 통일됐다 - 그래서
+# 여러 스크립트(convert_members_xlsx.py, sync_members.py, fetch_eloboard_data.py)가
+# 전부 xlsx를 직접 읽거나 쓸 일이 있어서 여기 공용으로 모아둔다.
+# ---------------------------------------------------------------------------
+
+XLSX_PATH = ROOT / "data" / "members.xlsx"
+XLSX_SHEET_NAME = "members"
+
+XLSX_GENDER_MAP = {"남자": "m", "여자": "f"}
+XLSX_GENDER_MAP_REVERSE = {"m": "남자", "f": "여자"}
+XLSX_PLACEHOLDER_VALUES = {"체크", "todo", "?", "미정", "", "null", "none", "n/a", "na"}
+XLSX_CORE_FIELDS = ["nickname", "elo_id", "birthdate", "gender", "race", "tier", "team", "role"]
+
+
+def xlsx_clean(value):
+    """"체크"/"null"류 임시 문자열이나 빈 문자열을 null로 정규화한다(대소문자
+    구분 안 함). 그 외 값은 그대로 통과."""
+    if isinstance(value, str) and value.strip().lower() in XLSX_PLACEHOLDER_VALUES:
+        return None
+    return value
+
+
+def xlsx_format_date(value):
+    value = xlsx_clean(value)
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d")
+    return str(value).strip() or None
+
+
+def xlsx_parse_date_for_write(value):
+    """members.json 스타일 "YYYY-MM-DD" 문자열을 엑셀에 넣을 datetime으로
+    되돌린다. 형식이 안 맞거나 None이면 빈 칸(None)으로 남긴다."""
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_xlsx_members(ws) -> dict:
+    """워크시트를 읽어 soop_id -> {core_fields..., info_updated_at} 딕셔너리로
+    반환한다. id/nickname이 비어있는 행은 건너뛴다."""
+    rows = {}
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        nickname, soop_id, elo_id, birthdate, gender, race, tier, team, role, updated_at = row[:10]
+
+        if not nickname or not soop_id:
+            print(f"[건너뜀] {row_idx}행: 이름 또는 SOOP ID가 비어있음", file=sys.stderr)
+            continue
+
+        # SOOP ID가 순수 숫자면 엑셀/openpyxl이 문자열이 아니라 int로 읽어들인다.
+        # 항상 문자열로 강제해서 이후 매칭/직렬화 문제를 원천 차단한다.
+        soop_id = str(soop_id)
+        tier = xlsx_clean(tier)
+
+        rows[soop_id] = {
+            "nickname": nickname,
+            "elo_id": elo_id if elo_id is not None else None,
+            "birthdate": xlsx_format_date(birthdate),
+            "gender": XLSX_GENDER_MAP.get(gender, gender),
+            "race": xlsx_clean(race),
+            "tier": str(tier) if tier is not None else None,
+            "team": xlsx_clean(team),
+            "role": role if role else "",
+            "info_updated_at": xlsx_format_date(updated_at),
+        }
+    return rows
+
+
+def load_xlsx_members() -> dict:
+    """XLSX_PATH를 열어 soop_id -> core_fields 딕셔너리로 반환한다. 파일이나
+    시트가 없으면 빈 딕셔너리를 반환한다(에러로 죽지 않음 - 최초 실행 등에서
+    xlsx 자체가 아직 없을 수 있음)."""
+    if not XLSX_PATH.exists():
+        return {}
+    wb = load_workbook(XLSX_PATH, data_only=True)
+    if XLSX_SHEET_NAME not in wb.sheetnames:
+        print(f"[오류] '{XLSX_SHEET_NAME}' 시트를 찾을 수 없습니다. (있는 시트: {wb.sheetnames})", file=sys.stderr)
+        return {}
+    return parse_xlsx_members(wb[XLSX_SHEET_NAME])
+
+
+def write_xlsx(update_rows: dict, append_rows: list, delete_ids: set | None = None) -> None:
+    """update_rows: {soop_id: core_fields} - 기존 행을 이 값으로 갱신(수정일은 안 건드림).
+    append_rows: [{"id":..., **core_fields, "info_updated_at":...}] - 새 행 추가.
+    delete_ids: 이 id에 해당하는 행을 통째로 지운다."""
+    delete_ids = delete_ids or set()
+    wb = load_workbook(XLSX_PATH)  # data_only=False - 저장을 위해 다시 연다
+    ws = wb[XLSX_SHEET_NAME]
+
+    if update_rows or delete_ids:
+        rows_to_delete = []
+        for row in ws.iter_rows(min_row=2):
+            cell_id = row[1].value
+            cell_id = str(cell_id) if cell_id is not None else None
+            if cell_id in delete_ids:
+                rows_to_delete.append(row[0].row)
+                continue
+            fields = update_rows.get(cell_id)
+            if not fields:
+                continue
+            row[0].value = fields.get("nickname")
+            row[2].value = fields.get("elo_id")
+            row[3].value = xlsx_parse_date_for_write(fields.get("birthdate"))
+            row[4].value = XLSX_GENDER_MAP_REVERSE.get(fields.get("gender"), fields.get("gender"))
+            row[5].value = fields.get("race")
+            row[6].value = fields.get("tier")
+            row[7].value = fields.get("team")
+            row[8].value = fields.get("role") or None
+            # "수정일"(row[9])은 여기서 건드리지 않는다 - 아카이브 소급 정정
+            # 전용 필드라, 자동 갱신 스크립트가 값을 넣으면 의도치 않게 소급
+            # 정정이 걸려버린다.
+
+        # 뒤에서부터(행 번호가 큰 것부터) 지워야, 먼저 지운 행 때문에 아직
+        # 안 지운 행들의 번호가 밀리는 문제가 안 생긴다.
+        for row_idx in sorted(rows_to_delete, reverse=True):
+            ws.delete_rows(row_idx)
+
+    for m in append_rows:
+        ws.append([
+            m.get("nickname"),
+            m.get("id"),
+            m.get("elo_id"),
+            xlsx_parse_date_for_write(m.get("birthdate")),
+            XLSX_GENDER_MAP_REVERSE.get(m.get("gender"), m.get("gender")),
+            m.get("race"),
+            m.get("tier"),
+            m.get("team"),
+            m.get("role") or None,
+            xlsx_parse_date_for_write(m.get("info_updated_at")),
+        ])
+
+    wb.save(XLSX_PATH)
