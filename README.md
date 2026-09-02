@@ -55,7 +55,16 @@ ststats/
 │   ├── update_data.py              ← 위 둘을 호출해서 데이터를 합치고, 아카이빙·월 확정(별풍선+
 │   │                                   스폰전적 둘 다)·소급 정정·latest.json 저장까지 전부 조율하는
 │   │                                   오케스트레이터 - 실제 데이터 갱신은 이 스크립트 하나로 끝남
-│   └── generate_pages.py           ← data/*.json을 docs/data/daily/로 복사하고, 전체/팀별/프로필 뼈대 HTML 생성
+│   ├── generate_pages.py           ← data/*.json을 docs/data/daily/로 복사하고, 전체/팀별/프로필 뼈대 HTML 생성.
+│   │                                   실제 CSS/JS/HTML은 아래 templates/ 폴더에 있고, 이 스크립트는
+│   │                                   Jinja2로 그 파일들을 읽어서 조립만 한다
+│   └── templates/
+│       ├── page.html.j2                ← HTML 뼈대(head/body). style.css/mobile.css/app.js.j2를
+│       │                                    변수로 받거나 include해서 조립한다
+│       ├── style.css                    ← 전체 CSS (PAGE_CSS였던 것)
+│       ├── mobile.css                   ← 모바일 미디어쿼리 CSS (MOBILE_CSS였던 것 - 전체/팀 페이지에만
+│       │                                    포함되고, 프로필/특정 팀 페이지엔 안 들어감)
+│       └── app.js.j2                    ← 클라이언트 JS 전체(달력, 정렬, 라이브 표시, 렌더링 등)
 ├── docs/
 │   ├── index.html           ← 전체 페이지 (GitHub Pages가 이 폴더를 서빙)
 │   ├── admin.html            ← 멤버 관리 어드민 페이지 (GitHub API로 직접 커밋)

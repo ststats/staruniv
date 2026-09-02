@@ -2,3 +2,4 @@ Pillow>=10,<12
 requests
 openpyxl
 fonttools[woff]
+jinja2
