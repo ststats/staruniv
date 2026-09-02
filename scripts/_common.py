@@ -317,15 +317,22 @@ def load_xlsx_members() -> dict:
     return parse_xlsx_members(wb[XLSX_SHEET_NAME])
 
 
-def write_xlsx(update_rows: dict, append_rows: list, delete_ids: set | None = None) -> None:
+def write_xlsx(update_rows: dict, append_rows: list, delete_ids: set | None = None,
+               clear_info_updated_at: set | None = None) -> None:
     """update_rows: {soop_id: core_fields} - 기존 행을 이 값으로 갱신(수정일은 안 건드림).
     append_rows: [{"id":..., **core_fields, "info_updated_at":...}] - 새 행 추가.
-    delete_ids: 이 id에 해당하는 행을 통째로 지운다."""
+    delete_ids: 이 id에 해당하는 행을 통째로 지운다.
+    clear_info_updated_at: 이 id들의 "수정일" 칸만 명시적으로 비운다 - 소급
+    정정이 성공적으로 다 반영된 뒤 호출부(update_data.py)가 쓴다. 이걸 안 비우면,
+    나중에 이 사람의 다른 정보(팀/티어 등)를 또 고칠 때 관리자가 수정일을
+    깜빡 새로 안 넣으면 예전 날짜가 그대로 재사용돼서, 이번에 새로 바뀐
+    내용까지 예전 날짜부터 잘못 소급 적용돼버리는 위험이 있다."""
     delete_ids = delete_ids or set()
+    clear_info_updated_at = clear_info_updated_at or set()
     wb = load_workbook(XLSX_PATH)  # data_only=False - 저장을 위해 다시 연다
     ws = wb[XLSX_SHEET_NAME]
 
-    if update_rows or delete_ids:
+    if update_rows or delete_ids or clear_info_updated_at:
         rows_to_delete = []
         for row in ws.iter_rows(min_row=2):
             cell_id = row[1].value
@@ -334,19 +341,20 @@ def write_xlsx(update_rows: dict, append_rows: list, delete_ids: set | None = No
                 rows_to_delete.append(row[0].row)
                 continue
             fields = update_rows.get(cell_id)
-            if not fields:
-                continue
-            row[0].value = fields.get("nickname")
-            row[2].value = fields.get("elo_id")
-            row[3].value = xlsx_parse_date_for_write(fields.get("birthdate"))
-            row[4].value = XLSX_GENDER_MAP_REVERSE.get(fields.get("gender"), fields.get("gender"))
-            row[5].value = fields.get("race")
-            row[6].value = fields.get("tier")
-            row[7].value = fields.get("team")
-            row[8].value = fields.get("role") or None
-            # "수정일"(row[9])은 여기서 건드리지 않는다 - 아카이브 소급 정정
-            # 전용 필드라, 자동 갱신 스크립트가 값을 넣으면 의도치 않게 소급
-            # 정정이 걸려버린다.
+            if fields:
+                row[0].value = fields.get("nickname")
+                row[2].value = fields.get("elo_id")
+                row[3].value = xlsx_parse_date_for_write(fields.get("birthdate"))
+                row[4].value = XLSX_GENDER_MAP_REVERSE.get(fields.get("gender"), fields.get("gender"))
+                row[5].value = fields.get("race")
+                row[6].value = fields.get("tier")
+                row[7].value = fields.get("team")
+                row[8].value = fields.get("role") or None
+                # "수정일"(row[9])은 여기서 건드리지 않는다 - 아카이브 소급 정정
+                # 전용 필드라, 자동 갱신 스크립트가 값을 넣으면 의도치 않게 소급
+                # 정정이 걸려버린다. 명시적으로 지우고 싶으면 아래 clear_info_updated_at을 쓴다.
+            if cell_id in clear_info_updated_at:
+                row[9].value = None
 
         # 뒤에서부터(행 번호가 큰 것부터) 지워야, 먼저 지운 행 때문에 아직
         # 안 지운 행들의 번호가 밀리는 문제가 안 생긴다.

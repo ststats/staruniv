@@ -127,7 +127,7 @@ def _prune_stale_corrections(applied: dict, updates: dict, today_date_str: str) 
     return pruned
 
 
-def apply_member_updates_to_archives(members: list, today_date_str: str):
+def apply_member_updates_to_archives(members: list, today_date_str: str) -> set:
     """members.json에 info_updated_at이 있는 멤버의 정보를 그 날짜 이후의 모든 아카이브에 소급 적용합니다.
 
     한 번이라도 소급 정정 대상이 생기면 그 이후로는 매 실행마다 그 날짜 이후의
@@ -135,7 +135,13 @@ def apply_member_updates_to_archives(members: list, today_date_str: str):
     실행 시간이 시간이 갈수록 계속 늘어난다. data/archive_corrections_applied.json에
     "지난번에 이미 완전히 반영한 보정 내용"을 스냅샷으로 남겨두고, 이번 실행에서
     그때랑 완전히 똑같은 사람은 건너뛴다 - 그러면 실제로 새로 생기거나 바뀐
-    보정 건에 대해서만, 그 사람의 update_date 이후 아카이브만 훑으면 된다."""
+    보정 건에 대해서만, 그 사람의 update_date 이후 아카이브만 훑으면 된다.
+
+    반환값: 이번 실행에서 실제로 소급 적용까지 성공적으로 끝낸 멤버 id 집합.
+    호출부(main())가 이 사람들의 xlsx "수정일" 칸을 비우는 데 쓴다 - 안 비우면,
+    나중에 이 사람의 다른 정보(팀/티어 등)를 또 고칠 때 관리자가 수정일을 깜빡
+    새로 안 넣으면 예전 날짜가 그대로 재사용돼서, 이번에 새로 바뀐 내용까지
+    예전 날짜부터 잘못 소급 적용돼버리는 위험이 있다."""
     updates = {}
     for m in members:
         update_date = m.get("info_updated_at")
@@ -151,13 +157,13 @@ def apply_member_updates_to_archives(members: list, today_date_str: str):
             }
 
     if not updates or not ARCHIVE_DIR.exists():
-        return
+        return set()
 
     applied = safe_read_json(APPLIED_CORRECTIONS_PATH, default={})
 
     pending = {mid: upd for mid, upd in updates.items() if applied.get(mid) != upd}
     if not pending:
-        return  # 지난번과 완전히 동일한 보정 내용 - 아카이브를 다시 훑을 필요 없음
+        return set()  # 지난번과 완전히 동일한 보정 내용 - 아카이브를 다시 훑을 필요 없음
 
     earliest_update_date = min(u["update_date"] for u in pending.values())
 
@@ -188,6 +194,7 @@ def apply_member_updates_to_archives(members: list, today_date_str: str):
     applied.update(pending)
     applied = _prune_stale_corrections(applied, updates, today_date_str)
     atomic_write_json(APPLIED_CORRECTIONS_PATH, applied)
+    return set(pending.keys())
 
 
 def _index_by_elo_id(sponsor_list: list) -> dict:
@@ -360,7 +367,7 @@ def main():
     confirm_previous_month_if_needed(prev_year, prev_month, year, month, all_ids, now, existing_elo_ids, new_members_acc)
 
     # 3. 소급 정정 적용
-    apply_member_updates_to_archives(members, today_date_str)
+    applied_correction_ids = apply_member_updates_to_archives(members, today_date_str)
 
     # 4. 오늘자 데이터 새로 수집 (풍고/엘로보드 순서는 이제 상관없다 - 둘 다 latest.json을
     #    직접 안 건드리는 순수 fetch라서)
@@ -447,11 +454,15 @@ def main():
 
     print(f"[완료] {OUTPUT_PATH.name} 갱신됨 (별풍선 {len(balloon_data)}명, 스폰전적 {len(sponsor_data)}명)")
 
-    # 이번 실행 동안 발견된 신규 elo_id가 있으면(월 확정 재조회 + 오늘자 수집
-    # 둘 다에서 나온 걸 다 모아서) 여기서 딱 한 번만 xlsx에 쓴다.
-    if new_members_acc:
-        write_xlsx({}, list(new_members_acc.values()))
-        print(f"[완료] 총 {len(new_members_acc)}명의 신규 임시 프로필이 members.xlsx에 추가되었습니다.")
+    # 이번 실행 동안 발견된 신규 elo_id(월 확정 재조회 + 오늘자 수집 둘 다에서
+    # 나온 걸 다 모아서)랑, 방금 소급 정정이 성공적으로 끝난 사람들의 "수정일"
+    # 비우기를 - 각각 따로 xlsx를 열고 쓰지 않고 - 여기서 딱 한 번만 합쳐서 쓴다.
+    if new_members_acc or applied_correction_ids:
+        write_xlsx({}, list(new_members_acc.values()), clear_info_updated_at=applied_correction_ids)
+        if new_members_acc:
+            print(f"[완료] 총 {len(new_members_acc)}명의 신규 임시 프로필이 members.xlsx에 추가되었습니다.")
+        if applied_correction_ids:
+            print(f"[완료] 소급 정정이 끝난 {len(applied_correction_ids)}명의 수정일을 xlsx에서 비웠습니다.")
 
 
 if __name__ == "__main__":
