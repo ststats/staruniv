@@ -39,9 +39,9 @@ TIERS_URL = "https://eloboard.co.kr/api/tiers"
 # 스위치. False로 두면 그 필드는 API에 뭐가 오든 기존 값을 그대로 유지한다.
 # (신규 추가에는 영향 없음 - 새로 추가되는 사람은 항상 API 값으로 채워진다.)
 UPDATE_EXISTING_NICKNAME = False
-UPDATE_EXISTING_RACE = True
-UPDATE_EXISTING_TIER = True
-UPDATE_EXISTING_TEAM = True
+UPDATE_EXISTING_RACE = False
+UPDATE_EXISTING_TIER = False
+UPDATE_EXISTING_TEAM = False
 
 # race 값 변환 맵 (필요에 따라 추가/수정)
 RACE_MAP = {
