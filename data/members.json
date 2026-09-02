@@ -2113,18 +2113,6 @@
       "id": "kitty1029"
     },
     {
-      "nickname": "슈슈",
-      "elo_id": 547,
-      "birthdate": "1990-12-14",
-      "gender": "f",
-      "race": "저그",
-      "tier": "5",
-      "team": "BGM",
-      "role": "",
-      "info_updated_at": null,
-      "id": "ldk8481"
-    },
-    {
       "nickname": "뽀누나",
       "elo_id": 399,
       "birthdate": "1981-09-13",
@@ -2135,6 +2123,18 @@
       "role": "",
       "info_updated_at": null,
       "id": "hy4985"
+    },
+    {
+      "nickname": "슈슈",
+      "elo_id": 547,
+      "birthdate": "1990-12-14",
+      "gender": "f",
+      "race": "저그",
+      "tier": "5",
+      "team": "BGM",
+      "role": "",
+      "info_updated_at": null,
+      "id": "ldk8481"
     },
     {
       "nickname": "라운이",
@@ -2153,7 +2153,7 @@
       "elo_id": 463,
       "birthdate": "1996-04-03",
       "gender": "f",
-      "race": "저그",
+      "race": "테란",
       "tier": "6",
       "team": "BGM",
       "role": "",
@@ -2911,7 +2911,7 @@
       "gender": "m",
       "race": "테란",
       "tier": "킹",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "ghtjs3833"
@@ -2959,7 +2959,7 @@
       "gender": "m",
       "race": "저그",
       "tier": "킹",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "bts150"
@@ -3139,7 +3139,7 @@
       "gender": "m",
       "race": "프로토스",
       "tier": "조커",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "jhyhlli123"
@@ -3259,7 +3259,7 @@
       "gender": "m",
       "race": "프로토스",
       "tier": "스페이드",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "nalra82"
@@ -3487,7 +3487,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "3",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "sr629"
@@ -3595,7 +3595,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "5",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "snowssa"
@@ -3619,7 +3619,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "6",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "ynblbee"
@@ -3751,7 +3751,7 @@
       "gender": "f",
       "race": "테란",
       "tier": "8",
-      "team": "HM",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "onzzang"
@@ -3767,18 +3767,6 @@
       "role": "",
       "info_updated_at": null,
       "id": "ara9687"
-    },
-    {
-      "nickname": "정윤종",
-      "elo_id": 38,
-      "birthdate": "1992-08-14",
-      "gender": "m",
-      "race": "프로토스",
-      "tier": "킹",
-      "team": "휴면",
-      "role": "",
-      "info_updated_at": null,
-      "id": "ioioiobb"
     },
     {
       "nickname": "전태양",
@@ -3803,6 +3791,18 @@
       "role": "",
       "info_updated_at": null,
       "id": "rjsrkdgkwk12"
+    },
+    {
+      "nickname": "정윤종",
+      "elo_id": 38,
+      "birthdate": "1992-08-14",
+      "gender": "m",
+      "race": "프로토스",
+      "tier": "킹",
+      "team": "휴면",
+      "role": "",
+      "info_updated_at": null,
+      "id": "ioioiobb"
     },
     {
       "nickname": "염보성",
@@ -5783,6 +5783,18 @@
       "role": "",
       "info_updated_at": null,
       "id": "163830"
+    },
+    {
+      "nickname": "산다라",
+      "elo_id": 6199,
+      "birthdate": null,
+      "gender": "m",
+      "race": "프로토스",
+      "tier": null,
+      "team": "휴면",
+      "role": "",
+      "info_updated_at": null,
+      "id": "clubsexybj"
     },
     {
       "nickname": "카덴지",
@@ -8785,6 +8797,18 @@
       "id": "vldzm9749"
     },
     {
+      "nickname": "땃쥐",
+      "elo_id": 820,
+      "birthdate": "1995-05-16",
+      "gender": "f",
+      "race": "저그",
+      "tier": "8",
+      "team": "휴면",
+      "role": "",
+      "info_updated_at": null,
+      "id": "dlwjddls30"
+    },
+    {
       "nickname": "히요코",
       "elo_id": 714,
       "birthdate": "2005-04-01",
@@ -9409,18 +9433,6 @@
       "id": "soyoung8075"
     },
     {
-      "nickname": "땃쥐",
-      "elo_id": 820,
-      "birthdate": "1995-05-16",
-      "gender": "f",
-      "race": "저그",
-      "tier": "8",
-      "team": "휴면",
-      "role": "",
-      "info_updated_at": null,
-      "id": "dlwjddls30"
-    },
-    {
       "nickname": "킹봄",
       "elo_id": 822,
       "birthdate": "1996-03-01",
@@ -9683,18 +9695,6 @@
       "role": "",
       "info_updated_at": null,
       "id": "fjqmal13"
-    },
-    {
-      "nickname": "산다라",
-      "elo_id": 6199,
-      "birthdate": null,
-      "gender": null,
-      "race": "프로토스",
-      "tier": null,
-      "team": "휴면",
-      "role": "",
-      "info_updated_at": null,
-      "id": "clubsexybj"
     }
   ]
 }
