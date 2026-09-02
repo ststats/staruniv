@@ -77,9 +77,13 @@ jobs:
 
       # Update data가 xlsx에 "미상" 임시 프로필을 새로 추가했을 수 있으니,
       # generate_pages.py가 최신 로스터로 사이트를 만들 수 있도록 한 번 더
-      # xlsx -> json 동기화한다.
+      # xlsx -> json 동기화한다. 이 스텝은 일부러 continue-on-error를 안 둔다
+      # (다른 convert 스텝들과 다름) - generate_pages.py 바로 직전 마지막
+      # 동기화라서, 여기서 실패하면 members.json이 방금 추가된 신규 인원 없이
+      # 예전 상태 그대로 남는데, 그걸 계속 진행해서 사이트를 만들고 커밋까지
+      # 해버리면 "일부만 반영된 불완전한 배포"가 조용히 나가버린다. 차라리
+      # 여기서 워크플로우를 멈추고 사람이 원인을 보게 하는 게 낫다.
       - name: Sync members.xlsx -> members.json (2차, 신규 미상 반영)
-        continue-on-error: true
         run: python scripts/convert_members_xlsx.py
 
       - name: Generate pages
