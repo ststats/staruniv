@@ -6,6 +6,12 @@
 <title>STARUNIV 어드민</title>
 <link rel="icon" type="image/webp" href="./logos/파비콘.webp">
 <link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<!-- xlsx(엑셀)를 브라우저에서 직접 읽고/쓰기 위한 라이브러리(SheetJS). 최신
+     안정 버전(0.20.3) - 0.20.1 이하는 ReDoS 취약점(CVE-2024-22363)이 있어
+     반드시 이 버전 이상을 써야 한다. SheetJS는 npm 레지스트리 갱신을 중단하고
+     자체 CDN(cdn.sheetjs.com)만 공식으로 관리하므로, jsdelivr/unpkg 같은
+     제3자 CDN이 아니라 이 주소를 직접 쓴다. -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 @font-face {
   font-family: 'Pretendard Variable';
@@ -148,7 +154,7 @@ td input:focus, td select:focus { outline: none; border-color: #4a5ce0; backgrou
   <div class="top-bar">
     <span class="month-select-group">
       <span class="top-date-btn" style="cursor: default;">STARUNIV 어드민</span>
-      <span class="top-meta" style="margin-left: 2px;">members.json 편집</span>
+      <span class="top-meta" style="margin-left: 2px;">members.xlsx 편집</span>
     </span>
     <span class="top-meta-group">
       <a class="back-link" href="index.html">전체페이지</a>
@@ -214,11 +220,23 @@ td input:focus, td select:focus { outline: none; border-color: #4a5ce0; backgrou
 const OWNER = 'ststats';
 const REPO = 'staruniv';
 const BRANCH = 'main';
-const FILE_PATH = 'data/members.json';
+const FILE_PATH = 'data/members.xlsx';
+const SHEET_NAME = 'members';
 const WORKFLOW_FILE = 'update-stats.yml';
+
+// xlsx 시트의 컬럼 순서(A~J) - Python 쪽 스크립트(_common.py의 parse_xlsx_members/
+// write_xlsx)와 반드시 같은 순서를 써야 한다. 헤더 행(1행)은 저장할 때 절대
+// 건드리지 않는다(아래 commitMembers 참고) - 기존 파일에 이미 있는 헤더
+// 문구/서식을 그대로 유지하기 위함이라, 여기선 그냥 컬럼 순서 참고용 주석으로만
+// 남겨둔다: 이름, SOOP ID, ELO ID, 생년월일, 성별, 종족, 티어, 소속, 직책, 수정일
 
 let members = [];
 let fileSha = null;
+// 불러온 워크북 전체(다른 시트, 헤더 서식, 열 너비 등 포함)를 그대로 들고
+// 있다가, 저장할 때 members 시트의 데이터 부분(2행부터)만 갈아끼운다 - 매번
+// 새 워크북을 처음부터 만들면(XLSX.utils.book_new()) 원본 파일에 다른 시트가
+// 있거나 서식이 있어도 다 사라지기 때문이다.
+let loadedWorkbook = null;
 
 const FIELDS = ['id', 'elo_id', 'nickname', 'gender', 'birthdate', 'role', 'team', 'race', 'tier', 'info_updated_at'];
 
@@ -262,11 +280,57 @@ async function ghFetch(path, options) {
   return res.status === 204 ? null : res.json();
 }
 
-function b64EncodeUtf8(str) {
-  return btoa(unescape(encodeURIComponent(str)));
+// 날짜 셀 값(엑셀 날짜 타입이면 JS Date 객체, 텍스트로 저장돼있었으면 문자열)을
+// "YYYY-MM-DD" 문자열로 통일한다. 값이 없으면 null.
+function cellToDateString(v) {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) {
+    const pad2 = (n) => String(n).padStart(2, '0');
+    return `${v.getFullYear()}-${pad2(v.getMonth() + 1)}-${pad2(v.getDate())}`;
+  }
+  return String(v).trim() || null;
 }
-function b64DecodeUtf8(str) {
-  return decodeURIComponent(escape(atob(str)));
+
+// 시트의 한 행(배열, A~J 순서)을 우리가 다루는 member 객체로 변환한다.
+// Python 쪽(_common.py의 parse_xlsx_members)과 필드 의미/변환 규칙을 맞춘다
+// (성별은 시트엔 "남자"/"여자"로 저장되지만, 내부적으로는 "m"/"f"로 다룬다).
+function rowToMember(row) {
+  const [nickname, soopId, eloId, birthdate, genderKr, race, tier, team, role, updatedAt] = row;
+  let gender = genderKr;
+  if (genderKr === '남자') gender = 'm';
+  else if (genderKr === '여자') gender = 'f';
+  return {
+    id: soopId != null ? String(soopId) : '',
+    elo_id: (eloId === undefined || eloId === null || eloId === '') ? null : eloId,
+    nickname: nickname != null ? nickname : '',
+    gender: gender || '',
+    birthdate: cellToDateString(birthdate),
+    role: role || '',
+    team: team != null ? team : '',
+    race: race != null ? race : '',
+    tier: tier != null ? String(tier) : '',
+    info_updated_at: cellToDateString(updatedAt),
+  };
+}
+
+// member 객체를 시트에 쓸 한 행(배열, A~J 순서)으로 되돌린다. rowToMember의 역방향.
+function memberToRow(m) {
+  let genderKr = m.gender;
+  if (m.gender === 'm') genderKr = '남자';
+  else if (m.gender === 'f') genderKr = '여자';
+  const eloId = (m.elo_id === '' || m.elo_id == null) ? null : Number(m.elo_id);
+  return [
+    m.nickname || null,
+    m.id || null,
+    Number.isNaN(eloId) ? null : eloId,
+    m.birthdate || null,
+    genderKr || null,
+    m.race || null,
+    m.tier || null,
+    m.team || null,
+    m.role || null,
+    m.info_updated_at || null,
+  ];
 }
 
 document.getElementById('load-btn').addEventListener('click', async () => {
@@ -274,8 +338,20 @@ document.getElementById('load-btn').addEventListener('click', async () => {
   try {
     const data = await ghFetch(`/contents/${FILE_PATH}?ref=${BRANCH}`, { method: 'GET' });
     fileSha = data.sha;
-    const parsed = JSON.parse(b64DecodeUtf8(data.content));
-    members = parsed.members || [];
+    // GitHub Contents API는 파일 내용을 base64로 준다 - xlsx는 바이너리
+    // 포맷이라 텍스트로 디코드하지 않고, SheetJS가 base64를 직접 읽게 한다.
+    const wb = XLSX.read(data.content, { type: 'base64', cellDates: true });
+    if (!wb.SheetNames.includes(SHEET_NAME)) {
+      throw new Error(`'${SHEET_NAME}' 시트를 찾을 수 없습니다. (있는 시트: ${wb.SheetNames.join(', ')})`);
+    }
+    loadedWorkbook = wb;
+    const ws = wb.Sheets[SHEET_NAME];
+    // header:1 = 각 행을 객체가 아니라 배열로 반환(컬럼 위치 그대로 다루기
+    // 위함). range:1 = 0-index 1번째 행(=엑셀 2행)부터 읽어서 헤더 행은 건너뜀.
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, range: 1 });
+    members = rows
+      .filter((r) => Array.isArray(r) && r.length > 0 && r[1] != null && r[1] !== '')
+      .map(rowToMember);
     document.getElementById('editor-card').style.display = '';
     renderTable();
     setStatus(`불러옴: ${members.length}명 (sha ${fileSha.slice(0, 7)})`, 'success');
@@ -355,15 +431,52 @@ document.getElementById('add-btn').addEventListener('click', () => {
 });
 
 async function commitMembers() {
-  const content = JSON.stringify({ members }, null, 2);
+  if (!loadedWorkbook) {
+    throw new Error('먼저 불러오기를 해야 저장할 수 있습니다.');
+  }
+  const ws = loadedWorkbook.Sheets[SHEET_NAME];
+
+  // 기존 시트에 이미 있던 데이터 행 범위를 확인한다(헤더 1행 포함). 지금
+  // 저장할 인원이 예전보다 줄었으면(누군가 삭제됨) 남는 오래된 셀이 그대로
+  // 남아있으면 안 되니, 데이터 영역(2행부터, 헤더는 절대 안 건드림)을 먼저
+  // 싹 비우고 나서 새로 쓴다.
+  const oldRange = ws['!ref']
+    ? XLSX.utils.decode_range(ws['!ref'])
+    : { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } };
+  for (let r = 1; r <= oldRange.e.r; r++) {
+    for (let c = 0; c <= 9; c++) {
+      delete ws[XLSX.utils.encode_cell({ r, c })];
+    }
+  }
+
+  // origin: 'A2' - 2행(0-index r=1)부터 쓴다. 1행(헤더)은 절대 안 건드리므로
+  // 기존 파일의 헤더 문구/서식이 그대로 유지된다.
+  const memberRows = members.map(memberToRow);
+  XLSX.utils.sheet_add_aoa(ws, memberRows, { origin: 'A2' });
+
+  // 시트의 사용 범위(!ref)를 새 데이터 크기에 맞게 갱신한다 - 안 그러면 예전
+  // 범위 그대로 남아서, 방금 지운 빈 셀들까지 "이 시트 범위 안"인 것처럼
+  // 남아있는 도구가 있을 수 있다.
+  ws['!ref'] = XLSX.utils.encode_range({
+    s: { r: 0, c: 0 },
+    e: { r: Math.max(memberRows.length, oldRange.e.r), c: Math.max(oldRange.e.c, 9) },
+  });
+
+  // loadedWorkbook 전체(members 시트 말고 다른 시트가 있었다면 그것도 포함)를
+  // 그대로 다시 내보낸다 - 이번에 건드린 건 members 시트의 데이터 부분뿐이다.
+  // xlsx는 바이너리 포맷이라, JSON 때처럼 텍스트를 UTF-8 바이트로 바꿔 base64
+  // 인코딩하는 게 아니라 SheetJS가 바이너리 자체를 base64로 직접 내보내게
+  // 한다 - GitHub Contents API는 파일 내용을 항상 base64로 받는다.
+  const base64Content = XLSX.write(loadedWorkbook, { type: 'base64', bookType: 'xlsx' });
+
   const msgInput = document.getElementById('commit-msg').value.trim();
-  const message = msgInput || `어드민 페이지에서 members.json 수정 (${members.length}명)`;
+  const message = msgInput || `어드민 페이지에서 members.xlsx 수정 (${members.length}명)`;
 
   const putRes = await ghFetch(`/contents/${FILE_PATH}`, {
     method: 'PUT',
     body: JSON.stringify({
       message,
-      content: b64EncodeUtf8(content),
+      content: base64Content,
       sha: fileSha,
       branch: BRANCH,
     }),
