@@ -9695,6 +9695,18 @@
       "role": "",
       "info_updated_at": null,
       "id": "fjqmal13"
+    },
+    {
+      "nickname": "미상(elo_773)",
+      "elo_id": 773,
+      "birthdate": null,
+      "gender": null,
+      "race": null,
+      "tier": null,
+      "team": null,
+      "role": "",
+      "info_updated_at": null,
+      "id": "elo_773"
     }
   ]
 }
