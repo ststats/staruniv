@@ -21,7 +21,7 @@ jobs:
 
       - name: 패키지 설치
         run: |
-          pip install requests
+          pip install requests openpyxl
 
       - name: 누락 데이터 복구 스크립트 실행
         run: python scripts/fix_august_sponsor.py
