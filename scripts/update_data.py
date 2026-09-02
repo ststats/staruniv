@@ -29,6 +29,7 @@ import json
 from _common import (
     ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range,
     atomic_write_json, safe_read_json, validate_and_clean_members,
+    XLSX_PATH, load_xlsx_members, write_xlsx,
 )
 from fetch_poonggo_data import fetch_poonggo_monthly
 from fetch_eloboard_data import aggregate_period_data
@@ -37,6 +38,52 @@ MEMBERS_PATH = ROOT / "data" / "members.json"
 OUTPUT_PATH = ROOT / "data" / "latest.json"
 ARCHIVE_DIR = ROOT / "data" / "archive"
 APPLIED_CORRECTIONS_PATH = ROOT / "data" / "archive_corrections_applied.json"
+
+
+def _add_unknown_elo_players(sponsor_list: list) -> None:
+    """엘로보드에서 수집된 스폰전적(aggregate_period_data()의 반환값)의 elo_id
+    중 members.xlsx에 없는 신규 ID가 있다면, 빈칸 프로필을 자동으로 생성하여
+    xlsx에 추가한다.
+
+    fetch_eloboard_data.py는 "가져오기만" 하는 순수 함수이므로, 그 수집
+    결과를 갖고 뭘 할지(신규 인원을 xlsx에 등록할지)는 오케스트레이터인 이
+    파일이 결정한다. xlsx가 로스터의 유일한 원본이므로(members.json은
+    convert_members_xlsx.py가 xlsx로부터 파생시킴), 여기서 xlsx를 직접
+    건드린다. 자동 생성된 임시 프로필은 id가 "elo_{elo_id}" 형태의 가짜
+    SOOP 아이디라, 나중에 관리자가 admin.html에서 진짜 정보로 채워 넣어야
+    완전해진다."""
+    if not XLSX_PATH.exists():
+        print("[경고] members.xlsx가 없어 신규 인원 자동 등록을 건너뜁니다.", file=sys.stderr)
+        return
+
+    member_map = load_xlsx_members()
+    existing_elo_ids = {
+        str(fields["elo_id"]) for fields in member_map.values() if fields.get("elo_id") is not None
+    }
+
+    appends = []
+    for item in sponsor_list:
+        elo_id_str = item.get("id")
+        if elo_id_str and elo_id_str not in existing_elo_ids:
+            new_member = {
+                "id": f"elo_{elo_id_str}",  # 아프리카TV 아이디 빈칸
+                "nickname": f"미상(elo_{elo_id_str})",
+                "elo_id": int(elo_id_str),
+                "birthdate": None,
+                "gender": "",  # 성별 빈칸
+                "race": "",    # 종족 빈칸
+                "tier": "",    # 티어 빈칸
+                "team": "",    # 소속 팀 빈칸
+                "role": "",
+                "info_updated_at": None,
+            }
+            appends.append(new_member)
+            existing_elo_ids.add(elo_id_str)
+            print(f"[알림] 새로운 임시 프로필 추가됨: {new_member['nickname']}")
+
+    if appends:
+        write_xlsx({}, appends)
+        print(f"[완료] 총 {len(appends)}명의 신규 임시 프로필이 members.xlsx에 추가되었습니다.")
 
 
 def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
@@ -172,6 +219,7 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
     if not sponsor_list:
         print(f"[경고] {prev_year}년 {prev_month}월 스폰전적 재조회 결과가 비어있음 - 기존 값 유지", file=sys.stderr)
     else:
+        _add_unknown_elo_players(sponsor_list)
         # sponsor_list의 "id"는 elo_id(숫자 문자열)다. archive의 각 멤버는 latest.json이
         # 저장될 때부터 자기 elo_id를 이미 갖고 있으므로(out_members 구성부 참고), 별도
         # 매핑 테이블 없이 archive 멤버의 elo_id로 바로 조회한다.
@@ -287,6 +335,7 @@ def main():
         print(f"[경고] 엘로보드 수집 중 오류: {e} - 기존 스폰전적 유지", file=sys.stderr)
         sponsor_list = []
     if sponsor_list:
+        _add_unknown_elo_players(sponsor_list)
         # sponsor_list의 "id"는 elo_id(숫자 문자열) 그대로다. 별도 변환 없이 elo_id를
         # 키로 저장해두고, out_members를 만들 때 각 멤버의 elo_id로 바로 조회한다.
         sponsor_data = _index_by_elo_id(sponsor_list)

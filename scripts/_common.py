@@ -143,9 +143,13 @@ def atomic_write_json(path: Path, data, **json_kwargs) -> None:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, **json_kwargs)
         os.replace(tmp_path, path)
-    except BaseException:
+    except Exception:
         # 실패하면 임시 파일 잔재를 남기지 않는다 - 원래 path는 애초에 안
-        # 건드렸으므로 그대로 안전하다.
+        # 건드렸으므로 그대로 안전하다. KeyboardInterrupt/SystemExit까지
+        # 여기서 잡을 필요는 없다(일반적인 쓰기 실패만 대상) - 어차피
+        # tempfile.mkstemp가 매번 고유한 이름을 만들어서, 정리를 못 하고
+        # 남는 임시파일이 있어도 다음 실행과 이름이 겹치거나 문제를 일으키지
+        # 않는다.
         try:
             os.unlink(tmp_path)
         except OSError:

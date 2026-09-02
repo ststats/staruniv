@@ -7,11 +7,12 @@ ststats 프로젝트의 CSR 페이지 생성 스크립트 (전면 개편본).
 
 import json
 import colorsys
+import hashlib
 import shutil
 from pathlib import Path
 from PIL import Image
 
-from _common import ROOT
+from _common import ROOT, safe_read_json, atomic_write_json
 
 DATA_PATH = ROOT / "data" / "latest.json"
 ARCHIVE_DIR = ROOT / "data" / "archive"
@@ -23,31 +24,56 @@ OUTPUT_INDEX = DOCS_DIR / "index.html"
 OUTPUT_PROFILE_PATH = DOCS_DIR / "profile.html"
 OUTPUT_TEAM_PATH = DOCS_DIR / "team.html"
 OUTPUT_TEAMS_DIR = DOCS_DIR / "teams"  # 예전 방식(팀별 파일)의 잔재 정리용으로만 씀
+# 팀 로고에서 대표 색상을 추출하는 건 이미지 픽셀을 전부 훑어야 해서(아래
+# get_team_topbar_color 참고) 팀 수만큼 반복되면 은근히 무겁다. 로고는 자주
+# 안 바뀌므로, 한 번 계산한 색상을 파일 내용 해시와 함께 캐싱해서 로고가
+# 실제로 바뀐 팀만 다시 계산한다.
+TEAM_LOGO_COLOR_CACHE_PATH = ROOT / "data" / "team_logo_colors_cache.json"
 
 PLACEHOLDER_VALUES = {"체크", "todo", "TODO", "?", "미정", "확인", "확인필요", ""}
 DEFAULT_TOPBAR_COLOR = "#4a5ce0"
 NON_TEAM_TOPBAR_COLOR = "#8b8f99"
 
-def get_team_topbar_color(team_name: str) -> str:
+def get_team_topbar_color(team_name: str, cache: dict) -> str:
+    """로고 파일에서 대표 색상을 추출한다. 파일 내용의 sha256 해시를 캐시
+    키로 써서, 실제로 로고가 바뀐 팀만 다시 계산한다(수정 시각/mtime이
+    아니라 내용 해시를 쓰는 이유: GitHub Actions의 checkout은 매번 저장소를
+    새로 클론하면서, 파일 내용이 하나도 안 바뀌어도 mtime을 그 순간으로
+    새로 찍어버린다 - mtime 기반 캐시였다면 매 실행마다 전부 무효화됐을
+    것이다)."""
     logo_path = LOGOS_DIR / f"{team_name}.webp"
-    if logo_path.exists():
-        try:
-            img = Image.open(logo_path).convert("RGBA").resize((40, 40))
-            buckets = {}
-            for r, g, b, a in img.getdata():
-                if a < 128 or (r > 235 and g > 235 and b > 235) or (r < 20 and g < 20 and b < 20): continue
-                h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                key = (r // 20 * 20, g // 20 * 20, b // 20 * 20)
-                bucket = buckets.setdefault(key, [0, 0.0])
-                bucket[0] += 1
-                bucket[1] += s
-            if buckets:
-                top_buckets = sorted(buckets.items(), key=lambda kv: -kv[1][0])[:6]
-                best_key = max(top_buckets, key=lambda kv: kv[1][1] / kv[1][0])[0]
-                return f"#{best_key[0]:02x}{best_key[1]:02x}{best_key[2]:02x}"
-        except Exception:
-            pass
-    return DEFAULT_TOPBAR_COLOR
+    if not logo_path.exists():
+        return DEFAULT_TOPBAR_COLOR
+
+    try:
+        file_hash = hashlib.sha256(logo_path.read_bytes()).hexdigest()
+    except OSError:
+        return DEFAULT_TOPBAR_COLOR
+
+    cached = cache.get(team_name)
+    if cached and cached.get("hash") == file_hash:
+        return cached["color"]
+
+    color = DEFAULT_TOPBAR_COLOR
+    try:
+        img = Image.open(logo_path).convert("RGBA").resize((40, 40))
+        buckets = {}
+        for r, g, b, a in img.getdata():
+            if a < 128 or (r > 235 and g > 235 and b > 235) or (r < 20 and g < 20 and b < 20): continue
+            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+            key = (r // 20 * 20, g // 20 * 20, b // 20 * 20)
+            bucket = buckets.setdefault(key, [0, 0.0])
+            bucket[0] += 1
+            bucket[1] += s
+        if buckets:
+            top_buckets = sorted(buckets.items(), key=lambda kv: -kv[1][0])[:6]
+            best_key = max(top_buckets, key=lambda kv: kv[1][1] / kv[1][0])[0]
+            color = f"#{best_key[0]:02x}{best_key[1]:02x}{best_key[2]:02x}"
+    except Exception:
+        pass
+
+    cache[team_name] = {"hash": file_hash, "color": color}
+    return color
 
 PAGE_CSS = """
 html { scrollbar-gutter: stable; }
@@ -987,7 +1013,9 @@ def main():
         if mid:
             static_info[mid] = {"gender": m.get("gender", "m"), "birthdate": clean_value(m.get("birthdate"))}
 
-    team_colors = {team: get_team_topbar_color(team) for team in sorted(all_team_names)}
+    team_color_cache = safe_read_json(TEAM_LOGO_COLOR_CACHE_PATH, default={})
+    team_colors = {team: get_team_topbar_color(team, team_color_cache) for team in sorted(all_team_names)}
+    atomic_write_json(TEAM_LOGO_COLOR_CACHE_PATH, team_color_cache)
     team_colors["FA"], team_colors["휴면"] = "#8b8f99", "#8b8f99"
 
     index_html = generate_html("스타대학", "", False, "", static_info, team_colors)

@@ -16,12 +16,19 @@ elo_id <-> id 매핑 테이블을 거쳐서 이 함수의 반환값을 소비한
 HTTP 요청/재시도는 _common.fetch_json()에 맡긴다 - fetch_poonggo_data.py와
 동일한 타임아웃/재시도 횟수/백오프 간격을 쓰도록 통일했다(자체 재시도 루프를
 따로 두지 않는다).
+
+이 모듈은 순수하게 "가져오기만" 한다 - members.xlsx에 신규 elo_id를
+자동 등록하는 로직(예전엔 여기서 aggregate_period_data() 끝에 자동으로
+불렀었다)은 update_data.py(오케스트레이터)로 옮겼다. 수집 모듈이 파일
+쓰기라는 부수 효과(side effect)까지 갖고 있으면, "이 함수를 부르면 정확히
+뭐가 바뀌는지"를 호출부만 봐서는 알 수 없게 된다 - 오케스트레이터가 수집
+결과를 받아서 뭘 할지 명시적으로 결정하는 게 책임이 더 명확하다.
 """
 
 import time
 import sys
 
-from _common import fetch_json, load_xlsx_members, write_xlsx, XLSX_PATH
+from _common import fetch_json
 from collections import defaultdict
 
 PAGE_LIMIT = 200
@@ -32,47 +39,6 @@ SLEEP_BETWEEN_PAGES_SEC = 0.5
 # 커밋도 전혀 안 된다. 충분히 넉넉하지만(200명 x 2000페이지 = 40만 건) 무한
 # 루프는 막아주는 상한선을 둔다.
 MAX_PAGES = 2000
-
-
-def _add_unknown_elo_players(combined_dict: dict) -> None:
-    """수집된 전적의 elo_id 중 xlsx에 없는 신규 ID가 있다면 빈칸 프로필을
-    자동으로 생성하여 xlsx에 추가한다.
-
-    xlsx가 로스터의 유일한 원본이므로(members.json은 convert_members_xlsx.py가
-    xlsx로부터 파생시킴), 여기서도 xlsx를 직접 건드린다. 자동 생성된 임시
-    프로필은 id가 "elo_{elo_id}" 형태의 가짜 SOOP 아이디라, 나중에 관리자가
-    admin.html에서 진짜 정보로 채워 넣어야 완전해진다."""
-    if not XLSX_PATH.exists():
-        print("[경고] members.xlsx가 없어 신규 인원 자동 등록을 건너뜁니다.", file=sys.stderr)
-        return
-
-    member_map = load_xlsx_members()
-    existing_elo_ids = {
-        str(fields["elo_id"]) for fields in member_map.values() if fields.get("elo_id") is not None
-    }
-
-    appends = []
-    for elo_id_str in combined_dict.keys():
-        if elo_id_str not in existing_elo_ids and elo_id_str != "None":
-            new_member = {
-                "id": f"elo_{elo_id_str}",  # 아프리카TV 아이디 빈칸
-                "nickname": f"미상(elo_{elo_id_str})",
-                "elo_id": int(elo_id_str),
-                "birthdate": None,
-                "gender": "",  # 성별 빈칸
-                "race": "",    # 종족 빈칸
-                "tier": "",    # 티어 빈칸
-                "team": "",    # 소속 팀 빈칸
-                "role": "",
-                "info_updated_at": None,
-            }
-            appends.append(new_member)
-            existing_elo_ids.add(elo_id_str)
-            print(f"[알림] 새로운 임시 프로필 추가됨: {new_member['nickname']}")
-
-    if appends:
-        write_xlsx({}, appends)
-        print(f"[완료] 총 {len(appends)}명의 신규 임시 프로필이 members.xlsx에 추가되었습니다.")
 
 
 def aggregate_period_data(start_date: str, end_date: str) -> list:
@@ -151,8 +117,5 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
 
         offset += PAGE_LIMIT
         time.sleep(SLEEP_BETWEEN_PAGES_SEC)
-
-    # 전적 수집이 끝난 직후 신규 인원 등록 로직 실행
-    _add_unknown_elo_players(combined_dict)
 
     return [v for v in combined_dict.values() if v["id"] is not None]
