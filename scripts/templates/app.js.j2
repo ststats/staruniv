@@ -121,6 +121,21 @@
       if (params.get('date') && AVAILABLE_DATES.includes(params.get('date'))) currentDateStr = params.get('date');
       if (params.get('metric') && metricDefs[params.get('metric')]) currentMetric = params.get('metric');
 
+      // 프로필 페이지의 뒤로가기 목적지는 document.referrer(브라우저가 알려주는
+      // "직전 페이지") 대신 URL 파라미터(fromTeam)로 직접 재구성한다 -
+      // referrer는 새 탭에서 열거나 브라우저 프라이버시 설정에 따라 아예 안
+      // 올 수도 있어서 불안정했다. fromTeam은 프로필 링크를 만드는 쪽
+      // (renderFaBar/renderDashboard)에서 항상 명시적으로 실어 보내므로,
+      // 어디서 왔든(전체페이지/팀페이지) 날짜·지표까지 그대로 들고 돌아간다.
+      if (IS_PROFILE) {
+          const fromTeam = params.get('fromTeam');
+          const backHref = fromTeam
+              ? `team.html?team=${encodeURIComponent(fromTeam)}&date=${currentDateStr}&metric=${currentMetric}`
+              : `index.html?date=${currentDateStr}&metric=${currentMetric}`;
+          const backLinkEl = document.getElementById('back-link');
+          if (backLinkEl) backLinkEl.href = LOGO_PREFIX + backHref;
+      }
+
       const metricSel = document.getElementById('ms-metric-select');
       if(metricSel) {
           metricSel.value = currentMetric;
@@ -142,15 +157,6 @@
       AVAILABLE_DATES.slice(1, 4).forEach(d => {
           fetch(LOGO_PREFIX + 'data/daily/' + d + '.json').then(r=>r.json()).then(data => fetchedData[d] = withDerivedFields(data)).catch(()=>{});
       });
-
-      if (IS_PROFILE && document.referrer) {
-          try {
-              const ref = new URL(document.referrer);
-              if (ref.origin === window.location.origin && ref.pathname.endsWith('team.html')) {
-                  document.getElementById('back-link').href = document.referrer;
-              }
-          } catch(e) {}
-      }
 
       applyData();
   });
@@ -290,7 +296,7 @@
           const liveDot = m.id ? `<span class="live-dot" data-live-id="${m.id}"></span>` : '';
           const inner = `${photoImg}${liveDot}<span class="member-name">${m.nickname}</span>`;
           return m.id
-              ? `<div class="fa-bar-item"><a href="${LOGO_PREFIX}profile.html?id=${m.id}&date=${currentDateStr}">${inner}</a></div>`
+              ? `<div class="fa-bar-item"><a href="${LOGO_PREFIX}profile.html?id=${m.id}&date=${currentDateStr}&metric=${currentMetric}&fromTeam=${encodeURIComponent(TARGET_TEAM || '')}">${inner}</a></div>`
               : `<div class="fa-bar-item"><span class="fa-bar-static">${inner}</span></div>`;
       }).join('');
 
@@ -371,7 +377,7 @@
                       const liveDot = m.id ? `<span class="live-dot" data-live-id="${m.id}"></span>` : '';
                       const bdayMark = isBday ? '<span class="bday-mark">🎂</span>' : '';
                       const nameContent = m.id
-                          ? `${liveDot}<a class="member-name-link" href="${LOGO_PREFIX}profile.html?id=${m.id}&date=${currentDateStr}">${m.nickname}</a>${bdayMark}`
+                          ? `${liveDot}<a class="member-name-link" href="${LOGO_PREFIX}profile.html?id=${m.id}&date=${currentDateStr}&metric=${currentMetric}&fromTeam=${encodeURIComponent(TARGET_TEAM || '')}">${m.nickname}</a>${bdayMark}`
                           : liveDot + m.nickname + bdayMark;
                       return `<div class="member-row ${cClass.join(' ')}"><span class="member-name">${nameContent}</span><span class="member-value">${def.format(m._val)}</span></div>`;
                   }).join('');
