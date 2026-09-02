@@ -634,7 +634,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
 
       const itemsHtml = faMembers.map(m => {{
           const photoUrl = soopPhotoUrl(m.id);
-          const photoImg = `<img class="fa-bar-photo" src="${{photoUrl}}" alt="" onerror="this.style.visibility='hidden'">`;
+          const photoImg = `<img class="fa-bar-photo" src="${{photoUrl}}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
           const liveDot = m.id ? `<span class="live-dot" data-live-id="${{m.id}}"></span>` : '';
           const inner = `${{photoImg}}${{liveDot}}<span class="member-name">${{m.nickname}}</span>`;
           return m.id
