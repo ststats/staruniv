@@ -107,5 +107,32 @@ jobs:
             exit 0
           fi
           git commit -m "데이터 갱신 (풍고+엘로보드): $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git pull --rebase origin "${GITHUB_REF_NAME}" || true
-          git push || (sleep 5 && git pull --rebase origin "${GITHUB_REF_NAME}" && git push)
+
+          # members.xlsx가 이제 로스터의 원본이라(admin.html도 여기 직접 커밋함),
+          # 이 워크플로우가 만든 xlsx 변경(신규 미상 프로필 추가, 소급정정 완료된
+          # 사람의 수정일 비우기 등)이랑 admin.html의 커밋이 하필 겹치면 여기서
+          # 병합해야 하는데 - xlsx는 바이너리라 git이 텍스트 파일처럼 자동으로
+          # 합쳐주지 못한다("Cannot merge binary files"로 그냥 충돌 처리됨). 예전
+          # members.json(텍스트) 시절보다 이 상황이 실제로 생길 가능성이 높아졌다.
+          # 그래서 재시도를 여러 번 하고, rebase가 실패할 때마다 확실하게
+          # abort해서 로컬 상태를 깨끗하게 정리한 뒤 다시 시도한다(정리 안 하고
+          # 넘어가면 리베이스 도중 상태로 push를 시도하게 되어 더 위험하다).
+          push_ok=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              push_ok=true
+              break
+            fi
+            echo "[재시도 ${attempt}/5] push 실패 - pull --rebase 후 재시도합니다"
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 5))
+            if ! git pull --rebase origin "${GITHUB_REF_NAME}"; then
+              echo "[경고] rebase 실패(xlsx 바이너리 충돌 가능성) - abort하고 다음 시도로 넘어갑니다"
+              git rebase --abort 2>/dev/null || true
+            fi
+          done
+
+          if [ "$push_ok" = false ]; then
+            echo "::error::5번 재시도했지만 push에 실패했습니다 - 이번 실행분은 반영되지 않았고, 다음 실행에서 다시 시도됩니다(데이터 유실이 아니라 이번 실행만 건너뛴 것)."
+            exit 1
+          fi
