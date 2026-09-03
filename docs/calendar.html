@@ -55,13 +55,13 @@
         }
         
         /* 레이아웃 구조 */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1300px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 860px; }
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1350px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 920px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1200px) { 
+        @media(max-width: 1250px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 860px; }
+            .sidebar { width: 100%; max-width: 920px; }
         }
 
         /* 공통 패널 스타일 */
@@ -106,9 +106,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin: 0 auto 24px auto;
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
+            width: 840px; /* 120px * 7열 = 840px로 캘린더와 완벽 일치 */
         }
         
         /* 연월 텍스트 스타일 */
@@ -125,10 +126,10 @@
         .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .calendar-scroll-content { width: 770px; margin: 0 auto; }
+        .calendar-scroll-content { width: 840px; margin: 0 auto; }
 
         .weekdays { 
-            display: grid; grid-template-columns: repeat(7, 110px); 
+            display: grid; grid-template-columns: repeat(7, 120px); 
             text-align: center; font-size: 14px; font-weight: 600; 
             color: var(--text-muted); margin-bottom: 12px; 
         }
@@ -136,12 +137,12 @@
         .weekdays div:last-child { color: var(--saturday); } 
 
         .days-grid { 
-            display: grid; grid-template-columns: repeat(7, 110px); 
+            display: grid; grid-template-columns: repeat(7, 120px); 
             border-top: 1px solid var(--border-light); border-left: 1px solid var(--border-light); 
         }
         
         .day-cell {
-            background: var(--bg-panel); width: 110px; 
+            background: var(--bg-panel); width: 120px; 
             min-height: 130px; 
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
@@ -161,7 +162,7 @@
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
-        /* 캘린더 내부 일정 셀 (배경색 복원) */
+        /* 캘린더 내부 일정 셀 */
         .cell-event {
             border-radius: var(--radius-sm); 
             padding: 5px 6px; 
@@ -399,13 +400,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '880px'; 
+            target.style.width = '940px'; // 120px 그리드 폭(840px)에 맞추어 넉넉히 확장
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1200,
+                windowWidth: 1250,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
