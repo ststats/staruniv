@@ -54,7 +54,7 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (900px 기준 정렬) */
+        /* 레이아웃 구조 (전체 카드 폭 900px 기준) */
         .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1310px; align-items: flex-start; justify-content: center; }
         .left-area { display: flex; flex-direction: column; width: 100%; max-width: 900px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
@@ -64,14 +64,14 @@
             .sidebar { width: 100%; max-width: 900px; }
         }
 
-        /* 공통 패널 스타일 (패딩 30px 적용 시 내부 폭 900 - 60 = 840px) */
+        /* 공통 패널 스타일 (카드 폭 정확히 900px 고정) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
-            width: 100%;
+            width: 900px; /* 카드 폭 900px 고정 */
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -85,10 +85,10 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-            width: 100%;
+            width: 900px; /* 캡처 영역 전체 폭 900px 맞춤 */
             background-color: var(--bg-page);
-            padding: 10px;
-            margin: -10px; 
+            padding: 0;
+            margin: 0; 
             border-radius: var(--radius-xl);
         }
 
@@ -109,7 +109,7 @@
             margin: 0 auto 24px auto;
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
-            width: 840px; /* 120px * 7열 = 840px로 캘린더와 완벽 일치 */
+            width: 840px; /* 120px * 7열 = 840px로 요일/날짜 그리드와 정확히 일치 */
         }
         
         /* 연월 텍스트 스타일 */
@@ -126,10 +126,12 @@
         .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* 캘린더 콘텐츠 840px 고정 후 가운데 정렬 */
         .calendar-scroll-content { width: 840px; margin: 0 auto; }
 
         .weekdays { 
-            display: grid; grid-template-columns: repeat(7, 120px); 
+            display: grid; grid-template-columns: repeat(7, 120px); /* 120px씩 7열 = 840px */
             text-align: center; font-size: 14px; font-weight: 600; 
             color: var(--text-muted); margin-bottom: 12px; 
         }
@@ -137,12 +139,12 @@
         .weekdays div:last-child { color: var(--saturday); } 
 
         .days-grid { 
-            display: grid; grid-template-columns: repeat(7, 120px); 
+            display: grid; grid-template-columns: repeat(7, 120px); /* 120px씩 7열 = 840px */
             border-top: 1px solid var(--border-light); border-left: 1px solid var(--border-light); 
         }
         
         .day-cell {
-            background: var(--bg-panel); width: 120px; 
+            background: var(--bg-panel); width: 120px; /* 정확히 120px 고정 */
             min-height: 130px; 
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
@@ -183,7 +185,7 @@
         /* ==============================
             [2] 사이드바 디자인
         ============================== */
-        .sidebar .box-panel { padding: 24px; }
+        .sidebar .box-panel { padding: 24px; width: 380px; } /* 사이드바 패널은 기존 너비 유지 */
         
         .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
