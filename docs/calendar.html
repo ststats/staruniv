@@ -54,17 +54,17 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (왼쪽 영역 최대 폭 900px 고정으로 불필요한 스크롤 방지) */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1310px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 900px; }
+        /* 레이아웃 구조 (왼쪽 영역 최대 폭 960px로 설정) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1370px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 960px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1310px) { 
+        @media(max-width: 1370px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 900px; }
+            .sidebar { width: 100%; max-width: 960px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 900px 제한) */
+        /* 공통 패널 스타일 (부모 카드 섹션 최대 폭 960px 고정) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
@@ -72,7 +72,7 @@
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -111,7 +111,7 @@
             margin: 0 auto 24px auto;
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
-            width: 840px; /* 120px * 7열 = 840px로 캘린더와 완벽 일치 */
+            width: 840px; /* 요일/날짜 그리드와 동일하게 840px 고정 */
         }
         
         /* 연월 텍스트 스타일 */
@@ -402,13 +402,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '900px'; 
+            target.style.width = '960px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1310,
+                windowWidth: 1370,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
