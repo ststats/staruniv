@@ -103,8 +103,13 @@
         .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
         /* 월간 캘린더 */
-        .calendar-header { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; }
-        .calendar-header h2 { font-size: 20px; font-weight: 700; color: var(--text-heading); letter-spacing: -0.5px; }
+        .month-subtitle {
+            font-size: 15px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-left: 4px;
+            letter-spacing: 0;
+        }
 
         .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
@@ -231,9 +236,9 @@
 
                 <!-- 2. 월간 캘린더 (독립된 둥근 하얀 박스) -->
                 <div class="box-panel">
-                    <header class="calendar-header">
-                        <h2 id="monthTitle"></h2>
-                    </header>
+                    <div class="panel-title">
+                        <span>📅</span> 이달의 일정 <span id="monthTitle" class="month-subtitle"></span>
+                    </div>
                     <div class="calendar-inner" id="calendarInner">
                         <div class="calendar-scroll-content">
                             <div class="weekdays">
@@ -436,7 +441,8 @@
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
-            document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
+            // 괄호를 포함하여 서브타이틀로 렌더링
+            document.getElementById('monthTitle').innerText = `(${year}년 ${month + 1}월)`;
 
             const firstDayIndex = new Date(year, month, 1).getDay();
             const lastDay = new Date(year, month + 1, 0).getDate();
