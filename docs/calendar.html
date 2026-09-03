@@ -33,10 +33,10 @@
             --sunday: #ef4444;
             --saturday: #3b82f6;
             
-            --radius-xl: 24px;
-            --radius-lg: 18px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
+            --radius-xl: 20px;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
             
             --shadow-panel: 0 4px 20px rgba(15, 23, 42, 0.04);
             --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -54,29 +54,29 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (사이드바 등 2배 확대 유지) */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1550px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 1020px; }
-        .sidebar { width: 440px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
+        /* 레이아웃 구조 (원본 크기 100% 복원) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1290px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 830px; }
+        .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1550px) { 
+        @media(max-width: 1290px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 1020px; }
+            .sidebar { width: 100%; max-width: 830px; }
         }
 
-        /* 공통 패널 스타일 */
+        /* 공통 패널 스타일 (원본 패딩 복원) */
         .box-panel {
             background: var(--bg-panel); 
-            padding: 35px 24px; 
+            padding: 30px 18px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 1020px;
+            max-width: 830px;
         }
         .panel-title { 
             font-size: 34px; font-weight: 700; color: var(--text-heading); 
-            margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
 
         /* ==============================
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 1020px;
+            max-width: 830px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -95,21 +95,21 @@
         }
 
         /* 오늘의 일정 리스트 */
-        .today-list { display: flex; flex-direction: column; gap: 16px; }
+        .today-list { display: flex; flex-direction: column; gap: 12px; }
         .today-card {
-            background: var(--bg-panel); border-radius: var(--radius-md); padding: 20px; 
-            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px; 
+            background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
+            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 8px; 
             box-shadow: var(--shadow-card);
         }
-        .no-schedule { font-size: 26px; color: var(--text-muted); text-align: center; padding: 30px 0; width: 100%; }
+        .no-schedule { font-size: 26px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
-        /* 월간 캘린더 영역 (오리지널 비율 110px 유지 -> 770px 기준) */
+        /* 월간 캘린더 영역 (원본 770px 박스 유지) */
         .calendar-header-area {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin: 0 auto 24px auto;
-            padding-bottom: 20px;
+            padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
             width: 100%;
             max-width: 770px; 
@@ -131,7 +131,7 @@
             overflow-x: auto; 
             padding-bottom: 12px; 
         }
-        .calendar-inner::-webkit-scrollbar { height: 10px; }
+        .calendar-inner::-webkit-scrollbar { height: 8px; }
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
         .calendar-scroll-content { 
@@ -140,11 +140,11 @@
             box-sizing: border-box;
         }
 
-        /* 요일 폰트 (-2px 줄임: 28px -> 26px) */
+        /* 요일 폰트 (28px -> 26px로 2px 축소, 칸 너비 110px 원본 유지) */
         .weekdays { 
             display: grid; grid-template-columns: repeat(7, 110px); 
             text-align: center; font-size: 26px; font-weight: 600; 
-            color: var(--text-muted); margin-bottom: 16px; 
+            color: var(--text-muted); margin-bottom: 12px; 
             box-sizing: border-box;
         }
         .weekdays div:first-child { color: var(--sunday); } 
@@ -157,7 +157,7 @@
             width: 770px; 
         }
         
-        /* 캘린더 칸 크기는 원래 크기(110px, min-height 130px)로 정확히 원복 */
+        /* 캘린더 셀 크기(110px, min-height 130px) 원본 100% 유지 */
         .day-cell {
             background: var(--bg-panel); width: 110px; 
             min-height: 130px; 
@@ -170,18 +170,18 @@
         .day-cell.other-month { background-color: #f8fafc; }
         .day-cell.other-month .day-number { color: #94a3b8; }
 
-        /* 날짜 숫자 폰트 (-2px 줄임: 30px -> 28px) */
-        .day-number { font-size: 28px; font-weight: 600; color: var(--text-heading); margin-bottom: 8px; line-height: 1.4; }
+        /* 날짜 숫자 폰트 (30px -> 28px로 2px 축소) */
+        .day-number { font-size: 28px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
 
         .day-cell.today .day-number { width: max-content; position: relative; z-index: 1; }
         .day-cell.today .day-number::after {
-            content: ''; position: absolute; bottom: 2px; left: -2px; right: -2px; height: 12px;
+            content: ''; position: absolute; bottom: 1px; left: -2px; right: -2px; height: 8px;
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
-        /* 캘린더 내부 일정 셀 폰트들 (-2px씩 줄임: 시간/이름 22->20px, 내용 24->22px) */
+        /* 캘린더 내부 일정 셀 폰트들 (시간/이름 22->20px, 내용 24->22px로 각각 2px 축소, 셀 패딩 원본 유지) */
         .cell-event {
             border-radius: var(--radius-sm); 
             padding: 5px 6px; 
@@ -200,34 +200,34 @@
 
 
         /* ==============================
-            [2] 사이드바 디자인 (기존 2배 유지)
+            [2] 사이드바 디자인
         ============================== */
-        .sidebar .box-panel { padding: 35px 24px; }
+        .sidebar .box-panel { padding: 24px 18px; }
         
-        .month-control-box { display: flex; gap: 10px; margin-bottom: 24px; align-items: center; }
+        .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
         
         .btn-outline { 
             flex: 1; background: var(--bg-panel); color: var(--text-main); 
-            border: 1px solid var(--border-dark); padding: 16px 0; 
+            border: 1px solid var(--border-dark); padding: 10px 0; 
             border-radius: var(--radius-md); font-size: 26px; font-weight: 600; 
         }
         .btn-outline:hover { background-color: var(--bg-page); color: var(--text-heading); }
         
         .btn-action { 
-            background: var(--success); color: white; padding: 16px 20px; 
+            background: var(--success); color: white; padding: 10px 14px; 
             border-radius: var(--radius-md); font-size: 26px; font-weight: 600; flex-shrink: 0; 
         }
         .btn-action:hover { background: var(--success-hover); }
         .btn-primary { 
-            width: 100%; padding: 20px; background: var(--primary); color: white; 
-            border-radius: var(--radius-md); font-weight: 600; font-size: 28px; margin-top: 12px; 
+            width: 100%; padding: 14px; background: var(--primary); color: white; 
+            border-radius: var(--radius-md); font-weight: 600; font-size: 28px; margin-top: 8px; 
         }
         .btn-primary:hover { background: var(--primary-hover); }
 
-        .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
         input, select, textarea {
-            width: 100%; padding: 16px; background: var(--bg-page); 
+            width: 100%; padding: 12px; background: var(--bg-page); 
             border: 1px solid var(--border-light); color: var(--text-heading); 
             border-radius: var(--radius-md); font-size: 26px; font-family: inherit; transition: all 0.2s;
         }
@@ -235,21 +235,21 @@
             outline: none; border-color: var(--primary); 
             background: var(--bg-panel); box-shadow: 0 0 0 3px var(--primary-light); 
         }
-        textarea { resize: vertical; min-height: 120px; }
+        textarea { resize: vertical; min-height: 80px; }
 
-        .selected-list { display: flex; flex-direction: column; gap: 16px; }
+        .selected-list { display: flex; flex-direction: column; gap: 12px; }
         .selected-card {
-            background: var(--bg-panel); border-radius: var(--radius-md); padding: 20px; 
-            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 12px; 
+            background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
+            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px; 
             box-shadow: var(--shadow-card);
         }
-        .card-main { display: flex; align-items: center; gap: 12px; font-size: 26px; }
-        .card-dot { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; }
+        .card-main { display: flex; align-items: center; gap: 10px; font-size: 26px; }
+        .card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .card-time { color: var(--text-muted); font-weight: 600; font-size: 26px; } 
         .card-person { font-weight: 700; color: var(--text-heading); font-size: 26px; } 
         .card-desc { color: var(--text-main); font-size: 26px; flex-grow: 1; font-weight: 500; } 
         
-        .btn-group { display: flex; gap: 12px; margin-left: auto; flex-shrink: 0; }
+        .btn-group { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
         .edit-btn { background: none; color: var(--primary); font-size: 24px; font-weight: 600; padding: 4px; }
         .edit-btn:hover { color: var(--primary-hover); text-decoration: underline; }
         .delete-btn { background: none; color: var(--danger); font-size: 24px; font-weight: 600; padding: 4px; }
@@ -419,13 +419,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '770px'; 
+            target.style.width = '830px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1550,
+                windowWidth: 1290,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
@@ -633,7 +633,7 @@
             container.innerHTML = todayItems.map(item => {
                 const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
                 const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 24px; padding-left: 34px;">↳ ${escapeHTML(item.detail)}</div>` : '';
+                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 13px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
 
                 return `
                     <div class="today-card">
