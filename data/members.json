@@ -9707,6 +9707,18 @@
       "role": "",
       "info_updated_at": null,
       "id": "elo_773"
+    },
+    {
+      "nickname": "미상(elo_763)",
+      "elo_id": 763,
+      "birthdate": null,
+      "gender": null,
+      "race": null,
+      "tier": null,
+      "team": null,
+      "role": "",
+      "info_updated_at": null,
+      "id": "elo_763"
     }
   ]
 }
