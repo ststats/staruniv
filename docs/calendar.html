@@ -54,20 +54,20 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (캘린더 770px에 맞춰 왼쪽 영역 최대 폭을 850px로 콤팩트하게 설정) */
-        .main-layout { display: flex; gap: 24px; width: 100%; max-width: 1250px; align-items: flex-start; justify-content: center; }
+        /* 레이아웃 구조 (770px 캘린더에 맞춰 왼쪽 영역 최대 폭 850px 설정) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1250px; align-items: flex-start; justify-content: center; }
         .left-area { display: flex; flex-direction: column; width: 100%; max-width: 850px; }
-        .sidebar { width: 360px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0; }
+        .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
         @media(max-width: 1230px) { 
             .main-layout { flex-direction: column; align-items: center; } 
             .sidebar { width: 100%; max-width: 850px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 850px, 패딩 24px로 좌우 여백 축소) */
+        /* 공통 패널 스타일 (최대 폭 850px, 패딩 30px) */
         .box-panel {
             background: var(--bg-panel); 
-            padding: 24px; 
+            padding: 30px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
@@ -85,7 +85,7 @@
         .capture-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
             width: 100%;
             max-width: 850px;
             background-color: var(--bg-page);
@@ -108,7 +108,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 0 auto 20px auto;
+            margin: 0 auto 24px auto;
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
             width: 100%;
@@ -158,8 +158,8 @@
         
         .day-cell {
             background: var(--bg-panel); width: 110px; 
-            min-height: 120px; 
-            display: flex; flex-direction: column; padding: 6px; cursor: pointer; 
+            min-height: 130px; 
+            display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
             box-sizing: border-box; 
@@ -168,7 +168,8 @@
         .day-cell.other-month { background-color: #f8fafc; }
         .day-cell.other-month .day-number { color: #94a3b8; }
 
-        .day-number { font-size: 14px; font-weight: 600; color: var(--text-heading); margin-bottom: 4px; line-height: 1.4; }
+        /* 원래의 시원시원한 폰트 크기로 복원 */
+        .day-number { font-size: 15px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
 
@@ -178,11 +179,11 @@
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
-        /* 캘린더 내부 일정 셀 */
+        /* 캘린더 내부 일정 셀 (원래 폰트 크기 복원) */
         .cell-event {
             border-radius: var(--radius-sm); 
-            padding: 4px 5px; 
-            margin-bottom: 3px; 
+            padding: 5px 6px; 
+            margin-bottom: 4px; 
             font-weight: 500; 
             display: flex; 
             flex-direction: column; 
@@ -191,9 +192,9 @@
             box-shadow: var(--shadow-card);
         }
         .cell-top { display: flex; justify-content: space-between; align-items: center; font-weight: 600; white-space: nowrap; }
-        .event-time { opacity: 0.8; font-size: 10px; }
-        .event-person { font-weight: 700; font-size: 10px; margin-left: auto; text-align: right; }
-        .event-desc { font-size: 11px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
+        .event-time { opacity: 0.8; font-size: 11px; }
+        .event-person { font-weight: 700; font-size: 11px; margin-left: auto; text-align: right; }
+        .event-desc { font-size: 12px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
 
 
         /* ==============================
@@ -201,7 +202,7 @@
         ============================== */
         .sidebar .box-panel { padding: 24px; }
         
-        .month-control-box { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; }
+        .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
         
         .btn-outline { 
@@ -304,7 +305,7 @@
                     <button class="btn-action" onclick="captureCalendar()">📸 캡처 적용</button>
                 </div>
 
-                <div class="panel-title" id="formTitle" style="margin-top: 20px;">➕ [<span id="selectedDateText">날짜선택</span>] 일정 추가</div>
+                <div class="panel-title" id="formTitle" style="margin-top: 24px;">➕ [<span id="selectedDateText">날짜선택</span>] 일정 추가</div>
                 <input type="hidden" id="editScheduleId" value="">
                 
                 <div class="form-row">
@@ -416,13 +417,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '850px'; 
+            target.style.width = '770px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1230,
+                windowWidth: 1250,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
