@@ -54,17 +54,17 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1350px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 920px; }
+        /* 레이아웃 구조 (900px 기준 정렬) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1310px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 900px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1250px) { 
+        @media(max-width: 1310px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 920px; }
+            .sidebar { width: 100%; max-width: 900px; }
         }
 
-        /* 공통 패널 스타일 */
+        /* 공통 패널 스타일 (패딩 30px 적용 시 내부 폭 900 - 60 = 840px) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
@@ -400,13 +400,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '940px'; // 120px 그리드 폭(840px)에 맞추어 넉넉히 확장
+            target.style.width = '900px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1250,
+                windowWidth: 1310,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
