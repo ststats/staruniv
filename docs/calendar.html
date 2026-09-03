@@ -64,7 +64,7 @@
             .sidebar { width: 100%; max-width: 830px; }
         }
 
-        /* 공통 패널 스타일 (상하 30px, 좌우 패딩을 18px로 줄여 여백 슬림화) */
+        /* 공통 패널 스타일 (상하 30px, 좌우 패딩 슬림하게 18px) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px 18px; 
@@ -199,7 +199,7 @@
         /* ==============================
             [2] 사이드바 디자인
         ============================== */
-        .sidebar .box-panel { padding: 24px 18px; } /* 사이드바 패널 좌우 여백도 동일하게 맞춤 */
+        .sidebar .box-panel { padding: 24px 18px; }
         
         .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
@@ -416,7 +416,8 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '770px'; 
+            /* 핵심 수정: 캡처 시 전체 영역이 좁아지지 않고 830px 풀너비로 선명하게 캡처되도록 지정 */
+            target.style.width = '830px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
