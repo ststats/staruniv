@@ -126,16 +126,19 @@
             letter-spacing: normal;
         }
 
+        /* 핵심 수정: 평소엔 overflow가 숨겨지지만 공간이 부족하면 자연스럽게 스크롤 발생 */
         .calendar-inner { 
             width: 100%; 
-            overflow-x: visible; 
+            overflow-x: auto; 
             padding-bottom: 12px; 
         }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
         .calendar-scroll-content { 
-            width: 840px; 
+            min-width: 840px; /* 최소 840px을 유지하여 찌그러짐 방지 */
+            width: 100%; 
+            max-width: 840px; 
             margin: 0 auto; 
             box-sizing: border-box;
         }
@@ -153,7 +156,7 @@
             display: grid; grid-template-columns: repeat(7, 120px); 
             border-top: 1px solid var(--border-light); border-left: 1px solid var(--border-light); 
             box-sizing: border-box;
-            width: 840px; /* 정확히 840px 고정하여 우측 삐져나옴 원천 차단 */
+            width: 840px; 
         }
         
         .day-cell {
@@ -162,7 +165,7 @@
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
-            box-sizing: border-box; /* 테두리가 너비를 밀어내지 않도록 고정 */
+            box-sizing: border-box; 
         }
         .day-cell:hover { background-color: var(--primary-light); }
         .day-cell.other-month { background-color: #f8fafc; }
