@@ -81,7 +81,6 @@
         /* ==============================
            [1] 왼쪽 영역 (캡처 대상)
         ============================== */
-        /* 두 박스를 아우르는 캡처 영역 (배경색을 body와 통일하여 자연스럽게 캡처됨) */
         .capture-wrapper {
             display: flex;
             flex-direction: column;
@@ -89,7 +88,7 @@
             width: 100%;
             background-color: var(--bg-page);
             padding: 10px;
-            margin: -10px; /* 시각적 정렬 보정 */
+            margin: -10px; 
             border-radius: var(--radius-xl);
         }
 
@@ -102,13 +101,26 @@
         }
         .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
-        /* 월간 캘린더 */
-        .month-subtitle {
-            font-size: 15px;
-            color: var(--text-muted);
-            font-weight: 500;
-            margin-left: 4px;
-            letter-spacing: 0;
+        /* 월간 캘린더 영역 개선 디자인 */
+        .calendar-header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 24px; /* 그리드와의 상하 여백 넉넉하게 확보 */
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-light); /* 시각적 구분선 추가로 세련미 극대화 */
+        }
+        
+        /* '2026년 9월' 연월 배지 스타일 (감각적인 포인트 디자인) */
+        .month-badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            letter-spacing: -0.2px;
+            box-shadow: inset 0 1px 2px rgba(59, 130, 246, 0.1);
         }
 
         .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
@@ -131,7 +143,7 @@
         
         .day-cell {
             background: var(--bg-panel); width: 110px; 
-            min-height: 130px; /* 일정 2개가 넉넉히 들어가는 사이즈 유지 */
+            min-height: 130px; 
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
@@ -199,7 +211,6 @@
         }
         textarea { resize: vertical; min-height: 80px; }
 
-        /* 리스트 내 공통 카드 속성 (오늘의 일정, 선택한 날짜 둘 다 적용) */
         .selected-list { display: flex; flex-direction: column; gap: 12px; }
         .selected-card {
             background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
@@ -223,10 +234,9 @@
 
     <main class="main-layout">
         <section class="left-area">
-            <!-- 캡처 대상: 이제 이 두 개의 박스를 묶어서 캡처합니다 -->
             <div id="calendarCaptureArea" class="capture-wrapper">
                 
-                <!-- 1. 오늘의 일정 (독립된 둥근 하얀 박스) -->
+                <!-- 1. 오늘의 일정 -->
                 <div class="box-panel">
                     <div class="panel-title">
                         <span>⚡</span> 오늘의 일정
@@ -234,10 +244,14 @@
                     <div class="today-list" id="todayList"></div>
                 </div>
 
-                <!-- 2. 월간 캘린더 (독립된 둥근 하얀 박스) -->
+                <!-- 2. 월간 캘린더 (상하 여백 및 타이틀 감각적 디자인 적용) -->
                 <div class="box-panel">
-                    <div class="panel-title">
-                        <span>📅</span> 이달의 일정 <span id="monthTitle" class="month-subtitle"></span>
+                    <div class="calendar-header-area">
+                        <div class="panel-title" style="margin-bottom: 0;">
+                            <span>📅</span> 이달의 일정
+                        </div>
+                        <!-- 세련된 연월 뱃지 스타일 -->
+                        <div id="monthTitle" class="month-badge"></div>
                     </div>
                     <div class="calendar-inner" id="calendarInner">
                         <div class="calendar-scroll-content">
@@ -380,7 +394,6 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            // 캡처 시 레이아웃 무너짐 방지용 뷰포트 확보
             target.style.width = '880px'; 
             calInner.style.overflow = 'visible'; 
 
@@ -388,7 +401,7 @@
                 scale: 2, 
                 useCORS: true,
                 windowWidth: 1200,
-                backgroundColor: "#f8fafc" // body 색상과 완벽 매칭
+                backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
                 calInner.style.overflow = originalCalOverflow;
@@ -441,8 +454,8 @@
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
-            // 괄호를 포함하여 서브타이틀로 렌더링
-            document.getElementById('monthTitle').innerText = `(${year}년 ${month + 1}월)`;
+            // 연월 뱃지 안의 텍스트 지정[cite: 1]
+            document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
 
             const firstDayIndex = new Date(year, month, 1).getDay();
             const lastDay = new Date(year, month + 1, 0).getDate();
