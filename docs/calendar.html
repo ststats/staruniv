@@ -54,7 +54,7 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (왼쪽 영역 최대 폭 960px로 설정) */
+        /* 레이아웃 구조 */
         .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1370px; align-items: flex-start; justify-content: center; }
         .left-area { display: flex; flex-direction: column; width: 100%; max-width: 960px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
@@ -64,7 +64,7 @@
             .sidebar { width: 100%; max-width: 960px; }
         }
 
-        /* 공통 패널 스타일 (부모 카드 섹션 최대 폭 960px 고정) */
+        /* 공통 패널 스타일 (부모 카드 폭 960px 고정) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
@@ -103,7 +103,7 @@
         }
         .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
-        /* 월간 캘린더 영역 개선 디자인 */
+        /* 월간 캘린더 영역 개선 디자인 (핵심 수정: 캘린더 내부 내용물과 동일하게 840px로 정확히 맞춤) */
         .calendar-header-area {
             display: flex;
             justify-content: space-between;
@@ -111,7 +111,8 @@
             margin: 0 auto 24px auto;
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
-            width: 840px; /* 요일/날짜 그리드와 동일하게 840px 고정 */
+            width: 100%;
+            max-width: 840px; /* 요일 그리드 폭(120px * 7 = 840px)과 완벽하게 일치시킴 */
         }
         
         /* 연월 텍스트 스타일 */
@@ -125,10 +126,19 @@
             letter-spacing: normal;
         }
 
-        .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
+        .calendar-inner { 
+            width: 100%; 
+            overflow-x: visible; /* PC에서 삐져나가지 않도록 강제 스크롤 방지 */
+            padding-bottom: 12px; 
+        }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .calendar-scroll-content { width: 840px; margin: 0 auto; }
+        
+        .calendar-scroll-content { 
+            width: 100%; 
+            max-width: 840px; /* 840px로 제한하여 박스 안에서 정렬 유지 */
+            margin: 0 auto; 
+        }
 
         .weekdays { 
             display: grid; grid-template-columns: repeat(7, 120px); 
