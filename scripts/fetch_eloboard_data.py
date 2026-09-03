@@ -39,6 +39,12 @@ SLEEP_BETWEEN_PAGES_SEC = 0.5
 # 커밋도 전혀 안 된다. 충분히 넉넉하지만(200명 x 2000페이지 = 40만 건) 무한
 # 루프는 막아주는 상한선을 둔다.
 MAX_PAGES = 2000
+# 오래된 매치를 "한 건" 만났다고 바로 탐색을 끝내지 않고, 연속으로 몇 "페이지
+# 전체"가 다 기간보다 오래됐을 때만 진짜로 끝낸다(아래 aggregate_period_data
+# 문서 참고 - 늦게 뒤섞여 들어온 과거 데이터에 대한 안전판). 3페이지(최대
+# 600건) 정도의 완충 구간을 두면, 어지간한 규모의 뒤늦은 데이터 유입도
+# 흡수하면서 실제로 기간을 다 지나쳤을 때는 여전히 합리적으로 빨리 멈춘다.
+OLD_PAGE_STREAK_TO_STOP = 3
 
 
 def aggregate_period_data(start_date: str, end_date: str) -> list:
@@ -48,9 +54,15 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
     반환하는 각 항목의 "id"는 afreecatv 핸들이 아니라 elo_id(숫자를
     문자열화한 것)이다 - 호출부에서 members.json의 elo_id와 매칭해야 한다.
 
-    API가 최신 -> 과거 순으로 정렬해서 내려준다고 가정하고, start_date보다
-    이른 매치를 만나는 즉시 탐색을 중단한다(정렬이 바뀌면 이 가정이 깨지니
-    유의).
+    API가 대체로 최신 -> 과거 순으로 정렬해서 내려준다고 가정하지만, 완벽하게
+    그 순서만 믿지는 않는다 - EloBoard 쪽에서 늦게 발견되거나 복구된 과거
+    데이터가, 실제 played_on 날짜 순서가 아니라 "이제 막 등록된 순서"로
+    최근 데이터 사이에 섞여 나타날 수 있다(실제로 8월 데이터가 한동안
+    누락됐다가 나중에 올라온 사례가 있었다). 그래서 start_date보다 이른
+    매치를 "한 건" 만났다고 바로 중단하지 않고, 연속으로 여러 "페이지 전체"가
+    다 start_date보다 오래됐을 때만(OLD_PAGE_STREAK_TO_STOP 참고) 종료한다 -
+    그 사이 섞여 들어온 예외적인 옛날 기록 몇 개는 그냥 건너뛰고 계속
+    진행하되, 실제로 그 기간을 다 지나쳤다는 확신이 들 때만 멈춘다.
 
     페이지 요청이 fetch_json()의 재시도를 다 소진해도 실패하면, 지금까지 모은
     데이터가 불완전하다는 걸 명확히 경고로 남기고 빈 리스트를 반환한다(부분
@@ -62,6 +74,7 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
     offset = 0
     page_count = 0
     combined_dict = defaultdict(lambda: {"id": None, "sponsor_wins": 0, "sponsor_losses": 0})
+    consecutive_fully_old_pages = 0
 
     print(f"[요청] {start_date} ~ {end_date} 기간 전적 수집 시작...")
 
@@ -83,7 +96,7 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
         if not matches:
             break
 
-        reached_start = False
+        page_has_in_range_match = False
         for match in matches:
             played_on = match.get("played_on", "")
 
@@ -91,11 +104,12 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
                 # 아직 기간 이후(더 최신) 데이터 - 계속 넘어간다
                 continue
             elif played_on < start_date:
-                # 기간보다 과거 데이터에 도달 - 더 볼 필요 없이 종료
-                print(f"[완료] {start_date} 이전 데이터 도달. 탐색을 종료합니다.")
-                reached_start = True
-                break
+                # 이 매치 하나는 기간보다 과거지만, 같은 페이지 안에 기간
+                # 안쪽 매치가 더 있을 수도 있으니(늦게 섞여 들어온 경우) 이
+                # 레코드만 건너뛰고 페이지 끝까지는 마저 확인한다.
+                continue
             else:
+                page_has_in_range_match = True
                 for p in match.get("participants", []):
                     try:
                         elo_id = str(p["player_id"])
@@ -112,8 +126,17 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
                     else:
                         combined_dict[elo_id]["sponsor_losses"] += 1
 
-        if reached_start:
-            break
+        if page_has_in_range_match:
+            consecutive_fully_old_pages = 0
+        else:
+            # 이 페이지엔 기간 안쪽 매치가 하나도 없었다 - 다만 아직은
+            # "늦게 섞여 들어온 예외" 가능성을 배제 못 하므로, 연속으로 몇
+            # 페이지가 더 이렇게 나와야 진짜로 기간을 다 지나쳤다고 판단한다.
+            consecutive_fully_old_pages += 1
+            if consecutive_fully_old_pages >= OLD_PAGE_STREAK_TO_STOP:
+                print(f"[완료] {OLD_PAGE_STREAK_TO_STOP}페이지 연속으로 {start_date} 이전 데이터만 "
+                      f"나와 탐색을 종료합니다.")
+                break
 
         offset += PAGE_LIMIT
         time.sleep(SLEEP_BETWEEN_PAGES_SEC)
