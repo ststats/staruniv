@@ -74,8 +74,13 @@
             width: 100%;
             max-width: 830px;
         }
-        /* 패널 타이틀: 원본 18px */
-        .panel-title { 
+
+        /* 패널 타이틀: 왼쪽(오늘의 일정, 이달의 일정)은 1.3배(23px), 오른쪽(관리자 연동, 선택한 날짜 일정 등)은 1배(18px) */
+        .left-area .panel-title { 
+            font-size: 23px; font-weight: 700; color: var(--text-heading); 
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+        }
+        .sidebar .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
             margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
@@ -102,8 +107,12 @@
             border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 8px; 
             box-shadow: var(--shadow-card);
         }
-        /* 일정 없음: 원본 14px */
-        .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
+        /* 오늘의 일정 내부 텍스트 및 안내문구: 1.3배 (18px) */
+        .no-schedule { font-size: 18px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
+        .today-card .card-main { font-size: 18px; }
+        .today-card .card-time { font-size: 18px; }
+        .today-card .card-person { font-size: 18px; }
+        .today-card .card-desc { font-size: 18px; }
 
         /* 월간 캘린더 영역 (110px * 7열 = 770px 기준) */
         .calendar-header-area {
@@ -117,9 +126,9 @@
             max-width: 770px; 
         }
         
-        /* 연월 텍스트 스타일: 원본 18px */
+        /* 연월 텍스트 스타일: 1.3배 (23px) */
         .month-badge {
-            font-size: 18px;
+            font-size: 23px;
             font-weight: 700;
             color: var(--text-heading);
             background: none;
@@ -142,10 +151,10 @@
             box-sizing: border-box;
         }
 
-        /* 요일: 원본 14px */
+        /* 요일: 1.3배 (18px) */
         .weekdays { 
             display: grid; grid-template-columns: repeat(7, 110px); 
-            text-align: center; font-size: 14px; font-weight: 600; 
+            text-align: center; font-size: 18px; font-weight: 600; 
             color: var(--text-muted); margin-bottom: 12px; 
             box-sizing: border-box;
         }
@@ -171,8 +180,8 @@
         .day-cell.other-month { background-color: #f8fafc; }
         .day-cell.other-month .day-number { color: #94a3b8; }
 
-        /* 날짜 숫자: 원본 15px */
-        .day-number { font-size: 15px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
+        /* 날짜 숫자: 1.3배 (20px) */
+        .day-number { font-size: 20px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
 
@@ -182,7 +191,7 @@
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
-        /* 캘린더 내부 일정 셀 (요청하신 시간/이름/내용 모두 13px) */
+        /* 캘린더 내부 일정 셀 (시간, 이름, 내용 모두 요청하신 13px) */
         .cell-event {
             border-radius: var(--radius-sm); 
             padding: 5px 6px; 
@@ -201,14 +210,13 @@
 
 
         /* ==============================
-            [2] 사이드바 디자인 (원본 크기 복원)
+            [2] 사이드바 디자인 (관리자 연동, 일정 추가, 선택한 날짜 일정 -> 원본 1배)
         ============================== */
         .sidebar .box-panel { padding: 24px 18px; }
         
         .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
         
-        /* 버튼: 원본 13px */
         .btn-outline { 
             flex: 1; background: var(--bg-panel); color: var(--text-main); 
             border: 1px solid var(--border-dark); padding: 10px 0; 
@@ -221,8 +229,6 @@
             border-radius: var(--radius-md); font-size: 13px; font-weight: 600; flex-shrink: 0; 
         }
         .btn-action:hover { background: var(--success-hover); }
-        
-        /* 등록 버튼: 원본 14px */
         .btn-primary { 
             width: 100%; padding: 14px; background: var(--primary); color: white; 
             border-radius: var(--radius-md); font-weight: 600; font-size: 14px; margin-top: 8px; 
@@ -230,8 +236,6 @@
         .btn-primary:hover { background: var(--primary-hover); }
 
         .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
-        
-        /* 입력창/셀렉트/텍스트에어리어: 원본 14px */
         input, select, textarea {
             width: 100%; padding: 12px; background: var(--bg-page); 
             border: 1px solid var(--border-light); color: var(--text-heading); 
@@ -249,8 +253,6 @@
             border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px; 
             box-shadow: var(--shadow-card);
         }
-        
-        /* 선택 일정 카드: 원본 14px */
         .card-main { display: flex; align-items: center; gap: 10px; font-size: 14px; }
         .card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .card-time { color: var(--text-muted); font-weight: 600; font-size: 14px; } 
@@ -258,8 +260,6 @@
         .card-desc { color: var(--text-main); font-size: 14px; flex-grow: 1; font-weight: 500; } 
         
         .btn-group { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
-        
-        /* 수정/삭제 버튼: 원본 13px */
         .edit-btn { background: none; color: var(--primary); font-size: 13px; font-weight: 600; padding: 4px; }
         .edit-btn:hover { color: var(--primary-hover); text-decoration: underline; }
         .delete-btn { background: none; color: var(--danger); font-size: 13px; font-weight: 600; padding: 4px; }
@@ -643,7 +643,7 @@
             container.innerHTML = todayItems.map(item => {
                 const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
                 const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 13px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
+                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 18px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
 
                 return `
                     <div class="today-card">
