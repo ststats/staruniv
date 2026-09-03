@@ -54,17 +54,17 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (770px 캘린더에 맞춰 왼쪽 영역 최대 폭 850px 설정) */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1250px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 850px; }
+        /* 레이아웃 구조 (770px 캘린더 + 좌우 패딩 60px = 830px 기준 정렬) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1230px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 830px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
         @media(max-width: 1230px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 850px; }
+            .sidebar { width: 100%; max-width: 830px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 850px, 패딩 30px) */
+        /* 공통 패널 스타일 (최대 폭 정확히 830px 고정) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
@@ -72,7 +72,7 @@
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 850px;
+            max-width: 830px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 850px;
+            max-width: 830px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -168,7 +168,6 @@
         .day-cell.other-month { background-color: #f8fafc; }
         .day-cell.other-month .day-number { color: #94a3b8; }
 
-        /* 원래의 시원시원한 폰트 크기로 복원 */
         .day-number { font-size: 15px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
@@ -179,7 +178,7 @@
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
-        /* 캘린더 내부 일정 셀 (원래 폰트 크기 복원) */
+        /* 캘린더 내부 일정 셀 */
         .cell-event {
             border-radius: var(--radius-sm); 
             padding: 5px 6px; 
@@ -423,7 +422,7 @@
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1250,
+                windowWidth: 1230,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
