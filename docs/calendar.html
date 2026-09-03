@@ -54,25 +54,25 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (전체 폭 900px 통일) */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1310px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 900px; }
+        /* 레이아웃 구조 (전체 폭 정확히 880px: 캘린더 840px + 좌우 패딩 각 20px) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1280px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 880px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1310px) { 
+        @media(max-width: 1280px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 900px; }
+            .sidebar { width: 100%; max-width: 880px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 900px 고정) */
+        /* 공통 패널 스타일 (최대 폭 880px, 좌우 패딩 20px로 변경하여 내부 콘텐츠 폭 정확히 840px 확보) */
         .box-panel {
             background: var(--bg-panel); 
-            padding: 30px; 
+            padding: 30px 20px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 900px;
+            max-width: 880px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 900px;
+            max-width: 880px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -126,7 +126,7 @@
             letter-spacing: normal;
         }
 
-        /* 핵심 수정: 평소엔 overflow가 숨겨지지만 공간이 부족하면 자연스럽게 스크롤 발생 */
+        /* 캘린더 내부 스크롤 (화면 좁을 때만 스크롤) */
         .calendar-inner { 
             width: 100%; 
             overflow-x: auto; 
@@ -136,9 +136,7 @@
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
         .calendar-scroll-content { 
-            min-width: 840px; /* 최소 840px을 유지하여 찌그러짐 방지 */
-            width: 100%; 
-            max-width: 840px; 
+            width: 840px; 
             margin: 0 auto; 
             box-sizing: border-box;
         }
@@ -419,13 +417,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '900px'; 
+            target.style.width = '880px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1310,
+                windowWidth: 1280,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
@@ -669,7 +667,7 @@
                     <div class="selected-card">
                         <div class="card-main">
                             <div class="card-dot" style="background-color: ${item.color || '#eff6ff'};"></div>
-                            ${timeHtml} ${personHtml}
+                            ${timeHtml} ${personNames}
                             <span class="card-desc">${escapeHTML(item.desc)}</span>
                             <div class="btn-group">
                                 <button class="edit-btn" onclick="enterEditMode('${selectedDateStr}', ${item.id})">수정</button>
