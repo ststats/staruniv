@@ -54,25 +54,25 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (770px 캘린더를 여유 있게 품는 890px로 넉넉하게 확장) */
+        /* 레이아웃 구조 */
         .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1290px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 890px; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 830px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
         @media(max-width: 1290px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 890px; }
+            .sidebar { width: 100%; max-width: 830px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 890px로 캘린더보다 여유 있게 설정) */
+        /* 공통 패널 스타일 (상하 30px, 좌우 패딩을 18px로 줄여 여백 슬림화) */
         .box-panel {
             background: var(--bg-panel); 
-            padding: 30px; 
+            padding: 30px 18px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 890px;
+            max-width: 830px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 890px;
+            max-width: 830px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -199,7 +199,7 @@
         /* ==============================
             [2] 사이드바 디자인
         ============================== */
-        .sidebar .box-panel { padding: 24px; }
+        .sidebar .box-panel { padding: 24px 18px; } /* 사이드바 패널 좌우 여백도 동일하게 맞춤 */
         
         .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
