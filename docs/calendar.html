@@ -89,7 +89,7 @@
         .day-cell.other-month { background-color: #f3f4f6; }
         .day-cell.other-month .day-number { color: #9ca3af; }
 
-        .day-number { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+        .day-number { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 4px; line-height: 1.4; }
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
 
@@ -108,9 +108,16 @@
         .event-person { font-weight: 700; font-size: 11px; margin-left: auto; text-align: right; }
         .event-desc { font-size: 12px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; }
 
+        .today-schedule-section {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
         .section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #111; }
-        .schedule-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
-        .no-schedule { font-size: 12px; color: #9ca3af; text-align: center; padding: 15px 0; }
+        .schedule-list { display: flex; flex-direction: column; gap: 8px; min-height: 88px; max-height: 220px; overflow-y: auto; }
+        .no-schedule { font-size: 12px; color: #9ca3af; text-align: left; padding: 15px 4px; }
 
         .month-control-box { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: background-color 0.2s; border: none; }
@@ -159,6 +166,11 @@
     <main class="main-layout">
         <section class="left-area">
             <div class="box-panel" id="calendarCaptureArea">
+                <div class="today-schedule-section">
+                    <div class="section-title">⚡ 오늘의 일정</div>
+                    <div class="schedule-list" id="todayList"></div>
+                </div>
+
                 <header class="calendar-header">
                     <h2 id="monthTitle"></h2>
                 </header>
@@ -170,11 +182,6 @@
                         <div class="days-grid" id="daysGrid"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="box-panel">
-                <div class="section-title">⚡ 다가오는 일정</div>
-                <div class="schedule-list" id="upcomingList"></div>
             </div>
         </section>
 
@@ -215,7 +222,7 @@
                     </select>
                 </div>
                 <div class="form-row" style="margin-bottom: 0;">
-                    <input type="text" id="inputDetail" placeholder="상세내용 (캘린더 미표시, 다가오는 일정 표시)">
+                    <input type="text" id="inputDetail" placeholder="상세내용 (캘린더 미표시, 오늘의 일정에만 표시)">
                 </div>
                 <button class="add-btn" id="submitBtn" onclick="addOrUpdateSchedule()">일정 등록하기</button>
             </div>
@@ -428,7 +435,7 @@
                 daysGrid.insertAdjacentHTML('beforeend', `<div class="day-cell other-month"><span class="day-number">${i}</span></div>`);
             }
 
-            renderUpcomingSchedules();
+            renderTodaySchedules();
             renderSelectedDateSchedules();
         };
 
@@ -516,30 +523,26 @@
             saveData();
         };
 
-        const renderUpcomingSchedules = () => {
-            const container = document.getElementById('upcomingList');
+        const renderTodaySchedules = () => {
+            const container = document.getElementById('todayList');
             const today = new Date();
             const todayStr = getFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
-            
-            let allItems = [];
-            for (let dateStr in schedules) {
-                if (dateStr >= todayStr) {
-                    schedules[dateStr].forEach(item => allItems.push({ dateStr, ...item }));
-                }
-            }
 
-            allItems.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || (a.time || "").localeCompare(b.time || ""));
-            const top3 = allItems.slice(0, 3);
+            // 오늘 날짜에 해당하는 일정만(예전엔 오늘 이후 전체를 모아 최대
+            // 3개까지 보여주는 "다가오는 일정"이었는데, 딱 오늘 것만 보여주는
+            // 걸로 바뀌었으니 개수 제한도 필요 없다).
+            const todayItems = (schedules[todayStr] || []).slice();
+            todayItems.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
 
-            if (top3.length === 0) {
-                container.innerHTML = `<div class="no-schedule">다가오는 일정이 없습니다.</div>`;
+            if (todayItems.length === 0) {
+                container.innerHTML = `<div class="no-schedule">오늘 일정이 없습니다.</div>`;
                 return;
             }
 
             const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-            container.innerHTML = top3.map(item => {
-                const dateObj = new Date(item.dateStr + 'T00:00:00');
-                const formattedDate = `${item.dateStr} (${weekDays[dateObj.getDay()]})`;
+            const dateObj = new Date(todayStr + 'T00:00:00');
+            const formattedDate = `${todayStr} (${weekDays[dateObj.getDay()]})`;
+            container.innerHTML = todayItems.map(item => {
                 const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
                 const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
                 const detailHtml = item.detail ? `<span class="upcoming-detail">${escapeHTML(item.detail)}</span>` : '';
