@@ -54,17 +54,17 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (770px 캘린더 + 좌우 패딩 60px = 830px 기준 정렬) */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1230px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 830px; }
+        /* 레이아웃 구조 (770px 캘린더를 여유 있게 품는 890px로 넉넉하게 확장) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1290px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 890px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1230px) { 
+        @media(max-width: 1290px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 830px; }
+            .sidebar { width: 100%; max-width: 890px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 정확히 830px 고정) */
+        /* 공통 패널 스타일 (최대 폭 890px로 캘린더보다 여유 있게 설정) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
@@ -72,7 +72,7 @@
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 830px;
+            max-width: 890px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 830px;
+            max-width: 890px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -422,7 +422,7 @@
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1230,
+                windowWidth: 1290,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
