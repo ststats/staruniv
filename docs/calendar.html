@@ -111,7 +111,7 @@
             border-bottom: 2px solid var(--border-light);
         }
         
-        /* 연월 텍스트 스타일: 박스, 색상 효과 모두 제거하고 이달의 일정과 동일한 폰트 적용 */
+        /* 연월 텍스트 스타일 */
         .month-badge {
             font-size: 18px;
             font-weight: 700;
@@ -161,22 +161,21 @@
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
-        /* 캘린더 내부 일정 셀: 배경, 박스 효과 제거 */
+        /* 캘린더 내부 일정 셀 (배경색 복원) */
         .cell-event {
-            background: none;
-            border-radius: 0;
-            padding: 2px 0;
+            border-radius: var(--radius-sm); 
+            padding: 5px 6px; 
             margin-bottom: 4px; 
             font-weight: 500; 
             display: flex; 
             flex-direction: column; 
             gap: 2px; 
-            color: var(--text-main);
-            box-shadow: none;
+            color: var(--text-heading); 
+            box-shadow: var(--shadow-card);
         }
         .cell-top { display: flex; justify-content: space-between; align-items: center; font-weight: 600; white-space: nowrap; }
-        .event-time { opacity: 0.8; font-size: 12px; }
-        .event-person { font-weight: 700; font-size: 12px; margin-left: auto; text-align: right; }
+        .event-time { opacity: 0.8; font-size: 11px; }
+        .event-person { font-weight: 700; font-size: 11px; margin-left: auto; text-align: right; }
         .event-desc { font-size: 12px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
 
 
@@ -257,7 +256,6 @@
                         <div class="panel-title" style="margin-bottom: 0;">
                             <span>📅</span> 이달의 일정
                         </div>
-                        <!-- 이달의 일정 타이틀과 동일한 폰트 크기(18px) 및 색상으로 변경 -->
                         <div id="monthTitle" class="month-badge"></div>
                     </div>
                     <div class="calendar-inner" id="calendarInner">
@@ -492,7 +490,7 @@
                         const personText = item.person ? `<span class="event-person">${escapeHTML(item.person)}</span>` : '';
                         
                         dayHTML += `
-                            <div class="cell-event">
+                            <div class="cell-event" style="background-color: ${item.color || '#eff6ff'};">
                                 <div class="cell-top">${timeHtml}${personText}</div>
                                 <div class="event-desc">${escapeHTML(item.desc)}</div>
                             </div>
