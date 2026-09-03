@@ -2174,7 +2174,7 @@
     },
     {
       "nickname": "제티",
-      "elo_id": 6044,
+      "elo_id": 773,
       "birthdate": "1992-08-27",
       "gender": "f",
       "race": "프로토스",
@@ -3734,7 +3734,7 @@
     },
     {
       "nickname": "세월",
-      "elo_id": 6029,
+      "elo_id": 763,
       "birthdate": "1996-04-14",
       "gender": "f",
       "race": "프로토스",
@@ -9695,30 +9695,6 @@
       "role": "",
       "info_updated_at": null,
       "id": "fjqmal13"
-    },
-    {
-      "nickname": "미상(elo_773)",
-      "elo_id": 773,
-      "birthdate": null,
-      "gender": null,
-      "race": null,
-      "tier": null,
-      "team": null,
-      "role": "",
-      "info_updated_at": null,
-      "id": "elo_773"
-    },
-    {
-      "nickname": "미상(elo_763)",
-      "elo_id": 763,
-      "birthdate": null,
-      "gender": null,
-      "race": null,
-      "tier": null,
-      "team": null,
-      "role": "",
-      "info_updated_at": null,
-      "id": "elo_763"
     }
   ]
 }
