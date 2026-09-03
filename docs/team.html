@@ -173,6 +173,13 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
   const TARGET_TEAM = new URLSearchParams(window.location.search).get('team') || "";
   const LOGO_PREFIX = "";
   const IS_PROFILE = false;
+  // 프로필 페이지의 뒤로가기 목적지 계산용 - URL에 한 번만 실려오는 값이라
+  // 페이지 로드 시점에 딱 한 번만 읽어서 상수로 둔다(날짜/지표처럼 나중에
+  // 또 바뀌는 값이 아님). document.referrer(브라우저가 알려주는 "직전 페이지")
+  // 대신 이걸 쓰는 이유: referrer는 새 탭에서 열거나 브라우저 프라이버시
+  // 설정에 따라 아예 안 올 수도 있어서 불안정했다. fromTeam은 프로필 링크를
+  // 만드는 쪽(renderFaBar/renderDashboard)에서 항상 명시적으로 실어 보낸다.
+  const FROM_TEAM = new URLSearchParams(window.location.search).get('fromTeam');
 
   const metricDefs = {
       balloon: { field: 'balloons', label: '별풍선', unit: '별풍선', format: v => v ? v.toLocaleString('ko-KR') : '', excludeRoles: true, rankByFemale: false, source: '풍고', url: 'https://poonggo.com' },
@@ -288,21 +295,6 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       if (params.get('date') && AVAILABLE_DATES.includes(params.get('date'))) currentDateStr = params.get('date');
       if (params.get('metric') && metricDefs[params.get('metric')]) currentMetric = params.get('metric');
 
-      // 프로필 페이지의 뒤로가기 목적지는 document.referrer(브라우저가 알려주는
-      // "직전 페이지") 대신 URL 파라미터(fromTeam)로 직접 재구성한다 -
-      // referrer는 새 탭에서 열거나 브라우저 프라이버시 설정에 따라 아예 안
-      // 올 수도 있어서 불안정했다. fromTeam은 프로필 링크를 만드는 쪽
-      // (renderFaBar/renderDashboard)에서 항상 명시적으로 실어 보내므로,
-      // 어디서 왔든(전체페이지/팀페이지) 날짜·지표까지 그대로 들고 돌아간다.
-      if (IS_PROFILE) {
-          const fromTeam = params.get('fromTeam');
-          const backHref = fromTeam
-              ? `team.html?team=${encodeURIComponent(fromTeam)}&date=${currentDateStr}&metric=${currentMetric}`
-              : `index.html?date=${currentDateStr}&metric=${currentMetric}`;
-          const backLinkEl = document.getElementById('back-link');
-          if (backLinkEl) backLinkEl.href = LOGO_PREFIX + backHref;
-      }
-
       const metricSel = document.getElementById('ms-metric-select');
       if(metricSel) {
           metricSel.value = currentMetric;
@@ -334,6 +326,16 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 
       if (TARGET_TEAM && !IS_PROFILE) {
           document.getElementById('back-link').href = 'index.html?date=' + currentDateStr + '&metric=' + currentMetric;
+      } else if (IS_PROFILE) {
+          // 날짜/지표가 바뀔 때마다 applyData()가 매번 호출되므로, 여기서
+          // 매번 다시 계산해야 뒤로가기 링크가 항상 지금 보고 있는 날짜를
+          // 그대로 들고 돌아간다(페이지 처음 열 때 딱 한 번만 계산하면,
+          // 그 이후 날짜를 바꿔도 뒤로가기는 예전 날짜로 남는 문제가 있었다).
+          const backHref = FROM_TEAM
+              ? `team.html?team=${encodeURIComponent(FROM_TEAM)}&date=${currentDateStr}&metric=${currentMetric}`
+              : `index.html?date=${currentDateStr}&metric=${currentMetric}`;
+          const backLinkEl = document.getElementById('back-link');
+          if (backLinkEl) backLinkEl.href = LOGO_PREFIX + backHref;
       }
 
       if (fetchedData[currentDateStr]) {
