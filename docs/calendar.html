@@ -15,7 +15,6 @@
         :root {
             --bg-page: #f8fafc;        
             --bg-panel: #ffffff;       
-            --bg-section: #f1f5f9;     
             
             --text-heading: #0f172a;   
             --text-main: #334155;      
@@ -74,64 +73,38 @@
             border: 1px solid var(--border-light);
             width: 100%;
         }
+        .panel-title { 
+            font-size: 18px; font-weight: 700; color: var(--text-heading); 
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+        }
 
         /* ==============================
-           [1] 캡처 영역 내부 섹션 분리
+           [1] 왼쪽 영역 (캡처 대상)
         ============================== */
-        #calendarCaptureArea {
-            padding: 32px;
+        /* 두 박스를 아우르는 캡처 영역 (배경색을 body와 통일하여 자연스럽게 캡처됨) */
+        .capture-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 32px;
+            gap: 24px;
+            width: 100%;
+            background-color: var(--bg-page);
+            padding: 10px;
+            margin: -10px; /* 시각적 정렬 보정 */
+            border-radius: var(--radius-xl);
         }
 
-        /* --- 오늘의 일정 모듈 --- */
-        .today-module {
-            background: var(--bg-section);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            border: 1px solid var(--border-light);
-        }
-        .module-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .module-icon { font-size: 18px; }
-        .module-title { 
-            font-size: 18px; 
-            font-weight: 700; 
-            color: var(--text-heading); 
-            letter-spacing: -0.3px;
-        }
-
-        /* 선택한 날짜 일정과 동일한 카드 레이아웃 적용 */
+        /* 오늘의 일정 리스트 */
         .today-list { display: flex; flex-direction: column; gap: 12px; }
-        
         .today-card {
             background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
             border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 8px; 
             box-shadow: var(--shadow-card);
         }
-        
         .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
-        /* --- 월간 캘린더 모듈 --- */
-        .calendar-module {
-            display: flex;
-            flex-direction: column;
-        }
-        .calendar-header { 
-            display: flex; justify-content: center; align-items: center; 
-            margin-bottom: 24px; 
-        }
-        .calendar-header h2 { 
-            font-size: 20px; 
-            font-weight: 700; 
-            color: var(--text-heading); 
-            letter-spacing: -0.5px;
-        }
+        /* 월간 캘린더 */
+        .calendar-header { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; }
+        .calendar-header h2 { font-size: 20px; font-weight: 700; color: var(--text-heading); letter-spacing: -0.5px; }
 
         .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
@@ -153,7 +126,7 @@
         
         .day-cell {
             background: var(--bg-panel); width: 110px; 
-            min-height: 130px; /* ✨ 요청하신 높이 확장 (기본 일정 2개 충분히 들어감) */
+            min-height: 130px; /* 일정 2개가 넉넉히 들어가는 사이즈 유지 */
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
@@ -166,11 +139,7 @@
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
 
-        .day-cell.today .day-number {
-            width: max-content;
-            position: relative;
-            z-index: 1;
-        }
+        .day-cell.today .day-number { width: max-content; position: relative; z-index: 1; }
         .day-cell.today .day-number::after {
             content: ''; position: absolute; bottom: 1px; left: -2px; right: -2px; height: 8px;
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
@@ -191,7 +160,6 @@
            [2] 사이드바 디자인
         ============================== */
         .sidebar .box-panel { padding: 24px; }
-        .sidebar-title { font-size: 16px; font-weight: 700; color: var(--text-heading); margin-bottom: 16px; }
         
         .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
@@ -226,7 +194,7 @@
         }
         textarea { resize: vertical; min-height: 80px; }
 
-        /* 선택한 날짜 일정 카드 (공통 카드 속성) */
+        /* 리스트 내 공통 카드 속성 (오늘의 일정, 선택한 날짜 둘 다 적용) */
         .selected-list { display: flex; flex-direction: column; gap: 12px; }
         .selected-card {
             background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
@@ -234,7 +202,6 @@
             box-shadow: var(--shadow-card);
         }
         .card-main { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        
         .card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .card-time { color: var(--text-muted); font-weight: 600; font-size: 14px; } 
         .card-person { font-weight: 700; color: var(--text-heading); font-size: 14px; } 
@@ -250,22 +217,20 @@
 <body>
 
     <main class="main-layout">
-        <!-- 메인 캘린더 & 오늘 일정 영역 -->
         <section class="left-area">
-            <div class="box-panel" id="calendarCaptureArea">
+            <!-- 캡처 대상: 이제 이 두 개의 박스를 묶어서 캡처합니다 -->
+            <div id="calendarCaptureArea" class="capture-wrapper">
                 
-                <!-- 1. 오늘의 일정 섹션 -->
-                <div class="today-module">
-                    <div class="module-header">
-                        <span class="module-icon">⚡</span>
-                        <h3 class="module-title">오늘의 일정</h3>
+                <!-- 1. 오늘의 일정 (독립된 둥근 하얀 박스) -->
+                <div class="box-panel">
+                    <div class="panel-title">
+                        <span>⚡</span> 오늘의 일정
                     </div>
-                    <!-- ✨ 선택한 날짜 일정과 동일한 세로 리스트 구조로 변경 -->
                     <div class="today-list" id="todayList"></div>
                 </div>
 
-                <!-- 2. 월간 캘린더 섹션 -->
-                <div class="calendar-module">
+                <!-- 2. 월간 캘린더 (독립된 둥근 하얀 박스) -->
+                <div class="box-panel">
                     <header class="calendar-header">
                         <h2 id="monthTitle"></h2>
                     </header>
@@ -282,10 +247,9 @@
             </div>
         </section>
 
-        <!-- 사이드바 컨트롤 영역 -->
         <aside class="sidebar">
             <div class="box-panel">
-                <div class="sidebar-title">🔑 관리자 연동</div>
+                <div class="panel-title">🔑 관리자 연동</div>
                 <div class="form-row" style="margin-bottom: 0;">
                     <input type="password" id="githubToken" placeholder="GitHub 토큰 입력">
                     <button class="btn-action" onclick="saveTokenLocally()" style="background-color: var(--text-heading);">연동</button>
@@ -299,7 +263,7 @@
                     <button class="btn-action" onclick="captureCalendar()">📸 캡처 적용</button>
                 </div>
 
-                <div class="sidebar-title" id="formTitle" style="margin-top: 24px;">➕ [<span id="selectedDateText">날짜선택</span>] 일정 추가</div>
+                <div class="panel-title" id="formTitle" style="margin-top: 24px;">➕ [<span id="selectedDateText">날짜선택</span>] 일정 추가</div>
                 <input type="hidden" id="editScheduleId" value="">
                 
                 <div class="form-row">
@@ -326,7 +290,7 @@
             </div>
 
             <div class="box-panel">
-                <div class="sidebar-title">📅 선택한 날짜 일정</div>
+                <div class="panel-title">📅 선택한 날짜 일정</div>
                 <div class="selected-list" id="selectedDateList"></div>
             </div>
         </aside>
@@ -411,13 +375,15 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '860px'; 
+            // 캡처 시 레이아웃 무너짐 방지용 뷰포트 확보
+            target.style.width = '880px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1200 
+                windowWidth: 1200,
+                backgroundColor: "#f8fafc" // body 색상과 완벽 매칭
             }).then(async canvas => {
                 target.style.width = originalWidth;
                 calInner.style.overflow = originalCalOverflow;
@@ -608,7 +574,6 @@
             saveData();
         };
 
-        // ✨ 날짜 제거 및 '선택한 날짜 일정'과 동일한 구조로 변경
         const renderTodaySchedules = () => {
             const container = document.getElementById('todayList');
             const today = new Date();
@@ -625,7 +590,6 @@
             container.innerHTML = todayItems.map(item => {
                 const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
                 const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-                // 오늘의 일정에만 나오는 '상세내용'을 카드 아래쪽에 배치 (왼쪽 여백을 줘서 들여쓰기 느낌)
                 const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 13px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
 
                 return `
