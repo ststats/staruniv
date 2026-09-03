@@ -54,25 +54,25 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (전체 폭 정확히 880px: 캘린더 840px + 좌우 패딩 각 20px) */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1280px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 880px; }
+        /* 레이아웃 구조 (카드 섹션 최대 폭을 940px로 넉넉하게 확장) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1350px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 940px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1280px) { 
+        @media(max-width: 1350px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 880px; }
+            .sidebar { width: 100%; max-width: 940px; }
         }
 
-        /* 공통 패널 스타일 (최대 폭 880px, 좌우 패딩 20px로 변경하여 내부 콘텐츠 폭 정확히 840px 확보) */
+        /* 공통 패널 스타일 (최대 폭 940px 고정) */
         .box-panel {
             background: var(--bg-panel); 
-            padding: 30px 20px; 
+            padding: 30px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 880px;
+            max-width: 940px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 880px;
+            max-width: 940px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -112,7 +112,7 @@
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
             width: 100%;
-            max-width: 840px; /* 120px * 7열 = 840px 고정 */
+            max-width: 840px; /* 요일 그리드 폭(120px * 7 = 840px)과 일치 */
         }
         
         /* 연월 텍스트 스타일 */
@@ -126,7 +126,7 @@
             letter-spacing: normal;
         }
 
-        /* 캘린더 내부 스크롤 (화면 좁을 때만 스크롤) */
+        /* PC 화면에서는 스크롤 없이 쏙 들어가고, 화면이 좁아질 때만 스크롤 허용 */
         .calendar-inner { 
             width: 100%; 
             overflow-x: auto; 
@@ -417,13 +417,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '880px'; 
+            target.style.width = '940px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1280,
+                windowWidth: 1350,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
@@ -667,7 +667,7 @@
                     <div class="selected-card">
                         <div class="card-main">
                             <div class="card-dot" style="background-color: ${item.color || '#eff6ff'};"></div>
-                            ${timeHtml} ${personNames}
+                            ${timeHtml} ${personHtml}
                             <span class="card-desc">${escapeHTML(item.desc)}</span>
                             <div class="btn-group">
                                 <button class="edit-btn" onclick="enterEditMode('${selectedDateStr}', ${item.id})">수정</button>
