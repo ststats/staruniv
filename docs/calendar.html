@@ -13,18 +13,18 @@
            리뉴얼된 프리미엄 테마 시스템
         ============================== */
         :root {
-            --bg-page: #f8fafc;        /* 전체 배경 (Slate 50) */
-            --bg-panel: #ffffff;       /* 패널 배경 */
-            --bg-section: #f1f5f9;     /* 섹션 구분 배경 (Slate 100) */
+            --bg-page: #f8fafc;        
+            --bg-panel: #ffffff;       
+            --bg-section: #f1f5f9;     
             
-            --text-heading: #0f172a;   /* 진한 제목 (Slate 900) */
-            --text-main: #334155;      /* 기본 텍스트 (Slate 700) */
-            --text-muted: #64748b;     /* 보조 텍스트 (Slate 500) */
+            --text-heading: #0f172a;   
+            --text-main: #334155;      
+            --text-muted: #64748b;     
             
-            --border-light: #e2e8f0;   /* 연한 테두리 (Slate 200) */
-            --border-dark: #cbd5e1;    /* 진한 테두리 (Slate 300) */
+            --border-light: #e2e8f0;   
+            --border-dark: #cbd5e1;    
             
-            --primary: #3b82f6;        /* 메인 블루 (Blue 500) */
+            --primary: #3b82f6;        
             --primary-hover: #2563eb;
             --primary-light: #eff6ff;
             
@@ -82,7 +82,7 @@
             padding: 32px;
             display: flex;
             flex-direction: column;
-            gap: 32px; /* 오늘의 일정과 캘린더 사이의 명확한 여백 */
+            gap: 32px;
         }
 
         /* --- 오늘의 일정 모듈 --- */
@@ -106,39 +106,15 @@
             letter-spacing: -0.3px;
         }
 
-        /* 가로 스크롤 영역 (줄바꿈 방지 핵심) */
-        .today-scroll-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            padding-bottom: 8px; /* 스크롤바 여백 */
-        }
-        /* 스크롤바 커스텀 */
-        .today-scroll-wrapper::-webkit-scrollbar { height: 6px; }
-        .today-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
-        .today-scroll-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-        .today-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-width: max-content; /* 내부 컨텐츠 크기만큼 확장되어 줄바꿈 방지 */
-        }
+        /* 선택한 날짜 일정과 동일한 카드 레이아웃 적용 */
+        .today-list { display: flex; flex-direction: column; gap: 12px; }
         
         .today-card {
-            background: var(--bg-panel); 
-            border-radius: var(--radius-md); 
-            padding: 14px 18px; 
-            border: 1px solid var(--border-light); 
-            display: inline-flex; /* 가로 배열 유지 */
-            align-items: center; 
-            gap: 16px; 
-            font-size: 14px;
+            background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
+            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 8px; 
             box-shadow: var(--shadow-card);
-            white-space: nowrap; /* 카드 내부 전체 줄바꿈 방지 */
         }
-        .today-card .card-date { font-weight: 700; color: var(--text-heading); flex-shrink: 0; }
-        .today-card .card-detail { color: var(--text-muted); font-size: 14px; }
-
+        
         .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
         /* --- 월간 캘린더 모듈 --- */
@@ -176,7 +152,8 @@
         }
         
         .day-cell {
-            background: var(--bg-panel); width: 110px; min-height: 110px; 
+            background: var(--bg-panel); width: 110px; 
+            min-height: 130px; /* ✨ 요청하신 높이 확장 (기본 일정 2개 충분히 들어감) */
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
@@ -249,7 +226,7 @@
         }
         textarea { resize: vertical; min-height: 80px; }
 
-        /* 선택한 날짜 일정 카드 */
+        /* 선택한 날짜 일정 카드 (공통 카드 속성) */
         .selected-list { display: flex; flex-direction: column; gap: 12px; }
         .selected-card {
             background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
@@ -283,12 +260,8 @@
                         <span class="module-icon">⚡</span>
                         <h3 class="module-title">오늘의 일정</h3>
                     </div>
-                    <!-- 가로 스크롤 및 줄바꿈 방지 래퍼 -->
-                    <div class="today-scroll-wrapper" id="todayScrollWrapper">
-                        <div class="today-list" id="todayList">
-                            <!-- JS로 랜더링 됨 -->
-                        </div>
-                    </div>
+                    <!-- ✨ 선택한 날짜 일정과 동일한 세로 리스트 구조로 변경 -->
+                    <div class="today-list" id="todayList"></div>
                 </div>
 
                 <!-- 2. 월간 캘린더 섹션 -->
@@ -311,7 +284,6 @@
 
         <!-- 사이드바 컨트롤 영역 -->
         <aside class="sidebar">
-            <!-- 관리자 인증 -->
             <div class="box-panel">
                 <div class="sidebar-title">🔑 관리자 연동</div>
                 <div class="form-row" style="margin-bottom: 0;">
@@ -320,7 +292,6 @@
                 </div>
             </div>
 
-            <!-- 일정 관리 폼 -->
             <div class="box-panel">
                 <div class="month-control-box">
                     <button class="btn-outline" onclick="changeMonth(-1)">◀ 이전달</button>
@@ -354,7 +325,6 @@
                 <button class="btn-primary" id="submitBtn" onclick="addOrUpdateSchedule()">일정 등록하기</button>
             </div>
 
-            <!-- 선택한 날짜 리스트 -->
             <div class="box-panel">
                 <div class="sidebar-title">📅 선택한 날짜 일정</div>
                 <div class="selected-list" id="selectedDateList"></div>
@@ -437,26 +407,20 @@
 
             const target = document.getElementById('calendarCaptureArea');
             const calInner = document.getElementById('calendarInner');
-            const todayWrapper = document.getElementById('todayScrollWrapper');
             
-            // 캡처 전 뷰포트 및 스크롤 강제 고정 (잘림 방지)
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
-            const originalTodayOverflow = todayWrapper.style.overflow;
             
             target.style.width = '860px'; 
             calInner.style.overflow = 'visible'; 
-            todayWrapper.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
                 windowWidth: 1200 
             }).then(async canvas => {
-                // 원상복구
                 target.style.width = originalWidth;
                 calInner.style.overflow = originalCalOverflow;
-                todayWrapper.style.overflow = originalTodayOverflow;
 
                 const base64Image = canvas.toDataURL('image/png').split(',')[1]; 
                 
@@ -644,7 +608,7 @@
             saveData();
         };
 
-        // --- 가로 배열과 줄바꿈 방지 적용된 오늘의 일정 랜더링 ---
+        // ✨ 날짜 제거 및 '선택한 날짜 일정'과 동일한 구조로 변경
         const renderTodaySchedules = () => {
             const container = document.getElementById('todayList');
             const today = new Date();
@@ -657,22 +621,20 @@
                 container.innerHTML = `<div class="no-schedule">오늘 등록된 일정이 없습니다.</div>`;
                 return;
             }
-
-            const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-            const dateObj = new Date(todayStr + 'T00:00:00');
-            const formattedDate = `${todayStr} (${weekDays[dateObj.getDay()]})`;
             
             container.innerHTML = todayItems.map(item => {
                 const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
                 const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-                const detailHtml = item.detail ? `<span class="card-detail">${escapeHTML(item.detail)}</span>` : '';
+                // 오늘의 일정에만 나오는 '상세내용'을 카드 아래쪽에 배치 (왼쪽 여백을 줘서 들여쓰기 느낌)
+                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 13px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
 
                 return `
                     <div class="today-card">
-                        <span class="card-date">${formattedDate}</span>
-                        <div class="card-dot" style="background-color: ${item.color || '#eff6ff'};"></div>
-                        ${timeHtml} ${personHtml}
-                        <span class="card-desc">${escapeHTML(item.desc)}</span>
+                        <div class="card-main">
+                            <div class="card-dot" style="background-color: ${item.color || '#eff6ff'};"></div>
+                            ${timeHtml} ${personHtml}
+                            <span class="card-desc">${escapeHTML(item.desc)}</span>
+                        </div>
                         ${detailHtml}
                     </div>
                 `;
