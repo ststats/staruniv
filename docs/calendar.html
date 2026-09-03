@@ -179,7 +179,6 @@
         </section>
 
         <aside class="sidebar">
-            <!-- 🔑 관리자 인증 영역 추가 -->
             <div class="box-panel" style="padding: 15px;">
                 <div class="section-title" style="margin-bottom: 8px;">🔑 관리자 인증</div>
                 <div class="form-row" style="margin-bottom: 0;">
@@ -192,7 +191,6 @@
                 <div class="month-control-box">
                     <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
                     <button class="month-nav-btn" onclick="changeMonth(1)">다음달 ▶</button>
-                    <!-- 📸 저장 버튼 텍스트 변경 -->
                     <button class="capture-btn" onclick="captureCalendar()">📸 깃허브 적용</button>
                 </div>
 
@@ -240,7 +238,7 @@
         const REPO_NAME = 'staruniv';
         const DATA_FILE_PATH = 'schedule.json';
         const IMG_FILE_PATH = 'calendar.png';
-        let dataFileSha = ''; // 데이터 덮어쓰기를 위한 SHA 값 저장
+        let dataFileSha = ''; 
 
         // --- 2. 깃허브 연동 함수 ---
         const saveTokenLocally = () => {
@@ -261,7 +259,7 @@
                 });
                 if(res.ok) {
                     const data = await res.json();
-                    const decoded = decodeURIComponent(escape(atob(data.content))); // 한글 깨짐 방지 디코딩
+                    const decoded = decodeURIComponent(escape(atob(data.content))); 
                     schedules = JSON.parse(decoded);
                     dataFileSha = data.sha;
                     renderCalendar();
@@ -281,7 +279,7 @@
             if(!token) return alert('GitHub 토큰을 입력하고 연동해주세요!');
 
             try {
-                const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(schedules)))); // 한글 인코딩 처리
+                const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(schedules)))); 
                 const payload = {
                     message: '일정 데이터 업데이트',
                     content: contentBase64
@@ -296,7 +294,7 @@
 
                 if (res.ok) {
                     const data = await res.json();
-                    dataFileSha = data.content.sha; // 다음 덮어쓰기를 위해 SHA 갱신
+                    dataFileSha = data.content.sha; 
                 } else {
                     alert('데이터 저장 실패! 토큰 권한을 확인하세요.');
                 }
@@ -305,14 +303,30 @@
             }
         };
 
-        // --- 3. 스크린샷 캡처 후 깃허브 업로드 ---
+        // --- 3. 스크린샷 캡처 후 깃허브 업로드 (모바일 뷰어 해상도 강제 고정 적용) ---
         const captureCalendar = () => {
             const token = document.getElementById('githubToken').value;
             if(!token) return alert('GitHub 토큰을 입력하고 연동해주세요!');
 
             const target = document.getElementById('calendarCaptureArea');
-            html2canvas(target, { scale: 2, useCORS: true }).then(async canvas => {
-                const base64Image = canvas.toDataURL('image/png').split(',')[1]; // Base64 문자열만 추출
+            const inner = target.querySelector('.calendar-inner');
+            
+            // ✨ 모바일 캡처 방지: 캡처 직전 임시로 데스크톱 뷰 사이즈로 강제 변경
+            const originalWidth = target.style.width;
+            const originalOverflow = inner.style.overflow;
+            target.style.width = '820px'; // PC 해상도 너비 고정
+            inner.style.overflow = 'visible'; // 스크롤바 숨김 방지 및 전체 렌더링
+
+            html2canvas(target, { 
+                scale: 2, 
+                useCORS: true,
+                windowWidth: 1200 // 가상 윈도우 너비를 PC 사이즈로 설정
+            }).then(async canvas => {
+                // ✨ 캡처 완료 즉시 원래 화면 상태로 원상 복구
+                target.style.width = originalWidth;
+                inner.style.overflow = originalOverflow;
+
+                const base64Image = canvas.toDataURL('image/png').split(',')[1]; 
                 
                 try {
                     let imgSha = '';
@@ -337,7 +351,7 @@
                     });
                     
                     if (putRes.ok) {
-                        alert('✅ 커뮤니티 게시판용 이미지가 깃허브에 완벽하게 갱신되었습니다!');
+                        alert('✅ 커뮤니티 게시판용 이미지가 풀사이즈로 깃허브에 완벽하게 갱신되었습니다!');
                     } else {
                         alert('이미지 업데이트 실패! 에러를 확인하세요.');
                     }
@@ -452,8 +466,8 @@
                 schedules[selectedDateStr].push({ id: Date.now(), time, person, desc, detail, color });
             }
 
-            renderCalendar(); // 로컬 화면 갱신
-            saveData();       // 깃허브 API로 데이터 덮어쓰기 (비동기)
+            renderCalendar(); 
+            saveData();       
             clearForm();
         };
 
@@ -580,7 +594,6 @@
             const todayStr = getFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
             selectDate(todayStr);
 
-            // 로컬 스토리지에 임시 저장해둔 토큰이 있으면 불러와서 세팅 및 데이터 로드[cite: 1]
             const savedToken = localStorage.getItem('gh_token');
             if (savedToken) {
                 document.getElementById('githubToken').value = savedToken;
