@@ -10,17 +10,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* ==============================
-           리뉴얼된 프리미엄 테마 시스템
+            리뉴얼된 프리미엄 테마 시스템
         ============================== */
         :root {
             --bg-page: #f8fafc;        
             --bg-panel: #ffffff;       
             
-            --text-heading: #0f172a;   
+            --text-heading: #0f172a;    
             --text-main: #334155;      
             --text-muted: #64748b;     
             
-            --border-light: #e2e8f0;   
+            --border-light: #e2e8f0;    
             --border-dark: #cbd5e1;    
             
             --primary: #3b82f6;        
@@ -79,7 +79,7 @@
         }
 
         /* ==============================
-           [1] 왼쪽 영역 (캡처 대상)
+            [1] 왼쪽 영역 (캡처 대상)
         ============================== */
         .capture-wrapper {
             display: flex;
@@ -105,22 +105,21 @@
         .calendar-header-area {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 24px; /* 그리드와의 상하 여백 넉넉하게 확보 */
+            align-items: center;
+            margin-bottom: 24px;
             padding-bottom: 16px;
-            border-bottom: 2px solid var(--border-light); /* 시각적 구분선 추가로 세련미 극대화 */
+            border-bottom: 2px solid var(--border-light);
         }
         
-        /* '2026년 9월' 연월 배지 스타일 (감각적인 포인트 디자인) */
+        /* 연월 텍스트 스타일: 박스, 색상 효과 모두 제거하고 이달의 일정과 동일한 폰트 적용 */
         .month-badge {
-            background: var(--primary-light);
-            color: var(--primary);
-            font-size: 14px;
+            font-size: 18px;
             font-weight: 700;
-            padding: 6px 14px;
-            border-radius: 20px;
-            letter-spacing: -0.2px;
-            box-shadow: inset 0 1px 2px rgba(59, 130, 246, 0.1);
+            color: var(--text-heading);
+            background: none;
+            padding: 0;
+            box-shadow: none;
+            letter-spacing: normal;
         }
 
         .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
@@ -162,19 +161,27 @@
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
+        /* 캘린더 내부 일정 셀: 배경, 박스 효과 제거 */
         .cell-event {
-            border-radius: var(--radius-sm); padding: 5px 6px; margin-bottom: 4px; 
-            font-weight: 500; display: flex; flex-direction: column; gap: 2px; 
-            color: var(--text-heading); box-shadow: var(--shadow-card);
+            background: none;
+            border-radius: 0;
+            padding: 2px 0;
+            margin-bottom: 4px; 
+            font-weight: 500; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 2px; 
+            color: var(--text-main);
+            box-shadow: none;
         }
         .cell-top { display: flex; justify-content: space-between; align-items: center; font-weight: 600; white-space: nowrap; }
-        .event-time { opacity: 0.8; font-size: 11px; }
-        .event-person { font-weight: 700; font-size: 11px; margin-left: auto; text-align: right; }
+        .event-time { opacity: 0.8; font-size: 12px; }
+        .event-person { font-weight: 700; font-size: 12px; margin-left: auto; text-align: right; }
         .event-desc { font-size: 12px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
 
 
         /* ==============================
-           [2] 사이드바 디자인
+            [2] 사이드바 디자인
         ============================== */
         .sidebar .box-panel { padding: 24px; }
         
@@ -244,13 +251,13 @@
                     <div class="today-list" id="todayList"></div>
                 </div>
 
-                <!-- 2. 월간 캘린더 (상하 여백 및 타이틀 감각적 디자인 적용) -->
+                <!-- 2. 월간 캘린더 -->
                 <div class="box-panel">
                     <div class="calendar-header-area">
                         <div class="panel-title" style="margin-bottom: 0;">
                             <span>📅</span> 이달의 일정
                         </div>
-                        <!-- 세련된 연월 뱃지 스타일 -->
+                        <!-- 이달의 일정 타이틀과 동일한 폰트 크기(18px) 및 색상으로 변경 -->
                         <div id="monthTitle" class="month-badge"></div>
                     </div>
                     <div class="calendar-inner" id="calendarInner">
@@ -454,7 +461,6 @@
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
-            // 연월 뱃지 안의 텍스트 지정[cite: 1]
             document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
 
             const firstDayIndex = new Date(year, month, 1).getDay();
@@ -486,7 +492,7 @@
                         const personText = item.person ? `<span class="event-person">${escapeHTML(item.person)}</span>` : '';
                         
                         dayHTML += `
-                            <div class="cell-event" style="background-color: ${item.color || '#eff6ff'};">
+                            <div class="cell-event">
                                 <div class="cell-top">${timeHtml}${personText}</div>
                                 <div class="event-desc">${escapeHTML(item.desc)}</div>
                             </div>
