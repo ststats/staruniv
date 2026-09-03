@@ -233,11 +233,11 @@
         let selectedDateStr = "";
         let schedules = {}; 
         
-        // 깃허브 API 관련 변수
+        // 깃허브 API 관련 변수 (docs 경로로 수정됨)
         const REPO_OWNER = 'ststats';
         const REPO_NAME = 'staruniv';
-        const DATA_FILE_PATH = 'schedule.json';
-        const IMG_FILE_PATH = 'calendar.png';
+        const DATA_FILE_PATH = 'docs/schedule.json';
+        const IMG_FILE_PATH = 'docs/calendar.png';
         let dataFileSha = ''; 
 
         // --- 2. 깃허브 연동 함수 ---
@@ -351,7 +351,7 @@
                     });
                     
                     if (putRes.ok) {
-                        alert('✅ 커뮤니티 게시판용 이미지가 풀사이즈로 깃허브에 완벽하게 갱신되었습니다!');
+                        alert('✅ 게시판용 이미지가 풀사이즈로 깃허브(docs 폴더)에 완벽하게 갱신되었습니다!');
                     } else {
                         alert('이미지 업데이트 실패! 에러를 확인하세요.');
                     }
