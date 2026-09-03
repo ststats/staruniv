@@ -55,27 +55,27 @@
         }
         
         /* 레이아웃 구조 */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1290px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 830px; }
-        .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1350px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 860px; }
+        .sidebar { width: 400px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1290px) { 
+        @media(max-width: 1350px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 830px; }
+            .sidebar { width: 100%; max-width: 860px; }
         }
 
-        /* 공통 패널 스타일 (상하 30px, 좌우 패딩 슬림하게 18px) */
+        /* 공통 패널 스타일 */
         .box-panel {
             background: var(--bg-panel); 
-            padding: 30px 18px; 
+            padding: 30px 20px; 
             border-radius: var(--radius-xl); 
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 830px;
+            max-width: 860px;
         }
         .panel-title { 
-            font-size: 18px; font-weight: 700; color: var(--text-heading); 
+            font-size: 20px; font-weight: 700; color: var(--text-heading); 
             margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 830px;
+            max-width: 860px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -97,13 +97,13 @@
         /* 오늘의 일정 리스트 */
         .today-list { display: flex; flex-direction: column; gap: 12px; }
         .today-card {
-            background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
+            background: var(--bg-panel); border-radius: var(--radius-md); padding: 18px; 
             border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 8px; 
             box-shadow: var(--shadow-card);
         }
-        .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
+        .no-schedule { font-size: 15px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
-        /* 월간 캘린더 영역 (110px * 7열 = 770px 기준) */
+        /* 월간 캘린더 영역 (115px * 7열 = 805px 기준) */
         .calendar-header-area {
             display: flex;
             justify-content: space-between;
@@ -112,12 +112,12 @@
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
             width: 100%;
-            max-width: 770px; 
+            max-width: 805px; 
         }
         
         /* 연월 텍스트 스타일 */
         .month-badge {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--text-heading);
             background: none;
@@ -135,14 +135,14 @@
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
         .calendar-scroll-content { 
-            width: 770px; 
+            width: 805px; 
             margin: 0 auto; 
             box-sizing: border-box;
         }
 
         .weekdays { 
-            display: grid; grid-template-columns: repeat(7, 110px); 
-            text-align: center; font-size: 14px; font-weight: 600; 
+            display: grid; grid-template-columns: repeat(7, 115px); 
+            text-align: center; font-size: 16px; font-weight: 600; 
             color: var(--text-muted); margin-bottom: 12px; 
             box-sizing: border-box;
         }
@@ -150,15 +150,15 @@
         .weekdays div:last-child { color: var(--saturday); } 
 
         .days-grid { 
-            display: grid; grid-template-columns: repeat(7, 110px); 
+            display: grid; grid-template-columns: repeat(7, 115px); 
             border-top: 1px solid var(--border-light); border-left: 1px solid var(--border-light); 
             box-sizing: border-box;
-            width: 770px; 
+            width: 805px; 
         }
         
         .day-cell {
-            background: var(--bg-panel); width: 110px; 
-            min-height: 130px; 
+            background: var(--bg-panel); width: 115px; 
+            min-height: 140px; 
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
@@ -168,20 +168,20 @@
         .day-cell.other-month { background-color: #f8fafc; }
         .day-cell.other-month .day-number { color: #94a3b8; }
 
-        .day-number { font-size: 15px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
+        .day-number { font-size: 18px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
         .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
         .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
 
         .day-cell.today .day-number { width: max-content; position: relative; z-index: 1; }
         .day-cell.today .day-number::after {
-            content: ''; position: absolute; bottom: 1px; left: -2px; right: -2px; height: 8px;
+            content: ''; position: absolute; bottom: 1px; left: -2px; right: -2px; height: 10px;
             background-color: rgba(59, 130, 246, 0.3); z-index: -1; border-radius: 2px;
         }
 
         /* 캘린더 내부 일정 셀 */
         .cell-event {
             border-radius: var(--radius-sm); 
-            padding: 5px 6px; 
+            padding: 6px 8px; 
             margin-bottom: 4px; 
             font-weight: 500; 
             display: flex; 
@@ -191,34 +191,34 @@
             box-shadow: var(--shadow-card);
         }
         .cell-top { display: flex; justify-content: space-between; align-items: center; font-weight: 600; white-space: nowrap; }
-        .event-time { opacity: 0.8; font-size: 11px; }
-        .event-person { font-weight: 700; font-size: 11px; margin-left: auto; text-align: right; }
-        .event-desc { font-size: 12px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
+        .event-time { opacity: 0.8; font-size: 13px; }
+        .event-person { font-weight: 700; font-size: 13px; margin-left: auto; text-align: right; }
+        .event-desc { font-size: 14px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
 
 
         /* ==============================
             [2] 사이드바 디자인
         ============================== */
-        .sidebar .box-panel { padding: 24px 18px; }
+        .sidebar .box-panel { padding: 24px 20px; }
         
         .month-control-box { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
         button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
         
         .btn-outline { 
             flex: 1; background: var(--bg-panel); color: var(--text-main); 
-            border: 1px solid var(--border-dark); padding: 10px 0; 
-            border-radius: var(--radius-md); font-size: 13px; font-weight: 600; 
+            border: 1px solid var(--border-dark); padding: 12px 0; 
+            border-radius: var(--radius-md); font-size: 15px; font-weight: 600; 
         }
         .btn-outline:hover { background-color: var(--bg-page); color: var(--text-heading); }
         
         .btn-action { 
-            background: var(--success); color: white; padding: 10px 14px; 
-            border-radius: var(--radius-md); font-size: 13px; font-weight: 600; flex-shrink: 0; 
+            background: var(--success); color: white; padding: 12px 16px; 
+            border-radius: var(--radius-md); font-size: 15px; font-weight: 600; flex-shrink: 0; 
         }
         .btn-action:hover { background: var(--success-hover); }
         .btn-primary { 
-            width: 100%; padding: 14px; background: var(--primary); color: white; 
-            border-radius: var(--radius-md); font-weight: 600; font-size: 14px; margin-top: 8px; 
+            width: 100%; padding: 15px; background: var(--primary); color: white; 
+            border-radius: var(--radius-md); font-weight: 600; font-size: 16px; margin-top: 8px; 
         }
         .btn-primary:hover { background: var(--primary-hover); }
 
@@ -226,30 +226,30 @@
         input, select, textarea {
             width: 100%; padding: 12px; background: var(--bg-page); 
             border: 1px solid var(--border-light); color: var(--text-heading); 
-            border-radius: var(--radius-md); font-size: 14px; font-family: inherit; transition: all 0.2s;
+            border-radius: var(--radius-md); font-size: 15px; font-family: inherit; transition: all 0.2s;
         }
         input:focus, textarea:focus, select:focus { 
             outline: none; border-color: var(--primary); 
             background: var(--bg-panel); box-shadow: 0 0 0 3px var(--primary-light); 
         }
-        textarea { resize: vertical; min-height: 80px; }
+        textarea { resize: vertical; min-height: 90px; }
 
         .selected-list { display: flex; flex-direction: column; gap: 12px; }
         .selected-card {
-            background: var(--bg-panel); border-radius: var(--radius-md); padding: 16px; 
+            background: var(--bg-panel); border-radius: var(--radius-md); padding: 18px; 
             border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px; 
             box-shadow: var(--shadow-card);
         }
-        .card-main { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-        .card-time { color: var(--text-muted); font-weight: 600; font-size: 14px; } 
-        .card-person { font-weight: 700; color: var(--text-heading); font-size: 14px; } 
-        .card-desc { color: var(--text-main); font-size: 14px; flex-grow: 1; font-weight: 500; } 
+        .card-main { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+        .card-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+        .card-time { color: var(--text-muted); font-weight: 600; font-size: 15px; } 
+        .card-person { font-weight: 700; color: var(--text-heading); font-size: 15px; } 
+        .card-desc { color: var(--text-main); font-size: 15px; flex-grow: 1; font-weight: 500; } 
         
-        .btn-group { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
-        .edit-btn { background: none; color: var(--primary); font-size: 13px; font-weight: 600; padding: 4px; }
+        .btn-group { display: flex; gap: 10px; margin-left: auto; flex-shrink: 0; }
+        .edit-btn { background: none; color: var(--primary); font-size: 14px; font-weight: 600; padding: 4px; }
         .edit-btn:hover { color: var(--primary-hover); text-decoration: underline; }
-        .delete-btn { background: none; color: var(--danger); font-size: 13px; font-weight: 600; padding: 4px; }
+        .delete-btn { background: none; color: var(--danger); font-size: 14px; font-weight: 600; padding: 4px; }
         .delete-btn:hover { color: #dc2626; text-decoration: underline; }
     </style>
 </head>
@@ -416,14 +416,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            /* 핵심 수정: 캡처 시 전체 영역이 좁아지지 않고 830px 풀너비로 선명하게 캡처되도록 지정 */
-            target.style.width = '830px'; 
+            target.style.width = '860px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1290,
+                windowWidth: 1350,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
@@ -631,7 +630,7 @@
             container.innerHTML = todayItems.map(item => {
                 const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
                 const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 13px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
+                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 14px; padding-left: 24px;">↳ ${escapeHTML(item.detail)}</div>` : '';
 
                 return `
                     <div class="today-card">
