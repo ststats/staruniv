@@ -54,17 +54,17 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1370px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 960px; }
+        /* 레이아웃 구조 (전체 폭 900px로 통일) */
+        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1310px; align-items: flex-start; justify-content: center; }
+        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 900px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
         
-        @media(max-width: 1370px) { 
+        @media(max-width: 1310px) { 
             .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 960px; }
+            .sidebar { width: 100%; max-width: 900px; }
         }
 
-        /* 공통 패널 스타일 (부모 카드 폭 960px 고정) */
+        /* 공통 패널 스타일 (최대 폭 900px 고정) */
         .box-panel {
             background: var(--bg-panel); 
             padding: 30px; 
@@ -72,7 +72,7 @@
             box-shadow: var(--shadow-panel); 
             border: 1px solid var(--border-light);
             width: 100%;
-            max-width: 960px;
+            max-width: 900px;
         }
         .panel-title { 
             font-size: 18px; font-weight: 700; color: var(--text-heading); 
@@ -87,7 +87,7 @@
             flex-direction: column;
             gap: 24px;
             width: 100%;
-            max-width: 960px;
+            max-width: 900px;
             background-color: var(--bg-page);
             padding: 10px;
             margin: -10px; 
@@ -103,7 +103,7 @@
         }
         .no-schedule { font-size: 14px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
 
-        /* 월간 캘린더 영역 개선 디자인 (핵심 수정: 캘린더 내부 내용물과 동일하게 840px로 정확히 맞춤) */
+        /* 월간 캘린더 영역 개선 디자인 */
         .calendar-header-area {
             display: flex;
             justify-content: space-between;
@@ -112,7 +112,7 @@
             padding-bottom: 16px;
             border-bottom: 2px solid var(--border-light);
             width: 100%;
-            max-width: 840px; /* 요일 그리드 폭(120px * 7 = 840px)과 완벽하게 일치시킴 */
+            max-width: 840px; /* 120px * 7열 = 840px 고정 */
         }
         
         /* 연월 텍스트 스타일 */
@@ -128,7 +128,7 @@
 
         .calendar-inner { 
             width: 100%; 
-            overflow-x: visible; /* PC에서 삐져나가지 않도록 강제 스크롤 방지 */
+            overflow-x: visible; 
             padding-bottom: 12px; 
         }
         .calendar-inner::-webkit-scrollbar { height: 8px; }
@@ -136,7 +136,7 @@
         
         .calendar-scroll-content { 
             width: 100%; 
-            max-width: 840px; /* 840px로 제한하여 박스 안에서 정렬 유지 */
+            max-width: 840px; 
             margin: 0 auto; 
         }
 
@@ -412,13 +412,13 @@
             const originalWidth = target.style.width;
             const originalCalOverflow = calInner.style.overflow;
             
-            target.style.width = '960px'; 
+            target.style.width = '900px'; 
             calInner.style.overflow = 'visible'; 
 
             html2canvas(target, { 
                 scale: 2, 
                 useCORS: true,
-                windowWidth: 1370,
+                windowWidth: 1310,
                 backgroundColor: "#f8fafc" 
             }).then(async canvas => {
                 target.style.width = originalWidth;
