@@ -54,7 +54,7 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 레이아웃 구조 (전체 폭 900px로 통일) */
+        /* 레이아웃 구조 (전체 폭 900px 통일) */
         .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1310px; align-items: flex-start; justify-content: center; }
         .left-area { display: flex; flex-direction: column; width: 100%; max-width: 900px; }
         .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
@@ -135,15 +135,16 @@
         .calendar-inner::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
         .calendar-scroll-content { 
-            width: 100%; 
-            max-width: 840px; 
+            width: 840px; 
             margin: 0 auto; 
+            box-sizing: border-box;
         }
 
         .weekdays { 
             display: grid; grid-template-columns: repeat(7, 120px); 
             text-align: center; font-size: 14px; font-weight: 600; 
             color: var(--text-muted); margin-bottom: 12px; 
+            box-sizing: border-box;
         }
         .weekdays div:first-child { color: var(--sunday); } 
         .weekdays div:last-child { color: var(--saturday); } 
@@ -151,6 +152,8 @@
         .days-grid { 
             display: grid; grid-template-columns: repeat(7, 120px); 
             border-top: 1px solid var(--border-light); border-left: 1px solid var(--border-light); 
+            box-sizing: border-box;
+            width: 840px; /* 정확히 840px 고정하여 우측 삐져나옴 원천 차단 */
         }
         
         .day-cell {
@@ -159,6 +162,7 @@
             display: flex; flex-direction: column; padding: 8px; cursor: pointer; 
             border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
+            box-sizing: border-box; /* 테두리가 너비를 밀어내지 않도록 고정 */
         }
         .day-cell:hover { background-color: var(--primary-light); }
         .day-cell.other-month { background-color: #f8fafc; }
