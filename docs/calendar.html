@@ -236,8 +236,8 @@
         // 깃허브 API 관련 변수 (docs 경로로 수정됨)
         const REPO_OWNER = 'ststats';
         const REPO_NAME = 'staruniv';
-        const DATA_FILE_PATH = 'docs/schedule.json';
-        const IMG_FILE_PATH = 'docs/calendar.png';
+        const DATA_FILE_PATH = 'docs/data/calendar.json';
+        const IMG_FILE_PATH = 'docs/data/calendar.png';
         let dataFileSha = ''; 
 
         // --- 2. 깃허브 연동 함수 ---
@@ -264,7 +264,7 @@
                     dataFileSha = data.sha;
                     renderCalendar();
                 } else if (res.status === 404) {
-                    console.log("schedule.json 파일이 없습니다. 새로 생성됩니다.");
+                    console.log("calendar.json 파일이 없습니다. 새로 생성됩니다.");
                     renderCalendar();
                 } else {
                     alert("데이터를 불러오지 못했습니다. 토큰 권한을 확인하세요.");
