@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-01 01:43:09",
+  "updated_at": "2026-09-01 03:55:09",
   "date": "2026-08-31",
   "year": 2026,
   "month": 8,
@@ -2540,7 +2540,7 @@
     },
     {
       "id": "yyssaa33",
-      "elo_id": 6044,
+      "elo_id": 773,
       "nickname": "제티",
       "role": "",
       "team": "BGM",
@@ -2549,8 +2549,8 @@
       "balloons": 30484,
       "broadcast_seconds": 293417,
       "cumulative_viewers": 7093,
-      "sponsor_wins": 0,
-      "sponsor_losses": 0
+      "sponsor_wins": 11,
+      "sponsor_losses": 27
     },
     {
       "id": "xzqwe1",
@@ -4360,7 +4360,7 @@
     },
     {
       "id": "asdsa1113",
-      "elo_id": 6029,
+      "elo_id": 763,
       "nickname": "세월",
       "role": "",
       "team": "FA",
@@ -4369,8 +4369,8 @@
       "balloons": 48462,
       "broadcast_seconds": 347386,
       "cumulative_viewers": 16738,
-      "sponsor_wins": 0,
-      "sponsor_losses": 0
+      "sponsor_wins": 8,
+      "sponsor_losses": 44
     },
     {
       "id": "onzzang",
@@ -11344,35 +11344,7 @@
       "sponsor_wins": 2,
       "sponsor_losses": 7
     },
-    {
-      "id": "asdsa1113",
-      "elo_id": 763,
-      "nickname": "세월",
-      "role": "",
-      "team": "FA",
-      "race": "프로토스",
-      "tier": "7",
-      "balloons": 0,
-      "broadcast_seconds": 0,
-      "cumulative_viewers": 0,
-      "sponsor_wins": 8,
-      "sponsor_losses": 44
-    },
-    {
-      "id": "yyssaa33",
-      "elo_id": 773,
-      "nickname": "제티",
-      "role": "",
-      "team": "BGM",
-      "race": "프로토스",
-      "tier": "7",
-      "balloons": 0,
-      "broadcast_seconds": 0,
-      "cumulative_viewers": 0,
-      "sponsor_wins": 11,
-      "sponsor_losses": 27
-    }
   ],
-  "sponsor_updated_at": "2026-09-01 01:43:09",
+  "sponsor_updated_at": "2026-09-01 03:55:09",
   "sponsor_month": "2026-08"
 }
