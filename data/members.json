@@ -9695,6 +9695,18 @@
       "role": "",
       "info_updated_at": null,
       "id": "fjqmal13"
+    },
+    {
+      "nickname": "베트남테란",
+      "elo_id": 6452,
+      "birthdate": null,
+      "gender": "m",
+      "race": "테란",
+      "tier": null,
+      "team": "휴면",
+      "role": "",
+      "info_updated_at": null,
+      "id": "janghoman"
     }
   ]
 }
