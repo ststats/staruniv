@@ -1,7 +1,6 @@
+Pillow>=10,<12
+requests
 gspread
 google-auth
-requests
-Jinja2
-Pillow
-fonttools
-brotli
+fonttools[woff]
+jinja2
