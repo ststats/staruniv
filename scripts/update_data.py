@@ -302,6 +302,8 @@ def main():
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_json(OUTPUT_PATH, result)
 
+    print(f"[완료] {OUTPUT_PATH.name} 갱신됨 (별풍선 {len(balloon_data)}명, 스폰전적 {len(sponsor_data)}명)")
+
     if new_members_acc or applied_correction_ids:
         write_sheet({}, list(new_members_acc.values()), clear_info_updated_at=applied_correction_ids)
         if new_members_acc:
