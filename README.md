@@ -64,16 +64,9 @@
 - 개인 프로필에서 방송 중인 인원은 실시간 임베드(썸네일+LIVE 배지+시청자수) 표시, 방송 중 아니면 자동으로 숨김
 - 모바일 대응, 자체 호스팅 폰트(서브셋으로 용량 최소화)
 
-## 환경 변수 (Secrets)
-
-GitHub Actions 구동을 위해 다음 항목이 저장소 Settings → Secrets에 설정되어야 합니다:
-- `GOOGLE_CREDENTIALS_JSON`: 서비스 계정 키 JSON 전체
-- `GOOGLE_SHEET_ID`: 로스터 구글 시트 ID
 
 ## 수동 갱신
 
 저장소 → Actions → **Update all stats** → Run workflow
 
-## 데이터 결측 사고가 났을 때
 
-`fix_august_sponsor.py`를 재사용: 파일 위 `START_DATE`/`END_DATE`/`ARCHIVE_DATE` 세 값만 바꿔서 워크플로우를 수동 실행하면, 해당 기간 스폰전적을 재조회해서 그 아카이브에 소급 반영함(타임스탬프는 안 건드림).
