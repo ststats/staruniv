@@ -3,9 +3,9 @@ html { scrollbar-gutter: stable; }
 body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; margin: 0; padding: 20px 10px; color: #1a1d29; }
 .top-bar { max-width: 1080px; margin: 0 auto 16px; background: #fff; border-radius: 20px; padding: 16px 20px; min-height: 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 4px 12px rgba(20,20,30,0.05); }
 .month-select-group { display: inline-flex; align-items: center; gap: 6px; position: relative; vertical-align: middle; }
-.top-date-input { font-size: 20px; font-weight: 800; color: #141821; border: none; background: transparent; cursor: pointer; font-family: inherit; padding: 2px 0; line-height: 1.2; vertical-align: middle; }
-.top-date-input:hover { color: #4a5ce0; }
-.top-date-input::-webkit-calendar-picker-indicator { cursor: pointer; }
+.top-date-btn { background: transparent; border: none; font-size: 20px; font-weight: 800; color: #141821; cursor: pointer; padding: 2px 0; font-family: inherit; display: inline-flex; align-items: center; vertical-align: middle; gap: 6px; line-height: 1.2; }
+.top-date-btn:hover { color: #4a5ce0; }
+.hidden-date-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; margin: 0; }
 
 .select-wrapper { position: relative; display: inline-flex; align-items: center; vertical-align: middle; gap: 6px; visibility: hidden; font-weight: 800; }
 .select-wrapper.ready { visibility: visible; }
