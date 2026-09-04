@@ -109,7 +109,8 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
     top_bar_html = f"""
   <div class="top-bar">
     <span class="month-select-group">
-      <input type="date" id="date-picker" class="top-date-input" aria-label="날짜 선택">
+      <button id="calendar-btn" class="top-date-btn" type="button"></button>
+      <input type="date" id="date-picker" class="hidden-date-input" tabindex="-1" aria-hidden="true">
 
       {'' if is_profile else '''
       <div class="select-wrapper">
