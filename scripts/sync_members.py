@@ -44,6 +44,13 @@ def main(argv=None):
         sys.exit(1)
 
     member_map = load_sheet_members()
+    # soop_id 대소문자/공백 차이 때문에 이미 있는 사람을 "신규"로 오판해서
+    # 매 실행마다 같은 사람이 중복으로 계속 추가되는 걸 막기 위해, 소문자로
+    # 정규화한 키로도 조회할 수 있게 별도 맵을 만든다. 시트에 실제로 저장된
+    # 원래 대소문자는 그대로 보존해야 하므로(정규화된 키로 덮어쓰면 안 됨),
+    # 조회는 정규화된 키로 하되 갱신은 항상 시트에 있던 원래 soop_id를 쓴다.
+    normalized_to_original = {sid.strip().lower(): sid for sid in member_map}
+
     api_data = fetch_json(TIERS_URL, label="엘로보드 티어 목록")
     if api_data is None:
         sys.exit(1)
@@ -60,7 +67,12 @@ def main(argv=None):
         converted_race = RACE_MAP.get(api_player.get("race"), api_player.get("race"))
         team_name = api_player.get("college") or ""
 
-        existing = member_map.get(soop_id)
+        # API가 주는 soop_id의 대소문자/공백이 시트에 저장된 것과 다를 수 있어서,
+        # 정규화된 키로 먼저 조회하고, 찾았으면 시트에 있던 원래 키를 그대로 쓴다
+        # (updates 딕셔너리의 키가 write_sheet()에서 실제 행을 찾는 기준이라,
+        # 여기서 원래 키를 안 쓰면 기존 행을 못 찾고 또 새 행으로 추가돼버린다).
+        original_soop_id = normalized_to_original.get(soop_id.strip().lower())
+        existing = member_map.get(original_soop_id) if original_soop_id else None
         if existing:
             before = (existing.get("nickname"), existing.get("race"), existing.get("tier"), existing.get("team"))
             new_fields = dict(existing)
@@ -75,7 +87,7 @@ def main(argv=None):
             
             after = (new_fields.get("nickname"), new_fields.get("race"), new_fields.get("tier"), new_fields.get("team"))
             if before != after:
-                updates[soop_id] = new_fields
+                updates[original_soop_id] = new_fields
         else:
             new_member = {
                 "id": soop_id,
