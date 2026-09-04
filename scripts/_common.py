@@ -228,14 +228,13 @@ def write_sheet(update_rows: dict, append_rows: list, delete_ids: set | None = N
     ws = get_worksheet()
     all_values = ws.get_all_values()
     
-    header = all_values[0] if all_values else [
-        "이름", "SOOP ID", "ELO ID", "생년월일", "성별", "종족", "티어", "소속", "직책", "수정일"
-    ]
-    new_data = [header]
+    # 1행(헤더)은 아예 배열에 담지 않고 무시합니다. 2행부터 들어갈 데이터만 조립합니다.
+    new_data = []
 
     if len(all_values) > 1:
         for row in all_values[1:]:
-            row += [''] * (10 - len(row))
+            # 무조건 A~J열(10개) 크기로 맞추어 K열 이후 데이터는 건드리지 않게 방어
+            row = (row + [''] * 10)[:10] 
             cell_id = str(row[1]).strip() if row[1] else None
 
             if cell_id in delete_ids:
@@ -272,10 +271,16 @@ def write_sheet(update_rows: dict, append_rows: list, delete_ids: set | None = N
         ]
         new_data.append(new_row)
 
-    # 안전한 덮어쓰기 로직: 전체 삭제(clear) 대신 새 데이터를 먼저 덮어쓰기
-    ws.update(values=new_data, range_name="A1", value_input_option="USER_ENTERED")
+    # 1. 2행(A2)부터 시작하여 A~J열 영역의 "값"만 덮어씁니다. (1행 헤더와 K열 이후, 모든 서식 완벽 보존)
+    if new_data:
+        ws.update(values=new_data, range_name="A2", value_input_option="USER_ENTERED")
     
-    # 만약 일부 행이 삭제되어서 기존 데이터가 새 데이터보다 더 길었다면 남은 찌꺼기 부분만 삭제
-    if len(all_values) > len(new_data):
-        range_to_clear = f"A{len(new_data) + 1}:J{len(all_values)}"
-        ws.batch_clear([range_to_clear])
+    # 2. 만약 삭제된 인원이 있어서 전체 행 수가 줄었다면 남은 찌꺼기 비우기
+    old_data_count = len(all_values) - 1 if len(all_values) > 1 else 0
+    new_data_count = len(new_data)
+    
+    if old_data_count > new_data_count:
+        start_clear_row = 2 + new_data_count
+        end_clear_row = len(all_values)
+        # 찌꺼기가 남은 행의 A~J열 "값"만 명시적으로 삭제합니다. (서식 보존)
+        ws.batch_clear([f"A{start_clear_row}:J{end_clear_row}"])
