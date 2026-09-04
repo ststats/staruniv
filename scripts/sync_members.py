@@ -104,6 +104,11 @@ def main(argv=None):
             appends.append(new_member)
 
     if args.dry_run:
+        for soop_id, fields in updates.items():
+            print(f"  [갱신 예정] {soop_id}: -> {fields}")
+        for m in appends:
+            print(f"  [추가 예정] {m['id']} ({m['nickname']})")
+        print(f"[dry-run 완료] 갱신 {len(updates)}명, 신규 추가 {len(appends)}명 (구글 시트는 안 건드림)")
         return
 
     if updates or appends:

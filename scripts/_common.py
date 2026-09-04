@@ -99,13 +99,21 @@ REQUIRED_MEMBER_STRING_FIELDS = ("id", "nickname")
 VALID_GENDERS = {"m", "f", None}
 
 def validate_and_clean_members(members: list) -> list:
+    """members.json(구글 시트에서 파생된 것)의 각 레코드가 최소한의 스키마를
+    만족하는지 검사한다. id/nickname이 비어있는 레코드는 경고 로그를 남기고
+    걸러낸다 - 로그 없이 조용히 건너뛰면, 구글 시트에서 관리자가 실수로 셀을
+    지웠을 때 그 사람이 사이트에서 아무 흔적 없이 사라져버려서 원인을 찾기
+    매우 어려워진다."""
     cleaned = []
     for idx, m in enumerate(members):
         if not isinstance(m, dict):
+            print(f"[경고] members[{idx}]가 올바른 형식이 아니라 건너뜁니다: {m!r}", file=sys.stderr)
             continue
         member_id = m.get("id")
         nickname = m.get("nickname")
         if not member_id or not nickname:
+            print(f"[경고] members[{idx}]에 SOOP ID 또는 이름이 비어있어 건너뜁니다"
+                  f"(구글 시트에서 셀이 실수로 지워지지 않았는지 확인하세요): {m!r}", file=sys.stderr)
             continue
         m = dict(m)
         m["id"] = str(member_id)
