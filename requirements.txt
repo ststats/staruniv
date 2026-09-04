@@ -1,5 +1,5 @@
-Pillow>=10,<12
+gspread
+google-auth
 requests
-openpyxl
-fonttools[woff]
-jinja2
+Jinja2
+Pillow
