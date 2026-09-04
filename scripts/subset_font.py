@@ -83,7 +83,7 @@ def collect_used_characters() -> set:
             print(f"[경고] members.json 읽기 실패, 건너뜀: {e}", file=sys.stderr)
 
     if ARCHIVE_DIR.exists():
-        for p in ARCHIVE_DIR.glob("*.json"):
+        for p in ARCHIVE_DIR.rglob("*.json"):
             try:
                 with open(p, "r", encoding="utf-8") as f:
                     data = json.load(f)
