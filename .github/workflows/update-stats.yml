@@ -43,7 +43,7 @@ jobs:
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-        run: python scripts/convert_members_xlsx.py
+        run: python scripts/convert_members.py
 
       - name: Update data (풍고 + 엘로보드)
         env:
@@ -55,7 +55,7 @@ jobs:
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-        run: python scripts/convert_members_xlsx.py
+        run: python scripts/convert_members.py
 
       - name: Generate pages
         run: python scripts/generate_pages.py
