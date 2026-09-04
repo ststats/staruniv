@@ -121,25 +121,34 @@ def validate_and_clean_members(members: list) -> list:
     return cleaned
 
 # ---------------------------------------------------------------------------
-# 구글 시트 관련 공용 헬퍼
+# 구글 시트 관련 공용 헬퍼 (최적화 및 안정화 적용)
 # ---------------------------------------------------------------------------
 
 SHEET_NAME = "members"
-XLSX_GENDER_MAP = {"남자": "m", "여자": "f"}
-XLSX_GENDER_MAP_REVERSE = {"m": "남자", "f": "여자"}
-XLSX_PLACEHOLDER_VALUES = {"체크", "todo", "?", "미정", "", "null", "none", "n/a", "na"}
+SHEET_GENDER_MAP = {"남자": "m", "여자": "f"}
+SHEET_GENDER_MAP_REVERSE = {"m": "남자", "f": "여자"}
+SHEET_PLACEHOLDER_VALUES = {"체크", "todo", "?", "미정", "", "null", "none", "n/a", "na"}
+
+# API 클라이언트 전역 캐싱 (인증 오버헤드 최소화)
+_gspread_client = None
 
 def is_sheet_ready() -> bool:
     return bool(os.environ.get("GOOGLE_CREDENTIALS_JSON")) and bool(os.environ.get("GOOGLE_SHEET_ID"))
 
 def get_gspread_client():
+    global _gspread_client
+    if _gspread_client is not None:
+        return _gspread_client
+        
     creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
     if not creds_json:
         return None
+        
     creds_dict = json.loads(creds_json)
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-    return gspread.authorize(creds)
+    _gspread_client = gspread.authorize(creds)
+    return _gspread_client
 
 def get_worksheet():
     gc = get_gspread_client()
@@ -148,18 +157,18 @@ def get_worksheet():
     if not sheet_id: return None
     return gc.open_by_key(sheet_id).worksheet(SHEET_NAME)
 
-def xlsx_clean(value):
-    if isinstance(value, str) and value.strip().lower() in XLSX_PLACEHOLDER_VALUES:
+def sheet_clean(value):
+    if isinstance(value, str) and value.strip().lower() in SHEET_PLACEHOLDER_VALUES:
         return None
     return value if value != "" else None
 
-def xlsx_format_date(value):
-    value = xlsx_clean(value)
+def sheet_format_date(value):
+    value = sheet_clean(value)
     if not value:
         return None
     return str(value).strip()
 
-def xlsx_parse_date_for_write(value):
+def sheet_parse_date_for_write(value):
     if not value:
         return ""
     try:
@@ -189,7 +198,7 @@ def load_sheet_members() -> dict:
             continue
 
         soop_id = str(soop_id).strip()
-        tier = xlsx_clean(tier)
+        tier = sheet_clean(tier)
         
         try:
             elo_id_int = int(str(elo_id).strip()) if str(elo_id).strip() else None
@@ -199,13 +208,13 @@ def load_sheet_members() -> dict:
         rows[soop_id] = {
             "nickname": nickname.strip(),
             "elo_id": elo_id_int,
-            "birthdate": xlsx_format_date(birthdate),
-            "gender": XLSX_GENDER_MAP.get(gender.strip(), gender.strip()),
-            "race": xlsx_clean(race),
+            "birthdate": sheet_format_date(birthdate),
+            "gender": SHEET_GENDER_MAP.get(gender.strip(), gender.strip()),
+            "race": sheet_clean(race),
             "tier": str(tier) if tier is not None else None,
-            "team": xlsx_clean(team),
+            "team": sheet_clean(team),
             "role": role.strip() if role else "",
-            "info_updated_at": xlsx_format_date(updated_at),
+            "info_updated_at": sheet_format_date(updated_at),
         }
     return rows
 
@@ -236,8 +245,8 @@ def write_sheet(update_rows: dict, append_rows: list, delete_ids: set | None = N
             if fields:
                 row[0] = fields.get("nickname") or ""
                 row[2] = fields.get("elo_id") or ""
-                row[3] = xlsx_parse_date_for_write(fields.get("birthdate"))
-                row[4] = XLSX_GENDER_MAP_REVERSE.get(fields.get("gender"), fields.get("gender")) or ""
+                row[3] = sheet_parse_date_for_write(fields.get("birthdate"))
+                row[4] = SHEET_GENDER_MAP_REVERSE.get(fields.get("gender"), fields.get("gender")) or ""
                 row[5] = fields.get("race") or ""
                 row[6] = fields.get("tier") or ""
                 row[7] = fields.get("team") or ""
@@ -253,15 +262,20 @@ def write_sheet(update_rows: dict, append_rows: list, delete_ids: set | None = N
             m.get("nickname") or "",
             m.get("id") or "",
             m.get("elo_id") or "",
-            xlsx_parse_date_for_write(m.get("birthdate")),
-            XLSX_GENDER_MAP_REVERSE.get(m.get("gender"), m.get("gender")) or "",
+            sheet_parse_date_for_write(m.get("birthdate")),
+            SHEET_GENDER_MAP_REVERSE.get(m.get("gender"), m.get("gender")) or "",
             m.get("race") or "",
             m.get("tier") or "",
             m.get("team") or "",
             m.get("role") or "",
-            xlsx_parse_date_for_write(m.get("info_updated_at"))
+            sheet_parse_date_for_write(m.get("info_updated_at"))
         ]
         new_data.append(new_row)
 
-    ws.clear()
+    # 안전한 덮어쓰기 로직: 전체 삭제(clear) 대신 새 데이터를 먼저 덮어쓰기
     ws.update(values=new_data, range_name="A1", value_input_option="USER_ENTERED")
+    
+    # 만약 일부 행이 삭제되어서 기존 데이터가 새 데이터보다 더 길었다면 남은 찌꺼기 부분만 삭제
+    if len(all_values) > len(new_data):
+        range_to_clear = f"A{len(new_data) + 1}:J{len(all_values)}"
+        ws.batch_clear([range_to_clear])
