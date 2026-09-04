@@ -11,7 +11,7 @@ from pathlib import Path
 from _common import (
     ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range,
     atomic_write_json, safe_read_json, validate_and_clean_members,
-    is_sheet_ready, load_sheet_members, write_sheet, send_discord_alert
+    is_sheet_ready, load_sheet_members, write_sheet
 )
 from fetch_poonggo_data import fetch_poonggo_monthly
 from fetch_eloboard_data import aggregate_period_data
@@ -102,7 +102,7 @@ def apply_member_updates_to_archives(members: list, today_date_str: str) -> set:
 
     earliest_update_date = min(u["update_date"] for u in pending.values())
 
-    # rglob를 사용하여 모든 연/월 하위 디렉토리를 탐색합니다
+    # 하위 폴더까지 스캔하기 위해 rglob 사용
     for archive_path in ARCHIVE_DIR.rglob("*.json"):
         file_date = archive_path.stem
         if file_date < earliest_update_date:
@@ -230,7 +230,6 @@ def main():
     confirm_previous_month_if_needed(prev_year, prev_month, year, month, all_ids, now, existing_elo_ids, new_members_acc)
     applied_correction_ids = apply_member_updates_to_archives(members, today_date_str)
 
-    # --- 병렬 처리 (Concurrency) 적용 구간 ---
     print(f"[수집] 풍고 별풍선 및 엘로보드 스폰전적 병렬 수집 시작...")
     start_date, end_date = get_month_date_range(now)
     
@@ -244,10 +243,8 @@ def main():
         except Exception as e:
             print(f"[경고] 엘로보드 수집 중 오류: {e} - 기존 스폰전적 유지", file=sys.stderr)
             sponsor_list = []
-    # ------------------------------------------
 
     if balloon_data is None:
-        send_discord_alert("🚨 별풍선 데이터를 가져오지 못했습니다. 수집 워크플로우가 중단되었습니다.")
         raise SystemExit("[오류] 별풍선 데이터를 가져오지 못했습니다.")
 
     sponsor_data = {}
