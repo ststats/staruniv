@@ -2,6 +2,8 @@ name: Update all stats
 
 on:
   workflow_dispatch: {}
+  schedule:
+    - cron: "0 * * * *" # 예시: 필요 시 활성화
 
 permissions:
   contents: write
@@ -14,9 +16,6 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # print()가 stdout으로 가면 GitHub Actions 로그 캡처 환경에서 버퍼링돼서
-    # stderr(경고/에러)보다 늦게 찍혀 로그 순서가 실제 실행 순서와 어긋날 수
-    # 있다 - PYTHONUNBUFFERED=1로 stdout도 즉시 흘려보내게 한다.
     env:
       PYTHONUNBUFFERED: "1"
     steps:
@@ -32,67 +31,35 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # members.xlsx가 로스터의 유일한 원본이다(admin.html도 이제 xlsx를 직접
-      # 읽고 쓴다 - 더 이상 members.json을 직접 고치는 창구가 없다). 그래서
-      # xlsx -> json은 예전처럼 "어느 쪽이 바뀌었나 판단하는 3-way 병합"이 아니라
-      # 그냥 "지금 xlsx 내용 그대로 json을 다시 씀" 한 방향뿐이다.
-      #
-      # convert_members_xlsx.py는 이 워크플로우 안에서 xlsx가 실제로 바뀌는
-      # 지점(sync_members.py, 아래 Update data 안의 fetch_eloboard_data.py)
-      # 직후에만 한 번씩 돌리면 충분하다 - sync_members.py 자신이 매번
-      # xlsx를 직접 새로 읽으므로(load_xlsx_members()), admin.html이 그
-      # 사이 커밋한 수정사항도 별도로 미리 한 번 더 convert할 필요 없이
-      # 자동으로 반영된다. 그래서 여기선 sync_members.py를 먼저 돌리고,
-      # convert는 그 직후 딱 한 번만(2번째 pull 이후에도 필요한
-      # Update data 앞에서 한 번 더) 돌린다 - 예전엔 sync_members.py 앞에도
-      # 한 번 더 돌렸었는데(admin 수정 즉시 반영용), 실제로는 불필요한
-      # 중복이었다.
-      - name: Sync members.xlsx tiers (EloBoard API)
+      - name: Sync Google Sheet tiers (EloBoard API)
         continue-on-error: true
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: python scripts/sync_members.py
 
-      - name: Sync members.xlsx -> members.json (1차, admin 수정 + tiers 반영)
+      - name: Sync Google Sheet -> members.json (1차, tiers 반영)
         continue-on-error: true
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: python scripts/convert_members_xlsx.py
 
-      # Checkout은 워크플로우 시작 시점에 딱 한 번만 스냅샷을 받아온다 - 그 이후
-      # admin.html이 GitHub API로 직접 members.xlsx를 커밋해도(예: "미상" 임시
-      # 프로필을 실제 정보로 채워 넣는 수정) 이 워크플로우는 그 커밋을 전혀
-      # 모른 채로 계속 돈다. 그 상태에서 fetch_eloboard_data.py가 로컬(체크아웃
-      # 시점 기준)의 오래된 xlsx만 보고 "이 elo_id 모르는 사람"이라고 판단해서,
-      # admin이 이미 채워둔 사람을 또 "미상"으로 중복 추가해버리는 문제가
-      # 실제로 있었다. 그래서 신규 elo_id를 판단하는 스텝(Update data) 바로
-      # 직전에 한 번 더 pull해서, admin.html이 그 사이 커밋한 최신 상태를
-      # 반영한 뒤 진행한다. 이 시점엔 아직 이 워크플로우 자신이 뭘 커밋한 게
-      # 없으니 rebase 충돌 걱정 없이 항상 fast-forward로 끝난다.
-      - name: Pull latest (admin.html이 그 사이 커밋했을 수 있음)
-        run: git pull --ff-only origin "${GITHUB_REF_NAME}"
-
-      # 별풍선(풍고)과 스폰전적(엘로보드)을 한 스크립트 안에서 순서 걱정 없이 처리한다.
-      # 아카이빙/월확정/오늘자 수집을 전부 update_data.py가 조율한다. 이 안에서
-      # fetch_eloboard_data.py가 신규 elo_id를 발견하면 members.xlsx에 직접
-      # "미상" 임시 프로필을 추가한다.
       - name: Update data (풍고 + 엘로보드)
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: python scripts/update_data.py
 
-      # Update data가 xlsx에 "미상" 임시 프로필을 새로 추가했을 수 있으니,
-      # generate_pages.py가 최신 로스터로 사이트를 만들 수 있도록 한 번 더
-      # xlsx -> json 동기화한다. 이 스텝은 일부러 continue-on-error를 안 둔다
-      # (다른 convert 스텝들과 다름) - generate_pages.py 바로 직전 마지막
-      # 동기화라서, 여기서 실패하면 members.json이 방금 추가된 신규 인원 없이
-      # 예전 상태 그대로 남는데, 그걸 계속 진행해서 사이트를 만들고 커밋까지
-      # 해버리면 "일부만 반영된 불완전한 배포"가 조용히 나가버린다. 차라리
-      # 여기서 워크플로우를 멈추고 사람이 원인을 보게 하는 게 낫다.
-      - name: Sync members.xlsx -> members.json (2차, 신규 미상 반영)
+      - name: Sync Google Sheet -> members.json (2차, 신규 미상 반영)
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: python scripts/convert_members_xlsx.py
 
       - name: Generate pages
         run: python scripts/generate_pages.py
 
-      # generate_pages.py 이후에 돌아야 한다 - docs/*.html을 스캔해서 실제
-      # 사용된 문자를 확인하기 때문. 폰트 다운로드가 실패해도(외부 CDN 문제
-      # 등) 사이트 나머지가 안 깨지게 continue-on-error로 둔다 - 이 경우
-      # docs/fonts/PretendardVariable.woff2가 이전 실행 결과 그대로 남는다.
       - name: Subset font
         continue-on-error: true
         run: python scripts/subset_font.py
@@ -102,37 +69,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
+          
+          # 잔재 엑셀 파일 및 어드민 제거 (만약 남아있다면)
+          git rm -f data/members.xlsx admin.html 2>/dev/null || true
+          
           if git diff --quiet --cached; then
             echo "변경 없음 - 커밋 생략"
             exit 0
           fi
-          git commit -m "데이터 갱신 (풍고+엘로보드): $(date -u +'%Y-%m-%d %H:%M UTC')"
-
-          # members.xlsx가 이제 로스터의 원본이라(admin.html도 여기 직접 커밋함),
-          # 이 워크플로우가 만든 xlsx 변경(신규 미상 프로필 추가, 소급정정 완료된
-          # 사람의 수정일 비우기 등)이랑 admin.html의 커밋이 하필 겹치면 여기서
-          # 병합해야 하는데 - xlsx는 바이너리라 git이 텍스트 파일처럼 자동으로
-          # 합쳐주지 못한다("Cannot merge binary files"로 그냥 충돌 처리됨). 예전
-          # members.json(텍스트) 시절보다 이 상황이 실제로 생길 가능성이 높아졌다.
-          # 그래서 재시도를 여러 번 하고, rebase가 실패할 때마다 확실하게
-          # abort해서 로컬 상태를 깨끗하게 정리한 뒤 다시 시도한다(정리 안 하고
-          # 넘어가면 리베이스 도중 상태로 push를 시도하게 되어 더 위험하다).
-          push_ok=false
-          for attempt in 1 2 3 4 5; do
-            if git push; then
-              push_ok=true
-              break
-            fi
-            echo "[재시도 ${attempt}/5] push 실패 - pull --rebase 후 재시도합니다"
-            git rebase --abort 2>/dev/null || true
-            sleep $((attempt * 5))
-            if ! git pull --rebase origin "${GITHUB_REF_NAME}"; then
-              echo "[경고] rebase 실패(xlsx 바이너리 충돌 가능성) - abort하고 다음 시도로 넘어갑니다"
-              git rebase --abort 2>/dev/null || true
-            fi
-          done
-
-          if [ "$push_ok" = false ]; then
-            echo "::error::5번 재시도했지만 push에 실패했습니다 - 이번 실행분은 반영되지 않았고, 다음 실행에서 다시 시도됩니다(데이터 유실이 아니라 이번 실행만 건너뛴 것)."
-            exit 1
-          fi
+          git commit -m "데이터 갱신 (풍고+엘로보드+시트동기화): $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
