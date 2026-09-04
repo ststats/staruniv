@@ -4,19 +4,9 @@ html { scrollbar-gutter: stable; }
 body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; margin: 0; padding: 20px 10px; color: #1a1d29; }
 .top-bar { max-width: 1080px; margin: 0 auto 16px; background: #fff; border-radius: 20px; padding: 16px 20px; min-height: 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 4px 12px rgba(20,20,30,0.05); }
 .month-select-group { display: inline-flex; align-items: center; gap: 6px; position: relative; vertical-align: middle; }
-.top-date-btn { background: transparent; border: none; font-size: 20px; font-weight: 800; color: #141821; cursor: pointer; padding: 2px 0; font-family: inherit; display: inline-flex; align-items: center; vertical-align: middle; gap: 6px; line-height: 1.2; }
-.top-date-btn:hover { color: #4a5ce0; }
-.cal-popup { display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 16px; z-index: 100; width: 260px; }
-.cal-popup.show { display: block; }
-.cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 700; }
-.cal-nav-btn { background: none; border: none; font-size: 16px; cursor: pointer; color: #6b6f79; padding: 0 8px; }
-.cal-nav-btn:hover { color: #141821; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-.cal-day-name { font-size: 11px; color: #a4a8b2; padding-bottom: 8px; font-weight: 600; }
-.cal-date { font-size: 13px; font-weight: 600; padding: 8px 0; border-radius: 8px; cursor: pointer; color: #141821; }
-.cal-date:hover { background: #f2f3f5; }
-.cal-date.active { background: #4a5ce0; color: #fff; }
-.cal-date.disabled { color: #d1d4d8; cursor: not-allowed; background: transparent; pointer-events: none; font-weight: 400; }
+.top-date-input { font-size: 20px; font-weight: 800; color: #141821; border: none; background: transparent; cursor: pointer; font-family: inherit; padding: 2px 0; line-height: 1.2; vertical-align: middle; }
+.top-date-input:hover { color: #4a5ce0; }
+.top-date-input::-webkit-calendar-picker-indicator { cursor: pointer; }
 
 .select-wrapper { position: relative; display: inline-flex; align-items: center; vertical-align: middle; gap: 6px; visibility: hidden; font-weight: 800; }
 .select-wrapper.ready { visibility: visible; }
@@ -129,19 +119,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
 </style></head><body>
   <div class="top-bar">
     <span class="month-select-group">
-      <button id="calendar-btn" class="top-date-btn"></button>
-      <div id="cal-popup" class="cal-popup">
-          <div class="cal-header">
-              <button id="cal-prev" class="cal-nav-btn" aria-label="이전 달">◀</button>
-              <span id="cal-title"></span>
-              <button id="cal-next" class="cal-nav-btn" aria-label="다음 달">▶</button>
-          </div>
-          <div class="cal-grid">
-              <div class="cal-day-name">일</div><div class="cal-day-name">월</div><div class="cal-day-name">화</div>
-              <div class="cal-day-name">수</div><div class="cal-day-name">목</div><div class="cal-day-name">금</div><div class="cal-day-name">토</div>
-          </div>
-          <div id="cal-days" class="cal-grid"></div>
-      </div>
+      <input type="date" id="date-picker" class="top-date-input" aria-label="날짜 선택">
 
       
       <div class="select-wrapper">
@@ -284,11 +262,9 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
   let currentMetric = "balloon";
   let fetchedData = {};
 
-  const calBtn = document.getElementById('calendar-btn');
-  const calPopup = document.getElementById('cal-popup');
-  const calTitle = document.getElementById('cal-title');
-  const calDays = document.getElementById('cal-days');
-  let viewDate = new Date(currentDateStr);
+  const datePicker = document.getElementById('date-picker');
+  datePicker.min = AVAILABLE_DATES[AVAILABLE_DATES.length - 1];
+  datePicker.max = AVAILABLE_DATES[0];
 
   window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
@@ -321,8 +297,7 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
   });
 
   function applyData() {
-      const parts = currentDateStr.split('-');
-      calBtn.innerHTML = parts[0].slice(-2) + '년 ' + parts[1] + '월 ' + parts[2] + '일 <span class="nav-chevron">▾</span>';
+      datePicker.value = currentDateStr;
 
       if (TARGET_TEAM && !IS_PROFILE) {
           document.getElementById('back-link').href = 'index.html?date=' + currentDateStr + '&metric=' + currentMetric;
@@ -679,59 +654,18 @@ body { font-family: 'Pretendard Variable', sans-serif; background: #f4f5f7; marg
       document.getElementById('top-meta-text').innerHTML = '업데이트 ' + data.updated_at + ' · 출처: <a href="https://poonggo.com" target="_blank" class="source-link">풍고</a>, <a href="https://eloboard.co.kr/" target="_blank" class="source-link">Elo</a>';
   }
 
-  function renderCalendar() {
-      const y = viewDate.getFullYear();
-      const m = viewDate.getMonth();
-      document.getElementById('cal-title').textContent = y + '년 ' + (m+1) + '월';
-      calDays.innerHTML = '';
-
-      const firstDay = new Date(y, m, 1).getDay();
-      const daysInMonth = new Date(y, m+1, 0).getDate();
-      for(let i=0; i<firstDay; i++) calDays.appendChild(document.createElement('div'));
-
-      for(let d=1; d<=daysInMonth; d++) {
-          const dateStr = y + '-' + String(m+1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-          const el = document.createElement('div');
-          el.className = 'cal-date';
-          el.textContent = d;
-          el.setAttribute('aria-label', y + '년 ' + (m+1) + '월 ' + d + '일');
-
-          if (AVAILABLE_DATES.includes(dateStr)) {
-              if (dateStr === currentDateStr) {
-                  el.classList.add('active');
-                  el.setAttribute('aria-current', 'date');
-              }
-              el.setAttribute('role', 'button');
-              el.setAttribute('tabindex', '0');
-              const selectDate = function() {
-                  currentDateStr = dateStr;
-                  calPopup.classList.remove('show');
-                  applyData();
-              };
-              el.onclick = selectDate;
-              el.onkeydown = function(e) {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDate(); }
-              };
-          } else {
-              el.classList.add('disabled');
-              el.setAttribute('aria-disabled', 'true');
-          }
-          calDays.appendChild(el);
+  datePicker.addEventListener('change', function() {
+      const picked = datePicker.value;
+      if (AVAILABLE_DATES.includes(picked)) {
+          currentDateStr = picked;
+          applyData();
+      } else {
+          // 네이티브 date input은 min/max 범위 안의 특정 날짜만 콕 집어서
+          // 선택 못 하게 막는 기능 자체가 없다(브라우저 표준의 한계) - 그래서
+          // 범위 안이지만 실제 데이터가 없는 날짜(드물게 워크플로우가 하루
+          // 건너뛴 경우 등)를 고르면, 여기서 즉시 원래 날짜로 되돌린다.
+          datePicker.value = currentDateStr;
       }
-  }
-
-  document.getElementById('cal-prev').onclick = function() { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); renderCalendar(); };
-  document.getElementById('cal-next').onclick = function() { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); };
-
-  calBtn.onclick = function(e) {
-      e.stopPropagation();
-      viewDate = new Date(currentDateStr);
-      renderCalendar();
-      calPopup.classList.toggle('show');
-  };
-
-  document.addEventListener('click', function(e) {
-      if (!calBtn.contains(e.target) && !calPopup.contains(e.target)) calPopup.classList.remove('show');
   });
 
   const metricSel = document.getElementById('ms-metric-select');
