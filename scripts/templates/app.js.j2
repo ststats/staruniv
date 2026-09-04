@@ -319,10 +319,13 @@
       const upd = (currentMetric === 'sponsor' && data.sponsor_updated_at) ? data.sponsor_updated_at : data.updated_at;
 
       const validTeams = new Set(data.members.map(m=>m.team).filter(t => t && t !== 'FA' && t !== '휴면'));
-      const inquiryHtml = TARGET_TEAM ? '' : ' <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
-      document.getElementById('top-meta-text').innerHTML = validTeams.size + '팀 · ' +
-        data.members.filter(m => m.team && m.team !== 'FA' && m.team !== '휴면').length +
-        '명 · 업데이트 ' + upd + ' · 출처: <a href="'+def.url+'" target="_blank" class="source-link">'+def.source+'</a>' + inquiryHtml;
+      // 팀페이지(TARGET_TEAM 있음)에서는 이미 그 팀 하나만 보고 있는 화면이라
+      // "N팀 · M명" 전체 집계 문구는 안 보여준다 - 전체페이지에서만 표시.
+      const teamCountHtml = TARGET_TEAM ? '' : (validTeams.size + '팀 · ' +
+        data.members.filter(m => m.team && m.team !== 'FA' && m.team !== '휴면').length + '명 · ');
+      const inquiryHtml = ' <span style="color:#c2c5cc;">·</span> <a href="https://ygosu.com/board/pan_prison" target="_blank" class="source-link">문의</a>';
+      document.getElementById('top-meta-text').innerHTML = teamCountHtml +
+        '업데이트 ' + upd + ' · 출처: <a href="'+def.url+'" target="_blank" class="source-link">'+def.source+'</a>' + inquiryHtml;
 
       const roleLegend = document.getElementById('role-legend-item');
       if(roleLegend) roleLegend.style.display = def.excludeRoles ? '' : 'none';
