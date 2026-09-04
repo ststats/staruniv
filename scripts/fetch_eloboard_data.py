@@ -17,7 +17,7 @@ HTTP 요청/재시도는 _common.fetch_json()에 맡긴다 - fetch_poonggo_data.
 동일한 타임아웃/재시도 횟수/백오프 간격을 쓰도록 통일했다(자체 재시도 루프를
 따로 두지 않는다).
 
-이 모듈은 순수하게 "가져오기만" 한다 - members.xlsx에 신규 elo_id를
+이 모듈은 순수하게 "가져오기만" 한다 - 구글 시트에 신규 elo_id를
 자동 등록하는 로직(예전엔 여기서 aggregate_period_data() 끝에 자동으로
 불렀었다)은 update_data.py(오케스트레이터)로 옮겼다. 수집 모듈이 파일
 쓰기라는 부수 효과(side effect)까지 갖고 있으면, "이 함수를 부르면 정확히
