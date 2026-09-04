@@ -154,7 +154,7 @@
 
   function applyData() {
       const parts = currentDateStr.split('-');
-      calBtn.innerHTML = parts[0] + '년 ' + parts[1] + '월 ' + parts[2] + '일 <span class="nav-chevron">▾</span>';
+      calBtn.innerHTML = parts[0].slice(-2) + '년 ' + parts[1] + '월 ' + parts[2] + '일 <span class="nav-chevron">▾</span>';
       datePicker.value = currentDateStr;
 
       if (TARGET_TEAM && !IS_PROFILE) {
