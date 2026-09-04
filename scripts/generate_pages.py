@@ -132,7 +132,7 @@ def main():
                 _write_if_changed(DOCS_DATA_DIR / f"{d_str}.json", json.dumps(latest, ensure_ascii=False))
 
     if ARCHIVE_DIR.exists():
-        # 바뀐 아카이브 경로 구조(rglob) 적용
+        # rglob를 사용하여 연/월 구조 내의 파일도 모두 탐색
         for arch in ARCHIVE_DIR.rglob("*.json"):
             if len(arch.stem) == 10:
                 all_dates.append(arch.stem)
