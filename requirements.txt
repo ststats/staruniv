@@ -3,3 +3,5 @@ google-auth
 requests
 Jinja2
 Pillow
+fonttools
+brotli
