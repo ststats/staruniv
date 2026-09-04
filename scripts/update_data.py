@@ -5,11 +5,13 @@ ststats 프로젝트의 데이터 갱신 오케스트레이터.
 import sys
 import json
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from _common import (
     ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range,
     atomic_write_json, safe_read_json, validate_and_clean_members,
-    is_sheet_ready, load_sheet_members, write_sheet,
+    is_sheet_ready, load_sheet_members, write_sheet, send_discord_alert
 )
 from fetch_poonggo_data import fetch_poonggo_monthly
 from fetch_eloboard_data import aggregate_period_data
@@ -19,6 +21,14 @@ OUTPUT_PATH = ROOT / "data" / "latest.json"
 ARCHIVE_DIR = ROOT / "data" / "archive"
 APPLIED_CORRECTIONS_PATH = ROOT / "data" / "archive_corrections_applied.json"
 PRUNE_GRACE_MONTHS = 6
+
+# --- 아카이브 폴더 구조화 헬퍼 ---
+def get_archive_path(date_str: str) -> Path:
+    """YYYY-MM-DD 형태의 날짜를 받아 연/월 단위 폴더 경로를 반환합니다."""
+    dt = datetime.strptime(date_str, "%Y-%m-%d")
+    path = ARCHIVE_DIR / str(dt.year) / f"{dt.month:02d}" / f"{date_str}.json"
+    return path
+# ---------------------------------
 
 def _collect_unknown_elo_players(sponsor_list: list, existing_elo_ids: set) -> dict:
     new_members = {}
@@ -48,8 +58,7 @@ def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
     prev_date = prev_latest.get("date")
     if not prev_date or prev_date == new_date_str:
         return
-    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
-    archive_path = ARCHIVE_DIR / f"{prev_date}.json"
+    archive_path = get_archive_path(prev_date)
     if not archive_path.exists():
         atomic_write_json(archive_path, prev_latest)
 
@@ -93,7 +102,8 @@ def apply_member_updates_to_archives(members: list, today_date_str: str) -> set:
 
     earliest_update_date = min(u["update_date"] for u in pending.values())
 
-    for archive_path in ARCHIVE_DIR.glob("*.json"):
+    # rglob를 사용하여 모든 연/월 하위 디렉토리를 탐색합니다
+    for archive_path in ARCHIVE_DIR.rglob("*.json"):
         file_date = archive_path.stem
         if file_date < earliest_update_date:
             continue
@@ -128,7 +138,7 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
     if not prev_year or not prev_month or (prev_year, prev_month) == (new_year, new_month):
         return
     last_day = last_day_of_month(prev_year, prev_month)
-    archive_path = ARCHIVE_DIR / f"{prev_year:04d}-{prev_month:02d}-{last_day:02d}.json"
+    archive_path = get_archive_path(f"{prev_year:04d}-{prev_month:02d}-{last_day:02d}")
     if not archive_path.exists():
         return
 
@@ -220,17 +230,28 @@ def main():
     confirm_previous_month_if_needed(prev_year, prev_month, year, month, all_ids, now, existing_elo_ids, new_members_acc)
     applied_correction_ids = apply_member_updates_to_archives(members, today_date_str)
 
-    balloon_data = fetch_poonggo_monthly(year, month, all_ids)
+    # --- 병렬 처리 (Concurrency) 적용 구간 ---
+    print(f"[수집] 풍고 별풍선 및 엘로보드 스폰전적 병렬 수집 시작...")
+    start_date, end_date = get_month_date_range(now)
+    
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_balloon = executor.submit(fetch_poonggo_monthly, year, month, all_ids)
+        future_sponsor = executor.submit(aggregate_period_data, start_date, end_date)
+        
+        balloon_data = future_balloon.result()
+        try:
+            sponsor_list = future_sponsor.result()
+        except Exception as e:
+            print(f"[경고] 엘로보드 수집 중 오류: {e} - 기존 스폰전적 유지", file=sys.stderr)
+            sponsor_list = []
+    # ------------------------------------------
+
     if balloon_data is None:
+        send_discord_alert("🚨 별풍선 데이터를 가져오지 못했습니다. 수집 워크플로우가 중단되었습니다.")
         raise SystemExit("[오류] 별풍선 데이터를 가져오지 못했습니다.")
 
     sponsor_data = {}
     sponsor_collection_succeeded = False
-    start_date, end_date = get_month_date_range(now)
-    try:
-        sponsor_list = aggregate_period_data(start_date, end_date)
-    except Exception:
-        sponsor_list = []
         
     if sponsor_list:
         new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids))
