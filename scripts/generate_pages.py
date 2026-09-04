@@ -109,19 +109,7 @@ def generate_html(title, target_team, is_profile, logo_prefix, static_info, team
     top_bar_html = f"""
   <div class="top-bar">
     <span class="month-select-group">
-      <button id="calendar-btn" class="top-date-btn"></button>
-      <div id="cal-popup" class="cal-popup">
-          <div class="cal-header">
-              <button id="cal-prev" class="cal-nav-btn" aria-label="이전 달">◀</button>
-              <span id="cal-title"></span>
-              <button id="cal-next" class="cal-nav-btn" aria-label="다음 달">▶</button>
-          </div>
-          <div class="cal-grid">
-              <div class="cal-day-name">일</div><div class="cal-day-name">월</div><div class="cal-day-name">화</div>
-              <div class="cal-day-name">수</div><div class="cal-day-name">목</div><div class="cal-day-name">금</div><div class="cal-day-name">토</div>
-          </div>
-          <div id="cal-days" class="cal-grid"></div>
-      </div>
+      <input type="date" id="date-picker" class="top-date-input" aria-label="날짜 선택">
 
       {'' if is_profile else '''
       <div class="select-wrapper">
