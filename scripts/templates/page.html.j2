@@ -1,4 +1,106 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ title }}</title><link rel="icon" type="image/webp" href="{{ logo_prefix }}logos/파비콘.webp"><link rel="preload" href="{{ font_url }}" as="font" type="font/woff2" crossorigin><style>@font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-style: normal; font-display: block; src: url('{{ font_url }}') format('woff2-variations'); }
-{% include 'style.css' %}
-{% if include_mobile_css %}{% include 'mobile.css' %}{% endif %}
-</style></head><body>{{ top_bar_html }}{{ body_html }}{{ legend_html }}{% include 'app.js.j2' %}</body></html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="icon" type="image/webp" href="{{ logo_prefix }}logos/파비콘.webp">
+  <link rel="preload" href="{{ font_url }}" as="font" type="font/woff2" crossorigin>
+  <style>
+    @font-face { font-family: 'Pretendard Variable'; font-weight: 45 920; font-style: normal; font-display: block; src: url('{{ font_url }}') format('woff2-variations'); }
+    {% include 'style.css' %}
+    {% if include_mobile_css %}{% include 'mobile.css' %}{% endif %}
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <span class="month-select-group">
+      <button id="calendar-btn" class="top-date-btn" type="button"></button>
+      <input type="date" id="date-picker" class="hidden-date-input" tabindex="-1" aria-hidden="true">
+      
+      {% if not is_profile %}
+      <div class="select-wrapper">
+          <select class="top-date-select" id="ms-metric-select">
+              <option value='balloon'>별풍선</option>
+              <option value='broadcast'>방송시간</option>
+              <option value='viewer'>누적시청자</option>
+              <option value='sponsor'>스폰판수</option>
+          </select>
+          <span class="nav-chevron">▾</span>
+      </div>
+      {% endif %}
+    </span>
+    <span class="top-meta-group">
+      {% if is_profile %}
+        <a href="{{ logo_prefix }}index.html" id="back-link" class="back-link">← 뒤로가기</a>
+        <span class="top-meta-sep" id="back-sep">·</span>
+      {% elif target_team %}
+        <a href="{{ logo_prefix }}index.html" id="back-link" class="back-link">전체페이지</a>
+        <span class="top-meta-sep" id="back-sep">·</span>
+      {% endif %}
+      <span class="top-meta" id="top-meta-text"></span>
+    </span>
+  </div>
+
+  {% if is_profile %}
+  <div style="max-width:480px;margin:0 auto;">
+    <div class="team-card" id="profile-card" style="display:none;">
+      <div class="team-card-topbar" id="profile-topbar"></div>
+      <div class="team-header">
+        <div class="team-header-left">
+          <img class="profile-photo-img" id="profile-photo" alt="">
+          <span class="team-name" id="profile-nickname"></span>
+        </div>
+      </div>
+      <div id="profile-live-embed" style="display:none;"></div>
+      <div class="profile-info">
+        <div class="profile-row"><span class="profile-row-label">성별</span><span class="profile-row-value" id="profile-gender"></span></div>
+        <div class="profile-row"><span class="profile-row-label">생년월일</span><span class="profile-row-value" id="profile-birthdate"></span></div>
+        <div class="profile-row"><span class="profile-row-label">소속</span><span class="profile-row-value" id="profile-team"></span></div>
+        <div class="profile-row"><span class="profile-row-label">직책</span><span class="profile-row-value" id="profile-role"></span></div>
+        <div class="profile-row"><span class="profile-row-label">종족</span><span class="profile-row-value" id="profile-race"></span></div>
+        <div class="profile-row"><span class="profile-row-label">티어</span><span class="profile-row-value" id="profile-tier"></span></div>
+        <div class="profile-row">
+          <span class="profile-row-label">방송국</span>
+          <a id="profile-station-link" href="#" target="_blank" rel="noopener">
+            <img class="profile-station-icon" src="{{ logo_prefix }}logos/숲로고.webp" alt="방송국 바로가기" onerror="this.style.display='none'">
+          </a>
+        </div>
+      </div>
+      <div class="team-footer">
+        <div class="stat-card">
+          <div class="stat-card-header no-icon"><span class="stat-label">별풍선</span></div>
+          <div class="stat-value" id="profile-balloons"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header no-icon"><span class="stat-label">방송시간</span></div>
+          <div class="stat-value" id="profile-broadcast"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header no-icon"><span class="stat-label">누적시청자</span></div>
+          <div class="stat-value" id="profile-viewers"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header no-icon"><span class="stat-label">스폰전적</span></div>
+          <div class="stat-value" id="profile-sponsor" style="color:#a4a8b2;font-size:12px;transition:opacity 0.3s ease;">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div id="grid-container"></div>
+  {% if not target_team %}
+  <div id="fa-bar" class="fa-bar" style="display:none;"></div>
+  {% endif %}
+  <div class="legend">
+    <span><span class="sw" style="background:#d6e9fb;"></span>상위 1%</span>
+    <span><span class="sw" style="background:#dcefdd;"></span>상위 5%</span>
+    <span><span class="sw" style="background:#fbf3cf;"></span>상위 10%</span>
+    <span id="role-legend-item"><span class="sw" style="background:#fadada;"></span>수장/전력외</span>
+    <span>🎂 생일</span>
+  </div>
+  {% endif %}
+
+  {% include 'app.js.j2' %}
+</body>
+</html>
