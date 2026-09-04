@@ -112,9 +112,17 @@ def aggregate_period_data(start_date: str, end_date: str) -> list:
                 page_has_in_range_match = True
                 for p in match.get("participants", []):
                     try:
-                        elo_id = str(p["player_id"])
+                        raw_player_id = p["player_id"]
                         result = p["result"]
-                    except (KeyError, TypeError) as e:
+                        if raw_player_id is None:
+                            # str(None) == "None"이라 예외 없이 그냥 통과돼버려서,
+                            # 이 값이 나중에 진짜 elo_id인 것처럼 끝까지 흘러가다가
+                            # int("None") 하는 시점에서야 터진다(실제로 이렇게
+                            # 터진 적이 있었다). player_id가 null인 참가자
+                            # 레코드는 처음부터 명시적으로 걸러낸다.
+                            raise ValueError("player_id가 null")
+                        elo_id = str(raw_player_id)
+                    except (KeyError, TypeError, ValueError) as e:
                         print(f"[경고] 형식이 예상과 다른 참가자 레코드 건너뜀: {e} ({p!r})", file=sys.stderr)
                         continue
 
