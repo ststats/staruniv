@@ -59,11 +59,19 @@ def main(argv=None):
     
     updates = {}
     appends = []
+    # API가 같은 선수를 여러 티어 그룹(예: 부문/시즌별 그룹)에 중복으로
+    # 내려주는 경우, 매번 시트 스냅샷(member_map/normalized_to_original)만
+    # 보고 "없는 사람"으로 판단하면 같은 사람이 이번 한 번의 실행 안에서만도
+    # appends에 여러 번 쌓여 중복 행으로 추가되어버린다. 이번 실행에서 이미
+    # 추가 예정으로 잡은 soop_id(정규화된 키)를 별도로 기억해뒀다가, 같은
+    # 사람이 또 나오면 건너뛴다.
+    pending_normalized_ids = set()
     for api_player in api_players:
         soop_id = api_player.get("soop_id")
         if not soop_id:
             continue
 
+        normalized_id = soop_id.strip().lower()
         converted_race = RACE_MAP.get(api_player.get("race"), api_player.get("race"))
         team_name = api_player.get("college") or ""
 
@@ -71,7 +79,7 @@ def main(argv=None):
         # 정규화된 키로 먼저 조회하고, 찾았으면 시트에 있던 원래 키를 그대로 쓴다
         # (updates 딕셔너리의 키가 write_sheet()에서 실제 행을 찾는 기준이라,
         # 여기서 원래 키를 안 쓰면 기존 행을 못 찾고 또 새 행으로 추가돼버린다).
-        original_soop_id = normalized_to_original.get(soop_id.strip().lower())
+        original_soop_id = normalized_to_original.get(normalized_id)
         existing = member_map.get(original_soop_id) if original_soop_id else None
         if existing:
             before = (existing.get("nickname"), existing.get("race"), existing.get("tier"), existing.get("team"))
@@ -89,6 +97,12 @@ def main(argv=None):
             if before != after:
                 updates[original_soop_id] = new_fields
         else:
+            if normalized_id in pending_normalized_ids:
+                # 이번 실행에서 이미 같은 사람을 신규로 추가하기로 했다
+                # (API가 같은 선수를 여러 그룹에 중복으로 내려준 경우).
+                # 또 추가하면 중복 행이 생기므로 건너뛴다.
+                continue
+            pending_normalized_ids.add(normalized_id)
             new_member = {
                 "id": soop_id,
                 "nickname": api_player.get("name"),
