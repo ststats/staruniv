@@ -11,7 +11,8 @@ from pathlib import Path
 from _common import (
     ROOT, DATETIME_FORMAT, kst_now, last_day_of_month, get_month_date_range,
     atomic_write_json, safe_read_json, validate_and_clean_members,
-    is_sheet_ready, load_sheet_members, write_sheet
+    is_sheet_ready, load_sheet_members, write_sheet,
+    load_pending_members, append_pending_members, PENDING_SHEET_NAME
 )
 from fetch_poonggo_data import fetch_poonggo_monthly
 from fetch_eloboard_data import aggregate_period_data
@@ -30,7 +31,16 @@ def get_archive_path(date_str: str) -> Path:
     return path
 # ---------------------------------
 
-def _collect_unknown_elo_players(sponsor_list: list, existing_elo_ids: set) -> dict:
+def _collect_unknown_elo_players(sponsor_list: list, existing_elo_ids: set, today_date_str: str) -> dict:
+    """스폰전적에만 등장하고 members 시트에도, new_members(대기) 시트에도
+    없는 elo_id를 찾아 "신규 후보"로 만든다. 예전에는 이 결과를 곧바로
+    members 시트에 "미상(elo_...)" 임시 프로필로 등록했지만, 검증되지 않은
+    프로필이 실제 로스터 시트에 섞이는 걸 막기 위해 이제는 new_members
+    시트로 보낸다 - 관리자가 실제 SOOP ID/닉네임을 확인해서 검토한 뒤
+    수동으로 members 시트에 옮겨야 한다.
+    existing_elo_ids에는 호출부에서 members 시트뿐 아니라 new_members
+    시트에 이미 대기 중인 elo_id도 함께 넣어줘야, 검토가 아직 안 끝난
+    같은 후보가 매 실행마다 new_members에 중복으로 쌓이지 않는다."""
     new_members = {}
     for item in sponsor_list:
         elo_id_str = item.get("id")
@@ -39,17 +49,16 @@ def _collect_unknown_elo_players(sponsor_list: list, existing_elo_ids: set) -> d
                 "id": f"elo_{elo_id_str}",
                 "nickname": f"미상(elo_{elo_id_str})",
                 "elo_id": int(elo_id_str),
-                "birthdate": None,
                 "gender": "",
                 "race": "",
                 "tier": "",
                 "team": "",
-                "role": "",
-                "info_updated_at": None,
+                "source": "elo_unknown",
+                "found_at": today_date_str,
             }
             new_members[elo_id_str] = new_member
             existing_elo_ids.add(elo_id_str)
-            print(f"[알림] 새로운 임시 프로필 발견됨: {new_member['nickname']}")
+            print(f"[알림] 새로운 신규 후보 발견됨: {new_member['nickname']}")
     return new_members
 
 def archive_previous_day_if_needed(prev_latest: dict, new_date_str: str):
@@ -167,7 +176,7 @@ def confirm_previous_month_if_needed(prev_year, prev_month, new_year, new_month,
         sponsor_list = []
         
     if sponsor_list:
-        new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids))
+        new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids, now.strftime("%Y-%m-%d")))
         lookup = _index_by_elo_id(sponsor_list)
         for m in archive.get("members", []):
             elo_id = m.get("elo_id")
@@ -224,6 +233,13 @@ def main():
             str(fields["elo_id"]) for fields in load_sheet_members().values()
             if fields.get("elo_id") is not None
         }
+        # new_members(대기) 시트에 이미 올라와 검토를 기다리고 있는
+        # elo_id도 합쳐야, 아직 검토 안 끝난 같은 후보가 매 실행마다
+        # 또 대기 시트에 중복으로 쌓이는 걸 막을 수 있다.
+        existing_elo_ids |= {
+            fields["elo_id"] for fields in load_pending_members().values()
+            if fields.get("elo_id")
+        }
     new_members_acc = {}
 
     archive_previous_day_if_needed(prev_latest, today_date_str)
@@ -251,7 +267,7 @@ def main():
     sponsor_collection_succeeded = False
         
     if sponsor_list:
-        new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids))
+        new_members_acc.update(_collect_unknown_elo_players(sponsor_list, existing_elo_ids, today_date_str))
         sponsor_data = _index_by_elo_id(sponsor_list)
         sponsor_collection_succeeded = True
         sponsor_updated_at = now.strftime(DATETIME_FORMAT)
@@ -304,12 +320,14 @@ def main():
 
     print(f"[완료] {OUTPUT_PATH.name} 갱신됨 (별풍선 {len(balloon_data)}명, 스폰전적 {len(sponsor_data)}명)")
 
-    if new_members_acc or applied_correction_ids:
-        write_sheet({}, list(new_members_acc.values()), clear_info_updated_at=applied_correction_ids)
-        if new_members_acc:
-            print(f"[완료] 총 {len(new_members_acc)}명의 신규 임시 프로필이 구글 시트에 추가되었습니다.")
-        if applied_correction_ids:
-            print(f"[완료] 소급 정정이 끝난 {len(applied_correction_ids)}명의 수정일을 비웠습니다.")
+    if applied_correction_ids:
+        write_sheet({}, [], clear_info_updated_at=applied_correction_ids)
+        print(f"[완료] 소급 정정이 끝난 {len(applied_correction_ids)}명의 수정일을 비웠습니다.")
+
+    if new_members_acc:
+        append_pending_members(list(new_members_acc.values()))
+        print(f"[완료] 총 {len(new_members_acc)}명의 신규 후보가 '{PENDING_SHEET_NAME}' 시트에 추가되었습니다 "
+              f"(검토 후 members 시트로 옮겨주세요).")
 
 if __name__ == "__main__":
     main()

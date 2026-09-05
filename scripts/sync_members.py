@@ -5,7 +5,10 @@ EloBoard의 티어 목록 API(/api/tiers)를 조회해서 구글 시트를 최�
 import sys
 import argparse
 
-from _common import fetch_json, is_sheet_ready, load_sheet_members, write_sheet
+from _common import (
+    fetch_json, is_sheet_ready, load_sheet_members, write_sheet, kst_now,
+    load_pending_members, append_pending_members, PENDING_SHEET_NAME
+)
 
 TIERS_URL = "https://eloboard.co.kr/api/tiers"
 
@@ -51,20 +54,30 @@ def main(argv=None):
     # 조회는 정규화된 키로 하되 갱신은 항상 시트에 있던 원래 soop_id를 쓴다.
     normalized_to_original = {sid.strip().lower(): sid for sid in member_map}
 
+    # members 시트에 없는 신규 등록자는 이제 곧바로 members 시트에 쓰지
+    # 않고 new_members(대기) 시트로 보낸다 - 관리자가 검토해서 직접
+    # members 시트로 옮기기 전까지는 여기 머무른다. 이미 대기 중인 후보를
+    # 정규화된 soop_id 기준으로 미리 알아둬야, 아직 검토 안 끝난 같은
+    # 후보가 매 실행마다 new_members 시트에 중복으로 또 쌓이지 않는다.
+    pending_map = load_pending_members()
+    already_pending_normalized = {pid.strip().lower() for pid in pending_map}
+
     api_data = fetch_json(TIERS_URL, label="엘로보드 티어 목록")
     if api_data is None:
         sys.exit(1)
 
     api_players = flatten_players(api_data)
-    
+    today_date_str = kst_now().strftime("%Y-%m-%d")
+
     updates = {}
-    appends = []
+    new_candidates = []
     # API가 같은 선수를 여러 티어 그룹(예: 부문/시즌별 그룹)에 중복으로
-    # 내려주는 경우, 매번 시트 스냅샷(member_map/normalized_to_original)만
-    # 보고 "없는 사람"으로 판단하면 같은 사람이 이번 한 번의 실행 안에서만도
-    # appends에 여러 번 쌓여 중복 행으로 추가되어버린다. 이번 실행에서 이미
-    # 추가 예정으로 잡은 soop_id(정규화된 키)를 별도로 기억해뒀다가, 같은
-    # 사람이 또 나오면 건너뛴다.
+    # 내려주는 경우, 매번 시트 스냅샷(member_map/normalized_to_original,
+    # already_pending_normalized)만 보고 "없는 사람"으로 판단하면 같은
+    # 사람이 이번 한 번의 실행 안에서만도 new_candidates에 여러 번 쌓여
+    # new_members 시트에 중복 행으로 추가되어버린다. 이번 실행에서 이미
+    # 후보로 잡은 soop_id(정규화된 키)를 별도로 기억해뒀다가, 같은 사람이
+    # 또 나오면 건너뛴다.
     pending_normalized_ids = set()
     for api_player in api_players:
         soop_id = api_player.get("soop_id")
@@ -97,37 +110,41 @@ def main(argv=None):
             if before != after:
                 updates[original_soop_id] = new_fields
         else:
-            if normalized_id in pending_normalized_ids:
-                # 이번 실행에서 이미 같은 사람을 신규로 추가하기로 했다
+            if normalized_id in already_pending_normalized or normalized_id in pending_normalized_ids:
+                # 이미 new_members 시트에 대기 중이거나(이전 실행에서
+                # 추가됨), 이번 실행에서 이미 같은 사람을 후보로 잡았다
                 # (API가 같은 선수를 여러 그룹에 중복으로 내려준 경우).
                 # 또 추가하면 중복 행이 생기므로 건너뛴다.
                 continue
             pending_normalized_ids.add(normalized_id)
-            new_member = {
+            new_candidates.append({
                 "id": soop_id,
                 "nickname": api_player.get("name"),
                 "elo_id": api_player.get("player_id"),
-                "birthdate": None,
                 "gender": "f" if api_player.get("division") == "women" else "m",
                 "race": converted_race,
                 "tier": api_player.get("current_tier"),
                 "team": team_name,
-                "role": "",
-                "info_updated_at": None,
-            }
-            appends.append(new_member)
+                "source": "sync_members",
+                "found_at": today_date_str,
+            })
 
     if args.dry_run:
         for soop_id, fields in updates.items():
             print(f"  [갱신 예정] {soop_id}: -> {fields}")
-        for m in appends:
-            print(f"  [추가 예정] {m['id']} ({m['nickname']})")
-        print(f"[dry-run 완료] 갱신 {len(updates)}명, 신규 추가 {len(appends)}명 (구글 시트는 안 건드림)")
+        for c in new_candidates:
+            print(f"  [신규후보 추가 예정 -> '{PENDING_SHEET_NAME}' 시트] {c['id']} ({c['nickname']})")
+        print(f"[dry-run 완료] 갱신 {len(updates)}명, 신규 후보 {len(new_candidates)}명 (구글 시트는 안 건드림)")
         return
 
-    if updates or appends:
-        write_sheet(updates, appends)
-        print(f"[완료] 구글 시트 갱신됨 (기존 정보 갱신 {len(updates)}명, 신규 추가 {len(appends)}명)")
+    if updates:
+        write_sheet(updates, [])
+    if new_candidates:
+        append_pending_members(new_candidates)
+
+    if updates or new_candidates:
+        print(f"[완료] 기존 정보 갱신 {len(updates)}명, 신규 후보 {len(new_candidates)}명을 "
+              f"'{PENDING_SHEET_NAME}' 시트에 추가함 (검토 후 members 시트로 옮겨주세요).")
     else:
         print("[완료] 변경 없음")
 

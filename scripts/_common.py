@@ -131,6 +131,14 @@ def validate_and_clean_members(members: list) -> list:
 # ---------------------------------------------------------------------------
 
 SHEET_NAME = "members"
+# 아직 검증되지 않은 "신규 후보"(스폰전적에만 등장하는 미상 elo_id,
+# 티어 API에는 있지만 members 시트엔 없는 신규 등록자)는 곧바로
+# members 시트에 쓰지 않고 이 별도 시트에 쌓아둔다. members 시트는
+# 여전히 "사람이 검토를 마친" 로스터만 담아야 정확성이 유지되기
+# 때문에, 자동 발견된 후보는 관리자가 검토해서 직접 members 시트로
+# 옮기기 전까지는 여기 머무른다(자동 승격 로직은 의도적으로 없음).
+PENDING_SHEET_NAME = "new_members"
+PENDING_SHEET_COLUMNS = 9  # 닉네임, id, elo_id, 성별, 종족, 티어, 팀, 출처, 발견일
 SHEET_GENDER_MAP = {"남자": "m", "여자": "f"}
 SHEET_GENDER_MAP_REVERSE = {"m": "남자", "f": "여자"}
 SHEET_PLACEHOLDER_VALUES = {"체크", "todo", "?", "미정", "", "null", "none", "n/a", "na"}
@@ -165,12 +173,12 @@ def get_gspread_client():
     _gspread_client = gspread.authorize(creds)
     return _gspread_client
 
-def get_worksheet():
+def get_worksheet(sheet_name: str = SHEET_NAME):
     gc = get_gspread_client()
     if not gc: return None
     sheet_id = os.environ.get("GOOGLE_SHEET_ID")
     if not sheet_id: return None
-    return gc.open_by_key(sheet_id).worksheet(SHEET_NAME)
+    return gc.open_by_key(sheet_id).worksheet(sheet_name)
 
 def sheet_clean(value):
     if isinstance(value, str) and value.strip().lower() in SHEET_PLACEHOLDER_VALUES:
@@ -325,3 +333,85 @@ def write_sheet(update_rows: dict, append_rows: list, delete_ids: set | None = N
         end_clear_row = len(all_values)
         # 찌꺼기가 남은 행의 A~J열 "값"만 명시적으로 삭제합니다. (서식 보존)
         ws.batch_clear([f"A{start_clear_row}:J{end_clear_row}"])
+
+# ---------------------------------------------------------------------------
+# "신규 후보" (new_members) 시트 관련 헬퍼
+# ---------------------------------------------------------------------------
+
+def load_pending_members() -> dict:
+    """new_members 시트에 이미 대기 중인 후보 목록을 id(soop_id 또는
+    elo_<elo_id> 형태의 placeholder) 기준으로 읽어온다. 호출부는 이 결과를
+    이용해 "이미 대기 중인 후보"를 다시 추가하지 않게 걸러낸다 - 이게 없으면
+    검토가 안 끝난 후보가 매 실행마다 new_members 시트에 중복으로 계속
+    쌓이게 된다."""
+    if not is_sheet_ready():
+        return {}
+    try:
+        ws = get_worksheet(PENDING_SHEET_NAME)
+        if ws is None:
+            return {}
+        all_values = ws.get_all_values()
+    except Exception as e:
+        print(f"[오류] '{PENDING_SHEET_NAME}' 시트를 읽어오는 중 에러 발생: {e}", file=sys.stderr)
+        return {}
+
+    if not all_values or len(all_values) < 2:
+        return {}
+
+    rows = {}
+    for row in all_values[1:]:
+        row = (row + [''] * PENDING_SHEET_COLUMNS)[:PENDING_SHEET_COLUMNS]
+        nickname, cand_id, elo_id, gender, race, tier, team, source, found_at = row
+        cand_id = str(cand_id).strip()
+        if not cand_id:
+            continue
+        rows[cand_id] = {
+            "nickname": nickname.strip() if nickname else "",
+            "elo_id": str(elo_id).strip() if elo_id else "",
+            "gender": gender.strip() if gender else "",
+            "race": sheet_clean(race),
+            "tier": sheet_clean(tier),
+            "team": sheet_clean(team),
+            "source": source.strip() if source else "",
+            "found_at": found_at.strip() if found_at else "",
+        }
+    return rows
+
+def append_pending_members(candidates: list) -> None:
+    """새로 발견된 후보들을 new_members 시트 맨 끝에 추가만 한다(수정/삭제
+    없음 - 검토/승격/삭제는 관리자가 시트에서 직접 한다). 여기서 실패해도
+    예외를 던지지 않는다 - 호출부(update_data.py, sync_members.py)에서
+    latest.json 저장 등 이미 끝난 다른 작업까지 실패로 보이게 만들고 싶지
+    않기 때문이다(write_sheet()의 실패 처리 방침과 동일)."""
+    if not candidates:
+        return
+    try:
+        ws = get_worksheet(PENDING_SHEET_NAME)
+        if ws is None:
+            print(f"[경고] '{PENDING_SHEET_NAME}' 시트 인증 정보가 없어 쓰기를 건너뜁니다.", file=sys.stderr)
+            return
+    except Exception as e:
+        print(f"[오류] '{PENDING_SHEET_NAME}' 시트 접근 중 에러 발생 - 이번엔 건너뜁니다: {e}", file=sys.stderr)
+        return
+
+    new_rows = []
+    for c in candidates:
+        new_rows.append([
+            c.get("nickname") or "",
+            c.get("id") or "",
+            str(c.get("elo_id")) if c.get("elo_id") is not None else "",
+            SHEET_GENDER_MAP_REVERSE.get(c.get("gender"), c.get("gender")) or "",
+            c.get("race") or "",
+            c.get("tier") or "",
+            c.get("team") or "",
+            c.get("source") or "",
+            c.get("found_at") or "",
+        ])
+
+    try:
+        # RAW를 쓰는 이유는 write_sheet()와 동일 - elo_id 같은 숫자처럼
+        # 보이는 값이나 발견일 같은 날짜처럼 보이는 값이 구글 시트에 의해
+        # 자동으로 다른 타입으로 변환되는 것을 막기 위함이다.
+        ws.append_rows(new_rows, value_input_option="RAW")
+    except Exception as e:
+        print(f"[오류] '{PENDING_SHEET_NAME}' 시트에 신규 후보 추가 중 에러 발생 - 이번엔 건너뜁니다: {e}", file=sys.stderr)
