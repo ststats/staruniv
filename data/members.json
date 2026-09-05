@@ -1411,7 +1411,7 @@
       "gender": "m",
       "race": "테란",
       "tier": "갓",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "palko1"
@@ -1423,7 +1423,7 @@
       "gender": "m",
       "race": "저그",
       "tier": "갓",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "thakzkf"
@@ -1435,7 +1435,7 @@
       "gender": "m",
       "race": "저그",
       "tier": "잭",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "dohyeon97"
@@ -1447,7 +1447,7 @@
       "gender": "m",
       "race": "저그",
       "tier": "조커",
-      "team": "수술대",
+      "team": "영정",
       "role": "",
       "info_updated_at": null,
       "id": "qndnd12"
@@ -1459,7 +1459,7 @@
       "gender": "m",
       "race": "프로토스",
       "tier": "조커",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "wjswpalssla1"
@@ -1471,7 +1471,7 @@
       "gender": "m",
       "race": "프로토스",
       "tier": "조커",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "comcmxx"
@@ -1483,7 +1483,7 @@
       "gender": "m",
       "race": "프로토스",
       "tier": "0",
-      "team": "수술대",
+      "team": "영정",
       "role": "",
       "info_updated_at": null,
       "id": "gjgj3274"
@@ -1495,7 +1495,7 @@
       "gender": "m",
       "race": "프로토스",
       "tier": "5",
-      "team": "수술대",
+      "team": "영정",
       "role": "수장",
       "info_updated_at": null,
       "id": "ititit"
@@ -1507,7 +1507,7 @@
       "gender": "f",
       "race": "테란",
       "tier": "1",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "bijyu90"
@@ -1519,7 +1519,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "3",
-      "team": "수술대",
+      "team": "영정",
       "role": "",
       "info_updated_at": null,
       "id": "dmswls4565"
@@ -1531,7 +1531,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "3",
-      "team": "수술대",
+      "team": "영정",
       "role": "",
       "info_updated_at": null,
       "id": "pazzy1"
@@ -1543,7 +1543,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "3",
-      "team": "수술대",
+      "team": "영정",
       "role": "",
       "info_updated_at": null,
       "id": "rlsk0705"
@@ -1555,7 +1555,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "4",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "totlllsz"
@@ -1567,7 +1567,7 @@
       "gender": "f",
       "race": "테란",
       "tier": "5",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "nerve89"
@@ -1579,7 +1579,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "6",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "wlgua7272"
@@ -1591,7 +1591,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "6",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "nreupne"
@@ -1603,7 +1603,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "6",
-      "team": "수술대",
+      "team": "영정",
       "role": "",
       "info_updated_at": null,
       "id": "tato1104"
@@ -1615,7 +1615,7 @@
       "gender": "f",
       "race": "테란",
       "tier": "7",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "jiinii000"
@@ -1627,7 +1627,7 @@
       "gender": "f",
       "race": "저그",
       "tier": "7",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "min030606"
@@ -1639,7 +1639,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "7",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "heyyo0123"
@@ -1651,7 +1651,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "7",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "jungym0116"
@@ -1663,7 +1663,7 @@
       "gender": "f",
       "race": "프로토스",
       "tier": "8",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "zinsim"
@@ -1675,7 +1675,7 @@
       "gender": "f",
       "race": "테란",
       "tier": "베이비",
-      "team": "수술대",
+      "team": "FA",
       "role": "",
       "info_updated_at": null,
       "id": "ode0411"
