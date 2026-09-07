@@ -246,12 +246,12 @@
                     <div class="table-responsive flex-grow-1" style="overflow-y: auto;">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:615px; table-layout: fixed;">
                             <thead>
-                                <tr><th class="text-center" style="white-space:nowrap; width:18.8%;">상대</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대회</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대학</th><th class="text-center" style="white-space:nowrap; width:18.8%;">미니</th><th class="text-center" style="white-space:nowrap; width:18.8%;">CK</th><th style="width:6%;"></th></tr>
+                                <tr><th class="text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">상대</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대회</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대학</th><th class="text-center" style="white-space:nowrap; width:18.8%;">미니</th><th class="text-center" style="white-space:nowrap; width:18.8%;">CK</th><th style="width:6%;"></th></tr>
                             </thead>
                             <tbody>
                                 {% for row in crew_stats['전체'] %}
                                 <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="{{ row['상대'] | e }}">
-                                    <td class="fw-bold text-dark text-center" style="white-space:nowrap; width:18.8%;">
+                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
                                         <span class="d-flex align-items-center justify-content-center gap-2">
                                             <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
                                             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ row['상대'] | e }}</span>
@@ -279,11 +279,11 @@
                 <div class="clean-card flex-grow-0 p-0 overflow-hidden" style="border-radius: 10px;">
                     <div class="match-list-scroll match-list-team">
                         <div class="match-row match-header">
-                            <div class="m-date">날짜</div>
-                            <div class="m-type">형식</div>
                             <div class="m-opp-team">상대</div>
-                            <div class="m-score">세트 스코어</div>
+                            <div class="m-type">형식</div>
+                            <div class="m-score">세트</div>
                             <div class="m-res">결과</div>
+                            <div class="m-date">날짜</div>
                             <div class="m-arrow"></div>
                         </div>
                         <div id="team-recent-list"></div>
@@ -307,7 +307,7 @@
                             <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:650px; table-layout: fixed;">
                                 <thead>
                                     <tr>
-                                        <th class="text-center" style="white-space:nowrap; width:20%;">멤버</th>
+                                        <th class="text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;">멤버</th>
                                         <th style="white-space:nowrap; width:20%;">대회</th>
                                         <th style="white-space:nowrap; width:20%;">대학</th>
                                         <th style="white-space:nowrap; width:20%;">미니</th>
@@ -373,12 +373,12 @@
                     <div class="clean-card p-0 overflow-hidden" style="border-radius: 10px;">
                         <div class="match-list-scroll match-list-indiv">
                             <div class="match-row match-header">
-                                <div class="m-date">날짜</div>
-                                <div class="m-type">형식</div>
                                 <div class="m-opp-team">상대</div>
+                                <div class="m-type">형식</div>
                                 <div class="m-opp-player">상대 선수</div>
                                 <div class="m-map">맵</div>
                                 <div class="m-res">결과</div>
+                                <div class="m-date">날짜</div>
                             </div>
                             <div id="indiv-recent-list"></div>
                         </div>
