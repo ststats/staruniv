@@ -1121,6 +1121,8 @@
     }
 
     window.onload = async function() {
+        document.getElementById('footerYear').innerText = `© ${new Date().getFullYear()} 스타대학. All rights reserved.`;
+
         // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
         // 그걸 사용하는 초기화 로직들을 이어서 실행한다.
         await loadSiteData();
