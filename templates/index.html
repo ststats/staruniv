@@ -256,7 +256,8 @@
                                 <tr class="row-clickable" data-team="{{ row['상대'] | e }}">
                                     <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
                                         <span class="flex-center gap-2 text-ellipsis">
-                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <!-- 팀 로고 전용 클래스 복구 -->
+                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo" style="width:16px; height:16px;" loading="lazy" onerror="this.remove();">
                                             <span>{{ row['상대'] | e }}</span>
                                         </span>
                                     </td>
@@ -329,7 +330,7 @@
 
                 <div id="statContent" style="display: none;">
                     <div class="clean-card d-flex align-items-center mb-4 p-4">
-                        <div class="avatar avatar-xl flex-center text-secondary me-3" style="font-size: 28px;" id="p-avatar">👤</div>
+                        <div class="avatar avatar-xl flex-center text-secondary me-3" id="p-avatar">👤</div>
                         <div>
                             <h3 class="fw-bold m-0 mb-2" id="p-name" style="letter-spacing:-1px;">이름</h3>
                             <div class="d-flex gap-2">
