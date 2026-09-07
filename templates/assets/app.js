@@ -8,12 +8,11 @@ let currentPlayer = '';
         }[tag]));
     }
 
-    function teamLogoHtml(teamName, sizePx) {
+    function teamLogoHtml(teamName, addClass = '') {
         const name = String(teamName || '').trim();
         if (!name) return '';
         const fileName = (name === '내전') ? '캄몬스타즈' : name;
-        const size = sizePx || 16;
-        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.remove();">`;
+        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="avatar avatar-sm ${addClass}" loading="lazy" onerror="this.remove();">`;
     }
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'stats', 'synergy', 'tools'];
@@ -137,7 +136,7 @@ let currentPlayer = '';
 
     function renderNewsSidebar() {
         const html = [`<div class="avatar-select-item avatar-select-all active" id="news-side-btn-all" onclick="showNewsAll()">
-                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
+                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar avatar-md" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback avatar avatar-md&quot;&gt;전체&lt;/div&gt;';">
                             <span class="avatar-select-name">전체</span>
                        </div>`];
         dbMembers.forEach(m => {
@@ -145,7 +144,7 @@ let currentPlayer = '';
             const soopId = m['SOOP ID'];
             if (!soopId || !/^[a-zA-Z0-9_-]+$/.test(String(soopId).trim())) return;
             html.push(`<div class="avatar-select-item" id="news-side-player-${m['이름']}" onclick="selectNewsPlayer('${m['이름']}')">
-                            ${avatarHtml(soopId, 'avatar-select-img')}
+                            ${avatarHtml(soopId, 'avatar avatar-md')}
                             <span class="avatar-select-name">${escapeHTML(m['이름'])}</span>
                         </div>`);
         });
@@ -209,7 +208,6 @@ let currentPlayer = '';
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
-            // 하단 여백 중복 제거 (padding-bottom 삭제)
             content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
         }
     }
@@ -307,15 +305,15 @@ let currentPlayer = '';
             : '';
 
         return `
-        <div class="news-post-card">
+        <div class="clean-card news-post-card">
             <div class="news-post-header">
-                ${avatarHtml(soopId, 'news-post-avatar')}
+                ${avatarHtml(soopId, 'avatar avatar-md')}
                 <div>
                     <div class="news-post-name">${escapeHTML(name)}</div>
                     <div class="news-post-meta">${escapeHTML(category)}${category && timeText ? ' · ' : ''}${escapeHTML(timeText)}</div>
                 </div>
             </div>
-            ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
+            ${title ? `<div class="news-post-title text-ellipsis">${escapeHTML(title)}</div>` : ''}
             ${snippet ? `<div class="news-post-body">${escapeHTML(snippet)}</div>` : ''}
             ${photosHtml}
             <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
@@ -345,7 +343,6 @@ let currentPlayer = '';
             }
 
             if (newsCurrentPage < newsTotalPages) {
-                // 하단 여백 중복 제거 (padding-bottom 삭제)
                 content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
             }
         } catch (e) {
@@ -428,36 +425,35 @@ let currentPlayer = '';
                     if(isDraw) resBadge = '<span class="text-secondary fw-bold">무</span>';
 
                     return `
-                    <tr style="border-bottom:1px solid #f1f3f5;">
-                        <td style="width:18.8%; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || ''}</td>
-                        <td style="width:18.8%;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
+                    <tr>
+                        <td class="text-muted fw-bold" style="width:18.8%;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || ''}</td>
+                        <td class="fw-bold ${isWin?'text-primary':'text-dark'}" style="width:18.8%;">${escapeHTML(r['우리 선수'])||'-'}</td>
                         <td style="width:18.8%;">${resBadge}</td>
-                        <td style="width:18.8%;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
-                        <td style="width:18.8%; color:#555;">${escapeHTML(r['맵']) || '-'}</td>
+                        <td class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}" style="width:18.8%;">${escapeHTML(r['상대 선수'])||'-'}</td>
+                        <td class="text-secondary" style="width:18.8%;">${escapeHTML(r['맵']) || '-'}</td>
                         <td style="width:6%;"></td>
                     </tr>`;
                 }).join('');
             } else {
-                setDetailsHtml = '<tr><td colspan="6" class="text-center text-muted py-2" style="font-size:var(--fs-body);">상세 세트 기록이 없습니다.</td></tr>';
+                setDetailsHtml = '<tr><td colspan="6" class="text-center text-muted py-2">상세 세트 기록이 없습니다.</td></tr>';
             }
 
             return `
-            <tr class="match-row" style="cursor:pointer; border-bottom:1px solid #f1f3f5;" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
+            <tr class="row-clickable match-row" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                <td class="sticky-col" style="width:18.8%;">
+                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'])}<span>${escapeHTML(m['상대팀'])}</span></span>
                 </td>
-                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td>${m['세트 결과'] || '-'}</td>
-                <td>${badgeHtml}</td>
-                <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
-                <td><span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
+                <td style="width:18.8%;"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td style="width:18.8%;">${m['세트 결과'] || '-'}</td>
+                <td style="width:18.8%;">${badgeHtml}</td>
+                <td style="width:18.8%;">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
+                <td style="width:6%;"><span class="m-arrow"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
             </tr>
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
                     <div class="collapse" id="${collapseId}">
-                        <!-- 내부 패딩 통일 -->
                         <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding: 16px;">
-                            <table class="table table-borderless mb-0 text-center" style="table-layout:fixed; width:100%; font-size:var(--fs-body);">
+                            <table class="table table-borderless mb-0 stat-table">
                                 <tbody>${setDetailsHtml}</tbody>
                             </table>
                         </div>
@@ -476,7 +472,7 @@ let currentPlayer = '';
     }
 
     function openTeamOpponentModal(opponent) {
-        document.getElementById('teamModalTitle').innerHTML = `${teamLogoHtml(opponent, 20)} vs ${escapeHTML(opponent)} 전체 전적`;
+        document.getElementById('teamModalTitle').innerHTML = `${teamLogoHtml(opponent, 24)} vs ${escapeHTML(opponent)} 전체 전적`;
         renderTeamMatchesList('team-modal-list', {format: '전체', opponent}, null);
         new bootstrap.Modal(document.getElementById('teamMatchesModal')).show();
     }
@@ -494,8 +490,8 @@ let currentPlayer = '';
     }
     function avatarHtml(soopId, cls) {
         const url = getProfileImgUrl(soopId);
-        if (!url) return `<span class="${cls} d-flex align-items-center justify-content-center">👤</span>`;
-        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} d-flex align-items-center justify-content-center\\'>👤</span>';">`;
+        if (!url) return `<span class="${cls} flex-center">👤</span>`;
+        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} flex-center\\'>👤</span>';">`;
     }
 
     const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
@@ -526,9 +522,9 @@ let currentPlayer = '';
     function memberCardHtml(m) {
         const tierText = (m['티어'] !== undefined && m['티어'] !== '') ? `${m['티어']}티어` : '-';
         return `
-        <div class="member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
-            ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
-            <div class="member-card-name">${escapeHTML(m['이름'])}</div>
+        <div class="clean-card card-hover member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
+            ${avatarHtml(m['SOOP ID'], 'avatar avatar-xl member-avatar-img')}
+            <div class="member-card-name text-ellipsis">${escapeHTML(m['이름'])}</div>
             <div class="member-card-tags">
                 <span class="tag-badge">${tierText}</span>
                 <span class="tag-badge">${raceShortLabel(m['종족'])}</span>
@@ -551,13 +547,13 @@ let currentPlayer = '';
                 <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
             <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
-                <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>
+                <div class="grid-cards mb-4">${sorted.map(memberCardHtml).join('')}</div>
             </div>`;
         }
 
         return `
         <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
-        <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>`;
+        <div class="grid-cards mb-4">${sorted.map(memberCardHtml).join('')}</div>`;
     }
     function renderMembersPage() {
         const roleOrderBase = ['감독', '코치', '선수'];
@@ -574,7 +570,6 @@ let currentPlayer = '';
         });
 
         if (formerMembers.length > 0) {
-            // 하단 여백 중복 제거
             html += `
             <div class="text-center" style="margin-top:24px;">
                 <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 <svg id="former-members-toggle-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
@@ -645,24 +640,24 @@ let currentPlayer = '';
             return;
         }
 
-        container.innerHTML = `<div class="live-broadcast-grid">${liveList.map(({ member: m, live }) => {
+        container.innerHTML = `<div class="grid-cards grid-cards-lg">${liveList.map(({ member: m, live }) => {
             const { broad, broadStart } = live;
             const soopId = m['SOOP ID'];
             const viewerText = broad.current_sum_viewer != null ? broad.current_sum_viewer.toLocaleString('ko-KR') + '명' : '-';
             const elapsedText = formatLiveElapsed(broadStart) || '-';
 
             return `
-            <a class="live-broadcast-card" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
+            <a class="clean-card card-hover live-broadcast-card" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
                 <div class="live-thumb-wrap">
                     <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${broad.broad_no}" alt="방송 화면" onerror="this.style.display='none';">
                     <span class="live-badge">LIVE</span>
                 </div>
                 <div class="live-card-body">
-                    <div class="live-card-title">${escapeHTML(broad.broad_title || '')}</div>
+                    <div class="live-card-title text-ellipsis">${escapeHTML(broad.broad_title || '')}</div>
                     <div class="live-card-meta-row">
                         <div class="live-card-who">
-                            ${avatarHtml(soopId, 'live-card-avatar')}
-                            <span class="live-card-name">${escapeHTML(m['이름'])}</span>
+                            ${avatarHtml(soopId, 'avatar avatar-md')}
+                            <span class="live-card-name text-ellipsis">${escapeHTML(m['이름'])}</span>
                         </div>
                         <div class="live-card-stats">
                             <div class="live-card-viewers">${escapeHTML(viewerText)}</div>
@@ -711,15 +706,15 @@ let currentPlayer = '';
             const dateText = (post.regDate || '').split(' ')[0];
 
             return `
-            <a class="notice-row" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
-                ${avatarHtml(soopId, 'notice-row-avatar')}
+            <a class="list-row notice-row" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
+                ${avatarHtml(soopId, 'avatar avatar-md')}
                 <div class="notice-row-body">
                     <div class="notice-row-top">
                         <span class="notice-row-name">${escapeHTML(m['이름'])}</span>
                         <span class="notice-row-date">${escapeHTML(dateText)}</span>
                     </div>
-                    <div class="notice-row-title">${escapeHTML(title)}</div>
-                    <div class="notice-row-snippet">${escapeHTML(snippet)}</div>
+                    <div class="notice-row-title text-ellipsis">${escapeHTML(title)}</div>
+                    <div class="notice-row-snippet text-ellipsis">${escapeHTML(snippet)}</div>
                 </div>
             </a>`;
         }).join('');
@@ -806,13 +801,13 @@ let currentPlayer = '';
 
     function renderIndividualSidebar() {
         const html = [`<div class="avatar-select-item avatar-select-all active" id="side-btn-summary" onclick="showIndivSummary()">
-                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
+                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar avatar-md" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback avatar avatar-md&quot;&gt;전체&lt;/div&gt;';">
                             <span class="avatar-select-name">전체</span>
                        </div>`];
         const formerHtml = [];
         dbMembers.forEach(m => {
             const item = `<div class="avatar-select-item" id="side-player-${m['이름']}" onclick="selectPlayer('${m['이름']}')">
-                            ${avatarHtml(m['SOOP ID'], 'avatar-select-img')}
+                            ${avatarHtml(m['SOOP ID'], 'avatar avatar-md')}
                             <span class="avatar-select-name">${escapeHTML(m['이름'])}</span>
                         </div>`;
             if (isActiveMember(m)) html.push(item);
@@ -820,7 +815,7 @@ let currentPlayer = '';
         });
 
         html.push(`<div class="avatar-select-item avatar-select-toggle" id="indiv-toggle-former" onclick="toggleFormerMembers()">
-                        <div class="avatar-select-fallback">
+                        <div class="avatar-select-fallback avatar avatar-md">
                             <svg id="indiv-toggle-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </div>
                         <span class="avatar-select-name">이전 멤버</span>
@@ -852,12 +847,12 @@ let currentPlayer = '';
         activeMembers.forEach(m => {
             const pStat = playersStats.find(x => x['이름'] === m['이름']) || {};
             const name = m['이름'];
-            html += `<tr style="border-bottom:1px solid #f1f3f5; cursor:pointer;" onclick="selectPlayer('${name}')">
-                <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</span></span></td>
-                <td style="white-space:nowrap; width:20%;">${pStat['대회 전적'] || '-'}</td>
-                <td style="white-space:nowrap; width:20%;">${pStat['대학 전적'] || '-'}</td>
-                <td style="white-space:nowrap; width:20%;">${pStat['미니 전적'] || '-'}</td>
-                <td style="white-space:nowrap; width:20%;">${pStat['CK 전적'] || '-'}</td>
+            html += `<tr class="row-clickable" onclick="selectPlayer('${name}')">
+                <td class="fw-bold text-dark sticky-col" style="width:20%;"><span class="flex-center gap-2 text-ellipsis">${avatarHtml(m['SOOP ID'], 'avatar avatar-sm')}<span>${escapeHTML(name)}</span></span></td>
+                <td style="width:20%;">${pStat['대회 전적'] || '-'}</td>
+                <td style="width:20%;">${pStat['대학 전적'] || '-'}</td>
+                <td style="width:20%;">${pStat['미니 전적'] || '-'}</td>
+                <td style="width:20%;">${pStat['CK 전적'] || '-'}</td>
             </tr>`;
         });
         document.getElementById('indiv-summary-tbody').innerHTML = html;
@@ -934,15 +929,15 @@ let currentPlayer = '';
             else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
 
             return `
-            <tr style="border-bottom:1px solid #f1f3f5;">
-                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대 선수']) || '-'}</td>
-                <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
+            <tr>
+                <td class="sticky-col text-ellipsis" style="width:16.66%;">${escapeHTML(m['상대 선수']) || '-'}</td>
+                <td class="text-ellipsis" style="width:16.66%;">
+                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'])}<span>${escapeHTML(m['상대팀'])}</span></span>
                 </td>
-                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td>${escapeHTML(m['맵']) || '-'}</td>
-                <td>${badgeHtml}</td>
-                <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
+                <td style="width:16.66%;"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td style="width:16.66%;">${escapeHTML(m['맵']) || '-'}</td>
+                <td style="width:16.66%;">${badgeHtml}</td>
+                <td style="width:16.66%;">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
             </tr>
             `;
         }).join('');
@@ -1043,14 +1038,14 @@ let currentPlayer = '';
 
         return `
         <tr>
-            <td class="text-center text-secondary fw-bold" style="width:25%; white-space:nowrap;">${idx + 1}</td>
+            <td class="text-center text-secondary fw-bold" style="width:25%;">${idx + 1}</td>
             <td class="text-center" style="width:25%;">
-                <span class="d-flex align-items-center justify-content-center gap-2" style="min-width:0;">
-                    ${avatarHtml(ours['SOOP ID'], 'player-avatar-sm')}
-                    <span class="fw-bold" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(name)}</span>
+                <span class="flex-center gap-2" style="min-width:0;">
+                    ${avatarHtml(ours['SOOP ID'], 'avatar avatar-sm')}
+                    <span class="fw-bold text-ellipsis">${escapeHTML(name)}</span>
                 </span>
             </td>
-            <td class="text-center fw-bold" style="width:50%; color:var(--color-primary); white-space:nowrap;">${escapeHTML(displayVal)}</td>
+            <td class="text-center fw-bold text-ellipsis" style="width:50%; color:var(--color-primary);">${escapeHTML(displayVal)}</td>
         </tr>`;
     }
 
