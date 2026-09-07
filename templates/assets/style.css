@@ -24,12 +24,13 @@
         body.modal-open { padding-right: 0 !important; overflow-y: visible !important; }
         .modal, .modal-open .modal { padding-right: 0 !important; }
         
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--color-bg); color: var(--color-text-main); }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--color-bg); color: var(--color-text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        .page-main { flex: 1 0 auto; }
         a { text-decoration: none; color: inherit; cursor: pointer; }
         
         /* 상단 GNB */
         .top-navbar { background-color: #fff; height: 64px; border-bottom: 1px solid var(--color-border); position: sticky; top: 0; z-index: 100; }
-        .site-footer { border-top: 1px solid var(--color-border); background: #fff; padding: 24px 0; margin-top: 24px; text-align: center; font-size: 12px; color: var(--color-text-sub); }
+        .site-footer { border-top: 1px solid var(--color-border); background: #fff; padding: 24px 0; flex-shrink: 0; text-align: center; font-size: 12px; color: var(--color-text-sub); }
         .top-navbar .navbar-inner { height: 100%; display: flex; align-items: center; width: 100%; }
         .top-navbar .logo { font-size: 20px; font-weight: 800; margin-right: 30px; display: flex; align-items: center; flex-shrink: 0; }
         .logo-black { color: var(--color-logo-black); }
@@ -62,7 +63,7 @@
         .sub-tab.active { color: var(--color-primary); font-weight: 800; border-bottom: 3px solid var(--color-primary); }
 
         /* 공통 컨테이너 및 텍스트 */
-        .page-section { display: none; padding: 25px 0; }
+        .page-section { display: none; padding: 25px 0 32px 0; }
         .page-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -75,7 +76,7 @@
         }
         @media (max-width: 767.98px) {
             .container { padding-left: 24px !important; padding-right: 24px !important; }
-            .page-section { padding: 20px 0; }
+            .page-section { padding: 20px 0 28px 0; }
             .top-navbar .logo { font-size: 18px; margin-right: 15px; }
             .nav-menu .nav-item { font-size: 14px; margin-right: 18px; }
         }
