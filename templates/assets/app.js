@@ -8,7 +8,6 @@ let currentPlayer = '';
         }[tag]));
     }
 
-    // 팀 로고 렌더링 (아바타와 분리하여 네모 반듯한 원본 비율 유지)
     function teamLogoHtml(teamName, sizePx) {
         const name = String(teamName || '').trim();
         if (!name) return '';
@@ -449,7 +448,7 @@ let currentPlayer = '';
                 <td style="width:18.8%;">${m['세트 결과'] || '-'}</td>
                 <td style="width:18.8%;">${badgeHtml}</td>
                 <td style="width:18.8%;">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
-                <td style="width:6%;"><span class="m-arrow"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
+                <td style="width:6%;"><span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
             </tr>
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
@@ -483,7 +482,6 @@ let currentPlayer = '';
         if (row) openTeamOpponentModal(row.dataset.team);
     });
 
-    // 프로필 아바타 렌더링 (동그란 형태)
     function getProfileImgUrl(soopId) {
         if (!soopId) return null;
         const id = String(soopId).trim().toLowerCase();
@@ -491,6 +489,7 @@ let currentPlayer = '';
         const prefix = id.substring(0, 2);
         return `https://profile.img.sooplive.co.kr/LOGO/${prefix}/${id}/${id}.jpg`;
     }
+
     function avatarHtml(soopId, cls) {
         const url = getProfileImgUrl(soopId);
         if (!url) return `<span class="${cls}">👤</span>`;
@@ -547,18 +546,22 @@ let currentPlayer = '';
         if (opts.collapseId) {
             const startClosed = !!opts.startClosed;
             return `
-            <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
-                <span>${escapeHTML(title)} ${countHtml}</span>
-                <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </div>
-            <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
-                <div class="grid-cards mb-4">${sorted.map(memberCardHtml).join('')}</div>
+            <div class="member-group-wrap">
+                <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
+                    <span>${escapeHTML(title)} ${countHtml}</span>
+                    <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
+                    <div class="grid-cards">${sorted.map(memberCardHtml).join('')}</div>
+                </div>
             </div>`;
         }
 
         return `
-        <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
-        <div class="grid-cards mb-4">${sorted.map(memberCardHtml).join('')}</div>`;
+        <div class="member-group-wrap">
+            <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
+            <div class="grid-cards">${sorted.map(memberCardHtml).join('')}</div>
+        </div>`;
     }
 
     function renderMembersPage() {
