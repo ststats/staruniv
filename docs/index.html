@@ -134,13 +134,12 @@
             <div class="section-title">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive custom-scrollbar">
-                    <!-- 🌟 최소 가로길이 무효화 및 1:2:3 비율 적용 🌟 -->
                     <table class="table table-borderless table-hover mb-0 stat-table" style="min-width: 100%;">
                         <thead>
                             <tr>
-                                <th style="width:16.66%;">순위</th>
-                                <th style="width:33.33%;">멤버</th>
-                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
+                                <th style="width:20%;">순위</th>
+                                <th style="width:40%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:40%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-male">
@@ -154,13 +153,12 @@
             <div class="section-title">여자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive custom-scrollbar">
-                    <!-- 🌟 최소 가로길이 무효화 및 1:2:3 비율 적용 🌟 -->
                     <table class="table table-borderless table-hover mb-0 stat-table" style="min-width: 100%;">
                         <thead>
                             <tr>
-                                <th style="width:16.66%;">순위</th>
-                                <th style="width:33.33%;">멤버</th>
-                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
+                                <th style="width:20%;">순위</th>
+                                <th style="width:40%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:40%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-female">
@@ -667,10 +665,10 @@
 
                 <div id="statContent" style="display: none;">
                     <div class="clean-card d-flex align-items-center mb-4 p-4">
-                        <div class="avatar avatar-xl text-secondary me-3" id="p-avatar">👤</div>
-                        <div>
-                            <h3 class="fw-bold m-0 mb-2" id="p-name" style="letter-spacing:-1px;">이름</h3>
-                            <div class="d-flex gap-2">
+                        <div class="avatar avatar-xl flex-shrink-0 text-secondary me-3" id="p-avatar">👤</div>
+                        <div style="min-width: 0;">
+                            <h3 class="fw-bold text-ellipsis m-0 mb-2" id="p-name" style="font-size: 20px; letter-spacing:-0.5px; line-height: 1;">이름</h3>
+                            <div class="d-flex gap-2 flex-wrap">
                                 <span class="tag-badge border border-secondary text-secondary" id="p-tier">티어</span>
                                 <span class="tag-badge border border-secondary text-secondary" id="p-race">종족</span>
                             </div>
@@ -703,7 +701,6 @@
                     <div class="section-title mt-4" style="height:auto; flex-wrap:wrap; gap:8px;">
                         <div class="d-flex align-items-center" style="max-width: 100%; overflow: hidden;">
                             <span style="flex-shrink: 0;">최근 전적</span>
-                            <!-- 불필요한 바 제거 -->
                             <div id="indiv-filters" class="filter-nav hide-scrollbar">
                                 <div class="filter-item active" onclick="setIndivFilter('전체')">전체</div>
                                 <div class="filter-item" onclick="setIndivFilter('대회')">대회</div>
@@ -737,6 +734,7 @@
 </div>
 </main>
 
+<!-- 팝업 모달 -->
 <div class="modal fade" id="teamMatchesModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;">
         <div class="modal-content">
@@ -801,42 +799,52 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding: 24px;">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="avatar avatar-xl flex-center text-secondary me-3" style="font-size: 28px;" id="mp-avatar">👤</div>
-                    <div>
-                        <div class="fw-bold" id="mp-name" style="font-size:var(--fs-heading); margin-bottom:8px;">이름</div>
-                        <div class="d-flex gap-2">
+                <!-- 🌟 사진 찌그러짐 방지(flex-shrink-0) 및 텍스트 밸런스 교정 🌟 -->
+                <div class="d-flex align-items-center mb-4">
+                    <div class="avatar avatar-xl flex-center text-secondary flex-shrink-0" style="font-size: 28px; margin-right: 16px;" id="mp-avatar">👤</div>
+                    <div style="min-width: 0;">
+                        <div class="fw-bold text-ellipsis" id="mp-name" style="font-size: 20px; letter-spacing: -0.5px; margin-bottom: 8px; line-height: 1;">이름</div>
+                        <div class="d-flex gap-2 flex-wrap">
                             <span class="tag-badge" id="mp-role-badge">직책</span>
                             <span class="tag-badge" id="mp-tier-badge">티어</span>
                             <span class="tag-badge" id="mp-race-badge">종족</span>
                         </div>
                     </div>
                 </div>
+                
                 <table class="table table-borderless mb-0" style="font-size:var(--fs-body);">
                     <tbody id="mp-info-body"></tbody>
                 </table>
 
-                <div class="mt-3">
+                <div class="mt-4">
                     <div class="section-title-sm">
                         이번 달 방송 활동
                         <span class="text-secondary" id="mp-activity-status" style="font-size:var(--fs-body); font-weight:600;">데이터 준비중</span>
                     </div>
-                    <div class="grid-cards grid-cards-md mt-2">
-                        <div class="clean-card text-center py-3">
-                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">별풍선</div>
-                            <div class="fw-bold" id="mp-balloons" style="font-size:var(--fs-body);">-</div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-6">
+                            <div class="clean-card text-center p-3">
+                                <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">별풍선</div>
+                                <div class="fw-bold text-ellipsis" id="mp-balloons" style="font-size:var(--fs-body);">-</div>
+                            </div>
                         </div>
-                        <div class="clean-card text-center py-3">
-                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">방송시간</div>
-                            <div class="fw-bold" id="mp-broadcast-hours" style="font-size:var(--fs-body);">-</div>
+                        <div class="col-6">
+                            <div class="clean-card text-center p-3">
+                                <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">방송시간</div>
+                                <div class="fw-bold text-ellipsis" id="mp-broadcast-hours" style="font-size:var(--fs-body);">-</div>
+                            </div>
                         </div>
-                        <div class="clean-card text-center py-3">
-                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">누적시청자</div>
-                            <div class="fw-bold" id="mp-viewers" style="font-size:var(--fs-body);">-</div>
+                        <div class="col-6">
+                            <div class="clean-card text-center p-3">
+                                <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">누적시청자</div>
+                                <div class="fw-bold text-ellipsis" id="mp-viewers" style="font-size:var(--fs-body);">-</div>
+                            </div>
                         </div>
-                        <div class="clean-card text-center py-3">
-                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">스폰전적</div>
-                            <div class="fw-bold" id="mp-sponsor-record" style="font-size:var(--fs-body);">-</div>
+                        <div class="col-6">
+                            <div class="clean-card text-center p-3">
+                                <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">스폰전적</div>
+                                <div class="fw-bold text-ellipsis" id="mp-sponsor-record" style="font-size:var(--fs-body);">-</div>
+                            </div>
                         </div>
                     </div>
                 </div>

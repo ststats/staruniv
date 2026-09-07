@@ -27,7 +27,7 @@
 
         /* 공통 유틸리티 */
         .flex-center { display: flex; align-items: center; justify-content: center; }
-        .text-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .text-ellipsis { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
         
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; display: block; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7d6f5; border-radius: 4px; }
@@ -62,7 +62,7 @@
         .card-hover { display: block; text-decoration: none; color: inherit; transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; cursor: pointer; }
         .card-hover:hover { box-shadow: 0 8px 24px rgba(41,121,255,0.08); transform: translateY(-3px); border-color: #b9cdf5; }
 
-        .list-row { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid #f1f3f5; text-decoration: none; color: inherit; transition: background 0.15s ease; cursor: pointer; }
+        .list-row { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid #f1f3f5; text-decoration: none; color: inherit; transition: background 0.15s ease; cursor: pointer; max-width: 100%; }
         .list-row:last-child { border-bottom: none; }
         .list-row:hover, .list-row.active { background: var(--color-primary-tint); }
 
@@ -173,12 +173,14 @@
         .member-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; margin-bottom: 8px; }
         .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 
-        /* 소식 / 공지 피드 */
+        /* 🔥 소식 / 공지 피드 넘침 완벽 해결 🔥 */
         .notice-row { align-items: flex-start; }
-        .notice-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+        /* 영역 강제 한정 (말줄임이 무시되지 않도록 제약) */
+        .notice-row-body { min-width: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .notice-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; }
         .notice-row-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
         .notice-row-date { font-size: 11px; color: #999; flex-shrink: 0; }
-        .notice-row-title, .notice-row-snippet { margin-top: 4px; font-size: var(--fs-body); }
+        .notice-row-title, .notice-row-snippet { margin-top: 4px; font-size: var(--fs-body); width: 100%; }
         .notice-row-title { font-weight: 700; color: #222; }
         .notice-row-snippet { font-size: 12px; color: var(--color-text-sub); }
 
@@ -213,7 +215,7 @@
         .m-arrow svg { display: block; }
         [aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
 
-        /* 모달 (팝업) */
+        /* 모달 (팝업) 둥글기 증가 */
         .modal-content { overflow: hidden; border-radius: 16px; border: none; box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
         .modal-header { position: relative; display: flex; align-items: center; justify-content: center; padding: 20px 24px; border-bottom: 1px solid var(--color-border) !important; background: #fff; }
         .modal-title { font-size: var(--fs-heading); font-weight: 800; text-align: center; width: 100%; margin: 0; color: #111; }
