@@ -123,7 +123,7 @@
     </div>
 </div>
 
-<!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
+<!-- 시너지표 -->
 <div id="page-synergy" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">방송통계</h1>
@@ -175,10 +175,11 @@
             </div>
         </div>
     </div>
-    <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; margin-top:24px; padding-bottom:24px;"></div>
+    <!-- 하단 여백 중복 삭제 -->
+    <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; margin-top:24px;"></div>
 </div>
 
-<!-- 도구 페이지: 외부 링크 카드 모음 -->
+<!-- 도구 페이지 -->
 <div id="page-tools" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">도구</h1>
@@ -208,6 +209,7 @@
         </a>
     </div>
 
+    <!-- 하드코딩된 여백 교정 -->
     <div class="section-title mt-4">외부사이트</div>
     <div class="tool-grid">
         <a class="tool-card" href="https://ygosu.com/board/pan_monstarz" target="_blank" rel="noopener">
@@ -242,7 +244,7 @@
     <!-- 1. 팀 뷰 -->
     <div id="view-team-stat">
         <div class="section-title">전체 전적</div>
-        <div class="row g-3 mb-4">
+        <div class="row g-4 mb-4">
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대회</div><div class="rate" id="t-sum-대회-r">0%</div><div class="wl" id="t-sum-대회-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대회')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대학</div><div class="rate" id="t-sum-대학-r">0%</div><div class="wl" id="t-sum-대학-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대학')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">미니</div><div class="rate" id="t-sum-미니-r">0%</div><div class="wl" id="t-sum-미니-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('미니')">상세 전적</button></div></div>
@@ -269,7 +271,6 @@
                                     </td>
                                     <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대회 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대학 전적'] | e }}</td>
                                     <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['미니 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['CK 전적'] | e }}</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
                                     <td class="text-center" style="width: 6%;">
                                         <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
@@ -286,7 +287,7 @@
                     최근 전적
                     <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                 </div>
-                <div class="clean-card flex-grow-0 p-0 overflow-hidden" style="border-radius: 10px;">
+                <div class="clean-card flex-grow-0 p-0 overflow-hidden">
                     <div class="table-responsive">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
                             <thead>
@@ -347,7 +348,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-4">
+                    <div class="row g-4 mb-4">
                         <div class="col-md-6">
                             <div class="clean-card h-100 p-4">
                                 <div class="section-title-sm">형식별 승률</div>
@@ -384,7 +385,7 @@
                         <button class="btn-view-all" onclick="openIndivMatchModal()">전체보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                     </div>
 
-                    <div class="clean-card p-0 overflow-hidden" style="border-radius: 10px;">
+                    <div class="clean-card p-0 overflow-hidden">
                         <div class="table-responsive">
                             <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
                                 <thead>
@@ -410,8 +411,6 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
-     박아넣지 않고 별도 JSON(data/site_data.json)에서 비동기로 fetch해온다. -->
 <script>
     let dbMembers = [], dbMatches = [], dbRounds = [], playersStats = [];
     async function loadSiteData() {
