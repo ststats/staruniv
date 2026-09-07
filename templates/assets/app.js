@@ -447,17 +447,16 @@
                     if(isDraw) resBadge = '<span class="text-secondary fw-bold">무</span>';
 
                     return `
-                    <div class="d-flex align-items-center py-2" style="font-size:var(--fs-body); border-bottom:1px solid #f1f3f5; min-width: 480px;">
-                        <div style="width:18.8%; text-align:center; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || (i+1) + '라'}</div>
-                        <div style="width:18.8%; text-align:center;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</div>
-                        <div style="width:18.8%; text-align:center;">${resBadge}</div>
-                        <div style="width:18.8%; text-align:center;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</div>
-                        <div style="width:18.8%; text-align:center; color:#555;">${escapeHTML(r['맵']) || '-'}</div>
-                        <div style="width:6%;"></div>
-                    </div>`;
+                    <tr style="border-bottom:1px solid #f1f3f5;">
+                        <td style="width:20%; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || (i+1) + '라'}</td>
+                        <td style="width:20%;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
+                        <td style="width:20%;">${resBadge}</td>
+                        <td style="width:20%;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
+                        <td style="width:20%; color:#555;">${escapeHTML(r['맵']) || '-'}</td>
+                    </tr>`;
                 }).join('');
             } else {
-                setDetailsHtml = '<div class="text-center text-muted py-2" style="font-size:var(--fs-body);">상세 세트 기록이 없습니다.</div>';
+                setDetailsHtml = '<tr><td colspan="5" class="text-center text-muted py-2" style="font-size:var(--fs-body);">상세 세트 기록이 없습니다.</td></tr>';
             }
 
             return `
@@ -474,8 +473,10 @@
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
                     <div class="collapse" id="${collapseId}">
-                        <div class="py-2 px-3" style="background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
-                            ${setDetailsHtml}
+                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
+                            <table class="table table-borderless mb-0 text-center" style="table-layout:fixed; width:100%; font-size:var(--fs-body);">
+                                <tbody>${setDetailsHtml}</tbody>
+                            </table>
                         </div>
                     </div>
                 </td>
