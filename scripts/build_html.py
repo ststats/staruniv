@@ -36,15 +36,25 @@ template = env.get_template('index.html')
 
 html_output = template.render(
     crew_stats=stats_data['crew_stats'],
-    member_stats=stats_data['member_stats'],
-    members_list=sorted_members,
-    matches_list=matches_list,
-    rounds_list=rounds_list  # 개인별 상세 전적 추가!
 )
 
 os.makedirs('docs', exist_ok=True)
+os.makedirs('docs/data', exist_ok=True)
 with open('docs/index.html', 'w', encoding='utf-8') as f:
     f.write(html_output)
+
+# 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, index.html에
+# 직접 박아넣지 않고 별도 JSON으로 빼서 브라우저가 비동기로 fetch하게 한다.
+# (초기 HTML 용량이 데이터량과 무관하게 항상 일정하게 유지됨)
+site_data = {
+    'members': sorted_members,
+    'matches': matches_list,
+    'rounds': rounds_list,
+    'playersStats': stats_data['member_stats']['전체'],
+}
+with open('docs/data/site_data.json', 'w', encoding='utf-8') as f:
+    json.dump(site_data, f, ensure_ascii=False)
+print(f"✅ site_data.json 저장 완료 ({os.path.getsize('docs/data/site_data.json') / 1024:.1f} KB)")
 
 # 정적 자산(style.css / app.js / calendar.js)은 데이터와 무관하게 그대로 복사.
 # templates/assets/ 아래에 두고 소스로 관리, 빌드마다 docs/로 동기화.

@@ -36,6 +36,32 @@ if missing_match_cols or missing_round_cols:
         print(f"❌ '매치 전적' 시트에 필요한 컬럼이 없습니다: {missing_round_cols}")
     exit(1)
 
+# 컬럼은 있지만 값 자체가 이상한 경우(오타/형식 오류)는 조용히 통계에서 누락되기
+# 쉬우므로, 실행을 막지는 않되 몇 건이나 문제인지 미리 경고해준다.
+def warn_invalid_values(df, col, valid_values, label):
+    if col not in df.columns:
+        return
+    actual = df[col].dropna().apply(lambda v: str(v).strip())
+    invalid = actual[~actual.isin(valid_values) & (actual != '')]
+    if len(invalid) > 0:
+        sample = invalid.unique()[:5].tolist()
+        print(f"⚠️  {label} '{col}' 값 중 {len(invalid)}건이 예상 값({valid_values})에 없습니다. 예시: {sample}")
+
+def warn_invalid_dates(df, col, label):
+    if col not in df.columns:
+        return
+    parsed = pd.to_datetime(df[col], errors='coerce')
+    invalid_count = df[col].notna().sum() - parsed.notna().sum()
+    if invalid_count > 0:
+        print(f"⚠️  {label} '{col}' 값 중 {invalid_count}건을 날짜로 인식하지 못했습니다.")
+
+warn_invalid_values(df_matches, '형식', FORMATS, "'매치 목록' 시트")
+warn_invalid_values(df_rounds, '형식', FORMATS, "'매치 전적' 시트")
+warn_invalid_values(df_matches, '최종 결과', ['승', '패', '무', '무승부'], "'매치 목록' 시트")
+warn_invalid_values(df_rounds, '결과', ['승', '패', '무', '무승부'], "'매치 전적' 시트")
+warn_invalid_dates(df_matches, '날짜', "'매치 목록' 시트")
+warn_invalid_dates(df_rounds, '날짜', "'매치 전적' 시트")
+
 def numeric_sum(df, col):
     """컬럼이 아예 없을 수도 있는 선택적 숫자 필드(펀딩/지원금/사비 등)를 안전하게 합산."""
     return pd.to_numeric(df[col], errors='coerce').sum() if col in df.columns else 0
