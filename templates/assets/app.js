@@ -763,10 +763,12 @@ let currentPlayer = '';
             ['활동기간', period],
             ['방송국', broadcast],
         ];
+        
+        // 🌟 모달 내 표(table) 세로 중앙 정렬(align-middle) 적용 🌟
         document.getElementById('mp-info-body').innerHTML = rows.map(([label, val]) => `
             <tr>
-                <td class="text-secondary" style="width:90px; font-weight:700; border-color:#f1f3f5; padding-left:0;">${label}</td>
-                <td class="fw-bold text-dark" style="border-color:#f1f3f5;">${val}</td>
+                <td class="text-secondary align-middle" style="width:90px; font-weight:700; border-color:#f1f3f5; padding: 12px 0;">${label}</td>
+                <td class="fw-bold text-dark align-middle" style="border-color:#f1f3f5; padding: 12px 0;">${val}</td>
             </tr>`).join('');
 
         renderMemberActivitySummary(m);
@@ -1035,7 +1037,7 @@ let currentPlayer = '';
         updateHash('synergy', metric !== 'balloons' ? { metric } : {});
     }
 
-    // 방송통계 테이블 비율 1:2:3 조정
+    // 🌟 방송통계 1:2:2 비율 (20% : 40% : 40%) 적용 🌟
     function synergyRowHtml(m, idx) {
         const ours = m.ourMember;
         const name = ours['이름'] || m.nickname;
@@ -1048,14 +1050,14 @@ let currentPlayer = '';
 
         return `
         <tr>
-            <td class="text-center text-secondary fw-bold" style="width:16.66%;">${idx + 1}</td>
-            <td class="text-center" style="width:33.33%;">
+            <td class="text-center text-secondary fw-bold" style="width:20%;">${idx + 1}</td>
+            <td class="text-center" style="width:40%;">
                 <span class="flex-center gap-2" style="min-width:0;">
                     ${avatarHtml(ours['SOOP ID'], 'avatar avatar-sm')}
                     <span class="fw-bold text-ellipsis">${escapeHTML(name)}</span>
                 </span>
             </td>
-            <td class="text-center fw-bold text-ellipsis" style="width:50%; color:var(--color-primary);">${escapeHTML(displayVal)}</td>
+            <td class="text-center fw-bold text-ellipsis" style="width:40%; color:var(--color-primary);">${escapeHTML(displayVal)}</td>
         </tr>`;
     }
 
