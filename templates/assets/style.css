@@ -270,7 +270,7 @@
         /* ==============================
             일정(캘린더) 페이지 스크롤 완벽 픽스 및 레이아웃
         ============================== */
-        .cal-app-root { padding: 0 0 24px 0; }
+        .cal-app-root { padding: 0; }
         
         /* 모바일에서는 column, PC에서는 row */
         .cal-main-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
