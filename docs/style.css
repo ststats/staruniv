@@ -29,6 +29,7 @@
         
         /* 상단 GNB */
         .top-navbar { background-color: #fff; height: 64px; border-bottom: 1px solid var(--color-border); position: sticky; top: 0; z-index: 100; }
+        .site-footer { border-top: 1px solid var(--color-border); background: #fff; padding: 20px 0; margin-top: 40px; text-align: center; font-size: 12px; color: var(--color-text-sub); }
         .top-navbar .navbar-inner { height: 100%; display: flex; align-items: center; width: 100%; }
         .top-navbar .logo { font-size: 20px; font-weight: 800; margin-right: 30px; display: flex; align-items: center; flex-shrink: 0; }
         .logo-black { color: var(--color-logo-black); }
