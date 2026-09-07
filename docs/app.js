@@ -1035,6 +1035,7 @@ let currentPlayer = '';
         updateHash('synergy', metric !== 'balloons' ? { metric } : {});
     }
 
+    // 방송통계 테이블 비율 1:2:3 조정
     function synergyRowHtml(m, idx) {
         const ours = m.ourMember;
         const name = ours['이름'] || m.nickname;
@@ -1047,8 +1048,8 @@ let currentPlayer = '';
 
         return `
         <tr>
-            <td class="text-center text-secondary fw-bold" style="width:25%;">${idx + 1}</td>
-            <td class="text-center" style="width:25%;">
+            <td class="text-center text-secondary fw-bold" style="width:16.66%;">${idx + 1}</td>
+            <td class="text-center" style="width:33.33%;">
                 <span class="flex-center gap-2" style="min-width:0;">
                     ${avatarHtml(ours['SOOP ID'], 'avatar avatar-sm')}
                     <span class="fw-bold text-ellipsis">${escapeHTML(name)}</span>

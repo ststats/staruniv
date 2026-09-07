@@ -134,11 +134,12 @@
             <div class="section-title">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive custom-scrollbar">
-                    <table class="table table-borderless table-hover mb-0 stat-table">
+                    <!-- 🌟 최소 가로길이 무효화 및 1:2:3 비율 적용 🌟 -->
+                    <table class="table table-borderless table-hover mb-0 stat-table" style="min-width: 100%;">
                         <thead>
                             <tr>
-                                <th style="width:25%;">순위</th>
-                                <th style="width:25%;">멤버</th>
+                                <th style="width:16.66%;">순위</th>
+                                <th style="width:33.33%;">멤버</th>
                                 <th class="synergy-metric-label" style="width:50%;">별풍선</th>
                             </tr>
                         </thead>
@@ -153,11 +154,12 @@
             <div class="section-title">여자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive custom-scrollbar">
-                    <table class="table table-borderless table-hover mb-0 stat-table">
+                    <!-- 🌟 최소 가로길이 무효화 및 1:2:3 비율 적용 🌟 -->
+                    <table class="table table-borderless table-hover mb-0 stat-table" style="min-width: 100%;">
                         <thead>
                             <tr>
-                                <th style="width:25%;">순위</th>
-                                <th style="width:25%;">멤버</th>
+                                <th style="width:16.66%;">순위</th>
+                                <th style="width:33.33%;">멤버</th>
                                 <th class="synergy-metric-label" style="width:50%;">별풍선</th>
                             </tr>
                         </thead>
@@ -242,7 +244,6 @@
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">CK</div><div class="rate" id="t-sum-CK-r">0%</div><div class="wl" id="t-sum-CK-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('CK')">상세 전적</button></div></div>
         </div>
 
-        <!-- 하단 여백 문제(mb-4)를 수정하여 정확히 맞춤 -->
         <div class="row g-4 align-items-stretch">
             <div class="col-lg-7 d-flex flex-column">
                 <div class="section-title">상대 전적</div>
@@ -702,6 +703,7 @@
                     <div class="section-title mt-4" style="height:auto; flex-wrap:wrap; gap:8px;">
                         <div class="d-flex align-items-center" style="max-width: 100%; overflow: hidden;">
                             <span style="flex-shrink: 0;">최근 전적</span>
+                            <!-- 불필요한 바 제거 -->
                             <div id="indiv-filters" class="filter-nav hide-scrollbar">
                                 <div class="filter-item active" onclick="setIndivFilter('전체')">전체</div>
                                 <div class="filter-item" onclick="setIndivFilter('대회')">대회</div>
@@ -842,7 +844,6 @@
         </div>
     </div>
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>

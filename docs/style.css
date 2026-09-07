@@ -42,6 +42,8 @@
             border: 2px solid transparent; overflow: hidden; line-height: 1;
         }
         img.avatar { display: inline-block; border-color: transparent; }
+        /* div 컨테이너 안에 동적으로 들어가는 이미지의 확대/찌그러짐 방지 */
+        .avatar > img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
         
         .avatar-sm { width: 24px; min-width: 24px; height: 24px; min-height: 24px; font-size: 14px; border-width: 1px; }
         .avatar-md { width: 36px; min-width: 36px; height: 36px; min-height: 36px; font-size: 18px; }
