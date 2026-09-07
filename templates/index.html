@@ -11,7 +11,6 @@
 </head>
 <body>
 
-<!-- GNB -->
 <div class="top-navbar">
     <div class="navbar-inner container">
         <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
@@ -119,7 +118,6 @@
     </div>
 </div>
 
-<!-- 시너지표 -->
 <div id="page-synergy" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">방송통계</h1>
@@ -174,7 +172,6 @@
     <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; margin-top:24px;"></div>
 </div>
 
-<!-- 도구 페이지 -->
 <div id="page-tools" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">도구</h1>
@@ -225,7 +222,6 @@
     </div>
 </div>
 
-<!-- 전적 페이지 -->
 <div id="page-stats" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">전적</h1>
@@ -260,14 +256,14 @@
                                 <tr class="row-clickable" data-team="{{ row['상대'] | e }}">
                                     <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
                                         <span class="flex-center gap-2 text-ellipsis">
-                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="avatar avatar-sm flex-shrink-0" loading="lazy" onerror="this.remove();">
+                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
                                             <span>{{ row['상대'] | e }}</span>
                                         </span>
                                     </td>
                                     <td style="width:18.8%;">{{ row['대회 전적'] | e }}</td><td style="width:18.8%;">{{ row['대학 전적'] | e }}</td>
                                     <td style="width:18.8%;">{{ row['미니 전적'] | e }}</td><td style="width:18.8%;">{{ row['CK 전적'] | e }}</td>
                                     <td style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 {% endfor %}
