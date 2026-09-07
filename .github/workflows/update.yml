@@ -39,26 +39,11 @@ jobs:
         python scripts/generate_stats.py
         python scripts/build_html.py
 
-    - name: Node.js 세팅 (캘린더 이미지 캡처용)
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: 스크린샷 툴(Puppeteer) 설치
-      run: npm install puppeteer
-
-    - name: 캘린더 화면 스크린샷 캡처
-      # admin.html이 오늘 날짜 기준으로 렌더링되므로, 일정 데이터가 그대로여도
-      # 매일 다시 찍어야 "오늘" 표시/요일 배치 등이 최신으로 유지된다.
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      run: node capture.js
-
     - name: 변경된 데이터 및 HTML 깃허브에 배포
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
-        # index.html 뿐 아니라 분리된 정적 자산(css/js)과 캘린더 캡처 이미지도 같이 add
-        git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js docs/data/calendar.png
-        git diff --quiet && git diff --staged --quiet || git commit -m "🚀 통계 웹페이지 + 캘린더 이미지 자동 업데이트"
+        # index.html 뿐 아니라 분리된 정적 자산(css/js)도 같이 add
+        git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js
+        git diff --quiet && git diff --staged --quiet || git commit -m "🚀 통계 웹페이지 자동 업데이트"
         git push
