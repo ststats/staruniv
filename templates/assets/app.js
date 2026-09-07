@@ -1,7 +1,6 @@
 let currentPlayer = ''; 
     let currentIndivFilter = '전체';
 
-    // 구글시트 원본 텍스트를 innerHTML에 꽂을 때 깨지거나 마크업이 섞이지 않도록 이스케이프
     function escapeHTML(str) {
         if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({
@@ -9,9 +8,6 @@ let currentPlayer = '';
         }[tag]));
     }
 
-    // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
-    // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
-    // 없는 팀도 있을 수 있어 onerror로 조용히 숨긴다.
     function teamLogoHtml(teamName, sizePx) {
         const name = String(teamName || '').trim();
         if (!name) return '';
@@ -22,7 +18,6 @@ let currentPlayer = '';
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'stats', 'synergy', 'tools'];
 
-    // ===== 해시 라우터: #페이지?파라미터=값 형태로 하위 상태까지 URL에 반영 =====
     function parseHash() {
         const raw = (location.hash || '').replace(/^#/, '');
         const qIdx = raw.indexOf('?');
@@ -35,7 +30,6 @@ let currentPlayer = '';
         const qs = new URLSearchParams();
         Object.entries(params || {}).forEach(([k, v]) => { if (v) qs.set(k, v); });
         const qsStr = qs.toString();
-        // 홈 + 파라미터 없음은 주소 깔끔하게 해시 자체를 비운다
         if (page === 'home' && !qsStr) return '';
         return '#' + page + (qsStr ? '?' + qsStr : '');
     }
@@ -58,7 +52,6 @@ let currentPlayer = '';
         if (!skipHashUpdate) updateHash(pageId, {});
     }
 
-    // 뒤로가기/앞으로가기 및 새로고침 시 해시에 맞춰 페이지 + 하위 상태를 복원
     function restoreFromHash() {
         const { page, params } = parseHash();
         const pageId = VALID_PAGE_IDS.includes(page) ? page : 'home';
@@ -131,13 +124,11 @@ let currentPlayer = '';
         updateMembersHash();
     }
 
-    // 홈 화면 "소식 전체보기" -> 멤버 페이지의 소식 탭으로 이동
     function goToNewsFeed() {
         switchPage('members');
         switchMemberView('news');
     }
 
-    // ===== 멤버 소식(SOOP 게시판 전체 글) =====
     let newsSidebarRendered = false;
     let currentNewsPlayer = null;
     let newsCurrentPage = 1;
@@ -180,8 +171,6 @@ let currentPlayer = '';
             return soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
         });
 
-        // 멤버별로 최근 몇 개씩 후보를 모아서(공지+일반글 합친 것) 전체를 한 번에
-        // 날짜순으로 다시 정렬 - "더보기"로 계속 더 볼 수 있게 넉넉히 모아둔다.
         const settled = await Promise.allSettled(
             activeMembers.map(async m => {
                 const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
@@ -220,7 +209,8 @@ let currentPlayer = '';
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
-            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px; padding-bottom:24px;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+            // 하단 여백 중복 제거 (padding-bottom 삭제)
+            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
         }
     }
 
@@ -245,7 +235,6 @@ let currentPlayer = '';
         loadNewsFeed(true);
     }
 
-    // SOOP 게시판 API의 regDate("YYYY-MM-DD HH:MM:SS")를 "N분 전" 식으로 변환
     function formatRelativeTime(dateStr) {
         const date = new Date(String(dateStr || '').replace(' ', 'T'));
         if (isNaN(date.getTime())) return '';
@@ -259,8 +248,6 @@ let currentPlayer = '';
         return String(dateStr).split(' ')[0];
     }
 
-    // 게시판 응답의 contents(일반글)와 noticeData(공지)를 합쳐서, 본인이 쓴 글만
-    // 남기고 최신순으로 정렬한다. (같은 글이 양쪽에 겹치는 경우는 titleNo로 중복 제거)
     function mergeOwnPosts(data, soopId) {
         const isOwn = p => String(p.userId || '').toLowerCase() === String(soopId).toLowerCase();
         const merged = [...(data.contents || []).filter(isOwn), ...(data.noticeData || []).filter(isOwn)];
@@ -274,9 +261,6 @@ let currentPlayer = '';
         return unique;
     }
 
-    // 홈/소식 화면 열 때마다 멤버 30명씩 SOOP API를 다시 호출하면 사용자가 몰릴 때
-    // 브라우저 쪽에서 API 호출 빈도 제한(Rate Limit)에 걸릴 수 있어, 세션 안에서는
-    // 짧은 시간 내 같은 요청을 재사용하도록 sessionStorage에 살짝 캐싱해둔다.
     async function cachedFetchJson(url, ttlMs) {
         const cacheKey = `apicache:${url}`;
         try {
@@ -285,14 +269,14 @@ let currentPlayer = '';
                 const { data, ts } = JSON.parse(cached);
                 if (Date.now() - ts < ttlMs) return data;
             }
-        } catch (e) { /* 캐시 읽기 실패는 무시하고 그냥 새로 받아온다 */ }
+        } catch (e) { }
 
         const res = await fetch(url);
         if (!res.ok) throw new Error('요청 실패: ' + res.status);
         const data = await res.json();
         try {
             sessionStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
-        } catch (e) { /* 저장 공간이 꽉 찼거나 해도 캐싱은 선택사항이니 무시 */ }
+        } catch (e) { }
         return data;
     }
 
@@ -361,7 +345,8 @@ let currentPlayer = '';
             }
 
             if (newsCurrentPage < newsTotalPages) {
-                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px; padding-bottom:24px;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+                // 하단 여백 중복 제거 (padding-bottom 삭제)
+                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
             }
         } catch (e) {
             content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">글을 불러오지 못했습니다.</div>`;
@@ -427,9 +412,6 @@ let currentPlayer = '';
             else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
 
             const collapseId = `collapse-${containerId}-${idx}`;
-            // _match_key가 있으면 그걸로 정확히 매칭(같은 날 여러 경기 구분), 없을 때만 날짜+상대팀으로 대체
-            // 내전 라운드는 개인 통계용으로 반대편 관점의 '미러' 라운드가 추가돼 있으므로
-            // (match_link.py 참고) 세트별 상세보기에는 원본 한 줄만 보이도록 걸러낸다.
             const teamRounds = dbRounds.filter(r => {
                 if (r['_mirrored']) return false;
                 if (m['_match_key'] && r['_match_key']) return r['_match_key'] === m['_match_key'];
@@ -473,7 +455,8 @@ let currentPlayer = '';
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
                     <div class="collapse" id="${collapseId}">
-                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding:0 16px;">
+                        <!-- 내부 패딩 통일 -->
+                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding: 16px;">
                             <table class="table table-borderless mb-0 text-center" style="table-layout:fixed; width:100%; font-size:var(--fs-body);">
                                 <tbody>${setDetailsHtml}</tbody>
                             </table>
@@ -505,7 +488,6 @@ let currentPlayer = '';
     function getProfileImgUrl(soopId) {
         if (!soopId) return null;
         const id = String(soopId).trim().toLowerCase();
-        // SOOP 아이디는 영문/숫자/일부 특수문자만 쓰이므로, 형식이 이상한 값은 URL/속성에 꽂지 않고 무시
         if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
         const prefix = id.substring(0, 2);
         return `https://profile.img.sooplive.co.kr/LOGO/${prefix}/${id}/${id}.jpg`;
@@ -516,7 +498,6 @@ let currentPlayer = '';
         return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} d-flex align-items-center justify-content-center\\'>👤</span>';">`;
     }
 
-    // 멤버 탭 렌더링
     const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
     function tierIndex(tier) {
         const idx = TIER_ORDER.indexOf(String(tier));
@@ -593,8 +574,9 @@ let currentPlayer = '';
         });
 
         if (formerMembers.length > 0) {
+            // 하단 여백 중복 제거
             html += `
-            <div class="text-center" style="margin-top:24px; padding-bottom:24px;">
+            <div class="text-center" style="margin-top:24px;">
                 <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 <svg id="former-members-toggle-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
             </div>
             <div id="former-members-section" style="display:none;">
@@ -613,14 +595,9 @@ let currentPlayer = '';
         chevron.style.transform = showing ? '' : 'rotate(180deg)';
     }
 
-    // 홈 화면 - 현재 방송중 목록.
-    // 참고 프로젝트(ststats)의 개인페이지 패턴 그대로: bjapi.afreecatv.com을
-    // 브라우저에서 직접 fetch한다 (CORS 허용됨, 확인됨). 활성 멤버가 소수라
-    // 프록시/백엔드 배치 작업 없이 페이지 로드 시점에 병렬로 바로 체크한다 -
-    // 그래서 워크플로를 몇 분마다 돌릴 필요가 없고, 열 때마다 최신 상태.
     async function checkIsLiveRealtime(soopId) {
         try {
-            const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000); // 30초 (실시간성 유지 위해 짧게)
+            const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000);
             if (!data || !data.broad) return null;
             return {
                 broad: data.broad,
@@ -697,9 +674,6 @@ let currentPlayer = '';
         }).join('')}</div>`;
     }
 
-    // ===== 홈 화면 - 최신 공지 =====
-    // SOOP 채널 게시판 API를 브라우저에서 직접 fetch한다 (방송중 체크와 같은 방식).
-    // 응답의 noticeData가 실제로 '공지' 처리된 글들이고(noticeYn:2), 최신순으로 정렬돼 온다.
     async function renderLatestNotices() {
         const container = document.getElementById('home-notice-list');
         const activeMembers = dbMembers.filter(m => {
@@ -713,7 +687,6 @@ let currentPlayer = '';
             return;
         }
 
-        // 공지만이 아니라 일반글도 같이 긁어와서(fetchMemberFeed는 공지+일반글을 합쳐 최신순 반환) 섞는다.
         const settled = await Promise.allSettled(
             activeMembers.map(async m => {
                 const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
@@ -793,11 +766,9 @@ let currentPlayer = '';
             </tr>`).join('');
 
         renderMemberActivitySummary(m);
-
         new bootstrap.Modal(document.getElementById('memberProfileModal')).show();
     }
 
-    // 프로필 팝업의 "이번 달 방송 활동"을 시너지표(ststats)에서 가져온 데이터로 채운다.
     function renderMemberActivitySummary(m) {
         const statusEl = document.getElementById('mp-activity-status');
         const balloonsEl = document.getElementById('mp-balloons');
@@ -903,7 +874,6 @@ let currentPlayer = '';
         const sideItem = document.getElementById(`side-player-${name}`);
         if (sideItem) {
             sideItem.classList.add('active');
-            // 이전 멤버가 접혀있는 상태에서 그 사람이 선택되면 자동으로 펼쳐준다
             const formerWrap = document.getElementById('indiv-former-wrap');
             if (formerWrap && formerWrap.contains(sideItem) && formerWrap.style.display === 'none') {
                 toggleFormerMembers();
@@ -986,7 +956,6 @@ let currentPlayer = '';
         new bootstrap.Modal(document.getElementById('indivMatchesModal')).show();
     }
 
-    // ===== 시너지표 (ststats 외부 데이터에서 우리 로스터만 추려서 표시) =====
     const STSTATS_BASE = 'https://ststats.github.io/synergy';
     let synergyData = null;
     let synergyMetric = 'balloons';
@@ -1012,9 +981,6 @@ let currentPlayer = '';
             if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
             const data = await dataRes.json();
 
-            // team 이름이 아니라 SOOP ID로 매칭한다 - 외부 쪽 team 표기가
-            // 우리 쪽 개편(예: 캄몬스타즈 -> 스타대학)과 항상 동기화된다는
-            // 보장이 없기 때문.
             const idToMember = {};
             dbMembers.forEach(m => {
                 const soopId = String(m['SOOP ID'] || '').trim().toLowerCase();
@@ -1098,7 +1064,6 @@ let currentPlayer = '';
 
     function sortSynergyRows(rows) {
         if (synergyMetric === 'sponsor') {
-            // 표시는 승패/승률이지만, 정렬은 판수(승+패)가 많은 순 - 승수 기준이 아니다.
             return rows.slice().sort((a, b) =>
                 ((b.sponsor_wins || 0) + (b.sponsor_losses || 0)) - ((a.sponsor_wins || 0) + (a.sponsor_losses || 0)));
         }
@@ -1120,17 +1085,12 @@ let currentPlayer = '';
     }
 
     window.onload = async function() {
-        // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
-        // 그걸 사용하는 초기화 로직들을 이어서 실행한다.
         await loadSiteData();
-
         calculateTeamSummaries();
         renderMembersPage();
         renderLiveBroadcasts();
         renderLatestNotices();
         loadSynergyData();
-
-        // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
         restoreFromHash();
 
         const today = new Date();
