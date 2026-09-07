@@ -34,9 +34,17 @@
 
 
 def _extract_round_num(round_str):
+    """'1R'~'11R', 'ACE', 빈값(번외) 등 다양한 표기를 지원한다. 문자열에서
+    숫자만 뽑아내는 방식이라 접미사가 'R'이든 '라'든(구 데이터 호환) 상관없이
+    동작한다. 'ACE'나 빈값처럼 숫자를 뽑을 수 없으면 None을 반환하고,
+    그 경우 라운드 리셋 판단은 '세트' 값 변화만으로 하게 된다."""
+    s = str(round_str or '').strip()
+    digits = ''.join(ch for ch in s if ch.isdigit())
+    if not digits:
+        return None
     try:
-        return int(str(round_str).replace('라', '').strip())
-    except (TypeError, ValueError):
+        return int(digits)
+    except ValueError:
         return None
 
 
@@ -111,8 +119,8 @@ def link_rounds_to_matches(matches, rounds, members=None):
     # 2. 라운드에 순번 부여
     round_seq_counter = {}
     seen_sets_in_chunk = {}   # key -> 현재 경기(chunk) 안에서 이미 등장한 '세트' 값들
-    last_set_name = {}       # key -> 직전 라운드의 '세트' 값 (세트 전환 시점 파악용)
-    last_round_num = {}      # key -> 직전 라운드 번호 (리셋 여부 판단용)
+    last_set_name = {}       # key -> 직전 라운드의 '세트' 값 (같은 세트 안의 다음 라운드인지 판단용)
+    last_round_num = {}      # key -> 직전 라운드 번호 ('세트' 값이 없는 옛날 데이터의 fallback 판단용)
 
     for r in rounds:
         key = (r.get('날짜'), r.get('상대팀'))
@@ -120,20 +128,23 @@ def link_rounds_to_matches(matches, rounds, members=None):
         num = _extract_round_num(r.get('라운드'))
         seq = round_seq_counter.get(key, 0)
 
-        prev_num = last_round_num.get(key)
-        round_reset = prev_num is not None and num is not None and num <= prev_num
-
-        is_new_match = False
-        if round_reset:
+        # '세트' 값이 있으면 그것만으로 새 경기 여부를 판단한다:
+        #  - 직전 라운드와 '세트' 값이 같으면 -> 같은 세트 안의 다음 라운드일 뿐, 새 경기 아님
+        #  - '세트' 값이 바뀌었는데 그 값이 지금 이 경기(chunk) 안에서 이미 등장했던 적이
+        #    있으면 -> 이미 지나온 세트로 되돌아간 것이므로 새 경기
+        #  - '세트' 값이 바뀌었는데 처음 보는 값이면 -> 같은 경기 안의 다음 세트로 진행
+        # 'ACE'/빈 라운드처럼 번호를 못 뽑는 라운드가 중간에 껴 있어도 이 판단은 영향을 안 받는다.
+        # '세트' 값이 아예 없는 옛날 데이터에서만 라운드 번호 리셋으로 판단하는 fallback을 쓴다.
+        if set_name:
             prev_set = last_set_name.get(key)
-            seen = seen_sets_in_chunk.get(key, set())
-            if set_name and set_name != prev_set and set_name not in seen:
-                # 라운드는 리셋됐지만 세트가 새로 진행된 것(1세트->2세트->슈에 등)
-                # -> 같은 경기 안의 새 세트일 뿐, 새 경기가 아니다.
+            if set_name == prev_set:
                 is_new_match = False
             else:
-                # 세트가 없거나 그대로거나 이미 지나온 세트로 되돌아감 -> 진짜 새 경기
-                is_new_match = True
+                seen = seen_sets_in_chunk.get(key, set())
+                is_new_match = set_name in seen
+        else:
+            prev_num = last_round_num.get(key)
+            is_new_match = prev_num is not None and num is not None and num <= prev_num
 
         if is_new_match:
             seq += 1
