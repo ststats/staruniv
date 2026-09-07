@@ -1,5 +1,4 @@
-
-    let currentPlayer = ''; 
+let currentPlayer = ''; 
     let currentIndivFilter = '전체';
 
     // 구글시트 원본 텍스트를 innerHTML에 꽂을 때 깨지거나 마크업이 섞이지 않도록 이스케이프
@@ -474,7 +473,7 @@
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
                     <div class="collapse" id="${collapseId}">
-                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding:0 12px;">
+                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding:0 16px;">
                             <table class="table table-borderless mb-0 text-center" style="table-layout:fixed; width:100%; font-size:var(--fs-body);">
                                 <tbody>${setDetailsHtml}</tbody>
                             </table>
