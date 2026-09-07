@@ -1,289 +1,145 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>일정표</title>
-    <!-- Pretendard 폰트 -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <!-- html2canvas 라이브러리 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        /* ==============================
-            리뉴얼된 프리미엄 테마 시스템
-        ============================== */
-        :root {
-            --bg-page: #f4f7fc;
-            --bg-panel: #ffffff;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캘린더 관리 - 스타대학</title>
 
-            --text-heading: #1a1f27;
-            --text-main: #1a1f27;
-            --text-muted: #7a828e;
+<!--
+    이 관리자 페이지는 사이트가 실제로 쓰는 style.css / calendar.js / holidays.json을
+    그대로 링크해서 씁니다(복사본 아님) - 그래서 사이트 디자인이 바뀌면 이 페이지도
+    자동으로 같이 바뀝니다. 이 페이지 자체가 만드는 건 딱 두 가지뿐입니다:
+      1) GitHub 토큰으로 calendar.json 불러오기/저장하기
+      2) 일정 추가/수정/삭제 폼 + 각 일정 카드에 [수정]/[삭제] 버튼 끼워넣기
+       (calendar.js의 calRenderTodaySchedules/calRenderSelectedDateSchedules가
+        각 카드를 만들 때 window.calCardExtra가 있으면 그 결과를 카드 안에
+        추가로 넣어주도록 훅이 나 있어서, calendar.js 자체는 손대지 않고
+        이 파일에서만 편집 버튼을 끼워넣습니다.)
+-->
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 
-            --border-light: #eaedf2;
-            --border-dark: #d8dce3;
+<style>
+    /* 어드민 전용 요소(토큰 바 / 추가·수정 폼 / 좌우 레이아웃)만 여기서 스타일링.
+       캘린더 자체 스타일(요일/날짜칸/카드 등)은 전부 style.css 걸 그대로 씁니다. */
+    body { margin: 0; }
+    .admin-layout { display: flex; gap: 24px; align-items: flex-start; }
+    .admin-main { flex: 1 1 0%; min-width: 0; }
+    .admin-side { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
+    @media (max-width: 991px) {
+        .admin-layout { flex-direction: column; }
+        .admin-side { width: 100%; }
+    }
 
-            --primary: #2979ff;
-            --primary-hover: #1c63e0;
-            --primary-light: #eef4ff;
+    .admin-token-bar { display: flex; gap: 8px; }
+    .admin-token-bar input {
+        flex: 1; height: 40px; padding: 0 12px; border: 1px solid var(--color-border);
+        border-radius: 8px; font-size: var(--fs-body); font-family: inherit;
+    }
+    .admin-token-bar input:focus { outline: none; border-color: var(--color-primary); }
+    .btn-solid { height: 40px; padding: 0 16px; border: none; border-radius: 8px; font-size: var(--fs-body); font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+    .btn-solid:hover { opacity: 0.85; }
+    .btn-solid:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-solid-dark { background: var(--color-text-main); color: #fff; }
+    .btn-solid-primary { background: var(--color-primary); color: #fff; }
 
-            --success: #10b981;
-            --success-hover: #059669;
-            --danger: #f03e3e;
-            --sunday: #f03e3e;
-            --saturday: #2979ff;
+    .admin-form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .admin-form-row input, .admin-form-row select, .admin-form-row textarea {
+        width: 100%; padding: 0 12px; height: 42px; border: 1px solid var(--color-border);
+        border-radius: 8px; font-size: var(--fs-body); font-family: inherit; box-sizing: border-box;
+        background: #fff; color: var(--color-text-main);
+    }
+    .admin-form-row select { flex-shrink: 0; width: 110px; }
+    .admin-form-row textarea { padding-top: 10px; resize: none; overflow: hidden; line-height: 1.3; height: 42px; }
+    .admin-form-row input:focus, .admin-form-row textarea:focus, .admin-form-row select:focus {
+        outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-tint);
+    }
+    .admin-submit-btn {
+        width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--color-primary);
+        color: #fff; font-weight: 700; font-size: var(--fs-body); cursor: pointer; margin-top: 4px; transition: background 0.15s;
+    }
+    .admin-submit-btn:hover { background: #1c63e0; }
+    .admin-form-title { font-size: var(--fs-subheading); font-weight: 800; color: #222; margin-bottom: 10px; }
 
-            --radius-xl: 14px;
-            --radius-lg: 12px;
-            --radius-md: 10px;
-            --radius-sm: 6px;
-
-            --shadow-panel: 0 2px 6px rgba(0, 0, 0, 0.015);
-            --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.015);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            background-color: var(--bg-page); 
-            color: var(--text-main); 
-            font-family: 'Pretendard Variable', Pretendard, sans-serif; 
-            padding: 30px 20px; 
-            display: flex; 
-            justify-content: center; 
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* 레이아웃 구조 */
-        .main-layout { display: flex; gap: 30px; width: 100%; max-width: 1290px; align-items: flex-start; justify-content: center; }
-        .left-area { display: flex; flex-direction: column; width: 100%; max-width: 830px; }
-        .sidebar { width: 380px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; }
-        
-        @media(max-width: 1290px) { 
-            .main-layout { flex-direction: column; align-items: center; } 
-            .sidebar { width: 100%; max-width: 830px; }
-        }
-
-        /* 공통 패널 스타일 */
-        .box-panel {
-            background: var(--bg-panel); 
-            padding: 24px 18px;
-            border-radius: var(--radius-xl); 
-            box-shadow: var(--shadow-panel); 
-            border: 1px solid var(--border-light);
-            width: 100%;
-            max-width: 830px;
-        }
-
-        .left-area .panel-title,
-        .sidebar .panel-title { 
-            font-size: 20px; font-weight: 700; color: var(--text-heading); 
-            margin-bottom: 20px; 
-        }
-
-        /* 캡처 영역 */
-        .capture-wrapper {
-            display: flex; flex-direction: column; gap: 24px; width: 100%; max-width: 830px;
-            background-color: var(--bg-page); padding: 10px; margin: -10px; border-radius: var(--radius-xl);
-        }
-
-        /* 오늘의 일정 리스트 & 카드 */
-        .today-list { display: flex; flex-direction: column; gap: 12px; }
-        .today-card {
-            background: var(--bg-panel); border-radius: var(--radius-md); padding: 12px 16px; 
-            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px; 
-            box-shadow: var(--shadow-card);
-        }
-        .no-schedule { font-size: 15px; color: var(--text-muted); text-align: center; padding: 20px 0; width: 100%; }
-        .today-card .card-main, .today-card .card-time, .today-card .card-person, .today-card .card-desc { font-size: 15px; }
-
-        /* 공통 헤더 네비게이션 스타일 */
-        .header-nav-container { display: flex; align-items: center; gap: 14px; }
-        .header-nav-btn {
-            background: transparent; border: none; color: var(--text-muted);
-            width: 28px; height: 28px; border-radius: 50%; font-size: 16px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;
-        }
-        .header-nav-btn:hover { background-color: var(--border-light); color: var(--text-heading); }
-        .header-badge { font-size: 20px; font-weight: 700; color: var(--text-heading); letter-spacing: normal; }
-
-        /* 캘린더 영역 (월간/주간 공통) */
-        .calendar-header-area {
-            display: flex; justify-content: space-between; align-items: center; margin: 0 auto 24px auto;
-            padding-bottom: 16px; border-bottom: 2px solid var(--border-light); width: 100%; max-width: 770px; 
-        }
-        .calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 12px; }
-        .calendar-inner::-webkit-scrollbar { height: 8px; }
-        .calendar-inner::-webkit-scrollbar-thumb { background: #c7d6f5; border-radius: 10px; }
-        .calendar-scroll-content { width: 770px; margin: 0 auto; box-sizing: border-box; }
-
-        /* 캘린더 그리드 및 요일 (공통) */
-        .weekdays { 
-            display: grid; grid-template-columns: repeat(7, 110px); text-align: center; font-size: 15px; 
-            font-weight: 600; color: var(--text-muted); margin-bottom: 12px; box-sizing: border-box;
-        }
-        .weekdays div:first-child { color: var(--sunday); } 
-        .weekdays div:last-child { color: var(--saturday); } 
-
-        .days-grid { 
-            display: grid; grid-template-columns: repeat(7, 110px); 
-            border-top: 1px solid var(--border-light); border-left: 1px solid var(--border-light); box-sizing: border-box; 
-        }
-        
-        .day-cell {
-            background: var(--bg-panel); min-height: 130px; display: flex; flex-direction: column; padding: 8px; 
-            cursor: pointer; border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
-            transition: background 0.15s ease; box-sizing: border-box; 
-        }
-        .day-cell:hover { background-color: var(--primary-light); }
-        .day-cell.other-month { background-color: #fafbfc; }
-        .day-cell.other-month .day-number { color: #c3c9d1; }
-
-        .day-number { font-size: 15px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px; line-height: 1.4; }
-        
-        /* 요일별 색상 및 공휴일 덮어쓰기 로직 최적화 */
-        .day-cell:nth-child(7n+1) .day-number { color: var(--sunday); }
-        .day-cell:nth-child(7n) .day-number { color: var(--saturday); }
-        .day-cell.holiday .day-number { color: var(--danger) !important; } /* 공휴일 우선 적용 */
-
-        .day-cell.today .day-number { width: max-content; position: relative; z-index: 1; }
-        .day-cell.today .day-number::after {
-            content: ''; position: absolute; bottom: 1px; left: -2px; right: -2px; height: 8px;
-            background-color: rgba(41, 121, 255, 0.16); z-index: -1; border-radius: 2px;
-        }
-
-        /* 이벤트 셀 디자인 */
-        .cell-event {
-            border-radius: var(--radius-sm); padding: 5px 6px; margin-bottom: 4px; font-weight: 500; 
-            display: flex; flex-direction: column; gap: 2px; color: var(--text-heading); box-shadow: var(--shadow-card);
-        }
-        .cell-top { display: flex; justify-content: space-between; align-items: center; font-weight: 600; white-space: nowrap; }
-        .event-time { opacity: 0.8; font-size: 13px; }
-        .event-person { font-weight: 700; font-size: 13px; margin-left: auto; text-align: right; }
-        .event-desc { font-size: 13px; text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.3; }
-
-        /* ==============================
-            [2] 사이드바 디자인
-        ============================== */
-        button { cursor: pointer; font-family: inherit; transition: all 0.2s; border: none; }
-        
-        .btn-action { 
-            background: var(--success); color: white; padding: 10px 14px; 
-            border-radius: var(--radius-md); font-size: 15px; font-weight: 600; flex-shrink: 0; 
-        }
-        .btn-action:hover:not(:disabled) { background: var(--success-hover); }
-        .btn-action:disabled { background: #c3c9d1; cursor: not-allowed; opacity: 0.7; }
-        
-        .btn-primary { 
-            width: 100%; padding: 14px; background: var(--primary); color: white; 
-            border-radius: var(--radius-md); font-weight: 600; font-size: 15px; margin-top: 8px; 
-        }
-        .btn-primary:hover { background: var(--primary-hover); }
-
-        .form-row { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }
-        
-        input, select, textarea {
-            width: 100%; height: 46px; padding: 0 12px; background: var(--bg-page); border: 1px solid var(--border-light); 
-            color: var(--text-heading); border-radius: var(--radius-md); font-size: 15px; font-family: inherit; 
-            transition: all 0.2s; box-sizing: border-box; display: flex; align-items: center;
-        }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); background: var(--bg-panel); box-shadow: 0 0 0 3px var(--primary-light); }
-        textarea { resize: none; padding-top: 12px; overflow: hidden; line-height: 1.2; }
-
-        .selected-list { display: flex; flex-direction: column; gap: 12px; }
-        .selected-card {
-            background: var(--bg-panel); border-radius: var(--radius-md); padding: 12px 16px; 
-            border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-card);
-        }
-        .card-main { display: flex; align-items: center; gap: 10px; font-size: 15px; }
-        .card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-        .card-time { color: var(--text-muted); font-weight: 600; font-size: 15px; } 
-        .card-person { font-weight: 700; color: var(--text-heading); font-size: 15px; } 
-        .card-desc { color: var(--text-main); font-size: 15px; flex-grow: 1; font-weight: 500; } 
-        
-        .btn-group { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
-        .edit-btn { background: none; color: var(--primary); font-size: 15px; font-weight: 600; padding: 0 4px; }
-        .edit-btn:hover { color: var(--primary-hover); text-decoration: underline; }
-        .delete-btn { background: none; color: var(--danger); font-size: 15px; font-weight: 600; padding: 0 4px; }
-        .delete-btn:hover { color: #dc2626; text-decoration: underline; }
-    </style>
+    /* calendar.js가 만드는 카드 안에 끼워넣는 [수정]/[삭제] 버튼 (calCardExtra 훅으로 삽입) */
+    .cal-card-actions { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
+    .cal-card-actions button { background: none; border: none; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; }
+    .cal-card-actions .edit-btn { color: var(--color-primary); }
+    .cal-card-actions .edit-btn:hover { text-decoration: underline; }
+    .cal-card-actions .delete-btn { color: var(--color-lose); }
+    .cal-card-actions .delete-btn:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
 
-    <main class="main-layout">
-        <section class="left-area">
-            <div id="calendarCaptureArea" class="capture-wrapper">
-                
-                <!-- 1. 오늘의 일정 -->
-                <div class="box-panel">
-                    <div class="panel-title">⚡ 오늘의 일정</div>
-                    <div class="today-list" id="todayList"></div>
-                </div>
+<div class="container" style="max-width: 1320px; margin: 0 auto; padding: 32px;">
+    <div class="page-header">
+        <h1 class="page-header-title">캘린더 관리</h1>
+    </div>
+    <hr class="page-header-divider">
 
-                <!-- 1.5 김윤환 일정 -->
-                <div class="box-panel">
-                    <div class="calendar-header-area">
-                        <div class="panel-title" style="margin-bottom: 0;">👨‍💻 김윤환 일정</div>
-                        <div class="header-nav-container">
-                            <button class="header-nav-btn" onclick="changeWeeklyOffset(-1)">‹</button>
-                            <div class="header-badge" style="width: 0px; overflow: hidden; opacity: 0; visibility: hidden;"></div>
-                            <button class="header-nav-btn" onclick="changeWeeklyOffset(1)">›</button>
-                        </div>
-                    </div>
-                    <div class="calendar-inner">
-                        <div class="calendar-scroll-content">
-                            <div class="weekdays">
-                                <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+    <div class="clean-card p-4 mb-4">
+        <div class="admin-token-bar">
+            <input type="password" id="githubToken" placeholder="GitHub 토큰 입력">
+            <button class="btn-solid btn-solid-dark" onclick="saveTokenLocally()">연동</button>
+            <button id="saveAllBtn" class="btn-solid btn-solid-primary" onclick="saveAllToGithub()">저장</button>
+        </div>
+    </div>
+
+    <div class="admin-layout">
+        <!-- 왼쪽: 사이트 캘린더 페이지랑 완전히 동일한 구조/클래스 -->
+        <div class="admin-main">
+            <div class="cal-app-root">
+                <div class="cal-main-layout" style="flex-direction: column;">
+                    <section class="cal-calendar-area" style="width: 100%;">
+                        <div class="section-title">
+                            이달의 일정
+                            <div class="cal-nav-group">
+                                <button class="cal-nav-btn" onclick="changeMonth(-1)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                                <div id="monthTitle" class="cal-nav-badge"></div>
+                                <button class="cal-nav-btn" onclick="changeMonth(1)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                             </div>
-                            <div class="days-grid" id="weeklyGrid"></div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- 2. 월간 캘린더 -->
-                <div class="box-panel">
-                    <div class="calendar-header-area">
-                        <div class="panel-title" style="margin-bottom: 0;">📅 이달의 일정</div>
-                        <div class="header-nav-container">
-                            <button class="header-nav-btn" onclick="changeMonth(-1)">‹</button>
-                            <div id="monthTitle" class="header-badge"></div>
-                            <button class="header-nav-btn" onclick="changeMonth(1)">›</button>
-                        </div>
-                    </div>
-                    <div class="calendar-inner" id="calendarInner">
-                        <div class="calendar-scroll-content">
-                            <div class="weekdays">
-                                <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                        <div class="clean-card p-3">
+                            <div class="cal-calendar-inner">
+                                <div class="cal-calendar-scroll-content">
+                                    <div class="cal-weekdays">
+                                        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                                    </div>
+                                    <div class="cal-days-grid" id="daysGrid"></div>
+                                </div>
                             </div>
-                            <div class="days-grid" id="daysGrid"></div>
                         </div>
-                    </div>
+                    </section>
                 </div>
-
             </div>
-        </section>
+        </div>
 
-        <aside class="sidebar">
-            <!-- 3. 관리자 연동 및 전체 저장 -->
-            <div class="box-panel">
-                <div class="panel-title">🔑 관리자 연동 및 데이터 저장</div>
-                <div class="form-row" style="margin-bottom: 0; display: flex; gap: 8px;">
-                    <input type="password" id="githubToken" placeholder="GitHub 토큰 입력" style="flex: 1;">
-                    <button class="btn-action" onclick="saveTokenLocally()" style="background-color: var(--text-heading); white-space: nowrap;">연동</button>
-                    <button id="saveAllBtn" class="btn-action" onclick="saveAllToGithub()" style="white-space: nowrap;">저장</button>
+        <!-- 오른쪽: 오늘의 일정 / 선택한 날짜 + 일정 편집 폼 (전부 어드민 전용) -->
+        <aside class="admin-side">
+            <div>
+                <div class="section-title">오늘의 일정</div>
+                <div class="clean-card p-4">
+                    <div class="cal-today-list" id="todayList"></div>
                 </div>
             </div>
 
-            <!-- 4. 일정 추가 폼 -->
-            <div class="box-panel">
-                <div class="panel-title" id="formTitle">➕ [날짜선택] 일정 추가</div>
+            <div>
+                <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
+                <div class="clean-card p-4">
+                    <div class="cal-selected-list" id="selectedDateList"></div>
+                </div>
+            </div>
+
+            <div class="clean-card p-4">
+                <div class="admin-form-title" id="formTitle">[날짜선택] 일정 추가</div>
                 <input type="hidden" id="editScheduleId" value="">
-                
-                <div class="form-row">
+                <div class="admin-form-row">
                     <input type="text" id="inputTime" placeholder="시간 (예: 19:00)">
                     <input type="text" id="inputPerson" placeholder="타이틀">
                 </div>
-                <div class="form-row">
+                <div class="admin-form-row">
                     <select id="inputColor">
                         <option value="#ffe4e6">🔴 빨강</option>
                         <option value="#ffedd5">🟠 주황</option>
@@ -296,488 +152,229 @@
                     </select>
                     <textarea id="inputDesc" placeholder="간략내용 (줄바꿈 가능)"></textarea>
                 </div>
-                <div class="form-row" style="margin-bottom: 0;">
+                <div class="admin-form-row">
                     <input type="text" id="inputDetail" placeholder="상세내용 (오늘의 일정에만 표시)">
                 </div>
-                <button class="btn-primary" id="submitBtn" onclick="addOrUpdateSchedule()">일정 반영하기</button>
-            </div>
-
-            <!-- 5. 선택한 날짜 일정 -->
-            <div class="box-panel">
-                <div class="panel-title" id="selectedListTitle">📅 선택한 날짜 일정</div>
-                <div class="selected-list" id="selectedDateList"></div>
+                <button class="admin-submit-btn" id="submitBtn" onclick="addOrUpdateSchedule()">일정 반영하기</button>
             </div>
         </aside>
-    </main>
+    </div>
+</div>
 
-    <script>
-        let currentDate = new Date();
-        let selectedDateStr = "";
-        let selectedType = "calendar"; 
-        let schedules = {}; 
-        let weeklySchedules = {}; 
-        let weeklyOffset = 0; 
+<!-- 사이트가 실제로 쓰는 캘린더 렌더링 로직을 그대로 가져다 쓴다 (복사본 아님) -->
+<script src="calendar.js"></script>
 
-        const REPO_OWNER = 'ststats';
-        const REPO_NAME = 'staruniv';
-        const DATA_FILE_PATH = 'docs/data/calendar.json';
-        const IMG_FILE_PATH = 'docs/data/calendar.png';
+<script>
+    // ===== 여기서부터는 어드민 전용: GitHub 로드/저장 + 일정 추가/수정/삭제 =====
+    const REPO_OWNER = 'ststats';
+    const REPO_NAME = 'staruniv';
+    const DATA_FILE_PATH = 'docs/data/calendar.json';
 
-        const publicHolidays = {
-            "2024-01-01": true, "2024-02-09": true, "2024-02-10": true, "2024-02-11": true, "2024-02-12": true,
-            "2024-03-01": true, "2024-04-10": true, "2024-05-05": true, "2024-05-06": true, "2024-05-15": true,
-            "2024-06-06": true, "2024-08-15": true, "2024-09-16": true, "2024-09-17": true, "2024-09-18": true,
-            "2024-10-03": true, "2024-10-09": true, "2024-12-25": true,
-            "2025-01-01": true, "2025-01-28": true, "2025-01-29": true, "2025-01-30": true, "2025-03-01": true, "2025-03-03": true,
-            "2025-05-05": true, "2025-05-06": true, "2025-06-06": true, "2025-08-15": true, "2025-10-03": true, "2025-10-05": true, "2025-10-06": true, "2025-10-07": true, "2025-10-08": true, "2025-10-09": true, "2025-12-25": true,
-            "2026-01-01": true, "2026-02-16": true, "2026-02-17": true, "2026-02-18": true, "2026-03-01": true, "2026-03-02": true,
-            "2026-05-05": true, "2026-05-24": true, "2026-05-25": true, "2026-06-06": true, "2026-08-15": true, "2026-09-24": true, "2026-09-25": true, "2026-09-26": true, "2026-09-28": true, "2026-10-03": true, "2026-10-09": true, "2026-12-25": true
-        };
+    const escapeHTML = calEscapeHTML; // calendar.js가 이미 이스케이프 함수를 갖고 있어 그대로 재사용
 
-        const escapeHTML = (str) => {
-            if (!str) return '';
-            return str.replace(/[&<>'"]/g, tag => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-            }[tag]));
-        };
+    const saveTokenLocally = () => {
+        const token = document.getElementById('githubToken').value.trim();
+        if (!token) return alert('토큰을 입력해주세요.');
+        localStorage.setItem('gh_token', token);
+        alert('토큰이 임시 저장되었습니다.');
+        loadDataFromGithub();
+    };
 
-        const getFormatDate = (year, month, day) => {
-            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        };
-
-        const saveTokenLocally = () => {
-            const token = document.getElementById('githubToken').value.trim();
-            if(!token) return alert('토큰을 입력해주세요.');
-            localStorage.setItem('gh_token', token);
-            alert('토큰이 임시 저장되었습니다.');
-            loadDataFromGithub();
-        };
-
-        const loadDataFromGithub = async () => {
-            const token = document.getElementById('githubToken').value;
-            if(!token) return;
-
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_FILE_PATH}`, {
-                    headers: { Authorization: `token ${token}` }
-                });
-                if(res.ok) {
-                    const data = await res.json();
-                    const decoded = decodeURIComponent(escape(atob(data.content))); 
-                    const parsed = JSON.parse(decoded);
-                    
-                    if (parsed.schedules) {
-                        schedules = parsed.schedules;
-                        weeklySchedules = parsed.weeklySchedules || {};
-                    } else {
-                        schedules = parsed;
-                    }
-                    renderCalendar();
-                } else if (res.status === 404) {
-                    renderCalendar();
-                }
-            } catch (e) {
-                console.error(e);
+    const loadDataFromGithub = async () => {
+        const token = document.getElementById('githubToken').value;
+        if (!token) return;
+        try {
+            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_FILE_PATH}`, {
+                headers: { Authorization: `token ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const decoded = decodeURIComponent(escape(atob(data.content)));
+                const parsed = JSON.parse(decoded);
+                calSchedules = parsed.schedules || parsed;
+                calRenderCalendar();
+            } else if (res.status === 404) {
+                calRenderCalendar();
             }
-        };
-
-        const saveAllToGithub = async () => {
-            const token = document.getElementById('githubToken').value;
-            if(!token) return alert('GitHub 토큰을 먼저 입력하고 연동해주세요!');
-
-            const saveBtn = document.getElementById('saveAllBtn');
-            saveBtn.innerText = '통합 저장중...';
-            saveBtn.disabled = true;
-
-            try {
-                const bundleData = { schedules, weeklySchedules };
-                const jsonContent = JSON.stringify(bundleData, null, 2);
-
-                const target = document.getElementById('calendarCaptureArea');
-                const calInner = document.getElementById('calendarInner');
-                const originalWidth = target.style.width;
-                const originalCalOverflow = calInner.style.overflow;
-                
-                target.style.width = '830px'; 
-                calInner.style.overflow = 'visible'; 
-
-                const canvas = await html2canvas(target, { 
-                    scale: 2, useCORS: true, windowWidth: 1290, backgroundColor: "#f4f7fc" 
-                });
-                
-                target.style.width = originalWidth;
-                calInner.style.overflow = originalCalOverflow;
-                const base64Image = canvas.toDataURL('image/png').split(',')[1]; 
-
-                const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
-                const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
-
-                const repoRes = await fetch(repoUrl, { headers });
-                if(!repoRes.ok) throw new Error('저장소 정보를 불러올 수 없습니다.');
-                const defaultBranch = (await repoRes.json()).default_branch || 'main';
-
-                const refRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { headers });
-                const refData = await refRes.json();
-                const latestCommitSha = refData.object.sha;
-
-                const imgBlobRes = await fetch(`${repoUrl}/git/blobs`, {
-                    method: 'POST', headers,
-                    body: JSON.stringify({ content: base64Image, encoding: 'base64' })
-                });
-                const imgBlobSha = (await imgBlobRes.json()).sha;
-
-                const jsonBlobRes = await fetch(`${repoUrl}/git/blobs`, {
-                    method: 'POST', headers,
-                    body: JSON.stringify({ content: jsonContent, encoding: 'utf-8' })
-                });
-                const jsonBlobSha = (await jsonBlobRes.json()).sha;
-
-                const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
-                const baseTreeSha = (await commitRes.json()).tree.sha;
-
-                const treeRes = await fetch(`${repoUrl}/git/trees`, {
-                    method: 'POST', headers,
-                    body: JSON.stringify({
-                        base_tree: baseTreeSha,
-                        tree: [
-                            { path: DATA_FILE_PATH, mode: '100644', type: 'blob', sha: jsonBlobSha },
-                            { path: IMG_FILE_PATH, mode: '100644', type: 'blob', sha: imgBlobSha }
-                        ]
-                    })
-                });
-                const newTreeSha = (await treeRes.json()).sha;
-
-                const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
-                    method: 'POST', headers,
-                    body: JSON.stringify({
-                        message: '✅ 캘린더 데이터 및 이미지 통합 업데이트',
-                        tree: newTreeSha,
-                        parents: [latestCommitSha]
-                    })
-                });
-                const newCommitSha = (await newCommitRes.json()).sha;
-
-                const updateRefRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, {
-                    method: 'PATCH', headers,
-                    body: JSON.stringify({ sha: newCommitSha })
-                });
-
-                if (!updateRefRes.ok) throw new Error('브랜치 업데이트 실패');
-                alert('✅ 데이터와 이미지가 성공적으로 저장되었습니다!');
-
-            } catch (error) {
-                console.error(error);
-                alert('저장 중 오류가 발생했습니다: ' + error.message);
-            } finally {
-                saveBtn.innerText = '저장';
-                saveBtn.disabled = false;
-            }
-        };
-
-        const getEventHTML = (item) => {
-            const timeHtml = item.time ? `<span class="event-time">${escapeHTML(item.time)}</span>` : '';
-            const personText = item.person ? `<span class="event-person">${escapeHTML(item.person)}</span>` : '';
-            return `
-                <div class="cell-event" style="background-color: ${item.color || '#eef4ff'};">
-                    <div class="cell-top">${timeHtml}${personText}</div>
-                    <div class="event-desc">${escapeHTML(item.desc)}</div>
-                </div>
-            `;
-        };
-
-        const renderCalendar = () => {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-
-            document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
-
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            const lastDay = new Date(year, month + 1, 0).getDate();
-            const prevLastDay = new Date(year, month, 0).getDate();
-
-            const daysGrid = document.getElementById('daysGrid');
-            daysGrid.innerHTML = "";
-
-            const actualToday = new Date();
-            const todayStr = getFormatDate(actualToday.getFullYear(), actualToday.getMonth() + 1, actualToday.getDate());
-
-            for (let i = firstDayIndex; i > 0; i--) {
-                daysGrid.insertAdjacentHTML('beforeend', `<div class="day-cell other-month"><span class="day-number">${prevLastDay - i + 1}</span></div>`);
-            }
-
-            for (let i = 1; i <= lastDay; i++) {
-                const dateStr = getFormatDate(year, month + 1, i);
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'day-cell';
-                
-                if (dateStr === todayStr) dayDiv.classList.add('today');
-                if (publicHolidays[dateStr]) dayDiv.classList.add('holiday');
-                
-                let dayHTML = `<span class="day-number">${i}</span>`;
-
-                if (schedules[dateStr] && schedules[dateStr].length > 0) {
-                    schedules[dateStr].forEach(item => {
-                        dayHTML += getEventHTML(item);
-                    });
-                }
-
-                dayDiv.innerHTML = dayHTML;
-                dayDiv.onclick = () => selectDate(dateStr, 'calendar');
-                daysGrid.appendChild(dayDiv);
-            }
-
-            const totalCellsCount = firstDayIndex + lastDay;
-            const nextDaysCount = totalCellsCount % 7 === 0 ? 0 : 7 - (totalCellsCount % 7);
-            for (let i = 1; i <= nextDaysCount; i++) {
-                daysGrid.insertAdjacentHTML('beforeend', `<div class="day-cell other-month"><span class="day-number">${i}</span></div>`);
-            }
-
-            renderTodaySchedules();
-            renderWeeklyGrid();
-            renderSelectedDateSchedules();
-        };
-
-        const renderWeeklyGrid = () => {
-            const grid = document.getElementById('weeklyGrid');
-            grid.innerHTML = "";
-
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay() + (weeklyOffset * 7));
-
-            const actualToday = new Date();
-            const todayStr = getFormatDate(actualToday.getFullYear(), actualToday.getMonth() + 1, actualToday.getDate());
-
-            for (let i = 0; i < 7; i++) {
-                const currentDay = new Date(startOfWeek);
-                currentDay.setDate(startOfWeek.getDate() + i);
-                const dateStr = getFormatDate(currentDay.getFullYear(), currentDay.getMonth() + 1, currentDay.getDate());
-                
-                const cell = document.createElement('div');
-                cell.className = 'day-cell'; 
-                
-                if (dateStr === todayStr) cell.classList.add('today');
-                if (publicHolidays[dateStr]) cell.classList.add('holiday');
-                
-                let cellHTML = `<span class="day-number">${currentDay.getDate()}</span>`;
-
-                if (weeklySchedules[dateStr] && weeklySchedules[dateStr].length > 0) {
-                    weeklySchedules[dateStr].forEach(item => {
-                        cellHTML += getEventHTML(item);
-                    });
-                }
-
-                cell.innerHTML = cellHTML;
-                cell.onclick = () => {
-                    selectDate(dateStr, 'weekly');
-                };
-                grid.appendChild(cell);
-            }
-        };
-
-        const changeMonth = (direction) => {
-            currentDate.setMonth(currentDate.getMonth() + direction);
-            renderCalendar();
-        };
-
-        const changeWeeklyOffset = (direction) => {
-            weeklyOffset += direction;
-            renderWeeklyGrid();
-        };
-
-        const selectDate = (dateStr, type = 'calendar') => {
-            selectedDateStr = dateStr;
-            selectedType = type;
-            cancelEdit(); 
-            renderSelectedDateSchedules();
-        };
-
-        const addOrUpdateSchedule = () => {
-            if (!selectedDateStr) return alert('날짜를 먼저 클릭해주세요!');
-
-            const time = document.getElementById('inputTime').value.trim();
-            const person = document.getElementById('inputPerson').value.trim();
-            const desc = document.getElementById('inputDesc').value.trim();
-            const detail = document.getElementById('inputDetail').value.trim();
-            const color = document.getElementById('inputColor').value;
-            const editId = document.getElementById('editScheduleId').value;
-
-            if (!desc && !time && !person) return alert('입력된 내용이 없습니다.');
-
-            const targetStore = (selectedType === 'weekly') ? weeklySchedules : schedules;
-
-            if (!targetStore[selectedDateStr]) targetStore[selectedDateStr] = [];
-
-            if (editId) {
-                const item = targetStore[selectedDateStr].find(i => i.id == editId);
-                if (item) Object.assign(item, { time, person, desc, detail, color });
-            } else {
-                targetStore[selectedDateStr].push({ id: Date.now(), time, person, desc, detail, color });
-            }
-
-            renderCalendar(); 
-            cancelEdit();
-        };
-
-        const enterEditMode = (dateStr, id, type = 'calendar') => {
-            const targetStore = (type === 'weekly') ? weeklySchedules : schedules;
-            const item = targetStore[dateStr]?.find(i => i.id === id);
-            if (!item) return;
-
-            selectedType = type;
-            selectedDateStr = dateStr;
-
-            document.getElementById('editScheduleId').value = item.id;
-            document.getElementById('inputTime').value = item.time || '';
-            document.getElementById('inputPerson').value = item.person || '';
-            
-            const inputDesc = document.getElementById('inputDesc');
-            inputDesc.value = item.desc || '';
-            
-            inputDesc.style.height = '46px';
-            inputDesc.style.height = inputDesc.scrollHeight + 'px';
-
-            document.getElementById('inputDetail').value = item.detail || '';
-            document.getElementById('inputColor').value = item.color || '#d1fae5';
-
-            const prefix = (type === 'weekly') ? '김윤환 ' : '';
-            document.getElementById('formTitle').innerText = `✏️ [${dateStr}] ${prefix}일정 수정`;
-            document.getElementById('selectedListTitle').innerText = (type === 'weekly') ? `📅 선택한 날짜 김윤환 일정` : `📅 선택한 날짜 일정`;
-
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerText = '수정 완료하기';
-            submitBtn.style.backgroundColor = 'var(--success)';
-        };
-
-        const cancelEdit = () => {
-            clearForm();
-            const prefix = (selectedType === 'weekly') ? '김윤환 ' : '';
-            document.getElementById('formTitle').innerText = `➕ [${selectedDateStr || '날짜선택'}] ${prefix}일정 추가`;
-            document.getElementById('selectedListTitle').innerText = (selectedType === 'weekly') ? `📅 선택한 날짜 김윤환 일정` : `📅 선택한 날짜 일정`;
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerText = '일정 반영하기';
-            submitBtn.style.backgroundColor = 'var(--primary)';
-            renderSelectedDateSchedules();
-        };
-
-        const clearForm = () => {
-            document.getElementById('editScheduleId').value = '';
-            document.getElementById('inputTime').value = '';
-            document.getElementById('inputPerson').value = '';
-            document.getElementById('inputDesc').value = '';
-            document.getElementById('inputDesc').style.height = '46px';
-            document.getElementById('inputDetail').value = '';
-            document.getElementById('inputColor').value = '#d1fae5';
-        };
-
-        const deleteSchedule = (dateStr, id, type = 'calendar') => {
-            if (!confirm("일정을 삭제하시겠습니까?")) return;
-            if (document.getElementById('editScheduleId').value == id) cancelEdit();
-
-            const targetStore = (type === 'weekly') ? weeklySchedules : schedules;
-            targetStore[dateStr] = targetStore[dateStr].filter(item => item.id !== id);
-            if (targetStore[dateStr].length === 0) delete targetStore[dateStr];
-            
-            renderCalendar();
-            renderSelectedDateSchedules();
-        };
-
-        const renderTodaySchedules = () => {
-            const container = document.getElementById('todayList');
-            const today = new Date();
-            const todayStr = getFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
-
-            const todayItems = (schedules[todayStr] || []).slice();
-            todayItems.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-
-            if (todayItems.length === 0) {
-                container.innerHTML = `<div class="no-schedule">오늘 등록된 일정이 없습니다.</div>`;
-                return;
-            }
-            
-            container.innerHTML = todayItems.map(item => {
-                const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
-                const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-                const detailHtml = item.detail ? `<div style="color: var(--text-muted); font-size: 15px; padding-left: 22px;">↳ ${escapeHTML(item.detail)}</div>` : '';
-
-                return `
-                    <div class="today-card">
-                        <div class="card-main">
-                            <div class="card-dot" style="background-color: ${item.color || '#eef4ff'};"></div>
-                            ${timeHtml} ${personHtml}
-                            <span class="card-desc">${escapeHTML(item.desc)}</span>
-                        </div>
-                        ${detailHtml}
-                    </div>
-                `;
-            }).join('');
-        };
-
-        const renderSelectedDateSchedules = () => {
-            const container = document.getElementById('selectedDateList');
-            const titleEl = document.getElementById('selectedListTitle');
-            const formTitleEl = document.getElementById('formTitle');
-
-            if (!selectedDateStr) {
-                container.innerHTML = `<div class="no-schedule">날짜를 클릭하세요.</div>`;
-                formTitleEl.innerText = `➕ [날짜선택] 일정 추가`;
-                return;
-            }
-
-            const prefix = (selectedType === 'weekly') ? '김윤환 ' : '';
-            titleEl.innerText = `📅 선택한 날짜 ${prefix}일정`;
-            formTitleEl.innerText = `➕ [${selectedDateStr}] ${prefix}일정 추가`;
-
-            const targetStore = (selectedType === 'weekly') ? weeklySchedules : schedules;
-            const daySchedules = targetStore[selectedDateStr] || [];
-
-            if (daySchedules.length === 0) {
-                container.innerHTML = `<div class="no-schedule">등록된 일정이 없습니다.</div>`;
-                return;
-            }
-
-            container.innerHTML = daySchedules.map(item => {
-                const timeHtml = item.time ? `<span class="card-time">${escapeHTML(item.time)}</span>` : '';
-                const personHtml = item.person ? `<span class="card-person">${escapeHTML(item.person)}</span>` : '';
-
-                return `
-                    <div class="selected-card">
-                        <div class="card-main">
-                            <div class="card-dot" style="background-color: ${item.color || '#eef4ff'};"></div>
-                            ${timeHtml} ${personHtml}
-                            <span class="card-desc">${escapeHTML(item.desc)}</span>
-                            <div class="btn-group">
-                                <button class="edit-btn" onclick="enterEditMode('${selectedDateStr}', ${item.id}, '${selectedType}')">수정</button>
-                                <button class="delete-btn" onclick="deleteSchedule('${selectedDateStr}', ${item.id}, '${selectedType}')">삭제</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        };
-
-        const textareaEl = document.getElementById('inputDesc');
-        textareaEl.addEventListener('input', function() {
-            this.style.height = '46px'; 
-            this.style.height = this.scrollHeight + 'px'; 
-        });
-
-        const init = () => {
-            const today = new Date();
-            const todayStr = getFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
-            selectDate(todayStr, 'calendar');
-
-            const savedToken = localStorage.getItem('gh_token');
-            if (savedToken) {
-                document.getElementById('githubToken').value = savedToken;
-                loadDataFromGithub(); 
-            } else {
-                renderCalendar(); 
-            }
-        };
-
-        init();
-    </script>
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const saveAllToGithub = async () => {
+        const token = document.getElementById('githubToken').value;
+        if (!token) return alert('GitHub 토큰을 먼저 입력하고 연동해주세요!');
+
+        const saveBtn = document.getElementById('saveAllBtn');
+        saveBtn.innerText = '저장중...';
+        saveBtn.disabled = true;
+
+        try {
+            const jsonContent = JSON.stringify({ schedules: calSchedules }, null, 2);
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+            const repoRes = await fetch(repoUrl, { headers });
+            if (!repoRes.ok) throw new Error('저장소 정보를 불러올 수 없습니다.');
+            const defaultBranch = (await repoRes.json()).default_branch || 'main';
+
+            const refRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { headers });
+            const latestCommitSha = (await refRes.json()).object.sha;
+
+            const jsonBlobRes = await fetch(`${repoUrl}/git/blobs`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ content: jsonContent, encoding: 'utf-8' })
+            });
+            const jsonBlobSha = (await jsonBlobRes.json()).sha;
+
+            const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
+            const baseTreeSha = (await commitRes.json()).tree.sha;
+
+            const treeRes = await fetch(`${repoUrl}/git/trees`, {
+                method: 'POST', headers,
+                body: JSON.stringify({
+                    base_tree: baseTreeSha,
+                    tree: [{ path: DATA_FILE_PATH, mode: '100644', type: 'blob', sha: jsonBlobSha }]
+                })
+            });
+            const newTreeSha = (await treeRes.json()).sha;
+
+            const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ message: '✅ 캘린더 데이터 업데이트', tree: newTreeSha, parents: [latestCommitSha] })
+            });
+            const newCommitSha = (await newCommitRes.json()).sha;
+
+            const updateRefRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, {
+                method: 'PATCH', headers,
+                body: JSON.stringify({ sha: newCommitSha })
+            });
+            if (!updateRefRes.ok) throw new Error('브랜치 업데이트 실패');
+
+            alert('✅ 데이터가 성공적으로 저장되었습니다!');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            saveBtn.innerText = '저장';
+            saveBtn.disabled = false;
+        }
+    };
+
+    // ----- 일정 추가/수정/삭제 -----
+    const clearForm = () => {
+        document.getElementById('editScheduleId').value = '';
+        document.getElementById('inputTime').value = '';
+        document.getElementById('inputPerson').value = '';
+        document.getElementById('inputDesc').value = '';
+        document.getElementById('inputDesc').style.height = '42px';
+        document.getElementById('inputDetail').value = '';
+        document.getElementById('inputColor').value = '#d1fae5';
+    };
+
+    const cancelEdit = () => {
+        clearForm();
+        document.getElementById('formTitle').innerText = `[${calSelectedDateStr || '날짜선택'}] 일정 추가`;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = '일정 반영하기';
+        submitBtn.style.background = '';
+    };
+
+    const addOrUpdateSchedule = () => {
+        if (!calSelectedDateStr) return alert('날짜를 먼저 클릭해주세요!');
+
+        const time = document.getElementById('inputTime').value.trim();
+        const person = document.getElementById('inputPerson').value.trim();
+        const desc = document.getElementById('inputDesc').value.trim();
+        const detail = document.getElementById('inputDetail').value.trim();
+        const color = document.getElementById('inputColor').value;
+        const editId = document.getElementById('editScheduleId').value;
+
+        if (!desc && !time && !person) return alert('입력된 내용이 없습니다.');
+
+        if (!calSchedules[calSelectedDateStr]) calSchedules[calSelectedDateStr] = [];
+
+        if (editId) {
+            const item = calSchedules[calSelectedDateStr].find(i => i.id == editId);
+            if (item) Object.assign(item, { time, person, desc, detail, color });
+        } else {
+            calSchedules[calSelectedDateStr].push({ id: Date.now(), time, person, desc, detail, color });
+        }
+
+        calRenderCalendar();
+        cancelEdit();
+    };
+
+    const enterEditMode = (dateStr, id) => {
+        const item = calSchedules[dateStr]?.find(i => i.id === id);
+        if (!item) return;
+
+        calSelectedDateStr = dateStr;
+        document.getElementById('editScheduleId').value = item.id;
+        document.getElementById('inputTime').value = item.time || '';
+        document.getElementById('inputPerson').value = item.person || '';
+
+        const inputDesc = document.getElementById('inputDesc');
+        inputDesc.value = item.desc || '';
+        inputDesc.style.height = '42px';
+        inputDesc.style.height = inputDesc.scrollHeight + 'px';
+
+        document.getElementById('inputDetail').value = item.detail || '';
+        document.getElementById('inputColor').value = item.color || '#d1fae5';
+
+        document.getElementById('formTitle').innerText = `✏️ [${dateStr}] 일정 수정`;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = '수정 완료하기';
+        submitBtn.style.background = 'var(--color-lose)';
+    };
+
+    const deleteSchedule = (dateStr, id) => {
+        if (!confirm('일정을 삭제하시겠습니까?')) return;
+        if (document.getElementById('editScheduleId').value == id) cancelEdit();
+
+        calSchedules[dateStr] = calSchedules[dateStr].filter(item => item.id !== id);
+        if (calSchedules[dateStr].length === 0) delete calSchedules[dateStr];
+
+        calRenderCalendar();
+    };
+
+    // calendar.js의 오늘의 일정/선택한 날짜 카드 렌더링에 [수정]/[삭제] 버튼을 끼워넣는 훅.
+    // "오늘의 일정" 카드는 사이트처럼 읽기 전용으로 두고, "선택한 날짜" 카드에만 버튼을 붙인다.
+    window.calCardExtra = (item, dateStr, type) => {
+        if (type !== 'selected') return '';
+        return `<div class="cal-card-actions">
+            <button class="edit-btn" onclick="enterEditMode('${dateStr}', ${item.id})">수정</button>
+            <button class="delete-btn" onclick="deleteSchedule('${dateStr}', ${item.id})">삭제</button>
+        </div>`;
+    };
+
+    // 날짜를 새로 클릭하면(다른 날짜로 이동) 편집 중이던 폼은 초기화한다.
+    window.calOnDateSelect = (dateStr) => {
+        cancelEdit();
+    };
+
+    const inputDescEl = document.getElementById('inputDesc');
+    inputDescEl.addEventListener('input', function() {
+        this.style.height = '42px';
+        this.style.height = this.scrollHeight + 'px';
+    });
+
+    const init = async () => {
+        await loadPublicHolidays();
+
+        const today = new Date();
+        calSelectedDateStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
+
+        const savedToken = localStorage.getItem('gh_token');
+        if (savedToken) {
+            document.getElementById('githubToken').value = savedToken;
+            await loadDataFromGithub();
+        } else {
+            calRenderCalendar();
+        }
+    };
+
+    init();
+</script>
 </body>
 </html>

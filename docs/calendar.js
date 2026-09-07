@@ -102,6 +102,7 @@
     const calSelectDate = (dateStr) => {
         calSelectedDateStr = dateStr;
         calRenderSelectedDateSchedules();
+        if (typeof window.calOnDateSelect === 'function') window.calOnDateSelect(dateStr);
     };
     
     const calRenderTodaySchedules = () => {
@@ -121,6 +122,7 @@
                     ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''} 
                     ${item.person ? `<span class="cal-card-person">${calEscapeHTML(item.person)}</span>` : ''}
                     <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ' ' + calEscapeHTML(item.detail) : ''}</span>
+                    ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, curTodayStr, 'today') : ''}
                 </div>
             </div>
         `).join('');
@@ -144,6 +146,7 @@
                     ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''} 
                     ${item.person ? `<span class="cal-card-person">${calEscapeHTML(item.person)}</span>` : ''}
                     <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ' ' + calEscapeHTML(item.detail) : ''}</span>
+                    ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, calSelectedDateStr, 'selected') : ''}
                 </div>
             </div>
         `).join('');
