@@ -11,12 +11,10 @@
 </head>
 <body>
 
-<!-- GNB -->
 <div class="top-navbar">
     <div class="navbar-inner container">
         <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
-        <div class="nav-menu" id="mainMenu">
-            <!-- 기본 접속 화면: 홈 탭 -->
+        <div class="nav-menu hide-scrollbar" id="mainMenu">
             <a class="nav-item active" data-page="home" onclick="switchPage('home')">홈</a>
             <a class="nav-item" data-page="schedule" onclick="switchPage('schedule')">일정</a>
             <a class="nav-item" data-page="members" onclick="switchPage('members')">멤버</a>
@@ -55,18 +53,17 @@
     <hr class="page-header-divider">
     <div class="cal-app-root">
         <div class="cal-main-layout">
-            <!-- 모바일 분리용 사이드바 -->
             <aside class="cal-sidebar">
                 <div class="cal-today-card-wrapper">
                     <div class="section-title">오늘의 일정</div>
                     <div class="clean-card p-4">
-                        <div class="cal-today-list" id="todayList"></div>
+                        <div class="cal-today-list custom-scrollbar" id="todayList"></div>
                     </div>
                 </div>
                 <div class="cal-selected-card-wrapper">
                     <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
                     <div class="clean-card p-4">
-                        <div class="cal-selected-list" id="selectedDateList"></div>
+                        <div class="cal-selected-list custom-scrollbar" id="selectedDateList"></div>
                     </div>
                 </div>
             </aside>
@@ -81,8 +78,7 @@
                     </div>
                 </div>
                 <div class="clean-card p-4">
-                    <!-- 가로 스크롤 허용 캘린더 구역 -->
-                    <div class="cal-calendar-inner">
+                    <div class="cal-calendar-inner custom-scrollbar">
                         <div class="cal-calendar-scroll-content">
                             <div class="cal-weekdays">
                                 <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
@@ -111,19 +107,17 @@
     </div>
 
     <div id="view-member-news" style="display:none;">
-        <div class="avatar-selector-scroll">
+        <div class="clean-card avatar-selector-scroll custom-scrollbar">
             <div class="avatar-selector-list" id="news-avatar-list"></div>
         </div>
 
         <div class="section-title" id="news-content-title">전체 공지</div>
-
         <div id="news-feed-content">
             <div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>
         </div>
     </div>
 </div>
 
-<!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
 <div id="page-synergy" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">방송통계</h1>
@@ -139,13 +133,13 @@
         <div class="col-md-6">
             <div class="section-title">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:320px; table-layout:fixed;">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-borderless table-hover mb-0 stat-table">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">순위</th>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">멤버</th>
-                                <th class="text-center synergy-metric-label" style="width:50%; white-space:nowrap;">별풍선</th>
+                                <th style="width:25%;">순위</th>
+                                <th style="width:25%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-male">
@@ -158,13 +152,13 @@
         <div class="col-md-6">
             <div class="section-title">여자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:320px; table-layout:fixed;">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-borderless table-hover mb-0 stat-table">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">순위</th>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">멤버</th>
-                                <th class="text-center synergy-metric-label" style="width:50%; white-space:nowrap;">별풍선</th>
+                                <th style="width:25%;">순위</th>
+                                <th style="width:25%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-female">
@@ -175,60 +169,59 @@
             </div>
         </div>
     </div>
-    <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; margin-top:24px; padding-bottom:24px;"></div>
+    <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; margin-top:24px;"></div>
 </div>
 
-<!-- 도구 페이지: 외부 링크 카드 모음 -->
 <div id="page-tools" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">도구</h1>
     </div>
     <hr class="page-header-divider">
+    
     <div class="section-title">외부도구</div>
-    <div class="tool-grid">
-        <a class="tool-card" href="https://calm-hoxy.vercel.app/" target="_blank" rel="noopener">
+    <div class="grid-cards grid-cards-md">
+        <a class="clean-card card-hover tool-card" href="https://calm-hoxy.vercel.app/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcalm-hoxy.vercel.app%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">혹시</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcalm-hoxy.vercel.app%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">혹시</div>
         </a>
-        <a class="tool-card" href="https://prena.io/brain/" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://prena.io/brain/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fprena.io%2Fbrain%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">암다리</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fprena.io%2Fbrain%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">암다리</div>
         </a>
-        <a class="tool-card" href="https://lazygyu.github.io/roulette/" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://lazygyu.github.io/roulette/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Flazygyu.github.io%2Froulette%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">핀볼</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Flazygyu.github.io%2Froulette%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">핀볼</div>
         </a>
-        <a class="tool-card" href="https://search.naver.com/search.naver?where=nexearch&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%EA%B2%8C%EC%9E%84" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://search.naver.com/search.naver?where=nexearch&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%EA%B2%8C%EC%9E%84" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.naver.com%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">네이버 사다리</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.naver.com%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">네이버 사다리</div>
         </a>
     </div>
 
     <div class="section-title mt-4">외부사이트</div>
-    <div class="tool-grid">
-        <a class="tool-card" href="https://ygosu.com/board/pan_monstarz" target="_blank" rel="noopener">
+    <div class="grid-cards grid-cards-md">
+        <a class="clean-card card-hover tool-card" href="https://ygosu.com/board/pan_monstarz" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fygosu.com%2Fboard%2Fpan_monstarz" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">스대게</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fygosu.com%2Fboard%2Fpan_monstarz" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">스대게</div>
         </a>
-        <a class="tool-card" href="https://eloboard.com/" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://eloboard.com/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Feloboard.com%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">EloBoard</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Feloboard.com%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">EloBoard</div>
         </a>
-        <a class="tool-card" href="https://www.fmkorea.com/?mid=starcraft" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://www.fmkorea.com/?mid=starcraft" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.fmkorea.com%2F%3Fmid%3Dstarcraft" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">스갤</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.fmkorea.com%2F%3Fmid%3Dstarcraft" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">스갤</div>
         </a>
     </div>
 </div>
 
-<!-- 전적 페이지 -->
 <div id="page-stats" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">전적</h1>
@@ -242,7 +235,7 @@
     <!-- 1. 팀 뷰 -->
     <div id="view-team-stat">
         <div class="section-title">전체 전적</div>
-        <div class="row g-3 mb-4">
+        <div class="row g-4 mb-4">
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대회</div><div class="rate" id="t-sum-대회-r">0%</div><div class="wl" id="t-sum-대회-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대회')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대학</div><div class="rate" id="t-sum-대학-r">0%</div><div class="wl" id="t-sum-대학-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대학')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">미니</div><div class="rate" id="t-sum-미니-r">0%</div><div class="wl" id="t-sum-미니-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('미니')">상세 전적</button></div></div>
@@ -253,385 +246,360 @@
             <div class="col-lg-7 d-flex flex-column">
                 <div class="section-title">상대 전적</div>
                 <div class="clean-card p-0 overflow-hidden d-flex flex-column flex-grow-1">
-                    <div class="table-responsive flex-grow-1" style="overflow-y: auto;">
-                        <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:615px; table-layout: fixed;">
+                    <div class="table-responsive flex-grow-1 custom-scrollbar">
+                        <table class="table table-borderless table-hover mb-0 stat-table" style="min-width:615px;">
                             <thead>
-                                <tr><th class="text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">상대</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대회</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대학</th><th class="text-center" style="white-space:nowrap; width:18.8%;">미니</th><th class="text-center" style="white-space:nowrap; width:18.8%;">CK</th><th style="width:6%;"></th></tr>
+                                <tr><th class="sticky-col" style="width:18.8%;">상대</th><th style="width:18.8%;">대회</th><th style="width:18.8%;">대학</th><th style="width:18.8%;">미니</th><th style="width:18.8%;">CK</th><th style="width:6%;"></th></tr>
                             </thead>
                             <tbody>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="BGM">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/BGM.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">BGM</span>
+                                <tr class="row-clickable" data-team="BGM">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/BGM.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>BGM</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="DM">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/DM.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">DM</span>
+                                <tr class="row-clickable" data-team="DM">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/DM.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>DM</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">2승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">2승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="HM">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/HM.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">HM</span>
+                                <tr class="row-clickable" data-team="HM">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/HM.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>HM</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="JSA">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/JSA.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">JSA</span>
+                                <tr class="row-clickable" data-team="JSA">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/JSA.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>JSA</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 2패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">1승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">5승 2패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 2패</td><td style="width:18.8%;">1승 1패</td>
+                                    <td style="width:18.8%;">5승 2패</td><td style="width:18.8%;">1승 0패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="YB">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/YB.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">YB</span>
+                                <tr class="row-clickable" data-team="YB">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/YB.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>YB</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 2패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 1패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">1승 2패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="거성대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/거성대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">거성대</span>
+                                <tr class="row-clickable" data-team="거성대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/거성대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>거성대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="내전">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/캄몬스타즈.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">내전</span>
+                                <tr class="row-clickable" data-team="내전">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/캄몬스타즈.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>내전</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="노적단">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/노적단.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">노적단</span>
+                                <tr class="row-clickable" data-team="노적단">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/노적단.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>노적단</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">1승 0패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="뉴캣슬">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/뉴캣슬.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">뉴캣슬</span>
+                                <tr class="row-clickable" data-team="뉴캣슬">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/뉴캣슬.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>뉴캣슬</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">4승 4패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width:18.8%;">4승 4패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="늪지대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/늪지대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">늪지대</span>
+                                <tr class="row-clickable" data-team="늪지대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/늪지대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>늪지대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 4패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">0승 1패</td><td style="width:18.8%;">1승 0패</td>
+                                    <td style="width:18.8%;">1승 4패</td><td style="width:18.8%;">1승 0패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="드림즈">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/드림즈.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">드림즈</span>
+                                <tr class="row-clickable" data-team="드림즈">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/드림즈.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>드림즈</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">0승 1패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="섭이대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/섭이대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">섭이대</span>
+                                <tr class="row-clickable" data-team="섭이대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/섭이대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>섭이대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="소림사">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/소림사.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">소림사</span>
+                                <tr class="row-clickable" data-team="소림사">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/소림사.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>소림사</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="수술대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/수술대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">수술대</span>
+                                <tr class="row-clickable" data-team="수술대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/수술대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>수술대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">3승 3패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">3승 3패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="신세계">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/신세계.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">신세계</span>
+                                <tr class="row-clickable" data-team="신세계">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/신세계.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>신세계</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="씨나인">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/씨나인.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">씨나인</span>
+                                <tr class="row-clickable" data-team="씨나인">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/씨나인.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>씨나인</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">0승 2패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 3패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">4승 5패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">3승 0패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">0승 2패</td><td style="width:18.8%;">0승 3패</td>
+                                    <td style="width:18.8%;">4승 5패</td><td style="width:18.8%;">3승 0패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="엠비대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/엠비대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">엠비대</span>
+                                <tr class="row-clickable" data-team="엠비대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/엠비대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>엠비대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">2승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">2승 2패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">2승 1패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width:18.8%;">2승 2패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="연합팀">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/연합팀.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">연합팀</span>
+                                <tr class="row-clickable" data-team="연합팀">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/연합팀.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>연합팀</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">20승 18패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">20승 18패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="와플대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/와플대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">와플대</span>
+                                <tr class="row-clickable" data-team="와플대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/와플대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>와플대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">4승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 1패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">4승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="우끼끼즈">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/우끼끼즈.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">우끼끼즈</span>
+                                <tr class="row-clickable" data-team="우끼끼즈">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/우끼끼즈.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>우끼끼즈</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">-</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width:18.8%;">-</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="이노대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/이노대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">이노대</span>
+                                <tr class="row-clickable" data-team="이노대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/이노대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>이노대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">2승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">4승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">2승 3패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">2승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">4승 1패</td><td style="width:18.8%;">2승 3패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="장독대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/장독대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">장독대</span>
+                                <tr class="row-clickable" data-team="장독대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/장독대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>장독대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width:18.8%;">0승 1패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="정선대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/정선대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">정선대</span>
+                                <tr class="row-clickable" data-team="정선대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/정선대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>정선대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">2승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">5승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">2승 1패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width:18.8%;">5승 1패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="케이대">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/케이대.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">케이대</span>
+                                <tr class="row-clickable" data-team="케이대">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/케이대.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>케이대</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">3승 1패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">3승 3패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">0승 1패</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">3승 1패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">3승 3패</td><td style="width:18.8%;">0승 1패</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="흑카데미">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/흑카데미.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">흑카데미</span>
+                                <tr class="row-clickable" data-team="흑카데미">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/흑카데미.webp" alt="" class="avatar avatar-sm" loading="lazy" onerror="this.remove();">
+                                            <span>흑카데미</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">1승 0패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">0승 6패</td><td class="text-center" style="white-space:nowrap; width:18.8%;">-</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
-                                    <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                    <td style="width:18.8%;">1승 0패</td><td style="width:18.8%;">-</td>
+                                    <td style="width:18.8%;">0승 6패</td><td style="width:18.8%;">-</td>
+                                    <td style="width: 6%;">
+                                        <span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 
@@ -646,16 +614,16 @@
                     최근 전적
                     <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                 </div>
-                <div class="clean-card flex-grow-0 p-0 overflow-hidden" style="border-radius: 10px;">
-                    <div class="table-responsive">
-                        <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                <div class="clean-card flex-grow-0 p-0 overflow-hidden">
+                    <div class="table-responsive custom-scrollbar">
+                        <table class="table table-borderless table-hover mb-0 stat-table">
                             <thead>
                                 <tr>
-                                    <th class="text-center stat-table-sticky-col" style="width:18.8%;">상대</th>
-                                    <th class="text-center" style="width:18.8%;">형식</th>
-                                    <th class="text-center" style="width:18.8%;">세트</th>
-                                    <th class="text-center" style="width:18.8%;">결과</th>
-                                    <th class="text-center" style="width:18.8%;">날짜</th>
+                                    <th class="sticky-col" style="width:18.8%;">상대</th>
+                                    <th style="width:18.8%;">형식</th>
+                                    <th style="width:18.8%;">세트</th>
+                                    <th style="width:18.8%;">결과</th>
+                                    <th style="width:18.8%;">날짜</th>
                                     <th style="width:6%;"></th>
                                 </tr>
                             </thead>
@@ -669,7 +637,7 @@
 
     <!-- 2. 개인 뷰 -->
     <div id="view-indiv-stat" style="display: none;">
-        <div class="avatar-selector-scroll">
+        <div class="clean-card avatar-selector-scroll custom-scrollbar">
             <div class="avatar-selector-list" id="indiv-avatar-list"></div>
         </div>
 
@@ -677,15 +645,15 @@
 
         <div id="indiv-summary-content">
                     <div class="clean-card p-0 overflow-hidden">
-                        <div class="table-responsive">
-                            <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:650px; table-layout: fixed;">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table table-borderless table-hover mb-0 stat-table" style="min-width:650px;">
                                 <thead>
                                     <tr>
-                                        <th class="text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;">멤버</th>
-                                        <th style="white-space:nowrap; width:20%;">대회</th>
-                                        <th style="white-space:nowrap; width:20%;">대학</th>
-                                        <th style="white-space:nowrap; width:20%;">미니</th>
-                                        <th style="white-space:nowrap; width:20%;">CK</th>
+                                        <th class="sticky-col" style="width:20%;">멤버</th>
+                                        <th style="width:20%;">대회</th>
+                                        <th style="width:20%;">대학</th>
+                                        <th style="width:20%;">미니</th>
+                                        <th style="width:20%;">CK</th>
                                     </tr>
                                 </thead>
                                 <tbody id="indiv-summary-tbody">
@@ -697,7 +665,7 @@
 
                 <div id="statContent" style="display: none;">
                     <div class="clean-card d-flex align-items-center mb-4 p-4">
-                        <div class="profile-avatar" id="p-avatar">👤</div>
+                        <div class="avatar avatar-xl flex-center text-secondary me-3" style="font-size: 28px;" id="p-avatar">👤</div>
                         <div>
                             <h3 class="fw-bold m-0 mb-2" id="p-name" style="letter-spacing:-1px;">이름</h3>
                             <div class="d-flex gap-2">
@@ -707,14 +675,14 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-4">
+                    <div class="row g-4 mb-4">
                         <div class="col-md-6">
                             <div class="clean-card h-100 p-4">
                                 <div class="section-title-sm">형식별 승률</div>
                                 <div class="donut-wrap">
-                                    <div class="donut-box"><div class="donut" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label">대회</div><div class="donut-sub" id="dw-fmt-1">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label">대학</div><div class="donut-sub" id="dw-fmt-2">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-fmt-3"><span class="donut-text" id="dt-fmt-3">0%</span></div><div class="donut-label">미니</div><div class="donut-sub" id="dw-fmt-3">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label text-ellipsis">대회</div><div class="donut-sub text-ellipsis" id="dw-fmt-1">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label text-ellipsis">대학</div><div class="donut-sub text-ellipsis" id="dw-fmt-2">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-fmt-3"><span class="donut-text" id="dt-fmt-3">0%</span></div><div class="donut-label text-ellipsis">미니</div><div class="donut-sub text-ellipsis" id="dw-fmt-3">-</div></div>
                                 </div>
                             </div>
                         </div>
@@ -722,9 +690,9 @@
                             <div class="clean-card h-100 p-4">
                                 <div class="section-title-sm">종족전 승률</div>
                                 <div class="donut-wrap">
-                                    <div class="donut-box"><div class="donut" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label text-primary">vs T</div><div class="donut-sub" id="dw-race-t">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label" style="color:purple;">vs Z</div><div class="donut-sub" id="dw-race-z">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-race-p"><span class="donut-text" id="dt-race-p">0%</span></div><div class="donut-label text-warning">vs P</div><div class="donut-sub" id="dw-race-p">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label text-primary">vs T</div><div class="donut-sub text-ellipsis" id="dw-race-t">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label" style="color:purple;">vs Z</div><div class="donut-sub text-ellipsis" id="dw-race-z">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-race-p"><span class="donut-text" id="dt-race-p">0%</span></div><div class="donut-label text-warning">vs P</div><div class="donut-sub text-ellipsis" id="dw-race-p">-</div></div>
                                 </div>
                             </div>
                         </div>
@@ -733,7 +701,7 @@
                     <div class="section-title mt-4" style="height:auto; flex-wrap:wrap; gap:8px;">
                         <div class="d-flex align-items-center" style="max-width: 100%; overflow: hidden;">
                             <span style="flex-shrink: 0;">최근 전적</span>
-                            <div id="indiv-filters" class="filter-nav">
+                            <div id="indiv-filters" class="filter-nav custom-scrollbar">
                                 <div class="filter-item active" onclick="setIndivFilter('전체')">전체</div>
                                 <div class="filter-item" onclick="setIndivFilter('대회')">대회</div>
                                 <div class="filter-item" onclick="setIndivFilter('대학')">대학</div>
@@ -744,17 +712,17 @@
                         <button class="btn-view-all" onclick="openIndivMatchModal()">전체보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                     </div>
 
-                    <div class="clean-card p-0 overflow-hidden" style="border-radius: 10px;">
-                        <div class="table-responsive">
-                            <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                    <div class="clean-card p-0 overflow-hidden">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table table-borderless table-hover mb-0 stat-table">
                                 <thead>
                                     <tr>
-                                        <th class="text-center stat-table-sticky-col" style="width:16.66%;">상대</th>
-                                        <th class="text-center" style="width:16.66%;">상대 팀</th>
-                                        <th class="text-center" style="width:16.66%;">형식</th>
-                                        <th class="text-center" style="width:16.66%;">맵</th>
-                                        <th class="text-center" style="width:16.66%;">결과</th>
-                                        <th class="text-center" style="width:16.66%;">날짜</th>
+                                        <th class="sticky-col" style="width:16.66%;">상대</th>
+                                        <th style="width:16.66%;">상대 팀</th>
+                                        <th style="width:16.66%;">형식</th>
+                                        <th style="width:16.66%;">맵</th>
+                                        <th style="width:16.66%;">결과</th>
+                                        <th style="width:16.66%;">날짜</th>
                                     </tr>
                                 </thead>
                                 <tbody id="indiv-recent-list"></tbody>
@@ -766,7 +734,6 @@
 </div>
 </main>
 
-<!-- 팝업 모달 -->
 <div class="modal fade" id="teamMatchesModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;">
         <div class="modal-content">
@@ -775,15 +742,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-borderless table-hover mb-0 stat-table">
                         <thead>
                             <tr>
-                                <th class="text-center stat-table-sticky-col" style="width:18.8%;">상대</th>
-                                <th class="text-center" style="width:18.8%;">형식</th>
-                                <th class="text-center" style="width:18.8%;">세트</th>
-                                <th class="text-center" style="width:18.8%;">결과</th>
-                                <th class="text-center" style="width:18.8%;">날짜</th>
+                                <th class="sticky-col" style="width:18.8%;">상대</th>
+                                <th style="width:18.8%;">형식</th>
+                                <th style="width:18.8%;">세트</th>
+                                <th style="width:18.8%;">결과</th>
+                                <th style="width:18.8%;">날짜</th>
                                 <th style="width:6%;"></th>
                             </tr>
                         </thead>
@@ -803,16 +770,16 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-borderless table-hover mb-0 stat-table">
                         <thead>
                             <tr>
-                                <th class="text-center stat-table-sticky-col" style="width:16.66%;">상대</th>
-                                <th class="text-center" style="width:16.66%;">상대 팀</th>
-                                <th class="text-center" style="width:16.66%;">형식</th>
-                                <th class="text-center" style="width:16.66%;">맵</th>
-                                <th class="text-center" style="width:16.66%;">결과</th>
-                                <th class="text-center" style="width:16.66%;">날짜</th>
+                                <th class="sticky-col" style="width:16.66%;">상대</th>
+                                <th style="width:16.66%;">상대 팀</th>
+                                <th style="width:16.66%;">형식</th>
+                                <th style="width:16.66%;">맵</th>
+                                <th style="width:16.66%;">결과</th>
+                                <th style="width:16.66%;">날짜</th>
                             </tr>
                         </thead>
                         <tbody id="indiv-modal-list"></tbody>
@@ -832,7 +799,7 @@
             </div>
             <div class="modal-body" style="padding: 24px;">
                 <div class="d-flex align-items-center mb-2">
-                    <div class="profile-avatar" id="mp-avatar" style="width:64px;height:64px;margin-right:16px;">👤</div>
+                    <div class="avatar avatar-xl flex-center text-secondary me-3" style="font-size: 28px;" id="mp-avatar">👤</div>
                     <div>
                         <div class="fw-bold" id="mp-name" style="font-size:var(--fs-heading); margin-bottom:8px;">이름</div>
                         <div class="d-flex gap-2">
@@ -851,30 +818,22 @@
                         이번 달 방송 활동
                         <span class="text-secondary" id="mp-activity-status" style="font-size:var(--fs-body); font-weight:600;">데이터 준비중</span>
                     </div>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <div class="clean-card text-center py-2">
-                                <div class="text-secondary" style="font-size:var(--fs-body); font-weight:700;">별풍선</div>
-                                <div class="fw-bold" id="mp-balloons" style="font-size:var(--fs-body);">-</div>
-                            </div>
+                    <div class="grid-cards grid-cards-md mt-2">
+                        <div class="clean-card text-center py-3">
+                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">별풍선</div>
+                            <div class="fw-bold" id="mp-balloons" style="font-size:var(--fs-body);">-</div>
                         </div>
-                        <div class="col-6">
-                            <div class="clean-card text-center py-2">
-                                <div class="text-secondary" style="font-size:var(--fs-body); font-weight:700;">방송시간</div>
-                                <div class="fw-bold" id="mp-broadcast-hours" style="font-size:var(--fs-body);">-</div>
-                            </div>
+                        <div class="clean-card text-center py-3">
+                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">방송시간</div>
+                            <div class="fw-bold" id="mp-broadcast-hours" style="font-size:var(--fs-body);">-</div>
                         </div>
-                        <div class="col-6">
-                            <div class="clean-card text-center py-2">
-                                <div class="text-secondary" style="font-size:var(--fs-body); font-weight:700;">누적시청자</div>
-                                <div class="fw-bold" id="mp-viewers" style="font-size:var(--fs-body);">-</div>
-                            </div>
+                        <div class="clean-card text-center py-3">
+                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">누적시청자</div>
+                            <div class="fw-bold" id="mp-viewers" style="font-size:var(--fs-body);">-</div>
                         </div>
-                        <div class="col-6">
-                            <div class="clean-card text-center py-2">
-                                <div class="text-secondary" style="font-size:var(--fs-body); font-weight:700;">스폰전적</div>
-                                <div class="fw-bold" id="mp-sponsor-record" style="font-size:var(--fs-body);">-</div>
-                            </div>
+                        <div class="clean-card text-center py-3">
+                            <div class="text-secondary mb-1" style="font-size:var(--fs-body); font-weight:700;">스폰전적</div>
+                            <div class="fw-bold" id="mp-sponsor-record" style="font-size:var(--fs-body);">-</div>
                         </div>
                     </div>
                 </div>
@@ -885,8 +844,6 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
-     박아넣지 않고 별도 JSON(data/site_data.json)에서 비동기로 fetch해온다. -->
 <script>
     let dbMembers = [], dbMatches = [], dbRounds = [], playersStats = [];
     async function loadSiteData() {
