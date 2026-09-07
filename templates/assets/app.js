@@ -451,10 +451,12 @@
                 <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
                 <td><span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
             </tr>
-            <tr class="collapse" id="${collapseId}">
+            <tr>
                 <td colspan="6" style="padding:0; border:none;">
-                    <div class="py-2 px-3" style="background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
-                        ${setDetailsHtml}
+                    <div class="collapse" id="${collapseId}">
+                        <div class="py-2 px-3" style="background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
+                            ${setDetailsHtml}
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -571,8 +573,8 @@
 
         if (formerMembers.length > 0) {
             html += `
-            <div class="text-center" id="former-members-toggle-wrap" style="padding: 6px 0 24px;">
-                <button class="btn-view-all" onclick="showFormerMembers()">이전 멤버 (${formerMembers.length}명)<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+            <div class="text-center" style="padding: 6px 0 24px;">
+                <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 <svg id="former-members-toggle-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
             </div>
             <div id="former-members-section" style="display:none;">
                 ${renderMemberGroup('이전 멤버', formerMembers)}
@@ -582,9 +584,12 @@
         document.getElementById('members-groups').innerHTML = html || '<div class="text-center text-muted py-5">등록된 멤버가 없습니다.</div>';
     }
 
-    function showFormerMembers() {
-        document.getElementById('former-members-toggle-wrap').style.display = 'none';
-        document.getElementById('former-members-section').style.display = 'block';
+    function toggleFormerMembersSection() {
+        const section = document.getElementById('former-members-section');
+        const chevron = document.getElementById('former-members-toggle-chevron');
+        const showing = section.style.display !== 'none';
+        section.style.display = showing ? 'none' : 'block';
+        chevron.style.transform = showing ? '' : 'rotate(180deg)';
     }
 
     // 홈 화면 - 현재 방송중 목록.
