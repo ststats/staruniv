@@ -134,13 +134,12 @@
             <div class="section-title">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive custom-scrollbar">
-                    <!-- 🌟 최소 가로길이 무효화 및 1:2:3 비율 적용 🌟 -->
                     <table class="table table-borderless table-hover mb-0 stat-table" style="min-width: 100%;">
                         <thead>
                             <tr>
-                                <th style="width:16.66%;">순위</th>
-                                <th style="width:33.33%;">멤버</th>
-                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
+                                <th style="width:20%;">순위</th>
+                                <th style="width:40%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:40%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-male">
@@ -154,13 +153,12 @@
             <div class="section-title">여자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive custom-scrollbar">
-                    <!-- 🌟 최소 가로길이 무효화 및 1:2:3 비율 적용 🌟 -->
                     <table class="table table-borderless table-hover mb-0 stat-table" style="min-width: 100%;">
                         <thead>
                             <tr>
-                                <th style="width:16.66%;">순위</th>
-                                <th style="width:33.33%;">멤버</th>
-                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
+                                <th style="width:20%;">순위</th>
+                                <th style="width:40%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:40%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-female">
@@ -331,10 +329,10 @@
 
                 <div id="statContent" style="display: none;">
                     <div class="clean-card d-flex align-items-center mb-4 p-4">
-                        <div class="avatar avatar-xl text-secondary me-3" id="p-avatar">👤</div>
-                        <div>
-                            <h3 class="fw-bold m-0 mb-2" id="p-name" style="letter-spacing:-1px;">이름</h3>
-                            <div class="d-flex gap-2">
+                        <div class="avatar avatar-xl flex-shrink-0 text-secondary me-3" id="p-avatar">👤</div>
+                        <div style="min-width: 0;">
+                            <h3 class="fw-bold text-ellipsis m-0 mb-2" id="p-name" style="font-size: 20px; letter-spacing:-0.5px; line-height: 1;">이름</h3>
+                            <div class="d-flex gap-2 flex-wrap">
                                 <span class="tag-badge border border-secondary text-secondary" id="p-tier">티어</span>
                                 <span class="tag-badge border border-secondary text-secondary" id="p-race">종족</span>
                             </div>
@@ -367,7 +365,6 @@
                     <div class="section-title mt-4" style="height:auto; flex-wrap:wrap; gap:8px;">
                         <div class="d-flex align-items-center" style="max-width: 100%; overflow: hidden;">
                             <span style="flex-shrink: 0;">최근 전적</span>
-                            <!-- 불필요한 바 제거 -->
                             <div id="indiv-filters" class="filter-nav hide-scrollbar">
                                 <div class="filter-item active" onclick="setIndivFilter('전체')">전체</div>
                                 <div class="filter-item" onclick="setIndivFilter('대회')">대회</div>
