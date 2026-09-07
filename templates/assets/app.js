@@ -764,7 +764,6 @@ let currentPlayer = '';
             ['방송국', broadcast],
         ];
         
-        // 🌟 모달 내 표(table) 세로 중앙 정렬(align-middle) 적용 🌟
         document.getElementById('mp-info-body').innerHTML = rows.map(([label, val]) => `
             <tr>
                 <td class="text-secondary align-middle" style="width:90px; font-weight:700; border-color:#f1f3f5; padding: 12px 0;">${label}</td>
@@ -1037,7 +1036,6 @@ let currentPlayer = '';
         updateHash('synergy', metric !== 'balloons' ? { metric } : {});
     }
 
-    // 🌟 방송통계 1:2:2 비율 (20% : 40% : 40%) 적용 🌟
     function synergyRowHtml(m, idx) {
         const ours = m.ourMember;
         const name = ours['이름'] || m.nickname;
