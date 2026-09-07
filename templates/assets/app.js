@@ -428,11 +428,12 @@
 
                     return `
                     <div class="d-flex align-items-center py-2" style="font-size:var(--fs-body); border-bottom:1px solid #f1f3f5; min-width: 480px;">
-                        <div style="width:20%; text-align:center; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || (i+1) + '라'}</div>
-                        <div style="width:20%; text-align:center;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</div>
-                        <div style="width:20%; text-align:center;">${resBadge}</div>
-                        <div style="width:20%; text-align:center;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</div>
-                        <div style="width:20%; text-align:center; color:#555;">${escapeHTML(r['맵']) || '-'}</div>
+                        <div style="width:18.8%; text-align:center; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || (i+1) + '라'}</div>
+                        <div style="width:18.8%; text-align:center;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</div>
+                        <div style="width:18.8%; text-align:center;">${resBadge}</div>
+                        <div style="width:18.8%; text-align:center;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</div>
+                        <div style="width:18.8%; text-align:center; color:#555;">${escapeHTML(r['맵']) || '-'}</div>
+                        <div style="width:6%;"></div>
                     </div>`;
                 }).join('');
             } else {
@@ -442,11 +443,11 @@
             return `
             <div class="match-item-wrap">
                 <div class="match-row" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                    <div class="m-date">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</div>
-                    <div class="m-type"><span class="tag-badge">${escapeHTML(m['형식'])}</span></div>
                     <div class="m-opp-team">${teamLogoHtml(m['상대팀'])}${escapeHTML(m['상대팀'])}</div>
+                    <div class="m-type"><span class="tag-badge">${escapeHTML(m['형식'])}</span></div>
                     <div class="m-score">${m['세트 결과'] || '-'}</div>
                     <div class="m-res">${badgeHtml}</div>
+                    <div class="m-date">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</div>
                     <div class="m-arrow">
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
@@ -538,23 +539,14 @@
 
         const countHtml = `<span class="text-secondary" style="font-size:var(--fs-body); font-weight:600;">${sorted.length}명</span>`;
 
-        if (opts.hiddenToggle) {
-            // 평소엔 타이틀 자체를 숨겨두고 '공지 더보기'와 같은 형태의 버튼만 노출.
-            // 버튼을 누르면 타이틀 + 목록이 함께 펼쳐지고, 펼쳐진 뒤에는 타이틀을
-            // 다시 눌러 접을 수 있다 (기존 section-title 클릭 토글 유지).
-            const collapseId = opts.collapseId;
+        if (opts.collapseId) {
+            const startClosed = !!opts.startClosed;
             return `
-            <div class="former-toggle-row" id="${collapseId}-toggle-row">
-                <button type="button" class="btn-view-all former-toggle-btn" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                    ${escapeHTML(title)} ${countHtml}
-                    <svg class="section-title-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </button>
+            <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
+                <span>${escapeHTML(title)} ${countHtml}</span>
+                <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
-            <div class="collapse" id="${collapseId}">
-                <div class="section-title" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                    <span>${escapeHTML(title)} ${countHtml}</span>
-                    <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
+            <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
                 <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>
             </div>`;
         }
@@ -576,18 +568,23 @@
             const group = activeMembers.filter(m => (m['직책'] || '기타') === role);
             html += renderMemberGroup(role, group);
         });
-        html += renderMemberGroup('이전 멤버', formerMembers, { collapseId: 'former-members-collapse', hiddenToggle: true });
+
+        if (formerMembers.length > 0) {
+            html += `
+            <div class="text-center" id="former-members-toggle-wrap" style="padding: 6px 0 24px;">
+                <button class="btn-view-all" onclick="showFormerMembers()">이전 멤버 (${formerMembers.length}명)<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+            </div>
+            <div id="former-members-section" style="display:none;">
+                ${renderMemberGroup('이전 멤버', formerMembers)}
+            </div>`;
+        }
 
         document.getElementById('members-groups').innerHTML = html || '<div class="text-center text-muted py-5">등록된 멤버가 없습니다.</div>';
+    }
 
-        // 펼쳐지면 버튼 줄은 숨기고(타이틀이 그 역할을 대신함),
-        // 접히면 다시 버튼 줄을 보여준다.
-        const formerCollapseEl = document.getElementById('former-members-collapse');
-        const formerToggleRow = document.getElementById('former-members-collapse-toggle-row');
-        if (formerCollapseEl && formerToggleRow) {
-            formerCollapseEl.addEventListener('show.bs.collapse', () => { formerToggleRow.style.display = 'none'; });
-            formerCollapseEl.addEventListener('hide.bs.collapse', () => { formerToggleRow.style.display = ''; });
-        }
+    function showFormerMembers() {
+        document.getElementById('former-members-toggle-wrap').style.display = 'none';
+        document.getElementById('former-members-section').style.display = 'block';
     }
 
     // 홈 화면 - 현재 방송중 목록.
@@ -869,7 +866,7 @@
             const pStat = playersStats.find(x => x['이름'] === m['이름']) || {};
             const name = m['이름'];
             html += `<tr style="border-bottom:1px solid #f1f3f5; cursor:pointer;" onclick="selectPlayer('${name}')">
-                <td class="fw-bold text-dark text-center" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</span></span></td>
+                <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</span></span></td>
                 <td style="white-space:nowrap; width:20%;">${pStat['대회 전적'] || '-'}</td>
                 <td style="white-space:nowrap; width:20%;">${pStat['대학 전적'] || '-'}</td>
                 <td style="white-space:nowrap; width:20%;">${pStat['미니 전적'] || '-'}</td>
@@ -953,12 +950,12 @@
             return `
             <div class="match-item-wrap">
                 <div class="match-row" style="cursor:default;">
-                    <div class="m-date">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</div>
-                    <div class="m-type"><span class="tag-badge">${escapeHTML(m['형식'])}</span></div>
                     <div class="m-opp-team">${teamLogoHtml(m['상대팀'])}${escapeHTML(m['상대팀'])}</div>
+                    <div class="m-type"><span class="tag-badge">${escapeHTML(m['형식'])}</span></div>
                     <div class="m-opp-player">${escapeHTML(m['상대 선수']) || '-'}</div>
                     <div class="m-map">${escapeHTML(m['맵']) || '-'}</div>
                     <div class="m-res">${badgeHtml}</div>
+                    <div class="m-date">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</div>
                 </div>
             </div>
             `;
