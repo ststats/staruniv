@@ -448,15 +448,16 @@
 
                     return `
                     <tr style="border-bottom:1px solid #f1f3f5;">
-                        <td style="width:20%; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || (i+1) + '라'}</td>
-                        <td style="width:20%;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
-                        <td style="width:20%;">${resBadge}</td>
-                        <td style="width:20%;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
-                        <td style="width:20%; color:#555;">${escapeHTML(r['맵']) || '-'}</td>
+                        <td style="width:18.8%; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || (i+1) + '라'}</td>
+                        <td style="width:18.8%;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
+                        <td style="width:18.8%;">${resBadge}</td>
+                        <td style="width:18.8%;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
+                        <td style="width:18.8%; color:#555;">${escapeHTML(r['맵']) || '-'}</td>
+                        <td style="width:6%;"></td>
                     </tr>`;
                 }).join('');
             } else {
-                setDetailsHtml = '<tr><td colspan="5" class="text-center text-muted py-2" style="font-size:var(--fs-body);">상세 세트 기록이 없습니다.</td></tr>';
+                setDetailsHtml = '<tr><td colspan="6" class="text-center text-muted py-2" style="font-size:var(--fs-body);">상세 세트 기록이 없습니다.</td></tr>';
             }
 
             return `
@@ -473,7 +474,7 @@
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
                     <div class="collapse" id="${collapseId}">
-                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
+                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding:0 12px;">
                             <table class="table table-borderless mb-0 text-center" style="table-layout:fixed; width:100%; font-size:var(--fs-body);">
                                 <tbody>${setDetailsHtml}</tbody>
                             </table>
@@ -965,11 +966,11 @@
 
             return `
             <tr style="border-bottom:1px solid #f1f3f5;">
-                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대 선수']) || '-'}</td>
+                <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
                 <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td>${escapeHTML(m['상대 선수']) || '-'}</td>
                 <td>${escapeHTML(m['맵']) || '-'}</td>
                 <td>${badgeHtml}</td>
                 <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
