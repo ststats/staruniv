@@ -1,6 +1,8 @@
-let currentPlayer = ''; 
+
+    let currentPlayer = ''; 
     let currentIndivFilter = '전체';
 
+    // 구글시트 원본 텍스트를 innerHTML에 꽂을 때 깨지거나 마크업이 섞이지 않도록 이스케이프
     function escapeHTML(str) {
         if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({
@@ -8,16 +10,20 @@ let currentPlayer = '';
         }[tag]));
     }
 
+    // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
+    // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
+    // 없는 팀도 있을 수 있어 onerror로 조용히 숨긴다.
     function teamLogoHtml(teamName, sizePx) {
         const name = String(teamName || '').trim();
         if (!name) return '';
         const fileName = (name === '내전') ? '캄몬스타즈' : name;
         const size = sizePx || 16;
-        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo" style="width:${size}px; height:${size}px; margin-right:4px;" loading="lazy" onerror="this.remove();">`;
+        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.remove();">`;
     }
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'stats', 'synergy', 'tools'];
 
+    // ===== 해시 라우터: #페이지?파라미터=값 형태로 하위 상태까지 URL에 반영 =====
     function parseHash() {
         const raw = (location.hash || '').replace(/^#/, '');
         const qIdx = raw.indexOf('?');
@@ -30,6 +36,7 @@ let currentPlayer = '';
         const qs = new URLSearchParams();
         Object.entries(params || {}).forEach(([k, v]) => { if (v) qs.set(k, v); });
         const qsStr = qs.toString();
+        // 홈 + 파라미터 없음은 주소 깔끔하게 해시 자체를 비운다
         if (page === 'home' && !qsStr) return '';
         return '#' + page + (qsStr ? '?' + qsStr : '');
     }
@@ -52,6 +59,7 @@ let currentPlayer = '';
         if (!skipHashUpdate) updateHash(pageId, {});
     }
 
+    // 뒤로가기/앞으로가기 및 새로고침 시 해시에 맞춰 페이지 + 하위 상태를 복원
     function restoreFromHash() {
         const { page, params } = parseHash();
         const pageId = VALID_PAGE_IDS.includes(page) ? page : 'home';
@@ -124,11 +132,13 @@ let currentPlayer = '';
         updateMembersHash();
     }
 
+    // 홈 화면 "소식 전체보기" -> 멤버 페이지의 소식 탭으로 이동
     function goToNewsFeed() {
         switchPage('members');
         switchMemberView('news');
     }
 
+    // ===== 멤버 소식(SOOP 게시판 전체 글) =====
     let newsSidebarRendered = false;
     let currentNewsPlayer = null;
     let newsCurrentPage = 1;
@@ -137,7 +147,7 @@ let currentPlayer = '';
 
     function renderNewsSidebar() {
         const html = [`<div class="avatar-select-item avatar-select-all active" id="news-side-btn-all" onclick="showNewsAll()">
-                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar avatar-md" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback avatar avatar-md&quot;&gt;전체&lt;/div&gt;';">
+                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
                             <span class="avatar-select-name">전체</span>
                        </div>`];
         dbMembers.forEach(m => {
@@ -145,7 +155,7 @@ let currentPlayer = '';
             const soopId = m['SOOP ID'];
             if (!soopId || !/^[a-zA-Z0-9_-]+$/.test(String(soopId).trim())) return;
             html.push(`<div class="avatar-select-item" id="news-side-player-${m['이름']}" onclick="selectNewsPlayer('${m['이름']}')">
-                            ${avatarHtml(soopId, 'avatar avatar-md')}
+                            ${avatarHtml(soopId, 'avatar-select-img')}
                             <span class="avatar-select-name">${escapeHTML(m['이름'])}</span>
                         </div>`);
         });
@@ -171,6 +181,8 @@ let currentPlayer = '';
             return soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
         });
 
+        // 멤버별로 최근 몇 개씩 후보를 모아서(공지+일반글 합친 것) 전체를 한 번에
+        // 날짜순으로 다시 정렬 - "더보기"로 계속 더 볼 수 있게 넉넉히 모아둔다.
         const settled = await Promise.allSettled(
             activeMembers.map(async m => {
                 const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
@@ -209,7 +221,7 @@ let currentPlayer = '';
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
-            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px; padding-bottom:24px;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
         }
     }
 
@@ -234,6 +246,7 @@ let currentPlayer = '';
         loadNewsFeed(true);
     }
 
+    // SOOP 게시판 API의 regDate("YYYY-MM-DD HH:MM:SS")를 "N분 전" 식으로 변환
     function formatRelativeTime(dateStr) {
         const date = new Date(String(dateStr || '').replace(' ', 'T'));
         if (isNaN(date.getTime())) return '';
@@ -247,6 +260,8 @@ let currentPlayer = '';
         return String(dateStr).split(' ')[0];
     }
 
+    // 게시판 응답의 contents(일반글)와 noticeData(공지)를 합쳐서, 본인이 쓴 글만
+    // 남기고 최신순으로 정렬한다. (같은 글이 양쪽에 겹치는 경우는 titleNo로 중복 제거)
     function mergeOwnPosts(data, soopId) {
         const isOwn = p => String(p.userId || '').toLowerCase() === String(soopId).toLowerCase();
         const merged = [...(data.contents || []).filter(isOwn), ...(data.noticeData || []).filter(isOwn)];
@@ -260,6 +275,9 @@ let currentPlayer = '';
         return unique;
     }
 
+    // 홈/소식 화면 열 때마다 멤버 30명씩 SOOP API를 다시 호출하면 사용자가 몰릴 때
+    // 브라우저 쪽에서 API 호출 빈도 제한(Rate Limit)에 걸릴 수 있어, 세션 안에서는
+    // 짧은 시간 내 같은 요청을 재사용하도록 sessionStorage에 살짝 캐싱해둔다.
     async function cachedFetchJson(url, ttlMs) {
         const cacheKey = `apicache:${url}`;
         try {
@@ -268,21 +286,21 @@ let currentPlayer = '';
                 const { data, ts } = JSON.parse(cached);
                 if (Date.now() - ts < ttlMs) return data;
             }
-        } catch (e) { }
+        } catch (e) { /* 캐시 읽기 실패는 무시하고 그냥 새로 받아온다 */ }
 
         const res = await fetch(url);
         if (!res.ok) throw new Error('요청 실패: ' + res.status);
         const data = await res.json();
         try {
             sessionStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
-        } catch (e) { }
+        } catch (e) { /* 저장 공간이 꽉 찼거나 해도 캐싱은 선택사항이니 무시 */ }
         return data;
     }
 
     async function fetchMemberFeed(soopId, page) {
         try {
             const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board?perPage=10&page=${page}`;
-            const data = await cachedFetchJson(url, 120000); 
+            const data = await cachedFetchJson(url, 120000); // 2분
             return {
                 posts: mergeOwnPosts(data, soopId),
                 totalPages: (data.meta && data.meta.totalPages) || 1,
@@ -306,15 +324,15 @@ let currentPlayer = '';
             : '';
 
         return `
-        <div class="clean-card news-post-card">
+        <div class="news-post-card">
             <div class="news-post-header">
-                ${avatarHtml(soopId, 'avatar avatar-md')}
+                ${avatarHtml(soopId, 'news-post-avatar')}
                 <div>
                     <div class="news-post-name">${escapeHTML(name)}</div>
                     <div class="news-post-meta">${escapeHTML(category)}${category && timeText ? ' · ' : ''}${escapeHTML(timeText)}</div>
                 </div>
             </div>
-            ${title ? `<div class="news-post-title text-ellipsis">${escapeHTML(title)}</div>` : ''}
+            ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
             ${snippet ? `<div class="news-post-body">${escapeHTML(snippet)}</div>` : ''}
             ${photosHtml}
             <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
@@ -344,7 +362,7 @@ let currentPlayer = '';
             }
 
             if (newsCurrentPage < newsTotalPages) {
-                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px; padding-bottom:24px;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
             }
         } catch (e) {
             content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">글을 불러오지 못했습니다.</div>`;
@@ -410,6 +428,9 @@ let currentPlayer = '';
             else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
 
             const collapseId = `collapse-${containerId}-${idx}`;
+            // _match_key가 있으면 그걸로 정확히 매칭(같은 날 여러 경기 구분), 없을 때만 날짜+상대팀으로 대체
+            // 내전 라운드는 개인 통계용으로 반대편 관점의 '미러' 라운드가 추가돼 있으므로
+            // (match_link.py 참고) 세트별 상세보기에는 원본 한 줄만 보이도록 걸러낸다.
             const teamRounds = dbRounds.filter(r => {
                 if (r['_mirrored']) return false;
                 if (m['_match_key'] && r['_match_key']) return r['_match_key'] === m['_match_key'];
@@ -426,35 +447,35 @@ let currentPlayer = '';
                     if(isDraw) resBadge = '<span class="text-secondary fw-bold">무</span>';
 
                     return `
-                    <tr>
-                        <td class="text-muted fw-bold" style="width:18.8%;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || ''}</td>
-                        <td class="fw-bold ${isWin?'text-primary':'text-dark'}" style="width:18.8%;">${escapeHTML(r['우리 선수'])||'-'}</td>
+                    <tr style="border-bottom:1px solid #f1f3f5;">
+                        <td style="width:18.8%; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || ''}</td>
+                        <td style="width:18.8%;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
                         <td style="width:18.8%;">${resBadge}</td>
-                        <td class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}" style="width:18.8%;">${escapeHTML(r['상대 선수'])||'-'}</td>
-                        <td class="text-secondary" style="width:18.8%;">${escapeHTML(r['맵']) || '-'}</td>
+                        <td style="width:18.8%;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
+                        <td style="width:18.8%; color:#555;">${escapeHTML(r['맵']) || '-'}</td>
                         <td style="width:6%;"></td>
                     </tr>`;
                 }).join('');
             } else {
-                setDetailsHtml = '<tr><td colspan="6" class="text-center text-muted py-2">상세 세트 기록이 없습니다.</td></tr>';
+                setDetailsHtml = '<tr><td colspan="6" class="text-center text-muted py-2" style="font-size:var(--fs-body);">상세 세트 기록이 없습니다.</td></tr>';
             }
 
             return `
-            <tr class="row-clickable match-row" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                <td class="sticky-col" style="width:18.8%;">
-                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'], 16)}<span class="text-ellipsis">${escapeHTML(m['상대팀'])}</span></span>
+            <tr class="match-row" style="cursor:pointer; border-bottom:1px solid #f1f3f5;" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
-                <td style="width:18.8%;"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td style="width:18.8%;">${m['세트 결과'] || '-'}</td>
-                <td style="width:18.8%;">${badgeHtml}</td>
-                <td style="width:18.8%;">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
-                <td style="width:6%;"><span class="m-arrow flex-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
+                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td>${m['세트 결과'] || '-'}</td>
+                <td>${badgeHtml}</td>
+                <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
+                <td><span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
             </tr>
             <tr>
                 <td colspan="6" style="padding:0; border:none;">
                     <div class="collapse" id="${collapseId}">
-                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding: 16px;">
-                            <table class="table table-borderless mb-0 stat-table">
+                        <div style="background-color:#fcfcfd; border-top:1px dashed #eaedf2; padding:0 12px;">
+                            <table class="table table-borderless mb-0 text-center" style="table-layout:fixed; width:100%; font-size:var(--fs-body);">
                                 <tbody>${setDetailsHtml}</tbody>
                             </table>
                         </div>
@@ -473,7 +494,7 @@ let currentPlayer = '';
     }
 
     function openTeamOpponentModal(opponent) {
-        document.getElementById('teamModalTitle').innerHTML = `${teamLogoHtml(opponent, 24)} vs ${escapeHTML(opponent)} 전체 전적`;
+        document.getElementById('teamModalTitle').innerHTML = `${teamLogoHtml(opponent, 20)} vs ${escapeHTML(opponent)} 전체 전적`;
         renderTeamMatchesList('team-modal-list', {format: '전체', opponent}, null);
         new bootstrap.Modal(document.getElementById('teamMatchesModal')).show();
     }
@@ -485,17 +506,18 @@ let currentPlayer = '';
     function getProfileImgUrl(soopId) {
         if (!soopId) return null;
         const id = String(soopId).trim().toLowerCase();
+        // SOOP 아이디는 영문/숫자/일부 특수문자만 쓰이므로, 형식이 이상한 값은 URL/속성에 꽂지 않고 무시
         if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
         const prefix = id.substring(0, 2);
         return `https://profile.img.sooplive.co.kr/LOGO/${prefix}/${id}/${id}.jpg`;
     }
-
     function avatarHtml(soopId, cls) {
         const url = getProfileImgUrl(soopId);
-        if (!url) return `<span class="${cls}">👤</span>`;
-        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls}\\'>👤</span>';">`;
+        if (!url) return `<span class="${cls} d-flex align-items-center justify-content-center">👤</span>`;
+        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} d-flex align-items-center justify-content-center\\'>👤</span>';">`;
     }
 
+    // 멤버 탭 렌더링
     const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
     function tierIndex(tier) {
         const idx = TIER_ORDER.indexOf(String(tier));
@@ -521,20 +543,18 @@ let currentPlayer = '';
         if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
         return Math.floor((end - start) / 86400000) + 1;
     }
-
     function memberCardHtml(m) {
         const tierText = (m['티어'] !== undefined && m['티어'] !== '') ? `${m['티어']}티어` : '-';
         return `
-        <div class="clean-card card-hover member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
-            ${avatarHtml(m['SOOP ID'], 'avatar avatar-xl mb-2')}
-            <div class="member-card-name text-ellipsis">${escapeHTML(m['이름'])}</div>
+        <div class="member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
+            ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
+            <div class="member-card-name">${escapeHTML(m['이름'])}</div>
             <div class="member-card-tags">
                 <span class="tag-badge">${tierText}</span>
                 <span class="tag-badge">${raceShortLabel(m['종족'])}</span>
             </div>
         </div>`;
     }
-    
     function renderMemberGroup(title, members, opts) {
         opts = opts || {};
         if (members.length === 0) return '';
@@ -546,24 +566,19 @@ let currentPlayer = '';
         if (opts.collapseId) {
             const startClosed = !!opts.startClosed;
             return `
-            <div class="member-group-wrap">
-                <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
-                    <span>${escapeHTML(title)} ${countHtml}</span>
-                    <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-                <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
-                    <div class="grid-cards">${sorted.map(memberCardHtml).join('')}</div>
-                </div>
+            <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
+                <span>${escapeHTML(title)} ${countHtml}</span>
+                <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
+                <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>
             </div>`;
         }
 
         return `
-        <div class="member-group-wrap">
-            <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
-            <div class="grid-cards">${sorted.map(memberCardHtml).join('')}</div>
-        </div>`;
+        <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
+        <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>`;
     }
-
     function renderMembersPage() {
         const roleOrderBase = ['감독', '코치', '선수'];
         const activeMembers = dbMembers.filter(isActiveMember);
@@ -580,7 +595,7 @@ let currentPlayer = '';
 
         if (formerMembers.length > 0) {
             html += `
-            <div class="text-center" style="margin-top:24px;">
+            <div class="text-center" style="margin-top:24px; padding-bottom:24px;">
                 <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 <svg id="former-members-toggle-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
             </div>
             <div id="former-members-section" style="display:none;">
@@ -599,9 +614,14 @@ let currentPlayer = '';
         chevron.style.transform = showing ? '' : 'rotate(180deg)';
     }
 
+    // 홈 화면 - 현재 방송중 목록.
+    // 참고 프로젝트(ststats)의 개인페이지 패턴 그대로: bjapi.afreecatv.com을
+    // 브라우저에서 직접 fetch한다 (CORS 허용됨, 확인됨). 활성 멤버가 소수라
+    // 프록시/백엔드 배치 작업 없이 페이지 로드 시점에 병렬로 바로 체크한다 -
+    // 그래서 워크플로를 몇 분마다 돌릴 필요가 없고, 열 때마다 최신 상태.
     async function checkIsLiveRealtime(soopId) {
         try {
-            const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000);
+            const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000); // 30초 (실시간성 유지 위해 짧게)
             if (!data || !data.broad) return null;
             return {
                 broad: data.broad,
@@ -649,24 +669,24 @@ let currentPlayer = '';
             return;
         }
 
-        container.innerHTML = `<div class="grid-cards grid-cards-lg">${liveList.map(({ member: m, live }) => {
+        container.innerHTML = `<div class="live-broadcast-grid">${liveList.map(({ member: m, live }) => {
             const { broad, broadStart } = live;
             const soopId = m['SOOP ID'];
             const viewerText = broad.current_sum_viewer != null ? broad.current_sum_viewer.toLocaleString('ko-KR') + '명' : '-';
             const elapsedText = formatLiveElapsed(broadStart) || '-';
 
             return `
-            <a class="clean-card card-hover live-broadcast-card" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
+            <a class="live-broadcast-card" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
                 <div class="live-thumb-wrap">
                     <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${broad.broad_no}" alt="방송 화면" onerror="this.style.display='none';">
                     <span class="live-badge">LIVE</span>
                 </div>
                 <div class="live-card-body">
-                    <div class="live-card-title text-ellipsis">${escapeHTML(broad.broad_title || '')}</div>
+                    <div class="live-card-title">${escapeHTML(broad.broad_title || '')}</div>
                     <div class="live-card-meta-row">
                         <div class="live-card-who">
-                            ${avatarHtml(soopId, 'avatar avatar-md')}
-                            <span class="live-card-name text-ellipsis">${escapeHTML(m['이름'])}</span>
+                            ${avatarHtml(soopId, 'live-card-avatar')}
+                            <span class="live-card-name">${escapeHTML(m['이름'])}</span>
                         </div>
                         <div class="live-card-stats">
                             <div class="live-card-viewers">${escapeHTML(viewerText)}</div>
@@ -678,6 +698,9 @@ let currentPlayer = '';
         }).join('')}</div>`;
     }
 
+    // ===== 홈 화면 - 최신 공지 =====
+    // SOOP 채널 게시판 API를 브라우저에서 직접 fetch한다 (방송중 체크와 같은 방식).
+    // 응답의 noticeData가 실제로 '공지' 처리된 글들이고(noticeYn:2), 최신순으로 정렬돼 온다.
     async function renderLatestNotices() {
         const container = document.getElementById('home-notice-list');
         const activeMembers = dbMembers.filter(m => {
@@ -691,6 +714,7 @@ let currentPlayer = '';
             return;
         }
 
+        // 공지만이 아니라 일반글도 같이 긁어와서(fetchMemberFeed는 공지+일반글을 합쳐 최신순 반환) 섞는다.
         const settled = await Promise.allSettled(
             activeMembers.map(async m => {
                 const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
@@ -715,15 +739,15 @@ let currentPlayer = '';
             const dateText = (post.regDate || '').split(' ')[0];
 
             return `
-            <a class="list-row notice-row" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
-                ${avatarHtml(soopId, 'avatar avatar-md')}
+            <a class="notice-row" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
+                ${avatarHtml(soopId, 'notice-row-avatar')}
                 <div class="notice-row-body">
                     <div class="notice-row-top">
                         <span class="notice-row-name">${escapeHTML(m['이름'])}</span>
                         <span class="notice-row-date">${escapeHTML(dateText)}</span>
                     </div>
-                    <div class="notice-row-title text-ellipsis">${escapeHTML(title)}</div>
-                    <div class="notice-row-snippet text-ellipsis">${escapeHTML(snippet)}</div>
+                    <div class="notice-row-title">${escapeHTML(title)}</div>
+                    <div class="notice-row-snippet">${escapeHTML(snippet)}</div>
                 </div>
             </a>`;
         }).join('');
@@ -763,17 +787,18 @@ let currentPlayer = '';
             ['활동기간', period],
             ['방송국', broadcast],
         ];
-        
         document.getElementById('mp-info-body').innerHTML = rows.map(([label, val]) => `
             <tr>
-                <td class="text-secondary align-middle" style="width:90px; font-weight:700; border-color:#f1f3f5; padding: 12px 0;">${label}</td>
-                <td class="fw-bold text-dark align-middle" style="border-color:#f1f3f5; padding: 12px 0;">${val}</td>
+                <td class="text-secondary" style="width:90px; font-weight:700; border-color:#f1f3f5; padding-left:0;">${label}</td>
+                <td class="fw-bold text-dark" style="border-color:#f1f3f5;">${val}</td>
             </tr>`).join('');
 
         renderMemberActivitySummary(m);
+
         new bootstrap.Modal(document.getElementById('memberProfileModal')).show();
     }
 
+    // 프로필 팝업의 "이번 달 방송 활동"을 시너지표(ststats)에서 가져온 데이터로 채운다.
     function renderMemberActivitySummary(m) {
         const statusEl = document.getElementById('mp-activity-status');
         const balloonsEl = document.getElementById('mp-balloons');
@@ -811,13 +836,13 @@ let currentPlayer = '';
 
     function renderIndividualSidebar() {
         const html = [`<div class="avatar-select-item avatar-select-all active" id="side-btn-summary" onclick="showIndivSummary()">
-                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar avatar-md" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback avatar avatar-md&quot;&gt;전체&lt;/div&gt;';">
+                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
                             <span class="avatar-select-name">전체</span>
                        </div>`];
         const formerHtml = [];
         dbMembers.forEach(m => {
             const item = `<div class="avatar-select-item" id="side-player-${m['이름']}" onclick="selectPlayer('${m['이름']}')">
-                            ${avatarHtml(m['SOOP ID'], 'avatar avatar-md')}
+                            ${avatarHtml(m['SOOP ID'], 'avatar-select-img')}
                             <span class="avatar-select-name">${escapeHTML(m['이름'])}</span>
                         </div>`;
             if (isActiveMember(m)) html.push(item);
@@ -825,7 +850,7 @@ let currentPlayer = '';
         });
 
         html.push(`<div class="avatar-select-item avatar-select-toggle" id="indiv-toggle-former" onclick="toggleFormerMembers()">
-                        <div class="avatar-select-fallback avatar avatar-md">
+                        <div class="avatar-select-fallback">
                             <svg id="indiv-toggle-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </div>
                         <span class="avatar-select-name">이전 멤버</span>
@@ -857,12 +882,12 @@ let currentPlayer = '';
         activeMembers.forEach(m => {
             const pStat = playersStats.find(x => x['이름'] === m['이름']) || {};
             const name = m['이름'];
-            html += `<tr class="row-clickable" onclick="selectPlayer('${name}')">
-                <td class="fw-bold text-dark sticky-col" style="width:20%;"><span class="flex-center gap-2 text-ellipsis">${avatarHtml(m['SOOP ID'], 'avatar avatar-sm')}<span>${escapeHTML(name)}</span></span></td>
-                <td style="width:20%;">${pStat['대회 전적'] || '-'}</td>
-                <td style="width:20%;">${pStat['대학 전적'] || '-'}</td>
-                <td style="width:20%;">${pStat['미니 전적'] || '-'}</td>
-                <td style="width:20%;">${pStat['CK 전적'] || '-'}</td>
+            html += `<tr style="border-bottom:1px solid #f1f3f5; cursor:pointer;" onclick="selectPlayer('${name}')">
+                <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</span></span></td>
+                <td style="white-space:nowrap; width:20%;">${pStat['대회 전적'] || '-'}</td>
+                <td style="white-space:nowrap; width:20%;">${pStat['대학 전적'] || '-'}</td>
+                <td style="white-space:nowrap; width:20%;">${pStat['미니 전적'] || '-'}</td>
+                <td style="white-space:nowrap; width:20%;">${pStat['CK 전적'] || '-'}</td>
             </tr>`;
         });
         document.getElementById('indiv-summary-tbody').innerHTML = html;
@@ -879,6 +904,7 @@ let currentPlayer = '';
         const sideItem = document.getElementById(`side-player-${name}`);
         if (sideItem) {
             sideItem.classList.add('active');
+            // 이전 멤버가 접혀있는 상태에서 그 사람이 선택되면 자동으로 펼쳐준다
             const formerWrap = document.getElementById('indiv-former-wrap');
             if (formerWrap && formerWrap.contains(sideItem) && formerWrap.style.display === 'none') {
                 toggleFormerMembers();
@@ -939,15 +965,15 @@ let currentPlayer = '';
             else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
 
             return `
-            <tr>
-                <td class="sticky-col text-ellipsis" style="width:16.66%;">${escapeHTML(m['상대 선수']) || '-'}</td>
-                <td class="text-ellipsis" style="width:16.66%;">
-                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'], 16)}<span class="text-ellipsis">${escapeHTML(m['상대팀'])}</span></span>
+            <tr style="border-bottom:1px solid #f1f3f5;">
+                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대 선수']) || '-'}</td>
+                <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
-                <td style="width:16.66%;"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td style="width:16.66%;">${escapeHTML(m['맵']) || '-'}</td>
-                <td style="width:16.66%;">${badgeHtml}</td>
-                <td style="width:16.66%;">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
+                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td>${escapeHTML(m['맵']) || '-'}</td>
+                <td>${badgeHtml}</td>
+                <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
             </tr>
             `;
         }).join('');
@@ -961,6 +987,7 @@ let currentPlayer = '';
         new bootstrap.Modal(document.getElementById('indivMatchesModal')).show();
     }
 
+    // ===== 시너지표 (ststats 외부 데이터에서 우리 로스터만 추려서 표시) =====
     const STSTATS_BASE = 'https://ststats.github.io/synergy';
     let synergyData = null;
     let synergyMetric = 'balloons';
@@ -986,6 +1013,9 @@ let currentPlayer = '';
             if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
             const data = await dataRes.json();
 
+            // team 이름이 아니라 SOOP ID로 매칭한다 - 외부 쪽 team 표기가
+            // 우리 쪽 개편(예: 캄몬스타즈 -> 스타대학)과 항상 동기화된다는
+            // 보장이 없기 때문.
             const idToMember = {};
             dbMembers.forEach(m => {
                 const soopId = String(m['SOOP ID'] || '').trim().toLowerCase();
@@ -1048,14 +1078,14 @@ let currentPlayer = '';
 
         return `
         <tr>
-            <td class="text-center text-secondary fw-bold" style="width:20%;">${idx + 1}</td>
-            <td class="text-center" style="width:40%;">
-                <span class="flex-center gap-2" style="min-width:0;">
-                    ${avatarHtml(ours['SOOP ID'], 'avatar avatar-sm')}
-                    <span class="fw-bold text-ellipsis">${escapeHTML(name)}</span>
+            <td class="text-center text-secondary fw-bold" style="width:25%; white-space:nowrap;">${idx + 1}</td>
+            <td class="text-center" style="width:25%;">
+                <span class="d-flex align-items-center justify-content-center gap-2" style="min-width:0;">
+                    ${avatarHtml(ours['SOOP ID'], 'player-avatar-sm')}
+                    <span class="fw-bold" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(name)}</span>
                 </span>
             </td>
-            <td class="text-center fw-bold text-ellipsis" style="width:40%; color:var(--color-primary);">${escapeHTML(displayVal)}</td>
+            <td class="text-center fw-bold" style="width:50%; color:var(--color-primary); white-space:nowrap;">${escapeHTML(displayVal)}</td>
         </tr>`;
     }
 
@@ -1069,6 +1099,7 @@ let currentPlayer = '';
 
     function sortSynergyRows(rows) {
         if (synergyMetric === 'sponsor') {
+            // 표시는 승패/승률이지만, 정렬은 판수(승+패)가 많은 순 - 승수 기준이 아니다.
             return rows.slice().sort((a, b) =>
                 ((b.sponsor_wins || 0) + (b.sponsor_losses || 0)) - ((a.sponsor_wins || 0) + (a.sponsor_losses || 0)));
         }
@@ -1090,12 +1121,17 @@ let currentPlayer = '';
     }
 
     window.onload = async function() {
+        // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
+        // 그걸 사용하는 초기화 로직들을 이어서 실행한다.
         await loadSiteData();
+
         calculateTeamSummaries();
         renderMembersPage();
         renderLiveBroadcasts();
         renderLatestNotices();
         loadSynergyData();
+
+        // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
         restoreFromHash();
 
         const today = new Date();
