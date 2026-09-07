@@ -221,7 +221,7 @@
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
-            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px; padding-bottom:24px;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="padding: 24px 0;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
         }
     }
 
@@ -362,7 +362,7 @@
             }
 
             if (newsCurrentPage < newsTotalPages) {
-                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="margin-top:24px; padding-bottom:24px;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="padding: 24px 0;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
             }
         } catch (e) {
             content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">글을 불러오지 못했습니다.</div>`;
@@ -595,7 +595,7 @@
 
         if (formerMembers.length > 0) {
             html += `
-            <div class="text-center" style="margin-top:24px; padding-bottom:24px;">
+            <div class="text-center" style="padding: 24px 0;">
                 <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 <svg id="former-members-toggle-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
             </div>
             <div id="former-members-section" style="display:none;">
@@ -1078,14 +1078,14 @@
 
         return `
         <tr>
-            <td class="text-center text-secondary fw-bold" style="width:25%; white-space:nowrap;">${idx + 1}</td>
-            <td class="text-center" style="width:25%;">
+            <td class="text-center text-secondary fw-bold" style="width:20%; white-space:nowrap;">${idx + 1}</td>
+            <td class="text-center" style="width:40%;">
                 <span class="d-flex align-items-center justify-content-center gap-2" style="min-width:0;">
                     ${avatarHtml(ours['SOOP ID'], 'player-avatar-sm')}
                     <span class="fw-bold" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(name)}</span>
                 </span>
             </td>
-            <td class="text-center fw-bold" style="width:50%; color:var(--color-primary); white-space:nowrap;">${escapeHTML(displayVal)}</td>
+            <td class="text-center fw-bold" style="width:40%; color:var(--color-primary); white-space:nowrap;">${escapeHTML(displayVal)}</td>
         </tr>`;
     }
 
