@@ -397,7 +397,7 @@
         const sliced = limit ? filtered.slice(0, limit) : filtered;
         
         if (sliced.length === 0) {
-            document.getElementById(containerId).innerHTML = '<div class="text-center text-muted py-4">경기 기록이 없습니다.</div>';
+            document.getElementById(containerId).innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
             return;
         }
 
@@ -441,23 +441,23 @@
             }
 
             return `
-            <div class="match-item-wrap">
-                <div class="match-row" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                    <div class="m-opp-team">${teamLogoHtml(m['상대팀'])}${escapeHTML(m['상대팀'])}</div>
-                    <div class="m-type"><span class="tag-badge">${escapeHTML(m['형식'])}</span></div>
-                    <div class="m-score">${m['세트 결과'] || '-'}</div>
-                    <div class="m-res">${badgeHtml}</div>
-                    <div class="m-date">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</div>
-                    <div class="m-arrow">
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </div>
-                </div>
-                <div class="collapse" id="${collapseId}">
-                    <div class="py-2" style="padding-left:15px; padding-right:15px; background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
+            <tr class="match-row" style="cursor:pointer; border-bottom:1px solid #f1f3f5;" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
+                </td>
+                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td>${m['세트 결과'] || '-'}</td>
+                <td>${badgeHtml}</td>
+                <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
+                <td><span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
+            </tr>
+            <tr class="collapse" id="${collapseId}">
+                <td colspan="6" style="padding:0; border:none;">
+                    <div class="py-2 px-3" style="background-color:#fcfcfd; border-top:1px dashed #eaedf2;">
                         ${setDetailsHtml}
                     </div>
-                </div>
-            </div>
+                </td>
+            </tr>
             `;
         }).join('');
         document.getElementById(containerId).innerHTML = html;
@@ -676,18 +676,6 @@
     // ===== 홈 화면 - 최신 공지 =====
     // SOOP 채널 게시판 API를 브라우저에서 직접 fetch한다 (방송중 체크와 같은 방식).
     // 응답의 noticeData가 실제로 '공지' 처리된 글들이고(noticeYn:2), 최신순으로 정렬돼 온다.
-    async function fetchLatestNotice(soopId) {
-        try {
-            const url = `https://api-channel.sooplive.com/v1.1/channel/${soopId}/board?perPage=20`;
-            const res = await fetch(url);
-            if (!res.ok) return null;
-            const data = await res.json();
-            return (data.noticeData && data.noticeData[0]) || null;
-        } catch (e) {
-            return null;
-        }
-    }
-
     async function renderLatestNotices() {
         const container = document.getElementById('home-notice-list');
         const activeMembers = dbMembers.filter(m => {
@@ -701,28 +689,32 @@
             return;
         }
 
+        // 공지만이 아니라 일반글도 같이 긁어와서(fetchMemberFeed는 공지+일반글을 합쳐 최신순 반환) 섞는다.
         const settled = await Promise.allSettled(
-            activeMembers.map(m => fetchLatestNotice(m['SOOP ID']).then(notice => ({ member: m, notice })))
+            activeMembers.map(async m => {
+                const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
+                return posts.slice(0, 3).map(post => ({ member: m, post }));
+            })
         );
 
         const withNotice = settled
-            .filter(r => r.status === 'fulfilled' && r.value.notice)
-            .map(r => r.value)
-            .sort((a, b) => new Date(b.notice.regDate) - new Date(a.notice.regDate));
+            .filter(r => r.status === 'fulfilled')
+            .flatMap(r => r.value)
+            .sort((a, b) => new Date(b.post.regDate) - new Date(a.post.regDate));
 
         if (withNotice.length === 0) {
             container.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
             return;
         }
 
-        container.innerHTML = withNotice.slice(0, 5).map(({ member: m, notice }) => {
+        container.innerHTML = withNotice.slice(0, 5).map(({ member: m, post }) => {
             const soopId = m['SOOP ID'];
-            const title = notice.titleName || '(제목 없음)';
-            const snippet = (notice.content && (notice.content.textContent || notice.content.summary)) || '';
-            const dateText = (notice.regDate || '').split(' ')[0];
+            const title = post.titleName || '(제목 없음)';
+            const snippet = (post.content && post.content.textContent) || '';
+            const dateText = (post.regDate || '').split(' ')[0];
 
             return `
-            <a class="notice-row" href="https://www.sooplive.com/station/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
+            <a class="notice-row" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
                 ${avatarHtml(soopId, 'notice-row-avatar')}
                 <div class="notice-row-body">
                     <div class="notice-row-top">
@@ -937,7 +929,7 @@
         const sliced = limit ? filtered.slice(0, limit) : filtered;
 
         if (sliced.length === 0) {
-            document.getElementById(containerId).innerHTML = '<div class="text-center text-muted py-4">경기 기록이 없습니다.</div>';
+            document.getElementById(containerId).innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
             return;
         }
 
@@ -948,16 +940,16 @@
             else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
 
             return `
-            <div class="match-item-wrap">
-                <div class="match-row" style="cursor:default;">
-                    <div class="m-opp-team">${teamLogoHtml(m['상대팀'])}${escapeHTML(m['상대팀'])}</div>
-                    <div class="m-type"><span class="tag-badge">${escapeHTML(m['형식'])}</span></div>
-                    <div class="m-opp-player">${escapeHTML(m['상대 선수']) || '-'}</div>
-                    <div class="m-map">${escapeHTML(m['맵']) || '-'}</div>
-                    <div class="m-res">${badgeHtml}</div>
-                    <div class="m-date">${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</div>
-                </div>
-            </div>
+            <tr style="border-bottom:1px solid #f1f3f5;">
+                <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
+                </td>
+                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td>${escapeHTML(m['상대 선수']) || '-'}</td>
+                <td>${escapeHTML(m['맵']) || '-'}</td>
+                <td>${badgeHtml}</td>
+                <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
+            </tr>
             `;
         }).join('');
         document.getElementById(containerId).innerHTML = html;

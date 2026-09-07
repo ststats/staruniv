@@ -637,16 +637,20 @@
                     <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                 </div>
                 <div class="clean-card flex-grow-0 p-0 overflow-hidden" style="border-radius: 10px;">
-                    <div class="match-list-scroll match-list-team">
-                        <div class="match-row match-header">
-                            <div class="m-opp-team">상대</div>
-                            <div class="m-type">형식</div>
-                            <div class="m-score">세트</div>
-                            <div class="m-res">결과</div>
-                            <div class="m-date">날짜</div>
-                            <div class="m-arrow"></div>
-                        </div>
-                        <div id="team-recent-list"></div>
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center stat-table-sticky-col" style="width:18.8%;">상대</th>
+                                    <th class="text-center" style="width:18.8%;">형식</th>
+                                    <th class="text-center" style="width:18.8%;">세트</th>
+                                    <th class="text-center" style="width:18.8%;">결과</th>
+                                    <th class="text-center" style="width:18.8%;">날짜</th>
+                                    <th style="width:6%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="team-recent-list"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -731,16 +735,20 @@
                     </div>
 
                     <div class="clean-card p-0 overflow-hidden" style="border-radius: 10px;">
-                        <div class="match-list-scroll match-list-indiv">
-                            <div class="match-row match-header">
-                                <div class="m-opp-team">상대</div>
-                                <div class="m-type">형식</div>
-                                <div class="m-opp-player">상대 선수</div>
-                                <div class="m-map">맵</div>
-                                <div class="m-res">결과</div>
-                                <div class="m-date">날짜</div>
-                            </div>
-                            <div id="indiv-recent-list"></div>
+                        <div class="table-responsive">
+                            <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center stat-table-sticky-col" style="width:16.66%;">상대</th>
+                                        <th class="text-center" style="width:16.66%;">형식</th>
+                                        <th class="text-center" style="width:16.66%;">상대 선수</th>
+                                        <th class="text-center" style="width:16.66%;">맵</th>
+                                        <th class="text-center" style="width:16.66%;">결과</th>
+                                        <th class="text-center" style="width:16.66%;">날짜</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="indiv-recent-list"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -756,16 +764,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="match-list-scroll match-list-team">
-                    <div class="match-row match-header">
-                        <div class="m-opp-team">상대</div>
-                        <div class="m-type">형식</div>
-                        <div class="m-score">세트</div>
-                        <div class="m-res">결과</div>
-                        <div class="m-date">날짜</div>
-                        <div class="m-arrow"></div>
-                    </div>
-                    <div id="team-modal-list"></div>
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                        <thead>
+                            <tr>
+                                <th class="text-center stat-table-sticky-col" style="width:18.8%;">상대</th>
+                                <th class="text-center" style="width:18.8%;">형식</th>
+                                <th class="text-center" style="width:18.8%;">세트</th>
+                                <th class="text-center" style="width:18.8%;">결과</th>
+                                <th class="text-center" style="width:18.8%;">날짜</th>
+                                <th style="width:6%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="team-modal-list"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -780,16 +792,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="match-list-scroll match-list-indiv">
-                    <div class="match-row match-header">
-                        <div class="m-opp-team">상대</div>
-                        <div class="m-type">형식</div>
-                        <div class="m-opp-player">상대 선수</div>
-                        <div class="m-map">맵</div>
-                        <div class="m-res">결과</div>
-                        <div class="m-date">날짜</div>
-                    </div>
-                    <div id="indiv-modal-list"></div>
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                        <thead>
+                            <tr>
+                                <th class="text-center stat-table-sticky-col" style="width:16.66%;">상대</th>
+                                <th class="text-center" style="width:16.66%;">형식</th>
+                                <th class="text-center" style="width:16.66%;">상대 선수</th>
+                                <th class="text-center" style="width:16.66%;">맵</th>
+                                <th class="text-center" style="width:16.66%;">결과</th>
+                                <th class="text-center" style="width:16.66%;">날짜</th>
+                            </tr>
+                        </thead>
+                        <tbody id="indiv-modal-list"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
