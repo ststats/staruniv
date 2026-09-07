@@ -18,7 +18,7 @@
         if (!name) return '';
         const fileName = (name === '내전') ? '캄몬스타즈' : name;
         const size = sizePx || 16;
-        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" style="width:${size}px;height:${size}px;" onerror="this.remove();">`;
+        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.remove();">`;
     }
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'stats', 'synergy', 'tools'];
@@ -275,12 +275,32 @@
         return unique;
     }
 
+    // 홈/소식 화면 열 때마다 멤버 30명씩 SOOP API를 다시 호출하면 사용자가 몰릴 때
+    // 브라우저 쪽에서 API 호출 빈도 제한(Rate Limit)에 걸릴 수 있어, 세션 안에서는
+    // 짧은 시간 내 같은 요청을 재사용하도록 sessionStorage에 살짝 캐싱해둔다.
+    async function cachedFetchJson(url, ttlMs) {
+        const cacheKey = `apicache:${url}`;
+        try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+                const { data, ts } = JSON.parse(cached);
+                if (Date.now() - ts < ttlMs) return data;
+            }
+        } catch (e) { /* 캐시 읽기 실패는 무시하고 그냥 새로 받아온다 */ }
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('요청 실패: ' + res.status);
+        const data = await res.json();
+        try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
+        } catch (e) { /* 저장 공간이 꽉 찼거나 해도 캐싱은 선택사항이니 무시 */ }
+        return data;
+    }
+
     async function fetchMemberFeed(soopId, page) {
         try {
             const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board?perPage=10&page=${page}`;
-            const res = await fetch(url);
-            if (!res.ok) return { posts: [], totalPages: 1 };
-            const data = await res.json();
+            const data = await cachedFetchJson(url, 120000); // 2분
             return {
                 posts: mergeOwnPosts(data, soopId),
                 totalPages: (data.meta && data.meta.totalPages) || 1,
@@ -492,7 +512,7 @@
     function avatarHtml(soopId, cls) {
         const url = getProfileImgUrl(soopId);
         if (!url) return `<span class="${cls} d-flex align-items-center justify-content-center">👤</span>`;
-        return `<img src="${url}" class="${cls}" onerror="this.outerHTML='<span class=\\'${cls} d-flex align-items-center justify-content-center\\'>👤</span>';">`;
+        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} d-flex align-items-center justify-content-center\\'>👤</span>';">`;
     }
 
     // 멤버 탭 렌더링
@@ -599,9 +619,7 @@
     // 그래서 워크플로를 몇 분마다 돌릴 필요가 없고, 열 때마다 최신 상태.
     async function checkIsLiveRealtime(soopId) {
         try {
-            const res = await fetch(`https://bjapi.afreecatv.com/api/${soopId}/station`);
-            if (!res.ok) return null;
-            const data = await res.json();
+            const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000); // 30초 (실시간성 유지 위해 짧게)
             if (!data || !data.broad) return null;
             return {
                 broad: data.broad,
@@ -1100,7 +1118,11 @@
         femaleTbody.innerHTML = female.length ? female.map(synergyRowHtml).join('') : noData;
     }
 
-    window.onload = function() {
+    window.onload = async function() {
+        // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
+        // 그걸 사용하는 초기화 로직들을 이어서 실행한다.
+        await loadSiteData();
+
         calculateTeamSummaries();
         renderMembersPage();
         renderLiveBroadcasts();

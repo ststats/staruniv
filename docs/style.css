@@ -10,6 +10,7 @@
             --color-win: #0066ff;
             --color-lose: #f03e3e;
             --color-draw: #868e96;
+            --color-logo-black: #141821;
 
             --fs-hero: 28px;
             --fs-heading: 16px;
@@ -30,7 +31,7 @@
         .top-navbar { background-color: #fff; height: 64px; border-bottom: 1px solid var(--color-border); }
         .top-navbar .navbar-inner { height: 100%; display: flex; align-items: center; width: 100%; }
         .top-navbar .logo { font-size: 20px; font-weight: 800; margin-right: 30px; display: flex; align-items: center; flex-shrink: 0; }
-        .logo-black { color: #141821; }
+        .logo-black { color: var(--color-logo-black); }
         .logo-accent { color: var(--color-primary); }
 
         .home-wordmark { padding-top: 32px; padding-bottom: 32px; }
@@ -52,9 +53,9 @@
 
         /* 페이지 공통 헤더: 큰 타이틀 + 설명 + 구분선 */
         .page-header { margin-bottom: 4px; }
-        .page-header-title { font-size: 30px; font-weight: 800; color: #141821; letter-spacing: -0.5px; margin: 0 0 8px 0; }
+        .page-header-title { font-size: 30px; font-weight: 800; color: var(--color-logo-black); letter-spacing: -0.5px; margin: 0 0 8px 0; }
         .page-header-desc { font-size: var(--fs-body); color: var(--color-text-sub); margin: 0; }
-        .page-header-divider { border: none; border-bottom: 2px solid #1a1f27; margin: 14px 0 25px 0; }
+        .page-header-divider { border: none; border-bottom: 2px solid var(--color-text-main); margin: 14px 0 25px 0; }
         .page-header-divider.tight { margin-bottom: 4px; }
         .sub-tab { padding: 10px 5px; font-size: var(--fs-heading); font-weight: 600; color: var(--color-text-sub); cursor: pointer; margin-bottom: -1px; border-bottom: 3px solid transparent; }
         .sub-tab.active { color: var(--color-primary); font-weight: 800; border-bottom: 3px solid var(--color-primary); }
@@ -90,7 +91,7 @@
         .btn-clean { background: #fff; border: 1px solid #dcdfe4; border-radius: 6px; font-size: var(--fs-body); font-weight: 600; padding: 6px 14px; color: #555; transition: 0.1s; cursor: pointer; }
         .btn-clean:hover, .btn-clean.active { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
         
-        .filter-nav { display: flex; gap: 16px; margin-left: 16px; border-left: 2px solid #eaedf2; padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        .filter-nav { display: flex; gap: 16px; margin-left: 16px; border-left: 2px solid var(--color-border); padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
         .filter-nav::-webkit-scrollbar { display: none; }
         .filter-item { font-size: 13px; font-weight: 600; color: #888; cursor: pointer; position: relative; padding: 4px 0; transition: color 0.15s; flex-shrink: 0; }
         .filter-item:hover { color: #111; }
