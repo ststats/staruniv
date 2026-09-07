@@ -44,6 +44,6 @@ jobs:
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
         # index.html 뿐 아니라 분리된 정적 자산(css/js)도 같이 add
-        git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js docs/holidays.json docs/favicon.svg
+        git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js docs/holidays.json docs/data/site_data.json
         git diff --quiet && git diff --staged --quiet || git commit -m "🚀 통계 웹페이지 자동 업데이트"
         git push
