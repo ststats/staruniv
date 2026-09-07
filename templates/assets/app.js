@@ -538,14 +538,23 @@
 
         const countHtml = `<span class="text-secondary" style="font-size:var(--fs-body); font-weight:600;">${sorted.length}명</span>`;
 
-        if (opts.collapseId) {
-            const startClosed = !!opts.startClosed;
+        if (opts.hiddenToggle) {
+            // 평소엔 타이틀 자체를 숨겨두고 '공지 더보기'와 같은 형태의 버튼만 노출.
+            // 버튼을 누르면 타이틀 + 목록이 함께 펼쳐지고, 펼쳐진 뒤에는 타이틀을
+            // 다시 눌러 접을 수 있다 (기존 section-title 클릭 토글 유지).
+            const collapseId = opts.collapseId;
             return `
-            <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
-                <span>${escapeHTML(title)} ${countHtml}</span>
-                <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <div class="former-toggle-row" id="${collapseId}-toggle-row">
+                <button type="button" class="btn-view-all former-toggle-btn" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                    ${escapeHTML(title)} ${countHtml}
+                    <svg class="section-title-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
             </div>
-            <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
+            <div class="collapse" id="${collapseId}">
+                <div class="section-title" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                    <span>${escapeHTML(title)} ${countHtml}</span>
+                    <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
                 <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>
             </div>`;
         }
@@ -567,9 +576,18 @@
             const group = activeMembers.filter(m => (m['직책'] || '기타') === role);
             html += renderMemberGroup(role, group);
         });
-        html += renderMemberGroup('이전 멤버', formerMembers, { collapseId: 'former-members-collapse', startClosed: true });
+        html += renderMemberGroup('이전 멤버', formerMembers, { collapseId: 'former-members-collapse', hiddenToggle: true });
 
         document.getElementById('members-groups').innerHTML = html || '<div class="text-center text-muted py-5">등록된 멤버가 없습니다.</div>';
+
+        // 펼쳐지면 버튼 줄은 숨기고(타이틀이 그 역할을 대신함),
+        // 접히면 다시 버튼 줄을 보여준다.
+        const formerCollapseEl = document.getElementById('former-members-collapse');
+        const formerToggleRow = document.getElementById('former-members-collapse-toggle-row');
+        if (formerCollapseEl && formerToggleRow) {
+            formerCollapseEl.addEventListener('show.bs.collapse', () => { formerToggleRow.style.display = 'none'; });
+            formerCollapseEl.addEventListener('hide.bs.collapse', () => { formerToggleRow.style.display = ''; });
+        }
     }
 
     // 홈 화면 - 현재 방송중 목록.

@@ -87,6 +87,10 @@
         /* 버튼 */
         .btn-view-all { background: transparent; border: none; font-size: 12px; font-weight: 700; color: #888; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
         .btn-view-all:hover { background: #f1f3f5; color: #222; }
+        .former-toggle-row { display: flex; justify-content: center; margin: 4px 0 20px; }
+        .former-toggle-btn { display: inline-flex; align-items: center; gap: 6px; }
+        .former-toggle-btn .section-title-chevron { transform: rotate(-90deg); }
+        .former-toggle-btn[aria-expanded="true"] .section-title-chevron { transform: rotate(0deg); }
         .btn-clean { background: #fff; border: 1px solid #dcdfe4; border-radius: 6px; font-size: var(--fs-body); font-weight: 600; padding: 6px 14px; color: #555; transition: 0.1s; cursor: pointer; }
         .btn-clean:hover, .btn-clean.active { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
         
@@ -139,6 +143,21 @@
         .m-arrow { text-align: center; color: #adb5bd; display: flex; justify-content: center; transition: transform 0.2s; }
         .m-arrow svg { display: block; }
         .match-row[aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
+
+        /* 폭이 좁아져 가로 스크롤이 생길 때, '상대' 컬럼을 시각적으로 맨 앞에 두고
+           고정해서 스코어/결과 쪽으로 스크롤해도 어떤 경기인지 계속 보이게 함.
+           DOM/헤더 순서(날짜-형식-상대-...)는 그대로 두고 order로 화면상에서만 이동. */
+        .match-list-team .m-opp-team,
+        .match-list-indiv .m-opp-team {
+            order: -1;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #fff;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+        }
+        .match-row.match-header .m-opp-team { background: #fff; }
+        .match-row:hover .m-opp-team { background: var(--color-primary-tint); }
 
         /* 뱃지 */
         .tag-badge { font-size: 11px; font-weight: 700; padding: 3px 6px; border-radius: 4px; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
