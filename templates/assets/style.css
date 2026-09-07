@@ -18,44 +18,53 @@
             --fs-body: 13px;
         }
         
-        /* 기본 설정 */
         html { overflow-y: scroll !important; scrollbar-gutter: stable; }
         body { overflow-y: visible !important; padding-right: 0 !important; font-family: 'Pretendard', sans-serif; background-color: var(--color-bg); color: var(--color-text-main); min-height: 100vh; display: flex; flex-direction: column; }
         body.modal-open, .modal, .modal-open .modal { padding-right: 0 !important; overflow-y: visible !important; }
         .page-main { flex: 1 0 auto; }
         a { text-decoration: none; color: inherit; cursor: pointer; }
 
-        /* 공통 유틸리티 (중복 코드 제거용) */
+        /* 공통 유틸리티 */
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .text-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; display: block; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7d6f5; border-radius: 4px; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* 공통 아바타 시스템 */
-        .avatar { border-radius: 50%; object-fit: cover; background: #f1f3f5; flex-shrink: 0; box-sizing: border-box; }
-        .avatar-sm { width: 24px; height: 24px; }
-        .avatar-md { width: 32px; height: 32px; }
-        .avatar-lg { width: 48px; height: 48px; }
-        .avatar-xl { width: 64px; height: 64px; }
+        /* 🔥 공통 아바타 시스템 (비율 찌그러짐 완벽 방지) 🔥 */
+        .avatar { 
+            display: inline-flex; align-items: center; justify-content: center; 
+            border-radius: 50%; object-fit: cover; background: #f1f3f5; 
+            flex-shrink: 0; box-sizing: border-box; vertical-align: middle; 
+            border: 2px solid transparent; overflow: hidden;
+        }
+        img.avatar { display: inline-block; border-color: transparent; }
         
-        /* 공통 카드 및 호버 액션 시스템 */
+        .avatar-sm { width: 24px; height: 24px; font-size: 14px; border-width: 1px; }
+        .avatar-md { width: 36px; height: 36px; font-size: 18px; }
+        .avatar-lg { width: 48px; height: 48px; font-size: 24px; }
+        .avatar-xl { width: 64px; height: 64px; font-size: 28px; }
+
+        /* 🔥 팀 로고 시스템 (아바타와 분리하여 원본 비율 유지) 🔥 */
+        .team-logo { 
+            display: inline-block; object-fit: contain; border-radius: 4px; 
+            vertical-align: middle; flex-shrink: 0; 
+        }
+
+        /* 공통 카드 및 리스트 */
         .clean-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); }
         .card-hover { display: block; text-decoration: none; color: inherit; transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; cursor: pointer; }
         .card-hover:hover { box-shadow: 0 8px 24px rgba(41,121,255,0.08); transform: translateY(-3px); border-color: #b9cdf5; }
-
-        /* 공통 리스트 시스템 (소식, 사이드바 멤버 등) */
+        
         .list-row { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid #f1f3f5; text-decoration: none; color: inherit; transition: background 0.15s ease; cursor: pointer; }
         .list-row:last-child { border-bottom: none; }
         .list-row:hover, .list-row.active { background: var(--color-primary-tint); }
 
-        /* 공통 그리드 시스템 */
         .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; }
         .grid-cards-md { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
         .grid-cards-lg { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
         
-        /* 공통 뱃지 시스템 */
+        /* 뱃지 */
         .tag-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
         .match-badge { display: inline-block; width: 44px; text-align: center; font-size: 11px; font-weight: 800; padding: 4px 0; border-radius: 6px; color: #fff; }
         .badge-win { background-color: var(--color-win); }
@@ -63,7 +72,7 @@
         .badge-draw { background-color: var(--color-draw); }
         .live-badge { position: absolute; top: 8px; left: 8px; background: var(--color-lose); color: #fff; font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 6px; letter-spacing: 0.3px; }
 
-        /* 공통 통계 테이블 시스템 */
+        /* 통계 테이블 */
         .stat-table { table-layout: fixed; width: 100%; min-width: 480px; font-size: var(--fs-body); text-align: center; }
         .stat-table thead th { background: #fff; border-bottom: 2px solid #d8dce3; font-size: var(--fs-subheading); color: #666; font-weight: 700; padding: 12px; }
         .stat-table tbody tr { border-bottom: 1px solid #f1f3f5; }
@@ -174,7 +183,7 @@
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; line-height: 1.6; margin-bottom: 16px; }
         .news-post-photos img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; margin-bottom: 8px; display: block; background: #f1f3f5; }
         .news-post-photos img:last-child { margin-bottom: 0; }
-        .news-post-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #999; transition: color 0.15s; }
+        .news-post-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
         .news-post-link:hover { color: var(--color-primary); }
         .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 8px 16px; cursor: pointer; transition: opacity 0.15s; }
         .news-load-more:hover { opacity: 0.7; }
@@ -193,7 +202,6 @@
         .donut-label { font-size: var(--fs-body); font-weight: 700; color: #555; margin-bottom: 4px; }
         .donut-sub { font-size: var(--fs-body); color: #999; }
 
-        /* 아코디언 화살표 통일 */
         .m-arrow { text-align: center; color: #adb5bd; display: flex; justify-content: center; transition: transform 0.2s; }
         .m-arrow svg { display: block; }
         [aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
@@ -212,9 +220,9 @@
         .avatar-select-item:hover { background: #f5f7fa; }
         .avatar-select-item.active { background: var(--color-primary-tint); }
         .avatar-select-fallback { display: flex; align-items: center; justify-content: center; font-size: 11px; }
-        .avatar-select-item.active .avatar, .avatar-select-item.active .avatar-select-fallback { border: 2px solid var(--color-primary); }
+        .avatar-select-item.active .avatar, .avatar-select-item.active .avatar-select-fallback { border-color: var(--color-primary); }
         .avatar-select-all .avatar-select-fallback { background: var(--color-primary-tint); color: var(--color-primary); font-weight: 800; font-size: 12px; }
-        .avatar-select-toggle .avatar-select-fallback { background: #f1f3f5; color: #888; font-weight: 800; font-size: 16px; }
+        .avatar-select-toggle .avatar-select-fallback { background: #f1f3f5; color: #888; font-weight: 800; font-size: 16px; border: 2px solid transparent; }
         .avatar-select-toggle .avatar-select-name { color: var(--color-primary); }
         .avatar-select-name { font-size: var(--fs-body); font-weight: 700; color: #555; white-space: nowrap; }
         .avatar-select-item.active .avatar-select-name { color: var(--color-primary); font-weight: 800; }
@@ -244,7 +252,6 @@
         /* ==============================
             일정(캘린더) 페이지 스크롤 완벽 픽스 및 레이아웃
         ============================== */
-        /* 하단 여백 제거 (공통 32px에만 의존) */
         .cal-app-root, #synergy-updated, #news-all-load-more-wrap, #news-load-more-wrap { padding-bottom: 0 !important; }
         
         .cal-main-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
