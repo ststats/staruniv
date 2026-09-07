@@ -187,32 +187,32 @@
     <div class="tool-grid">
         <a class="tool-card" href="https://calm-hoxy.vercel.app/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcalm-hoxy.vercel.app%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcalm-hoxy.vercel.app%2F" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">혹시</div>
         </a>
         <a class="tool-card" href="https://prena.io/brain/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fprena.io%2Fbrain%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fprena.io%2Fbrain%2F" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">암다리</div>
         </a>
         <a class="tool-card" href="https://lazygyu.github.io/roulette/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Flazygyu.github.io%2Froulette%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Flazygyu.github.io%2Froulette%2F" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">핀볼</div>
         </a>
         <a class="tool-card" href="https://search.naver.com/search.naver?where=nexearch&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%EA%B2%8C%EC%9E%84" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.naver.com%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.naver.com%2F" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">네이버 사다리</div>
         </a>
         <a class="tool-card" href="https://ygosu.com/board/pan_monstarz" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fygosu.com%2Fboard%2Fpan_monstarz" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fygosu.com%2Fboard%2Fpan_monstarz" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">스대게</div>
         </a>
         <a class="tool-card" href="https://eloboard.com/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Feloboard.com%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Feloboard.com%2F" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">EloBoard</div>
         </a>
     </div>
@@ -253,7 +253,7 @@
                                 <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="{{ row['상대'] | e }}">
                                     <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
                                         <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
+                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
                                             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ row['상대'] | e }}</span>
                                         </span>
                                     </td>
@@ -399,12 +399,24 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- 서버에서 렌더링되는 데이터만 인라인으로 주입 (나머지 로직은 정적 파일로 분리) -->
+<!-- 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
+     박아넣지 않고 별도 JSON(data/site_data.json)에서 비동기로 fetch해온다. -->
 <script>
-    const dbMembers = {{ members_list | tojson }};
-    const dbMatches = {{ matches_list | tojson }};
-    const dbRounds = {{ rounds_list | tojson }};
-    const playersStats = {{ member_stats['전체'] | tojson }};
+    let dbMembers = [], dbMatches = [], dbRounds = [], playersStats = [];
+    async function loadSiteData() {
+        try {
+            const res = await fetch('data/site_data.json', { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                dbMembers = data.members || [];
+                dbMatches = data.matches || [];
+                dbRounds = data.rounds || [];
+                playersStats = data.playersStats || [];
+            }
+        } catch (e) {
+            console.error('사이트 데이터를 불러오지 못했습니다:', e);
+        }
+    }
 </script>
 <script src="app.js"></script>
 <script src="calendar.js"></script>
