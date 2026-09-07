@@ -8,11 +8,13 @@ let currentPlayer = '';
         }[tag]));
     }
 
-    function teamLogoHtml(teamName, addClass = '') {
+    // 팀 로고 렌더링 (아바타와 분리하여 네모 반듯한 원본 비율 유지)
+    function teamLogoHtml(teamName, sizePx) {
         const name = String(teamName || '').trim();
         if (!name) return '';
         const fileName = (name === '내전') ? '캄몬스타즈' : name;
-        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="avatar avatar-sm ${addClass}" loading="lazy" onerror="this.remove();">`;
+        const size = sizePx || 16;
+        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo" style="width:${size}px; height:${size}px; margin-right:4px;" loading="lazy" onerror="this.remove();">`;
     }
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'stats', 'synergy', 'tools'];
@@ -281,7 +283,7 @@ let currentPlayer = '';
     async function fetchMemberFeed(soopId, page) {
         try {
             const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board?perPage=10&page=${page}`;
-            const data = await cachedFetchJson(url, 120000); // 2분
+            const data = await cachedFetchJson(url, 120000); 
             return {
                 posts: mergeOwnPosts(data, soopId),
                 totalPages: (data.meta && data.meta.totalPages) || 1,
@@ -441,7 +443,7 @@ let currentPlayer = '';
             return `
             <tr class="row-clickable match-row" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
                 <td class="sticky-col" style="width:18.8%;">
-                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'])}<span>${escapeHTML(m['상대팀'])}</span></span>
+                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'], 16)}<span class="text-ellipsis">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
                 <td style="width:18.8%;"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
                 <td style="width:18.8%;">${m['세트 결과'] || '-'}</td>
@@ -481,6 +483,7 @@ let currentPlayer = '';
         if (row) openTeamOpponentModal(row.dataset.team);
     });
 
+    // 프로필 아바타 렌더링 (동그란 형태)
     function getProfileImgUrl(soopId) {
         if (!soopId) return null;
         const id = String(soopId).trim().toLowerCase();
@@ -490,8 +493,8 @@ let currentPlayer = '';
     }
     function avatarHtml(soopId, cls) {
         const url = getProfileImgUrl(soopId);
-        if (!url) return `<span class="${cls} flex-center">👤</span>`;
-        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} flex-center\\'>👤</span>';">`;
+        if (!url) return `<span class="${cls}">👤</span>`;
+        return `<img src="${url}" class="${cls}" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls}\\'>👤</span>';">`;
     }
 
     const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
@@ -519,11 +522,12 @@ let currentPlayer = '';
         if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
         return Math.floor((end - start) / 86400000) + 1;
     }
+
     function memberCardHtml(m) {
         const tierText = (m['티어'] !== undefined && m['티어'] !== '') ? `${m['티어']}티어` : '-';
         return `
         <div class="clean-card card-hover member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
-            ${avatarHtml(m['SOOP ID'], 'avatar avatar-xl member-avatar-img')}
+            ${avatarHtml(m['SOOP ID'], 'avatar avatar-xl mb-2')}
             <div class="member-card-name text-ellipsis">${escapeHTML(m['이름'])}</div>
             <div class="member-card-tags">
                 <span class="tag-badge">${tierText}</span>
@@ -531,6 +535,7 @@ let currentPlayer = '';
             </div>
         </div>`;
     }
+    
     function renderMemberGroup(title, members, opts) {
         opts = opts || {};
         if (members.length === 0) return '';
@@ -555,6 +560,7 @@ let currentPlayer = '';
         <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
         <div class="grid-cards mb-4">${sorted.map(memberCardHtml).join('')}</div>`;
     }
+
     function renderMembersPage() {
         const roleOrderBase = ['감독', '코치', '선수'];
         const activeMembers = dbMembers.filter(isActiveMember);
@@ -932,7 +938,7 @@ let currentPlayer = '';
             <tr>
                 <td class="sticky-col text-ellipsis" style="width:16.66%;">${escapeHTML(m['상대 선수']) || '-'}</td>
                 <td class="text-ellipsis" style="width:16.66%;">
-                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'])}<span>${escapeHTML(m['상대팀'])}</span></span>
+                    <span class="flex-center gap-2 text-ellipsis">${teamLogoHtml(m['상대팀'], 16)}<span class="text-ellipsis">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
                 <td style="width:16.66%;"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
                 <td style="width:16.66%;">${escapeHTML(m['맵']) || '-'}</td>
