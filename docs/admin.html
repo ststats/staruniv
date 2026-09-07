@@ -20,6 +20,8 @@
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<!-- html2canvas: 저장 시 "오늘의 일정"+"이달의 일정" 캡처용 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
     /* 어드민 전용 요소(토큰 바 / 추가·수정 폼 / 좌우 레이아웃)만 여기서 스타일링.
@@ -97,7 +99,7 @@
         <div class="admin-main">
             <div class="cal-app-root">
                 <div class="cal-main-layout" style="flex-direction: column;">
-                    <section class="cal-calendar-area" style="width: 100%;">
+                    <section class="cal-calendar-area" id="captureMonth" style="width: 100%;">
                         <div class="section-title">
                             이달의 일정
                             <div class="cal-nav-group">
@@ -208,6 +210,8 @@
         }
     };
 
+    const IMG_FILE_PATH = 'docs/data/calendar.png';
+
     const saveAllToGithub = async () => {
         const token = document.getElementById('githubToken').value;
         if (!token) return alert('GitHub 토큰을 먼저 입력하고 연동해주세요!');
@@ -218,6 +222,14 @@
 
         try {
             const jsonContent = JSON.stringify({ schedules: calSchedules }, null, 2);
+
+            // 캘린더 그리드("이달의 일정")를 캡처해서 JSON이랑 같은 커밋에 같이 넣는다.
+            // (따로 커밋하면 Vercel 배포가 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
+            const canvas = await html2canvas(document.getElementById('captureMonth'), {
+                scale: 2, useCORS: true, backgroundColor: '#f4f7fc'
+            });
+            const base64Image = canvas.toDataURL('image/png').split(',')[1];
+
             const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
             const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
 
@@ -234,6 +246,12 @@
             });
             const jsonBlobSha = (await jsonBlobRes.json()).sha;
 
+            const imgBlobRes = await fetch(`${repoUrl}/git/blobs`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ content: base64Image, encoding: 'base64' })
+            });
+            const imgBlobSha = (await imgBlobRes.json()).sha;
+
             const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
             const baseTreeSha = (await commitRes.json()).tree.sha;
 
@@ -241,14 +259,17 @@
                 method: 'POST', headers,
                 body: JSON.stringify({
                     base_tree: baseTreeSha,
-                    tree: [{ path: DATA_FILE_PATH, mode: '100644', type: 'blob', sha: jsonBlobSha }]
+                    tree: [
+                        { path: DATA_FILE_PATH, mode: '100644', type: 'blob', sha: jsonBlobSha },
+                        { path: IMG_FILE_PATH, mode: '100644', type: 'blob', sha: imgBlobSha }
+                    ]
                 })
             });
             const newTreeSha = (await treeRes.json()).sha;
 
             const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
                 method: 'POST', headers,
-                body: JSON.stringify({ message: '✅ 캘린더 데이터 업데이트', tree: newTreeSha, parents: [latestCommitSha] })
+                body: JSON.stringify({ message: '✅ 캘린더 데이터 + 이미지 업데이트', tree: newTreeSha, parents: [latestCommitSha] })
             });
             const newCommitSha = (await newCommitRes.json()).sha;
 
@@ -258,7 +279,7 @@
             });
             if (!updateRefRes.ok) throw new Error('브랜치 업데이트 실패');
 
-            alert('✅ 데이터가 성공적으로 저장되었습니다!');
+            alert('✅ 데이터와 이미지가 성공적으로 저장되었습니다!');
         } catch (error) {
             console.error(error);
             alert('저장 중 오류가 발생했습니다: ' + error.message);
