@@ -15,8 +15,7 @@
 <div class="top-navbar">
     <div class="navbar-inner container">
         <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
-        <div class="nav-menu" id="mainMenu">
-            <!-- 기본 접속 화면: 홈 탭 -->
+        <div class="nav-menu hide-scrollbar" id="mainMenu">
             <a class="nav-item active" data-page="home" onclick="switchPage('home')">홈</a>
             <a class="nav-item" data-page="schedule" onclick="switchPage('schedule')">일정</a>
             <a class="nav-item" data-page="members" onclick="switchPage('members')">멤버</a>
@@ -55,18 +54,17 @@
     <hr class="page-header-divider">
     <div class="cal-app-root">
         <div class="cal-main-layout">
-            <!-- 모바일 분리용 사이드바 -->
             <aside class="cal-sidebar">
                 <div class="cal-today-card-wrapper">
                     <div class="section-title">오늘의 일정</div>
                     <div class="clean-card p-4">
-                        <div class="cal-today-list" id="todayList"></div>
+                        <div class="cal-today-list custom-scrollbar" id="todayList"></div>
                     </div>
                 </div>
                 <div class="cal-selected-card-wrapper">
                     <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
                     <div class="clean-card p-4">
-                        <div class="cal-selected-list" id="selectedDateList"></div>
+                        <div class="cal-selected-list custom-scrollbar" id="selectedDateList"></div>
                     </div>
                 </div>
             </aside>
@@ -81,8 +79,7 @@
                     </div>
                 </div>
                 <div class="clean-card p-4">
-                    <!-- 가로 스크롤 허용 캘린더 구역 -->
-                    <div class="cal-calendar-inner">
+                    <div class="cal-calendar-inner custom-scrollbar">
                         <div class="cal-calendar-scroll-content">
                             <div class="cal-weekdays">
                                 <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
@@ -111,12 +108,11 @@
     </div>
 
     <div id="view-member-news" style="display:none;">
-        <div class="avatar-selector-scroll">
+        <div class="clean-card avatar-selector-scroll custom-scrollbar">
             <div class="avatar-selector-list" id="news-avatar-list"></div>
         </div>
 
         <div class="section-title" id="news-content-title">전체 공지</div>
-
         <div id="news-feed-content">
             <div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>
         </div>
@@ -139,13 +135,13 @@
         <div class="col-md-6">
             <div class="section-title">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:320px; table-layout:fixed;">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-borderless table-hover mb-0 stat-table">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">순위</th>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">멤버</th>
-                                <th class="text-center synergy-metric-label" style="width:50%; white-space:nowrap;">별풍선</th>
+                                <th style="width:25%;">순위</th>
+                                <th style="width:25%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-male">
@@ -158,13 +154,13 @@
         <div class="col-md-6">
             <div class="section-title">여자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:320px; table-layout:fixed;">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-borderless table-hover mb-0 stat-table">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">순위</th>
-                                <th class="text-center" style="width:25%; white-space:nowrap;">멤버</th>
-                                <th class="text-center synergy-metric-label" style="width:50%; white-space:nowrap;">별풍선</th>
+                                <th style="width:25%;">순위</th>
+                                <th style="width:25%;">멤버</th>
+                                <th class="synergy-metric-label" style="width:50%;">별풍선</th>
                             </tr>
                         </thead>
                         <tbody id="synergy-tbody-female">
@@ -175,7 +171,6 @@
             </div>
         </div>
     </div>
-    <!-- 하단 여백 중복 삭제 -->
     <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; margin-top:24px;"></div>
 </div>
 
@@ -185,47 +180,47 @@
         <h1 class="page-header-title">도구</h1>
     </div>
     <hr class="page-header-divider">
+    
     <div class="section-title">외부도구</div>
-    <div class="tool-grid">
-        <a class="tool-card" href="https://calm-hoxy.vercel.app/" target="_blank" rel="noopener">
+    <div class="grid-cards grid-cards-md">
+        <a class="clean-card card-hover tool-card" href="https://calm-hoxy.vercel.app/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcalm-hoxy.vercel.app%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">혹시</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcalm-hoxy.vercel.app%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">혹시</div>
         </a>
-        <a class="tool-card" href="https://prena.io/brain/" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://prena.io/brain/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fprena.io%2Fbrain%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">암다리</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fprena.io%2Fbrain%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">암다리</div>
         </a>
-        <a class="tool-card" href="https://lazygyu.github.io/roulette/" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://lazygyu.github.io/roulette/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Flazygyu.github.io%2Froulette%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">핀볼</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Flazygyu.github.io%2Froulette%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">핀볼</div>
         </a>
-        <a class="tool-card" href="https://search.naver.com/search.naver?where=nexearch&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%EA%B2%8C%EC%9E%84" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://search.naver.com/search.naver?where=nexearch&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%EA%B2%8C%EC%9E%84" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.naver.com%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">네이버 사다리</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.naver.com%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">네이버 사다리</div>
         </a>
     </div>
 
-    <!-- 하드코딩된 여백 교정 -->
     <div class="section-title mt-4">외부사이트</div>
-    <div class="tool-grid">
-        <a class="tool-card" href="https://ygosu.com/board/pan_monstarz" target="_blank" rel="noopener">
+    <div class="grid-cards grid-cards-md">
+        <a class="clean-card card-hover tool-card" href="https://ygosu.com/board/pan_monstarz" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fygosu.com%2Fboard%2Fpan_monstarz" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">스대게</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fygosu.com%2Fboard%2Fpan_monstarz" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">스대게</div>
         </a>
-        <a class="tool-card" href="https://eloboard.com/" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://eloboard.com/" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Feloboard.com%2F" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">EloBoard</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Feloboard.com%2F" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">EloBoard</div>
         </a>
-        <a class="tool-card" href="https://www.fmkorea.com/?mid=starcraft" target="_blank" rel="noopener">
+        <a class="clean-card card-hover tool-card" href="https://www.fmkorea.com/?mid=starcraft" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.fmkorea.com%2F%3Fmid%3Dstarcraft" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">스갤</div>
+            <div class="tool-card-icon flex-center"><img loading="lazy" src="https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fwww.fmkorea.com%2F%3Fmid%3Dstarcraft" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name text-ellipsis">스갤</div>
         </a>
     </div>
 </div>
@@ -255,23 +250,23 @@
             <div class="col-lg-7 d-flex flex-column">
                 <div class="section-title">상대 전적</div>
                 <div class="clean-card p-0 overflow-hidden d-flex flex-column flex-grow-1">
-                    <div class="table-responsive flex-grow-1" style="overflow-y: auto;">
-                        <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:615px; table-layout: fixed;">
+                    <div class="table-responsive flex-grow-1 custom-scrollbar">
+                        <table class="table table-borderless table-hover mb-0 stat-table" style="min-width:615px;">
                             <thead>
-                                <tr><th class="text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">상대</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대회</th><th class="text-center" style="white-space:nowrap; width:18.8%;">대학</th><th class="text-center" style="white-space:nowrap; width:18.8%;">미니</th><th class="text-center" style="white-space:nowrap; width:18.8%;">CK</th><th style="width:6%;"></th></tr>
+                                <tr><th class="sticky-col" style="width:18.8%;">상대</th><th style="width:18.8%;">대회</th><th style="width:18.8%;">대학</th><th style="width:18.8%;">미니</th><th style="width:18.8%;">CK</th><th style="width:6%;"></th></tr>
                             </thead>
                             <tbody>
                                 {% for row in crew_stats['전체'] %}
-                                <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="{{ row['상대'] | e }}">
-                                    <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ row['상대'] | e }}</span>
+                                <tr class="row-clickable" data-team="{{ row['상대'] | e }}">
+                                    <td class="fw-bold text-dark sticky-col" style="width:18.8%;">
+                                        <span class="flex-center gap-2 text-ellipsis">
+                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="avatar avatar-sm flex-shrink-0" loading="lazy" onerror="this.remove();">
+                                            <span>{{ row['상대'] | e }}</span>
                                         </span>
                                     </td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대회 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대학 전적'] | e }}</td>
-                                    <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['미니 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['CK 전적'] | e }}</td>
-                                    <td class="text-center" style="width: 6%;">
+                                    <td style="width:18.8%;">{{ row['대회 전적'] | e }}</td><td style="width:18.8%;">{{ row['대학 전적'] | e }}</td>
+                                    <td style="width:18.8%;">{{ row['미니 전적'] | e }}</td><td style="width:18.8%;">{{ row['CK 전적'] | e }}</td>
+                                    <td style="width: 6%;">
                                         <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                                     </td>
                                 </tr>
@@ -288,15 +283,15 @@
                     <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                 </div>
                 <div class="clean-card flex-grow-0 p-0 overflow-hidden">
-                    <div class="table-responsive">
-                        <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                    <div class="table-responsive custom-scrollbar">
+                        <table class="table table-borderless table-hover mb-0 stat-table">
                             <thead>
                                 <tr>
-                                    <th class="text-center stat-table-sticky-col" style="width:18.8%;">상대</th>
-                                    <th class="text-center" style="width:18.8%;">형식</th>
-                                    <th class="text-center" style="width:18.8%;">세트</th>
-                                    <th class="text-center" style="width:18.8%;">결과</th>
-                                    <th class="text-center" style="width:18.8%;">날짜</th>
+                                    <th class="sticky-col" style="width:18.8%;">상대</th>
+                                    <th style="width:18.8%;">형식</th>
+                                    <th style="width:18.8%;">세트</th>
+                                    <th style="width:18.8%;">결과</th>
+                                    <th style="width:18.8%;">날짜</th>
                                     <th style="width:6%;"></th>
                                 </tr>
                             </thead>
@@ -310,7 +305,7 @@
 
     <!-- 2. 개인 뷰 -->
     <div id="view-indiv-stat" style="display: none;">
-        <div class="avatar-selector-scroll">
+        <div class="clean-card avatar-selector-scroll custom-scrollbar">
             <div class="avatar-selector-list" id="indiv-avatar-list"></div>
         </div>
 
@@ -318,15 +313,15 @@
 
         <div id="indiv-summary-content">
                     <div class="clean-card p-0 overflow-hidden">
-                        <div class="table-responsive">
-                            <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:650px; table-layout: fixed;">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table table-borderless table-hover mb-0 stat-table" style="min-width:650px;">
                                 <thead>
                                     <tr>
-                                        <th class="text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;">멤버</th>
-                                        <th style="white-space:nowrap; width:20%;">대회</th>
-                                        <th style="white-space:nowrap; width:20%;">대학</th>
-                                        <th style="white-space:nowrap; width:20%;">미니</th>
-                                        <th style="white-space:nowrap; width:20%;">CK</th>
+                                        <th class="sticky-col" style="width:20%;">멤버</th>
+                                        <th style="width:20%;">대회</th>
+                                        <th style="width:20%;">대학</th>
+                                        <th style="width:20%;">미니</th>
+                                        <th style="width:20%;">CK</th>
                                     </tr>
                                 </thead>
                                 <tbody id="indiv-summary-tbody">
@@ -338,7 +333,7 @@
 
                 <div id="statContent" style="display: none;">
                     <div class="clean-card d-flex align-items-center mb-4 p-4">
-                        <div class="profile-avatar" id="p-avatar">👤</div>
+                        <div class="avatar avatar-xl flex-center text-secondary me-3" style="font-size: 28px;" id="p-avatar">👤</div>
                         <div>
                             <h3 class="fw-bold m-0 mb-2" id="p-name" style="letter-spacing:-1px;">이름</h3>
                             <div class="d-flex gap-2">
@@ -353,9 +348,9 @@
                             <div class="clean-card h-100 p-4">
                                 <div class="section-title-sm">형식별 승률</div>
                                 <div class="donut-wrap">
-                                    <div class="donut-box"><div class="donut" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label">대회</div><div class="donut-sub" id="dw-fmt-1">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label">대학</div><div class="donut-sub" id="dw-fmt-2">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-fmt-3"><span class="donut-text" id="dt-fmt-3">0%</span></div><div class="donut-label">미니</div><div class="donut-sub" id="dw-fmt-3">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label text-ellipsis">대회</div><div class="donut-sub text-ellipsis" id="dw-fmt-1">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label text-ellipsis">대학</div><div class="donut-sub text-ellipsis" id="dw-fmt-2">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-fmt-3"><span class="donut-text" id="dt-fmt-3">0%</span></div><div class="donut-label text-ellipsis">미니</div><div class="donut-sub text-ellipsis" id="dw-fmt-3">-</div></div>
                                 </div>
                             </div>
                         </div>
@@ -363,9 +358,9 @@
                             <div class="clean-card h-100 p-4">
                                 <div class="section-title-sm">종족전 승률</div>
                                 <div class="donut-wrap">
-                                    <div class="donut-box"><div class="donut" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label text-primary">vs T</div><div class="donut-sub" id="dw-race-t">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label" style="color:purple;">vs Z</div><div class="donut-sub" id="dw-race-z">-</div></div>
-                                    <div class="donut-box"><div class="donut" id="d-race-p"><span class="donut-text" id="dt-race-p">0%</span></div><div class="donut-label text-warning">vs P</div><div class="donut-sub" id="dw-race-p">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label text-primary">vs T</div><div class="donut-sub text-ellipsis" id="dw-race-t">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label" style="color:purple;">vs Z</div><div class="donut-sub text-ellipsis" id="dw-race-z">-</div></div>
+                                    <div class="donut-box"><div class="donut flex-center" id="d-race-p"><span class="donut-text" id="dt-race-p">0%</span></div><div class="donut-label text-warning">vs P</div><div class="donut-sub text-ellipsis" id="dw-race-p">-</div></div>
                                 </div>
                             </div>
                         </div>
@@ -374,7 +369,7 @@
                     <div class="section-title mt-4" style="height:auto; flex-wrap:wrap; gap:8px;">
                         <div class="d-flex align-items-center" style="max-width: 100%; overflow: hidden;">
                             <span style="flex-shrink: 0;">최근 전적</span>
-                            <div id="indiv-filters" class="filter-nav">
+                            <div id="indiv-filters" class="filter-nav custom-scrollbar">
                                 <div class="filter-item active" onclick="setIndivFilter('전체')">전체</div>
                                 <div class="filter-item" onclick="setIndivFilter('대회')">대회</div>
                                 <div class="filter-item" onclick="setIndivFilter('대학')">대학</div>
@@ -386,16 +381,16 @@
                     </div>
 
                     <div class="clean-card p-0 overflow-hidden">
-                        <div class="table-responsive">
-                            <table class="table table-borderless table-hover mb-0 text-center stat-table" style="min-width:480px; table-layout:fixed;">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table table-borderless table-hover mb-0 stat-table">
                                 <thead>
                                     <tr>
-                                        <th class="text-center stat-table-sticky-col" style="width:16.66%;">상대</th>
-                                        <th class="text-center" style="width:16.66%;">상대 팀</th>
-                                        <th class="text-center" style="width:16.66%;">형식</th>
-                                        <th class="text-center" style="width:16.66%;">맵</th>
-                                        <th class="text-center" style="width:16.66%;">결과</th>
-                                        <th class="text-center" style="width:16.66%;">날짜</th>
+                                        <th class="sticky-col" style="width:16.66%;">상대</th>
+                                        <th style="width:16.66%;">상대 팀</th>
+                                        <th style="width:16.66%;">형식</th>
+                                        <th style="width:16.66%;">맵</th>
+                                        <th style="width:16.66%;">결과</th>
+                                        <th style="width:16.66%;">날짜</th>
                                     </tr>
                                 </thead>
                                 <tbody id="indiv-recent-list"></tbody>
