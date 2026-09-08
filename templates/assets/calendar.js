@@ -24,6 +24,16 @@
     const calGetFormatDate = (year, month, day) => {
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     };
+
+    // 일정 배열을 시간순으로 정렬. 시간이 없는 일정은 항상 최상단에 오도록 한다.
+    const calSortByTime = (items) => {
+        return items.slice().sort((a, b) => {
+            const aHas = !!a.time, bHas = !!b.time;
+            if (aHas !== bHas) return aHas ? 1 : -1; // 시간 없는 쪽이 먼저
+            if (!aHas) return 0; // 둘 다 시간 없음: 등록 순서 유지
+            return a.time.localeCompare(b.time);
+        });
+    };
     
     const calLoadPublicData = async () => {
         try {
@@ -77,7 +87,7 @@
             if (calPublicHolidays[dateStr]) dayDiv.classList.add('holiday');
             let dayHTML = `<span class="cal-day-number">${i}</span>`;
             if (calSchedules[dateStr] && calSchedules[dateStr].length > 0) {
-                calSchedules[dateStr].forEach(item => { dayHTML += calGetEventHTML(item); });
+                calSortByTime(calSchedules[dateStr]).forEach(item => { dayHTML += calGetEventHTML(item); });
             }
             dayDiv.innerHTML = dayHTML;
             dayDiv.onclick = () => calSelectDate(dateStr);
@@ -109,8 +119,7 @@
         const container = document.getElementById('todayList');
         const today = new Date();
         const curTodayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
-        const todayItems = (calSchedules[curTodayStr] || []).slice();
-        todayItems.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+        const todayItems = calSortByTime(calSchedules[curTodayStr] || []);
         if (todayItems.length === 0) { 
             container.innerHTML = `<div class="cal-no-schedule">오늘 등록된 일정이 없습니다.</div>`; 
             return; 
@@ -134,7 +143,7 @@
             container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`; 
             return; 
         }
-        const daySchedules = calSchedules[calSelectedDateStr] || [];
+        const daySchedules = calSortByTime(calSchedules[calSelectedDateStr] || []);
         if (daySchedules.length === 0) { 
             container.innerHTML = `<div class="cal-no-schedule">등록된 일정이 없습니다.</div>`; 
             return; 
