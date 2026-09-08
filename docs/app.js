@@ -61,7 +61,7 @@
         const targetNav = document.querySelector(`#mainMenu .nav-item[data-page="${pageId}"]`);
         if (targetNav) targetNav.classList.add('active');
 
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
         if (!skipHashUpdate) {
             resetPageSubState(pageId);
