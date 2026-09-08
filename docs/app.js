@@ -448,8 +448,11 @@
             }
         });
         for (let fmt in tStats) {
-            document.getElementById(`t-sum-${fmt}-w`).innerText = `${tStats[fmt].w}승 ${tStats[fmt].l}패`;
-            document.getElementById(`t-sum-${fmt}-r`).innerText = getRateText(tStats[fmt].w, tStats[fmt].l);
+            const w = tStats[fmt].w, l = tStats[fmt].l;
+            const rate = (w + l) > 0 ? (w / (w + l) * 100) : 0;
+            document.getElementById(`t-sum-${fmt}-w`).innerText = `${w}승 ${l}패`;
+            document.getElementById(`t-sum-${fmt}-r`).innerText = getRateText(w, l);
+            document.getElementById(`t-sum-${fmt}-donut`).style.background = `conic-gradient(var(--color-primary) ${rate}%, #eee 0)`;
         }
         renderTeamMatchesList('team-recent-list', {format: '전체'}, 10);
     }
@@ -783,7 +786,7 @@
         });
 
         if (activeMembers.length === 0) {
-            container.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
+            container.innerHTML = `<div class="clean-card text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
             return;
         }
 
@@ -801,30 +804,30 @@
             .sort((a, b) => new Date(b.post.regDate) - new Date(a.post.regDate));
 
         if (withNotice.length === 0) {
-            container.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
+            container.innerHTML = `<div class="clean-card text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
             return;
         }
 
         container.innerHTML = withNotice.slice(0, 5).map(({ member: m, post }) => {
             const soopId = m['SOOP ID'];
+            const name = m['이름'];
+            const timeText = formatRelativeTime(post.regDate);
             const title = post.titleName || '(제목 없음)';
             const snippet = (post.content && post.content.textContent) || '';
-            const dateText = (post.regDate || '').split(' ')[0];
             const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
-            const thumbHtml = thumbUrl ? `<img class="notice-row-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
+            const thumbHtml = thumbUrl ? `<div class="home-notice-photo"><img src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>` : '';
 
             return `
-            <div class="notice-row" onclick="goToNewsFeed('${String(m['이름']).replace(/'/g, "\\'")}')">
-                ${avatarHtml(soopId, 'notice-row-avatar')}
-                <div class="notice-row-body">
-                    <div class="notice-row-top">
-                        <span class="notice-row-name">${escapeHTML(m['이름'])}</span>
-                        <span class="notice-row-dot">·</span>
-                        <span class="notice-row-date">${escapeHTML(dateText)}</span>
+            <div class="home-notice-card" onclick="goToNewsFeed('${String(name).replace(/'/g, "\\'")}')">
+                <div class="home-notice-header">
+                    ${avatarHtml(soopId, 'home-notice-avatar')}
+                    <div class="home-notice-header-text">
+                        <div class="home-notice-name">${escapeHTML(name)}</div>
+                        <div class="home-notice-meta">${escapeHTML(timeText)}</div>
                     </div>
-                    <div class="notice-row-title">${escapeHTML(title)}</div>
-                    ${snippet ? `<div class="notice-row-snippet">${escapeHTML(snippet)}</div>` : ''}
                 </div>
+                <div class="home-notice-title">${escapeHTML(title)}</div>
+                ${snippet ? `<div class="home-notice-body">${escapeHTML(snippet)}</div>` : ''}
                 ${thumbHtml}
             </div>`;
         }).join('');
