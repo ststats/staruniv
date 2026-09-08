@@ -815,19 +815,19 @@
             const title = post.titleName || '(제목 없음)';
             const snippet = (post.content && post.content.textContent) || '';
             const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
-            const thumbHtml = thumbUrl ? `<div class="home-notice-photo"><img src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>` : '';
+            const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
 
             return `
             <div class="home-notice-card" onclick="goToNewsFeed('${String(name).replace(/'/g, "\\'")}')">
-                <div class="home-notice-header">
-                    ${avatarHtml(soopId, 'home-notice-avatar')}
-                    <div class="home-notice-header-text">
-                        <div class="home-notice-name">${escapeHTML(name)}</div>
-                        <div class="home-notice-meta">${escapeHTML(timeText)}</div>
+                ${avatarHtml(soopId, 'home-notice-avatar')}
+                <div class="home-notice-body">
+                    <div class="home-notice-name">${escapeHTML(name)}</div>
+                    <div class="home-notice-title-row">
+                        <span class="home-notice-title">${escapeHTML(title)}</span>
+                        <span class="home-notice-meta">${escapeHTML(timeText)}</span>
                     </div>
+                    ${snippet ? `<div class="home-notice-snippet">${escapeHTML(snippet)}</div>` : ''}
                 </div>
-                <div class="home-notice-title">${escapeHTML(title)}</div>
-                ${snippet ? `<div class="home-notice-body">${escapeHTML(snippet)}</div>` : ''}
                 ${thumbHtml}
             </div>`;
         }).join('');

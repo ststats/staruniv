@@ -163,13 +163,18 @@
         .filter-item.active { color: var(--color-primary); font-weight: 800; }
         .filter-item.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background-color: var(--color-primary); border-radius: 2px; }
 
-        .stat-card-box { position: relative; text-align: center; padding: 20px 16px; }
-        .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 700; margin-bottom: 12px; }
-        .stat-card-box .wl { font-size: var(--fs-body); color: #888; font-weight: 600; margin-top: 8px; }
-        /* 우상단 화살표 - 클릭하면 상세 전적 팝업(모달)이 뜬다는 걸 나타내는
-           링크형 아이콘. 기존 '상세 전적' 버튼을 대체한다. */
-        .stat-card-arrow { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border: none; border-radius: 50%; background: transparent; color: #adb5bd; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s, color 0.15s; }
-        .stat-card-arrow:hover { background: var(--color-primary-tint); color: var(--color-primary); }
+        .stat-card-box { position: relative; text-align: center; padding: 22px 16px 20px; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
+        .stat-card-box:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
+        .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 700; margin-bottom: 14px; }
+        .stat-card-box .wl { font-size: var(--fs-body); color: #888; font-weight: 600; margin-top: 10px; }
+        /* 저번보다 임팩트 있게: 도넛을 더 키우고, 링도 두껍게, 가운데 퍼센트도 더 크고 진하게 */
+        .stat-card-box .donut { width: 92px; height: 92px; margin-bottom: 4px; }
+        .stat-card-box .donut::before { width: 70px; height: 70px; }
+        .stat-card-box .donut-text { font-size: 19px; font-weight: 800; color: var(--color-primary); }
+        /* 우상단 화살표 - 도구 페이지의 외부링크 화살표(↗)와 같은 모양으로,
+           카드 전체가 클릭 가능함을 알려주는 시각적 표시일 뿐이다(클릭은 카드 자체에 걸림) */
+        .stat-card-arrow { position: absolute; top: 14px; right: 14px; color: #ccc; font-size: 12px; transition: color 0.15s; }
+        .stat-card-box:hover .stat-card-arrow { color: var(--color-primary); }
 
         /* 리스트 래퍼 */
         
@@ -220,17 +225,18 @@
         /* 홈 화면 - 최근 공지 (카드 한 장 = 글 한 개: 아바타+이름/시간 헤더,
            볼드 제목, 그 아래 공지 내용) */
         .home-notice-list { display: flex; flex-direction: column; gap: 12px; }
-        .home-notice-card { cursor: pointer; padding: 16px; transition: box-shadow 0.15s, transform 0.15s; }
+        .home-notice-card { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px 16px; transition: box-shadow 0.15s, transform 0.15s; }
         .home-notice-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
-        .home-notice-header { display: flex; align-items: center; gap: 12px; }
         .home-notice-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
-        .home-notice-header-text { min-width: 0; flex: 1; }
+        .home-notice-body { min-width: 0; flex: 1; }
         .home-notice-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .home-notice-meta { font-size: 11px; color: #999; margin-top: 2px; }
-        .home-notice-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-top: 14px; }
-        .home-notice-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-top: 6px; }
-        .home-notice-photo { margin-top: 12px; }
-        .home-notice-photo img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px; display: block; background: var(--color-bg-subtle); }
+        /* 공지제목을 시간 왼쪽에 배치 - 제목은 줄어들고, 시간은 항상 오른쪽에 고정 폭으로 붙는다 */
+        .home-notice-title-row { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; min-width: 0; }
+        .home-notice-title { font-weight: 800; font-size: var(--fs-body); color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .home-notice-meta { font-size: 11px; color: #999; flex-shrink: 0; margin-left: auto; white-space: nowrap; }
+        .home-notice-snippet { font-size: 12px; color: var(--color-text-sub); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 사진은 오른쪽 정사각 썸네일로 */
+        .home-notice-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
 
 
         /* 멤버 소식 피드 - 인스타그램 포스트 스타일: 사진은 카드 끝까지 꽉 채우고,
@@ -270,6 +276,7 @@
         .member-card .tool-card-ext { top: 8px; right: 10px; }
         /* 텍스트 링크 옆에 붙는 인라인 화살표(원글 보기 등) - 도구모음 카드 화살표와 동일한 모양 */
         .ext-arrow { display: inline-block; margin-left: 3px; font-size: 11px; }
+        .stat-table .ext-arrow { margin-left: 0; color: #ccc; font-size: 12px; }
         /* tag-badge와 동일하게 flex로 중앙정렬해서, 폰트 메트릭 차이로 텍스트가
            박스 안에서 위/아래로 치우쳐 보이던 문제와 뱃지가 커 보이던 문제를 함께 해결 */
         .match-badge { width: 36px; height: 18px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; font-size: 10px; font-weight: 800; line-height: 1; border-radius: 4px; color: #fff; }
@@ -329,6 +336,7 @@
         .stat-table tbody tr:hover .stat-table-sticky-col { background: var(--color-primary-tint); }
         .team-row-clickable { cursor: pointer; transition: background 0.1s; }
         .team-row-clickable:hover { background: var(--color-primary-tint) !important; }
+        .team-row-clickable:hover .ext-arrow { color: var(--color-primary); }
 
         /* ==============================
             일정(캘린더) 페이지 스크롤 완벽 픽스 및 레이아웃
