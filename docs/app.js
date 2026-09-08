@@ -33,16 +33,35 @@
 
     // ===== 해시 라우터: #페이지?파라미터=값 형태로 하위 상태까지 URL에 반영 =====
     function parseHash() {
-        // 해시(#page?params) 대신 실제 경로(/page?params)를 표준 URL 형태로 쓴다.
-        const seg = location.pathname.replace(/^\//, '').replace(/\/$/, '');
-        return { page: seg || 'home', params: new URLSearchParams(location.search) };
+        // 실제 경로(/page?params)를 표준 URL 형태로 쓴다. GitHub Pages에서도
+        // 동작하도록 docs/404.html + 위 부트스트랩 스크립트로 경로를 복원한다
+        // (rafgraph/spa-github-pages 패턴).
+        //
+        // Vercel처럼 루트(/records)에 배포되든, GitHub Pages 프로젝트 페이지처럼
+        // 서브경로(/staruniv/records)에 배포되든 둘 다 지원해야 하므로, pathname을
+        // 세그먼트로 쪼개서 VALID_PAGE_IDS와 실제로 일치하는 세그먼트를 찾는다
+        // (앞에 저장소 이름 같은 서브경로가 몇 겹 있든 상관없이 항상 정확하다).
+        const segments = location.pathname.split('/').filter(Boolean);
+        const pageSeg = segments.find(s => VALID_PAGE_IDS.includes(s));
+        return { page: pageSeg || 'home', params: new URLSearchParams(location.search) };
+    }
+
+    function getBasePath() {
+        // 현재 URL에서 "알려진 페이지 이름" 세그먼트 앞부분(GitHub Pages라면
+        // 저장소 이름 등)을 그대로 유지하기 위해 계산한다. Vercel 루트 배포라면
+        // 빈 문자열이 나온다.
+        const segments = location.pathname.split('/').filter(Boolean);
+        const idx = segments.findIndex(s => VALID_PAGE_IDS.includes(s));
+        const baseSegments = idx === -1 ? segments : segments.slice(0, idx);
+        return baseSegments.length ? '/' + baseSegments.join('/') : '';
     }
 
     function buildHash(page, params) {
         const qs = new URLSearchParams();
         Object.entries(params || {}).forEach(([k, v]) => { if (v) qs.set(k, v); });
         const qsStr = qs.toString();
-        const path = page === 'home' ? '/' : '/' + page;
+        const base = getBasePath();
+        const path = page === 'home' ? (base ? base + '/' : '/') : base + '/' + page;
         return path + (qsStr ? '?' + qsStr : '');
     }
 
