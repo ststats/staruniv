@@ -581,6 +581,18 @@
     function raceBadgeHtml(race) {
         return `<span class="tag-badge${raceBadgeClass(race)}">${raceShortLabel(race)}</span>`;
     }
+    // 티어 표기(예: "3티어")를 멤버 카드/모달/개인전적 프로필에서 동일하게 사용
+    function tierLabel(tier) {
+        return (tier !== undefined && tier !== null && tier !== '') ? `${tier}티어` : '티어 미정';
+    }
+    function tierBadgeHtml(tier) {
+        return `<span class="tag-badge tier-badge">${tierLabel(tier)}</span>`;
+    }
+    // 직책 뱃지 클래스(감독/코치/선수별 색상)
+    function roleBadgeClass(role) {
+        const map = { '감독': 'role-director', '코치': 'role-coach', '선수': 'role-player' };
+        return map[role] ? ` role-badge ${map[role]}` : '';
+    }
     function isActiveMember(m) {
         return !m['퇴단일'] || String(m['퇴단일']).trim() === '';
     }
@@ -595,13 +607,12 @@
         return Math.floor((end - start) / 86400000) + 1;
     }
     function memberCardHtml(m) {
-        const tierText = (m['티어'] !== undefined && m['티어'] !== '') ? `${m['티어']}티어` : '-';
         return `
         <div class="member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
             ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
             <div class="member-card-name">${escapeHTML(m['이름'])}</div>
             <div class="member-card-tags">
-                <span class="tag-badge">${tierText}</span>
+                ${tierBadgeHtml(m['티어'])}
                 ${raceBadgeHtml(m['종족'])}
             </div>
         </div>`;
@@ -809,11 +820,15 @@
         if (!m) return;
 
         document.getElementById('mp-name').innerText = name;
-        document.getElementById('mp-role-badge').innerText = m['직책'] || '미정';
+        const mpRoleBadge = document.getElementById('mp-role-badge');
+        mpRoleBadge.textContent = m['직책'] || '미정';
+        mpRoleBadge.className = 'tag-badge' + roleBadgeClass(m['직책']);
         const mpRaceBadge = document.getElementById('mp-race-badge');
         mpRaceBadge.textContent = raceShortLabel(m['종족']);
         mpRaceBadge.className = 'tag-badge' + raceBadgeClass(m['종족']);
-        document.getElementById('mp-tier-badge').innerText = (m['티어'] !== undefined && m['티어'] !== '') ? `${m['티어']}티어` : '티어 미정';
+        const mpTierBadge = document.getElementById('mp-tier-badge');
+        mpTierBadge.textContent = tierLabel(m['티어']);
+        mpTierBadge.className = 'tag-badge tier-badge';
 
         const avatarUrl = getProfileImgUrl(m['SOOP ID']);
         const avatarEl = document.getElementById('mp-avatar');
@@ -968,7 +983,9 @@
         const pDb = dbMembers.find(x => x['이름'] === name) || {};
 
         document.getElementById('p-name').innerText = name;
-        document.getElementById('p-tier').innerText = (pDb['티어'] || pDb['입단 티어'] || pDb['직책'] || '미정') + (pDb['직책'] === '선수' ? ' 티어' : '');
+        const pTierBadge = document.getElementById('p-tier');
+        pTierBadge.textContent = tierLabel(pDb['티어']);
+        pTierBadge.className = 'tag-badge tier-badge';
         const pRaceBadge = document.getElementById('p-race');
         pRaceBadge.textContent = raceShortLabel(pDb['종족']);
         pRaceBadge.className = 'tag-badge' + raceBadgeClass(pDb['종족']);
