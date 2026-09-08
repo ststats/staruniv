@@ -18,14 +18,26 @@
     }
     const EMPTY_MATCH_ROW_HTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
 
-    // 공지 카드의 다중 사진 스와이프 - 스크롤 위치를 보고 현재 몇 번째 사진인지
-    // 계산해서 점(dot) 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
+    // 사진마다 원본 비율대로 폭이 다르므로(높이 600px 고정, 폭은 auto), 스크롤 위치만으로
+    // "컨테이너 폭 x 번째"를 계산하던 기존 방식은 안 맞는다. 대신 각 이미지의 실제
+    // offsetLeft와 현재 scrollLeft를 비교해서 가장 가까운(=스냅되어 있는) 사진을 찾는다.
+    function getCurrentPhotoIndex(scroller) {
+        const imgs = Array.from(scroller.children);
+        let idx = 0, minDiff = Infinity;
+        imgs.forEach((img, i) => {
+            const diff = Math.abs(img.offsetLeft - scroller.scrollLeft);
+            if (diff < minDiff) { minDiff = diff; idx = i; }
+        });
+        return { idx, total: imgs.length, imgs };
+    }
+
+    // 공지 카드의 다중 사진 스와이프 - 현재 몇 번째 사진인지 계산해서
+    // 점(dot) 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
     // (첫 장에선 이전 화살표를, 마지막 장에선 다음 화살표를 숨긴다)
     function updateNewsPhotoDots(scroller) {
         const wrap = scroller.parentElement;
         if (!wrap || !wrap.classList.contains('news-post-photos-wrap')) return;
-        const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
-        const total = scroller.children.length;
+        const { idx, total } = getCurrentPhotoIndex(scroller);
 
         const dotsWrap = wrap.querySelector('.news-post-photos-dots');
         if (dotsWrap) dotsWrap.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
@@ -36,10 +48,13 @@
         if (nextBtn) nextBtn.classList.toggle('is-hidden', idx >= total - 1);
     }
 
-    // 화살표 클릭 시 사진 한 장 폭만큼 부드럽게 스크롤 이동 (좌: -1, 우: 1)
+    // 화살표 클릭 시 현재 사진 기준 바로 옆 사진의 실제 위치(offsetLeft)로 부드럽게 이동.
+    // (사진 폭이 제각각이라 "컨테이너 폭만큼 이동"이 아니라 다음 사진의 실제 좌표로 스크롤)
     function scrollNewsPhotos(btn, dir) {
         const scroller = btn.closest('.news-post-photos-wrap').querySelector('.news-post-photos');
-        scroller.scrollBy({ left: dir * scroller.clientWidth, behavior: 'smooth' });
+        const { idx, total, imgs } = getCurrentPhotoIndex(scroller);
+        const target = Math.max(0, Math.min(total - 1, idx + dir));
+        scroller.scrollTo({ left: imgs[target].offsetLeft, behavior: 'smooth' });
     }
 
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
