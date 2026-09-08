@@ -40,6 +40,12 @@
             --space-block-gap: 24px;
             --space-title-gap: 16px;
             --space-trailer: 16px;
+
+            /* 카드류 컴포넌트(흰 배경 박스) 공통 값 - clean-card, tool-card, member-card,
+               news-post-card, live-broadcast-card 등 전부 이 3개를 참조한다. */
+            --radius-card: 12px;
+            --shadow-card: 0 2px 6px rgba(0,0,0,0.015);
+            --shadow-card-hover: 0 6px 16px rgba(41,121,255,0.10);
         }
         
         /* 팝업(모달) 오픈 시 스크롤바 숨김으로 인한 화면 밀림(흔들림) 완벽 차단 */
@@ -127,7 +133,7 @@
         .section-title-sm { font-size: var(--fs-subheading); font-weight: 800; color: #111; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .section-title-chevron { color: #999; transition: transform 0.2s; flex-shrink: 0; }
         .section-title.collapsed .section-title-chevron { transform: rotate(-90deg); }
-        .clean-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.015); }
+        .clean-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
         
         /* 버튼 */
         .btn-view-all { background: transparent; border: none; font-size: 12px; font-weight: 700; color: #888; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
@@ -166,8 +172,8 @@
 
         /* 홈 화면 - 현재 방송중 카드 */
         .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-        .live-broadcast-card { display: block; border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; background: #fff; box-shadow: 0 2px 8px rgba(20,20,30,0.05); transition: box-shadow 0.15s, transform 0.15s; }
-        .live-broadcast-card:hover { box-shadow: 0 6px 16px rgba(41,121,255,0.10); transform: translateY(-1px); }
+        .live-broadcast-card { display: block; border: 1px solid var(--color-border); border-radius: var(--radius-card); overflow: hidden; text-decoration: none; color: inherit; background: var(--color-card); box-shadow: var(--shadow-card); transition: box-shadow 0.15s, transform 0.15s; }
+        .live-broadcast-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
         .live-thumb-wrap { position: relative; background: #e9ecef; }
         .live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #e9ecef; }
         .live-badge { position: absolute; top: 8px; left: 8px; background: var(--color-lose); color: #fff; font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.3px; }
@@ -194,7 +200,7 @@
         .notice-row-snippet { font-size: 12px; color: var(--color-text-sub); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* 멤버 소식 피드 */
-        .news-post-card { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.015); }
+        .news-post-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-card); }
         .news-post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .news-post-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
         .news-post-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
@@ -219,8 +225,8 @@
 
         /* 도구 페이지 카드 */
         .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
-        .tool-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 28px 12px; text-decoration: none; color: inherit; position: relative; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
-        .tool-card:hover { box-shadow: 0 6px 16px rgba(41,121,255,0.10); transform: translateY(-2px); border-color: #b9cdf5; }
+        .tool-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 28px 12px; text-decoration: none; color: inherit; position: relative; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
+        .tool-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
         .tool-card-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--color-primary-tint); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--fs-heading); overflow: hidden; }
         .tool-card-icon img { width: 24px; height: 24px; object-fit: contain; }
         .tool-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; text-align: center; }
@@ -239,7 +245,7 @@
         .modal-body.p-0 { background: #fcfcfc; }
 
         /* 개인 사이드바 */
-        .sidebar-list { border: 1px solid var(--color-border); border-radius: 10px; background: #fff; overflow: hidden; }
+        .sidebar-list { border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-card); overflow: hidden; }
         .sidebar-header { background: #fff; padding: 12px 20px; font-size: var(--fs-subheading); font-weight: 800; color: #666; border-bottom: 2px solid var(--color-border-strong); }
         .sidebar-header.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
         .sidebar-header-toggle { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
@@ -263,7 +269,7 @@
         .player-item { padding: 12px 20px; font-size: var(--fs-body); font-weight: 600; color: #444; cursor: pointer; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between; align-items: center; }
 
         /* 개인전적/소식 상단 가로 아바타 선택 바 (세로 나열, 이름은 본문 데이터 폰트 크기에 맞춤) */
-        .avatar-selector-scroll { background: #fff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.015); overflow-x: auto; margin-bottom: 20px; }
+        .avatar-selector-scroll { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow-x: auto; margin-bottom: 20px; }
         .avatar-selector-list { display: flex; gap: 8px; width: max-content; padding: 8px 12px; }
         .avatar-select-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0; width: 56px; padding: 4px 4px; border-radius: 8px; transition: background 0.15s; }
         .avatar-select-item:hover { background: #f5f7fa; }
@@ -284,8 +290,8 @@
 
         /* 멤버 페이지 카드 */
         .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; }
-        .member-card { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; }
-        .member-card:hover { box-shadow: 0 6px 16px rgba(41,121,255,0.10); transform: translateY(-2px); border-color: #b9cdf5; }
+        .member-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; }
+        .member-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
         .member-card.former { opacity: 0.55; }
         .member-card.former:hover { opacity: 0.85; }
         .member-avatar-img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto; }
