@@ -242,8 +242,16 @@
 
             const prevElWidth = captureEl.style.width;
             const prevElMaxWidth = captureEl.style.maxWidth;
+            const prevElPadding = captureEl.style.padding;
+            const prevElBoxSizing = captureEl.style.boxSizing;
+            const prevElBackground = captureEl.style.background;
             captureEl.style.width = CAPTURE_WIDTH + 'px';
             captureEl.style.maxWidth = 'none';
+            // 캡처 이미지 테두리에 살짝 여백을 주기 위한 padding (capture.js 자동
+            // 캡처본과 동일한 여백이 나오도록 값을 맞춰둠).
+            captureEl.style.padding = '16px';
+            captureEl.style.boxSizing = 'content-box';
+            captureEl.style.background = '#f4f7fc';
 
             const scrollTargets = captureEl.querySelectorAll('.cal-calendar-inner');
             const restoreFns = [];
@@ -268,6 +276,9 @@
                 restoreFns.forEach(fn => fn());
                 captureEl.style.width = prevElWidth;
                 captureEl.style.maxWidth = prevElMaxWidth;
+                captureEl.style.padding = prevElPadding;
+                captureEl.style.boxSizing = prevElBoxSizing;
+                captureEl.style.background = prevElBackground;
                 if (sideEl) sideEl.style.display = prevSideDisplay;
             }
             const base64Image = canvas.toDataURL('image/png').split(',')[1];
