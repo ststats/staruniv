@@ -173,12 +173,19 @@
         .match-row[aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
 
         /* 뱃지 */
-        .tag-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
-        /* 종족 뱃지(T/Z/P): 종족전 승률 도넛(#1976d2/#7b1fa2/#f57f17)과 동일한 색상으로 통일 */
-        .tag-badge.race-badge { min-width: 22px; color: #fff; border: none; }
+        .tag-badge { height: 22px; box-sizing: border-box; padding: 0 8px; border-radius: 4px; font-size: 11px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
+        /* 종족 뱃지(T/Z/P): 정사각형 + 종족전 승률 도넛(#1976d2/#7b1fa2/#f57f17)과 동일한 색상 */
+        .tag-badge.race-badge { width: 22px; padding: 0; color: #fff; border: none; }
         .tag-badge.race-badge.race-T { background: #1976d2; }
         .tag-badge.race-badge.race-Z { background: #7b1fa2; }
         .tag-badge.race-badge.race-P { background: #f57f17; }
+        /* 티어 뱃지: 티어별로 색을 나누지 않고 심플한 중립 톤으로 통일 */
+        .tag-badge.tier-badge { background: #eef0f3; color: #5b6270; border: 1px solid #e1e4e9; }
+        /* 직책 뱃지: 감독/코치/선수를 색으로 구분 */
+        .tag-badge.role-badge { color: #fff; border: none; }
+        .tag-badge.role-badge.role-director { background: #c62828; }
+        .tag-badge.role-badge.role-coach { background: #2e7d32; }
+        .tag-badge.role-badge.role-player { background: #1565c0; }
 
         /* 홈 화면 - 현재 방송중 카드 */
         .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
@@ -273,7 +280,7 @@
         .member-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
         .member-card.former { opacity: 0.55; }
         .member-card.former:hover { opacity: 0.85; }
-        .member-avatar-img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto; }
+        .member-avatar-img { width: 46%; max-width: 72px; min-width: 40px; aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto; }
         .member-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
         
