@@ -29,7 +29,7 @@
         return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.remove();">`;
     }
 
-    const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'stats', 'synergy', 'tools'];
+    const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'stats', 'tools'];
 
     // ===== 해시 라우터: #페이지?파라미터=값 형태로 하위 상태까지 URL에 반영 =====
     function parseHash() {
@@ -63,7 +63,25 @@
 
         window.scrollTo(0, 0);
 
-        if (!skipHashUpdate) updateHash(pageId, {});
+        if (!skipHashUpdate) {
+            resetPageSubState(pageId);
+            updateHash(pageId, {});
+        }
+    }
+
+    // 상단 메뉴로 직접 이동할 때는 이전에 보고 있던 하위 상태(선택 탭, 선택된 멤버 등)를
+    // 그대로 남겨두지 않고 각 페이지의 기본 화면으로 되돌린다.
+    function resetPageSubState(pageId) {
+        if (pageId === 'records') {
+            currentPlayer = '';
+            currentIndivFilter = '전체';
+            switchStatView('team');
+        } else if (pageId === 'members') {
+            currentNewsPlayer = null;
+            switchMemberView('status');
+        } else if (pageId === 'stats') {
+            setSynergyMetric('balloons');
+        }
     }
 
     // 뒤로가기/앞으로가기 및 새로고침 시 해시에 맞춰 페이지 + 하위 상태를 복원
@@ -72,19 +90,20 @@
         const pageId = VALID_PAGE_IDS.includes(page) ? page : 'home';
         switchPage(pageId, true);
 
-        if (pageId === 'stats') {
-            const view = params.get('view') === 'individual' ? 'individual' : 'team';
+        if (pageId === 'records') {
+            const view = params.get('view') === 'solo' ? 'individual' : 'team';
             switchStatView(view);
-            const player = params.get('player');
-            if (view === 'individual' && player) selectPlayer(player);
+            const member = params.get('member');
+            if (view === 'individual' && member) selectPlayer(member);
         } else if (pageId === 'members') {
             const view = params.get('view') === 'news' ? 'news' : 'status';
             switchMemberView(view);
             const member = params.get('member');
             if (view === 'news' && member) selectNewsPlayer(member);
-        } else if (pageId === 'synergy') {
-            const metric = params.get('metric');
-            if (metric) setSynergyMetric(metric);
+        } else if (pageId === 'stats') {
+            const view = params.get('view');
+            const metric = SYNERGY_METRIC_FROM_URL[view] || 'balloons';
+            setSynergyMetric(metric);
         }
     }
 
@@ -94,10 +113,10 @@
         const view = document.getElementById('tab-individual').classList.contains('active') ? 'individual' : 'team';
         const params = {};
         if (view === 'individual') {
-            params.view = 'individual';
-            if (currentPlayer) params.player = currentPlayer;
+            params.view = 'solo';
+            if (currentPlayer) params.member = currentPlayer;
         }
-        updateHash('stats', params);
+        updateHash('records', params);
     }
 
     function switchStatView(viewType) {
@@ -141,7 +160,7 @@
 
     // 홈 화면 "소식 전체보기" -> 멤버 페이지의 소식 탭으로 이동
     function goToNewsFeed() {
-        switchPage('members');
+        switchPage('members', true);
         switchMemberView('news');
     }
 
@@ -1057,6 +1076,21 @@
         sponsor: '스폰전적',
     };
 
+    // 내부적으로 쓰는 값(broadcast_seconds 등은 외부 API 필드명과 동일)과
+    // URL에 노출되는 짧은 값(hours 등)을 서로 변환하기 위한 테이블
+    const SYNERGY_METRIC_TO_URL = {
+        balloons: 'balloons',
+        broadcast_seconds: 'hours',
+        cumulative_viewers: 'viewers',
+        sponsor: 'sponsor',
+    };
+    const SYNERGY_METRIC_FROM_URL = {
+        balloons: 'balloons',
+        hours: 'broadcast_seconds',
+        viewers: 'cumulative_viewers',
+        sponsor: 'sponsor',
+    };
+
     function setSynergyMetric(metric) {
         synergyMetric = metric;
         document.querySelectorAll('#synergy-metric-filter .sub-tab').forEach(el => {
@@ -1066,7 +1100,8 @@
             el.innerText = SYNERGY_METRIC_LABELS[metric] || '';
         });
         renderSynergyTable();
-        updateHash('synergy', metric !== 'balloons' ? { metric } : {});
+        const urlValue = SYNERGY_METRIC_TO_URL[metric] || metric;
+        updateHash('stats', urlValue !== 'balloons' ? { view: urlValue } : {});
     }
 
     function synergyRowHtml(m, idx) {
