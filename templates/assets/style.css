@@ -79,6 +79,12 @@
            (padding은 절대 병합되지 않고 무조건 더해지므로, 페이지마다 안쪽 구조가
            다르면 padding 방식은 여백이 제각각 벌어지는 문제가 생긴다.) */
         .page-section > *:last-child { margin-bottom: 40px !important; }
+        /* 탭 전환 구조(멤버 현황/공지, 전적 팀/개인)는 두 뷰가 다 .page-section의
+           직속 자식으로 나란히 있고 하나만 display:block이라, :last-child가 DOM
+           순서상 뒤에 있는(꼭 지금 보이는 게 아닌) 뷰를 잡아버린다. 그래서 탭 뷰
+           래퍼들은 어느 쪽이 보이든 항상 여백을 받도록 따로 지정한다. */
+        #view-member-status, #view-member-news,
+        #view-team-stat, #view-indiv-stat { margin-bottom: 40px; }
         .page-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
