@@ -233,6 +233,13 @@
             const captureEl = document.getElementById('captureMonth');
             const CAPTURE_WIDTH = 1000;
 
+            // 캡처 대상을 강제로 넓히면 옆의 .admin-side(오늘의 일정 카드)와 겹쳐서
+            // 캘린더 오른쪽 요일들이 가려지는 게 실제 원인이었다 - 캡처하는 순간만
+            // 사이드바를 잠깐 숨겨서 겹침 자체를 없앤다.
+            const sideEl = document.querySelector('.admin-side');
+            const prevSideDisplay = sideEl ? sideEl.style.display : null;
+            if (sideEl) sideEl.style.display = 'none';
+
             const prevElWidth = captureEl.style.width;
             const prevElMaxWidth = captureEl.style.maxWidth;
             captureEl.style.width = CAPTURE_WIDTH + 'px';
@@ -261,6 +268,7 @@
                 restoreFns.forEach(fn => fn());
                 captureEl.style.width = prevElWidth;
                 captureEl.style.maxWidth = prevElMaxWidth;
+                if (sideEl) sideEl.style.display = prevSideDisplay;
             }
             const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
