@@ -78,7 +78,7 @@
            margin-bottom:24px만 가지면 그게 그대로 화면에 보이는 여백이 된다.
            (padding은 절대 병합되지 않고 무조건 더해지므로, 페이지마다 안쪽 구조가
            다르면 padding 방식은 여백이 제각각 벌어지는 문제가 생긴다.) */
-        .page-section > *:last-child { margin-bottom: 24px !important; }
+        .page-section > *:last-child { margin-bottom: 40px !important; }
         .page-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 

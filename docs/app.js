@@ -1036,7 +1036,8 @@
                 .filter(Boolean);
 
             const updatedText = data.updated_at ? `업데이트: ${data.updated_at}` : '';
-            document.getElementById('synergy-updated').innerText = updatedText;
+            document.getElementById('synergy-updated-male').innerText = updatedText;
+            document.getElementById('synergy-updated-female').innerText = updatedText;
 
             renderSynergyTable();
         } catch (e) {
