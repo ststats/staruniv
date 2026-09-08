@@ -44,6 +44,14 @@ jobs:
       with:
         node-version: '20'
 
+    - name: Puppeteer 캐시 복원
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/puppeteer
+        key: ${{ runner.os }}-puppeteer-${{ hashFiles('capture.js') }}
+        restore-keys: |
+          ${{ runner.os }}-puppeteer-
+
     - name: Puppeteer 설치
       run: npm install puppeteer
 
