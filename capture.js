@@ -19,7 +19,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const PORT = 8791;
-const CAPTURE_WIDTH = 1000;
+const CAPTURE_WIDTH = 936; // 실제 공개 사이트(일정 페이지)에서 캘린더가 렌더링되는 실측 폭과 동일하게 맞춤
 
 function waitForServer(url, timeoutMs) {
     const start = Date.now();
