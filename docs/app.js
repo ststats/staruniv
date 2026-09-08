@@ -588,10 +588,18 @@
     function tierBadgeHtml(tier) {
         return `<span class="tag-badge tier-badge">${tierLabel(tier)}</span>`;
     }
-    // 직책 뱃지 클래스(감독/코치/선수별 색상)
-    function roleBadgeClass(role) {
-        const map = { '감독': 'role-director', '코치': 'role-coach', '선수': 'role-player' };
-        return map[role] ? ` role-badge ${map[role]}` : '';
+    // 직책 뱃지 색상: 자주 쓰는 직책은 고정 색상, 그 외(전력분석관 등 임의의 직책)는
+    // 단일 그레이 톤으로 통일 - 종족 뱃지 색(테란 파랑/저그 보라/프로토스 주황)과 겹치지 않도록
+    // 선수는 테란 파랑(#1976d2)보다 확연히 진한 네이비를 사용
+    const ROLE_COLOR_FIXED = {
+        '감독': '#c62828',
+        '코치': '#2e7d32',
+        '선수': '#0d47a1',
+    };
+    const ROLE_COLOR_FALLBACK = '#78909c';
+    function roleColor(role) {
+        if (!role) return '#9e9e9e';
+        return ROLE_COLOR_FIXED[role] || ROLE_COLOR_FALLBACK;
     }
     function isActiveMember(m) {
         return !m['퇴단일'] || String(m['퇴단일']).trim() === '';
@@ -822,7 +830,8 @@
         document.getElementById('mp-name').innerText = name;
         const mpRoleBadge = document.getElementById('mp-role-badge');
         mpRoleBadge.textContent = m['직책'] || '미정';
-        mpRoleBadge.className = 'tag-badge' + roleBadgeClass(m['직책']);
+        mpRoleBadge.className = 'tag-badge role-badge';
+        mpRoleBadge.style.background = roleColor(m['직책']);
         const mpRaceBadge = document.getElementById('mp-race-badge');
         mpRaceBadge.textContent = raceShortLabel(m['종족']);
         mpRaceBadge.className = 'tag-badge' + raceBadgeClass(m['종족']);
@@ -838,8 +847,10 @@
 
         const active = isActiveMember(m);
         const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : (m['퇴단일'] || null)) : null;
-        const daysLabel = days !== null ? ` (${days}일${active ? '째' : ''})` : '';
-        const period = m['입단일'] ? `${m['입단일']} ~ ${active ? '현재' : (m['퇴단일'] || '-')}${daysLabel}` : '-';
+        const daysBadge = days !== null
+            ? ` <span class="days-chip">${days}일${active ? '째' : ''}</span>`
+            : '';
+        const period = m['입단일'] ? `${m['입단일']} ~ ${active ? '현재' : (m['퇴단일'] || '-')}${daysBadge}` : '-';
         const soopId = m['SOOP ID'];
         const isValidSoopId = soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
         const broadcast = isValidSoopId

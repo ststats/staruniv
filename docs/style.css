@@ -181,11 +181,10 @@
         .tag-badge.race-badge.race-P { background: #f57f17; }
         /* 티어 뱃지: 티어별로 색을 나누지 않고 심플한 중립 톤으로 통일 */
         .tag-badge.tier-badge { background: #eef0f3; color: #5b6270; border: 1px solid #e1e4e9; }
-        /* 직책 뱃지: 감독/코치/선수를 색으로 구분 */
+        /* 활동일수 칩: 정보성 숫자라 역할/티어/종족 뱃지보다 한 단계 더 가볍고 둥근 pill로 구분 */
+        .days-chip { display: inline-flex; align-items: center; height: 18px; padding: 0 8px; margin-left: 6px; border-radius: 9px; background: #f2f3f5; color: #8a90a0; font-size: 10px; font-weight: 700; line-height: 1; vertical-align: middle; }
+        /* 직책 뱃지: 감독/코치/선수 외 임의의 직책 문자열도 팔레트에서 색을 받아 표시 (배경색은 JS에서 지정) */
         .tag-badge.role-badge { color: #fff; border: none; }
-        .tag-badge.role-badge.role-director { background: #c62828; }
-        .tag-badge.role-badge.role-coach { background: #2e7d32; }
-        .tag-badge.role-badge.role-player { background: #1565c0; }
 
         /* 홈 화면 - 현재 방송중 카드 */
         .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
