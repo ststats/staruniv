@@ -225,8 +225,10 @@
 
             // 캘린더 그리드("이달의 일정")를 캡처해서 JSON이랑 같은 커밋에 같이 넣는다.
             // (따로 커밋하면 Vercel 배포가 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
+            // windowWidth를 데스크톱 폭으로 고정해서, 모바일에서 저장 눌러도 좁게
+            // 찌그러진 모바일 레이아웃이 아니라 항상 데스크톱 폭의 캘린더로 캡처되게 한다.
             const canvas = await html2canvas(document.getElementById('captureMonth'), {
-                scale: 2, useCORS: true, backgroundColor: '#f4f7fc'
+                scale: 2, useCORS: true, backgroundColor: '#f4f7fc', windowWidth: 1200
             });
             const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
