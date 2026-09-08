@@ -177,10 +177,12 @@
         updateMembersHash();
     }
 
-    // 홈 화면 "소식 전체보기" -> 멤버 페이지의 소식 탭으로 이동
-    function goToNewsFeed() {
+    // 홈 화면 "전체 보기"/공지 클릭 -> 멤버 페이지의 소식 탭으로 이동.
+    // name이 있으면(홈 공지 클릭) 원글로 나가지 않고 그 멤버의 개인 공지 탭으로 바로 이동한다.
+    function goToNewsFeed(name) {
         switchPage('members', true);
         switchMemberView('news');
+        if (name) selectNewsPlayer(name);
     }
 
     // ===== 멤버 소식(SOOP 게시판 전체 글) =====
@@ -381,7 +383,7 @@
             ${snippet ? `<div class="news-post-body">${escapeHTML(snippet)}</div>` : ''}
             ${photosHtml}
             <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
-                원글 보기 <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                원글 보기 <span class="ext-arrow">↗</span>
             </a>
         </div>`;
     }
@@ -617,6 +619,7 @@
     function memberCardHtml(m) {
         return `
         <div class="member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
+            <span class="tool-card-ext">↗</span>
             ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
             <div class="member-card-name">${escapeHTML(m['이름'])}</div>
             <div class="member-card-tags">
@@ -755,7 +758,7 @@
                     <div class="live-card-title">${escapeHTML(broad.broad_title || '')}</div>
                     <div class="live-card-meta-row">
                         <div class="live-card-who">
-                            ${avatarHtml(soopId, 'live-card-avatar')}
+                            <span class="live-card-avatar-ring">${avatarHtml(soopId, 'live-card-avatar')}</span>
                             <span class="live-card-name">${escapeHTML(m['이름'])}</span>
                         </div>
                         <div class="live-card-stats">
@@ -807,9 +810,11 @@
             const title = post.titleName || '(제목 없음)';
             const snippet = (post.content && post.content.textContent) || '';
             const dateText = (post.regDate || '').split(' ')[0];
+            const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
+            const thumbHtml = thumbUrl ? `<img class="notice-row-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
 
             return `
-            <a class="notice-row" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
+            <div class="notice-row" onclick="goToNewsFeed('${String(m['이름']).replace(/'/g, "\\'")}')">
                 ${avatarHtml(soopId, 'notice-row-avatar')}
                 <div class="notice-row-body">
                     <div class="notice-row-top">
@@ -819,7 +824,8 @@
                     <div class="notice-row-title">${escapeHTML(title)}</div>
                     <div class="notice-row-snippet">${escapeHTML(snippet)}</div>
                 </div>
-            </a>`;
+                ${thumbHtml}
+            </div>`;
         }).join('');
     }
 
