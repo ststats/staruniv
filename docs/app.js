@@ -10,6 +10,14 @@
         }[tag]));
     }
 
+    // 승/패/무 결과 뱃지 HTML - 팀/개인 최근전적 리스트가 둘 다 이 로직을 그대로 썼던 걸 공용화
+    function resultBadgeHtml(resText) {
+        if (resText === '승') return '<span class="match-badge badge-win">WIN</span>';
+        if (resText === '무' || resText === '무승부') return '<span class="match-badge badge-draw">DRAW</span>';
+        return '<span class="match-badge badge-lose">LOSE</span>';
+    }
+    const EMPTY_MATCH_ROW_HTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
+
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
     // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
     // 없는 팀도 있을 수 있어 onerror로 조용히 숨긴다.
@@ -417,15 +425,13 @@
         const sliced = limit ? filtered.slice(0, limit) : filtered;
         
         if (sliced.length === 0) {
-            document.getElementById(containerId).innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
+            document.getElementById(containerId).innerHTML = EMPTY_MATCH_ROW_HTML;
             return;
         }
 
         const html = sliced.map((m, idx) => {
-            let resText = m['최종 결과'] || m['최근 결과'] || '';
-            let badgeHtml = '<span class="match-badge badge-lose">LOSE</span>';
-            if (resText === '승') badgeHtml = '<span class="match-badge badge-win">WIN</span>';
-            else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
+            const resText = m['최종 결과'] || m['최근 결과'] || '';
+            const badgeHtml = resultBadgeHtml(resText);
 
             const collapseId = `collapse-${containerId}-${idx}`;
             // _match_key가 있으면 그걸로 정확히 매칭(같은 날 여러 경기 구분), 없을 때만 날짜+상대팀으로 대체
@@ -954,15 +960,13 @@
         const sliced = limit ? filtered.slice(0, limit) : filtered;
 
         if (sliced.length === 0) {
-            document.getElementById(containerId).innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
+            document.getElementById(containerId).innerHTML = EMPTY_MATCH_ROW_HTML;
             return;
         }
 
         const html = sliced.map(m => {
-            let resText = m['결과'] || '';
-            let badgeHtml = '<span class="match-badge badge-lose">LOSE</span>';
-            if (resText === '승') badgeHtml = '<span class="match-badge badge-win">WIN</span>';
-            else if (resText === '무' || resText === '무승부') badgeHtml = '<span class="match-badge badge-draw">DRAW</span>';
+            const resText = m['결과'] || '';
+            const badgeHtml = resultBadgeHtml(resText);
 
             return `
             <tr style="border-bottom:1px solid #f1f3f5;">
