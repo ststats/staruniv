@@ -467,7 +467,7 @@
             const w = tStats[fmt].w, l = tStats[fmt].l;
             const rate = (w + l) > 0 ? (w / (w + l) * 100) : 0;
             const ringColor = rate >= 50 ? 'var(--color-win)' : 'var(--color-lose)';
-            document.getElementById(`t-sum-${fmt}-w`).innerHTML = `<span style="color:var(--color-win);">${w}승</span> <span style="color:var(--color-lose);">${l}패</span>`;
+            document.getElementById(`t-sum-${fmt}-w`).innerHTML = `<span style="color:var(--color-win);">${w}</span>승 <span style="color:var(--color-lose);">${l}</span>패`;
             document.getElementById(`t-sum-${fmt}-r`).innerText = getRateText(w, l);
             document.getElementById(`t-sum-${fmt}-r`).style.color = ringColor;
             document.getElementById(`t-sum-${fmt}-donut`).style.background = `conic-gradient(${ringColor} ${rate}%, #eee 0)`;

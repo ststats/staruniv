@@ -211,7 +211,6 @@
         /* 썸네일 하단을 살짝 어둡게 그라데이션 처리해 배지/여백이 붕 떠 보이지 않게 */
         .live-thumb-wrap::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.28), rgba(0,0,0,0)); pointer-events: none; }
         .live-badge { position: absolute; top: 10px; left: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; background: var(--color-lose); color: #fff; font-size: 9px; font-weight: 800; padding: 4px 9px; border-radius: 20px; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(240,62,62,0.35); }
-        .live-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
         .live-card-body { padding: 12px 14px 14px; }
         .live-card-title { font-weight: 700; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 12px; }
         .live-card-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
