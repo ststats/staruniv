@@ -67,13 +67,17 @@ function waitForServer(url, timeoutMs) {
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
         // "저장" 버튼을 눌렀을 때와 동일한 방식으로, 캡처 대상을 강제로 넓히고
-        // 옆의 사이드바를 잠깐 숨긴다 (겹침으로 인한 잘림 방지).
+        // 옆의 사이드바를 잠깐 숨긴다 (겹침으로 인한 잘림 방지). 캡처 이미지
+        // 테두리에 살짝 여백을 주기 위해 padding도 함께 추가한다.
         await page.evaluate((w) => {
             const captureEl = document.getElementById('captureMonth');
             const sideEl = document.querySelector('.admin-side');
             if (sideEl) sideEl.style.display = 'none';
             captureEl.style.width = w + 'px';
             captureEl.style.maxWidth = 'none';
+            captureEl.style.padding = '16px';
+            captureEl.style.boxSizing = 'content-box';
+            captureEl.style.background = '#f4f7fc';
             captureEl.querySelectorAll('.cal-calendar-inner').forEach(el => {
                 el.scrollLeft = 0;
                 el.style.overflowX = 'visible';
