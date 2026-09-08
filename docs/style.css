@@ -180,6 +180,8 @@
         
         .match-row:hover { background: var(--color-primary-tint); }
         .team-logo-icon { object-fit: contain; border-radius: 4px; vertical-align: middle; margin-right: 4px; flex-shrink: 0; }
+        /* 팀 로고 이미지가 없을 때 (임시) 원형 배지 + 이니셜로 대신 표시 */
+        .team-logo-fallback { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-bg-subtle); color: #888; font-weight: 800; line-height: 1; vertical-align: middle; margin-right: 4px; flex-shrink: 0; }
 
         /* 아코디언 화살표(세트 상세보기 토글) */
         .m-arrow { text-align: center; color: #adb5bd; display: flex; justify-content: center; transition: transform 0.2s; }
@@ -222,21 +224,26 @@
         .live-card-viewers { font-weight: 700; font-size: var(--fs-body); color: #222; }
         .live-card-elapsed { font-size: 10px; color: #999; margin-top: 4px; }
 
-        /* 홈 화면 - 최근 공지 (카드 한 장 = 글 한 개: 아바타+이름/시간 헤더,
-           볼드 제목, 그 아래 공지 내용) */
+        /* 홈 화면 - 최근 공지 (카드 한 장 = 글 한 개)
+           1줄: 이름 / 2줄: 방송제목 · 몇시간전(오른쪽 정렬 아님) / 3줄: 공지내용(왼쪽부터, 아바타 없음)
+           아바타는 1~2줄 높이에 걸치고, 오른쪽 썸네일은 카드 전체 높이(1~3줄)에 맞춰 늘어난다. */
         .home-notice-list { display: flex; flex-direction: column; gap: 12px; }
-        .home-notice-card { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px 16px; transition: box-shadow 0.15s, transform 0.15s; }
+        .home-notice-card { display: flex; align-items: stretch; gap: 12px; cursor: pointer; padding: 14px 16px; transition: box-shadow 0.15s, transform 0.15s; }
         .home-notice-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
+        .home-notice-main { min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+        .home-notice-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .home-notice-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
-        .home-notice-body { min-width: 0; flex: 1; }
+        .home-notice-toptext { min-width: 0; flex: 1; }
         .home-notice-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        /* 공지제목을 시간 왼쪽에 배치 - 제목은 줄어들고, 시간은 항상 오른쪽에 고정 폭으로 붙는다 */
-        .home-notice-title-row { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; min-width: 0; }
-        .home-notice-title { font-weight: 800; font-size: var(--fs-body); color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-        .home-notice-meta { font-size: 11px; color: #999; flex-shrink: 0; margin-left: auto; white-space: nowrap; }
-        .home-notice-snippet { font-size: 12px; color: var(--color-text-sub); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        /* 사진은 오른쪽 정사각 썸네일로 */
-        .home-notice-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
+        /* 시간을 오른쪽으로 밀지 않고, 제목 바로 옆에 자연스럽게 흐르게 한다 */
+        .home-notice-title-row { display: flex; align-items: baseline; gap: 5px; margin-top: 2px; min-width: 0; }
+        .home-notice-title { font-weight: 700; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .home-notice-dot { color: #ccc; font-size: 11px; flex-shrink: 0; }
+        .home-notice-meta { font-size: 11px; color: #999; flex-shrink: 0; white-space: nowrap; }
+        /* 아바타 없이 카드 왼쪽 끝부터 시작 */
+        .home-notice-snippet { font-size: 12px; color: var(--color-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 사진은 오른쪽 썸네일로, 카드 전체 높이(1~3줄)에 맞춰 늘어난다 */
+        .home-notice-thumb { width: 64px; object-fit: cover; border-radius: 10px; background: var(--color-bg-subtle); flex-shrink: 0; }
 
 
         /* 멤버 소식 피드 - 인스타그램 포스트 스타일: 사진은 카드 끝까지 꽉 채우고,
@@ -251,7 +258,7 @@
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
         .news-post-photos img { width: 100%; max-height: 600px; object-fit: cover; border-radius: 0; margin-bottom: 2px; display: block; background: var(--color-bg-subtle); }
         .news-post-photos img:last-child { margin-bottom: 0; }
-        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 12px; padding: 12px 16px 14px 16px; border-top: 1px solid var(--color-bg-subtle); font-size: 12px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
+        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 8px; padding: 8px 16px 10px 16px; border-top: 1px solid var(--color-bg-subtle); font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
         .news-post-link:hover { color: var(--color-primary); }
         .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 8px 16px; cursor: pointer; transition: opacity 0.15s; }
         /* 카드/표 아래 붙는 보조 요소(더보기 버튼, 이전 멤버 버튼, 업데이트 시각 캡션 등)의
