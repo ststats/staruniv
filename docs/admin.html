@@ -225,11 +225,19 @@
 
             // 캘린더 그리드("이달의 일정")를 캡처해서 JSON이랑 같은 커밋에 같이 넣는다.
             // (따로 커밋하면 Vercel 배포가 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
-            // 캡처 대상 안에 overflow-x:auto인 가로 스크롤 영역(.cal-calendar-inner)이
-            // 있는데, html2canvas는 스크롤 컨테이너를 "지금 스크롤된/보이는 부분"만 찍는
-            // 경향이 있어(windowWidth만으로는 못 잡음), 캡처 직전에 스크롤을 0으로 리셋하고
-            // overflow를 잠깐 풀어서 전체를 펼친 채로 찍은 다음 원래대로 되돌린다.
+            // windowWidth(가상 클론)만으로는 html2canvas가 캔버스 크기 자체를 원래(좁은)
+            // 페이지에서 측정한 요소 크기로 잡아버려서 잘려 나온다. 대신 캡처 대상 요소
+            // 자체의 width를 캡처 직전에 실제로(진짜 DOM에) 넓게 강제로 바꿔서, 안의
+            // 그리드가 실제로 넓게 다시 배치된 상태를 그대로 캡처하고, 끝나면 원래대로
+            // 되돌린다. 스크롤 영역(.cal-calendar-inner)도 같이 리셋해서 잘림을 막는다.
             const captureEl = document.getElementById('captureMonth');
+            const CAPTURE_WIDTH = 1000;
+
+            const prevElWidth = captureEl.style.width;
+            const prevElMaxWidth = captureEl.style.maxWidth;
+            captureEl.style.width = CAPTURE_WIDTH + 'px';
+            captureEl.style.maxWidth = 'none';
+
             const scrollTargets = captureEl.querySelectorAll('.cal-calendar-inner');
             const restoreFns = [];
             scrollTargets.forEach(el => {
@@ -240,13 +248,19 @@
                 restoreFns.push(() => { el.style.overflowX = prevOverflow; el.scrollLeft = prevScrollLeft; });
             });
 
+            // 스타일 변경이 실제로 레이아웃에 반영될 시간을 한 프레임 준다.
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
             let canvas;
             try {
                 canvas = await html2canvas(captureEl, {
-                    scale: 2, useCORS: true, backgroundColor: '#f4f7fc', windowWidth: 1200
+                    scale: 2, useCORS: true, backgroundColor: '#f4f7fc',
+                    width: captureEl.scrollWidth, windowWidth: Math.max(CAPTURE_WIDTH + 200, 1200)
                 });
             } finally {
                 restoreFns.forEach(fn => fn());
+                captureEl.style.width = prevElWidth;
+                captureEl.style.maxWidth = prevElMaxWidth;
             }
             const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
