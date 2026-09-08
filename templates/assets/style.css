@@ -52,7 +52,7 @@
         html { overflow-y: scroll !important; scrollbar-gutter: stable; }
         body { overflow-y: visible !important; padding-right: 0 !important; }
         body.modal-open { padding-right: 0 !important; overflow-y: visible !important; }
-        .modal, .modal-open .modal { padding-right: 0 !important; }
+        .modal { padding-right: 0 !important; }
         
         body { font-family: 'Pretendard', sans-serif; background-color: var(--color-bg); color: var(--color-text-main); }
         a { text-decoration: none; color: inherit; cursor: pointer; }
@@ -73,11 +73,10 @@
         .nav-menu { display: flex; height: 100%; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; margin-left: auto; }
         .nav-menu::-webkit-scrollbar { display: none; }
         /* 얇은 커스텀 스크롤바 (가로/세로 스크롤 컨테이너 공통) */
-        .match-list-scroll::-webkit-scrollbar, .table-responsive::-webkit-scrollbar,
-        .avatar-selector-scroll::-webkit-scrollbar, .cal-calendar-inner::-webkit-scrollbar { height: 8px; }
-        .sidebar-scroll::-webkit-scrollbar, .cal-today-list::-webkit-scrollbar, .cal-selected-list::-webkit-scrollbar { width: 8px; }
-        .match-list-scroll::-webkit-scrollbar-thumb, .table-responsive::-webkit-scrollbar-thumb,
-        .sidebar-scroll::-webkit-scrollbar-thumb, .avatar-selector-scroll::-webkit-scrollbar-thumb,
+        .table-responsive::-webkit-scrollbar, .avatar-selector-scroll::-webkit-scrollbar,
+        .cal-calendar-inner::-webkit-scrollbar { height: 8px; }
+        .cal-today-list::-webkit-scrollbar, .cal-selected-list::-webkit-scrollbar { width: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb, .avatar-selector-scroll::-webkit-scrollbar-thumb,
         .cal-calendar-inner::-webkit-scrollbar-thumb, .cal-today-list::-webkit-scrollbar-thumb,
         .cal-selected-list::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 4px; }
         .nav-menu .nav-item { height: 100%; display: flex; align-items: center; margin-right: 24px; font-size: 15px; font-weight: 700; color: #888; position: relative; cursor: pointer; flex-shrink: 0; transition: color 0.15s; }
@@ -92,7 +91,6 @@
         /* 페이지 공통 헤더: 큰 타이틀 + 설명 + 구분선 */
         .page-header { margin-bottom: 4px; }
         .page-header-title { font-size: 30px; font-weight: 800; color: var(--color-logo-black); letter-spacing: -0.5px; margin: 0 0 8px 0; }
-        .page-header-desc { font-size: var(--fs-body); color: var(--color-text-sub); margin: 0; }
         .page-header-divider { border: none; border-bottom: 2px solid var(--color-text-main); margin: 16px 0 24px 0; }
         .page-header-divider.tight { margin-bottom: 4px; }
         .sub-tab { padding: 12px 4px; font-size: var(--fs-heading); font-weight: 600; color: var(--color-text-sub); cursor: pointer; margin-bottom: -1px; border-bottom: 3px solid transparent; }
@@ -112,8 +110,7 @@
            래퍼들은 어느 쪽이 보이든 항상 여백을 받도록 따로 지정한다. */
         #view-member-status, #view-member-news,
         #view-team-stat, #view-indiv-stat { margin-bottom: var(--space-page-bottom); }
-        .page-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .page-section.active { display: block; }
 
         /* 좌우 여백: 부트스트랩 기본(12px)은 PC에서도 너무 좁아서 기본값을 늘리고,
            화면 크기별로 계단식으로 넉넉하게 준다. 네비게이션도 .container를
@@ -133,7 +130,19 @@
         .section-title-sm { font-size: var(--fs-subheading); font-weight: 800; color: #111; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .section-title-chevron { color: #999; transition: transform 0.2s; flex-shrink: 0; }
         .section-title.collapsed .section-title-chevron { transform: rotate(-90deg); }
-        .clean-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+        /* 카드류 공통 속성 - 배경/테두리/둥근모서리는 카드 종류를 막론하고 전부 동일하다.
+           개별 규칙에는 그 컴포넌트만의 고유 속성만 남긴다. */
+        .clean-card, .live-broadcast-card, .news-post-card, .tool-card,
+        .avatar-selector-scroll, .member-card {
+            background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card);
+        }
+        .clean-card, .live-broadcast-card, .news-post-card, .avatar-selector-scroll { box-shadow: var(--shadow-card); }
+
+        .live-broadcast-card { display: block; overflow: hidden; text-decoration: none; color: inherit; transition: box-shadow 0.15s, transform 0.15s; }
+        .news-post-card { padding: 20px; margin-bottom: 16px; }
+        .tool-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px 12px; text-decoration: none; color: inherit; position: relative; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
+        .avatar-selector-scroll { overflow-x: auto; margin-bottom: 20px; }
+        .member-card { padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; }
         
         /* 버튼 */
         .btn-view-all { background: transparent; border: none; font-size: 12px; font-weight: 700; color: #888; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
@@ -154,11 +163,8 @@
         .stat-card-box .wl { font-size: var(--fs-body); color: #888; font-weight: 600; margin-bottom: 12px; }
 
         /* 리스트 래퍼 */
-        .match-list-scroll { overflow-x: auto; }
         
         .match-row:hover { background: var(--color-primary-tint); }
-        .match-row.match-header { background: #fff !important; cursor: default; font-weight: 700; color: #666; border-bottom: 2px solid var(--color-border-strong); }
-        .match-row.match-header > div { font-weight: 700; color: #666; }
         .team-logo-icon { object-fit: contain; border-radius: 4px; vertical-align: middle; margin-right: 4px; flex-shrink: 0; }
 
         /* 아코디언 화살표(세트 상세보기 토글) */
@@ -168,11 +174,9 @@
 
         /* 뱃지 */
         .tag-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
-        .tag-badge-live { background: #ffe3e3; color: var(--color-lose); border-color: #ffc9c9; }
 
         /* 홈 화면 - 현재 방송중 카드 */
         .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-        .live-broadcast-card { display: block; border: 1px solid var(--color-border); border-radius: var(--radius-card); overflow: hidden; text-decoration: none; color: inherit; background: var(--color-card); box-shadow: var(--shadow-card); transition: box-shadow 0.15s, transform 0.15s; }
         .live-broadcast-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
         .live-thumb-wrap { position: relative; background: #e9ecef; }
         .live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #e9ecef; }
@@ -200,7 +204,6 @@
         .notice-row-snippet { font-size: 12px; color: var(--color-text-sub); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* 멤버 소식 피드 */
-        .news-post-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-card); }
         .news-post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .news-post-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
         .news-post-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
@@ -225,7 +228,6 @@
 
         /* 도구 페이지 카드 */
         .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
-        .tool-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 28px 12px; text-decoration: none; color: inherit; position: relative; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
         .tool-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
         .tool-card-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--color-primary-tint); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--fs-heading); overflow: hidden; }
         .tool-card-icon img { width: 24px; height: 24px; object-fit: contain; }
@@ -244,32 +246,7 @@
         .modal-body { background: #fcfcfc; }
         .modal-body.p-0 { background: #fcfcfc; }
 
-        /* 개인 사이드바 */
-        .sidebar-list { border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-card); overflow: hidden; }
-        .sidebar-header { background: #fff; padding: 12px 20px; font-size: var(--fs-subheading); font-weight: 800; color: #666; border-bottom: 2px solid var(--color-border-strong); }
-        .sidebar-header.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
-        .sidebar-header-toggle { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
-        .sidebar-header-toggle:hover { background: var(--color-primary-tint); color: var(--color-primary); }
-        .sidebar-header-toggle .sidebar-chevron { color: #999; transition: transform 0.2s; flex-shrink: 0; }
-        [data-bs-toggle="collapse"].collapsed .sidebar-chevron { transform: rotate(-90deg); }
-        .sidebar-list > .sidebar-header-toggle:not(:first-child) { border-top: 1px solid var(--color-border); }
-        .sidebar-scroll { max-height: 250px; overflow-y: auto; }
-
-        .indiv-sidebar-backdrop { display: none; }
-        @media (max-width: 767.98px) {
-            .indiv-sidebar-panel {
-                position: fixed; top: 0; left: 0; bottom: 0; width: 280px; max-width: 85vw; background: #fff;
-                z-index: 1050; box-shadow: 0 0 24px rgba(0,0,0,0.15); transform: translateX(-100%);
-                transition: transform 0.25s ease; overflow-y: auto; padding: 16px;
-            }
-            .indiv-sidebar-panel.mobile-open { transform: translateX(0); }
-            .indiv-sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0); pointer-events: none; z-index: 1049; transition: background 0.25s ease; }
-            .indiv-sidebar-backdrop.show { background: rgba(0,0,0,0.35); pointer-events: auto; }
-        }
-        .player-item { padding: 12px 20px; font-size: var(--fs-body); font-weight: 600; color: #444; cursor: pointer; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between; align-items: center; }
-
         /* 개인전적/소식 상단 가로 아바타 선택 바 (세로 나열, 이름은 본문 데이터 폰트 크기에 맞춤) */
-        .avatar-selector-scroll { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow-x: auto; margin-bottom: 20px; }
         .avatar-selector-list { display: flex; gap: 8px; width: max-content; padding: 8px 12px; }
         .avatar-select-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0; width: 56px; padding: 4px 4px; border-radius: 8px; transition: background 0.15s; }
         .avatar-select-item:hover { background: #f5f7fa; }
@@ -282,15 +259,12 @@
         .avatar-select-toggle .avatar-select-name { color: var(--color-primary); }
         .avatar-select-name { font-size: var(--fs-body); font-weight: 700; color: #555; white-space: nowrap; }
         .avatar-select-item.active .avatar-select-name { color: var(--color-primary); font-weight: 800; }
-        .player-item .item-sub { font-size: var(--fs-body); color: #888; }
         .player-avatar-sm { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #e9ecef; flex-shrink: 0; }
         .profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--color-bg-subtle); font-size: var(--fs-hero); display: flex; align-items: center; justify-content: center; margin-right: 20px; overflow: hidden; flex-shrink: 0; }
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .player-item:hover, .player-item.active { background: var(--color-primary-tint); color: var(--color-primary); font-weight: 800; }
 
         /* 멤버 페이지 카드 */
         .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; }
-        .member-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; }
         .member-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
         .member-card.former { opacity: 0.55; }
         .member-card.former:hover { opacity: 0.85; }
