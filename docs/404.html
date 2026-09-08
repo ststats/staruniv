@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>스타대학</title>
+<script>
+    // GitHub Pages는 순수 정적 파일 서버라 /records, /stats 같은 경로에 실제
+    // 파일이 없으면 이 404.html을 대신 보여준다(Vercel은 vercel.json rewrite로
+    // 처리하지만, GitHub Pages엔 그런 설정이 없어서 이 트릭이 필요하다).
+    // 진짜 index.html로 되돌리면서, 원래 요청했던 경로를 쿼리스트링에 인코딩해
+    // 넘긴다 - index.html이 로드될 때 그 쿼리스트링을 다시 원래 경로로 복원한다.
+    // (rafgraph/spa-github-pages 패턴)
+    //
+    // 저장소가 프로젝트 페이지(https://ststats.github.io/staruniv/)로 배포된다는
+    // 가정 하에 pathSegmentsToKeep=1로 잡았다. 만약 커스텀 도메인이나 유저/조직
+    // 루트 페이지(https://ststats.github.io/)로 배포한다면 0으로 바꿔야 한다.
+    var pathSegmentsToKeep = 1;
+    var l = window.location;
+    l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+    );
+</script>
+</head>
+<body></body>
+</html>
