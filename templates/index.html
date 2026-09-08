@@ -302,7 +302,7 @@
                                 <tr class="team-row-clickable" style="border-bottom:1px solid #f1f3f5;" data-team="{{ row['상대'] | e }}">
                                     <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
                                         <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="this.remove();">
+                                            <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="teamLogoFallback(this, '{{ row['상대'] | e }}')">
                                             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ row['상대'] | e }}</span>
                                         </span>
                                     </td>

@@ -20,13 +20,26 @@
 
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
     // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
-    // 없는 팀도 있을 수 있어 onerror로 조용히 숨긴다.
+    // 없는 팀은 (임시로) 원형 배지에 팀 이름 첫 글자를 넣어 대신 보여준다.
+    function teamLogoFallback(imgEl, teamName) {
+        const initial = String(teamName || '').trim().charAt(0) || '?';
+        const span = document.createElement('span');
+        span.className = 'team-logo-fallback';
+        const w = imgEl.style.width, h = imgEl.style.height;
+        if (w) span.style.width = w;
+        if (h) span.style.height = h;
+        const sizeNum = parseInt(w, 10);
+        if (sizeNum) span.style.fontSize = Math.max(8, Math.round(sizeNum * 0.5)) + 'px';
+        span.textContent = initial;
+        imgEl.replaceWith(span);
+    }
     function teamLogoHtml(teamName, sizePx) {
         const name = String(teamName || '').trim();
         if (!name) return '';
         const fileName = (name === '내전') ? '캄몬스타즈' : name;
         const size = sizePx || 16;
-        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.remove();">`;
+        const jsSafeName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="${escapeHTML(name)}" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="teamLogoFallback(this, '${jsSafeName}')">`;
     }
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'stats', 'tools'];
@@ -436,7 +449,10 @@
     function updateDonut(elId, txtId, subId, stat, color) {
         document.getElementById(txtId).innerText = stat.text === "-" ? "-" : stat.rate.toFixed(1) + "%";
         document.getElementById(subId).innerText = stat.text;
-        document.getElementById(elId).style.background = `conic-gradient(${color} ${stat.rate}%, #eee 0)`;
+        // color === 'byRate'면 50% 기준으로 승(파랑)/패(빨강) 색을 자동으로 정한다.
+        const ringColor = color === 'byRate' ? (stat.rate >= 50 ? 'var(--color-win)' : 'var(--color-lose)') : color;
+        document.getElementById(elId).style.background = `conic-gradient(${ringColor} ${stat.rate}%, #eee 0)`;
+        if (color === 'byRate') document.getElementById(txtId).style.color = ringColor;
     }
 
     function calculateTeamSummaries() {
@@ -450,9 +466,11 @@
         for (let fmt in tStats) {
             const w = tStats[fmt].w, l = tStats[fmt].l;
             const rate = (w + l) > 0 ? (w / (w + l) * 100) : 0;
-            document.getElementById(`t-sum-${fmt}-w`).innerText = `${w}승 ${l}패`;
+            const ringColor = rate >= 50 ? 'var(--color-win)' : 'var(--color-lose)';
+            document.getElementById(`t-sum-${fmt}-w`).innerHTML = `<span style="color:var(--color-win);">${w}승</span> <span style="color:var(--color-lose);">${l}패</span>`;
             document.getElementById(`t-sum-${fmt}-r`).innerText = getRateText(w, l);
-            document.getElementById(`t-sum-${fmt}-donut`).style.background = `conic-gradient(var(--color-primary) ${rate}%, #eee 0)`;
+            document.getElementById(`t-sum-${fmt}-r`).style.color = ringColor;
+            document.getElementById(`t-sum-${fmt}-donut`).style.background = `conic-gradient(${ringColor} ${rate}%, #eee 0)`;
         }
         renderTeamMatchesList('team-recent-list', {format: '전체'}, 10);
     }
@@ -819,12 +837,17 @@
 
             return `
             <div class="home-notice-card" onclick="goToNewsFeed('${String(name).replace(/'/g, "\\'")}')">
-                ${avatarHtml(soopId, 'home-notice-avatar')}
-                <div class="home-notice-body">
-                    <div class="home-notice-name">${escapeHTML(name)}</div>
-                    <div class="home-notice-title-row">
-                        <span class="home-notice-title">${escapeHTML(title)}</span>
-                        <span class="home-notice-meta">${escapeHTML(timeText)}</span>
+                <div class="home-notice-main">
+                    <div class="home-notice-top">
+                        ${avatarHtml(soopId, 'home-notice-avatar')}
+                        <div class="home-notice-toptext">
+                            <div class="home-notice-name">${escapeHTML(name)}</div>
+                            <div class="home-notice-title-row">
+                                <span class="home-notice-title">${escapeHTML(title)}</span>
+                                <span class="home-notice-dot">·</span>
+                                <span class="home-notice-meta">${escapeHTML(timeText)}</span>
+                            </div>
+                        </div>
                     </div>
                     ${snippet ? `<div class="home-notice-snippet">${escapeHTML(snippet)}</div>` : ''}
                 </div>
@@ -1019,9 +1042,9 @@
             avatarEl.innerHTML = '👤';
         }
 
-        updateDonut('d-fmt-1', 'dt-fmt-1', 'dw-fmt-1', parseStat(pStat['대회 전적']), 'var(--color-primary)');
-        updateDonut('d-fmt-2', 'dt-fmt-2', 'dw-fmt-2', parseStat(pStat['대학 전적']), 'var(--color-primary)');
-        updateDonut('d-fmt-3', 'dt-fmt-3', 'dw-fmt-3', parseStat(pStat['미니 전적']), 'var(--color-primary)');
+        updateDonut('d-fmt-1', 'dt-fmt-1', 'dw-fmt-1', parseStat(pStat['대회 전적']), 'byRate');
+        updateDonut('d-fmt-2', 'dt-fmt-2', 'dw-fmt-2', parseStat(pStat['대학 전적']), 'byRate');
+        updateDonut('d-fmt-3', 'dt-fmt-3', 'dw-fmt-3', parseStat(pStat['미니 전적']), 'byRate');
 
         updateDonut('d-race-t', 'dt-race-t', 'dw-race-t', parseStat(pStat['테란전 전적']), '#1976d2');
         updateDonut('d-race-z', 'dt-race-z', 'dw-race-z', parseStat(pStat['저그전 전적']), '#7b1fa2');
