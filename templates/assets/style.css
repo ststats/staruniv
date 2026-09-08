@@ -268,14 +268,7 @@
             scrollbar-width: none;
         }
         .news-post-photos::-webkit-scrollbar { display: none; }
-        /* height:600px으로 고정해버리면 세로 폭까지 꽉 채우려다 극단적으로 가로가 긴
-           파노라마 사진이 카드보다 훨씬 넓게 튀어나올 수 있다. 그렇다고 max-width만
-           걸면(height는 고정인 채로) 가로만 줄어들어 비율이 찌그러진다.
-           그래서 width/height를 둘 다 auto로 두고 max-height + max-width(=카드 폭 100%)
-           로 "동시에" 제한하면, 둘 중 먼저 걸리는 제약에 맞춰 브라우저가 원본 비율을
-           그대로 유지한 채 스스로 줄여준다 (찌그러짐 없는 표준적인 'contain' 방식). */
-        .news-post-photos { align-items: center; }
-        .news-post-photos img { flex: 0 0 auto; max-height: 600px; max-width: 100%; width: auto; height: auto; border-radius: 0; scroll-snap-align: start; display: block; background: var(--color-bg-subtle); }
+        .news-post-photos img { flex: 0 0 100%; width: 100%; max-height: 600px; object-fit: cover; border-radius: 0; scroll-snap-align: start; display: block; background: var(--color-bg-subtle); }
         .news-post-photos-dots { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; pointer-events: none; }
         .photo-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.5); box-shadow: 0 0 2px rgba(0,0,0,0.4); transition: background 0.15s, transform 0.15s; }
         .photo-dot.active { background: #fff; transform: scale(1.3); }
