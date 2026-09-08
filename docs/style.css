@@ -72,7 +72,13 @@
         .sub-tab.active { color: var(--color-primary); font-weight: 800; border-bottom: 3px solid var(--color-primary); }
 
         /* 공통 컨테이너 및 텍스트 */
-        .page-section { display: none; padding: 24px 0; }
+        .page-section { display: none; padding: 24px 0 0 0; }
+        /* 하단 여백은 padding이 아니라 margin으로 준다 - 마진 병합(collapsing) 덕분에
+           그 안에 카드/테이블/리스트가 몇 겹으로 감싸여 있든, 마지막 자식 하나가
+           margin-bottom:24px만 가지면 그게 그대로 화면에 보이는 여백이 된다.
+           (padding은 절대 병합되지 않고 무조건 더해지므로, 페이지마다 안쪽 구조가
+           다르면 padding 방식은 여백이 제각각 벌어지는 문제가 생긴다.) */
+        .page-section > *:last-child { margin-bottom: 24px !important; }
         .page-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -85,7 +91,7 @@
         }
         @media (max-width: 767.98px) {
             .container { padding-left: 24px !important; padding-right: 24px !important; }
-            .page-section { padding: 20px 0; }
+            .page-section { padding: 20px 0 0 0; }
             .top-navbar .logo { font-size: 18px; margin-right: 16px; }
             .nav-menu .nav-item { font-size: var(--fs-subheading); margin-right: 20px; }
         }
