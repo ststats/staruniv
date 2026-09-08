@@ -49,7 +49,7 @@
         }
         
         /* 팝업(모달) 오픈 시 스크롤바 숨김으로 인한 화면 밀림(흔들림) 완벽 차단 */
-        html { overflow-y: scroll !important; scrollbar-gutter: stable; }
+        html { overflow-y: scroll !important; scrollbar-gutter: stable; scroll-behavior: auto; }
         body { overflow-y: visible !important; padding-right: 0 !important; }
         body.modal-open { padding-right: 0 !important; overflow-y: visible !important; }
         .modal { padding-right: 0 !important; }
