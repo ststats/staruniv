@@ -167,8 +167,8 @@
 
         .stat-card-box { position: relative; text-align: center; padding: 22px 16px 20px; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
         .stat-card-box:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
-        .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 700; margin-bottom: 14px; }
-        .stat-card-box .wl { font-size: var(--fs-body); color: #888; font-weight: 600; margin-top: 10px; }
+        .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 800; margin-bottom: 14px; }
+        .stat-card-box .wl { font-size: var(--fs-subheading); color: #888; font-weight: 800; margin-top: 14px; }
         /* 저번보다 임팩트 있게: 도넛을 더 키우고, 링도 두껍게, 가운데 퍼센트도 더 크고 진하게 */
         .stat-card-box .donut { width: 92px; height: 92px; margin-bottom: 4px; }
         .stat-card-box .donut::before { width: 70px; height: 70px; }
