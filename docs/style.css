@@ -272,6 +272,25 @@
         .news-post-photos-dots { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; pointer-events: none; }
         .photo-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.5); box-shadow: 0 0 2px rgba(0,0,0,0.4); transition: background 0.15s, transform 0.15s; }
         .photo-dot.active { background: #fff; transform: scale(1.3); }
+        /* PC용 좌우 화살표 - 평소엔 숨겨뒀다가 사진 영역에 마우스를 올리면(hover) 나타난다.
+           터치 기기는 hover 개념이 없어서(@media hover:none) 화살표를 아예 렌더링하지 않고
+           스와이프로만 조작하게 한다 - 화살표가 계속 떠 있거나 어정쩡하게 보이는 걸 방지. */
+        .news-photo-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 28px; height: 28px; border-radius: 50%; border: none;
+            background: rgba(0,0,0,0.4); color: #fff; font-size: 18px; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; opacity: 0; pointer-events: none;
+            transition: opacity 0.15s, background 0.15s; z-index: 2;
+        }
+        .news-post-photos-wrap:hover .news-photo-nav { opacity: 1; pointer-events: auto; }
+        .news-photo-nav:hover { background: rgba(0,0,0,0.6); }
+        .news-photo-nav.is-hidden { opacity: 0 !important; pointer-events: none !important; }
+        .news-photo-nav-prev { left: 8px; }
+        .news-photo-nav-next { right: 8px; }
+        @media (hover: none) {
+            .news-photo-nav { display: none; }
+        }
         .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 8px; padding: 8px 16px 10px 16px; border-top: 1px solid var(--color-bg-subtle); font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
         .news-post-link:hover { color: var(--color-primary); }
         .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 8px 16px; cursor: pointer; transition: opacity 0.15s; }

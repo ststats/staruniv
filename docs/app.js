@@ -19,12 +19,27 @@
     const EMPTY_MATCH_ROW_HTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
 
     // 공지 카드의 다중 사진 스와이프 - 스크롤 위치를 보고 현재 몇 번째 사진인지
-    // 계산해서 점(dot) 인디케이터의 active 표시를 갱신한다.
+    // 계산해서 점(dot) 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
+    // (첫 장에선 이전 화살표를, 마지막 장에선 다음 화살표를 숨긴다)
     function updateNewsPhotoDots(scroller) {
-        const dotsWrap = scroller.nextElementSibling;
-        if (!dotsWrap || !dotsWrap.classList.contains('news-post-photos-dots')) return;
+        const wrap = scroller.parentElement;
+        if (!wrap || !wrap.classList.contains('news-post-photos-wrap')) return;
         const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
-        dotsWrap.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+        const total = scroller.children.length;
+
+        const dotsWrap = wrap.querySelector('.news-post-photos-dots');
+        if (dotsWrap) dotsWrap.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+
+        const prevBtn = wrap.querySelector('.news-photo-nav-prev');
+        const nextBtn = wrap.querySelector('.news-photo-nav-next');
+        if (prevBtn) prevBtn.classList.toggle('is-hidden', idx <= 0);
+        if (nextBtn) nextBtn.classList.toggle('is-hidden', idx >= total - 1);
+    }
+
+    // 화살표 클릭 시 사진 한 장 폭만큼 부드럽게 스크롤 이동 (좌: -1, 우: 1)
+    function scrollNewsPhotos(btn, dir) {
+        const scroller = btn.closest('.news-post-photos-wrap').querySelector('.news-post-photos');
+        scroller.scrollBy({ left: dir * scroller.clientWidth, behavior: 'smooth' });
     }
 
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
@@ -398,9 +413,17 @@
         const dotsHtml = photos.length > 1
             ? `<div class="news-post-photos-dots">${photos.map((_, i) => `<span class="photo-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
             : '';
+        // PC는 호버 시 좌우 화살표로 클릭 이동, 모바일은 화살표 없이 스와이프만
+        // (화살표는 CSS의 @media (hover:none)에서 터치 기기일 때 아예 숨김).
+        // 맨 처음엔 이전 화살표를 숨겨둔다 - 스크롤이 움직이면 updateNewsPhotoDots가 갱신.
+        const navHtml = photos.length > 1
+            ? `<button type="button" class="news-photo-nav news-photo-nav-prev is-hidden" onclick="scrollNewsPhotos(this,-1)" aria-label="이전 사진">‹</button>
+               <button type="button" class="news-photo-nav news-photo-nav-next" onclick="scrollNewsPhotos(this,1)" aria-label="다음 사진">›</button>`
+            : '';
         const photosHtml = photos.length
             ? `<div class="news-post-photos-wrap">
                     <div class="news-post-photos"${photos.length > 1 ? ' onscroll="updateNewsPhotoDots(this)"' : ''}>${photos.map(p => `<img src="${escapeHTML(p.url)}" alt="" loading="lazy" onerror="this.remove();">`).join('')}</div>
+                    ${navHtml}
                     ${dotsHtml}
                </div>`
             : '';
