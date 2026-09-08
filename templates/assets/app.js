@@ -33,26 +33,23 @@
 
     // ===== 해시 라우터: #페이지?파라미터=값 형태로 하위 상태까지 URL에 반영 =====
     function parseHash() {
-        const raw = (location.hash || '').replace(/^#/, '');
-        const qIdx = raw.indexOf('?');
-        const page = qIdx === -1 ? raw : raw.slice(0, qIdx);
-        const params = new URLSearchParams(qIdx === -1 ? '' : raw.slice(qIdx + 1));
-        return { page: page || 'home', params };
+        // 해시(#page?params) 대신 실제 경로(/page?params)를 표준 URL 형태로 쓴다.
+        const seg = location.pathname.replace(/^\//, '').replace(/\/$/, '');
+        return { page: seg || 'home', params: new URLSearchParams(location.search) };
     }
 
     function buildHash(page, params) {
         const qs = new URLSearchParams();
         Object.entries(params || {}).forEach(([k, v]) => { if (v) qs.set(k, v); });
         const qsStr = qs.toString();
-        // 홈 + 파라미터 없음은 주소 깔끔하게 해시 자체를 비운다
-        if (page === 'home' && !qsStr) return '';
-        return '#' + page + (qsStr ? '?' + qsStr : '');
+        const path = page === 'home' ? '/' : '/' + page;
+        return path + (qsStr ? '?' + qsStr : '');
     }
 
     function updateHash(page, params) {
-        const newHash = buildHash(page, params);
-        if (location.hash !== newHash) {
-            history.pushState({ page, params }, '', newHash || location.pathname + location.search);
+        const newUrl = buildHash(page, params);
+        if (location.pathname + location.search !== newUrl) {
+            history.pushState({ page, params }, '', newUrl);
         }
     }
 
@@ -63,6 +60,8 @@
 
         const targetNav = document.querySelector(`#mainMenu .nav-item[data-page="${pageId}"]`);
         if (targetNav) targetNav.classList.add('active');
+
+        window.scrollTo(0, 0);
 
         if (!skipHashUpdate) updateHash(pageId, {});
     }
