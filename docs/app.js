@@ -634,13 +634,13 @@
         const sorted = [...members].sort((a, b) =>
             tierIndex(a['티어']) - tierIndex(b['티어']) || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
 
-        const countHtml = `<span class="text-secondary" style="font-size:var(--fs-body); font-weight:600;">${sorted.length}명</span>`;
+        const titleGroupHtml = `<span class="section-title-label">${escapeHTML(title)}<span class="title-count-divider"></span><span class="text-secondary" style="font-size:var(--fs-body); font-weight:600;">${sorted.length}명</span></span>`;
 
         if (opts.collapseId) {
             const startClosed = !!opts.startClosed;
             return `
             <div class="section-title${startClosed ? ' collapsed' : ''}" style="cursor:pointer;" role="button" data-bs-toggle="collapse" data-bs-target="#${opts.collapseId}">
-                <span>${escapeHTML(title)} ${countHtml}</span>
+                ${titleGroupHtml}
                 <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
             <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
@@ -649,7 +649,7 @@
         }
 
         return `
-        <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
+        <div class="section-title">${titleGroupHtml}</div>
         <div class="member-grid mb-block">${sorted.map(memberCardHtml).join('')}</div>`;
     }
     function renderMembersPage() {
@@ -819,10 +819,11 @@
                 <div class="notice-row-body">
                     <div class="notice-row-top">
                         <span class="notice-row-name">${escapeHTML(m['이름'])}</span>
+                        <span class="notice-row-dot">·</span>
                         <span class="notice-row-date">${escapeHTML(dateText)}</span>
                     </div>
                     <div class="notice-row-title">${escapeHTML(title)}</div>
-                    <div class="notice-row-snippet">${escapeHTML(snippet)}</div>
+                    ${snippet ? `<div class="notice-row-snippet">${escapeHTML(snippet)}</div>` : ''}
                 </div>
                 ${thumbHtml}
             </div>`;

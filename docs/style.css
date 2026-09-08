@@ -151,7 +151,12 @@
         .btn-clean { background: #fff; border: 1px solid #dcdfe4; border-radius: 6px; font-size: var(--fs-body); font-weight: 600; padding: 8px 16px; color: #555; transition: 0.1s; cursor: pointer; }
         .btn-clean:hover, .btn-clean.active { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
         
-        .filter-nav { display: flex; gap: 16px; margin-left: 16px; border-left: 2px solid var(--color-border); padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        /* 구분바 높이를 section-title 표준 높이(32px)에 맞춰, 짧은 선이 아니라
+           오른쪽 필터 영역 전체 크기에 맞는 온전한 구분선으로 보이게 한다. */
+        .filter-nav { display: flex; height: 32px; gap: 16px; margin-left: 16px; border-left: 2px solid var(--color-border); padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        /* 멤버현황 '역할 N명'처럼 제목 옆에 짧은 구분바로 숫자를 붙일 때 사용 */
+        .section-title-label { display: inline-flex; align-items: center; }
+        .title-count-divider { display: inline-block; width: 2px; height: 14px; background: var(--color-border-strong); margin: 0 10px; }
         .filter-nav::-webkit-scrollbar { display: none; }
         .filter-item { font-size: var(--fs-body); font-weight: 600; color: #888; cursor: pointer; position: relative; padding: 4px 0; transition: color 0.15s; flex-shrink: 0; }
         .filter-item:hover { color: #111; }
@@ -189,17 +194,21 @@
 
         /* 홈 화면 - 현재 방송중 카드 */
         .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-        .live-broadcast-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
-        .live-thumb-wrap { position: relative; background: #e9ecef; }
-        .live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #e9ecef; }
-        .live-badge { position: absolute; top: 8px; left: 8px; background: var(--color-lose); color: #fff; font-size: 9px; font-weight: 800; padding: 4px 9px; border-radius: 20px; letter-spacing: 0.3px; }
-        .live-card-body { padding: 12px 12px 12px; }
+        .live-broadcast-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
+        .live-broadcast-card:hover .live-thumb { transform: scale(1.04); }
+        .live-thumb-wrap { position: relative; background: #e9ecef; overflow: hidden; }
+        .live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #e9ecef; transition: transform 0.25s ease; }
+        /* 썸네일 하단을 살짝 어둡게 그라데이션 처리해 배지/여백이 붕 떠 보이지 않게 */
+        .live-thumb-wrap::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.28), rgba(0,0,0,0)); pointer-events: none; }
+        .live-badge { position: absolute; top: 10px; left: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; background: var(--color-lose); color: #fff; font-size: 9px; font-weight: 800; padding: 4px 9px; border-radius: 20px; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(240,62,62,0.35); }
+        .live-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
+        .live-card-body { padding: 12px 14px 14px; }
         .live-card-title { font-weight: 700; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 12px; }
         .live-card-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
         .live-card-who { display: flex; align-items: center; gap: 8px; min-width: 0; }
         /* 인스타그램 라이브 스토리 링 느낌의 그라디언트 테두리 */
-        .live-card-avatar-ring { width: 30px; height: 30px; border-radius: 50%; padding: 2px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
-        .live-card-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; border: 2px solid #fff; box-sizing: border-box; }
+        .live-card-avatar-ring { width: 32px; height: 32px; border-radius: 50%; padding: 2.5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+        .live-card-avatar { width: 27px; height: 27px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; border: 2px solid #fff; box-sizing: border-box; }
         .live-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .live-card-stats { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
         .live-card-viewers { font-weight: 700; font-size: var(--fs-body); color: #222; }
@@ -207,29 +216,36 @@
 
         /* 홈 화면 - 최신 공지 (인스타그램 피드 미리보기 스타일: 원형 아바타 +
            볼드 이름 + 캡션, 사진이 있으면 오른쪽에 정사각 썸네일) */
-        .notice-row { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--color-bg-subtle); text-decoration: none; color: inherit; align-items: center; transition: background 0.1s; cursor: pointer; }
+        .notice-row { display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--color-bg-subtle); text-decoration: none; color: inherit; align-items: center; transition: background 0.1s; cursor: pointer; }
         .notice-row:last-child { border-bottom: none; }
         .notice-row:hover { background: var(--color-primary-tint); }
         .notice-row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
         .notice-row-body { min-width: 0; flex: 1; }
-        .notice-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-        .notice-row-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; }
+        /* 이름 옆에 가운뎃점으로 날짜를 붙여 한 줄에 자연스럽게 흐르게 한다 -
+           space-between으로 날짜를 오른쪽 끝까지 밀면 썸네일과 자리다툼하며
+           어긋나 보이던 문제를 원천적으로 없앤다. */
+        .notice-row-top { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+        .notice-row-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .notice-row-dot { color: #ccc; font-size: 11px; flex-shrink: 0; }
         .notice-row-date { font-size: 11px; color: #999; flex-shrink: 0; white-space: nowrap; }
         .notice-row-title { font-weight: 700; font-size: var(--fs-body); color: #222; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .notice-row-snippet { font-size: 12px; color: var(--color-text-sub); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notice-row-thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
+        .notice-row-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
 
         /* 멤버 소식 피드 - 인스타그램 포스트 스타일: 사진은 카드 끝까지 꽉 채우고,
            헤더/본문/링크에만 안쪽 여백을 따로 준다 */
+        .news-post-card { transition: box-shadow 0.15s, transform 0.15s; }
+        .news-post-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
         .news-post-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0 16px; margin-bottom: 12px; }
-        .news-post-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
+        .news-post-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); border: 1px solid var(--color-border); flex-shrink: 0; }
         .news-post-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
         .news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
         .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; padding: 0 16px; }
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
         .news-post-photos img { width: 100%; max-height: 600px; object-fit: cover; border-radius: 0; margin-bottom: 2px; display: block; background: var(--color-bg-subtle); }
         .news-post-photos img:last-child { margin-bottom: 0; }
-        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 12px; padding: 0 16px 14px 16px; font-size: 12px; font-weight: 700; color: #999; text-decoration: none; }
+        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 12px; padding: 12px 16px 14px 16px; border-top: 1px solid var(--color-bg-subtle); font-size: 12px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
+        .news-post-link:hover { color: var(--color-primary); }
         .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 8px 16px; cursor: pointer; transition: opacity 0.15s; }
         /* 카드/표 아래 붙는 보조 요소(더보기 버튼, 이전 멤버 버튼, 업데이트 시각 캡션 등)의
            위쪽 여백은 전부 이 클래스 하나로 통일한다. 버튼 자체는 위쪽 패딩을 갖지 않으므로
@@ -253,7 +269,9 @@
         .member-card .tool-card-ext { top: 8px; right: 10px; }
         /* 텍스트 링크 옆에 붙는 인라인 화살표(원글 보기 등) - 도구모음 카드 화살표와 동일한 모양 */
         .ext-arrow { display: inline-block; margin-left: 3px; font-size: 11px; }
-        .match-badge { display: inline-block; width: 38px; text-align: center; font-size: 10px; font-weight: 800; padding: 2px 0; border-radius: 4px; color: #fff; }
+        /* tag-badge와 동일하게 flex로 중앙정렬해서, 폰트 메트릭 차이로 텍스트가
+           박스 안에서 위/아래로 치우쳐 보이던 문제와 뱃지가 커 보이던 문제를 함께 해결 */
+        .match-badge { width: 36px; height: 18px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; line-height: 1; border-radius: 4px; color: #fff; }
         .badge-win { background-color: var(--color-win); }
         .badge-lose { background-color: var(--color-lose); }
         .badge-draw { background-color: var(--color-draw); }
