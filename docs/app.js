@@ -18,6 +18,15 @@
     }
     const EMPTY_MATCH_ROW_HTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
 
+    // 공지 카드의 다중 사진 스와이프 - 스크롤 위치를 보고 현재 몇 번째 사진인지
+    // 계산해서 점(dot) 인디케이터의 active 표시를 갱신한다.
+    function updateNewsPhotoDots(scroller) {
+        const dotsWrap = scroller.nextElementSibling;
+        if (!dotsWrap || !dotsWrap.classList.contains('news-post-photos-dots')) return;
+        const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
+        dotsWrap.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+    }
+
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
     // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
     // 없는 팀은 (임시로) 원형 배지에 팀 이름 첫 글자를 넣어 대신 보여준다.
@@ -383,8 +392,17 @@
         const soopId = member ? member['SOOP ID'] : post.userId;
         const name = member ? member['이름'] : (post.userNick || '');
 
+        // 사진이 2장 이상이면 인스타처럼 가로 스와이프(스크롤 스냅)로 넘기고,
+        // 몇 번째 사진인지 보여주는 점(dot) 인디케이터를 같이 붙인다.
+        // (사진이 1장뿐이면 굳이 스크롤 컨테이너로 감쌀 필요 없이 기존처럼 표시)
+        const dotsHtml = photos.length > 1
+            ? `<div class="news-post-photos-dots">${photos.map((_, i) => `<span class="photo-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
+            : '';
         const photosHtml = photos.length
-            ? `<div class="news-post-photos">${photos.map(p => `<img src="${escapeHTML(p.url)}" alt="" loading="lazy" onerror="this.remove();">`).join('')}</div>`
+            ? `<div class="news-post-photos-wrap">
+                    <div class="news-post-photos"${photos.length > 1 ? ' onscroll="updateNewsPhotoDots(this)"' : ''}>${photos.map(p => `<img src="${escapeHTML(p.url)}" alt="" loading="lazy" onerror="this.remove();">`).join('')}</div>
+                    ${dotsHtml}
+               </div>`
             : '';
 
         return `
