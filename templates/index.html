@@ -57,8 +57,8 @@
         최근 공지
         <button class="btn-view-all" onclick="goToNewsFeed()">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px; vertical-align:middle;"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
     </div>
-    <div class="clean-card p-0 overflow-hidden" id="home-notice-list">
-        <div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>
+    <div class="home-notice-list" id="home-notice-list">
+        <div class="clean-card text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>
     </div>
 </div>
 
@@ -262,10 +262,30 @@
     <div id="view-team-stat">
         <div class="section-title">전체 전적</div>
         <div class="row g-3 mb-block">
-            <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대회</div><div class="rate" id="t-sum-대회-r">0%</div><div class="wl" id="t-sum-대회-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대회')">상세 전적</button></div></div>
-            <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대학</div><div class="rate" id="t-sum-대학-r">0%</div><div class="wl" id="t-sum-대학-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대학')">상세 전적</button></div></div>
-            <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">미니</div><div class="rate" id="t-sum-미니-r">0%</div><div class="wl" id="t-sum-미니-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('미니')">상세 전적</button></div></div>
-            <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">CK</div><div class="rate" id="t-sum-CK-r">0%</div><div class="wl" id="t-sum-CK-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('CK')">상세 전적</button></div></div>
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box">
+                <button class="stat-card-arrow" onclick="openTeamMatchModal('대회')" aria-label="대회 상세 전적 보기"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+                <div class="label">대회</div>
+                <div class="donut" id="t-sum-대회-donut"><span class="donut-text" id="t-sum-대회-r">0%</span></div>
+                <div class="wl" id="t-sum-대회-w">0승 0패</div>
+            </div></div>
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box">
+                <button class="stat-card-arrow" onclick="openTeamMatchModal('대학')" aria-label="대학 상세 전적 보기"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+                <div class="label">대학</div>
+                <div class="donut" id="t-sum-대학-donut"><span class="donut-text" id="t-sum-대학-r">0%</span></div>
+                <div class="wl" id="t-sum-대학-w">0승 0패</div>
+            </div></div>
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box">
+                <button class="stat-card-arrow" onclick="openTeamMatchModal('미니')" aria-label="미니 상세 전적 보기"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+                <div class="label">미니</div>
+                <div class="donut" id="t-sum-미니-donut"><span class="donut-text" id="t-sum-미니-r">0%</span></div>
+                <div class="wl" id="t-sum-미니-w">0승 0패</div>
+            </div></div>
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box">
+                <button class="stat-card-arrow" onclick="openTeamMatchModal('CK')" aria-label="CK 상세 전적 보기"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+                <div class="label">CK</div>
+                <div class="donut" id="t-sum-CK-donut"><span class="donut-text" id="t-sum-CK-r">0%</span></div>
+                <div class="wl" id="t-sum-CK-w">0승 0패</div>
+            </div></div>
         </div>
 
         <div class="row gap-block align-items-stretch mb-block">
@@ -288,9 +308,10 @@
                                     </td>
                                     <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대회 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대학 전적'] | e }}</td>
                                     <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['미니 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['CK 전적'] | e }}</td>
-                                    <!-- 상세보기 표시: 최근전적 목록과 완전히 동일한 화살표(9x9, 아래방향 쉐브런) -->
+                                    <!-- 이 행은 클릭 시 팝업(모달)이 열리므로, 인라인 펼침을 뜻하는
+                                         아래방향 대신 링크/팝업 열기를 뜻하는 오른쪽 화살표를 쓴다. -->
                                     <td class="text-center" style="width: 6%;">
-                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                                        <span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg></span>
                                     </td>
                                 </tr>
                                 {% endfor %}

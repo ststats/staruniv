@@ -134,10 +134,10 @@
         /* 카드류 공통 속성 - 배경/테두리/둥근모서리는 카드 종류를 막론하고 전부 동일하다.
            개별 규칙에는 그 컴포넌트만의 고유 속성만 남긴다. */
         .clean-card, .live-broadcast-card, .news-post-card, .tool-card,
-        .avatar-selector-scroll, .member-card {
+        .avatar-selector-scroll, .member-card, .home-notice-card {
             background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card);
         }
-        .clean-card, .live-broadcast-card, .news-post-card, .avatar-selector-scroll { box-shadow: var(--shadow-card); }
+        .clean-card, .live-broadcast-card, .news-post-card, .avatar-selector-scroll, .home-notice-card { box-shadow: var(--shadow-card); }
 
         .live-broadcast-card { display: block; overflow: hidden; text-decoration: none; color: inherit; transition: box-shadow 0.15s, transform 0.15s; }
         .news-post-card { padding: 0; margin-bottom: 16px; overflow: hidden; }
@@ -163,10 +163,13 @@
         .filter-item.active { color: var(--color-primary); font-weight: 800; }
         .filter-item.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background-color: var(--color-primary); border-radius: 2px; }
 
-        .stat-card-box { text-align: center; padding: 24px; }
-        .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 700; margin-bottom: 8px; }
-        .stat-card-box .rate { font-size: var(--fs-hero); font-weight: 800; line-height: 1.1; margin-bottom: 4px; color: var(--color-primary); }
-        .stat-card-box .wl { font-size: var(--fs-body); color: #888; font-weight: 600; margin-bottom: 12px; }
+        .stat-card-box { position: relative; text-align: center; padding: 20px 16px; }
+        .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 700; margin-bottom: 12px; }
+        .stat-card-box .wl { font-size: var(--fs-body); color: #888; font-weight: 600; margin-top: 8px; }
+        /* 우상단 화살표 - 클릭하면 상세 전적 팝업(모달)이 뜬다는 걸 나타내는
+           링크형 아이콘. 기존 '상세 전적' 버튼을 대체한다. */
+        .stat-card-arrow { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border: none; border-radius: 50%; background: transparent; color: #adb5bd; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .stat-card-arrow:hover { background: var(--color-primary-tint); color: var(--color-primary); }
 
         /* 리스트 래퍼 */
         
@@ -179,7 +182,7 @@
         .match-row[aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
 
         /* 뱃지 */
-        .tag-badge { height: 18px; box-sizing: border-box; padding: 0 6px; border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
+        .tag-badge { height: 18px; box-sizing: border-box; padding: 0 6px; border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
         /* 종족 뱃지(T/Z/P): 정사각형 + 종족전 승률 도넛(#1976d2/#7b1fa2/#f57f17)과 동일한 색상 */
         .tag-badge.race-badge { width: 18px; padding: 0; color: #fff; border: none; }
         .tag-badge.race-badge.race-T { background: #1976d2; }
@@ -214,23 +217,21 @@
         .live-card-viewers { font-weight: 700; font-size: var(--fs-body); color: #222; }
         .live-card-elapsed { font-size: 10px; color: #999; margin-top: 4px; }
 
-        /* 홈 화면 - 최신 공지 (인스타그램 피드 미리보기 스타일: 원형 아바타 +
-           볼드 이름 + 캡션, 사진이 있으면 오른쪽에 정사각 썸네일) */
-        .notice-row { display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--color-bg-subtle); text-decoration: none; color: inherit; align-items: center; transition: background 0.1s; cursor: pointer; }
-        .notice-row:last-child { border-bottom: none; }
-        .notice-row:hover { background: var(--color-primary-tint); }
-        .notice-row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
-        .notice-row-body { min-width: 0; flex: 1; }
-        /* 이름 옆에 가운뎃점으로 날짜를 붙여 한 줄에 자연스럽게 흐르게 한다 -
-           space-between으로 날짜를 오른쪽 끝까지 밀면 썸네일과 자리다툼하며
-           어긋나 보이던 문제를 원천적으로 없앤다. */
-        .notice-row-top { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
-        .notice-row-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notice-row-dot { color: #ccc; font-size: 11px; flex-shrink: 0; }
-        .notice-row-date { font-size: 11px; color: #999; flex-shrink: 0; white-space: nowrap; }
-        .notice-row-title { font-weight: 700; font-size: var(--fs-body); color: #222; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notice-row-snippet { font-size: 12px; color: var(--color-text-sub); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notice-row-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
+        /* 홈 화면 - 최근 공지 (카드 한 장 = 글 한 개: 아바타+이름/시간 헤더,
+           볼드 제목, 그 아래 공지 내용) */
+        .home-notice-list { display: flex; flex-direction: column; gap: 12px; }
+        .home-notice-card { cursor: pointer; padding: 16px; transition: box-shadow 0.15s, transform 0.15s; }
+        .home-notice-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
+        .home-notice-header { display: flex; align-items: center; gap: 12px; }
+        .home-notice-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
+        .home-notice-header-text { min-width: 0; flex: 1; }
+        .home-notice-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .home-notice-meta { font-size: 11px; color: #999; margin-top: 2px; }
+        .home-notice-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-top: 14px; }
+        .home-notice-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-top: 6px; }
+        .home-notice-photo { margin-top: 12px; }
+        .home-notice-photo img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px; display: block; background: var(--color-bg-subtle); }
+
 
         /* 멤버 소식 피드 - 인스타그램 포스트 스타일: 사진은 카드 끝까지 꽉 채우고,
            헤더/본문/링크에만 안쪽 여백을 따로 준다 */
@@ -271,7 +272,7 @@
         .ext-arrow { display: inline-block; margin-left: 3px; font-size: 11px; }
         /* tag-badge와 동일하게 flex로 중앙정렬해서, 폰트 메트릭 차이로 텍스트가
            박스 안에서 위/아래로 치우쳐 보이던 문제와 뱃지가 커 보이던 문제를 함께 해결 */
-        .match-badge { width: 36px; height: 18px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; line-height: 1; border-radius: 4px; color: #fff; }
+        .match-badge { width: 36px; height: 18px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; font-size: 10px; font-weight: 800; line-height: 1; border-radius: 4px; color: #fff; }
         .badge-win { background-color: var(--color-win); }
         .badge-lose { background-color: var(--color-lose); }
         .badge-draw { background-color: var(--color-draw); }
@@ -322,6 +323,7 @@
         /* 전적 테이블 공통 */
         .stat-table { font-size: var(--fs-body); }
         .stat-table thead th { background: #fff; border-bottom: 2px solid var(--color-border-strong); font-size: var(--fs-body); color: #666; font-weight: 800; padding-top: 8px; padding-bottom: 8px; }
+        .stat-table tbody td { vertical-align: middle; }
         .stat-table-sticky-col { position: sticky; left: 0; z-index: 2; background: #fff; }
         .stat-table thead .stat-table-sticky-col { z-index: 3; }
         .stat-table tbody tr:hover .stat-table-sticky-col { background: var(--color-primary-tint); }
