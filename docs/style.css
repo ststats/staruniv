@@ -272,7 +272,7 @@
         .news-post-photos-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 7px; pointer-events: none; }
         .photo-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: background 0.15s, transform 0.15s; }
         .photo-dot.active { background: #fff; transform: scale(1.25); box-shadow: 0 1px 4px rgba(0,0,0,0.6); }
-        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 8px; padding: 8px 16px 10px 16px; font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
+        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; padding: 6px 16px 10px 16px; font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
         .news-post-link:hover { color: var(--color-primary); }
         /* PC용 좌우 화살표 - 평소엔 숨겨뒀다가 사진 영역에 마우스를 올리면(hover) 나타난다.
            터치 기기는 hover 개념이 없어서(@media hover:none) 화살표를 아예 렌더링하지 않고
