@@ -151,9 +151,12 @@
         .btn-clean { background: #fff; border: 1px solid #dcdfe4; border-radius: 6px; font-size: var(--fs-body); font-weight: 600; padding: 8px 16px; color: #555; transition: 0.1s; cursor: pointer; }
         .btn-clean:hover, .btn-clean.active { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
         
-        /* 구분바 높이를 section-title 표준 높이(32px)에 맞춰, 짧은 선이 아니라
-           오른쪽 필터 영역 전체 크기에 맞는 온전한 구분선으로 보이게 한다. */
-        .filter-nav { display: flex; height: 32px; gap: 16px; margin-left: 16px; border-left: 2px solid var(--color-border); padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        /* 구분바(border-left)는 filter-nav 자신의 박스 테두리라, 필터탭
+           그룹(전체/대회/대학/미니/CK)과 항상 같은 높이가 된다. 왼쪽의 '최근 전적'
+           라벨은 부모가 align-items:stretch라 이 높이만큼 함께 늘어나므로,
+           라벨 자체를 flex로 만들어 그 안에서 텍스트를 세로 중앙에 놓는다. */
+        .filter-nav-label { display: flex; align-items: center; }
+        .filter-nav { display: flex; gap: 16px; margin-left: 16px; border-left: 2px solid var(--color-border); padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
         /* 멤버현황 '역할 N명'처럼 제목 옆에 짧은 구분바로 숫자를 붙일 때 사용 */
         .section-title-label { display: inline-flex; align-items: center; }
         .title-count-divider { display: inline-block; width: 2px; height: 14px; background: var(--color-border-strong); margin: 0 10px; }
