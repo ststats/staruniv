@@ -28,7 +28,7 @@
 </div>
 
 <div id="page-home" class="page-section active container">
-    <div class="clean-card p-4 mb-4 text-center home-wordmark">
+    <div class="clean-card p-4 mb-block text-center home-wordmark">
         <div class="home-wordmark-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
         <div class="home-wordmark-sub">STAR UNIVERSITY</div>
     </div>
@@ -134,7 +134,7 @@
         <div class="sub-tab" data-metric="cumulative_viewers" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
         <div class="sub-tab" data-metric="sponsor" onclick="setSynergyMetric('sponsor')">스폰전적</div>
     </div>
-    <div class="row g-4">
+    <div class="row gap-block">
         <div class="col-md-6">
             <div class="section-title">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
@@ -174,7 +174,7 @@
             </div>
         </div>
     </div>
-    <div class="text-center text-muted" id="synergy-updated" style="font-size:11px; padding: 16px 0 0 0;"></div>
+    <div class="text-center text-muted section-trailer" id="synergy-updated" style="font-size:11px;"></div>
 </div>
 
 <!-- 도구 페이지: 외부 링크 카드 모음 -->
@@ -241,14 +241,14 @@
     <!-- 1. 팀 뷰 -->
     <div id="view-team-stat">
         <div class="section-title">전체 전적</div>
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-block">
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대회</div><div class="rate" id="t-sum-대회-r">0%</div><div class="wl" id="t-sum-대회-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대회')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">대학</div><div class="rate" id="t-sum-대학-r">0%</div><div class="wl" id="t-sum-대학-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('대학')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">미니</div><div class="rate" id="t-sum-미니-r">0%</div><div class="wl" id="t-sum-미니-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('미니')">상세 전적</button></div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box"><div class="label">CK</div><div class="rate" id="t-sum-CK-r">0%</div><div class="wl" id="t-sum-CK-w">0승 0패</div><button class="btn-clean w-100" onclick="openTeamMatchModal('CK')">상세 전적</button></div></div>
         </div>
 
-        <div class="row g-4 align-items-stretch mb-4">
+        <div class="row gap-block align-items-stretch mb-block">
             <div class="col-lg-7 d-flex flex-column">
                 <div class="section-title">상대 전적</div>
                 <div class="clean-card p-0 overflow-hidden d-flex flex-column flex-grow-1">
@@ -695,7 +695,7 @@
                 </div>
 
                 <div id="statContent" style="display: none;">
-                    <div class="clean-card d-flex align-items-center mb-4 p-4">
+                    <div class="clean-card d-flex align-items-center mb-block p-4">
                         <div class="profile-avatar" id="p-avatar">👤</div>
                         <div>
                             <h3 class="fw-bold m-0 mb-2" id="p-name" style="letter-spacing:-1px;">이름</h3>
@@ -706,7 +706,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-4">
+                    <div class="row g-3 mb-block">
                         <div class="col-md-6">
                             <div class="clean-card h-100 p-3">
                                 <div class="section-title-sm">형식별 승률</div>

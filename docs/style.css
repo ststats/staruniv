@@ -19,6 +19,27 @@
             --fs-heading: 16px;
             --fs-subheading: 14px;
             --fs-body: 13px;
+
+            /* ============================================================
+               세로 스페이싱 스케일 — 사이트 전체 여백은 이 5개 변수로만 결정된다.
+               개별 페이지/컴포넌트에 매직넘버로 여백을 다시 정의하지 말고,
+               반드시 이 변수를 참조할 것. 값을 하나 바꾸면 사이트 전체에
+               일관되게 반영된다.
+
+               위계 (위에서 아래로 갈수록 "더 세부적인" 간격):
+               1. --space-page-top    페이지 최상단 여백 (.page-section 위쪽)
+               2. --space-page-bottom 페이지 마지막 콘텐츠 뒤 여백 (마진 병합으로 적용)
+               3. --space-block-gap   같은 페이지 안 블록(카드그룹, row) 사이 간격
+               4. --space-title-gap   섹션 제목 → 그 아래 본문 사이 간격
+               5. --space-trailer     본문(카드/표/리스트) → 보조 요소(더보기 버튼,
+                                      캡션 등) 사이 간격 — title-gap과 같은 크기여야
+                                      "제목→본문"과 "본문→보조요소" 위계가 안 뒤집힌다.
+               ============================================================ */
+            --space-page-top: 24px;
+            --space-page-bottom: 40px;
+            --space-block-gap: 24px;
+            --space-title-gap: 16px;
+            --space-trailer: 16px;
         }
         
         /* 팝업(모달) 오픈 시 스크롤바 숨김으로 인한 화면 밀림(흔들림) 완벽 차단 */
@@ -72,19 +93,19 @@
         .sub-tab.active { color: var(--color-primary); font-weight: 800; border-bottom: 3px solid var(--color-primary); }
 
         /* 공통 컨테이너 및 텍스트 */
-        .page-section { display: none; padding: 24px 0 0 0; }
+        .page-section { display: none; padding: var(--space-page-top) 0 0 0; }
         /* 하단 여백은 padding이 아니라 margin으로 준다 - 마진 병합(collapsing) 덕분에
            그 안에 카드/테이블/리스트가 몇 겹으로 감싸여 있든, 마지막 자식 하나가
            margin-bottom:24px만 가지면 그게 그대로 화면에 보이는 여백이 된다.
            (padding은 절대 병합되지 않고 무조건 더해지므로, 페이지마다 안쪽 구조가
            다르면 padding 방식은 여백이 제각각 벌어지는 문제가 생긴다.) */
-        .page-section > *:last-child { margin-bottom: 40px !important; }
+        .page-section > *:last-child { margin-bottom: var(--space-page-bottom) !important; }
         /* 탭 전환 구조(멤버 현황/공지, 전적 팀/개인)는 두 뷰가 다 .page-section의
            직속 자식으로 나란히 있고 하나만 display:block이라, :last-child가 DOM
            순서상 뒤에 있는(꼭 지금 보이는 게 아닌) 뷰를 잡아버린다. 그래서 탭 뷰
            래퍼들은 어느 쪽이 보이든 항상 여백을 받도록 따로 지정한다. */
         #view-member-status, #view-member-news,
-        #view-team-stat, #view-indiv-stat { margin-bottom: 40px; }
+        #view-team-stat, #view-indiv-stat { margin-bottom: var(--space-page-bottom); }
         .page-section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -102,7 +123,7 @@
             .nav-menu .nav-item { font-size: var(--fs-subheading); margin-right: 20px; }
         }
         
-        .section-title { font-size: var(--fs-heading); font-weight: 800; color: #111; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; height: 32px; padding-left: 12px; border-left: 4px solid var(--color-primary); }
+        .section-title { font-size: var(--fs-heading); font-weight: 800; color: #111; margin-bottom: var(--space-title-gap); display: flex; justify-content: space-between; align-items: center; height: 32px; padding-left: 12px; border-left: 4px solid var(--color-primary); }
         .section-title-sm { font-size: var(--fs-subheading); font-weight: 800; color: #111; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .section-title-chevron { color: #999; transition: transform 0.2s; flex-shrink: 0; }
         .section-title.collapsed .section-title-chevron { transform: rotate(-90deg); }
@@ -183,7 +204,17 @@
         .news-post-photos img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; background: var(--color-bg-subtle); }
         .news-post-photos img:last-child { margin-bottom: 0; }
         .news-post-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #999; text-decoration: none; }
-        .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 8px 16px; cursor: pointer; transition: opacity 0.15s; }
+        .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 8px 16px; cursor: pointer; transition: opacity 0.15s; }
+        /* 카드/표 아래 붙는 보조 요소(더보기 버튼, 이전 멤버 버튼, 업데이트 시각 캡션 등)의
+           위쪽 여백은 전부 이 클래스 하나로 통일한다. 버튼 자체는 위쪽 패딩을 갖지 않으므로
+           (클릭 영역 확보용 아래/좌우 패딩만 있음) 이 16px에 다른 값이 더해질 일이 없다. */
+        .section-trailer { padding-top: var(--space-trailer); }
+        /* 부트스트랩 g-4/mb-4는 자기만의 고정 rem 값이라 --space-block-gap과 숫자만
+           우연히 같을 뿐 실제로 연결돼있지 않다. 이 두 클래스로 진짜 연결시킨다:
+           .gap-block은 .row의 거터(칸 사이 간격)를, .mb-block은 margin-bottom을
+           담당하며, 둘 다 --space-block-gap 하나의 값을 그대로 따라간다. */
+        .gap-block { --bs-gutter-x: var(--space-block-gap); --bs-gutter-y: var(--space-block-gap); }
+        .mb-block { margin-bottom: var(--space-block-gap) !important; }
         .news-load-more:hover { opacity: 0.7; }
 
         /* 도구 페이지 카드 */

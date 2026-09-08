@@ -221,7 +221,7 @@
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
-            content.insertAdjacentHTML('beforeend', `<div class="text-center" style="padding: 8px 0 0 0;" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+            content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
         }
     }
 
@@ -362,7 +362,7 @@
             }
 
             if (newsCurrentPage < newsTotalPages) {
-                content.insertAdjacentHTML('beforeend', `<div class="text-center" style="padding: 8px 0 0 0;" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+                content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
             }
         } catch (e) {
             content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">글을 불러오지 못했습니다.</div>`;
@@ -571,13 +571,13 @@
                 <svg class="section-title-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
             <div class="collapse${startClosed ? '' : ' show'}" id="${opts.collapseId}">
-                <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>
+                <div class="member-grid mb-block">${sorted.map(memberCardHtml).join('')}</div>
             </div>`;
         }
 
         return `
         <div class="section-title">${escapeHTML(title)} ${countHtml}</div>
-        <div class="member-grid mb-4">${sorted.map(memberCardHtml).join('')}</div>`;
+        <div class="member-grid mb-block">${sorted.map(memberCardHtml).join('')}</div>`;
     }
     function renderMembersPage() {
         const roleOrderBase = ['감독', '코치', '선수'];
@@ -595,7 +595,7 @@
 
         if (formerMembers.length > 0) {
             html += `
-            <div class="text-center" style="padding: 8px 0 0 0;">
+            <div class="text-center section-trailer">
                 <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 <svg id="former-members-toggle-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
             </div>
             <div id="former-members-section" style="display:none;">
