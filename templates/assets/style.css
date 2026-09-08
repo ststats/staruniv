@@ -91,6 +91,7 @@
         /* 페이지 공통 헤더: 큰 타이틀 + 설명 + 구분선 */
         .page-header { margin-bottom: 4px; }
         .page-header-title { font-size: 30px; font-weight: 800; color: var(--color-logo-black); letter-spacing: -0.5px; margin: 0 0 8px 0; }
+        .page-header-subtitle { font-size: var(--fs-body); color: var(--color-text-sub); line-height: 1.5; margin: 0 0 12px 0; }
         .page-header-divider { border: none; border-bottom: 2px solid var(--color-text-main); margin: 16px 0 24px 0; }
         .page-header-divider.tight { margin-bottom: 4px; }
         .sub-tab { padding: 12px 4px; font-size: var(--fs-heading); font-weight: 600; color: var(--color-text-sub); cursor: pointer; margin-bottom: -1px; border-bottom: 3px solid transparent; }
@@ -220,7 +221,7 @@
         .news-post-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
         .news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
         .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; }
-        .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; line-height: 1.5; margin-bottom: 12px; }
+        .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; }
         .news-post-photos img { width: 100%; max-height: 600px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; background: var(--color-bg-subtle); }
         .news-post-photos img:last-child { margin-bottom: 0; }
         .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #999; text-decoration: none; }
