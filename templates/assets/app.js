@@ -177,7 +177,7 @@
         updateHash('members', params);
     }
 
-    function switchMemberView(viewType) {
+    function switchMemberView(viewType, skipHashUpdate) {
         document.getElementById('tab-member-status').classList.toggle('active', viewType === 'status');
         document.getElementById('tab-member-news').classList.toggle('active', viewType === 'news');
         document.getElementById('view-member-status').style.display = viewType === 'status' ? 'block' : 'none';
@@ -185,17 +185,21 @@
         if (viewType === 'news' && !newsSidebarRendered) {
             renderNewsSidebar();
             newsSidebarRendered = true;
-            showNewsAll();
+            showNewsAll(true);
         }
-        updateMembersHash();
+        if (!skipHashUpdate) updateMembersHash();
     }
 
     // 홈 화면 "전체 보기"/공지 클릭 -> 멤버 페이지의 소식 탭으로 이동.
     // name이 있으면(홈 공지 클릭) 원글로 나가지 않고 그 멤버의 개인 공지 탭으로 바로 이동한다.
+    // 탭 전환 -> 전체글 표시 -> 멤버 선택까지 한 번의 클릭으로 이어지는데, 단계마다
+    // 히스토리를 따로 쌓으면 뒤로가기를 여러 번 눌러야 빠져나가지므로, 여기서
+    // 한 번만 히스토리에 반영한다.
     function goToNewsFeed(name) {
         switchPage('members', true);
-        switchMemberView('news');
-        if (name) selectNewsPlayer(name);
+        switchMemberView('news', true);
+        if (name) selectNewsPlayer(name, true);
+        updateMembersHash();
     }
 
     // ===== 멤버 소식(SOOP 게시판 전체 글) =====
@@ -225,12 +229,12 @@
     let allNewsPool = [];
     let allNewsShownCount = 0;
 
-    async function showNewsAll() {
+    async function showNewsAll(skipHashUpdate) {
         document.querySelectorAll('#news-avatar-list .avatar-select-item').forEach(el => el.classList.remove('active'));
         document.getElementById('news-side-btn-all').classList.add('active');
         document.getElementById('news-content-title').innerText = '전체 공지';
         currentNewsPlayer = null;
-        updateMembersHash();
+        if (!skipHashUpdate) updateMembersHash();
 
         const content = document.getElementById('news-feed-content');
         content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>`;
@@ -289,7 +293,7 @@
         renderAllNewsFeed(false);
     }
 
-    function selectNewsPlayer(name) {
+    function selectNewsPlayer(name, skipHashUpdate) {
         document.querySelectorAll('#news-avatar-list .avatar-select-item').forEach(el => el.classList.remove('active'));
         const sideItem = document.getElementById(`news-side-player-${name}`);
         if (sideItem) sideItem.classList.add('active');
@@ -300,7 +304,7 @@
         currentNewsPlayer = m;
         newsCurrentPage = 1;
         newsTotalPages = 1;
-        updateMembersHash();
+        if (!skipHashUpdate) updateMembersHash();
 
         document.getElementById('news-feed-content').innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>`;
         loadNewsFeed(true);
