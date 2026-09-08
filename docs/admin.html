@@ -231,7 +231,7 @@
             // 그리드가 실제로 넓게 다시 배치된 상태를 그대로 캡처하고, 끝나면 원래대로
             // 되돌린다. 스크롤 영역(.cal-calendar-inner)도 같이 리셋해서 잘림을 막는다.
             const captureEl = document.getElementById('captureMonth');
-            const CAPTURE_WIDTH = 1000;
+            const CAPTURE_WIDTH = 936; // 실제 공개 사이트(일정 페이지)에서 캘린더가 렌더링되는 실측 폭과 동일하게 맞춤
 
             // 캡처 대상을 강제로 넓히면 옆의 .admin-side(오늘의 일정 카드)와 겹쳐서
             // 캘린더 오른쪽 요일들이 가려지는 게 실제 원인이었다 - 캡처하는 순간만
