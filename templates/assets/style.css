@@ -142,7 +142,7 @@
         .news-post-card { padding: 20px; margin-bottom: 16px; }
         .tool-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px 12px; text-decoration: none; color: inherit; position: relative; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
         .avatar-selector-scroll { overflow-x: auto; margin-bottom: 20px; }
-        .member-card { padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; }
+        .member-card { padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         
         /* 버튼 */
         .btn-view-all { background: transparent; border: none; font-size: 12px; font-weight: 700; color: #888; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
@@ -174,6 +174,11 @@
 
         /* 뱃지 */
         .tag-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
+        /* 종족 뱃지(T/Z/P): 종족전 승률 도넛(#1976d2/#7b1fa2/#f57f17)과 동일한 색상으로 통일 */
+        .tag-badge.race-badge { min-width: 22px; color: #fff; border: none; }
+        .tag-badge.race-badge.race-T { background: #1976d2; }
+        .tag-badge.race-badge.race-Z { background: #7b1fa2; }
+        .tag-badge.race-badge.race-P { background: #f57f17; }
 
         /* 홈 화면 - 현재 방송중 카드 */
         .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
@@ -210,9 +215,9 @@
         .news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
         .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; }
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; line-height: 1.5; margin-bottom: 12px; }
-        .news-post-photos img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; background: var(--color-bg-subtle); }
+        .news-post-photos img { width: 100%; max-height: 600px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; background: var(--color-bg-subtle); }
         .news-post-photos img:last-child { margin-bottom: 0; }
-        .news-post-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #999; text-decoration: none; }
+        .news-post-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 12px; font-size: 12px; font-weight: 700; color: #999; text-decoration: none; }
         .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 8px 16px; cursor: pointer; transition: opacity 0.15s; }
         /* 카드/표 아래 붙는 보조 요소(더보기 버튼, 이전 멤버 버튼, 업데이트 시각 캡션 등)의
            위쪽 여백은 전부 이 클래스 하나로 통일한다. 버튼 자체는 위쪽 패딩을 갖지 않으므로

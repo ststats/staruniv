@@ -573,6 +573,14 @@
         if (race.includes('프로토스')) return 'P';
         return race;
     }
+    // 종족 뱃지 클래스(T/Z/P별 색상)를 span에 부여할 때 공통으로 쓰는 헬퍼
+    function raceBadgeClass(race) {
+        const letter = raceShortLabel(race);
+        return ['T', 'Z', 'P'].includes(letter) ? ` race-badge race-${letter}` : '';
+    }
+    function raceBadgeHtml(race) {
+        return `<span class="tag-badge${raceBadgeClass(race)}">${raceShortLabel(race)}</span>`;
+    }
     function isActiveMember(m) {
         return !m['퇴단일'] || String(m['퇴단일']).trim() === '';
     }
@@ -594,7 +602,7 @@
             <div class="member-card-name">${escapeHTML(m['이름'])}</div>
             <div class="member-card-tags">
                 <span class="tag-badge">${tierText}</span>
-                <span class="tag-badge">${raceShortLabel(m['종족'])}</span>
+                ${raceBadgeHtml(m['종족'])}
             </div>
         </div>`;
     }
@@ -802,7 +810,9 @@
 
         document.getElementById('mp-name').innerText = name;
         document.getElementById('mp-role-badge').innerText = m['직책'] || '미정';
-        document.getElementById('mp-race-badge').innerText = raceShortLabel(m['종족']);
+        const mpRaceBadge = document.getElementById('mp-race-badge');
+        mpRaceBadge.textContent = raceShortLabel(m['종족']);
+        mpRaceBadge.className = 'tag-badge' + raceBadgeClass(m['종족']);
         document.getElementById('mp-tier-badge').innerText = (m['티어'] !== undefined && m['티어'] !== '') ? `${m['티어']}티어` : '티어 미정';
 
         const avatarUrl = getProfileImgUrl(m['SOOP ID']);
@@ -959,7 +969,9 @@
 
         document.getElementById('p-name').innerText = name;
         document.getElementById('p-tier').innerText = (pDb['티어'] || pDb['입단 티어'] || pDb['직책'] || '미정') + (pDb['직책'] === '선수' ? ' 티어' : '');
-        document.getElementById('p-race').innerText = pDb['종족'] || '종족 미정';
+        const pRaceBadge = document.getElementById('p-race');
+        pRaceBadge.textContent = raceShortLabel(pDb['종족']);
+        pRaceBadge.className = 'tag-badge' + raceBadgeClass(pDb['종족']);
 
         const avatarUrl = getProfileImgUrl(pDb['SOOP ID']);
         const avatarEl = document.getElementById('p-avatar');
