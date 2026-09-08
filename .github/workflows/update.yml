@@ -39,11 +39,24 @@ jobs:
         python scripts/generate_stats.py
         python scripts/build_html.py
 
+    - name: Node 환경 세팅
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Puppeteer 설치
+      run: npm install puppeteer
+
+    - name: 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링)
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: node capture.js
+
     - name: 변경된 데이터 및 HTML 깃허브에 배포
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
-        # index.html 뿐 아니라 분리된 정적 자산(css/js)도 같이 add
-        git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js docs/holidays.json docs/data/site_data.json
+        # index.html 뿐 아니라 분리된 정적 자산(css/js)과 캘린더 이미지도 같이 add
+        git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js docs/holidays.json docs/data/site_data.json docs/data/calendar.png
         git diff --quiet && git diff --staged --quiet || git commit -m "🚀 통계 웹페이지 자동 업데이트"
         git push
