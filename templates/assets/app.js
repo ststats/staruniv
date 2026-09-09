@@ -425,10 +425,12 @@
 
     // 게시글 원본 HTML을 그대로 꽂기 전에 script/iframe 등 위험한 태그와 on* 이벤트
     // 속성, javascript: 링크만 제거한다. 정렬/색상 같은 일반 서식은 원문 그대로 유지.
+    // 사진(figure/img)은 카드 하단의 사진 갤러리(post.photos)가 이미 따로 보여주므로,
+    // 본문에도 그대로 두면 같은 사진이 두 번(본문+갤러리) 나온다 - 본문에서는 제거한다.
     function sanitizeNewsHtml(html) {
         if (!html) return '';
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        doc.querySelectorAll('script, style, iframe, object, embed, link, meta, form').forEach(el => el.remove());
+        doc.querySelectorAll('script, style, iframe, object, embed, link, meta, form, figure, img').forEach(el => el.remove());
         doc.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(attr => {
                 const n = attr.name.toLowerCase();
@@ -437,6 +439,12 @@
                     el.removeAttribute(attr.name);
                 }
             });
+        });
+        // 사진을 지우고 남은, 원래부터 비어있던 문단(<p></p>, <p>&nbsp;</p>, <p><br></p>)은
+        // 빈 줄만 차지하니 같이 정리한다.
+        doc.querySelectorAll('p').forEach(p => {
+            const onlyBr = p.children.length === 1 && p.children[0].tagName === 'BR';
+            if (!p.textContent.trim() && (p.children.length === 0 || onlyBr)) p.remove();
         });
         return doc.body.innerHTML;
     }
