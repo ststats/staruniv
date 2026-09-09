@@ -294,7 +294,7 @@
 
         /* 최신 글 카드는 왼쪽에 고정 폭(600px)으로 붙어서 그대로 있고, 오른쪽 지난 글
            목록만 그 카드 높이에 맞춰(align-items:stretch) 내부적으로 스크롤된다. */
-        .featured-post { flex: 0 1 600px; min-width: 300px; }
+        .featured-post { flex: 0 1 500px; min-width: 300px; }
         .featured-post .news-post-card { margin-bottom: 0; }
 
         /* 오른쪽 지난 글 목록 - 왼쪽 최신 글 카드 높이에 맞춰 늘어나고(align-items:stretch),
@@ -307,7 +307,7 @@
            지금까지 "더보기"를 누를수록 리스트가 아래로 계속 길어지기만 했던 것.
            min-height:0으로 그 기본값을 없애야 진짜로 clip되어 스크롤이 생긴다.
            max-height는 대략 항목 5개 정도가 보이는 높이로 잡았다. */
-        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; min-height: 0; max-height: 460px; padding-right: 2px; }
+        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; min-height: 0; max-height: 500px; padding-right: 2px; }
         #news-past-list::-webkit-scrollbar { width: 5px; }
         #news-past-list::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
         .past-posts .news-load-more-wrap { flex-shrink: 0; text-align: center; padding-top: 12px; }
