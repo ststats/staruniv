@@ -19,13 +19,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const PORT = 8791;
-// 캘린더 캡처 폭은 더 이상 하드코딩하지 않는다. 실제 공개 사이트에서 캘린더가
-// "오늘의 일정" 사이드바(.cal-sidebar)와 나란히 배치된 상태 그대로의 폭을
-// 렌더링 시점에 직접 측정해서 쓴다(아래 captureWidth 측정 부분 참고).
-// 이 뷰포트 폭은 그 "나란히" 배치가 최대로 펼쳐지는 지점을 재현하기 위한 값이다:
-// .container가 max-width:1320px에 도달하고 @media(min-width:1200px)로
-// 패딩이 40px이 되는 데스크톱 최대 레이아웃 상태가 되도록 충분히 크게 잡는다.
-const MEASURE_VIEWPORT_WIDTH = 1600;
+// 실제 admin.html에서 개발자도구로 직접 확인한 값(#captureMonth 902.4px)으로 고정.
+const CAPTURE_WIDTH = 902.4;
 
 function waitForServer(url, timeoutMs) {
     const start = Date.now();
@@ -61,7 +56,7 @@ function waitForServer(url, timeoutMs) {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         const page = await browser.newPage();
-        await page.setViewport({ width: MEASURE_VIEWPORT_WIDTH, height: 1000 });
+        await page.setViewport({ width: CAPTURE_WIDTH + 300, height: 1000 });
 
         await page.evaluateOnNewDocument((t) => {
             localStorage.setItem('gh_token', t);
@@ -77,17 +72,6 @@ function waitForServer(url, timeoutMs) {
 
         // admin.html의 init()이 GitHub에서 일정 데이터를 불러와 렌더링을 끝낼 시간을 준다.
         await new Promise((resolve) => setTimeout(resolve, 3000));
-
-        // "오늘의 일정" 사이드바(.cal-sidebar)가 아직 그대로 보이는, 즉 실제 공개
-        // 사이트와 동일하게 나란히 배치된 상태에서 캘린더(#captureMonth)의 실제
-        // 렌더링 폭을 측정한다. 위에서 뷰포트를 충분히 넓게 잡아뒀으므로 이 값이
-        // 곧 "최대 넓이일 때 나란히 있는 폭"이 된다.
-        const captureWidth = await page.evaluate(() => {
-            const el = document.getElementById('captureMonth');
-            return el ? el.getBoundingClientRect().width : null;
-        });
-        if (!captureWidth) throw new Error('#captureMonth 요소를 찾을 수 없어 폭을 측정하지 못했습니다.');
-        console.log(`📏 측정된 캘린더 폭(사이드바와 나란히 있을 때): ${captureWidth}px`);
 
         // "저장" 버튼을 눌렀을 때와 동일한 방식으로, 캡처 대상을 강제로 넓히고
         // 옆의 사이드바를 잠깐 숨긴다 (겹침으로 인한 잘림 방지). 캡처 이미지
@@ -120,7 +104,7 @@ function waitForServer(url, timeoutMs) {
                 el.scrollLeft = 0;
                 el.style.overflowX = 'visible';
             });
-        }, captureWidth);
+        }, CAPTURE_WIDTH);
 
         await new Promise((resolve) => setTimeout(resolve, 300));
 
