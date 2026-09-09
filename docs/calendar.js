@@ -180,7 +180,7 @@
                     <div class="cal-card-dot" style="background-color: ${item.color || '#eff6ff'};"></div>
                     ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''} 
                     ${item.person ? `<span class="cal-card-person">${calEscapeHTML(item.person)}</span>` : ''}
-                    <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ' ' + calEscapeHTML(item.detail) : ''}</span>
+                    <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ` <span class="cal-card-detail">${calEscapeHTML(item.detail)}</span>` : ''}</span>
                     ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, dateStr, type) : ''}
                 </div>
             </div>
