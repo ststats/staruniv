@@ -303,7 +303,7 @@
                                     <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:18.8%;">
                                         <span class="d-flex align-items-center justify-content-center gap-2">
                                             <img src="images/{{ (row['상대'] if row['상대'] != '내전' else '캄몬스타즈') | e }}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px; flex-shrink:0;" onerror="teamLogoFallback(this, '{{ row['상대'] | e }}')">
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ row['상대'] | e }}</span>
+                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:normal;">{{ row['상대'] | e }}</span>
                                         </span>
                                     </td>
                                     <td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대회 전적'] | e }}</td><td class="text-center" style="white-space:nowrap; width:18.8%;">{{ row['대학 전적'] | e }}</td>
