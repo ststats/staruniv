@@ -457,8 +457,8 @@
            줄어들 때 그 차이의 비율만큼 사이드바가 훨씬 먼저·훨씬 많이 줄어들도록 한
            것 - 순수 CSS만으로 "먼저 줄었다 늘었다 → 그 다음에야 스크롤" 순서를
            근사한다. */
-        .cal-sidebar { min-width: 280px; display: flex; flex-direction: column; gap: 24px; flex-grow: 1; flex-shrink: 50; flex-basis: 360px; order: 2; }
-        .cal-calendar-area { display: flex; flex-direction: column; gap: 16px; width: 804px; flex-grow: 0; flex-shrink: 1; min-width: 0; overflow: hidden; order: 1; }
+        .cal-sidebar { min-width: 280px; display: flex; flex-direction: column; gap: 24px; flex-grow: 1; flex-shrink: 50; flex-basis: 360px; order: 1; }
+        .cal-calendar-area { display: flex; flex-direction: column; gap: 16px; width: 804px; flex-grow: 0; flex-shrink: 1; min-width: 0; overflow: hidden; order: 2; }
         .cal-calendar-area > .section-title { margin-bottom: 0; }
         .cal-calendar-area .clean-card { min-width: 0; max-width: 100%; display: flex; flex-direction: column; width: 100%; overflow: hidden; }
 
