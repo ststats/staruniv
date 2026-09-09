@@ -11,6 +11,28 @@ except FileNotFoundError:
     print("❌ data/db.json 파일을 찾을 수 없습니다. update_data.py를 먼저 실행하세요.")
     exit(1)
 
+# '팀 목록' 시트(창단일 포함)를 상대팀 정렬에 쓴다. 컬럼: 팀/설립자/창단일/해체일/비고/우승.
+# 이 시트에 없는 팀이나 창단일이 비어/이상한 값이면 날짜 미상으로 취급해 맨 위로 보낸다.
+# '내전'(자체 스크림)은 팀 목록에 없는 대신 캄몬스타즈 창단일을 그대로 쓴다.
+df_teams = pd.DataFrame(db.get('teams', []))
+team_founded = {}
+if '팀' in df_teams.columns and '창단일' in df_teams.columns:
+    parsed = pd.to_datetime(df_teams['창단일'], errors='coerce')
+    for team_name, founded in zip(df_teams['팀'], parsed):
+        team_name = str(team_name or '').strip()
+        if team_name and pd.notna(founded):
+            team_founded[team_name] = founded
+
+def team_sort_key(team_name):
+    """오래된 팀부터 정렬하기 위한 키. 창단일 미상(팀 목록에 없거나 값이 비정상)인
+    팀은 (0, ...)으로 묶어 항상 맨 위에 오게 하고, 창단일이 있는 팀은 (1, 날짜)로
+    묶어 그 안에서 오름차순(오래된 순)으로 정렬한다."""
+    lookup_name = '캄몬스타즈' if str(team_name).strip() == '내전' else str(team_name).strip()
+    founded = team_founded.get(lookup_name)
+    if founded is None:
+        return (0, pd.Timestamp.min)
+    return (1, founded)
+
 # 같은 날 같은 상대와 여러 경기를 치른 경우를 구분하기 위해 매치/라운드에
 # 고유 순번을 부여하고, 라운드에 형식을 채운다 (자세한 내용은 match_link.py 참고)
 linked_matches, linked_rounds = link_rounds_to_matches(db.get('matches', []), db.get('rounds', []), db.get('members', []))
@@ -141,7 +163,8 @@ def build_crew_stats():
             team_data['사비'] = f"{sabi:,.0f}" if sabi > 0 else "-"
             
             season_stats.append(team_data)
-            
+
+        season_stats.sort(key=lambda row: team_sort_key(row['상대']))
         crew_result[season] = season_stats
     return crew_result
 
