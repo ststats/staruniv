@@ -66,6 +66,7 @@
     }
     .admin-form-row select { flex: 1 1 50%; width: auto; }
     .admin-form-row textarea { flex: 1 1 50%; padding: 10px 12px; resize: none; overflow: hidden; line-height: 1.2; height: 42px; }
+    .admin-form-row input#inputLongTermDesc { flex: 1 1 50%; width: auto; }
     .admin-form-row input:focus, .admin-form-row textarea:focus, .admin-form-row select:focus {
         outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-tint);
     }
@@ -229,10 +230,8 @@
                             <option value="#f3e8ff">🟣 보라</option>
                             <option value="#f1f5f9">⚪ 회색</option>
                         </select>
-                        <input type="text" id="inputLongTermDesc" placeholder="간략내용 (달력에 표시)" style="display:none;">
-                    </div>
-                    <div class="admin-form-row" id="descRow">
                         <textarea id="inputDesc" placeholder="간략내용 (줄바꿈 가능)"></textarea>
+                        <input type="text" id="inputLongTermDesc" placeholder="간략내용 (달력에 표시)" style="display:none;">
                     </div>
                     <div class="admin-form-row">
                         <input type="text" id="inputDetail" placeholder="상세내용 (오늘의 일정에만 표시)">
@@ -494,7 +493,7 @@
         document.getElementById('modeBtnDay').classList.toggle('active', mode === 'day');
         document.getElementById('modeBtnRange').classList.toggle('active', mode === 'range');
         document.getElementById('rangeDatesRow').style.display = mode === 'range' ? 'flex' : 'none';
-        document.getElementById('descRow').style.display = mode === 'range' ? 'none' : 'flex';
+        document.getElementById('inputDesc').style.display = mode === 'range' ? 'none' : 'block';
         document.getElementById('inputLongTermDesc').style.display = mode === 'range' ? 'block' : 'none';
     };
 
