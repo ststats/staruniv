@@ -56,7 +56,7 @@ function waitForServer(url, timeoutMs) {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         const page = await browser.newPage();
-        await page.setViewport({ width: CAPTURE_WIDTH + 300, height: 1000 });
+        await page.setViewport({ width: Math.round(CAPTURE_WIDTH) + 300, height: 1000 });
 
         await page.evaluateOnNewDocument((t) => {
             localStorage.setItem('gh_token', t);
