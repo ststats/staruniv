@@ -38,19 +38,28 @@
     // 공지 카드의 다중 사진 스와이프 - 스크롤 위치를 보고 현재 몇 번째 사진인지
     // 계산해서 점(dot) 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
     // (첫 장에선 이전 화살표를, 마지막 장에선 다음 화살표를 숨긴다)
+    // 공지 사진 갤러리 가로 스크롤 시 dot/화살표 갱신 - 모바일에서 스와이프하면
+    // onscroll이 프레임당 여러 번 발생해 매번 나눗셈 연산이 도는 걸 막기 위해,
+    // requestAnimationFrame으로 한 프레임당 한 번만 실행되도록 스로틀링한다.
+    const newsPhotoDotsScheduled = new WeakSet();
     function updateNewsPhotoDots(scroller) {
-        const wrap = scroller.parentElement;
-        if (!wrap || !wrap.classList.contains('news-post-photos-wrap')) return;
-        const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
-        const total = scroller.children.length;
+        if (newsPhotoDotsScheduled.has(scroller)) return; // 이미 이번 프레임에 예약됨
+        newsPhotoDotsScheduled.add(scroller);
+        requestAnimationFrame(() => {
+            newsPhotoDotsScheduled.delete(scroller);
+            const wrap = scroller.parentElement;
+            if (!wrap || !wrap.classList.contains('news-post-photos-wrap')) return;
+            const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
+            const total = scroller.children.length;
 
-        const dotsWrap = wrap.querySelector('.news-post-photos-dots');
-        if (dotsWrap) dotsWrap.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+            const dotsWrap = wrap.querySelector('.news-post-photos-dots');
+            if (dotsWrap) dotsWrap.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 
-        const prevBtn = wrap.querySelector('.news-photo-nav-prev');
-        const nextBtn = wrap.querySelector('.news-photo-nav-next');
-        if (prevBtn) prevBtn.classList.toggle('is-hidden', idx <= 0);
-        if (nextBtn) nextBtn.classList.toggle('is-hidden', idx >= total - 1);
+            const prevBtn = wrap.querySelector('.news-photo-nav-prev');
+            const nextBtn = wrap.querySelector('.news-photo-nav-next');
+            if (prevBtn) prevBtn.classList.toggle('is-hidden', idx <= 0);
+            if (nextBtn) nextBtn.classList.toggle('is-hidden', idx >= total - 1);
+        });
     }
 
     // 화살표 클릭 시 사진 한 장 폭만큼 부드럽게 스크롤 이동 (좌: -1, 우: 1)
@@ -58,23 +67,6 @@
         const scroller = btn.closest('.news-post-photos-wrap').querySelector('.news-post-photos');
         scroller.scrollBy({ left: dir * scroller.clientWidth, behavior: 'smooth' });
     }
-
-    // 공지 사진 갤러리 위에서 휠을 굴리면 실제 트랙패드 가로 스와이프(deltaX)든
-    // 그냥 페이지를 내리려는 세로 휠(deltaY)이든 둘 다 기본 이동량이 커서 너무
-    // 빠르게 느껴진다. 가로 성분은 사진 스크롤 속도만 줄이고, 세로 성분은 절대
-    // 가로로 바꿔치기하지 않고 방향은 세로 그대로 유지한 채 페이지 스크롤
-    // 속도만 줄인다. 동적으로 생성되는 카드라 document에 위임해서 항상 걸리게 한다.
-    document.addEventListener('wheel', function (e) {
-        const scroller = e.target.closest && e.target.closest('.news-post-photos');
-        if (!scroller || scroller.children.length <= 1) return;
-        if (e.deltaX) {
-            e.preventDefault();
-            scroller.scrollLeft += e.deltaX * 0.3;
-        } else if (e.deltaY) {
-            e.preventDefault();
-            window.scrollTo(window.scrollX, window.scrollY + e.deltaY * 0.3);
-        }
-    }, { passive: false });
 
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
     // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
@@ -516,9 +508,12 @@
             ? `<button type="button" class="news-photo-nav news-photo-nav-prev is-hidden" onclick="scrollNewsPhotos(this,-1)" aria-label="이전 사진">‹</button>
                <button type="button" class="news-photo-nav news-photo-nav-next" onclick="scrollNewsPhotos(this,1)" aria-label="다음 사진">›</button>`
             : '';
+        // 첫 번째 사진은 갤러리가 열리자마자 바로 보이는 영역이라 loading="lazy"를
+        // 주면 오히려 불필요하게 로딩을 늦춰 화면에 늦게 뜬다 - 즉시 로드하고,
+        // 스와이프해야 보이는 두 번째 사진부터만 지연 로딩한다.
         const photosHtml = photos.length
             ? `<div class="news-post-photos-wrap">
-                    <div class="news-post-photos"${photos.length > 1 ? ' onscroll="updateNewsPhotoDots(this)"' : ''}>${photos.map(p => `<img src="${escapeHTML(p.url)}" alt="" loading="lazy" onerror="this.remove();">`).join('')}</div>
+                    <div class="news-post-photos"${photos.length > 1 ? ' onscroll="updateNewsPhotoDots(this)"' : ''}>${photos.map((p, i) => `<img src="${escapeHTML(p.url)}" alt=""${i > 0 ? ' loading="lazy"' : ''} onerror="this.remove();">`).join('')}</div>
                     ${navHtml}
                     ${dotsHtml}
                </div>`
