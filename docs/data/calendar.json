@@ -219,6 +219,16 @@
       "desc": "휴방",
       "detail": "",
       "color": "#fef3c7"
+    },
+    {
+      "id": 1788972694118,
+      "startDate": "2026-09-09",
+      "endDate": "2026-09-09",
+      "time": "20:00",
+      "person": "민철",
+      "desc": "코려대CK",
+      "detail": "",
+      "color": "#f3e8ff"
     }
   ]
 }
