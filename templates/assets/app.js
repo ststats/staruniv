@@ -584,7 +584,7 @@
             return `
             <tr class="match-row" style="cursor:pointer; border-bottom:1px solid #f1f3f5;" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
                 <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
+                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis; line-height:normal;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
                 <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
                 <td>${m['세트 결과'] || '-'}</td>
@@ -1057,7 +1057,7 @@
             const pStat = playersStats.find(x => x['이름'] === m['이름']) || {};
             const name = m['이름'];
             html += `<tr style="border-bottom:1px solid #f1f3f5; cursor:pointer;" onclick="selectPlayer('${jsStrEscape(name)}')">
-                <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</span></span></td>
+                <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis; line-height:normal;">${escapeHTML(name)}</span></span></td>
                 <td style="white-space:nowrap; width:20%;">${pStat['대회 전적'] || '-'}</td>
                 <td style="white-space:nowrap; width:20%;">${pStat['대학 전적'] || '-'}</td>
                 <td style="white-space:nowrap; width:20%;">${pStat['미니 전적'] || '-'}</td>
@@ -1144,7 +1144,7 @@
             <tr style="border-bottom:1px solid #f1f3f5;">
                 <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대 선수']) || '-'}</td>
                 <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m['상대팀'])}</span></span>
+                    <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis; line-height:normal;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
                 <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
                 <td>${escapeHTML(m['맵']) || '-'}</td>
@@ -1274,7 +1274,7 @@
             <td class="text-center" style="width:40%;">
                 <span class="d-flex align-items-center justify-content-center gap-2" style="min-width:0;">
                     ${avatarHtml(ours['SOOP ID'], 'player-avatar-sm')}
-                    <span class="fw-bold" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(name)}</span>
+                    <span class="fw-bold" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:normal;">${escapeHTML(name)}</span>
                 </span>
             </td>
             <td class="text-center fw-bold" style="width:40%; color:var(--color-primary); white-space:nowrap;">${escapeHTML(displayVal)}</td>
@@ -1311,6 +1311,18 @@
         maleTbody.innerHTML = male.length ? male.map(synergyRowHtml).join('') : noData;
         femaleTbody.innerHTML = female.length ? female.map(synergyRowHtml).join('') : noData;
     }
+
+    // 모달이 닫히기 시작할 때(hide.bs.modal) 그 안에 포커스가 남아있으면 부트스트랩이
+    // aria-hidden="true"를 그대로 씌우면서 "포커스가 남은 요소를 접근성 트리에서
+    // 숨겼다"는 크롬 경고가 뜬다. 화면엔 영향 없는 경고지만, 닫히기 직전에 포커스를
+    // 미리 빼주면 경고 자체가 안 뜬다.
+    document.querySelectorAll('.modal').forEach(modalEl => {
+        modalEl.addEventListener('hide.bs.modal', () => {
+            if (modalEl.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+        });
+    });
 
     window.onload = async function() {
         // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
