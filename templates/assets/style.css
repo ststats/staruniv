@@ -266,7 +266,6 @@
         .news-post-photos {
             display: flex;
             overflow-x: auto;
-            overscroll-behavior: contain;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
@@ -450,7 +449,7 @@
         .cal-cell-top { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
         .cal-event-time { font-size: 12px; font-weight: 400; color: var(--color-text-main); }
         .cal-event-person { font-weight: 800; font-size: var(--fs-body); color: #666; margin-left: auto; text-align: right; }
-        .cal-event-desc { font-size: var(--fs-body); font-weight: 400; color: var(--color-text-main); text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.25; }
+        .cal-event-desc { font-size: 12px; font-weight: 500; color: var(--color-text-main); text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.25; }
 
         /* 기간(장기) 일정은 cal-cell-event와 같은 2줄 카드를 그대로 쓰되, 옆 칸과 이어붙일 때
            그림자가 이음매처럼 겹쳐 보이지 않도록 막대 전용으로만 그림자를 없앤다. */
