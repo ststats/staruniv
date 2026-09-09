@@ -98,6 +98,7 @@
     .admin-tool-info { min-width: 0; flex: 1; }
     .admin-tool-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .admin-tool-url { font-size: 11px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-tool-detail { font-size: 12px; font-weight: 500; color: var(--color-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
     .admin-tool-row .delete-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--color-lose); cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
     .admin-tool-row .delete-btn:hover { text-decoration: underline; }
 </style>
@@ -601,6 +602,7 @@
                 <div class="admin-tool-info">
                     <div class="admin-tool-name">${escapeHTML(lt.title)}</div>
                     <div class="admin-tool-url">${escapeHTML(lt.startDate)} ~ ${escapeHTML(lt.endDate)}</div>
+                    ${lt.detail ? `<div class="admin-tool-detail">${escapeHTML(lt.detail)}</div>` : ''}
                 </div>
                 <button class="edit-btn" onclick="enterEditLongTerm(${lt.id})">수정</button>
                 <button class="delete-btn" onclick="deleteLongTerm(${lt.id})">삭제</button>
