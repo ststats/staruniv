@@ -84,7 +84,14 @@
     .cal-card-actions .delete-btn { color: var(--color-lose); }
     .cal-card-actions .delete-btn:hover { text-decoration: underline; }
 
-    /* 도구 관리 탭: 등록된 도구를 행으로 나열 + 오른쪽에 삭제 버튼 */
+    /* 일정 추가 폼의 "하루/기간" 토글 버튼 */
+    .admin-mode-btn { flex: 1; height: 36px; border: 1px solid var(--color-border); border-radius: 8px; background: #fff; color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    .admin-mode-btn.active { border-color: var(--color-primary); background: var(--color-primary-tint); color: var(--color-primary); }
+
+    .admin-tool-row .edit-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--color-primary); cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
+    .admin-tool-row .edit-btn:hover { text-decoration: underline; }
+
+    /* 도구 관리 탭 / 장기 일정 목록: 항목을 행으로 나열 + 오른쪽에 수정/삭제 버튼 */
     .admin-tool-list { display: flex; flex-direction: column; gap: 8px; }
     .admin-tool-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; }
     .admin-tool-row img { width: 24px; height: 24px; border-radius: 4px; object-fit: contain; flex-shrink: 0; }
@@ -186,11 +193,28 @@
             </div>
 
             <div>
+                <div class="section-title">등록된 장기 일정</div>
+                <div class="clean-card p-4">
+                    <div class="admin-tool-list" id="longTermList"></div>
+                </div>
+            </div>
+
+            <div>
                 <div class="section-title" id="formTitle">[날짜선택] 일정 추가</div>
                 <div class="clean-card p-4">
                     <input type="hidden" id="editScheduleId" value="">
+                    <input type="hidden" id="editLongTermId" value="">
                     <div class="admin-form-row">
-                        <input type="text" id="inputTime" placeholder="시간 (예: 19:00)">
+                        <button type="button" class="admin-mode-btn active" id="modeBtnDay" onclick="setScheduleMode('day')">하루</button>
+                        <button type="button" class="admin-mode-btn" id="modeBtnRange" onclick="setScheduleMode('range')">기간</button>
+                    </div>
+                    <div class="admin-form-row" id="rangeDatesRow" style="display:none;">
+                        <input type="date" id="inputStartDate">
+                        <span style="align-self:center; color:var(--color-text-sub); font-size:var(--fs-body);">~</span>
+                        <input type="date" id="inputEndDate">
+                    </div>
+                    <div class="admin-form-row">
+                        <input type="text" id="inputTime" placeholder="시간 (예: 19:00, 선택)">
                         <input type="text" id="inputPerson" placeholder="타이틀">
                     </div>
                     <div class="admin-form-row">
@@ -204,6 +228,8 @@
                             <option value="#f3e8ff">🟣 보라</option>
                             <option value="#f1f5f9">⚪ 회색</option>
                         </select>
+                    </div>
+                    <div class="admin-form-row" id="descRow">
                         <textarea id="inputDesc" placeholder="간략내용 (줄바꿈 가능)"></textarea>
                     </div>
                     <div class="admin-form-row">
@@ -312,6 +338,7 @@
                 const decoded = decodeURIComponent(escape(atob(data.content)));
                 const parsed = JSON.parse(decoded);
                 calSchedules = parsed.schedules || parsed;
+                calLongTerm = parsed.longTerm || [];
                 calRenderCalendar();
             } else if (res.status === 404) {
                 calRenderCalendar();
@@ -319,6 +346,7 @@
         } catch (e) {
             console.error(e);
         }
+        renderLongTermList();
     };
 
     const IMG_FILE_PATH = 'docs/data/calendar.png';
@@ -332,7 +360,7 @@
         saveBtn.disabled = true;
 
         try {
-            const jsonContent = JSON.stringify({ schedules: calSchedules }, null, 2);
+            const jsonContent = JSON.stringify({ schedules: calSchedules, longTerm: calLongTerm }, null, 2);
 
             // 캘린더 그리드("이달의 일정")를 캡처해서 JSON이랑 같은 커밋에 같이 넣는다.
             // (따로 커밋하면 Vercel 배포가 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
@@ -454,25 +482,53 @@
     };
 
     // ----- 일정 추가/수정/삭제 -----
+    // 'day'(하루짜리, calSchedules) / 'range'(장기, calLongTerm) 두 모드를 토글로 전환한다.
+    let scheduleMode = 'day';
+
+    // 모드에 따라 폼 UI만 바꾼다(값 초기화는 안 함) - enterEditLongTerm처럼 값을 채우기
+    // 직전에도 이 함수만 불러서 모드를 맞출 수 있게 분리해뒀다.
+    const applyScheduleModeUI = (mode) => {
+        scheduleMode = mode;
+        document.getElementById('modeBtnDay').classList.toggle('active', mode === 'day');
+        document.getElementById('modeBtnRange').classList.toggle('active', mode === 'range');
+        document.getElementById('rangeDatesRow').style.display = mode === 'range' ? 'flex' : 'none';
+        document.getElementById('descRow').style.display = mode === 'range' ? 'none' : 'flex';
+    };
+
+    // 토글 버튼을 직접 눌렀을 때만 호출 - 모드를 바꾸면서 편집 중이던 내용은 초기화한다.
+    const setScheduleMode = (mode) => {
+        applyScheduleModeUI(mode);
+        cancelEdit();
+        if (mode === 'range' && calSelectedDateStr) {
+            document.getElementById('inputStartDate').value = calSelectedDateStr;
+        }
+    };
+
     const clearForm = () => {
         document.getElementById('editScheduleId').value = '';
+        document.getElementById('editLongTermId').value = '';
         document.getElementById('inputTime').value = '';
         document.getElementById('inputPerson').value = '';
         document.getElementById('inputDesc').value = '';
         document.getElementById('inputDesc').style.height = '42px';
         document.getElementById('inputDetail').value = '';
         document.getElementById('inputColor').value = '#d1fae5';
+        document.getElementById('inputStartDate').value = '';
+        document.getElementById('inputEndDate').value = '';
     };
 
     const cancelEdit = () => {
         clearForm();
-        document.getElementById('formTitle').innerText = `[${calSelectedDateStr || '날짜선택'}] 일정 추가`;
+        document.getElementById('formTitle').innerText = scheduleMode === 'range'
+            ? '장기 일정 추가'
+            : `[${calSelectedDateStr || '날짜선택'}] 일정 추가`;
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.innerText = '일정 반영하기';
         submitBtn.style.background = '';
     };
 
     const addOrUpdateSchedule = () => {
+        if (scheduleMode === 'range') { addOrUpdateLongTerm(); return; }
         if (!calSelectedDateStr) return alert('날짜를 먼저 클릭해주세요!');
 
         const time = document.getElementById('inputTime').value.trim();
@@ -501,8 +557,10 @@
         const item = calSchedules[dateStr]?.find(i => i.id === id);
         if (!item) return;
 
+        applyScheduleModeUI('day');
         calSelectedDateStr = dateStr;
         document.getElementById('editScheduleId').value = item.id;
+        document.getElementById('editLongTermId').value = '';
         document.getElementById('inputTime').value = item.time || '';
         document.getElementById('inputPerson').value = item.person || '';
 
@@ -530,10 +588,91 @@
         calRenderCalendar();
     };
 
+    // ----- 장기 일정(예: 장기휴방) 추가/수정/삭제 - calSchedules와 완전히 별도인 calLongTerm 배열 -----
+    const renderLongTermList = () => {
+        const container = document.getElementById('longTermList');
+        if (!calLongTerm.length) {
+            container.innerHTML = `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">등록된 장기 일정이 없습니다.</div>`;
+            return;
+        }
+        container.innerHTML = calLongTerm.map(lt => `
+            <div class="admin-tool-row">
+                <span style="width:10px; height:10px; border-radius:50%; background:${lt.color || '#ffedd5'}; flex-shrink:0;"></span>
+                <div class="admin-tool-info">
+                    <div class="admin-tool-name">${escapeHTML(lt.title)}</div>
+                    <div class="admin-tool-url">${escapeHTML(lt.startDate)} ~ ${escapeHTML(lt.endDate)}</div>
+                </div>
+                <button class="edit-btn" onclick="enterEditLongTerm(${lt.id})">수정</button>
+                <button class="delete-btn" onclick="deleteLongTerm(${lt.id})">삭제</button>
+            </div>
+        `).join('');
+    };
+
+    const addOrUpdateLongTerm = () => {
+        const startDate = document.getElementById('inputStartDate').value;
+        const endDate = document.getElementById('inputEndDate').value;
+        const time = document.getElementById('inputTime').value.trim();
+        const title = document.getElementById('inputPerson').value.trim();
+        const color = document.getElementById('inputColor').value;
+        const detail = document.getElementById('inputDetail').value.trim();
+        const editId = document.getElementById('editLongTermId').value;
+
+        if (!startDate || !endDate) return alert('시작일과 종료일을 모두 선택해주세요.');
+        if (endDate < startDate) return alert('종료일은 시작일보다 빠를 수 없습니다.');
+        if (!title) return alert('타이틀을 입력해주세요.');
+
+        if (editId) {
+            const item = calLongTerm.find(x => String(x.id) === String(editId));
+            if (item) Object.assign(item, { title, startDate, endDate, time, color, detail });
+        } else {
+            calLongTerm.push({ id: Date.now(), title, startDate, endDate, time, color, detail });
+        }
+
+        calRenderCalendar();
+        renderLongTermList();
+        cancelEdit();
+    };
+
+    const enterEditLongTerm = (id) => {
+        const lt = calLongTerm.find(x => x.id === id);
+        if (!lt) return;
+
+        applyScheduleModeUI('range');
+        document.getElementById('editScheduleId').value = '';
+        document.getElementById('editLongTermId').value = lt.id;
+        document.getElementById('inputStartDate').value = lt.startDate;
+        document.getElementById('inputEndDate').value = lt.endDate;
+        document.getElementById('inputTime').value = lt.time || '';
+        document.getElementById('inputPerson').value = lt.title;
+        document.getElementById('inputColor').value = lt.color || '#ffedd5';
+        document.getElementById('inputDetail').value = lt.detail || '';
+
+        document.getElementById('formTitle').innerText = '✏️ 장기 일정 수정';
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = '수정 완료하기';
+        submitBtn.style.background = 'var(--color-lose)';
+    };
+
+    const deleteLongTerm = (id) => {
+        if (!confirm('이 장기 일정을 삭제하시겠습니까?')) return;
+        if (document.getElementById('editLongTermId').value == id) cancelEdit();
+
+        calLongTerm = calLongTerm.filter(x => x.id !== id);
+        calRenderCalendar();
+        renderLongTermList();
+    };
+
     // calendar.js의 오늘의 일정/선택한 날짜 카드 렌더링에 [수정]/[삭제] 버튼을 끼워넣는 훅.
     // "오늘의 일정" 카드는 사이트처럼 읽기 전용으로 두고, "선택한 날짜" 카드에만 버튼을 붙인다.
+    // item._longTerm이면 장기 일정용 수정/삭제 함수로 분기한다.
     window.calCardExtra = (item, dateStr, type) => {
         if (type !== 'selected') return '';
+        if (item._longTerm) {
+            return `<div class="cal-card-actions">
+                <button class="edit-btn" onclick="enterEditLongTerm(${item.id})">수정</button>
+                <button class="delete-btn" onclick="deleteLongTerm(${item.id})">삭제</button>
+            </div>`;
+        }
         return `<div class="cal-card-actions">
             <button class="edit-btn" onclick="enterEditMode('${dateStr}', ${item.id})">수정</button>
             <button class="delete-btn" onclick="deleteSchedule('${dateStr}', ${item.id})">삭제</button>
@@ -541,8 +680,12 @@
     };
 
     // 날짜를 새로 클릭하면(다른 날짜로 이동) 편집 중이던 폼은 초기화한다.
+    // 기간 모드에서는 클릭한 날짜를 시작일로 편하게 채워준다.
     window.calOnDateSelect = (dateStr) => {
         cancelEdit();
+        if (scheduleMode === 'range') {
+            document.getElementById('inputStartDate').value = dateStr;
+        }
     };
 
     const inputDescEl = document.getElementById('inputDesc');
@@ -664,6 +807,7 @@
             await loadDataFromGithub();
         } else {
             calRenderCalendar();
+            renderLongTermList();
         }
         await loadToolsFromGithub();
     };
