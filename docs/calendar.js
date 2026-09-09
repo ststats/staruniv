@@ -118,11 +118,18 @@
         const roundRight = isTrueEnd || isWeekEnd;
         const bleedLeft = roundLeft ? '0' : '-8px';
         const bleedRight = roundRight ? '0' : '-8px';
+        // bleed(음수 마진)만큼 박스가 실제 칸 경계 밖으로 튀어나가는데, 기본 padding(4px)을
+        // 그대로 두면 안쪽 텍스트도 그만큼 같이 밀려나가 칸 경계에 딱 붙어버린다(장기 일정을
+        // 오른쪽 정렬했을 때 스치듯 붙는 문제). bleed 나가는 쪽만 padding을 8px만큼 더 줘서
+        // (4px+8px=12px) 상쇄하면, 텍스트는 항상 "실제 칸 경계에서 4px" 위치를 유지하고,
+        // bleed가 없는 하루짜리 일정 카드(패딩 4px)와도 오른쪽/왼쪽 정렬 위치가 정확히 맞는다.
+        const padLeft = roundLeft ? '4px' : '12px';
+        const padRight = roundRight ? '4px' : '12px';
         const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
         const timeHtml = ev.time ? `<span class="cal-event-time">${calEscapeHTML(ev.time)}</span>` : '';
         const personHtml = ev.person ? `<span class="cal-event-person">${calEscapeHTML(ev.person)}</span>` : '';
         return `
-            <div class="cal-cell-event cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color: ${ev.color || '#ffedd5'};">
+            <div class="cal-cell-event cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; padding-left:${padLeft}; padding-right:${padRight}; border-radius:${radius}; background-color: ${ev.color || '#ffedd5'};">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 <div class="cal-event-desc">${calEscapeHTML(ev.desc)}</div>
             </div>
