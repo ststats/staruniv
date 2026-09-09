@@ -913,6 +913,8 @@
             const soopId = m['SOOP ID'];
             const viewerText = broad.current_sum_viewer != null ? broad.current_sum_viewer.toLocaleString('ko-KR') + '명' : '-';
             const elapsedText = formatLiveElapsed(broadStart) || '-';
+            // 아바타 링 색: 여자는 기존 그대로(빨강 계열 그라디언트), 남자만 파란 원테두리로.
+            const avatarRingClass = m['성별'] === '남자' ? 'live-card-avatar-ring live-card-avatar-ring--male' : 'live-card-avatar-ring';
 
             return `
             <a class="live-broadcast-card" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
@@ -924,7 +926,7 @@
                     <div class="live-card-title">${escapeHTML(broad.broad_title || '')}</div>
                     <div class="live-card-meta-row">
                         <div class="live-card-who">
-                            <span class="live-card-avatar-ring">${avatarHtml(soopId, 'live-card-avatar')}</span>
+                            <span class="${avatarRingClass}">${avatarHtml(soopId, 'live-card-avatar')}</span>
                             <span class="live-card-name">${escapeHTML(m['이름'])}</span>
                         </div>
                         <div class="live-card-stats">
