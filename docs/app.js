@@ -586,9 +586,9 @@
                 <td class="stat-table-sticky-col" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis; line-height:normal;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
-                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td class="badge-cell"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
                 <td>${m['세트 결과'] || '-'}</td>
-                <td>${badgeHtml}</td>
+                <td class="badge-cell">${badgeHtml}</td>
                 <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
                 <td><span class="m-arrow" style="display:inline-flex; width:auto;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></td>
             </tr>
@@ -1146,9 +1146,9 @@
                 <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     <span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(m['상대팀'])}<span style="overflow:hidden; text-overflow:ellipsis; line-height:normal;">${escapeHTML(m['상대팀'])}</span></span>
                 </td>
-                <td><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td class="badge-cell"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
                 <td>${escapeHTML(m['맵']) || '-'}</td>
-                <td>${badgeHtml}</td>
+                <td class="badge-cell">${badgeHtml}</td>
                 <td>${m['날짜'] ? m['날짜'].split(' ')[0].substring(2) : ''}</td>
             </tr>
             `;
