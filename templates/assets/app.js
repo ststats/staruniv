@@ -258,6 +258,15 @@
     let newsTotalPages = 1;
     let newsLoading = false;
 
+    // "전체 공지"/"멤버별 공지" 두 화면 다 이 하나의 상태로 통일해서 그린다.
+    // newsItems: 지금 화면에 로드되어 있는 { member, post } 목록
+    // newsMode: 'all'(전체 공지) | 'member'(특정 멤버) - 더보기 눌렀을 때 어느 쪽 API를 더 부를지 결정
+    // newsFeaturedKey: 왼쪽 "최신 글" 자리에 올려둔 글의 식별자 - 리스트에서 글을 클릭하면 이 값만 바뀐다.
+    let newsItems = [];
+    let newsMode = 'all';
+    let newsFeaturedKey = null;
+    let newsHasMore = false;
+
     function renderNewsSidebar() {
         const html = [`<div class="avatar-select-item avatar-select-all active" id="news-side-btn-all" onclick="showNewsAll()">
                             <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
@@ -302,39 +311,78 @@
             .flatMap(r => r.value)
             .sort((a, b) => new Date(b.post.regDate) - new Date(a.post.regDate));
 
-        renderAllNewsFeed(true);
+        newsMode = 'all';
+        newsFeaturedKey = null; // 새로 들어왔으니 제일 최신 글을 다시 왼쪽에 올린다
+        allNewsShownCount = Math.min(10, allNewsPool.length);
+        newsItems = allNewsPool.slice(0, allNewsShownCount);
+        newsHasMore = allNewsShownCount < allNewsPool.length;
+        renderNewsLayout(content);
     }
 
-    function renderAllNewsFeed(reset) {
-        const content = document.getElementById('news-feed-content');
-        if (reset) allNewsShownCount = 0;
+    // { member, post } 하나를 고유하게 식별하는 키 - 리스트 클릭으로 "최신 글" 자리를
+    // 바꾸거나, 정렬 후 지금 어떤 글이 최신 글 자리에 있는지 다시 찾을 때 쓴다.
+    function newsItemKey(item) {
+        const soopId = item.member ? item.member['SOOP ID'] : item.post.userId;
+        return soopId + '_' + item.post.titleNo;
+    }
 
-        if (allNewsPool.length === 0) {
+    // 리스트에서 글을 클릭했을 때 - 그 글을 왼쪽 "최신 글" 자리로 올린다.
+    // (배열 순서나 날짜는 전혀 안 건드리고, 어떤 글을 최신 글 자리에 그릴지 나타내는
+    // 값만 바꾼 뒤 다시 그린다 - 그래서 오른쪽 리스트는 항상 날짜순이 유지된다)
+    function setNewsFeatured(key) {
+        newsFeaturedKey = key;
+        renderNewsLayout(document.getElementById('news-feed-content'));
+    }
+
+    // "전체 공지"/"멤버별 공지" 공용 렌더러. newsItems를 항상 날짜순으로 다시 정렬해서
+    // 그 중 newsFeaturedKey에 해당하는 글은 왼쪽 큰 카드로, 나머지는 오른쪽 리스트로 그린다.
+    function renderNewsLayout(content) {
+        if (newsItems.length === 0) {
             content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');
             return;
         }
 
-        const nextCount = Math.min(allNewsShownCount + 10, allNewsPool.length);
-        const html = allNewsPool.slice(allNewsShownCount, nextCount)
-            .map(({ member: m, post }) => renderNewsPostHtml(post, m)).join('');
-
-        if (reset) {
-            content.innerHTML = html;
-        } else {
-            const wrap = document.getElementById('news-all-load-more-wrap');
-            if (wrap) wrap.remove();
-            content.insertAdjacentHTML('beforeend', html);
+        const sorted = [...newsItems].sort((a, b) => new Date(b.post.regDate) - new Date(a.post.regDate));
+        if (!newsFeaturedKey || !sorted.some(it => newsItemKey(it) === newsFeaturedKey)) {
+            newsFeaturedKey = newsItemKey(sorted[0]); // 기본값: 가장 최신 글
         }
+        const featuredItem = sorted.find(it => newsItemKey(it) === newsFeaturedKey);
+        const restItems = sorted.filter(it => newsItemKey(it) !== newsFeaturedKey);
+
+        const loadMoreHtml = newsHasMore
+            ? `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`
+            : '';
+
+        content.innerHTML = `
+            <div class="featured-post">${renderFeaturedPostHtml(featuredItem)}</div>
+            <div class="past-posts">
+                <div id="news-past-list">${restItems.length ? restItems.map(renderPastNoticeHtml).join('') : emptyStateHtml('지난 글이 없습니다.')}</div>
+                ${loadMoreHtml}
+            </div>`;
         checkNewsClampButtons(content);
-        allNewsShownCount = nextCount;
-
-        if (allNewsShownCount < allNewsPool.length) {
-            content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
-        }
     }
 
-    function loadMoreAllNews() {
-        renderAllNewsFeed(false);
+    // 더보기: 지금 화면이 "전체 공지"면 이미 모아둔 allNewsPool에서 더 꺼내 보여주고,
+    // 특정 멤버면 그 멤버의 다음 페이지를 서버에 추가로 요청한다.
+    async function loadMoreNewsFeed() {
+        if (newsLoading) return;
+        newsLoading = true;
+        try {
+            if (newsMode === 'all') {
+                allNewsShownCount = Math.min(allNewsShownCount + 10, allNewsPool.length);
+                newsItems = allNewsPool.slice(0, allNewsShownCount);
+                newsHasMore = allNewsShownCount < allNewsPool.length;
+            } else if (newsMode === 'member' && currentNewsPlayer) {
+                newsCurrentPage += 1;
+                const { posts, totalPages } = await fetchMemberFeed(currentNewsPlayer['SOOP ID'], newsCurrentPage);
+                newsTotalPages = totalPages;
+                newsItems = newsItems.concat(posts.map(post => ({ member: currentNewsPlayer, post })));
+                newsHasMore = newsCurrentPage < newsTotalPages;
+            }
+            renderNewsLayout(document.getElementById('news-feed-content'));
+        } finally {
+            newsLoading = false;
+        }
     }
 
     function selectNewsPlayer(name, skipHashUpdate) {
@@ -351,7 +399,7 @@
         if (!skipHashUpdate) updateMembersHash();
 
         document.getElementById('news-feed-content').innerHTML = emptyStateHtml('불러오는 중...');
-        loadNewsFeed(true);
+        loadNewsFeed();
     }
 
     // SOOP 게시판 API의 regDate("YYYY-MM-DD HH:MM:SS")를 "N분 전" 식으로 변환
@@ -484,7 +532,10 @@
         btn.remove();
     }
 
-    function renderNewsPostHtml(post, member) {
+    // 왼쪽 "최신 글" 큰 카드 - 기존 news-post-card 마크업(사진 캐러셀, 본문 더보기 등)을
+    // 그대로 재사용한다. 사진은 CSS에서 정사각(1:1)으로 꽉 차게 보이도록 처리했다.
+    function renderFeaturedPostHtml(item) {
+        const { member, post } = item;
         const title = post.titleName || '';
         const snippet = (post.content && post.content.textContent) || '';
         const fullHtml = (post.content && post.content.content) || '';
@@ -539,40 +590,60 @@
         </div>`;
     }
 
-    async function loadNewsFeed(reset) {
+    // 오른쪽 "지난 글" 리스트 - 홈 화면 "최근 공지"의 home-notice-card를 그대로 재사용한다.
+    // 다른 점은 클릭 시 원글로 나가는 게 아니라, 그 글을 왼쪽 최신 글 자리로 올린다는 것.
+    function renderPastNoticeHtml(item) {
+        const { member, post } = item;
+        const soopId = member ? member['SOOP ID'] : post.userId;
+        const name = member ? member['이름'] : (post.userNick || '');
+        const title = post.titleName || '(제목 없음)';
+        const snippet = (post.content && post.content.textContent) || '';
+        const timeText = formatRelativeTime(post.regDate);
+        const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
+        const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
+        const key = jsStrEscape(newsItemKey(item));
+
+        return `
+        <div class="home-notice-card" onclick="setNewsFeatured('${key}')">
+            <div class="home-notice-main">
+                <div class="home-notice-top">
+                    ${avatarHtml(soopId, 'home-notice-avatar')}
+                    <div class="home-notice-toptext">
+                        <div class="home-notice-name">${escapeHTML(name)}</div>
+                        <div class="home-notice-title-row">
+                            <span class="home-notice-title">${escapeHTML(title)}</span>
+                            <span class="home-notice-dot">·</span>
+                            <span class="home-notice-meta">${escapeHTML(timeText)}</span>
+                        </div>
+                    </div>
+                </div>
+                ${snippet ? `<div class="home-notice-snippet">${formatNewsContent(snippet)}</div>` : ''}
+            </div>
+            ${thumbHtml}
+        </div>`;
+    }
+
+    async function loadNewsFeed() {
         if (newsLoading || !currentNewsPlayer) return;
         newsLoading = true;
         const soopId = currentNewsPlayer['SOOP ID'];
         const content = document.getElementById('news-feed-content');
 
         try {
-            if (reset) newsCurrentPage = 1;
+            newsCurrentPage = 1;
             const { posts, totalPages } = await fetchMemberFeed(soopId, newsCurrentPage);
             newsTotalPages = totalPages;
-            const postsHtml = posts.map(p => renderNewsPostHtml(p, currentNewsPlayer)).join('');
 
-            if (reset) {
-                content.innerHTML = posts.length ? postsHtml : emptyStateHtml('작성된 글이 없습니다.');
-            } else {
-                const loadMoreWrap = document.getElementById('news-load-more-wrap');
-                if (loadMoreWrap) loadMoreWrap.remove();
-                content.insertAdjacentHTML('beforeend', postsHtml);
-            }
-            checkNewsClampButtons(content);
-
-            if (newsCurrentPage < newsTotalPages) {
-                content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
-            }
+            newsMode = 'member';
+            newsFeaturedKey = null; // 멤버를 새로 선택했으니 그 멤버의 가장 최신 글을 왼쪽에 올린다
+            newsItems = posts.map(post => ({ member: currentNewsPlayer, post }));
+            newsHasMore = newsCurrentPage < newsTotalPages;
+            renderNewsLayout(content);
         } catch (e) {
             content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다.');
         } finally {
             newsLoading = false;
         }
-    }
-
-    function loadMoreNews() {
-        newsCurrentPage += 1;
-        loadNewsFeed(false);
     }
 
     function parseStat(statStr) {

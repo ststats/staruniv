@@ -274,13 +274,35 @@
             scrollbar-width: none;
         }
         .news-post-photos::-webkit-scrollbar { display: none; }
-        .news-post-photos img { flex: 0 0 100%; width: 100%; height: auto; max-height: 400px; object-fit: contain; object-position: center; border-radius: 0; scroll-snap-align: start; scroll-snap-stop: always; display: block; background: #fff; }
+        .news-post-photos img { flex: 0 0 100%; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center; border-radius: 0; scroll-snap-align: start; scroll-snap-stop: always; display: block; background: var(--color-bg-subtle); }
         .news-post-photos-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 7px; pointer-events: none; }
         .photo-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: background 0.15s, transform 0.15s; }
         .photo-dot.active { background: #fff; transform: scale(1.25); box-shadow: 0 1px 4px rgba(0,0,0,0.6); }
         .news-post-link-row { display: flex; justify-content: flex-end; margin-top: 12px; padding: 0 16px 12px 16px; }
         .news-post-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
         .news-post-link:hover { color: var(--color-primary); }
+
+        /* ============================================================
+           멤버 - 공지 : 최신 글 1개(인스타 스타일, 정사각) + 지난 글 목록
+           (홈 화면 "최근 공지" 카드 스타일 재사용). 임의의 미디어쿼리
+           breakpoint 대신 flex-wrap이 콘텐츠 폭(최신글 600 + 리스트 340)
+           합으로 자연스럽게 줄바꿈한다. 최신 글 카드는 기존 .news-post-card를
+           그대로 재사용하고(사진 캐러셀/더보기 등 기능 그대로 유지),
+           사진만 인스타처럼 정사각으로 꽉 차게 보이도록 아래에서 덮어쓴다.
+           ============================================================ */
+        #news-feed-content { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; align-items: stretch; }
+
+        .featured-post { flex: 0 1 600px; min-width: 300px; }
+        .featured-post .news-post-card { margin-bottom: 0; }
+
+        /* 오른쪽 지난 글 목록 - 왼쪽 최신 글 카드 높이에 맞춰 늘어나고(align-items:stretch),
+           그 안에서 넘치는 만큼만 스크롤된다. 리스트 항목은 클릭하면(홈 화면과 달리
+           원글 이동이 아니라) 그 글을 왼쪽 "최신 글" 자리로 올린다. */
+        .past-posts { flex: 1 1 340px; min-width: 300px; max-width: 460px; display: flex; flex-direction: column; }
+        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; padding-right: 2px; }
+        #news-past-list::-webkit-scrollbar { width: 5px; }
+        #news-past-list::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
+        .past-posts .news-load-more-wrap { flex-shrink: 0; text-align: center; padding-top: 12px; }
         /* PC용 좌우 화살표 - 평소엔 숨겨뒀다가 사진 영역에 마우스를 올리면(hover) 나타난다.
            터치 기기는 hover 개념이 없어서(@media hover:none) 화살표를 아예 렌더링하지 않고
            스와이프로만 조작하게 한다 - 화살표가 계속 떠 있거나 어정쩡하게 보이는 걸 방지. */
