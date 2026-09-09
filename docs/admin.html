@@ -229,6 +229,7 @@
                             <option value="#f3e8ff">🟣 보라</option>
                             <option value="#f1f5f9">⚪ 회색</option>
                         </select>
+                        <input type="text" id="inputLongTermDesc" placeholder="간략내용 (달력에 표시)" style="display:none;">
                     </div>
                     <div class="admin-form-row" id="descRow">
                         <textarea id="inputDesc" placeholder="간략내용 (줄바꿈 가능)"></textarea>
@@ -494,6 +495,7 @@
         document.getElementById('modeBtnRange').classList.toggle('active', mode === 'range');
         document.getElementById('rangeDatesRow').style.display = mode === 'range' ? 'flex' : 'none';
         document.getElementById('descRow').style.display = mode === 'range' ? 'none' : 'flex';
+        document.getElementById('inputLongTermDesc').style.display = mode === 'range' ? 'block' : 'none';
     };
 
     // 토글 버튼을 직접 눌렀을 때만 호출 - 모드를 바꾸면서 편집 중이던 내용은 초기화한다.
@@ -513,6 +515,7 @@
         document.getElementById('inputDesc').value = '';
         document.getElementById('inputDesc').style.height = '42px';
         document.getElementById('inputDetail').value = '';
+        document.getElementById('inputLongTermDesc').value = '';
         document.getElementById('inputColor').value = '#d1fae5';
         document.getElementById('inputStartDate').value = '';
         document.getElementById('inputEndDate').value = '';
@@ -602,7 +605,7 @@
                 <div class="admin-tool-info">
                     <div class="admin-tool-name">${escapeHTML(lt.title)}</div>
                     <div class="admin-tool-url">${escapeHTML(lt.startDate)} ~ ${escapeHTML(lt.endDate)}</div>
-                    ${lt.detail ? `<div class="admin-tool-detail">${escapeHTML(lt.detail)}</div>` : ''}
+                    ${lt.desc ? `<div class="admin-tool-detail">${escapeHTML(lt.desc)}</div>` : ''}
                 </div>
                 <button class="edit-btn" onclick="enterEditLongTerm(${lt.id})">수정</button>
                 <button class="delete-btn" onclick="deleteLongTerm(${lt.id})">삭제</button>
@@ -617,6 +620,7 @@
         const title = document.getElementById('inputPerson').value.trim();
         const color = document.getElementById('inputColor').value;
         const detail = document.getElementById('inputDetail').value.trim();
+        const desc = document.getElementById('inputLongTermDesc').value.trim();
         const editId = document.getElementById('editLongTermId').value;
 
         if (!startDate || !endDate) return alert('시작일과 종료일을 모두 선택해주세요.');
@@ -625,9 +629,9 @@
 
         if (editId) {
             const item = calLongTerm.find(x => String(x.id) === String(editId));
-            if (item) Object.assign(item, { title, startDate, endDate, time, color, detail });
+            if (item) Object.assign(item, { title, startDate, endDate, time, color, detail, desc });
         } else {
-            calLongTerm.push({ id: Date.now(), title, startDate, endDate, time, color, detail });
+            calLongTerm.push({ id: Date.now(), title, startDate, endDate, time, color, detail, desc });
         }
 
         calRenderCalendar();
@@ -648,6 +652,7 @@
         document.getElementById('inputPerson').value = lt.title;
         document.getElementById('inputColor').value = lt.color || '#ffedd5';
         document.getElementById('inputDetail').value = lt.detail || '';
+        document.getElementById('inputLongTermDesc').value = lt.desc || '';
 
         document.getElementById('formTitle').innerText = '✏️ 장기 일정 수정';
         const submitBtn = document.getElementById('submitBtn');
