@@ -299,10 +299,15 @@
 
         // 멤버별로 최근 몇 개씩 후보를 모아서(공지+일반글 합친 것) 전체를 한 번에
         // 날짜순으로 다시 정렬 - "더보기"로 계속 더 볼 수 있게 넉넉히 모아둔다.
+        //
+        // 주의: fetchMemberFeed(mergeOwnPosts)는 perPage=10짜리 일반글(contents)에
+        // 공지(noticeData)를 추가로 합치기 때문에, 공지가 있으면 10개보다 많이
+        // 돌아올 수 있다 - 여기서 다시 10개로 잘라버리면 공지든 일반글이든 넘치는
+        // 만큼 조용히 누락된다. 그래서 자르지 않고 페이지 1에서 받은 걸 전부 담는다.
         const settled = await Promise.allSettled(
             activeMembers.map(async m => {
                 const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
-                return posts.slice(0, 10).map(post => ({ member: m, post }));
+                return posts.map(post => ({ member: m, post }));
             })
         );
 
@@ -444,7 +449,14 @@
                 newsCurrentPage += 1;
                 const { posts, totalPages } = await fetchMemberFeed(currentNewsPlayer['SOOP ID'], newsCurrentPage);
                 newsTotalPages = totalPages;
-                newsItems = newsItems.concat(posts.map(post => ({ member: currentNewsPlayer, post })));
+                // 공지(noticeData)는 게시판 API 특성상 페이지가 넘어가도 고정으로
+                // 같이 딸려오는 경우가 있어, titleNo가 이미 있는 글은 다시 추가하지
+                // 않는다 (안 그러면 "더보기"를 누를 때마다 같은 공지가 중복으로 쌓임).
+                const existingKeys = new Set(newsItems.map(newsItemKey));
+                const newOnes = posts
+                    .map(post => ({ member: currentNewsPlayer, post }))
+                    .filter(item => !existingKeys.has(newsItemKey(item)));
+                newsItems = newsItems.concat(newOnes);
                 newsHasMore = newsCurrentPage < newsTotalPages;
             }
             renderNewsLayout(document.getElementById('news-feed-content'));
