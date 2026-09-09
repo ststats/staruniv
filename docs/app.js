@@ -1324,6 +1324,37 @@
         });
     });
 
+    // ===== 도구 페이지 - docs/data/tools.json에서 불러와 렌더링.
+    // 어드민 페이지 '도구' 탭에서 추가/삭제하고 GitHub에 저장하면 여기 반영된다. =====
+    function toolCardHtml(tool) {
+        const url = tool.url || '';
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url)}`;
+        return `
+        <a class="tool-card" href="${escapeHTML(url)}" target="_blank" rel="noopener">
+            <span class="tool-card-ext">↗</span>
+            <div class="tool-card-icon"><img loading="lazy" src="${faviconUrl}" alt="" onerror="this.style.display='none';"></div>
+            <div class="tool-card-name">${escapeHTML(tool.name)}</div>
+        </a>`;
+    }
+
+    async function loadToolsData() {
+        try {
+            const res = await fetch('data/tools.json', { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            ['extTools', 'extSites'].forEach(key => {
+                const container = document.getElementById('tools-grid-' + key);
+                if (!container) return;
+                const items = (data[key] && data[key].items) || [];
+                container.innerHTML = items.length
+                    ? items.map(toolCardHtml).join('')
+                    : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body); grid-column:1/-1;">등록된 도구가 없습니다.</div>`;
+            });
+        } catch (e) {
+            console.error('도구 목록을 불러오지 못했습니다:', e);
+        }
+    }
+
     window.onload = async function() {
         // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
         // 그걸 사용하는 초기화 로직들을 이어서 실행한다.
@@ -1334,6 +1365,7 @@
         renderLiveBroadcasts();
         renderLatestNotices();
         loadSynergyData();
+        loadToolsData();
 
         // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
         restoreFromHash();
