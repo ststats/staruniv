@@ -1,0 +1,19 @@
+{
+  "extTools": {
+    "title": "외부 도구",
+    "items": [
+      { "name": "혹시", "url": "https://calm-hoxy.vercel.app/" },
+      { "name": "암다리", "url": "https://prena.io/brain/" },
+      { "name": "핀볼", "url": "https://lazygyu.github.io/roulette/" },
+      { "name": "네이버 사다리", "url": "https://search.naver.com/search.naver?where=nexearch&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%EA%B2%8C%EC%9E%84" }
+    ]
+  },
+  "extSites": {
+    "title": "외부 사이트",
+    "items": [
+      { "name": "스대게", "url": "https://ygosu.com/board/pan_monstarz" },
+      { "name": "EloBoard", "url": "https://eloboard.com/" },
+      { "name": "스갤", "url": "https://www.fmkorea.com/?mid=starcraft" }
+    ]
+  }
+}
