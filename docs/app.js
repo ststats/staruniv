@@ -417,13 +417,33 @@
         return escapeHTML(String(text).replace(/<br\s*\/?>/gi, '\n'));
     }
 
-    // 공지 목록 API의 본문(textContent)은 미리보기 수준으로 잘려서 내려올 수 있어, 카드에서
-    // "더보기"를 누르면 게시글 상세 API로 전체 본문만 다시 받아온다. (제목/사진/메타 등은
-    // 이미 목록 API로 다 갖고 있으니 본문만 교체하면 된다.)
+    // 공지 목록/상세 API의 textContent 필드는 목록이든 상세든 항상 어느 정도 길이로
+    // 잘린 "미리보기"다 (실측 결과 상세 API에서도 "..."으로 끝나는 걸 확인함). 진짜
+    // 전체 본문은 content.content(원본 HTML) 필드에만 있어서, "더보기"를 누르면 이걸
+    // 받아와서 그대로 꽂는다. 원본 HTML이라 formatNewsContent(이스케이프)가 아니라
+    // sanitizeNewsHtml로 위험한 태그/속성만 걸러내고 나머지 서식(정렬, 색상 등)은 살린다.
     async function fetchPostFullContent(soopId, titleNo) {
         const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/post/${encodeURIComponent(titleNo)}`;
         const data = await cachedFetchJson(url, 300000); // 5분
-        return (data.content && data.content.textContent) || '';
+        return (data.content && data.content.content) || '';
+    }
+
+    // 게시글 원본 HTML을 그대로 꽂기 전에 script/iframe 등 위험한 태그와 on* 이벤트
+    // 속성, javascript: 링크만 제거한다. 정렬/색상 같은 일반 서식은 원문 그대로 유지.
+    function sanitizeNewsHtml(html) {
+        if (!html) return '';
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('script, style, iframe, object, embed, link, meta, form').forEach(el => el.remove());
+        doc.querySelectorAll('*').forEach(el => {
+            Array.from(el.attributes).forEach(attr => {
+                const n = attr.name.toLowerCase();
+                const v = attr.value || '';
+                if (n.startsWith('on') || ((n === 'href' || n === 'src') && /^\s*javascript:/i.test(v))) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+        });
+        return doc.body.innerHTML;
     }
 
     // 렌더링 직후 "더보기"가 필요한지 판단한다. 두 가지를 같이 본다:
@@ -442,14 +462,14 @@
         });
     }
 
-    // "더보기" 클릭 - 상세 API에서 전체 본문을 받아 clamp를 풀고 버튼을 없앤다.
+    // "더보기" 클릭 - 상세 API에서 전체 본문(HTML)을 받아 clamp를 풀고 버튼을 없앤다.
     async function expandNewsPost(btn, soopId, titleNo) {
         const body = btn.previousElementSibling;
         btn.innerText = '불러오는 중...';
         btn.disabled = true;
         try {
-            const fullText = await fetchPostFullContent(soopId, titleNo);
-            body.innerHTML = formatNewsContent(fullText);
+            const fullHtml = await fetchPostFullContent(soopId, titleNo);
+            body.innerHTML = sanitizeNewsHtml(fullHtml);
             body.classList.remove('news-post-body-clamp');
             btn.remove();
         } catch (e) {
@@ -498,7 +518,7 @@
                 </div>
             </div>
             ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
-            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsStrEscape(soopId)}', ${post.titleNo})">더보기</button>` : ''}
+            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsStrEscape(soopId)}', ${post.titleNo})">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
             ${photosHtml}
             <div class="news-post-link-row">
                 <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
