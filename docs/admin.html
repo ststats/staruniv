@@ -32,6 +32,10 @@
     /* 어드민 전용 요소(토큰 바 / 추가·수정 폼 / 좌우 레이아웃)만 여기서 스타일링.
        캘린더 자체 스타일(요일/날짜칸/카드 등)은 전부 style.css 걸 그대로 씁니다. */
     body { margin: 0; }
+    /* 상단바 "어드민" 뱃지를 텍스트 대신 톱니바퀴 아이콘 하나로 줄여서 모바일에서
+       로고 옆이 잘리지 않게 한다 (사이트의 race-badge와 동일하게 정사각형 아이콘 뱃지). */
+    .tag-badge.admin-badge { width: 18px; padding: 0; }
+
     .admin-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
     .admin-main { flex: 1 1 0%; min-width: 0; width: 100%; }
     .admin-main .cal-main-layout { width: 100%; min-width: 0; }
@@ -104,7 +108,7 @@
 <!-- GNB - 사이트 본편(index.html)과 완전히 동일한 상단바 마크업/클래스 -->
 <div class="top-navbar">
     <div class="navbar-inner container">
-        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span><span class="tag-badge tier-badge" style="margin-left:8px;">어드민</span></div>
+        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span><span class="tag-badge tier-badge admin-badge" style="margin-left:8px;" title="어드민" aria-label="어드민"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span></div>
         <div class="nav-menu" id="mainMenu">
             <a class="nav-item active" data-page="home" onclick="switchPage('home')">홈</a>
             <a class="nav-item" data-page="schedule" onclick="switchPage('schedule')">일정</a>
