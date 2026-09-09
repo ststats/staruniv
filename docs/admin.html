@@ -36,12 +36,16 @@
        로고 옆이 잘리지 않게 한다 (사이트의 race-badge와 동일하게 정사각형 아이콘 뱃지). */
     .tag-badge.admin-badge { width: 18px; padding: 0; }
 
+    /* 사이트의 실제 일정 페이지(.cal-main-layout/.cal-sidebar/.cal-calendar-area)와
+       완전히 같은 폭 로직을 쓴다: 캘린더는 고정 폭(804px)을 최대한 지키고, 사이드바가
+       화면이 좁아질 때 먼저 유연하게 줄어든다(flex-shrink:50). 반응형 전환 기준점도
+       사이트와 동일하게 868px로, 좌우 배치도 사이드바 왼쪽/캘린더 오른쪽으로 맞춘다. */
     .admin-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
-    .admin-main { flex: 1 1 0%; min-width: 0; width: 100%; }
+    .admin-main { flex: 0 1 804px; min-width: 0; width: auto; order: 2; }
     .admin-main .cal-main-layout { width: 100%; min-width: 0; }
     .admin-main .cal-calendar-area { min-width: 0; }
-    .admin-side { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
-    @media (max-width: 991px) {
+    .admin-side { min-width: 280px; flex-grow: 1; flex-shrink: 50; flex-basis: 360px; display: flex; flex-direction: column; gap: 20px; order: 1; }
+    @media (max-width: 868px) {
         .admin-layout { flex-direction: column; }
         .admin-side { width: 100%; }
     }
