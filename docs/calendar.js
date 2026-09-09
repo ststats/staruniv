@@ -1,11 +1,13 @@
     // ===== 일정(캘린더) 페이지 로직 =====
     let calCurrentDate = new Date();
     let calSelectedDateStr = "";
-    let calSchedules = {};
-    // 장기 일정(예: 장기휴방)의 시작일~종료일 범위 목록. 하루짜리 일정(calSchedules)과는
-    // 완전히 별도로 관리해서, 기존 하루 단위 로직은 전혀 안 건드리고 그대로 둔다.
-    // 각 항목: { id, title, startDate, endDate, time(선택), color, detail(선택) }
-    let calLongTerm = [];
+    // 하루짜리 일정과 기간(장기) 일정을 완전히 통합한 단일 배열.
+    // 각 항목: { id, startDate, endDate, time(선택), person(타이틀), desc(간략내용),
+    //           detail(상세내용, 선택), color }
+    // 하루짜리 일정은 startDate === endDate 인 항목일 뿐, 기간 일정과 데이터/렌더링
+    // 방식이 완전히 동일하다 (캘린더 칸에 표시되는 방식도, 오늘의 일정/선택한 날짜
+    // 목록에 표시되는 방식도 전부 동일한 코드 경로를 탄다).
+    let calEvents = [];
     const CAL_DATA_URL = 'data/calendar.json';
 
     // 공휴일 목록은 해마다 바뀌므로 코드에 박아두지 않고 별도 JSON(holidays.json)에서
@@ -19,15 +21,18 @@
             console.error('공휴일 데이터를 불러오지 못했습니다:', e);
         }
     };
-    
+
     const calEscapeHTML = (str) => {
         if (!str) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag]));
     };
-    
+
     const calGetFormatDate = (year, month, day) => {
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     };
+
+    // "YYYY-MM-DD" -> "YY-MM-DD" ("선택한 날짜 일정" 타이틀에 짧게 표시할 때 사용)
+    const calFormatShortDate = (dateStr) => dateStr ? dateStr.slice(2) : '';
 
     // 일정 배열을 시간순으로 정렬. 시간이 없는 일정은 항상 최상단에 오도록 한다.
     const calSortByTime = (items) => {
@@ -39,26 +44,42 @@
         });
     };
 
-    // dateStr이 장기 일정 기간(startDate~endDate) 안에 포함되는지 확인
-    const calLongTermCoversDate = (lt, dateStr) => dateStr >= lt.startDate && dateStr <= lt.endDate;
+    // dateStr이 이 일정의 기간(startDate~endDate) 안에 포함되는지 확인.
+    // endDate가 없으면(과거 데이터 호환용) startDate와 같은 것으로 취급.
+    const calEventCoversDate = (ev, dateStr) => dateStr >= ev.startDate && dateStr <= (ev.endDate || ev.startDate);
 
-    // "오늘의 일정"/"선택한 날짜 일정" 목록에서 하루짜리 일정과 같은 모양으로 다루기 위해,
-    // 장기 일정을 그 목록 카드 템플릿이 그대로 먹을 수 있는 형태(item)로 변환한다.
-    // person 자리엔 제목을, desc 자리엔 전체 기간을 넣고, time 자리엔 "(입력한 시간 ·) 장기"를
-    // 넣어서 하루짜리 일정과 한눈에 구분되게 한다. _longTerm/id는 편집·삭제 버튼(calCardExtra)이
-    // "이 항목이 장기 일정인지 + 몇 번째 항목인지"를 알 수 있도록 붙여두는 표식이다.
-    const calLongTermToItem = (lt) => ({
-        id: lt.id,
-        _longTerm: true,
-        time: (lt.time ? `${lt.time} · ` : '') + '장기',
-        person: lt.title,
-        desc: `${lt.startDate} ~ ${lt.endDate}`,
-        detail: lt.detail || '',
-        color: lt.color || '#ffedd5',
-    });
+    // 특정 날짜에 걸리는 일정들을 시간순으로 반환 - 캘린더 칸/오늘의 일정/선택한 날짜
+    // 목록이 전부 이 함수 하나만 사용해서, 하루짜리든 기간이든 완전히 같은 방식으로 다뤄진다.
+    const calEventsForDate = (dateStr) => calSortByTime(calEvents.filter(ev => calEventCoversDate(ev, dateStr)));
 
-    const calLongTermItemsForDate = (dateStr) => calLongTerm.filter(lt => calLongTermCoversDate(lt, dateStr)).map(calLongTermToItem);
-    
+    // 예전 데이터 형식(schedules: {날짜: [...]}, longTerm: [...])을 새 통합 형식(단일 배열)으로
+    // 변환한다. 이미 새 형식(events 배열)으로 저장된 데이터면 그대로 통과시킨다.
+    // - 새로 저장할 때는 항상 이 통합 형식(events)만 사용한다.
+    const calMigrateData = (parsed) => {
+        if (!parsed) return [];
+        if (Array.isArray(parsed.events)) return parsed.events;
+
+        const migrated = [];
+        const oldSchedules = parsed.schedules || {};
+        Object.keys(oldSchedules).forEach(dateStr => {
+            (oldSchedules[dateStr] || []).forEach(item => {
+                migrated.push({
+                    id: item.id, startDate: dateStr, endDate: dateStr,
+                    time: item.time || '', person: item.person || '',
+                    desc: item.desc || '', detail: item.detail || '', color: item.color,
+                });
+            });
+        });
+        (parsed.longTerm || []).forEach(lt => {
+            migrated.push({
+                id: lt.id, startDate: lt.startDate, endDate: lt.endDate,
+                time: lt.time || '', person: lt.title || '',
+                desc: lt.desc || '', detail: lt.detail || '', color: lt.color,
+            });
+        });
+        return migrated;
+    };
+
     const calLoadPublicData = async () => {
         try {
             const [scheduleRes] = await Promise.all([
@@ -66,16 +87,14 @@
                 loadPublicHolidays(),
             ]);
             if (scheduleRes.ok) {
-                const parsed = await scheduleRes.json();
-                calSchedules = parsed.schedules || parsed;
-                calLongTerm = parsed.longTerm || [];
+                calEvents = calMigrateData(await scheduleRes.json());
             }
         } catch (e) {
             console.error(e);
         }
         calRenderCalendar();
     };
-    
+
     const calGetEventHTML = (item) => {
         const timeHtml = item.time ? `<span class="cal-event-time">${calEscapeHTML(item.time)}</span>` : '';
         const personText = item.person ? `<span class="cal-event-person">${calEscapeHTML(item.person)}</span>` : '';
@@ -87,31 +106,32 @@
         `;
     };
 
-    // 장기 일정 막대 한 칸(하루치) - 여러 날짜에 걸쳐 이 함수가 반복 호출되면서
+    // 기간(장기) 일정 막대 한 칸(하루치) - 여러 날짜에 걸쳐 이 함수가 반복 호출되면서
     // 옆 칸의 막대와 이어붙는다. 주(week)가 바뀌어도(달력이 다음 줄로 넘어가도)
     // 계속 이어지는 것처럼 보이도록, 그 주의 첫/마지막 칸(일/토)에서도 끝처럼
     // 둥글게 마감하지 않고 실제 시작일/종료일에서만 둥글게 마감한다.
     // isWeekStart/isWeekEnd는 "이번 줄의 맨 왼쪽/오른쪽 칸이라 옆 칸 막대와 이어붙일
     // 수 없는 경계"를 뜻하고, 그 경우에만 살짝 둥글게 마감해 시각적으로 자연스럽게 끊는다.
-    const calGetLongTermBarHTML = (lt, dateStr, isWeekStart, isWeekEnd) => {
-        const isTrueStart = dateStr === lt.startDate;
-        const isTrueEnd = dateStr === lt.endDate;
+    // 라벨/설명은 하루짜리 일정과 동일한 person(타이틀)/desc(간략내용) 필드를 그대로 쓴다.
+    const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) => {
+        const isTrueStart = dateStr === ev.startDate;
+        const isTrueEnd = dateStr === ev.endDate;
         const roundLeft = isTrueStart || isWeekStart;
         const roundRight = isTrueEnd || isWeekEnd;
         const showLabel = isTrueStart || isWeekStart;
         const bleedLeft = roundLeft ? '0' : '-8px';
         const bleedRight = roundRight ? '0' : '-8px';
         const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
-        const labelHtml = showLabel ? `<span class="cal-longterm-bar-label">${calEscapeHTML(lt.title)}</span>` : '';
-        const descHtml = showLabel && lt.desc ? `<span class="cal-longterm-bar-desc">${calEscapeHTML(lt.desc)}</span>` : '';
-        return `<div class="cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color:${lt.color || '#ffedd5'};">${labelHtml}${descHtml}</div>`;
+        const labelHtml = showLabel && ev.person ? `<span class="cal-longterm-bar-label">${calEscapeHTML(ev.person)}</span>` : '';
+        const descHtml = showLabel && ev.desc ? `<span class="cal-longterm-bar-desc">${calEscapeHTML(ev.desc)}</span>` : '';
+        return `<div class="cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color:${ev.color || '#ffedd5'};">${labelHtml}${descHtml}</div>`;
     };
-    
+
     const calRenderCalendar = () => {
         const year = calCurrentDate.getFullYear();
         const month = calCurrentDate.getMonth();
         document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
-        
+
         const firstDayIndex = new Date(year, month, 1).getDay();
         const lastDay = new Date(year, month + 1, 0).getDate();
         const prevLastDay = new Date(year, month, 0).getDate();
@@ -123,7 +143,7 @@
         for (let i = firstDayIndex; i > 0; i--) {
             daysGrid.insertAdjacentHTML('beforeend', `<div class="cal-day-cell other-month"><span class="cal-day-number">${prevLastDay - i + 1}</span></div>`);
         }
-        
+
         for (let i = 1; i <= lastDay; i++) {
             const dateStr = calGetFormatDate(year, month + 1, i);
             const dayOfWeek = (firstDayIndex + i - 1) % 7; // 0=일 ... 6=토 (이번 달 1일 앞의 빈 칸까지 포함해 계산)
@@ -133,21 +153,19 @@
             if (calPublicHolidays[dateStr]) dayDiv.classList.add('holiday');
             let dayHTML = `<span class="cal-day-number">${i}</span>`;
 
-            // 장기 일정 막대는 항상 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 고정해서,
-            // 그 날 하루짜리 일정이 몇 개 있든 상관없이 같은 줄의 막대들이 수평으로 나란히 보이게 한다.
-            const coveringLongTerm = calLongTerm.filter(lt => calLongTermCoversDate(lt, dateStr));
-            coveringLongTerm.forEach(lt => {
-                dayHTML += calGetLongTermBarHTML(lt, dateStr, dayOfWeek === 0, dayOfWeek === 6);
-            });
+            // 기간(장기)에 걸친 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는
+            // 막대로, 하루짜리 일정은 그 아래에 기존과 동일한 카드로 표시한다.
+            const dayEvents = calEventsForDate(dateStr);
+            const multiDayEvents = dayEvents.filter(ev => ev.endDate && ev.endDate !== ev.startDate);
+            const singleDayEvents = dayEvents.filter(ev => !ev.endDate || ev.endDate === ev.startDate);
+            multiDayEvents.forEach(ev => { dayHTML += calGetLongTermBarHTML(ev, dateStr, dayOfWeek === 0, dayOfWeek === 6); });
+            singleDayEvents.forEach(item => { dayHTML += calGetEventHTML(item); });
 
-            if (calSchedules[dateStr] && calSchedules[dateStr].length > 0) {
-                calSortByTime(calSchedules[dateStr]).forEach(item => { dayHTML += calGetEventHTML(item); });
-            }
             dayDiv.innerHTML = dayHTML;
             dayDiv.onclick = () => calSelectDate(dateStr);
             daysGrid.appendChild(dayDiv);
         }
-        
+
         const totalCellsCount = firstDayIndex + lastDay;
         const nextDaysCount = totalCellsCount % 7 === 0 ? 0 : 7 - (totalCellsCount % 7);
         for (let i = 1; i <= nextDaysCount; i++) {
@@ -157,14 +175,17 @@
         calRenderTodaySchedules();
         calRenderSelectedDateSchedules();
     };
-    
+
     const changeMonth = (direction) => {
         calCurrentDate.setMonth(calCurrentDate.getMonth() + direction);
         calRenderCalendar();
     };
-    
+
     const calSelectDate = (dateStr) => {
         calSelectedDateStr = dateStr;
+        // "선택한 날짜 일정" 섹션 제목을 클릭한 날짜에 맞춰 유동적으로 바꾼다 (예: [26-09-09] 일정)
+        const titleEl = document.getElementById('selectedListTitle');
+        if (titleEl) titleEl.innerText = `[${calFormatShortDate(dateStr)}] 일정`;
         calRenderSelectedDateSchedules();
         if (typeof window.calOnDateSelect === 'function') window.calOnDateSelect(dateStr);
     };
@@ -186,31 +207,29 @@
             </div>
         `;
     };
-    
+
     const calRenderTodaySchedules = () => {
         const container = document.getElementById('todayList');
         const today = new Date();
         const curTodayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
-        // 장기 일정(있다면)을 먼저 보여주고, 그 다음 하루짜리 일정을 시간순으로 보여준다.
-        const todayItems = [...calLongTermItemsForDate(curTodayStr), ...calSortByTime(calSchedules[curTodayStr] || [])];
-        if (todayItems.length === 0) { 
-            container.innerHTML = `<div class="cal-no-schedule">오늘 등록된 일정이 없습니다.</div>`; 
-            return; 
+        const todayItems = calEventsForDate(curTodayStr);
+        if (todayItems.length === 0) {
+            container.innerHTML = `<div class="cal-no-schedule">오늘 등록된 일정이 없습니다.</div>`;
+            return;
         }
         container.innerHTML = todayItems.map(item => calEventCardHtml(item, curTodayStr, 'today')).join('');
     };
-    
+
     const calRenderSelectedDateSchedules = () => {
         const container = document.getElementById('selectedDateList');
-        if (!calSelectedDateStr) { 
-            container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`; 
-            return; 
+        if (!calSelectedDateStr) {
+            container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`;
+            return;
         }
-        const daySchedules = [...calLongTermItemsForDate(calSelectedDateStr), ...calSortByTime(calSchedules[calSelectedDateStr] || [])];
-        if (daySchedules.length === 0) { 
-            container.innerHTML = `<div class="cal-no-schedule">등록된 일정이 없습니다.</div>`; 
-            return; 
+        const daySchedules = calEventsForDate(calSelectedDateStr);
+        if (daySchedules.length === 0) {
+            container.innerHTML = `<div class="cal-no-schedule">등록된 일정이 없습니다.</div>`;
+            return;
         }
         container.innerHTML = daySchedules.map(item => calEventCardHtml(item, calSelectedDateStr, 'selected')).join('');
     };
-
