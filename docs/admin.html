@@ -3,12 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>캘린더 관리 - 스타대학</title>
+<title>관리자 - 스타대학</title>
 
 <!--
     이 관리자 페이지는 사이트가 실제로 쓰는 style.css / calendar.js / holidays.json을
     그대로 링크해서 씁니다(복사본 아님) - 그래서 사이트 디자인이 바뀌면 이 페이지도
-    자동으로 같이 바뀝니다. 이 페이지 자체가 만드는 건 딱 두 가지뿐입니다:
+    자동으로 같이 바뀝니다. 사이트 본편(index.html)과 동일한 상단바 + 페이지 전환
+    구조(.top-navbar/.page-section, switchPage)를 그대로 재사용해서, 나중에 다른
+    탭(홈/멤버/전적/방송통계/도구)에도 각자의 관리 기능을 이어서 채워 넣을 수 있게
+    했습니다. 지금 실제로 기능이 들어있는 건 '일정' 탭뿐이고, 나머지 탭은 자리만
+    잡아둔 빈 페이지입니다.
+    이 파일 자체가 만드는 건 딱 두 가지뿐입니다:
       1) GitHub 토큰으로 calendar.json 불러오기/저장하기
       2) 일정 추가/수정/삭제 폼 + 각 일정 카드에 [수정]/[삭제] 버튼 끼워넣기
        (calendar.js의 calRenderTodaySchedules/calRenderSelectedDateSchedules가
@@ -79,9 +84,33 @@
 </head>
 <body>
 
-<div class="container">
+<!-- GNB - 사이트 본편(index.html)과 완전히 동일한 상단바 마크업/클래스 -->
+<div class="top-navbar">
+    <div class="navbar-inner container">
+        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
+        <div class="nav-menu" id="mainMenu">
+            <a class="nav-item" data-page="home" onclick="switchPage('home')">홈</a>
+            <a class="nav-item active" data-page="schedule" onclick="switchPage('schedule')">일정</a>
+            <a class="nav-item" data-page="members" onclick="switchPage('members')">멤버</a>
+            <a class="nav-item" data-page="records" onclick="switchPage('records')">전적</a>
+            <a class="nav-item" data-page="stats" onclick="switchPage('stats')">방송통계</a>
+            <a class="nav-item" data-page="tools" onclick="switchPage('tools')">도구</a>
+        </div>
+    </div>
+</div>
+
+<!-- 아래 각 탭은 준비만 해둔 빈 페이지 - 나중에 탭별로 관리 기능을 채워 넣으면 됨 -->
+<div id="page-home" class="page-section container">
     <div class="page-header">
-        <h1 class="page-header-title">캘린더 관리</h1>
+        <h1 class="page-header-title">홈 관리</h1>
+    </div>
+    <hr class="page-header-divider">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+</div>
+
+<div id="page-schedule" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">일정 관리</h1>
     </div>
     <hr class="page-header-divider">
 
@@ -170,10 +199,54 @@
     </div>
 </div>
 
+<div id="page-members" class="page-section container">
+    <div class="page-header">
+        <h1 class="page-header-title">멤버 관리</h1>
+    </div>
+    <hr class="page-header-divider">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+</div>
+
+<div id="page-records" class="page-section container">
+    <div class="page-header">
+        <h1 class="page-header-title">전적 관리</h1>
+    </div>
+    <hr class="page-header-divider">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+</div>
+
+<div id="page-stats" class="page-section container">
+    <div class="page-header">
+        <h1 class="page-header-title">방송통계 관리</h1>
+    </div>
+    <hr class="page-header-divider">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+</div>
+
+<div id="page-tools" class="page-section container">
+    <div class="page-header">
+        <h1 class="page-header-title">도구 관리</h1>
+    </div>
+    <hr class="page-header-divider">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+</div>
+
 <!-- 사이트가 실제로 쓰는 캘린더 렌더링 로직을 그대로 가져다 쓴다 (복사본 아님) -->
 <script src="calendar.js"></script>
 
 <script>
+    // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
+    // 지금은 '일정' 탭에만 실제 기능이 있고, 나머지는 자리만 잡아둔 빈 페이지.
+    const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'stats', 'tools'];
+    function switchPage(pageId) {
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('#mainMenu .nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        const targetNav = document.querySelector(`#mainMenu .nav-item[data-page="${pageId}"]`);
+        if (targetNav) targetNav.classList.add('active');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+
     // ===== 여기서부터는 어드민 전용: GitHub 로드/저장 + 일정 추가/수정/삭제 =====
     const REPO_OWNER = 'ststats';
     const REPO_NAME = 'staruniv';
