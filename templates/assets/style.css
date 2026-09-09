@@ -227,7 +227,7 @@
 
         /* 홈 화면 - 최근 공지 (카드 한 장 = 글 한 개)
            1줄: 이름 / 2줄: 방송제목 · 몇시간전(오른쪽 정렬 아님) / 3줄: 공지내용(왼쪽부터, 아바타 없음)
-           아바타는 1~2줄 높이에 걸치고, 오른쪽 썸네일은 카드 전체 높이(1~3줄)에 맞춰 늘어난다. */
+           아바타는 1~2줄 높이에 걸치고, 오른쪽 썸네일은 1:1 정사각형으로 가운데 정렬된다. */
         .home-notice-list { display: flex; flex-direction: column; gap: 12px; }
         .home-notice-card { display: flex; align-items: stretch; gap: 12px; cursor: pointer; padding: 14px 16px; transition: box-shadow 0.15s, transform 0.15s; }
         .home-notice-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
@@ -243,8 +243,8 @@
         .home-notice-meta { font-size: 11px; color: #999; flex-shrink: 0; white-space: nowrap; }
         /* 아바타 없이 카드 왼쪽 끝부터 시작 */
         .home-notice-snippet { font-size: 12px; color: var(--color-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        /* 사진은 오른쪽 썸네일로, 카드 전체 높이(1~3줄)에 맞춰 늘어난다 */
-        .home-notice-thumb { width: 64px; object-fit: cover; border-radius: 10px; background: var(--color-bg-subtle); flex-shrink: 0; }
+        /* 사진은 오른쪽에 64x64 정사각형 썸네일로, 세로 가운데 정렬된다 */
+        .home-notice-thumb { width: 64px; height: 64px; aspect-ratio: 1 / 1; align-self: center; object-fit: cover; border-radius: 10px; background: var(--color-bg-subtle); flex-shrink: 0; }
 
 
         /* 멤버 소식 피드 - 인스타그램 포스트 스타일: 사진은 카드 끝까지 꽉 채우고,
@@ -301,8 +301,13 @@
            그 안에서 넘치는 만큼만 스크롤된다(왼쪽 카드는 그대로 고정된 것처럼 보임).
            리스트 항목은 클릭하면(홈 화면과 달리 원글 이동이 아니라) 그 글을 왼쪽
            "최신 글" 자리로 올린다. */
-        .past-posts { flex: 1 1 340px; min-width: 300px; display: flex; flex-direction: column; }
-        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; padding-right: 2px; }
+        .past-posts { flex: 1 1 340px; min-width: 300px; min-height: 0; display: flex; flex-direction: column; }
+        /* flex 자식은 기본 min-height가 auto라서, overflow-y:auto를 줘도 내용물 전체
+           크기만큼 계속 늘어나 버리고 정작 스크롤은 안 걸리는 문제가 있다 - 그래서
+           지금까지 "더보기"를 누를수록 리스트가 아래로 계속 길어지기만 했던 것.
+           min-height:0으로 그 기본값을 없애야 진짜로 clip되어 스크롤이 생긴다.
+           max-height는 대략 항목 5개 정도가 보이는 높이로 잡았다. */
+        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; min-height: 0; max-height: 460px; padding-right: 2px; }
         #news-past-list::-webkit-scrollbar { width: 5px; }
         #news-past-list::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
         .past-posts .news-load-more-wrap { flex-shrink: 0; text-align: center; padding-top: 12px; }
