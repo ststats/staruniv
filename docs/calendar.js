@@ -103,7 +103,7 @@
         const bleedRight = roundRight ? '0' : '-8px';
         const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
         const labelHtml = showLabel ? `<span class="cal-longterm-bar-label">${calEscapeHTML(lt.title)}</span>` : '';
-        const descHtml = showLabel && lt.detail ? `<span class="cal-longterm-bar-desc">${calEscapeHTML(lt.detail)}</span>` : '';
+        const descHtml = showLabel && lt.desc ? `<span class="cal-longterm-bar-desc">${calEscapeHTML(lt.desc)}</span>` : '';
         return `<div class="cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color:${lt.color || '#ffedd5'};">${labelHtml}${descHtml}</div>`;
     };
     
