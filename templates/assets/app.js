@@ -59,6 +59,23 @@
         scroller.scrollBy({ left: dir * scroller.clientWidth, behavior: 'smooth' });
     }
 
+    // 공지 사진 갤러리 위에서 휠을 굴리면 실제 트랙패드 가로 스와이프(deltaX)든
+    // 그냥 페이지를 내리려는 세로 휠(deltaY)이든 둘 다 기본 이동량이 커서 너무
+    // 빠르게 느껴진다. 가로 성분은 사진 스크롤 속도만 줄이고, 세로 성분은 절대
+    // 가로로 바꿔치기하지 않고 방향은 세로 그대로 유지한 채 페이지 스크롤
+    // 속도만 줄인다. 동적으로 생성되는 카드라 document에 위임해서 항상 걸리게 한다.
+    document.addEventListener('wheel', function (e) {
+        const scroller = e.target.closest && e.target.closest('.news-post-photos');
+        if (!scroller || scroller.children.length <= 1) return;
+        if (e.deltaX) {
+            e.preventDefault();
+            scroller.scrollLeft += e.deltaX * 0.3;
+        } else if (e.deltaY) {
+            e.preventDefault();
+            window.scrollTo(window.scrollX, window.scrollY + e.deltaY * 0.3);
+        }
+    }, { passive: false });
+
     // 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은
     // 상대가 우리 팀 자신이므로 캄몬스타즈.webp를 대신 쓴다. 로고 파일이
     // 없는 팀은 (임시로) 원형 배지에 팀 이름 첫 글자를 넣어 대신 보여준다.

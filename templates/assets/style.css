@@ -302,6 +302,12 @@
            위쪽 여백은 전부 이 클래스 하나로 통일한다. 버튼 자체는 위쪽 패딩을 갖지 않으므로
            (클릭 영역 확보용 아래/좌우 패딩만 있음) 이 16px에 다른 값이 더해질 일이 없다. */
         .section-trailer { padding-top: var(--space-trailer); }
+        /* 이전 멤버 섹션은 display:none/block으로만 토글되므로(접혀있을 땐 아예
+           렌더링 자체가 안 됨), 여기 margin-top을 줘도 접혀있을 때는 아무 공간도
+           차지하지 않고 펼쳐졌을 때만 적용된다 - 버튼 위 여백(--space-trailer)과
+           같은 값을 써서 버튼 아래에도 똑같은 여백이 생기게 하되, 이미 있는 다른
+           여백과 합산되어 더 벌어지지 않도록 이 한 군데에서만 준다. */
+        #former-members-section { margin-top: var(--space-trailer); }
         /* 부트스트랩 g-4/mb-4는 자기만의 고정 rem 값이라 --space-block-gap과 숫자만
            우연히 같을 뿐 실제로 연결돼있지 않다. 이 두 클래스로 진짜 연결시킨다:
            .gap-block은 .row의 거터(칸 사이 간격)를, .mb-block은 margin-bottom을
