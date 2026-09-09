@@ -316,6 +316,7 @@
             if (wrap) wrap.remove();
             content.insertAdjacentHTML('beforeend', html);
         }
+        checkNewsClampButtons(content);
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
@@ -408,6 +409,51 @@
         }
     }
 
+    // 게시판 API의 textContent는 순수 텍스트가 아니라 줄바꿈이 <br> 태그로 남아있는 형태라,
+    // 그대로 escapeHTML하면 화면에 "<br />" 글자가 그대로 보인다. <br> 계열만 실제 줄바꿈으로
+    // 바꾸고 나머지는 이스케이프해서 news-post-body(white-space: pre-wrap)에 안전하게 꽂는다.
+    function formatNewsContent(text) {
+        if (!text) return '';
+        return escapeHTML(String(text).replace(/<br\s*\/?>/gi, '\n'));
+    }
+
+    // 공지 목록 API의 본문(textContent)은 미리보기 수준으로 잘려서 내려올 수 있어, 카드에서
+    // "더보기"를 누르면 게시글 상세 API로 전체 본문만 다시 받아온다. (제목/사진/메타 등은
+    // 이미 목록 API로 다 갖고 있으니 본문만 교체하면 된다.)
+    async function fetchPostFullContent(soopId, titleNo) {
+        const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/post/${encodeURIComponent(titleNo)}`;
+        const data = await cachedFetchJson(url, 300000); // 5분
+        return (data.content && data.content.textContent) || '';
+    }
+
+    // 렌더링 직후 "더보기"가 필요한지 판단한다 - 텍스트 길이로 미리 판단하지 않고, 실제로
+    // 3줄(clamp) 안에 다 들어가는지를 DOM에서 직접 재보고 넘칠 때만 버튼을 보여준다.
+    function checkNewsClampButtons(container) {
+        container.querySelectorAll('.news-post-body-clamp:not([data-clamp-checked])').forEach(body => {
+            body.setAttribute('data-clamp-checked', '1');
+            if (body.scrollHeight > body.clientHeight + 1) {
+                const btn = body.nextElementSibling;
+                if (btn && btn.classList.contains('news-post-more-btn')) btn.style.display = 'inline-flex';
+            }
+        });
+    }
+
+    // "더보기" 클릭 - 상세 API에서 전체 본문을 받아 clamp를 풀고 버튼을 없앤다.
+    async function expandNewsPost(btn, soopId, titleNo) {
+        const body = btn.previousElementSibling;
+        btn.innerText = '불러오는 중...';
+        btn.disabled = true;
+        try {
+            const fullText = await fetchPostFullContent(soopId, titleNo);
+            body.innerHTML = formatNewsContent(fullText);
+            body.classList.remove('news-post-body-clamp');
+            btn.remove();
+        } catch (e) {
+            btn.innerText = '더보기 (실패, 다시 시도)';
+            btn.disabled = false;
+        }
+    }
+
     function renderNewsPostHtml(post, member) {
         const title = post.titleName || '';
         const snippet = (post.content && post.content.textContent) || '';
@@ -448,7 +494,7 @@
                 </div>
             </div>
             ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
-            ${snippet ? `<div class="news-post-body">${escapeHTML(snippet)}</div>` : ''}
+            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsStrEscape(soopId)}', ${post.titleNo})">더보기</button>` : ''}
             ${photosHtml}
             <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
                 원글 보기 <span class="ext-arrow">↗</span>
@@ -475,6 +521,7 @@
                 if (loadMoreWrap) loadMoreWrap.remove();
                 content.insertAdjacentHTML('beforeend', postsHtml);
             }
+            checkNewsClampButtons(content);
 
             if (newsCurrentPage < newsTotalPages) {
                 content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
@@ -907,7 +954,7 @@
                             </div>
                         </div>
                     </div>
-                    ${snippet ? `<div class="home-notice-snippet">${escapeHTML(snippet)}</div>` : ''}
+                    ${snippet ? `<div class="home-notice-snippet">${formatNewsContent(snippet)}</div>` : ''}
                 </div>
                 ${thumbHtml}
             </div>`;
