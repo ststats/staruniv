@@ -255,8 +255,10 @@
         .news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
         .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; padding: 0 16px; }
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
+        .news-post-body p { margin: 0 0 8px; }
+        .news-post-body p:last-child { margin-bottom: 0; }
         .news-post-body-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .news-post-more-btn { display: none; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 12px 16px; margin-top: -8px; cursor: pointer; transition: opacity 0.15s; }
+        .news-post-more-btn { display: none; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 400; color: var(--color-primary); padding: 0 16px 12px 16px; margin-top: -8px; cursor: pointer; transition: opacity 0.15s; }
         .news-post-more-btn:hover { opacity: 0.7; }
         /* 인스타처럼 가로 스와이프되는 사진 갤러리. scroll-snap으로 한 장씩 딱딱 걸리게 하고,
            스크롤바는 숨겨서(스크롤바 대신 아래 dot 인디케이터로 위치를 표시) 깔끔하게 보이게 한다. */
