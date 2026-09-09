@@ -209,6 +209,16 @@
       "desc": "24시간",
       "detail": "",
       "color": "#ffe4e6"
+    },
+    {
+      "id": 1788954141010,
+      "startDate": "2026-09-09",
+      "endDate": "2026-09-10",
+      "time": "",
+      "person": "윤환",
+      "desc": "휴방",
+      "detail": "",
+      "color": "#fef3c7"
     }
   ]
 }
