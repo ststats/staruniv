@@ -13,11 +13,24 @@ except FileNotFoundError:
     print("❌ JSON 파일이 없습니다.")
     exit(1)
 
+# app.js의 TIER_ORDER와 완전히 동일한 순서 - 멤버카드 그리드 정렬이랑 아바타 바
+# 정렬이 서로 다르게 나오지 않도록 여기서도 같은 기준을 쓴다. (참고: app.js의
+# tierIndex()는 목록에 없는 값이면 배열 길이를 반환해 맨 뒤로 보내는데, 여기서도
+# 동일하게 처리한다.)
+TIER_ORDER = ['갓', '킹', '잭', '조커', '스페이드', '0', '1', '2', '3', '4', '5', '6', '7', '8', '베이비']
+
+def tier_index(tier):
+    tier_str = str(tier) if tier is not None else ''
+    try:
+        return TIER_ORDER.index(tier_str)
+    except ValueError:
+        return len(TIER_ORDER)
+
 def sort_members(members):
     role_order = {'감독': 1, '코치': 2, '선수': 3}
     return sorted(members, key=lambda x: (
         role_order.get(x.get('직책', '선수'), 99),
-        str(x.get('입단 티어', '99'))
+        tier_index(x.get('티어'))
     ))
 
 sorted_members = sort_members(db_data.get('members', []))
