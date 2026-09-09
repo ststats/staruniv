@@ -642,9 +642,9 @@
                     return `
                     <tr style="border-bottom:1px solid #f1f3f5;">
                         <td style="width:18.8%; font-weight:800; color:#888; white-space:nowrap;">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || ''}</td>
-                        <td style="width:18.8%;" class="fw-bold ${isWin?'text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
+                        <td style="width:18.8%;" class="${isWin?'fw-bold text-primary':'text-dark'}">${escapeHTML(r['우리 선수'])||'-'}</td>
                         <td style="width:18.8%;">${resBadge}</td>
-                        <td style="width:18.8%;" class="fw-bold ${!isWin && !isDraw ?'text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
+                        <td style="width:18.8%;" class="${(!isWin && !isDraw)?'fw-bold text-primary':'text-dark'}">${escapeHTML(r['상대 선수'])||'-'}</td>
                         <td style="width:18.8%; color:#555;">${escapeHTML(r['맵']) || '-'}</td>
                         <td style="width:6%;"></td>
                     </tr>`;
