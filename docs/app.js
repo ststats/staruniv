@@ -18,6 +18,23 @@
     }
     const EMPTY_MATCH_ROW_HTML = '<tr><td colspan="6" class="text-center text-muted py-4">경기 기록이 없습니다.</td></tr>';
 
+    // onclick="fn('${value}')"처럼 JS 문자열 리터럴 안에 값을 꽂을 때 백슬래시/따옴표를
+    // 이스케이프한다. 멤버 이름에 특수문자가 섞여도 마크업이 깨지거나 엉뚱한 스크립트가
+    // 실행되지 않도록 인라인 핸들러에 값을 넣는 곳은 항상 이 함수를 거친다.
+    function jsStrEscape(str) {
+        return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    // 로딩중/데이터없음 등 안내 문구를 보여주는 <div> - 여러 화면(공지, 방송중, 소식 피드)이
+    // 문구만 다르고 동일한 마크업을 반복해서 쓰던 것을 공용화
+    function emptyStateHtml(text, extraClass) {
+        return `<div class="text-center text-muted py-4${extraClass ? ' ' + extraClass : ''}" style="font-size:var(--fs-body);">${text}</div>`;
+    }
+    // 표 형태(tbody) 안에서 쓰는 안내 문구 <tr> - synergy 표 등에서 재사용
+    function emptyRowHtml(colspan, text) {
+        return `<tr><td colspan="${colspan}" class="text-center text-muted py-4">${text}</td></tr>`;
+    }
+
     // 공지 카드의 다중 사진 스와이프 - 스크롤 위치를 보고 현재 몇 번째 사진인지
     // 계산해서 점(dot) 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
     // (첫 장에선 이전 화살표를, 마지막 장에선 다음 화살표를 숨긴다)
@@ -62,8 +79,7 @@
         if (!name) return '';
         const fileName = (name === '내전') ? '캄몬스타즈' : name;
         const size = sizePx || 16;
-        const jsSafeName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="${escapeHTML(name)}" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="teamLogoFallback(this, '${jsSafeName}')">`;
+        return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="${escapeHTML(name)}" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" onerror="teamLogoFallback(this, '${jsStrEscape(name)}')">`;
     }
 
     const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'stats', 'tools'];
@@ -238,11 +254,9 @@
                             <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
                             <span class="avatar-select-name">전체</span>
                        </div>`];
-        dbMembers.forEach(m => {
-            if (!isActiveMember(m)) return;
+        activeMembersWithSoopId().forEach(m => {
             const soopId = m['SOOP ID'];
-            if (!soopId || !/^[a-zA-Z0-9_-]+$/.test(String(soopId).trim())) return;
-            html.push(`<div class="avatar-select-item" id="news-side-player-${m['이름']}" onclick="selectNewsPlayer('${m['이름']}')">
+            html.push(`<div class="avatar-select-item" id="news-side-player-${m['이름']}" onclick="selectNewsPlayer('${jsStrEscape(m['이름'])}')">
                             ${avatarHtml(soopId, 'avatar-select-img')}
                             <span class="avatar-select-name">${escapeHTML(m['이름'])}</span>
                         </div>`);
@@ -261,13 +275,9 @@
         if (!skipHashUpdate) updateMembersHash();
 
         const content = document.getElementById('news-feed-content');
-        content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>`;
+        content.innerHTML = emptyStateHtml('불러오는 중...');
 
-        const activeMembers = dbMembers.filter(m => {
-            if (!isActiveMember(m)) return false;
-            const soopId = m['SOOP ID'];
-            return soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
-        });
+        const activeMembers = activeMembersWithSoopId();
 
         // 멤버별로 최근 몇 개씩 후보를 모아서(공지+일반글 합친 것) 전체를 한 번에
         // 날짜순으로 다시 정렬 - "더보기"로 계속 더 볼 수 있게 넉넉히 모아둔다.
@@ -291,7 +301,7 @@
         if (reset) allNewsShownCount = 0;
 
         if (allNewsPool.length === 0) {
-            content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">작성된 글이 없습니다.</div>`;
+            content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');
             return;
         }
 
@@ -309,7 +319,7 @@
         allNewsShownCount = nextCount;
 
         if (allNewsShownCount < allNewsPool.length) {
-            content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+            content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-all-load-more-wrap"><button class="news-load-more" onclick="loadMoreAllNews()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
         }
     }
 
@@ -330,7 +340,7 @@
         newsTotalPages = 1;
         if (!skipHashUpdate) updateMembersHash();
 
-        document.getElementById('news-feed-content').innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">불러오는 중...</div>`;
+        document.getElementById('news-feed-content').innerHTML = emptyStateHtml('불러오는 중...');
         loadNewsFeed(true);
     }
 
@@ -459,7 +469,7 @@
             const postsHtml = posts.map(p => renderNewsPostHtml(p, currentNewsPlayer)).join('');
 
             if (reset) {
-                content.innerHTML = posts.length ? postsHtml : `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">작성된 글이 없습니다.</div>`;
+                content.innerHTML = posts.length ? postsHtml : emptyStateHtml('작성된 글이 없습니다.');
             } else {
                 const loadMoreWrap = document.getElementById('news-load-more-wrap');
                 if (loadMoreWrap) loadMoreWrap.remove();
@@ -467,10 +477,10 @@
             }
 
             if (newsCurrentPage < newsTotalPages) {
-                content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
+                content.insertAdjacentHTML('beforeend', `<div class="text-center section-trailer" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNews()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`);
             }
         } catch (e) {
-            content.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">글을 불러오지 못했습니다.</div>`;
+            content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다.');
         } finally {
             newsLoading = false;
         }
@@ -672,6 +682,15 @@
     function isActiveMember(m) {
         return !m['퇴단일'] || String(m['퇴단일']).trim() === '';
     }
+    // 방송중 체크/소식 피드 등 SOOP API를 부르는 화면들이 공통으로 쓰는 대상:
+    // 활동중이면서 SOOP ID 형식이 유효한 멤버만 추려낸다.
+    function activeMembersWithSoopId() {
+        return dbMembers.filter(m => {
+            if (!isActiveMember(m)) return false;
+            const soopId = m['SOOP ID'];
+            return soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
+        });
+    }
     function todayStr() {
         return new Date().toISOString().split('T')[0];
     }
@@ -684,7 +703,7 @@
     }
     function memberCardHtml(m) {
         return `
-        <div class="member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${m['이름']}')">
+        <div class="member-card${isActiveMember(m) ? '' : ' former'}" onclick="openMemberProfile('${jsStrEscape(m['이름'])}')">
             <span class="tool-card-ext">↗</span>
             ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
             <div class="member-card-name">${escapeHTML(m['이름'])}</div>
@@ -778,23 +797,20 @@
         const elapsedSec = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 1000));
         const eh = Math.floor(elapsedSec / 3600);
         const em = Math.floor((elapsedSec % 3600) / 60);
-        return (eh > 0 ? `${eh}시간 ${em}분` : `${em}분`) + ' 방송중';
+        return (eh > 0 ? `${eh}시간 ${em}분` : `${em}분`) + ' 방송 중';
     }
 
     async function renderLiveBroadcasts() {
         const container = document.getElementById('home-live-broadcast');
-        const activeMembers = dbMembers.filter(m => {
-            if (!isActiveMember(m)) return false;
-            const soopId = m['SOOP ID'];
-            return soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
-        });
+        const noLiveHtml = emptyStateHtml('현재 방송 중인 멤버가 없습니다.');
+        const activeMembers = activeMembersWithSoopId();
 
         if (activeMembers.length === 0) {
-            container.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">현재 방송 중인 멤버가 없습니다.</div>`;
+            container.innerHTML = noLiveHtml;
             return;
         }
 
-        container.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">방송 상태 확인 중...</div>`;
+        container.innerHTML = emptyStateHtml('방송 상태 확인 중...');
 
         const settled = await Promise.allSettled(
             activeMembers.map(m => checkIsLiveRealtime(m['SOOP ID']).then(live => ({ member: m, live })))
@@ -804,7 +820,7 @@
             .map(r => r.value);
 
         if (liveList.length === 0) {
-            container.innerHTML = `<div class="text-center text-muted py-4" style="font-size:var(--fs-body);">현재 방송 중인 멤버가 없습니다.</div>`;
+            container.innerHTML = noLiveHtml;
             return;
         }
 
@@ -842,14 +858,11 @@
     // 응답의 noticeData가 실제로 '공지' 처리된 글들이고(noticeYn:2), 최신순으로 정렬돼 온다.
     async function renderLatestNotices() {
         const container = document.getElementById('home-notice-list');
-        const activeMembers = dbMembers.filter(m => {
-            if (!isActiveMember(m)) return false;
-            const soopId = m['SOOP ID'];
-            return soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
-        });
+        const noNoticeHtml = emptyStateHtml('최근 공지가 없습니다.', 'clean-card');
+        const activeMembers = activeMembersWithSoopId();
 
         if (activeMembers.length === 0) {
-            container.innerHTML = `<div class="clean-card text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
+            container.innerHTML = noNoticeHtml;
             return;
         }
 
@@ -867,7 +880,7 @@
             .sort((a, b) => new Date(b.post.regDate) - new Date(a.post.regDate));
 
         if (withNotice.length === 0) {
-            container.innerHTML = `<div class="clean-card text-center text-muted py-4" style="font-size:var(--fs-body);">최근 공지가 없습니다.</div>`;
+            container.innerHTML = noNoticeHtml;
             return;
         }
 
@@ -881,7 +894,7 @@
             const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
 
             return `
-            <div class="home-notice-card" onclick="goToNewsFeed('${String(name).replace(/'/g, "\\'")}')">
+            <div class="home-notice-card" onclick="goToNewsFeed('${jsStrEscape(name)}')">
                 <div class="home-notice-main">
                     <div class="home-notice-top">
                         ${avatarHtml(soopId, 'home-notice-avatar')}
@@ -963,12 +976,13 @@
         const viewersEl = document.getElementById('mp-viewers');
         const sponsorEl = document.getElementById('mp-sponsor-record');
 
+        const resetTo = (statusText) => {
+            statusEl.innerText = statusText;
+            balloonsEl.innerText = hoursEl.innerText = viewersEl.innerText = sponsorEl.innerText = '-';
+        };
+
         if (!synergyData) {
-            statusEl.innerText = '데이터 불러오는 중';
-            balloonsEl.innerText = '-';
-            hoursEl.innerText = '-';
-            viewersEl.innerText = '-';
-            sponsorEl.innerText = '-';
+            resetTo('데이터 불러오는 중');
             return;
         }
 
@@ -976,11 +990,7 @@
         const entry = synergyData.find(s => String(s.id || '').trim().toLowerCase() === soopId);
 
         if (!entry) {
-            statusEl.innerText = '데이터 없음';
-            balloonsEl.innerText = '-';
-            hoursEl.innerText = '-';
-            viewersEl.innerText = '-';
-            sponsorEl.innerText = '-';
+            resetTo('데이터 없음');
             return;
         }
 
@@ -998,7 +1008,7 @@
                        </div>`];
         const formerHtml = [];
         dbMembers.forEach(m => {
-            const item = `<div class="avatar-select-item" id="side-player-${m['이름']}" onclick="selectPlayer('${m['이름']}')">
+            const item = `<div class="avatar-select-item" id="side-player-${m['이름']}" onclick="selectPlayer('${jsStrEscape(m['이름'])}')">
                             ${avatarHtml(m['SOOP ID'], 'avatar-select-img')}
                             <span class="avatar-select-name">${escapeHTML(m['이름'])}</span>
                         </div>`;
@@ -1034,12 +1044,12 @@
         document.querySelectorAll('#indiv-avatar-list .avatar-select-item').forEach(el => el.classList.remove('active'));
         document.getElementById('side-btn-summary').classList.add('active');
 
-        const activeMembers = dbMembers.filter(m => !m['퇴단일'] || m['퇴단일'].trim() === '');
+        const activeMembers = dbMembers.filter(isActiveMember);
         let html = '';
         activeMembers.forEach(m => {
             const pStat = playersStats.find(x => x['이름'] === m['이름']) || {};
             const name = m['이름'];
-            html += `<tr style="border-bottom:1px solid #f1f3f5; cursor:pointer;" onclick="selectPlayer('${name}')">
+            html += `<tr style="border-bottom:1px solid #f1f3f5; cursor:pointer;" onclick="selectPlayer('${jsStrEscape(name)}')">
                 <td class="fw-bold text-dark text-center stat-table-sticky-col" style="white-space:nowrap; width:20%;"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span style="overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</span></span></td>
                 <td style="white-space:nowrap; width:20%;">${pStat['대회 전적'] || '-'}</td>
                 <td style="white-space:nowrap; width:20%;">${pStat['대학 전적'] || '-'}</td>
@@ -1200,7 +1210,7 @@
             renderSynergyTable();
         } catch (e) {
             console.error(e);
-            const errRow = `<tr><td colspan="3" class="text-center text-muted py-4">데이터를 불러오지 못했습니다.</td></tr>`;
+            const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다.');
             document.getElementById('synergy-tbody-male').innerHTML = errRow;
             document.getElementById('synergy-tbody-female').innerHTML = errRow;
         }
@@ -1290,7 +1300,7 @@
         const male = sortSynergyRows(active.filter(m => m.ourMember['성별'] === '남자'));
         const female = sortSynergyRows(active.filter(m => m.ourMember['성별'] === '여자'));
 
-        const noData = `<tr><td colspan="3" class="text-center text-muted py-4">표시할 멤버가 없습니다.</td></tr>`;
+        const noData = emptyRowHtml(3, '표시할 멤버가 없습니다.');
         maleTbody.innerHTML = male.length ? male.map(synergyRowHtml).join('') : noData;
         femaleTbody.innerHTML = female.length ? female.map(synergyRowHtml).join('') : noData;
     }
