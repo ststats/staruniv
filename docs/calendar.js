@@ -102,7 +102,9 @@
         const bleedLeft = roundLeft ? '0' : '-8px';
         const bleedRight = roundRight ? '0' : '-8px';
         const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
-        return `<div class="cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color:${lt.color || '#ffedd5'};">${showLabel ? `<span class="cal-longterm-bar-label">${calEscapeHTML(lt.title)}</span>` : ''}</div>`;
+        const labelHtml = showLabel ? `<span class="cal-longterm-bar-label">${calEscapeHTML(lt.title)}</span>` : '';
+        const descHtml = showLabel && lt.detail ? `<span class="cal-longterm-bar-desc">${calEscapeHTML(lt.detail)}</span>` : '';
+        return `<div class="cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color:${lt.color || '#ffedd5'};">${labelHtml}${descHtml}</div>`;
     };
     
     const calRenderCalendar = () => {
