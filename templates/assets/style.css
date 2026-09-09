@@ -255,6 +255,9 @@
         .news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
         .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; padding: 0 16px; }
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
+        .news-post-body-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .news-post-more-btn { display: none; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 12px 16px; margin-top: -8px; cursor: pointer; transition: opacity 0.15s; }
+        .news-post-more-btn:hover { opacity: 0.7; }
         /* 인스타처럼 가로 스와이프되는 사진 갤러리. scroll-snap으로 한 장씩 딱딱 걸리게 하고,
            스크롤바는 숨겨서(스크롤바 대신 아래 dot 인디케이터로 위치를 표시) 깔끔하게 보이게 한다. */
         .news-post-photos-wrap { position: relative; }
@@ -445,13 +448,9 @@
         .cal-event-person { font-weight: 800; font-size: var(--fs-body); color: #666; margin-left: auto; text-align: right; }
         .cal-event-desc { font-size: var(--fs-body); font-weight: 400; color: var(--color-text-main); text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.25; }
 
-        /* 기간(장기) 일정 막대 - 날짜 숫자 바로 아래, 하루짜리 일정보다 위에 고정해서
-           그 날 하루짜리 일정이 몇 개든 상관없이 같은 주(줄)의 막대들이 수평으로 나란히 보인다.
-           calendar.js가 시작일/종료일이 아닌 칸에서는 좌우로 -8px씩 밀어(.cal-day-cell의
-           padding:8px을 상쇄) 옆 칸 막대와 이어붙게 만든다. */
-        .cal-longterm-bar { height: 20px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 6px; overflow: hidden; box-sizing: border-box; flex-shrink: 0; }
-        .cal-longterm-bar-label { font-size: var(--fs-body); font-weight: 800; color: #666; padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
-        .cal-longterm-bar-desc { font-size: var(--fs-body); font-weight: 400; color: var(--color-text-main); padding-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: right; }
+        /* 기간(장기) 일정은 cal-cell-event와 같은 2줄 카드를 그대로 쓰되, 옆 칸과 이어붙일 때
+           그림자가 이음매처럼 겹쳐 보이지 않도록 막대 전용으로만 그림자를 없앤다. */
+        .cal-longterm-bar { box-shadow: none; }
 
         .cal-today-list, .cal-selected-list { display: flex; flex-direction: column; gap: 0; max-height: 360px; overflow-y: auto; padding-right: 4px; }
         .cal-today-card, .cal-selected-card { padding: 12px 0; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--color-bg-subtle); }

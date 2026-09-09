@@ -106,25 +106,27 @@
         `;
     };
 
-    // 기간(장기) 일정 막대 한 칸(하루치) - 여러 날짜에 걸쳐 이 함수가 반복 호출되면서
-    // 옆 칸의 막대와 이어붙는다. 주(week)가 바뀌어도(달력이 다음 줄로 넘어가도)
-    // 계속 이어지는 것처럼 보이도록, 그 주의 첫/마지막 칸(일/토)에서도 끝처럼
-    // 둥글게 마감하지 않고 실제 시작일/종료일에서만 둥글게 마감한다.
-    // isWeekStart/isWeekEnd는 "이번 줄의 맨 왼쪽/오른쪽 칸이라 옆 칸 막대와 이어붙일
-    // 수 없는 경계"를 뜻하고, 그 경우에만 살짝 둥글게 마감해 시각적으로 자연스럽게 끊는다.
-    // 라벨/설명은 하루짜리 일정과 동일한 person(타이틀)/desc(간략내용) 필드를 그대로 쓴다.
+    // 기간(장기) 일정 막대 한 칸(하루치) - 하루짜리 일정 카드(cal-cell-event)와 완전히 같은
+    // 2줄 레이아웃(시간·타이틀 / 간략내용)을 매일 그대로 찍어서, 여러 날짜에 걸쳐 이 함수가
+    // 반복 호출되며 옆 칸과 이어붙는다. 주(week)가 바뀌어도(달력이 다음 줄로 넘어가도) 계속
+    // 이어지는 것처럼 보이도록, 그 주의 첫/마지막 칸(일/토)에서도 끝처럼 둥글게 마감하지
+    // 않고 실제 시작일/종료일에서만 둥글게 마감한다.
     const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) => {
         const isTrueStart = dateStr === ev.startDate;
         const isTrueEnd = dateStr === ev.endDate;
         const roundLeft = isTrueStart || isWeekStart;
         const roundRight = isTrueEnd || isWeekEnd;
-        const showLabel = isTrueStart || isWeekStart;
         const bleedLeft = roundLeft ? '0' : '-8px';
         const bleedRight = roundRight ? '0' : '-8px';
         const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
-        const labelHtml = showLabel && ev.person ? `<span class="cal-longterm-bar-label">${calEscapeHTML(ev.person)}</span>` : '';
-        const descHtml = showLabel && ev.desc ? `<span class="cal-longterm-bar-desc">${calEscapeHTML(ev.desc)}</span>` : '';
-        return `<div class="cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color:${ev.color || '#ffedd5'};">${labelHtml}${descHtml}</div>`;
+        const timeHtml = ev.time ? `<span class="cal-event-time">${calEscapeHTML(ev.time)}</span>` : '';
+        const personHtml = ev.person ? `<span class="cal-event-person">${calEscapeHTML(ev.person)}</span>` : '';
+        return `
+            <div class="cal-cell-event cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; border-radius:${radius}; background-color: ${ev.color || '#ffedd5'};">
+                <div class="cal-cell-top">${timeHtml}${personHtml}</div>
+                <div class="cal-event-desc">${calEscapeHTML(ev.desc)}</div>
+            </div>
+        `;
     };
 
     const calRenderCalendar = () => {
