@@ -445,7 +445,7 @@
         .cal-event-person { font-weight: 800; font-size: var(--fs-body); color: #666; margin-left: auto; text-align: right; }
         .cal-event-desc { font-size: var(--fs-body); font-weight: 400; color: var(--color-text-main); text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.25; }
 
-        /* 장기 일정(예: 장기휴방) 막대 - 날짜 숫자 바로 아래, 하루짜리 일정보다 위에 고정해서
+        /* 기간(장기) 일정 막대 - 날짜 숫자 바로 아래, 하루짜리 일정보다 위에 고정해서
            그 날 하루짜리 일정이 몇 개든 상관없이 같은 주(줄)의 막대들이 수평으로 나란히 보인다.
            calendar.js가 시작일/종료일이 아닌 칸에서는 좌우로 -8px씩 밀어(.cal-day-cell의
            padding:8px을 상쇄) 옆 칸 막대와 이어붙게 만든다. */
@@ -462,4 +462,4 @@
         .cal-card-time { color: var(--color-text-main); font-weight: 400; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
         .cal-card-person { font-weight: 800; color: #666; font-size: var(--fs-body); }
         .cal-card-desc { color: var(--color-text-main); font-size: var(--fs-body); flex-grow: 1; font-weight: 400; }
-        .cal-card-detail { font-size: 12px; }
+        .cal-card-detail { font-size: 12px; color: var(--color-text-sub); font-weight: 400; }
