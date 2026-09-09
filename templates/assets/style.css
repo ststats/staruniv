@@ -406,9 +406,16 @@
         /* 모바일에서는 column, PC에서는 row */
         .cal-main-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
         
-        /* PC: Sidebar가 왼쪽(order: 1) / Calendar는 오른쪽(order: 2) */
-        .cal-sidebar { width: 360px; display: flex; flex-direction: column; gap: 24px; flex-shrink: 0; order: 1; }
-        .cal-calendar-area { display: flex; flex-direction: column; gap: 16px; flex: 1 1 0%; min-width: 0; overflow: hidden; order: 2; width: 100%; }
+        /* PC: Sidebar가 왼쪽(order: 1) / Calendar는 오른쪽(order: 2)
+           너비 축소 우선순위: 폭이 좁아지면 ① 사이드바(오늘의 일정 등)가 먼저
+           min-width(280px)까지 줄어들고, ② 사이드바가 최소너비에 도달한 뒤에야
+           캘린더 영역이 자기 너비(804px = 110px×7칸 + 카드 패딩/보더)보다
+           좁아지며 내부 스크롤이 생긴다. flex-shrink 값을 서로 크게 차등을 둬서
+           (사이드바 50 : 캘린더 1) 컨테이너가 줄어들 때 그 차이의 비율만큼
+           사이드바가 훨씬 먼저·훨씬 많이 줄어들도록 한 것 - 순수 CSS만으로
+           "먼저 줄었다 늘었다 → 그 다음에야 스크롤" 순서를 근사한다. */
+        .cal-sidebar { width: 360px; min-width: 280px; max-width: 360px; display: flex; flex-direction: column; gap: 24px; flex-grow: 0; flex-shrink: 50; order: 1; }
+        .cal-calendar-area { display: flex; flex-direction: column; gap: 16px; width: 804px; flex-grow: 0; flex-shrink: 1; min-width: 0; overflow: hidden; order: 2; }
         .cal-calendar-area > .section-title { margin-bottom: 0; }
         .cal-calendar-area .clean-card { min-width: 0; max-width: 100%; display: flex; flex-direction: column; width: 100%; overflow: hidden; }
 
@@ -433,11 +440,11 @@
 
         /* 요일 헤더는 사이트의 다른 표 헤더(.stat-table thead th)랑 폰트크기/굵기/색을
            통일해서, 달력만 따로 노는 느낌 없이 사이트 전체 타이포 스케일에 맞춘다. */
-        .cal-weekdays { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); text-align: center; font-size: var(--fs-body); font-weight: 800; color: #666; background: #fff; padding: 8px 0; border-bottom: 2px solid var(--color-border-strong); margin-bottom: 0; }
+        .cal-weekdays { display: grid; grid-template-columns: repeat(7, 110px); text-align: center; font-size: var(--fs-body); font-weight: 800; color: #666; background: #fff; padding: 8px 0; border-bottom: 2px solid var(--color-border-strong); margin-bottom: 0; }
         .cal-weekdays div:first-child { color: var(--color-lose); }
         .cal-weekdays div:last-child { color: var(--color-primary); }
 
-        .cal-days-grid { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); }
+        .cal-days-grid { display: grid; grid-template-columns: repeat(7, 110px); }
         .cal-day-cell { background: #fff; min-height: 110px; display: flex; flex-direction: column; padding: 8px; cursor: pointer; border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); transition: background 0.15s; box-sizing: border-box; }
         .cal-day-cell:hover { background: var(--color-primary-tint); }
         .cal-day-cell.other-month { background: #fafbfc; }
@@ -449,8 +456,14 @@
         .cal-day-cell:nth-child(7n+1) .cal-day-number { color: var(--color-lose); }
         .cal-day-cell:nth-child(7n) .cal-day-number { color: var(--color-primary); }
         .cal-day-cell.holiday .cal-day-number { color: var(--color-lose) !important; }
-        .cal-day-cell.today .cal-day-number { width: max-content; position: relative; z-index: 1; }
-        .cal-day-cell.today .cal-day-number::after { content: ''; position: absolute; bottom: 1px; left: -3px; right: -3px; height: 8px; background-color: var(--color-primary-tint-strong); z-index: -1; border-radius: 4px; }
+        /* 숫자의 위치/레이아웃(margin, line-height 등)은 기존과 완전히 동일하게 두고,
+           ::after는 absolute라 문서 흐름에 영향을 주지 않으므로 이 부분만 확대하고
+           배경을 진하게 채워 눈에 훨씬 잘 띄는 알약형 배지로 바꾼다. */
+        .cal-day-cell.today .cal-day-number { width: max-content; position: relative; z-index: 1; color: #fff; }
+        .cal-day-cell.today .cal-day-number::after { content: ''; position: absolute; top: -3px; bottom: -3px; left: -6px; right: -6px; background-color: var(--color-primary); z-index: -1; border-radius: 6px; box-shadow: 0 1px 3px rgba(41,121,255,0.35); }
+        /* 공휴일과 겹치는 오늘 날짜는 공휴일 빨간색(!important)보다 이 규칙이
+           클래스 4개로 특정도가 더 높아 항상 이긴다 - 배경이 채워지므로 흰색으로. */
+        .cal-day-cell.today.holiday .cal-day-number { color: #fff !important; }
 
         .cal-cell-event { border-radius: 6px; padding: 4px 4px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; color: #222; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .cal-cell-top { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
