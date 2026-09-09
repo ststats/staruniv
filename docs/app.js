@@ -329,15 +329,44 @@
     // 리스트에서 글을 클릭했을 때 - 그 글을 왼쪽 "최신 글" 자리로 올린다.
     // (배열 순서나 날짜는 전혀 안 건드리고, 어떤 글을 최신 글 자리에 그릴지 나타내는
     // 값만 바꾼 뒤 다시 그린다 - 그래서 오른쪽 리스트는 항상 날짜순이 유지된다)
+    //
+    // 모바일에서는 특히, 원래 커져 있던 글(보통 목록 위쪽)이 다시 작아지면서
+    // 그 아래 내용이 전부 위로 확 당겨 올라온다 - 그래서 방금 탭한 글이 "그 자리에서
+    // 커지는" 게 아니라 화면 위쪽으로 훅 튀어 올라가는 것처럼 보였다. 이를 막기 위해
+    // 다시 그리기 전/후로 그 글(data-news-key로 찾음)의 화면상 위치를 비교해서,
+    // 그 차이만큼 스크롤을 보정해 방금 탭한 자리에 그대로 붙어있는 것처럼 만든다.
     function setNewsFeatured(key) {
+        const content = document.getElementById('news-feed-content');
+        const beforeEl = content.querySelector(`[data-news-key="${CSS.escape(key)}"]`);
+        const beforeTop = beforeEl ? beforeEl.getBoundingClientRect().top : null;
+
         newsFeaturedKey = key;
-        renderNewsLayout(document.getElementById('news-feed-content'));
+        renderNewsLayout(content);
+
+        if (beforeTop !== null) {
+            const afterEl = content.querySelector(`[data-news-key="${CSS.escape(key)}"]`);
+            if (afterEl) {
+                const afterTop = afterEl.getBoundingClientRect().top;
+                window.scrollBy(0, afterTop - beforeTop);
+            }
+        }
     }
 
     // "전체 공지"/"멤버별 공지" 공용 렌더러. newsItems를 항상 날짜순으로 다시 정렬해서
     // 그 중 newsFeaturedKey에 해당하는 글은 왼쪽 큰 카드로, 나머지는 오른쪽 리스트로 그린다.
+    // 모바일에서는 화면이 좁아서 "왼쪽 큰 글 + 오른쪽 리스트"를 그냥 위아래로 쌓으면
+    // 큰 글이 항상 맨 위에 고정돼버려서, 리스트에서 글을 눌러도 화면 위로 스크롤해야
+    // 그 글이 커진 게 보인다. 그래서 모바일에서는 아예 다른 방식으로 그린다:
+    // 날짜순 리스트 하나만 있고, 지금 선택된 글만 "그 자리에서" 큰 카드로 확대되고
+    // 원래 커져 있던 글은 원래 있던 자리(날짜순 위치)로 다시 작아진다.
+    const NEWS_MOBILE_BREAKPOINT = 700;
+    function isNewsMobileLayout() {
+        return window.matchMedia(`(max-width: ${NEWS_MOBILE_BREAKPOINT}px)`).matches;
+    }
+
     function renderNewsLayout(content) {
         if (newsItems.length === 0) {
+            content.classList.remove('news-feed-mobile');
             content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');
             return;
         }
@@ -346,24 +375,51 @@
         if (!newsFeaturedKey || !sorted.some(it => newsItemKey(it) === newsFeaturedKey)) {
             newsFeaturedKey = newsItemKey(sorted[0]); // 기본값: 가장 최신 글
         }
-        const featuredItem = sorted.find(it => newsItemKey(it) === newsFeaturedKey);
-        const restItems = sorted.filter(it => newsItemKey(it) !== newsFeaturedKey);
 
         const loadMoreHtml = newsHasMore
             ? `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>`
             : '';
 
-        content.innerHTML = `
-            <div class="featured-post">${renderFeaturedPostHtml(featuredItem)}</div>
-            <div class="past-posts">
-                <div id="news-past-list">${restItems.length ? restItems.map(renderPastNoticeHtml).join('') : emptyStateHtml('지난 글이 없습니다.')}</div>
-                ${loadMoreHtml}
-            </div>`;
+        if (isNewsMobileLayout()) {
+            content.classList.add('news-feed-mobile');
+            // 날짜순 그대로 하나의 리스트로 그리되, 선택된 글만 큰 카드로 바꿔서 그 자리에 끼워 넣는다.
+            const itemsHtml = sorted.map(item => newsItemKey(item) === newsFeaturedKey
+                ? `<div class="featured-post" data-news-key="${escapeHTML(newsItemKey(item))}">${renderFeaturedPostHtml(item)}</div>`
+                : renderPastNoticeHtml(item)
+            ).join('');
+            content.innerHTML = itemsHtml + loadMoreHtml;
+        } else {
+            content.classList.remove('news-feed-mobile');
+            const featuredItem = sorted.find(it => newsItemKey(it) === newsFeaturedKey);
+            const restItems = sorted.filter(it => newsItemKey(it) !== newsFeaturedKey);
+            content.innerHTML = `
+                <div class="featured-post" data-news-key="${escapeHTML(newsItemKey(featuredItem))}">${renderFeaturedPostHtml(featuredItem)}</div>
+                <div class="past-posts">
+                    <div id="news-past-list">${restItems.length ? restItems.map(renderPastNoticeHtml).join('') : emptyStateHtml('지난 글이 없습니다.')}</div>
+                    ${loadMoreHtml}
+                </div>`;
+        }
         checkNewsClampButtons(content);
     }
 
     // 더보기: 지금 화면이 "전체 공지"면 이미 모아둔 allNewsPool에서 더 꺼내 보여주고,
     // 특정 멤버면 그 멤버의 다음 페이지를 서버에 추가로 요청한다.
+    // 창 크기를 조절하다 모바일 기준선을 넘나들면(회전, 브라우저 창 크기 조절 등)
+    // 레이아웃 방식 자체가 바뀌어야 하므로 다시 그려준다. 리사이즈 이벤트가
+    // 프레임마다 여러 번 발생할 수 있어 requestAnimationFrame으로 한 번만 처리한다.
+    let newsResizeScheduled = false;
+    window.addEventListener('resize', () => {
+        if (newsItems.length === 0 || newsResizeScheduled) return;
+        newsResizeScheduled = true;
+        requestAnimationFrame(() => {
+            newsResizeScheduled = false;
+            const content = document.getElementById('news-feed-content');
+            if (!content) return;
+            const wasMobile = content.classList.contains('news-feed-mobile');
+            if (wasMobile !== isNewsMobileLayout()) renderNewsLayout(content);
+        });
+    });
+
     async function loadMoreNewsFeed() {
         if (newsLoading) return;
         newsLoading = true;
@@ -604,7 +660,7 @@
         const key = jsStrEscape(newsItemKey(item));
 
         return `
-        <div class="home-notice-card" onclick="setNewsFeatured('${key}')">
+        <div class="home-notice-card" onclick="setNewsFeatured('${key}')" data-news-key="${escapeHTML(newsItemKey(item))}">
             <div class="home-notice-main">
                 <div class="home-notice-top">
                     ${avatarHtml(soopId, 'home-notice-avatar')}
