@@ -255,7 +255,7 @@
         .news-post-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); border: 1px solid var(--color-border); flex-shrink: 0; }
         .news-post-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
         .news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
-        .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; padding: 0 16px; }
+        .news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; padding: 0 16px; overflow-wrap: anywhere; word-break: break-word; }
         .news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
         .news-post-body p { margin: 0 0 8px; }
         .news-post-body p:last-child { margin-bottom: 0; }
@@ -315,8 +315,9 @@
         /* 모바일(700px 이하): 좌우 분리 대신 날짜순 단일 리스트로 그려지고,
            선택된 글만 그 자리에서 커진다. 큰 카드의 flex-basis(600px)는
            세로 스택에는 안 맞으니 여기서 되돌린다. */
-        #news-feed-content.news-feed-mobile { flex-direction: column; gap: 12px; }
-        #news-feed-content.news-feed-mobile > .featured-post { flex: 0 0 auto; width: 100%; min-width: 0; }
+        #news-feed-content.news-feed-mobile { flex-direction: column; flex-wrap: nowrap; gap: 12px; max-width: 100%; overflow-x: hidden; }
+        #news-feed-content.news-feed-mobile > .featured-post { flex: 0 0 auto; width: 100%; min-width: 0; max-width: 100%; }
+        #news-feed-content.news-feed-mobile > .home-notice-card { min-width: 0; max-width: 100%; }
         #news-feed-content.news-feed-mobile > .news-load-more-wrap { text-align: center; padding-top: 4px; }
         /* PC용 좌우 화살표 - 평소엔 숨겨뒀다가 사진 영역에 마우스를 올리면(hover) 나타난다.
            터치 기기는 hover 개념이 없어서(@media hover:none) 화살표를 아예 렌더링하지 않고
