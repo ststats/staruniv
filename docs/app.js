@@ -938,10 +938,17 @@
 
         const active = isActiveMember(m);
         const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : (m['퇴단일'] || null)) : null;
+        // 다른 뱃지들(직책/티어/종족)과 같은 tag-badge 패밀리(사각 배지+테두리)를 그대로 써서
+        // 톤을 맞춘다 - 예전엔 알약 모양 전용 스타일(.days-chip)이라 이질적으로 보였다.
+        // 그리고 옆의 일반 텍스트와 vertical-align:middle로만 맞추면 줄간격 때문에 살짝
+        // 어긋나 보여서(실측 약 2px), 텍스트와 뱃지를 flex로 묶어 기준선이 아니라 박스
+        // 높이 기준으로 정렬한다.
         const daysBadge = days !== null
-            ? ` <span class="days-chip">${days}일${active ? '째' : ''}</span>`
+            ? `<span class="tag-badge tier-badge">${days}일${active ? '째' : ''}</span>`
             : '';
-        const period = m['입단일'] ? `${m['입단일']} ~ ${active ? '현재' : (m['퇴단일'] || '-')}${daysBadge}` : '-';
+        const period = m['입단일']
+            ? `<span class="d-inline-flex align-items-center flex-wrap gap-1">${m['입단일']} ~ ${active ? '현재' : (m['퇴단일'] || '-')}${daysBadge}</span>`
+            : '-';
         const soopId = m['SOOP ID'];
         const isValidSoopId = soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
         const broadcast = isValidSoopId
