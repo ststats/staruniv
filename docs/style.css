@@ -266,13 +266,12 @@
         .news-post-photos {
             display: flex;
             overflow-x: auto;
-            touch-action: pan-y;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
         .news-post-photos::-webkit-scrollbar { display: none; }
-        .news-post-photos img { flex: 0 0 100%; width: 100%; aspect-ratio: 4 / 3; max-height: 600px; object-fit: cover; border-radius: 0; scroll-snap-align: start; display: block; background: var(--color-bg-subtle); }
+        .news-post-photos img { flex: 0 0 100%; width: 100%; max-height: 600px; object-fit: cover; border-radius: 0; scroll-snap-align: start; display: block; background: var(--color-bg-subtle); }
         .news-post-photos-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 7px; pointer-events: none; }
         .photo-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: background 0.15s, transform 0.15s; }
         .photo-dot.active { background: #fff; transform: scale(1.25); box-shadow: 0 1px 4px rgba(0,0,0,0.6); }
@@ -448,7 +447,7 @@
 
         .cal-cell-event { border-radius: 6px; padding: 4px 4px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; color: #222; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .cal-cell-top { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
-        .cal-event-time { font-size: 12px; font-weight: 400; color: var(--color-text-main); }
+        .cal-event-time { font-size: 12px; font-weight: 500; color: var(--color-text-main); }
         .cal-event-person { font-weight: 800; font-size: var(--fs-body); color: #666; margin-left: auto; text-align: right; }
         .cal-event-desc { font-size: 12px; font-weight: 500; color: var(--color-text-main); text-align: right; white-space: pre-wrap; word-break: break-all; margin-left: auto; line-height: 1.25; }
 
