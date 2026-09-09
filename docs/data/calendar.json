@@ -199,6 +199,16 @@
       "desc": "결승전",
       "detail": "",
       "color": "#f1f5f9"
+    },
+    {
+      "id": 1788951874127,
+      "startDate": "2026-09-20",
+      "endDate": "2026-09-21",
+      "time": "",
+      "person": "캄몬",
+      "desc": "24시간",
+      "detail": "",
+      "color": "#ffe4e6"
     }
   ]
 }
