@@ -330,35 +330,17 @@
     // (배열 순서나 날짜는 전혀 안 건드리고, 어떤 글을 최신 글 자리에 그릴지 나타내는
     // 값만 바꾼 뒤 다시 그린다 - 그래서 오른쪽 리스트는 항상 날짜순이 유지된다)
     //
-    // PC와 모바일은 스크롤을 다루는 방식이 다르다:
-    // - PC: 클릭한 글이 같은 자리가 아니라 아예 왼쪽 큰 카드 자리로 옮겨가므로
-    //   "그 자리에 붙어있게" 보정하는 게 의미가 없다(오히려 화면을 엉뚱하게 크게
-    //   스크롤시켜 페이지 맨 위로 튀는 원인이 됐다). 대신 페이지 전체 스크롤은
-    //   건드리지 않고, 다시 그리면서 초기화되는 오른쪽 리스트(#news-past-list)의
-    //   내부 스크롤 위치만 그대로 복원한다.
-    // - 모바일: 탭한 글이 같은 리스트 안에서 그 자리에 커지므로, 원래 커져 있던
-    //   글이 작아지면서 그 아래 내용이 위로 당겨 올라와 탭한 글이 화면 위로 튀어
-    //   보이는 문제가 있었다. 다시 그리기 전/후로 그 글(data-news-key로 찾음)의
-    //   화면상 위치를 비교해서 그 차이만큼 스크롤을 보정해 그 자리에 그대로
-    //   붙어있는 것처럼 만든다.
+    // 모바일에서는 스크롤을 건드리지 않는다(별도 보정 없음) - 그냥 다시 그려질 뿐이다.
+    // PC에서는 클릭한 글이 완전히 다른 위치(왼쪽 큰 카드)로 옮겨가므로 페이지
+    // 전체 스크롤은 그대로 두고, 다시 그리면서 초기화되는 오른쪽 리스트
+    // (#news-past-list)의 내부 스크롤 위치만 그대로 복원한다.
     function setNewsFeatured(key) {
         const content = document.getElementById('news-feed-content');
         const isMobile = content.classList.contains('news-feed-mobile');
 
         if (isMobile) {
-            const beforeEl = content.querySelector(`[data-news-key="${CSS.escape(key)}"]`);
-            const beforeTop = beforeEl ? beforeEl.getBoundingClientRect().top : null;
-
             newsFeaturedKey = key;
             renderNewsLayout(content);
-
-            if (beforeTop !== null) {
-                const afterEl = content.querySelector(`[data-news-key="${CSS.escape(key)}"]`);
-                if (afterEl) {
-                    const afterTop = afterEl.getBoundingClientRect().top;
-                    window.scrollBy(0, afterTop - beforeTop);
-                }
-            }
         } else {
             const listEl = document.getElementById('news-past-list');
             const savedScrollTop = listEl ? listEl.scrollTop : 0;
@@ -378,9 +360,16 @@
     // 그 글이 커진 게 보인다. 그래서 모바일에서는 아예 다른 방식으로 그린다:
     // 날짜순 리스트 하나만 있고, 지금 선택된 글만 "그 자리에서" 큰 카드로 확대되고
     // 원래 커져 있던 글은 원래 있던 자리(날짜순 위치)로 다시 작아진다.
-    const NEWS_MOBILE_BREAKPOINT = 700;
+    // 고정된 픽셀 값(예: 700px)으로 모바일 전환 기준을 잡으면, 실제로 두 컬럼이
+    // 옆으로 나란히 들어갈 수 있는지와 무관한 임의의 숫자가 된다. 대신 CSS에서
+    // 두 컬럼에 준 min-width(.featured-post 300px + .past-posts 300px) + gap(28px)을
+    // 그대로 기준으로 삼아서, "오른쪽 리스트가 폭이 부족해 아래로 떨어지려는 바로 그
+    // 순간"에 정확히 모바일(단일 리스트) 모드로 전환되게 한다.
+    const NEWS_TWO_COL_MIN_WIDTH = 300 + 28 + 300; // .featured-post min-width + gap + .past-posts min-width
     function isNewsMobileLayout() {
-        return window.matchMedia(`(max-width: ${NEWS_MOBILE_BREAKPOINT}px)`).matches;
+        const content = document.getElementById('news-feed-content');
+        if (!content) return false;
+        return content.clientWidth < NEWS_TWO_COL_MIN_WIDTH;
     }
 
     function renderNewsLayout(content) {
@@ -442,6 +431,10 @@
     async function loadMoreNewsFeed() {
         if (newsLoading) return;
         newsLoading = true;
+        // 리스트를 다시 그리면 #news-past-list가 새로 만들어지면서 스크롤이 0으로
+        // 초기화되니, 더보기로 항목이 추가된 뒤에도 보던 위치 그대로 있도록 저장해둔다.
+        const listElBefore = document.getElementById('news-past-list');
+        const savedScrollTop = listElBefore ? listElBefore.scrollTop : 0;
         try {
             if (newsMode === 'all') {
                 allNewsShownCount = Math.min(allNewsShownCount + 10, allNewsPool.length);
@@ -455,6 +448,8 @@
                 newsHasMore = newsCurrentPage < newsTotalPages;
             }
             renderNewsLayout(document.getElementById('news-feed-content'));
+            const listElAfter = document.getElementById('news-past-list');
+            if (listElAfter) listElAfter.scrollTop = savedScrollTop;
         } finally {
             newsLoading = false;
         }
