@@ -292,30 +292,26 @@
            ============================================================ */
         #news-feed-content { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 28px; align-items: stretch; }
 
-        /* 최신 글 카드는 왼쪽에 고정 폭(600px)으로 붙고, PC에서는 오른쪽 리스트를
-           스크롤해서 내려도 화면 중앙에 붙어서 같이 따라온다 (position:sticky +
-           top:50%/translateY(-50%) 조합 - 부모(.featured-post)가 align-items:stretch로
-           오른쪽 리스트 높이만큼 늘어나 있어서, 그 안에서 카드가 화면 중앙에 뜬 채로
-           스크롤을 따라 움직일 수 있는 여유 공간이 생긴다). 모바일에서는 아래에서
-           position:static으로 되돌려 일반 리스트 항목처럼 그냥 흘러가게 한다.
-        */
+        /* 최신 글 카드는 왼쪽에 고정 폭(600px)으로 붙어서 그대로 있고, 오른쪽 지난 글
+           목록만 그 카드 높이에 맞춰(align-items:stretch) 내부적으로 스크롤된다. */
         .featured-post { flex: 0 1 600px; min-width: 300px; }
-        .featured-post .news-post-card { margin-bottom: 0; position: sticky; top: 50%; transform: translateY(-50%); }
+        .featured-post .news-post-card { margin-bottom: 0; }
 
-        /* 오른쪽 지난 글 목록 - 더 이상 자체 스크롤을 갖지 않고, 페이지 자체가 스크롤되며
-           (그동안 왼쪽 최신 글 카드가 화면 중앙에 붙어 따라온다) 남는 가로 폭을 전부
-           차지하도록 늘어난다. 리스트 항목은 클릭하면(홈 화면과 달리 원글 이동이
-           아니라) 그 글을 왼쪽 "최신 글" 자리로 올린다. */
-        .past-posts { flex: 1 1 340px; min-width: 300px; }
-        #news-past-list { display: flex; flex-direction: column; gap: 12px; }
-        .past-posts .news-load-more-wrap { text-align: center; padding-top: 12px; }
+        /* 오른쪽 지난 글 목록 - 왼쪽 최신 글 카드 높이에 맞춰 늘어나고(align-items:stretch),
+           그 안에서 넘치는 만큼만 스크롤된다(왼쪽 카드는 그대로 고정된 것처럼 보임).
+           리스트 항목은 클릭하면(홈 화면과 달리 원글 이동이 아니라) 그 글을 왼쪽
+           "최신 글" 자리로 올린다. */
+        .past-posts { flex: 1 1 340px; min-width: 300px; display: flex; flex-direction: column; }
+        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; padding-right: 2px; }
+        #news-past-list::-webkit-scrollbar { width: 5px; }
+        #news-past-list::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
+        .past-posts .news-load-more-wrap { flex-shrink: 0; text-align: center; padding-top: 12px; }
 
         /* 모바일(700px 이하): 좌우 분리 대신 날짜순 단일 리스트로 그려지고,
-           선택된 글만 그 자리에서 커진다. 큰 카드의 flex-basis(600px)와
-           PC용 화면 중앙 스티키 효과는 세로 스택에는 안 맞으니 여기서 되돌린다. */
+           선택된 글만 그 자리에서 커진다. 큰 카드의 flex-basis(600px)는
+           세로 스택에는 안 맞으니 여기서 되돌린다. */
         #news-feed-content.news-feed-mobile { flex-direction: column; gap: 12px; }
         #news-feed-content.news-feed-mobile > .featured-post { flex: 0 0 auto; width: 100%; min-width: 0; }
-        #news-feed-content.news-feed-mobile .featured-post .news-post-card { position: static; transform: none; }
         #news-feed-content.news-feed-mobile > .news-load-more-wrap { text-align: center; padding-top: 4px; }
         /* PC용 좌우 화살표 - 평소엔 숨겨뒀다가 사진 영역에 마우스를 올리면(hover) 나타난다.
            터치 기기는 hover 개념이 없어서(@media hover:none) 화살표를 아예 렌더링하지 않고
