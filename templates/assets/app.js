@@ -947,7 +947,7 @@
             ? `<span class="tag-badge tier-badge">${days}일${active ? '째' : ''}</span>`
             : '';
         const period = m['입단일']
-            ? `<span class="d-inline-flex align-items-center flex-wrap gap-1">${m['입단일']} ~ ${active ? '현재' : (m['퇴단일'] || '-')}${daysBadge}</span>`
+            ? `<span class="d-inline-flex align-items-center flex-wrap gap-2">${m['입단일']} ~ ${active ? '현재' : (m['퇴단일'] || '-')}${daysBadge}</span>`
             : '-';
         const soopId = m['SOOP ID'];
         const isValidSoopId = soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
