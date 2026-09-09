@@ -426,12 +426,16 @@
         return (data.content && data.content.textContent) || '';
     }
 
-    // 렌더링 직후 "더보기"가 필요한지 판단한다 - 텍스트 길이로 미리 판단하지 않고, 실제로
-    // 3줄(clamp) 안에 다 들어가는지를 DOM에서 직접 재보고 넘칠 때만 버튼을 보여준다.
+    // 렌더링 직후 "더보기"가 필요한지 판단한다. 두 가지를 같이 본다:
+    // 1) 실제로 3줄(clamp) 안에 다 들어가는지 DOM에서 직접 재본 결과(넘치면 표시)
+    // 2) 목록 API가 이미 "..."으로 잘라서 내려준 미리보기인 경우 - 이런 글은 원문이
+    //    3줄보다 짧아 보여도(넘치지 않아도) 실제로는 잘린 상태이므로 버튼을 띄운다.
     function checkNewsClampButtons(container) {
         container.querySelectorAll('.news-post-body-clamp:not([data-clamp-checked])').forEach(body => {
             body.setAttribute('data-clamp-checked', '1');
-            if (body.scrollHeight > body.clientHeight + 1) {
+            const overflowed = body.scrollHeight > body.clientHeight + 1;
+            const looksApiTruncated = /(\.\.\.|…)\s*$/.test((body.textContent || '').trim());
+            if (overflowed || looksApiTruncated) {
                 const btn = body.nextElementSibling;
                 if (btn && btn.classList.contains('news-post-more-btn')) btn.style.display = 'inline-flex';
             }
@@ -496,9 +500,11 @@
             ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
             ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsStrEscape(soopId)}', ${post.titleNo})">더보기</button>` : ''}
             ${photosHtml}
-            <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
-                원글 보기 <span class="ext-arrow">↗</span>
-            </a>
+            <div class="news-post-link-row">
+                <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
+                    원글 보기 <span class="ext-arrow">↗</span>
+                </a>
+            </div>
         </div>`;
     }
 
