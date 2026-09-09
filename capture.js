@@ -19,8 +19,11 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const PORT = 8791;
-// 실제 admin.html에서 개발자도구로 직접 확인한 값(#captureMonth 902.4px)으로 고정.
-const CAPTURE_WIDTH = 902.4;
+// 요일칸이 110px 고정폭(가변 minmax 아님)으로 바뀌면서 캘린더 그리드 실제 너비가
+// 7일 × 110px = 770px로 고정됐다. 여기에 그리드를 감싸는 .clean-card의 패딩(p-3,
+// 좌우 16px씩)과 테두리(1px씩)를 더한 770 + 32 + 2 = 804px가 화면에 스크롤 없이
+// 꽉 차게 보이는 실제 캘린더 폭이므로, 이 값으로 캡처 너비를 고정한다.
+const CAPTURE_WIDTH = 804;
 
 function waitForServer(url, timeoutMs) {
     const start = Date.now();
