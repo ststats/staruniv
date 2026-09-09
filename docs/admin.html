@@ -44,6 +44,9 @@
 
     .admin-token-bar { display: flex; gap: 8px; flex-wrap: wrap; }
     .admin-token-bar input { flex: 1 1 160px; min-width: 0; }
+    /* 큰 타이틀(h1) 오른쪽에 저장 버튼을 나란히 두는 헤더 줄 - 일정/도구 탭에서 공용으로 씀 */
+    .admin-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .admin-header-row .page-header-title { margin-bottom: 0; }
     .admin-token-bar input {
         flex: 1; height: 40px; padding: 0 12px; border: 1px solid var(--color-border);
         border-radius: 8px; font-size: var(--fs-body); font-family: inherit;
@@ -131,14 +134,11 @@
 </div>
 
 <div id="page-schedule" class="page-section container">
-    <div class="page-header">
+    <div class="page-header admin-header-row">
         <h1 class="page-header-title">일정 관리</h1>
-    </div>
-    <hr class="page-header-divider">
-
-    <div class="d-flex justify-content-end mb-4">
         <button id="saveAllBtn" class="btn-solid btn-solid-primary" onclick="saveAllToGithub()">저장</button>
     </div>
+    <hr class="page-header-divider">
 
     <div class="admin-layout">
         <!-- 왼쪽: 사이트 캘린더 페이지랑 완전히 동일한 구조/클래스 -->
@@ -241,14 +241,11 @@
 </div>
 
 <div id="page-tools" class="page-section container">
-    <div class="page-header">
+    <div class="page-header admin-header-row">
         <h1 class="page-header-title">도구 관리</h1>
-    </div>
-    <hr class="page-header-divider">
-
-    <div class="d-flex justify-content-end mb-4">
         <button id="saveToolsBtn" class="btn-solid btn-solid-primary" onclick="saveToolsToGithub()">저장</button>
     </div>
+    <hr class="page-header-divider">
 
     <div class="section-title">외부 도구</div>
     <div class="clean-card p-4 mb-4">
