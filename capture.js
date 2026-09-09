@@ -95,7 +95,22 @@ function waitForServer(url, timeoutMs) {
         await page.evaluate((w) => {
             const captureEl = document.getElementById('captureMonth');
             const sideEl = document.querySelector('.admin-side');
+            const mainEl = document.querySelector('.admin-main');
+            // 진짜 flex-grow 주범은 #captureMonth(cal-calendar-area)가 아니라
+            // 그 조상인 .admin-main(flex:1 1 0%)이다. .admin-side("오늘의 일정")를
+            // 숨기면 .admin-main이 flex-grow로 빈 공간을 다시 채우며 커지고,
+            // 그 안의 cal-main-layout(width:100%) → #captureMonth(width:100%)로
+            // 그대로 전파돼 커진다. 그래서 .admin-main 자체를 측정된 폭으로 못박아
+            // 더 이상 커지지 않게 해야 한다.
+            if (mainEl) {
+                mainEl.style.flex = `0 0 ${w}px`;
+                mainEl.style.width = w + 'px';
+            }
             if (sideEl) sideEl.style.display = 'none';
+            // cal-calendar-area 클래스 자체도 style.css상 flex:1 1 0%라서, 혹시
+            // admin-main 고정만으로 충분하지 않은 경우를 대비해 이 요소 자체의
+            // flex도 함께 못박아 이중으로 안전장치를 둔다.
+            captureEl.style.flex = `0 0 ${w}px`;
             captureEl.style.width = w + 'px';
             captureEl.style.maxWidth = 'none';
             captureEl.style.padding = '16px';
