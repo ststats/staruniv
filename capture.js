@@ -63,6 +63,12 @@ function waitForServer(url, timeoutMs) {
 
         await page.goto(`http://localhost:${PORT}/admin.html`, { waitUntil: 'networkidle0' });
 
+        // admin.html은 이제 기본 활성 탭이 '홈'이라 '일정' 탭(#captureMonth가 있는 곳)은
+        // display:none 상태로 시작한다. 그대로 두면 캡처 대상이 화면에 없는 걸로 처리돼
+        // Puppeteer가 "Node is either not visible" 에러를 낸다. switchPage()로 강제로
+        // '일정' 탭을 활성화해서 렌더링되게 한다.
+        await page.evaluate(() => switchPage('schedule'));
+
         // admin.html의 init()이 GitHub에서 일정 데이터를 불러와 렌더링을 끝낼 시간을 준다.
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
