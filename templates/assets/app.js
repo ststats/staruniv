@@ -329,7 +329,7 @@
         return `
         <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
             <span class="mv-order-num">${idx + 1}.</span>
-            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">★</button>` : ''}
+            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">메인</button>` : ''}
             <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>

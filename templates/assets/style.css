@@ -493,9 +493,9 @@
         .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: #333; }
         .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
         .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
-        .mv-order-item .mv-order-focus { color: #ccc; }
-        .mv-order-item .mv-order-focus:hover { color: #e8a400; }
-        .mv-order-item .mv-order-focus.active { color: #f5a623; }
+        .mv-order-item .mv-order-focus { width: auto; height: auto; border: 1px solid var(--color-border-strong); background: transparent; color: var(--color-text-sub); font-size: 10px; font-weight: 700; border-radius: 999px; padding: 2px 8px; line-height: 1.4; }
+        .mv-order-item .mv-order-focus:hover { border-color: var(--color-primary); color: var(--color-primary); background: transparent; }
+        .mv-order-item .mv-order-focus.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
         .mv-order-empty { font-size: var(--fs-body); color: var(--color-text-sub); }
 
         .mv-actionbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 4px; padding: 14px 18px; background: var(--color-primary-tint); border-radius: 10px; }
