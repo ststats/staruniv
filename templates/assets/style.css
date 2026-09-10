@@ -105,6 +105,11 @@
            (padding은 절대 병합되지 않고 무조건 더해지므로, 페이지마다 안쪽 구조가
            다르면 padding 방식은 여백이 제각각 벌어지는 문제가 생긴다.) */
         .page-section > *:last-child { margin-bottom: var(--space-page-bottom) !important; }
+        /* 도구 탭은 멀티뷰어/외부도구 두 뷰가 형제 엘리먼트로 같이 있고 그 중
+           하나만 display:block으로 보이는 구조라(막상 화면에 보이는 게 항상
+           DOM상 마지막 자식은 아님), 위 :last-child 규칙이 안 먹는 경우가 있다.
+           그래서 두 뷰 모두에 하단 여백을 직접 못박아 다른 페이지와 똑같이 맞춘다. */
+        #view-tools-multiviewer, #view-tools-external { margin-bottom: var(--space-page-bottom); }
         /* 탭 전환 구조(멤버 현황/공지, 전적 팀/개인)는 두 뷰가 다 .page-section의
            직속 자식으로 나란히 있고 하나만 display:block이라, :last-child가 DOM
            순서상 뒤에 있는(꼭 지금 보이는 게 아닌) 뷰를 잡아버린다. 그래서 탭 뷰
@@ -488,6 +493,9 @@
         .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: #333; }
         .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
         .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
+        .mv-order-item .mv-order-focus { color: #ccc; }
+        .mv-order-item .mv-order-focus:hover { color: #e8a400; }
+        .mv-order-item .mv-order-focus.active { color: #f5a623; }
         .mv-order-empty { font-size: var(--fs-body); color: var(--color-text-sub); }
 
         .mv-actionbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 4px; padding: 14px 18px; background: var(--color-primary-tint); border-radius: 10px; }
@@ -545,7 +553,7 @@
            것 - 순수 CSS만으로 "먼저 줄었다 늘었다 → 그 다음에야 스크롤" 순서를
            근사한다. */
         .cal-sidebar { min-width: 280px; display: flex; flex-direction: column; gap: 24px; flex-grow: 1; flex-shrink: 50; flex-basis: 360px; order: 1; }
-        .cal-calendar-area { display: flex; flex-direction: column; gap: 16px; width: 804px; flex-grow: 0; flex-shrink: 1; min-width: 0; overflow: hidden; order: 2; }
+        .cal-calendar-area { display: flex; flex-direction: column; gap: 16px; width: 804px; max-width: 804px !important; flex-grow: 0; flex-shrink: 1; min-width: 0; overflow: hidden; order: 2; }
         .cal-calendar-area > .section-title { margin-bottom: 0; }
         .cal-calendar-area .clean-card { min-width: 0; max-width: 100%; display: flex; flex-direction: column; width: 100%; overflow: hidden; }
 

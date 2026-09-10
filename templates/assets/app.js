@@ -268,6 +268,18 @@
     let mvCols = 2;
     let mvDark = false;
     let mvFocus = false;
+    let mvFocusId = null; // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도로 지정
+
+    function mvFocusEntryId() {
+        // 명시적으로 지정한 포커스 대상이 있으면 그걸, 없으면(처음이거나 지워진 경우)
+        // 목록 1번을 기본값으로 쓴다.
+        if (mvFocusId && mvOrder.some(e => e.soopId === mvFocusId)) return mvFocusId;
+        return mvOrder.length ? mvOrder[0].soopId : null;
+    }
+    function mvSetFocusTarget(soopId) {
+        mvFocusId = soopId;
+        mvRenderOrderRow();
+    }
 
     function mvIndexOf(soopId) {
         return mvOrder.findIndex(e => e.soopId === soopId);
@@ -313,9 +325,11 @@
     }
 
     function mvOrderItemHtml(entry, idx) {
+        const isFocusTarget = mvFocus && mvFocusEntryId() === entry.soopId;
         return `
         <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
             <span class="mv-order-num">${idx + 1}.</span>
+            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">★</button>` : ''}
             <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>
@@ -402,6 +416,9 @@
         // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서 이 스테퍼가
         // 안 쓰이므로, 헷갈리지 않게 그리드 모드일 때만 보여준다.
         document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
+        // 포커스 모드를 막 켰을 때/껐을 때 목록에 ★(포커스 지정) 버튼이 보이거나
+        // 안 보이게 다시 그린다.
+        mvRenderOrderRow();
     }
 
     function openMultiviewer() {
@@ -412,6 +429,7 @@
             cols: String(mvCols),
             theme: mvDark ? 'dark' : 'light',
             focus: mvFocus ? '1' : '0',
+            focusId: mvFocus ? (mvFocusEntryId() || '') : '',
         });
         window.open(`multiview.html?${params.toString()}`, '_blank', 'noopener');
     }
