@@ -715,6 +715,15 @@
         return `<div class="cal-offair-section"><div class="cal-offair-label">${label}</div><div class="cal-offair-chips">${chips}</div></div>`;
     };
 
+    // '김윤환' 휴방 표시(달력 칸 맨 위 노란 띠)를 위한 훅 - 사이트 쪽 app.js와
+    // 동일한 이름(window.calOffAirMemberName)으로 걸어야 calendar.js가 찾아서 쓴다.
+    // 이 훅이 없으면 어드민 화면은 물론, capture.js가 admin.html을 그대로 캡처해
+    // 만드는 calendar.png에도 이 표시가 빠지게 된다.
+    window.calOffAirMemberName = (soopId) => {
+        const m = dbMembers.find(x => x['SOOP ID'] === soopId);
+        return m ? m['이름'] : null;
+    };
+
     // ----- 도구 관리 (docs/data/tools.json) -----
     // 캘린더와 달리 이미지 캡처가 없어서 GitHub Contents API의 단순 PUT(생성/수정 겸용)만
     // 쓰면 충분하다. 토큰은 캘린더 탭에서 이미 연동한 걸(localStorage 'gh_token') 그대로 쓴다.
