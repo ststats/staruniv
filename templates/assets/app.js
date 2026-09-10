@@ -259,90 +259,110 @@
         if (!skipHashUpdate) updateToolsHash();
     }
 
-    // ===== 도구 - 멀티뷰어 (멤버 선택 -> Mul.Live 새 창으로 열기) =====
-    // 그리드 배치/채팅 표시 등은 Mul.Live(외부 멀티뷰어) 새 창에서 직접 설정하므로,
-    // 우리 사이트에서는 "우리 멤버 중 누구를 볼지" 고르는 기능만 담당한다.
-    let mvSelected = new Set();
+    // ===== 도구 - 멀티뷰어 =====
+    // 우리 사이트는 "누구를 볼지 + 어떤 순서/열 개수로 볼지" 선택만 담당하고,
+    // 실제 영상 그리드/다크모드/설정 열고닫기는 자체 제작한 새 창(multiview.html)에서
+    // 처리한다. 선택 상태(mvOrder)는 도구 탭과 새 창 둘 다에서 똑같이 조정 가능하도록
+    // 새 창을 열 때 현재 상태를 그대로 URL로 넘긴다.
+    let mvOrder = [];   // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
+    let mvCols = 2;
 
-    function mvMemberCardHtml(m, isLive) {
+    function mvIndexOf(soopId) {
+        return mvOrder.findIndex(e => e.soopId === soopId);
+    }
+
+    function mvChipHtml(m) {
         const soopId = m['SOOP ID'];
-        const selected = mvSelected.has(soopId);
+        const selected = mvIndexOf(soopId) !== -1;
         return `
-        <div class="member-card mv-member-card${selected ? ' selected' : ''}" data-soop-id="${escapeHTML(soopId)}" role="button" tabindex="0"
-             onclick="mvToggleMember('${jsStrEscape(soopId)}')" onkeydown="if(event.key==='Enter')mvToggleMember('${jsStrEscape(soopId)}')">
-            <span class="mv-check">${selected ? '✓' : ''}</span>
-            ${isLive ? '<span class="live-badge mv-live-badge">LIVE</span>' : ''}
-            ${avatarHtml(soopId, 'member-avatar-img')}
-            <div class="member-card-name">${escapeHTML(m['이름'])}</div>
+        <div class="mv-chip${selected ? ' selected' : ''}" onclick="mvToggleMember('${jsStrEscape(soopId)}', '${jsStrEscape(m['이름'])}')">
+            ${avatarHtml(soopId, 'mv-chip-avatar')}
+            <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
+            <span class="mv-chip-check">✓</span>
         </div>`;
     }
 
-    function mvRenderGrid(members, liveMap) {
-        const container = document.getElementById('mv-member-grid');
+    function mvRenderChips() {
+        const container = document.getElementById('mv-chip-row');
         if (!container) return;
+        const members = activeMembersWithSoopId();
         container.innerHTML = members.length
-            ? members.map(m => mvMemberCardHtml(m, !!(liveMap && liveMap[m['SOOP ID']]))).join('')
-            : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body); grid-column:1/-1;">선택 가능한 멤버가 없습니다.</div>`;
+            ? members.map(mvChipHtml).join('')
+            : `<div class="text-muted" style="font-size:var(--fs-body);">선택 가능한 멤버가 없습니다.</div>`;
+    }
+
+    function mvOrderItemHtml(entry, idx) {
+        return `
+        <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
+            <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+            <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
+            <span class="mv-order-name">${escapeHTML(entry.name)}</span>
+            <button type="button" class="mv-order-remove" title="빼기" onclick="mvRemoveFromOrder(${idx})">✕</button>
+        </div>`;
+    }
+
+    function mvRenderOrderRow() {
+        const row = document.getElementById('mv-order-row');
+        if (!row) return;
+        row.innerHTML = mvOrder.length
+            ? mvOrder.map(mvOrderItemHtml).join('')
+            : `<span class="mv-order-empty">위에서 멤버를 선택하거나 숲 아이디를 직접 추가해보세요.</span>`;
     }
 
     function mvUpdateActionbar() {
-        const count = mvSelected.size;
-        document.getElementById('mv-actionbar-count').innerText = count > 0 ? `${count}명 선택됨` : '선택된 멤버가 없습니다.';
+        const count = mvOrder.length;
+        document.getElementById('mv-actionbar-count').innerText = count > 0 ? `${count}명 선택됨` : '선택된 대상이 없습니다.';
         document.getElementById('mv-open-btn').disabled = count === 0;
     }
 
-    function mvToggleMember(soopId) {
-        if (mvSelected.has(soopId)) mvSelected.delete(soopId);
-        else mvSelected.add(soopId);
-
-        const card = document.querySelector(`#mv-member-grid .mv-member-card[data-soop-id="${CSS.escape(soopId)}"]`);
-        if (card) {
-            const selected = mvSelected.has(soopId);
-            card.classList.toggle('selected', selected);
-            card.querySelector('.mv-check').innerText = selected ? '✓' : '';
-        }
+    function mvRenderAll() {
+        mvRenderChips();
+        mvRenderOrderRow();
         mvUpdateActionbar();
     }
 
-    function mvSelectAll() {
-        activeMembersWithSoopId().forEach(m => mvSelected.add(m['SOOP ID']));
-        document.querySelectorAll('#mv-member-grid .mv-member-card').forEach(card => {
-            card.classList.add('selected');
-            card.querySelector('.mv-check').innerText = '✓';
-        });
-        mvUpdateActionbar();
+    function mvToggleMember(soopId, name) {
+        const idx = mvIndexOf(soopId);
+        if (idx !== -1) mvOrder.splice(idx, 1);
+        else mvOrder.push({ soopId, name, isMember: true });
+        mvRenderAll();
     }
 
-    function mvClearSelection() {
-        mvSelected.clear();
-        document.querySelectorAll('#mv-member-grid .mv-member-card').forEach(card => {
-            card.classList.remove('selected');
-            card.querySelector('.mv-check').innerText = '';
-        });
-        mvUpdateActionbar();
+    function mvAddCustom() {
+        const input = document.getElementById('mv-custom-id');
+        const id = input.value.trim().toLowerCase();
+        if (!id) return;
+        if (!/^[a-z0-9_-]+$/.test(id)) { alert('숲(SOOP) 아이디 형식이 아닙니다 (영문/숫자/-/_ 만 가능).'); return; }
+        if (mvIndexOf(id) !== -1) { alert('이미 선택된 목록에 있습니다.'); return; }
+        // 우리 멤버의 아이디를 그대로 입력한 경우, 익명 항목이 아니라 실제 이름으로 추가한다.
+        const knownMember = activeMembersWithSoopId().find(m => m['SOOP ID'] === id);
+        mvOrder.push(knownMember ? { soopId: id, name: knownMember['이름'], isMember: true } : { soopId: id, name: id, isMember: false });
+        input.value = '';
+        mvRenderAll();
+    }
+
+    function mvMove(idx, dir) {
+        const target = idx + dir;
+        if (target < 0 || target >= mvOrder.length) return;
+        [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
+        mvRenderAll();
+    }
+
+    function mvRemoveFromOrder(idx) {
+        mvOrder.splice(idx, 1);
+        mvRenderAll();
+    }
+
+    function mvChangeCols(delta) {
+        mvCols = Math.min(4, Math.max(1, mvCols + delta));
+        document.getElementById('mv-cols-value').innerText = mvCols;
     }
 
     function openMultiviewer() {
-        if (mvSelected.size === 0) return;
-        const ids = Array.from(mvSelected).map(id => encodeURIComponent(id));
-        window.open(`https://mul.live/${ids.join('/')}`, '_blank', 'noopener');
-    }
-
-    // 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송중 여부(LIVE 뱃지)는
-    // 홈 화면 방송중 체크와 같은 방식으로 비동기로 확인해 나중에 덧입힌다
-    // (선택 상태는 mvSelected에 별도로 저장돼 있어 재렌더링해도 유지된다).
-    async function renderMultiviewerPicker() {
-        const members = activeMembersWithSoopId();
-        mvRenderGrid(members);
-        mvUpdateActionbar();
-        if (members.length === 0) return;
-
-        const settled = await Promise.allSettled(
-            members.map(m => checkIsLiveRealtime(m['SOOP ID']).then(live => ({ soopId: m['SOOP ID'], live: !!live })))
-        );
-        const liveMap = {};
-        settled.forEach(r => { if (r.status === 'fulfilled') liveMap[r.value.soopId] = r.value.live; });
-        mvRenderGrid(members, liveMap);
+        if (mvOrder.length === 0) return;
+        const list = mvOrder.map(e => ({ id: e.soopId, name: e.name, isMember: e.isMember }));
+        const params = new URLSearchParams({ list: JSON.stringify(list), cols: String(mvCols) });
+        window.open(`multiview.html?${params.toString()}`, '_blank', 'noopener');
     }
 
     // 홈 화면 "전체 보기"/공지 클릭 -> 멤버 페이지의 소식 탭으로 이동.
@@ -1795,7 +1815,7 @@
         renderLatestNotices();
         loadSynergyData();
         loadToolsData();
-        renderMultiviewerPicker();
+        mvRenderAll();
 
         // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
         restoreFromHash();
