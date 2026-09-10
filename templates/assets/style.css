@@ -556,7 +556,7 @@
            클래스 4개로 특정도가 더 높아 항상 이긴다 - 배경이 채워지므로 흰색으로. */
         .cal-day-cell.today.holiday .cal-day-number { color: #fff !important; }
 
-        .cal-cell-event { border-radius: 6px; padding: 4px 4px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; color: #222; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .cal-cell-event { border-radius: 6px; padding: 0 4px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; color: #222; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .cal-cell-top { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
         .cal-event-time { font-size: 12px; font-weight: 500; color: var(--color-text-main); }
         .cal-event-person { font-weight: 800; font-size: var(--fs-body); color: var(--color-text-main); margin-left: auto; text-align: right; }

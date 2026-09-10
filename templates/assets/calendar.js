@@ -106,10 +106,11 @@
     const calGetEventHTML = (item) => {
         const timeHtml = item.time ? `<span class="cal-event-time">${calEscapeHTML(item.time)}</span>` : '';
         const personText = item.person ? `<span class="cal-event-person">${calEscapeHTML(item.person)}</span>` : '';
+        const descHtml = item.desc ? `<div class="cal-event-desc">${calEscapeHTML(item.desc)}</div>` : '';
         return `
             <div class="cal-cell-event" style="background-color: ${item.color || '#eff6ff'};">
                 <div class="cal-cell-top">${timeHtml}${personText}</div>
-                <div class="cal-event-desc">${calEscapeHTML(item.desc)}</div>
+                ${descHtml}
             </div>
         `;
     };
@@ -136,10 +137,11 @@
         const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
         const timeHtml = ev.time ? `<span class="cal-event-time">${calEscapeHTML(ev.time)}</span>` : '';
         const personHtml = ev.person ? `<span class="cal-event-person">${calEscapeHTML(ev.person)}</span>` : '';
+        const descHtml = ev.desc ? `<div class="cal-event-desc">${calEscapeHTML(ev.desc)}</div>` : '';
         return `
             <div class="cal-cell-event cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; padding-left:${padLeft}; padding-right:${padRight}; border-radius:${radius}; background-color: ${ev.color || '#ffedd5'};">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
-                <div class="cal-event-desc">${calEscapeHTML(ev.desc)}</div>
+                ${descHtml}
             </div>
         `;
     };
