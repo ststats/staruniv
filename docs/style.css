@@ -256,7 +256,7 @@
         .news-post-card-fade { animation: newsFeaturedFadeIn 0.25s ease; }
 
         .news-past-item.home-notice-card {
-            background: transparent; box-shadow: none; border-radius: 0;
+            background: var(--color-card); box-shadow: none; border-radius: 0;
             border-bottom: 1px solid var(--color-border); padding: 12px 4px;
         }
         .news-past-item.home-notice-card:hover { background: var(--color-bg-subtle); transform: none; }
@@ -569,9 +569,8 @@
            맞춘다(항목 사이 간격과 구분선은 그대로 유지).
         */
         .cal-today-list, .cal-selected-list { display: flex; flex-direction: column; gap: 0; max-height: 360px; overflow-y: auto; padding-right: 4px; }
-        .cal-today-card, .cal-selected-card { padding: 12px 0; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--color-bg-subtle); }
-        .cal-today-card:first-child, .cal-selected-card:first-child { padding-top: 0; }
-        .cal-today-card:last-child, .cal-selected-card:last-child { padding-bottom: 0; border-bottom: none; }
+        .cal-today-card, .cal-selected-card { padding: 0; display: flex; flex-direction: column; gap: 8px; }
+        .cal-today-card + .cal-today-card, .cal-selected-card + .cal-selected-card { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-bg-subtle); }
         .cal-no-schedule { font-size: var(--fs-body); color: var(--color-text-sub); text-align: center; padding: 0; width: 100%; }
         .cal-card-main { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); }
         .cal-card-time { color: var(--color-text-main); font-weight: 400; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
