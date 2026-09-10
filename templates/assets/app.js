@@ -366,6 +366,9 @@
 
     function mvToggleFocusSetting() {
         mvFocus = document.getElementById('mv-focus-toggle').checked;
+        // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서 이 스테퍼가
+        // 안 쓰이므로, 헷갈리지 않게 그리드 모드일 때만 보여준다.
+        document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
     }
 
     function openMultiviewer() {
