@@ -266,6 +266,8 @@
     // 새 창을 열 때 현재 상태를 그대로 URL로 넘긴다.
     let mvOrder = [];   // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
     let mvCols = 2;
+    let mvDark = false;
+    let mvFocus = false;
 
     function mvIndexOf(soopId) {
         return mvOrder.findIndex(e => e.soopId === soopId);
@@ -358,10 +360,23 @@
         document.getElementById('mv-cols-value').innerText = mvCols;
     }
 
+    function mvToggleDarkSetting() {
+        mvDark = document.getElementById('mv-dark-toggle').checked;
+    }
+
+    function mvToggleFocusSetting() {
+        mvFocus = document.getElementById('mv-focus-toggle').checked;
+    }
+
     function openMultiviewer() {
         if (mvOrder.length === 0) return;
         const list = mvOrder.map(e => ({ id: e.soopId, name: e.name, isMember: e.isMember }));
-        const params = new URLSearchParams({ list: JSON.stringify(list), cols: String(mvCols) });
+        const params = new URLSearchParams({
+            list: JSON.stringify(list),
+            cols: String(mvCols),
+            theme: mvDark ? 'dark' : 'light',
+            focus: mvFocus ? '1' : '0',
+        });
         window.open(`multiview.html?${params.toString()}`, '_blank', 'noopener');
     }
 

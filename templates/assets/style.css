@@ -450,7 +450,18 @@
         .member-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 
-        /* 도구 - 멀티뷰어: 멤버 선택 칩 + 직접 추가 + 선택된 목록(순서/그리드 설정) */
+        /* 도구 - 멀티뷰어: ① 설정 ② 멤버 선택 + 직접 추가 ③ 선택된 목록 */
+        .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 14px 18px; background: #fff; border: 1px solid var(--color-border); border-radius: 10px; margin-bottom: 20px; }
+        .mv-settings-group { display: flex; align-items: center; gap: 8px; }
+        .mv-settings-label { font-size: var(--fs-body); font-weight: 700; color: #666; }
+        .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
+        .mv-stepper button { width: 26px; height: 26px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: 14px; cursor: pointer; }
+        .mv-stepper button:hover { background: var(--color-primary-tint); }
+        .mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
+        .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
+        .mv-toggle { display: flex; align-items: center; gap: 6px; font-size: var(--fs-body); font-weight: 700; color: #666; cursor: pointer; user-select: none; }
+        .mv-toggle input { width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; }
+
         .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
         .mv-chip { display: flex; align-items: center; gap: 6px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1.5px solid var(--color-border); background: #fff; cursor: pointer; transition: 0.12s; user-select: none; }
         .mv-chip:hover { border-color: #b9cdf5; }
@@ -461,20 +472,11 @@
         .mv-chip-check { display: none; width: 14px; height: 14px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 9px; align-items: center; justify-content: center; flex-shrink: 0; }
         .mv-chip.selected .mv-chip-check { display: flex; }
 
-        .mv-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .mv-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
         .mv-add-row input { flex: 0 1 260px; padding: 8px 12px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: var(--fs-body); }
         .mv-add-row input:focus { outline: none; border-color: var(--color-primary); }
         .mv-add-btn { background: #fff; border: 1px solid var(--color-border-strong); border-radius: 6px; padding: 8px 16px; font-size: var(--fs-body); font-weight: 700; color: #555; cursor: pointer; }
         .mv-add-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
-
-        .mv-select-actions { display: flex; align-items: center; gap: 8px; }
-        .mv-cols-stepper { display: flex; align-items: center; gap: 8px; }
-        .mv-cols-label { font-size: var(--fs-body); font-weight: 700; color: #666; }
-        .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
-        .mv-stepper button { width: 26px; height: 26px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: 14px; cursor: pointer; }
-        .mv-stepper button:hover { background: var(--color-primary-tint); }
-        .mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
-        .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
 
         .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 20px; }
         .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: #fff; font-size: 12px; }
