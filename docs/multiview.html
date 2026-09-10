@@ -88,8 +88,10 @@
        인라인 style로 지정한다 - 인원이 늘수록 아래쪽에 줄 공간이 더 필요해서
        고정 비율 하나로는 항목이 많을 때 썸네일이 너무 눌린다. */
     .mv-focus-layout { display: flex; flex-direction: column; gap: 10px; height: 100%; }
-    .mv-focus-main { min-height: 0; }
-    .mv-focus-main .mv-cell { height: 100%; }
+    .mv-focus-main { min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .mv-focus-main .mv-cell { flex: 0 0 auto; }
+    .mv-focus-main .mv-cell-body { flex: 0 0 auto; }
+    .mv-focus-main .mv-cell-video-wrap { width: auto; height: auto; }
     .mv-focus-rest-wrap { min-height: 0; }
     .mv-focus-rest-wrap .mv-grid { height: 100%; }
 
@@ -107,7 +109,7 @@
             <button type="button" class="mv-icon-btn" id="mv-theme-btn" onclick="mvToggleTheme()" title="다크모드">🌙</button>
         </div>
         <div class="mv-settings-bar">
-            <div class="mv-settings-group">
+            <div class="mv-settings-group" id="mv-cols-group">
                 <span class="mv-settings-label">열 개수</span>
                 <div class="mv-stepper">
                     <button type="button" onclick="mvChangeCols(-1)">−</button>
@@ -246,8 +248,15 @@
 
     function mvToggleFocus() {
         mvFocus = document.getElementById('mv-focus-checkbox').checked;
+        mvApplyColsGroupVisibility();
         mvRenderGrid();
         mvSaveState();
+    }
+    function mvApplyColsGroupVisibility() {
+        // 포커스 모드에서는 열 개수가 인원 수 기준 자동 계산(mvFocusLayoutFor)으로
+        // 정해지고 이 스테퍼 값은 아예 안 쓰이므로, 혼동 없게 그리드 모드일 때만
+        // 보여준다.
+        document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
     }
 
     // ===== 순서 목록 =====
@@ -333,6 +342,7 @@
                     ${rest.length ? `<div class="mv-focus-rest-wrap" style="flex:${layout.restFlex};"><div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div></div>` : ''}
                 </div>`;
             mvApplyGridColumns(layout.restCols);
+            mvSizeFocusMain();
         } else {
             area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
             mvApplyGridColumns();
@@ -345,10 +355,40 @@
         mvSaveState();
     }
 
+    // ===== 포커스 모드 메인 화면만 정확한 16:9 크기로 맞춘다 =====
+    // 나머지 그리드는 칸을 그냥 꽉 채워도 크게 눈에 안 띄지만, 메인(1번)은
+    // 화면에서 제일 도드라지는 요소라 대충 칸을 꽉 채우면 실제 영상 모양과
+    // 안 맞는 넓적한 박스가 되어 어색해 보인다. 이 부분만 존의 실제 사용
+    // 가능 면적 안에서 16:9를 유지하는 가장 큰 크기로 계산해 가운데 놓는다.
+    function mvSizeFocusMain() {
+        const zone = document.querySelector('.mv-focus-main');
+        if (!zone) return;
+        const header = zone.querySelector('.mv-cell-header');
+        const headerH = header ? header.offsetHeight : 27;
+        const availW = zone.clientWidth;
+        const availH = zone.clientHeight - headerH;
+        if (availW <= 0 || availH <= 0) return;
+        let videoW = availW;
+        let videoH = videoW * 9 / 16;
+        if (videoH > availH) {
+            videoH = availH;
+            videoW = videoH * 16 / 9;
+        }
+        const wrap = zone.querySelector('.mv-cell-video-wrap');
+        if (wrap) {
+            wrap.style.width = Math.floor(videoW) + 'px';
+            wrap.style.height = Math.floor(videoH) + 'px';
+        }
+    }
+    // 창 크기가 바뀌면 메인 존 크기도 바뀌므로 다시 계산한다 (포커스 모드가
+    // 아닐 때는 .mv-focus-main 자체가 없어서 mvSizeFocusMain은 조용히 무시된다).
+    window.addEventListener('resize', mvSizeFocusMain);
+
     // ===== 초기화 =====
     mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
     mvInit();
     document.getElementById('mv-cols-value').innerText = mvCols;
+    mvApplyColsGroupVisibility();
     mvRenderAll();
 </script>
 </body>
