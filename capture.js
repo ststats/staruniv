@@ -21,11 +21,11 @@ const path = require('path');
 const PORT = 8791;
 // 캘린더 그리드 자체의 순수 콘텐츠 폭은 7일 × 110px = 770px + 카드 패딩(32px) +
 // 테두리(2px) = 804px로 고정이다(style.css의 .cal-weekdays/.cal-days-grid 참고).
-// 캡처 결과물은 그보다 여유를 둔 888px로 뽑는다 - admin.html/style.css 전역에서
-// 반응형 전환 기준점으로도 쓰는 값과 맞춰, 캘린더(804px) 좌우로 살짝 여백이
-// 남도록 한다(캘린더 자체가 888px로 늘어나 보이는 게 아니라, 그만큼 넓은
-// 배경 위에 804px 캘린더가 놓이는 그림이 된다).
-const CAPTURE_WIDTH = 888;
+// 예전엔 여백을 더 주려고 888px로 강제로 넓혀봤는데, 부모 요소 폭 불일치로
+// 계속 이상하게 늘어나는 문제가 반복돼서, 아예 style.css에 .cal-calendar-area의
+// max-width를 804px !important로 못박아뒀다 - 그래서 여기서 폭을 얼마로
+// 지정하든 804px보다 커질 수 없다. 그러면 그냥 804로 맞춰서 혼란을 없앤다.
+const CAPTURE_WIDTH = 804;
 
 function waitForServer(url, timeoutMs) {
     const start = Date.now();
