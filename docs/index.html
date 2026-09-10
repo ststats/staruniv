@@ -219,10 +219,10 @@
                     <button type="button" onclick="mvChangeCols(1)">+</button>
                 </div>
             </div>
-            <label class="mv-toggle">
-                <input type="checkbox" id="mv-focus-toggle" onchange="mvToggleFocusSetting()">
-                포커스 모드
-            </label>
+            <div class="mv-mode-switch">
+                <button type="button" class="mv-mode-btn active" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
+                <button type="button" class="mv-mode-btn" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
+            </div>
             <label class="mv-toggle">
                 <input type="checkbox" id="mv-dark-toggle" onchange="mvToggleDarkSetting()">
                 다크 모드

@@ -411,13 +411,14 @@
         mvDark = document.getElementById('mv-dark-toggle').checked;
     }
 
-    function mvToggleFocusSetting() {
-        mvFocus = document.getElementById('mv-focus-toggle').checked;
+    function mvSetFocusMode(isFocus) {
+        mvFocus = isFocus;
+        document.getElementById('mv-mode-grid').classList.toggle('active', !isFocus);
+        document.getElementById('mv-mode-focus').classList.toggle('active', isFocus);
         // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서 이 스테퍼가
         // 안 쓰이므로, 헷갈리지 않게 그리드 모드일 때만 보여준다.
         document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
-        // 포커스 모드를 막 켰을 때/껐을 때 목록에 포커스 지정 표시가 보이거나
-        // 안 보이게 다시 그린다.
+        // 모드를 막 바꿨을 때 목록에 포커스 지정 표시가 보이거나 안 보이게 다시 그린다.
         mvRenderOrderRow();
     }
 
