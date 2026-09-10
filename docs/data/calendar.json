@@ -249,6 +249,36 @@
       "desc": "팬미팅",
       "detail": "",
       "color": "#dbeafe"
+    },
+    {
+      "id": 1789025508217,
+      "startDate": "2026-09-10",
+      "endDate": "2026-09-10",
+      "time": "16:00",
+      "person": "햇살",
+      "desc": "24시간",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1789025526568,
+      "startDate": "2026-09-10",
+      "endDate": "2026-09-10",
+      "time": "19:00",
+      "person": "하랑",
+      "desc": "테라스먹방",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1789025567961,
+      "startDate": "2026-09-12",
+      "endDate": "2026-09-12",
+      "time": "",
+      "person": "타밍송이",
+      "desc": "장판깔기빵",
+      "detail": "",
+      "color": "#ffe4e6"
     }
   ],
   "offAir": {
