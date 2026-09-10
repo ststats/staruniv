@@ -132,7 +132,7 @@
             .nav-menu .nav-item { font-size: var(--fs-subheading); margin-right: 20px; }
         }
         
-        .section-title { font-size: var(--fs-heading); font-weight: 800; color: #111; margin-bottom: var(--space-title-gap); display: flex; justify-content: space-between; align-items: center; height: 32px; padding-left: 12px; border-left: 4px solid var(--color-primary); }
+        .section-title { font-size: var(--fs-heading); font-weight: 800; color: var(--color-text-main); margin-bottom: var(--space-title-gap); display: flex; justify-content: space-between; align-items: center; height: 32px; padding-left: 12px; border-left: 4px solid var(--color-primary); }
         .section-title-sm { font-size: var(--fs-subheading); font-weight: 800; color: #111; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .section-title-chevron { color: #999; transition: transform 0.2s; flex-shrink: 0; }
         .section-title.collapsed .section-title-chevron { transform: rotate(-90deg); }
@@ -460,23 +460,34 @@
         .mv-settings-group { display: flex; align-items: center; gap: 8px; }
         .mv-settings-label { font-size: var(--fs-body); font-weight: 700; color: #666; }
         .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
-        .mv-stepper button { width: 26px; height: 26px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: 14px; cursor: pointer; }
+        .mv-stepper button { width: 26px; height: 26px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: var(--fs-body); cursor: pointer; }
         .mv-stepper button:hover { background: var(--color-primary-tint); }
         .mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
         .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
-        .mv-toggle { display: flex; align-items: center; gap: 6px; font-size: var(--fs-body); font-weight: 700; color: #666; cursor: pointer; user-select: none; }
-        .mv-toggle input { width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; }
+        .mv-toggle { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); font-weight: 700; color: #666; cursor: pointer; user-select: none; }
+        .mv-toggle input { appearance: none; -webkit-appearance: none; position: relative; width: 36px; height: 20px; margin: 0; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+        .mv-toggle input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+        .mv-toggle input:checked { background: var(--color-primary); }
+        .mv-toggle input:checked::before { transform: translateX(16px); }
+
+        /* 그리드/포커스 모드 전환 - 체크박스 대신 두 버튼 중 하나가 켜져 있는
+           세그먼트 컨트롤로, 지금 어느 모드인지 항상 눈에 보이게 한다. */
+        .mv-mode-switch { display: inline-flex; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
+        .mv-mode-btn { border: none; background: var(--color-card, #fff); color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; padding: 7px 14px; cursor: pointer; transition: 0.12s; }
+        .mv-mode-btn + .mv-mode-btn { border-left: 1px solid var(--color-border-strong); }
+        .mv-mode-btn.active { background: var(--color-primary); color: #fff; }
+        .mv-mode-btn:not(.active):hover { background: var(--color-primary-tint); color: var(--color-primary); }
 
         .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
         .mv-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; border: 1.5px solid var(--color-border); background: #fff; cursor: pointer; transition: 0.12s; user-select: none; }
         .mv-chip:hover { border-color: #b9cdf5; }
         .mv-chip.selected { border-color: var(--color-primary); background: var(--color-primary-tint); }
         .mv-chip-avatar { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--color-border); }
-        .mv-chip-name { font-size: 12px; font-weight: 700; color: #444; }
+        .mv-chip-name { font-size: var(--fs-body); font-weight: 700; color: #444; }
         .mv-chip.selected .mv-chip-name { color: var(--color-primary); font-weight: 800; }
-        .mv-chip-check { display: none; width: 14px; height: 14px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 9px; align-items: center; justify-content: center; flex-shrink: 0; }
+        .mv-chip-check { display: none; width: 14px; height: 14px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 10px; align-items: center; justify-content: center; flex-shrink: 0; }
         .mv-chip.selected .mv-chip-check { display: flex; }
-        .mv-chip-live { display: inline-flex; align-items: center; background: var(--color-lose); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 10px; line-height: 1; letter-spacing: 0.2px; }
+        .mv-chip-live { display: inline-flex; align-items: center; background: var(--color-lose); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 10px; line-height: 1; letter-spacing: 0.2px; }
 
         .mv-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
         .mv-add-row input { flex: 0 1 260px; padding: 8px 12px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: var(--fs-body); }
@@ -485,11 +496,11 @@
         .mv-add-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
 
         .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 20px; }
-        .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: #fff; font-size: 12px; }
+        .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: #fff; font-size: var(--fs-body); }
         .mv-order-item.custom { border-style: dashed; }
         .mv-order-num { font-weight: 800; color: var(--color-text-sub); margin-right: 2px; }
         .mv-order-name { font-weight: 700; margin-right: 2px; }
-        .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: #999; cursor: pointer; border-radius: 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+        .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: #999; cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; }
         .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: #333; }
         .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
         .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
