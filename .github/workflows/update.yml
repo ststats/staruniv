@@ -2,10 +2,6 @@ name: Update Stats
 
 on:
   workflow_dispatch:
-  schedule:
-    # 매일 20:00 KST(=11:00 UTC)에 자동 실행. "오늘" 표시 등 날짜만 바뀌어도
-    # 캘린더 이미지를 새로 반영해야 하므로 최소 하루 한 번은 돌아야 한다.
-    - cron: '0 11 * * *'
 
 permissions:
   contents: write
@@ -21,6 +17,13 @@ jobs:
     steps:
     - name: 저장소 체크아웃
       uses: actions/checkout@v4
+      with:
+        # git push는 이 체크아웃 스텝이 설정한 인증 정보를 그대로 쓴다. 기본
+        # 자동 토큰(secrets.GITHUB_TOKEN)은 레포 Settings → Actions → Workflow
+        # permissions가 "읽기 전용"으로 되어있으면 push가 막힐 수 있는데, 그
+        # 설정 영향을 안 받는 개인 액세스 토큰(PAT, secrets.GH_TOKEN)을 대신
+        # 써서 그 가능성 자체를 없앤다.
+        token: ${{ secrets.GH_TOKEN }}
 
     - name: 파이썬 환경 세팅
       uses: actions/setup-python@v5
@@ -61,7 +64,9 @@ jobs:
 
     - name: 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링)
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # admin.html이 GitHub API로 최신 일정(calendar.json)을 읽어올 때 쓰는
+        # 토큰 - 체크아웃 스텝과 동일한 PAT으로 통일한다.
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: node capture.js
 
     - name: 변경된 데이터 및 HTML 깃허브에 배포
