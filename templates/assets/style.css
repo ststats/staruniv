@@ -456,14 +456,14 @@
         .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 
         /* 도구 - 멀티뷰어: ① 설정 ② 멤버 선택 + 직접 추가 ③ 선택된 목록 */
-        .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; }
+        .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; }
         .mv-settings-group { display: flex; align-items: center; gap: 8px; }
-        .mv-settings-label { font-size: var(--fs-body); font-weight: 700; color: #666; }
+        .mv-settings-label { font-size: 11px; font-weight: 700; color: #666; }
         .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
-        .mv-stepper button { width: 26px; height: 26px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: var(--fs-body); cursor: pointer; }
+        .mv-stepper button { width: 22px; height: 22px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: var(--fs-body); cursor: pointer; }
         .mv-stepper button:hover { background: var(--color-primary-tint); }
         .mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
-        .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
+        .mv-stepper-value { width: 22px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 22px; }
         .mv-toggle { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); font-weight: 700; color: #666; cursor: pointer; user-select: none; }
         .mv-toggle input { appearance: none; -webkit-appearance: none; position: relative; width: 36px; height: 20px; margin: 0; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
         .mv-toggle input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
@@ -473,7 +473,7 @@
         /* 그리드/포커스 모드 전환 - 체크박스 대신 두 버튼 중 하나가 켜져 있는
            세그먼트 컨트롤로, 지금 어느 모드인지 항상 눈에 보이게 한다. */
         .mv-mode-switch { display: inline-flex; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
-        .mv-mode-btn { border: none; background: var(--color-card, #fff); color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; padding: 7px 14px; cursor: pointer; transition: 0.12s; }
+        .mv-mode-btn { border: none; background: var(--color-card, #fff); color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; padding: 6px 10px; cursor: pointer; transition: 0.12s; }
         .mv-mode-btn + .mv-mode-btn { border-left: 1px solid var(--color-border-strong); }
         .mv-mode-btn.active { background: var(--color-primary); color: #fff; }
         .mv-mode-btn:not(.active):hover { background: var(--color-primary-tint); color: var(--color-primary); }
