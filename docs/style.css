@@ -471,6 +471,7 @@
         .mv-chip.selected .mv-chip-name { color: var(--color-primary); font-weight: 800; }
         .mv-chip-check { display: none; width: 14px; height: 14px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 9px; align-items: center; justify-content: center; flex-shrink: 0; }
         .mv-chip.selected .mv-chip-check { display: flex; }
+        .mv-chip-live { display: inline-flex; align-items: center; background: var(--color-lose); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 10px; line-height: 1; letter-spacing: 0.2px; }
 
         .mv-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
         .mv-add-row input { flex: 0 1 260px; padding: 8px 12px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: var(--fs-body); }
@@ -481,6 +482,7 @@
         .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 20px; }
         .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: #fff; font-size: 12px; }
         .mv-order-item.custom { border-style: dashed; }
+        .mv-order-num { font-weight: 800; color: var(--color-text-sub); margin-right: 2px; }
         .mv-order-name { font-weight: 700; margin-right: 2px; }
         .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: #999; cursor: pointer; border-radius: 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
         .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: #333; }

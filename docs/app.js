@@ -273,29 +273,49 @@
         return mvOrder.findIndex(e => e.soopId === soopId);
     }
 
-    function mvChipHtml(m) {
+    function mvChipHtml(m, isLive) {
         const soopId = m['SOOP ID'];
         const selected = mvIndexOf(soopId) !== -1;
         return `
         <div class="mv-chip${selected ? ' selected' : ''}" onclick="mvToggleMember('${jsStrEscape(soopId)}', '${jsStrEscape(m['이름'])}')">
             ${avatarHtml(soopId, 'mv-chip-avatar')}
+            ${isLive ? '<span class="mv-chip-live">LIVE</span>' : ''}
             <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
             <span class="mv-chip-check">✓</span>
         </div>`;
     }
+
+    let mvLiveMap = {}; // soopId -> live 여부. 클릭할 때마다 다시 API를 부르지 않도록
+    // 최초 한 번만 조회해서 여기 캐시해두고, 선택 상태가 바뀔 때는 이 값을 그대로 재사용한다.
 
     function mvRenderChips() {
         const container = document.getElementById('mv-chip-row');
         if (!container) return;
         const members = activeMembersWithSoopId();
         container.innerHTML = members.length
-            ? members.map(mvChipHtml).join('')
+            ? members.map(m => mvChipHtml(m, !!mvLiveMap[m['SOOP ID']])).join('')
             : `<div class="text-muted" style="font-size:var(--fs-body);">선택 가능한 멤버가 없습니다.</div>`;
+    }
+
+    // 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송중 여부(LIVE 뱃지)는
+    // 홈 화면 방송중 체크와 같은 방식으로 비동기로 확인해 나중에 덧입힌다.
+    // (mvRenderAll이 아니라 페이지 로드 시 한 번만 불러서, 선택할 때마다 API를
+    // 다시 부르는 낭비가 없게 한다.)
+    async function mvCheckLiveAndRerenderChips() {
+        const members = activeMembersWithSoopId();
+        if (members.length === 0) return;
+        const settled = await Promise.allSettled(
+            members.map(m => checkIsLiveRealtime(m['SOOP ID']).then(live => ({ soopId: m['SOOP ID'], live: !!live })))
+        );
+        mvLiveMap = {};
+        settled.forEach(r => { if (r.status === 'fulfilled') mvLiveMap[r.value.soopId] = r.value.live; });
+        mvRenderChips();
     }
 
     function mvOrderItemHtml(entry, idx) {
         return `
         <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
+            <span class="mv-order-num">${idx + 1}.</span>
             <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>
@@ -332,9 +352,22 @@
 
     function mvAddCustom() {
         const input = document.getElementById('mv-custom-id');
-        const id = input.value.trim().toLowerCase();
-        if (!id) return;
-        if (!/^[a-z0-9_-]+$/.test(id)) { alert('숲(SOOP) 아이디 형식이 아닙니다 (영문/숫자/-/_ 만 가능).'); return; }
+        const raw = input.value.trim();
+        if (!raw) return;
+
+        // 1) 우리 멤버 이름과 정확히 일치하면(대소문자 무시) 그 멤버를 추가한다.
+        const byName = activeMembersWithSoopId().find(m => String(m['이름']).trim().toLowerCase() === raw.toLowerCase());
+        if (byName) {
+            if (mvIndexOf(byName['SOOP ID']) !== -1) { alert('이미 선택된 목록에 있습니다.'); return; }
+            mvOrder.push({ soopId: byName['SOOP ID'], name: byName['이름'], isMember: true });
+            input.value = '';
+            mvRenderAll();
+            return;
+        }
+
+        // 2) 이름이 아니면 숲 아이디로 취급한다.
+        const id = raw.toLowerCase();
+        if (!/^[a-z0-9_-]+$/.test(id)) { alert('멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다.'); return; }
         if (mvIndexOf(id) !== -1) { alert('이미 선택된 목록에 있습니다.'); return; }
         // 우리 멤버의 아이디를 그대로 입력한 경우, 익명 항목이 아니라 실제 이름으로 추가한다.
         const knownMember = activeMembersWithSoopId().find(m => m['SOOP ID'] === id);
@@ -1834,6 +1867,7 @@
         loadSynergyData();
         loadToolsData();
         mvRenderAll();
+        mvCheckLiveAndRerenderChips();
 
         // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
         restoreFromHash();
