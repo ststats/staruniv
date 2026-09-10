@@ -37,14 +37,14 @@
     .mv-settings-panel.open { transform: translateX(0); }
     .mv-settings-inner { padding: 16px; }
     .mv-settings-top { margin-bottom: 20px; }
-    .mv-title { font-size: 30px; font-weight: 800; color: var(--color-text-main); letter-spacing: -0.5px; margin: 0; }
+    .mv-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
 
-    /* 설정 바(열 개수/포커스모드/다크모드)는 도구 탭의 .mv-settings-bar와 완전히
-       같은 클래스(style.css 공용)를 그대로 쓴다 - 서랍 폭에 맞게 세로로 쌓이도록
-       여기서만 방향을 바꾼다. */
-    .mv-settings-panel .mv-settings-bar { flex-direction: column; align-items: stretch; }
-    .mv-settings-panel .mv-settings-group { justify-content: space-between; }
+    .mv-settings-panel .mv-settings-bar { gap: 10px; }
     .mv-settings-panel .mv-add-row input { flex: 1 1 auto; width: auto; }
+
+    /* 선택된 목록 + 직접 추가 입력칸을 한 박스 안에 합친다. */
+    .mv-selected-box .mv-order-row { background: none; border: none; box-shadow: none; padding: 0; margin-bottom: 12px; }
+    .mv-selected-box .mv-add-row { margin-bottom: 0; }
 
     /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
     .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
@@ -87,7 +87,7 @@
 <div class="mv-settings-panel" id="mv-settings-panel">
     <div class="mv-settings-inner">
         <div class="mv-settings-top">
-            <div class="mv-title">멀티뷰어</div>
+            <div class="mv-title"><span class="logo-black">멀티</span><span class="logo-accent">뷰어</span></div>
         </div>
 
         <div class="section-title">설정</div>
@@ -111,14 +111,16 @@
         </div>
 
         <div class="section-title">선택된 목록</div>
-        <div class="mv-order-row" id="mv-order-row"></div>
+        <div class="mv-selected-box">
+            <div class="mv-order-row" id="mv-order-row"></div>
+            <div class="mv-add-row">
+                <input type="text" id="mv-add-input" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
+                <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
+            </div>
+        </div>
 
         <div class="section-title">멤버 선택</div>
         <div class="mv-chip-row" id="mv-chip-row"></div>
-        <div class="mv-add-row">
-            <input type="text" id="mv-add-input" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
-            <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
-        </div>
     </div>
 </div>
 
@@ -255,8 +257,9 @@
     function mvApplyColsGroupVisibility() {
         // 포커스 모드에서는 열 개수가 화면 크기·인원 수 기준 자동 계산
         // (mvComputeFocusGridDims)으로 정해지고 이 스테퍼 값은 아예 안 쓰이므로,
-        // 혼동 없게 그리드 모드일 때만 보여준다.
-        document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
+        // 요소를 아예 숨기지 않고 흐릿하게 비활성화만 한다(보였다 안 보였다
+        // 하면 레이아웃이 덜컹거려서 오히려 지저분해 보임).
+        document.getElementById('mv-cols-group').classList.toggle('disabled', mvFocus);
     }
 
     // ===== 멤버 선택 칩 (도구 탭과 동일 - site_data.json에서 직접 불러온다) =====
