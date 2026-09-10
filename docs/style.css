@@ -5,6 +5,7 @@
             --color-text-main: #1a1f27;
             --color-text-sub: #7a828e;
             --color-primary: #2979ff;
+            --color-primary-deep: #1c5fe0;
             --color-primary-tint: #eef4ff;
             --color-primary-tint-strong: #e3ecff;
             --color-win: #0066ff;
@@ -456,29 +457,52 @@
         .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 
         /* 도구 - 멀티뷰어: ① 설정 ② 멤버 선택 + 직접 추가 ③ 선택된 목록 */
-        .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; }
-        .mv-settings-group { display: flex; align-items: center; gap: 8px; }
-        .mv-settings-label { font-size: 11px; font-weight: 700; color: #666; }
+        /* ===== 설정 콘솔 (타일형 컨트롤 데크): 각 설정을 아이콘+라벨+컨트롤이
+           있는 독립 타일로 만들고, 그 타일들을 콘솔 박스 안에 담는다. 실행
+           버튼은 콘솔 밖으로 분리해 그라디언트+그림자로 시선이 먼저 가게 한다.
+           모바일은 타일이 세로형, 넓은 화면(700px~)에서는 콘솔 자체가 가로
+           한 줄로, 타일도 가로형(아이콘·라벨·컨트롤이 한 줄)으로 바뀐다. */
+        .mv-console { display: flex; flex-direction: column; gap: 12px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 14px; margin-bottom: 20px; }
+        .mv-console-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .mv-tile { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 6px 12px; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+        .mv-tile.disabled { opacity: 0.4; pointer-events: none; }
+        .mv-tile-icon { color: var(--color-primary); width: 18px; height: 18px; flex-shrink: 0; }
+        .mv-tile-label { font-size: 10.5px; font-weight: 700; color: var(--color-text-sub); white-space: nowrap; }
+
         .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
         .mv-stepper button { width: 22px; height: 22px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: var(--fs-body); cursor: pointer; }
         .mv-stepper button:hover { background: var(--color-primary-tint); }
         .mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
         .mv-stepper-value { width: 22px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 22px; }
-        .mv-toggle { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); font-weight: 700; color: #666; cursor: pointer; user-select: none; }
-        .mv-toggle input { appearance: none; -webkit-appearance: none; position: relative; width: 36px; height: 20px; margin: 0; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
-        .mv-toggle input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
-        .mv-toggle input:checked { background: var(--color-primary); }
-        .mv-toggle input:checked::before { transform: translateX(16px); }
 
-        /* 그리드/포커스 모드 전환 - 체크박스 대신 두 버튼 중 하나가 켜져 있는
-           세그먼트 컨트롤로, 지금 어느 모드인지 항상 눈에 보이게 한다. */
+        .mv-toggle-switch { position: relative; width: 34px; height: 19px; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background 0.15s; flex-shrink: 0; border: none; padding: 0; }
+        .mv-toggle-switch::before { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+        .mv-toggle-switch.on { background: var(--color-primary); }
+        .mv-toggle-switch.on::before { transform: translateX(15px); }
+
         .mv-mode-switch { display: inline-flex; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
         .mv-mode-btn { border: none; background: var(--color-card, #fff); color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; padding: 6px 10px; cursor: pointer; transition: 0.12s; }
         .mv-mode-btn + .mv-mode-btn { border-left: 1px solid var(--color-border-strong); }
         .mv-mode-btn.active { background: var(--color-primary); color: #fff; }
         .mv-mode-btn:not(.active):hover { background: var(--color-primary-tint); color: var(--color-primary); }
 
-        .mv-settings-group.disabled { opacity: 0.4; pointer-events: none; }
+        .mv-run-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-deep)); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(41,121,255,0.32); transition: filter 0.1s, transform 0.1s; }
+        .mv-run-btn:hover:not(:disabled) { filter: brightness(1.06); }
+        .mv-run-btn:active:not(:disabled) { transform: scale(0.99); }
+        .mv-run-btn:disabled { background: #c3c8d1; box-shadow: none; cursor: not-allowed; }
+        .mv-run-btn svg { width: 13px; height: 13px; }
+
+        @media (min-width: 700px) {
+            .mv-console { flex-direction: row; align-items: center; padding: 12px 16px; gap: 18px; }
+            .mv-console-tiles { display: flex; flex: 0 0 auto; gap: 10px; }
+            .mv-tile { flex-direction: row; align-items: center; gap: 9px; padding: 9px 14px; border-radius: 9px; }
+            .mv-tile-label { font-size: 11px; }
+            .mv-run-btn { width: auto; padding: 10px 22px; margin-left: auto; box-shadow: 0 2px 8px rgba(41,121,255,0.25); }
+        }
+
+        /* ===== 멤버 선택 박스: 칩 + 숲아이디 입력을 한 박스 안에 ===== */
+        .mv-chip-box { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 14px 18px; margin-bottom: 20px; }
+        .mv-chip-box .mv-chip-row { background: none; border: none; box-shadow: none; padding: 0; margin-bottom: 12px; }
         .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; }
         .mv-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; border: 1.5px solid var(--color-border); background: var(--color-bg); cursor: pointer; transition: 0.12s; user-select: none; }
         .mv-chip:hover { border-color: #b9cdf5; }
@@ -490,18 +514,16 @@
         .mv-chip.selected .mv-chip-check { display: flex; }
         .mv-chip-live { display: inline-flex; align-items: center; background: var(--color-lose); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 10px; line-height: 1; letter-spacing: 0.2px; }
 
-        .mv-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
-        .mv-add-row input { flex: 0 1 260px; min-width: 0; padding: 8px 12px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: var(--fs-body); }
-        .mv-add-row input:focus { outline: none; border-color: var(--color-primary); }
-        .mv-add-btn { background: #fff; border: 1px solid var(--color-border-strong); border-radius: 6px; padding: 8px 16px; font-size: var(--fs-body); font-weight: 700; color: #555; cursor: pointer; }
-        .mv-add-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
+        /* 숲아이디 퀵 추가 (알약형 결합 입력) */
+        .mv-quickadd { display: flex; align-items: center; background: var(--color-bg); border: 1.5px solid var(--color-border); border-radius: 999px; padding: 4px 4px 4px 14px; gap: 8px; }
+        .mv-chip-box .mv-quickadd { max-width: 280px; }
+        .mv-quickadd:focus-within { border-color: var(--color-primary); }
+        .mv-quickadd input { flex: 1; min-width: 0; border: none; background: transparent; font-size: var(--fs-body); outline: none; color: var(--color-text-main); }
+        .mv-quickadd input::placeholder { color: #aaa; }
+        .mv-quickadd-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--color-primary); color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
+        .mv-quickadd-btn:hover { filter: brightness(1.08); }
 
         .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; min-height: 20px; }
-        /* 선택된 목록 + 직접 추가 입력칸을 한 박스 안에 합친 경우: 박스 자체가
-           카드 스타일을 가지므로, 안쪽 order-row는 자기 카드 스타일을 지운다. */
-        .mv-selected-box { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 14px 18px; margin-bottom: 20px; }
-        .mv-selected-box .mv-order-row { background: none; border: none; box-shadow: none; padding: 0; margin: 0 0 12px 0; }
-        .mv-selected-box .mv-add-row { margin-bottom: 0; }
         .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-bg); font-size: var(--fs-body); }
         .mv-order-item.custom { border-style: dashed; }
         .mv-order-num { font-weight: 800; color: var(--color-text-sub); margin-right: 2px; }
@@ -513,13 +535,6 @@
         .mv-order-item.selectable { cursor: pointer; }
         .mv-order-item.focus-target { border-color: var(--color-primary); background: var(--color-primary-tint); }
         .mv-order-empty { font-size: var(--fs-body); color: var(--color-text-sub); }
-
-        .mv-run-group { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-        .mv-open-btn { background: var(--color-primary); color: #fff; border: none; border-radius: 6px; font-size: var(--fs-body); font-weight: 700; padding: 10px 18px; cursor: pointer; transition: 0.1s; }
-        .mv-open-btn:hover:not(:disabled) { filter: brightness(1.08); }
-        .mv-open-btn:disabled { background: #c8ccd2; cursor: not-allowed; }
-        .mv-hint { margin-top: 12px; font-size: var(--fs-body); }
-        .mv-hint a { color: var(--color-primary); font-weight: 600; }
 
 
         /* 도넛 차트 */

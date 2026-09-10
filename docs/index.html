@@ -210,39 +210,48 @@
     <!-- 1. 멀티뷰어 뷰 -->
     <div id="view-tools-multiviewer">
         <div class="section-title">설정</div>
-        <div class="mv-settings-bar">
-            <div class="mv-settings-group" id="mv-cols-group">
-                <span class="mv-settings-label">열 개수</span>
-                <div class="mv-stepper">
-                    <button type="button" onclick="mvChangeCols(-1)">−</button>
-                    <span class="mv-stepper-value" id="mv-cols-value">2</span>
-                    <button type="button" onclick="mvChangeCols(1)">+</button>
+        <div class="mv-console">
+            <div class="mv-console-tiles">
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+                    <div class="mv-tile-label">보기</div>
+                    <div class="mv-mode-switch">
+                        <button type="button" class="mv-mode-btn active" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
+                        <button type="button" class="mv-mode-btn" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
+                    </div>
+                </div>
+                <div class="mv-tile disabled" id="mv-col-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
+                    <div class="mv-tile-label">열 개수</div>
+                    <div class="mv-stepper">
+                        <button type="button" onclick="mvChangeCols(-1)">−</button>
+                        <span class="mv-stepper-value" id="mv-cols-value">2</span>
+                        <button type="button" onclick="mvChangeCols(1)">+</button>
+                    </div>
+                </div>
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                    <div class="mv-tile-label">다크 모드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" onclick="mvToggleDarkSetting()"></button>
                 </div>
             </div>
-            <div class="mv-mode-switch">
-                <button type="button" class="mv-mode-btn active" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
-                <button type="button" class="mv-mode-btn" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
-            </div>
-            <label class="mv-toggle">
-                <input type="checkbox" id="mv-dark-toggle" onchange="mvToggleDarkSetting()">
-                다크 모드
-            </label>
-            <div class="mv-run-group">
-                <button type="button" class="mv-open-btn" id="mv-open-btn" onclick="openMultiviewer()" disabled>멀티뷰어 실행</button>
-            </div>
+            <button type="button" class="mv-run-btn" id="mv-open-btn" onclick="openMultiviewer()" disabled>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                멀티뷰어 실행
+            </button>
         </div>
 
         <div class="section-title">멤버 선택</div>
-        <div class="mv-chip-row" id="mv-chip-row"></div>
-
-        <div class="section-title">선택된 목록</div>
-        <div class="mv-selected-box">
-            <div class="mv-order-row" id="mv-order-row"></div>
-            <div class="mv-add-row">
-                <input type="text" id="mv-custom-id" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter')mvAddCustom()">
-                <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
+        <div class="mv-chip-box">
+            <div class="mv-chip-row" id="mv-chip-row"></div>
+            <div class="mv-quickadd">
+                <input type="text" id="mv-custom-id" placeholder="숲아이디 직접 입력" maxlength="20" onkeydown="if(event.key==='Enter')mvAddCustom()">
+                <button type="button" class="mv-quickadd-btn" title="추가" onclick="mvAddCustom()">+</button>
             </div>
         </div>
+
+        <div class="section-title">선택된 목록</div>
+        <div class="mv-order-row" id="mv-order-row"></div>
     </div>
 
     <!-- 2. 외부도구 뷰 (도구/사이트로 구분) -->
