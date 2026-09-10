@@ -44,9 +44,9 @@
       "id": 1788411375531,
       "startDate": "2026-09-02",
       "endDate": "2026-09-03",
-      "time": "",
+      "time": "비방연습",
       "person": "캄몬",
-      "desc": "비방연습",
+      "desc": "",
       "detail": "",
       "color": "#fef3c7"
     },
@@ -116,8 +116,8 @@
       "endDate": "2026-09-07",
       "time": "30:00",
       "person": "암벽토먼",
-      "desc": "할없사 낚시 (+랑)",
-      "detail": "",
+      "desc": "할없사 낚시",
+      "detail": "하랑 합류",
       "color": "#dbeafe"
     },
     {
@@ -146,7 +146,7 @@
       "endDate": "2026-09-08",
       "time": "16:00",
       "person": "낭니먼진",
-      "desc": "븅자매가 간다",
+      "desc": "낭먼이 간다",
       "detail": "",
       "color": "#ffe4e6"
     },
@@ -214,9 +214,9 @@
       "id": 1788954141010,
       "startDate": "2026-09-09",
       "endDate": "2026-09-10",
-      "time": "",
+      "time": "휴방",
       "person": "윤환",
-      "desc": "휴방",
+      "desc": "",
       "detail": "",
       "color": "#fef3c7"
     },
