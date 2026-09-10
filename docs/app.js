@@ -265,7 +265,6 @@
     // 처리한다. 선택 상태(mvOrder)는 도구 탭과 새 창 둘 다에서 똑같이 조정 가능하도록
     // 새 창을 열 때 현재 상태를 그대로 URL로 넘긴다.
     let mvOrder = [];   // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
-    let mvCols = 2;
     let mvDark = false;
     let mvFocus = false;
     let mvFocusId = null; // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도로 지정
@@ -326,14 +325,14 @@
 
     function mvOrderItemHtml(entry, idx) {
         const isFocusTarget = mvFocus && mvFocusEntryId() === entry.soopId;
+        const rowClick = mvFocus ? ` onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')"` : '';
         return `
-        <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
+        <div class="mv-order-item${entry.isMember ? '' : ' custom'}${isFocusTarget ? ' focus-target' : ''}${mvFocus ? ' selectable' : ''}"${rowClick}>
             <span class="mv-order-num">${idx + 1}.</span>
-            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">메인</button>` : ''}
-            <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-            <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
+            <button type="button" title="위로" onclick="event.stopPropagation(); mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+            <button type="button" title="아래로" onclick="event.stopPropagation(); mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>
-            <button type="button" class="mv-order-remove" title="빼기" onclick="mvRemoveFromOrder(${idx})">✕</button>
+            <button type="button" class="mv-order-remove" title="빼기" onclick="event.stopPropagation(); mvRemoveFromOrder(${idx})">✕</button>
         </div>`;
     }
 
@@ -402,21 +401,13 @@
         mvRenderAll();
     }
 
-    function mvChangeCols(delta) {
-        mvCols = Math.min(4, Math.max(1, mvCols + delta));
-        document.getElementById('mv-cols-value').innerText = mvCols;
-    }
-
     function mvToggleDarkSetting() {
         mvDark = document.getElementById('mv-dark-toggle').checked;
     }
 
     function mvToggleFocusSetting() {
         mvFocus = document.getElementById('mv-focus-toggle').checked;
-        // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서 이 스테퍼가
-        // 안 쓰이므로, 헷갈리지 않게 그리드 모드일 때만 보여준다.
-        document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
-        // 포커스 모드를 막 켰을 때/껐을 때 목록에 ★(포커스 지정) 버튼이 보이거나
+        // 포커스 모드를 막 켰을 때/껐을 때 목록에 포커스 지정 표시가 보이거나
         // 안 보이게 다시 그린다.
         mvRenderOrderRow();
     }
@@ -426,7 +417,6 @@
         const list = mvOrder.map(e => ({ id: e.soopId, name: e.name, isMember: e.isMember }));
         const params = new URLSearchParams({
             list: JSON.stringify(list),
-            cols: String(mvCols),
             theme: mvDark ? 'dark' : 'light',
             focus: mvFocus ? '1' : '0',
             focusId: mvFocus ? (mvFocusEntryId() || '') : '',
