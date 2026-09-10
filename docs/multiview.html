@@ -82,11 +82,9 @@
     .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; }
     .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 
-    /* 포커스 모드: 위(1번, 크게) + 아래(나머지, 작게)를 flex 비율로 나눈다 -
-       비율로만 나누면 뷰포트 높이가 그대로 정확히 소진되니 여기도 스크롤이 안 생긴다.
-       실제 flex 비율/열 개수는 나머지 인원 수에 따라 JS(mvFocusLayoutFor)가
-       인라인 style로 지정한다 - 인원이 늘수록 아래쪽에 줄 공간이 더 필요해서
-       고정 비율 하나로는 항목이 많을 때 썸네일이 너무 눌린다. */
+    /* 포커스 모드: 위(1번, 크게) + 아래(나머지, 작게)로 나눈다 - 세로 배분은
+       고정 비율이 아니라 JS(mvLayoutFocus)가 메인의 실제 16:9 크기를 먼저
+       계산하고 남는 세로 공간을 전부 나머지 쪽에 준다. */
     .mv-focus-layout { display: flex; flex-direction: column; gap: 10px; height: 100%; }
     .mv-focus-main { min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .mv-focus-main .mv-cell { flex: 0 0 auto; }
@@ -225,25 +223,15 @@
         grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     }
 
-    // 포커스 모드에서 "1번을 뺀 나머지 인원 수"별로 미리 손봐둔 비율/열 개수.
-    // 인원이 늘수록 아래쪽 썸네일 줄이 최소 2줄이 되는 시점(5명)부터는 메인이
-    // 차지하는 비율을 줄여서 썸네일이 너무 눌리지 않게 한다.
-    const MV_FOCUS_LAYOUTS = {
-        0: { mainFlex: 1, restFlex: 0, restCols: 1 },   // 나머지 없음: 메인이 화면 전체
-        1: { mainFlex: 4, restFlex: 1, restCols: 1 },
-        2: { mainFlex: 3, restFlex: 1, restCols: 2 },
-        3: { mainFlex: 3, restFlex: 1, restCols: 3 },
-        4: { mainFlex: 3, restFlex: 1, restCols: 4 },
-        5: { mainFlex: 2, restFlex: 1, restCols: 3 },   // 3+2 두 줄
-        6: { mainFlex: 2, restFlex: 1, restCols: 3 },   // 3+3 두 줄
-        7: { mainFlex: 2, restFlex: 1, restCols: 4 },   // 4+3 두 줄
-        8: { mainFlex: 2, restFlex: 1, restCols: 4 },   // 4+4 두 줄
-    };
-    function mvFocusLayoutFor(restCount) {
-        if (MV_FOCUS_LAYOUTS[restCount]) return MV_FOCUS_LAYOUTS[restCount];
-        // 표에 없는(9명 이상) 경우: 메인 비중을 더 줄이고, 열 개수는 정사각형에
-        // 가깝게(올림 제곱근) 배치해서 줄 수가 과하게 늘어나지 않게 한다.
-        return { mainFlex: 1.5, restFlex: 1, restCols: Math.max(1, Math.ceil(Math.sqrt(restCount))) };
+    // 포커스 모드에서 "1번을 뺀 나머지 인원 수"별로 미리 손봐둔 열 개수
+    // (메인:나머지 세로 비율은 더 이상 고정값이 아니라, 실제 16:9 크기를
+    // 계산해서 정하므로 - 아래 mvLayoutFocus 참고 - 여기서는 열 개수만 정한다).
+    const MV_FOCUS_COLS = { 0: 1, 1: 1, 2: 2, 3: 3, 4: 4, 5: 3, 6: 3, 7: 4, 8: 4 };
+    function mvFocusColsFor(restCount) {
+        if (MV_FOCUS_COLS[restCount] !== undefined) return MV_FOCUS_COLS[restCount];
+        // 표에 없는(9명 이상) 경우: 정사각형에 가깝게(올림 제곱근) 배치해서
+        // 줄 수가 과하게 늘어나지 않게 한다.
+        return Math.max(1, Math.ceil(Math.sqrt(restCount)));
     }
 
     function mvToggleFocus() {
@@ -253,7 +241,7 @@
         mvSaveState();
     }
     function mvApplyColsGroupVisibility() {
-        // 포커스 모드에서는 열 개수가 인원 수 기준 자동 계산(mvFocusLayoutFor)으로
+        // 포커스 모드에서는 열 개수가 인원 수 기준 자동 계산(mvFocusColsFor)으로
         // 정해지고 이 스테퍼 값은 아예 안 쓰이므로, 혼동 없게 그리드 모드일 때만
         // 보여준다.
         document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
@@ -331,18 +319,18 @@
         }
         if (mvFocus) {
             // 포커스 모드: 순서 1번(mvOrder[0])만 위쪽에 크게, 나머지는 그 아래
-            // 작은 그리드로 - 나머지 인원 수별로 미리 정해둔 비율/열 개수
-            // (mvFocusLayoutFor)를 써서, 인원이 많아져도 항상 한 화면 안에서
-            // 보기 좋게 배치되고 스크롤도 생기지 않는다.
+            // 작은 그리드로. 메인:나머지 세로 비율을 고정값으로 나누는 대신,
+            // mvLayoutFocus가 메인의 실제 16:9 크기를 먼저 계산하고 남는
+            // 세로 공간을 전부 나머지 쪽에 준다.
             const [main, ...rest] = mvOrder;
-            const layout = mvFocusLayoutFor(rest.length);
+            const restCols = mvFocusColsFor(rest.length);
             area.innerHTML = `
                 <div class="mv-focus-layout">
-                    <div class="mv-focus-main" style="flex:${layout.mainFlex};">${mvCellHtml(main)}</div>
-                    ${rest.length ? `<div class="mv-focus-rest-wrap" style="flex:${layout.restFlex};"><div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div></div>` : ''}
+                    <div class="mv-focus-main">${mvCellHtml(main)}</div>
+                    ${rest.length ? `<div class="mv-focus-rest-wrap"><div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div></div>` : ''}
                 </div>`;
-            mvApplyGridColumns(layout.restCols);
-            mvSizeFocusMain();
+            mvApplyGridColumns(restCols);
+            mvLayoutFocus();
         } else {
             area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
             mvApplyGridColumns();
@@ -355,16 +343,56 @@
         mvSaveState();
     }
 
-    // ===== 포커스 모드 메인 화면만 정확한 16:9 크기로 맞춘다 =====
-    // 나머지 그리드는 칸을 그냥 꽉 채워도 크게 눈에 안 띄지만, 메인(1번)은
-    // 화면에서 제일 도드라지는 요소라 대충 칸을 꽉 채우면 실제 영상 모양과
-    // 안 맞는 넓적한 박스가 되어 어색해 보인다. 이 부분만 존의 실제 사용
-    // 가능 면적 안에서 16:9를 유지하는 가장 큰 크기로 계산해 가운데 놓는다.
-    function mvSizeFocusMain() {
-        const zone = document.querySelector('.mv-focus-main');
-        if (!zone) return;
-        const header = zone.querySelector('.mv-cell-header');
+    // ===== 포커스 모드: 메인:나머지 세로 배분을 실제 16:9 크기 기준으로 계산 =====
+    // 고정 비율(예: 3:1) 대신, "가로폭을 100% 다 쓰면 메인에 세로로 얼마나
+    // 필요한지"를 먼저 구하고, 그만큼만 메인에 주고 남는 세로 공간은 전부
+    // 나머지 쪽으로 준다. 화면이 옆으로 아주 넓어서 그 필요 높이가 나머지
+    // 몫까지 다 잡아먹을 것 같으면, 나머지에게 최소한의 비율(15%)은 보장하고
+    // 그 다음 메인은 세로 기준으로 다시 맞춘다(이 경우엔 메인이 가로를
+    // 100% 다 못 쓰고 양옆에 여백이 남는다) - 즉 가로/세로 중 먼저 한계에
+    // 닿는 쪽이 100% 기준이 된다.
+    const MV_GAP = 10;
+    const MV_MIN_REST_RATIO = 0.15;
+
+    function mvLayoutFocus() {
+        const layout = document.querySelector('.mv-focus-layout');
+        const mainZone = document.querySelector('.mv-focus-main');
+        if (!layout || !mainZone) return;
+        const restWrap = document.querySelector('.mv-focus-rest-wrap');
+        const header = mainZone.querySelector('.mv-cell-header');
         const headerH = header ? header.offsetHeight : 27;
+
+        if (!restWrap) {
+            // 나머지가 없으면 메인이 존 전체를 그대로 쓴다.
+            mainZone.style.flex = '1 1 auto';
+            mvFitZoneVideo(mainZone, headerH);
+            return;
+        }
+
+        const totalH = layout.clientHeight;
+        const totalW = layout.clientWidth;
+
+        // 1) 가로폭 100%를 기준으로 메인에 필요한 자연스러운 높이를 구한다.
+        let mainTotalH = totalW * 9 / 16 + headerH;
+
+        // 2) 나머지 존에 최소 비율은 보장되도록, 메인이 너무 크면 눌러준다
+        //    (이 경우 메인은 세로 기준으로 다시 맞춰지며 가로가 100%가 안 된다).
+        const minRestH = totalH * MV_MIN_REST_RATIO;
+        const maxMainH = totalH - minRestH - MV_GAP;
+        if (mainTotalH > maxMainH) mainTotalH = Math.max(0, maxMainH);
+
+        const restH = Math.max(0, totalH - mainTotalH - MV_GAP);
+
+        mainZone.style.flex = `0 0 ${mainTotalH}px`;
+        restWrap.style.flex = `0 0 ${restH}px`;
+
+        mvFitZoneVideo(mainZone, headerH);
+    }
+
+    // 주어진 존(zone) 안에서 16:9를 유지하는 가장 큰 영상 크기를 계산해
+    // 가운데 놓는다. (메인은 위에서 세로를 먼저 못박아뒀으니, 여기서는
+    // 가로/세로 중 실제로 남는 쪽에 맞춰 마지막으로 정확히 맞추는 역할.)
+    function mvFitZoneVideo(zone, headerH) {
         const availW = zone.clientWidth;
         const availH = zone.clientHeight - headerH;
         if (availW <= 0 || availH <= 0) return;
@@ -380,9 +408,9 @@
             wrap.style.height = Math.floor(videoH) + 'px';
         }
     }
-    // 창 크기가 바뀌면 메인 존 크기도 바뀌므로 다시 계산한다 (포커스 모드가
-    // 아닐 때는 .mv-focus-main 자체가 없어서 mvSizeFocusMain은 조용히 무시된다).
-    window.addEventListener('resize', mvSizeFocusMain);
+    // 창 크기가 바뀌면 메인/나머지 배분과 메인 크기를 다시 계산한다
+    // (포커스 모드가 아닐 때는 .mv-focus-layout 자체가 없어서 조용히 무시된다).
+    window.addEventListener('resize', mvLayoutFocus);
 
     // ===== 초기화 =====
     mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
