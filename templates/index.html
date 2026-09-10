@@ -220,19 +220,19 @@
                 </div>
             </div>
             <label class="mv-toggle">
-                <input type="checkbox" id="mv-dark-toggle" onchange="mvToggleDarkSetting()">
-                다크모드
+                <input type="checkbox" id="mv-focus-toggle" onchange="mvToggleFocusSetting()">
+                포커스 모드
             </label>
             <label class="mv-toggle">
-                <input type="checkbox" id="mv-focus-toggle" onchange="mvToggleFocusSetting()">
-                포커스 모드 (1번을 크게)
+                <input type="checkbox" id="mv-dark-toggle" onchange="mvToggleDarkSetting()">
+                다크모드
             </label>
         </div>
 
         <div class="section-title">멤버 선택</div>
         <div class="mv-chip-row" id="mv-chip-row"></div>
         <div class="mv-add-row">
-            <input type="text" id="mv-custom-id" placeholder="숲 아이디 직접 입력" onkeydown="if(event.key==='Enter')mvAddCustom()">
+            <input type="text" id="mv-custom-id" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter')mvAddCustom()">
             <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
         </div>
 
