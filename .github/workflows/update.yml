@@ -17,7 +17,9 @@ jobs:
     steps:
     - name: 저장소 체크아웃
       uses: actions/checkout@v4
-
+      with:
+        token: ${{ secrets.GH_TOKEN }}  # GITHUB_TOKEN이 아니라 직접 등록한 GH_TOKEN으로 변경!
+        
     - name: 파이썬 환경 세팅
       uses: actions/setup-python@v5
       with:
@@ -57,7 +59,7 @@ jobs:
 
     - name: 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링)
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: node capture.js
 
     - name: 변경된 데이터 및 HTML 깃허브에 배포
