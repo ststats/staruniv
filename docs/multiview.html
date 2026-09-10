@@ -55,21 +55,21 @@
     .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
-    .mv-order-item .mv-order-focus { color: #555; }
-    .mv-order-item .mv-order-focus:hover { color: #e8a400; }
-    .mv-order-item .mv-order-focus.active { color: #f5a623; }
+    .mv-order-item .mv-order-focus { width: auto; height: auto; border: 1px solid var(--color-border-strong); background: transparent; color: var(--color-text-sub); font-size: 10px; font-weight: 700; border-radius: 999px; padding: 2px 8px; line-height: 1.4; }
+    .mv-order-item .mv-order-focus:hover { border-color: var(--color-primary); color: var(--color-primary); background: transparent; }
+    .mv-order-item .mv-order-focus.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
 
     /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 정확히 맞춘다. MultiTwitch 등
        다른 멀티뷰어들도 칸 크기를 직접 16:9로 계산하지 않고 그냥 칸을 꽉
        채운 뒤 비율 처리는 임베드 플레이어 자체에 맡긴다 - SOOP 플레이어도
        마찬가지로 자기가 받은 박스 안에서 알아서 레터박스 처리를 해줄 걸로
        보고, 우리는 칸을 꽉 채우는 단순한 방식으로 돌아간다. */
-    #mv-grid-area { height: 100vh; padding: 10px; box-sizing: border-box; }
+    #mv-grid-area { height: 100vh; height: 100dvh; padding: 10px; box-sizing: border-box; }
     .mv-grid { display: grid; gap: 10px; height: 100%; }
     .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
     .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
-    .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
-    .mv-cell-header a:hover { color: var(--color-primary); }
+    .mv-cell-refresh { border: none; background: transparent; color: var(--color-text-sub); font-size: 14px; font-weight: 700; cursor: pointer; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
+    .mv-cell-refresh:hover { background: var(--color-bg-subtle); color: var(--color-primary); }
     .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; }
     .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; }
     .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
@@ -149,9 +149,38 @@
         return mvOrder.length ? mvOrder[0].soopId : null;
     }
     function mvSetFocusTarget(soopId) {
+        const oldFocusId = mvFocusEntryId();
+        if (soopId === oldFocusId) return; // 이미 메인인 사람을 다시 누른 경우
+
+        if (mvFocus) {
+            // 그리드를 통째로 다시 그리면 모든 iframe이 새로 생성돼 재생 중이던
+            // 영상이 리셋된다 - 실제로는 "새 메인"과 "기존 메인" 두 칸의 위치와
+            // 메인 표시(2×2) 클래스만 서로 맞바꾸면 되므로 그렇게 처리한다.
+            const grid = document.getElementById('mv-grid');
+            if (grid) {
+                const oldFocusIdx = mvOrder.findIndex(e => e.soopId === oldFocusId);
+                const newFocusIdx = mvOrder.findIndex(e => e.soopId === soopId);
+                const toRenderIdx = i => (i === oldFocusIdx ? 0 : 1 + (i < oldFocusIdx ? i : i - 1));
+                const newRenderIdx = toRenderIdx(newFocusIdx);
+                if (newRenderIdx !== 0) {
+                    mvSwapGridCells(0, newRenderIdx);
+                    const cells = grid.children;
+                    if (cells[0]) cells[0].classList.add('mv-cell-main');
+                    if (cells[newRenderIdx]) cells[newRenderIdx].classList.remove('mv-cell-main');
+                }
+            } else {
+                // 그리드 자체가 없는 특수 케이스(포커스 대상 혼자 남은 상태) -
+                // 구조가 아예 다르므로 이 경우만 다시 그린다.
+                mvFocusId = soopId;
+                mvRenderGrid();
+                mvRenderOrderRow();
+                mvSaveState();
+                return;
+            }
+        }
+
         mvFocusId = soopId;
         mvRenderOrderRow();
-        mvRenderGrid(); // 누가 메인인지 자체가 바뀌는 일이라 그리드는 새로 그린다.
         mvSaveState();
     }
 
@@ -338,7 +367,7 @@
         return `
         <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
             <span class="mv-order-num">${idx + 1}.</span>
-            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">★</button>` : ''}
+            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">메인</button>` : ''}
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>
             <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
@@ -507,13 +536,23 @@
         const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
     }
+    // 특정 카드 하나만 새로고침한다(가끔 렉 걸리는 스트림만 개별로 다시 불러오고
+    // 싶을 때 씀) - 다른 카드들은 그대로 두므로 재생 중이던 나머지 영상엔
+    // 영향이 없다. src를 한 번 비웠다가 다시 넣어서 같은 URL이어도 확실히
+    // 새로고침되게 한다.
+    function mvRefreshCell(btn, soopId) {
+        const cell = btn.closest('.mv-cell');
+        const iframe = cell && cell.querySelector('iframe');
+        if (!iframe) return;
+        iframe.src = 'about:blank';
+        requestAnimationFrame(() => { iframe.src = mvEmbedUrl(soopId); });
+    }
     function mvCellHtml(entry, isMain) {
-        const channelUrl = `https://play.sooplive.co.kr/${encodeURIComponent(entry.soopId)}`;
         return `
         <div class="mv-cell${isMain ? ' mv-cell-main' : ''}">
             <div class="mv-cell-header">
                 <span>${escapeHTML(entry.name)}</span>
-                <a href="${channelUrl}" target="_blank" rel="noopener">새 탭↗</a>
+                <button type="button" class="mv-cell-refresh" title="새로고침" onclick="mvRefreshCell(this, '${jsStrEscape(entry.soopId)}')">⟳</button>
             </div>
             <div class="mv-cell-body">
                 <div class="mv-cell-video-wrap">
