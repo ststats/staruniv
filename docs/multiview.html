@@ -40,14 +40,6 @@
     .mv-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
     .mv-title-main { color: var(--color-text-main); }
 
-    .mv-settings-panel .mv-settings-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-    .mv-settings-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .mv-settings-panel .mv-add-row input { flex: 1 1 auto; width: auto; min-width: 0; }
-
-    /* 선택된 목록 + 직접 추가 입력칸을 한 박스 안에 합친다. */
-    .mv-selected-box .mv-order-row { background: none; border: none; box-shadow: none; padding: 0; margin-bottom: 12px; }
-    .mv-selected-box .mv-add-row { margin-bottom: 0; }
-
     /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
     .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
     .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: var(--fs-body); }
@@ -93,40 +85,44 @@
         </div>
 
         <div class="section-title">설정</div>
-        <div class="mv-settings-bar">
-            <div class="mv-settings-row">
-                <div class="mv-settings-group" id="mv-cols-group">
-                    <span class="mv-settings-label">열 개수</span>
+        <div class="mv-console">
+            <div class="mv-console-tiles">
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+                    <div class="mv-tile-label">보기</div>
+                    <div class="mv-mode-switch">
+                        <button type="button" class="mv-mode-btn active" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
+                        <button type="button" class="mv-mode-btn" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
+                    </div>
+                </div>
+                <div class="mv-tile disabled" id="mv-col-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
+                    <div class="mv-tile-label">열 개수</div>
                     <div class="mv-stepper">
                         <button type="button" onclick="mvChangeCols(-1)">−</button>
                         <span class="mv-stepper-value" id="mv-cols-value">2</span>
                         <button type="button" onclick="mvChangeCols(1)">+</button>
                     </div>
                 </div>
-                <div class="mv-mode-switch">
-                    <button type="button" class="mv-mode-btn" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
-                    <button type="button" class="mv-mode-btn" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                    <div class="mv-tile-label">다크 모드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" onclick="mvToggleTheme()"></button>
                 </div>
-            </div>
-            <div class="mv-settings-row">
-                <label class="mv-toggle">
-                    <input type="checkbox" id="mv-theme-checkbox" onchange="mvToggleThemeCheckbox()">
-                    다크 모드
-                </label>
             </div>
         </div>
 
         <div class="section-title">선택된 목록</div>
-        <div class="mv-selected-box">
-            <div class="mv-order-row" id="mv-order-row"></div>
-            <div class="mv-add-row">
-                <input type="text" id="mv-add-input" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
-                <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
-            </div>
-        </div>
+        <div class="mv-order-row" id="mv-order-row"></div>
 
         <div class="section-title">멤버 선택</div>
-        <div class="mv-chip-row" id="mv-chip-row"></div>
+        <div class="mv-chip-box">
+            <div class="mv-chip-row" id="mv-chip-row"></div>
+            <div class="mv-quickadd">
+                <input type="text" id="mv-add-input" placeholder="숲아이디 직접 입력" maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
+                <button type="button" class="mv-quickadd-btn" title="추가" onclick="mvAddCustom()">+</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -143,7 +139,7 @@
     // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
     let mvOrder = [];
     let mvCols = 2;
-    let mvFocus = false;
+    let mvFocus = true;
     let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
     let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
     let mvLiveMap = {};    // soopId -> 방송중 여부
@@ -186,22 +182,23 @@
             try {
                 mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]');
                 mvCols = Math.min(4, Math.max(1, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
-                mvFocus = localStorage.getItem('mv-focus') === '1';
+                mvFocus = localStorage.getItem('mv-focus') !== null ? localStorage.getItem('mv-focus') === '1' : true;
                 mvFocusId = localStorage.getItem('mv-focus-id') || null;
-            } catch (e) { mvOrder = []; mvCols = 2; mvFocus = false; mvFocusId = null; }
+            } catch (e) { mvOrder = []; mvCols = 2; mvFocus = true; mvFocusId = null; }
         }
         mvApplyModeButtons();
     }
 
-    // ===== 다크모드 (도구 탭과 같은 체크박스 방식) =====
+    // ===== 다크모드 (도구 탭과 같은 버튼형 스위치) =====
     function mvApplyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        const cb = document.getElementById('mv-theme-checkbox');
-        if (cb) cb.checked = theme === 'dark';
+        const btn = document.getElementById('mv-theme-toggle');
+        if (btn) btn.classList.toggle('on', theme === 'dark');
         localStorage.setItem('mv-theme', theme);
     }
-    function mvToggleThemeCheckbox() {
-        mvApplyTheme(document.getElementById('mv-theme-checkbox').checked ? 'dark' : 'light');
+    function mvToggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        mvApplyTheme(current === 'dark' ? 'light' : 'dark');
     }
 
     // ===== 설정 패널 여닫기 =====
@@ -264,8 +261,8 @@
         // 포커스 모드에서는 열 개수가 화면 크기·인원 수 기준 자동 계산
         // (mvComputeFocusGridDims)으로 정해지고 이 스테퍼 값은 아예 안 쓰이므로,
         // 요소를 아예 숨기지 않고 흐릿하게 비활성화만 한다(보였다 안 보였다
-        // 하면 레이아웃이 덜컹거려서 오히려 지저분해 보임).
-        document.getElementById('mv-cols-group').classList.toggle('disabled', mvFocus);
+        // 하면 레이아웃이 덜컹거려서 오히려 지저분해 보인다).
+        document.getElementById('mv-col-tile').classList.toggle('disabled', mvFocus);
     }
 
     // ===== 멤버 선택 칩 (도구 탭과 동일 - site_data.json에서 직접 불러온다) =====
