@@ -408,10 +408,11 @@
             // 그리드가 실제로 넓게 다시 배치된 상태를 그대로 캡처하고, 끝나면 원래대로
             // 되돌린다. 스크롤 영역(.cal-calendar-inner)도 같이 리셋해서 잘림을 막는다.
             const captureEl = document.getElementById('captureMonth');
-            // 804px = 사이트의 실제 .cal-calendar-area 고정 폭. capture.js(매일 자동 캡처)도
-            // 같은 값을 쓰도록 맞춰서, 수동 저장 때와 자동 캡처 때 이미지 크기가 서로
-            // 달라지지 않게 통일한다.
-            const CAPTURE_WIDTH = 804;
+            // 캘린더 그리드 자체의 순수 콘텐츠 폭(770px)+카드 패딩/테두리(34px)는 804px로
+            // 고정이고, 캡처 결과물은 그보다 여유를 둔 888px로 뽑는다. capture.js(매일
+            // 자동 캡처)도 같은 값을 쓰도록 맞춰서, 수동 저장 때와 자동 캡처 때 이미지
+            // 크기가 서로 달라지지 않게 통일한다.
+            const CAPTURE_WIDTH = 888;
 
             // 캡처 대상을 강제로 넓히면 옆의 .admin-side(오늘의 일정 카드)와 겹쳐서
             // 캘린더 오른쪽 요일들이 가려지는 게 실제 원인이었다 - 캡처하는 순간만
@@ -419,6 +420,19 @@
             const sideEl = document.querySelector('.admin-side');
             const prevSideDisplay = sideEl ? sideEl.style.display : null;
             if (sideEl) sideEl.style.display = 'none';
+
+            // #captureMonth(.cal-calendar-area)의 부모인 .admin-main은 style.css상
+            // flex:0 1 804px로 고정폭이라, CAPTURE_WIDTH가 그보다 넓어지면(예: 888px)
+            // captureEl만 넓혀서는 .admin-main 박스 밖으로 넘쳐버린다(늘어난 것처럼
+            // 보이는 원인). capture.js의 자동 캡처와 똑같이 .admin-main도 같이
+            // 못박아서, 부모-자식 폭이 항상 같이 움직이게 한다.
+            const mainEl = document.querySelector('.admin-main');
+            const prevMainFlex = mainEl ? mainEl.style.flex : null;
+            const prevMainWidth = mainEl ? mainEl.style.width : null;
+            if (mainEl) {
+                mainEl.style.flex = `0 0 ${CAPTURE_WIDTH}px`;
+                mainEl.style.width = CAPTURE_WIDTH + 'px';
+            }
 
             const prevElWidth = captureEl.style.width;
             const prevElMaxWidth = captureEl.style.maxWidth;
@@ -464,6 +478,10 @@
                 captureEl.style.boxSizing = prevElBoxSizing;
                 captureEl.style.background = prevElBackground;
                 if (sideEl) sideEl.style.display = prevSideDisplay;
+                if (mainEl) {
+                    mainEl.style.flex = prevMainFlex;
+                    mainEl.style.width = prevMainWidth;
+                }
             }
             const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
