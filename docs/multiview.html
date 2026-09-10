@@ -27,16 +27,17 @@
     body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
     /* ===== 설정 열기 버튼 (항상 떠 있음) ===== */
-    .mv-fab { position: fixed; top: 12px; right: 12px; z-index: 100; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); opacity: 0.85; color: var(--color-text-main); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .mv-fab { position: fixed; top: 12px; right: 12px; z-index: 100; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); opacity: 0.85; color: var(--color-text-main); font-size: var(--fs-body); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
     .mv-fab:hover { opacity: 1; border-color: var(--color-primary); }
     .mv-fab.on { border-color: var(--color-primary); color: var(--color-primary); }
 
     /* ===== 설정 패널: 오른쪽에서 접혔다 펴지는 서랍 형태 ===== */
-    .mv-settings-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: 340px; max-width: 88vw; background: var(--color-card, #fff); border-left: 1px solid var(--color-border); box-shadow: -4px 0 16px rgba(0,0,0,0.15); overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease; }
+    .mv-settings-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: 340px; max-width: 88vw; background: rgba(255,255,255,0.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid var(--color-border); box-shadow: -4px 0 16px rgba(0,0,0,0.15); overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease; }
+    html[data-theme="dark"] .mv-settings-panel { background: rgba(29,32,39,0.82); }
     .mv-settings-panel.open { transform: translateX(0); }
     .mv-settings-inner { padding: 16px; }
-    .mv-settings-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-    .mv-title { font-size: 16px; font-weight: 800; }
+    .mv-settings-top { margin-bottom: 20px; }
+    .mv-title { font-size: 30px; font-weight: 800; color: var(--color-text-main); letter-spacing: -0.5px; margin: 0; }
 
     /* 설정 바(열 개수/포커스모드/다크모드)는 도구 탭의 .mv-settings-bar와 완전히
        같은 클래스(style.css 공용)를 그대로 쓴다 - 서랍 폭에 맞게 세로로 쌓이도록
@@ -47,11 +48,11 @@
 
     /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
     .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
-    .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: 12px; }
+    .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: var(--fs-body); }
     .mv-order-item.custom { border-style: dashed; }
     .mv-order-num { font-weight: 800; color: var(--color-text-sub); flex-shrink: 0; }
     .mv-order-name { font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
@@ -64,8 +65,8 @@
     #mv-grid-area { height: 100vh; height: 100dvh; padding: 10px; box-sizing: border-box; }
     .mv-grid { display: grid; gap: 10px; height: 100%; }
     .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: var(--radius-card, 12px); overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-    .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
-    .mv-cell-refresh { border: none; background: transparent; color: var(--color-text-sub); font-size: 14px; font-weight: 700; cursor: pointer; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
+    .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: var(--fs-body); font-weight: 800; }
+    .mv-cell-refresh { border: none; background: transparent; color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; cursor: pointer; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
     .mv-cell-refresh:hover { background: var(--color-bg-subtle); color: var(--color-primary); }
     .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; }
     .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; }
@@ -76,7 +77,7 @@
        순서대로 채워준다 - 남는 칸 좌표를 직접 계산할 필요가 없다. */
     .mv-cell-main { grid-column: span 2; grid-row: span 2; }
 
-    .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 30vh 0; }
+    .mv-empty { text-align: center; color: var(--color-text-sub); font-size: var(--fs-body); padding: 30vh 0; }
 </style>
 </head>
 <body>
@@ -99,10 +100,10 @@
                     <button type="button" onclick="mvChangeCols(1)">+</button>
                 </div>
             </div>
-            <label class="mv-toggle">
-                <input type="checkbox" id="mv-focus-checkbox" onchange="mvToggleFocus()">
-                포커스 모드
-            </label>
+            <div class="mv-mode-switch">
+                <button type="button" class="mv-mode-btn" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
+                <button type="button" class="mv-mode-btn" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
+            </div>
             <label class="mv-toggle">
                 <input type="checkbox" id="mv-theme-checkbox" onchange="mvToggleThemeCheckbox()">
                 다크 모드
@@ -181,7 +182,7 @@
                 mvFocusId = localStorage.getItem('mv-focus-id') || null;
             } catch (e) { mvOrder = []; mvCols = 2; mvFocus = false; mvFocusId = null; }
         }
-        document.getElementById('mv-focus-checkbox').checked = mvFocus;
+        mvApplyModeButtons();
     }
 
     // ===== 다크모드 (도구 탭과 같은 체크박스 방식) =====
@@ -238,8 +239,14 @@
         return { cols, rows };
     }
 
-    function mvToggleFocus() {
-        mvFocus = document.getElementById('mv-focus-checkbox').checked;
+    function mvApplyModeButtons() {
+        document.getElementById('mv-mode-grid').classList.toggle('active', !mvFocus);
+        document.getElementById('mv-mode-focus').classList.toggle('active', mvFocus);
+    }
+    function mvSetFocusMode(isFocus) {
+        if (isFocus === mvFocus) return;
+        mvFocus = isFocus;
+        mvApplyModeButtons();
         mvApplyColsGroupVisibility();
         mvRenderOrderRow();
         mvRenderGrid();
@@ -276,7 +283,7 @@
         if (!container) return;
         container.innerHTML = mvMembers.length
             ? mvMembers.map(mvChipHtml).join('')
-            : '<div style="font-size:12px; color:var(--color-text-sub);">멤버 목록을 불러오지 못했습니다.</div>';
+            : '<div style="font-size:var(--fs-body); color:var(--color-text-sub);">멤버 목록을 불러오지 못했습니다.</div>';
     }
     function mvToggleMemberChip(soopId, name) {
         const idx = mvOrder.findIndex(e => e.soopId === soopId);
@@ -338,7 +345,7 @@
         const row = document.getElementById('mv-order-row');
         row.innerHTML = mvOrder.length
             ? mvOrder.map(mvOrderItemHtml).join('')
-            : '<span style="font-size:12px; color:var(--color-text-sub);">위에서 멤버를 선택하거나 이름/숲 아이디를 입력해 추가해보세요.</span>';
+            : '<span style="font-size:var(--fs-body); color:var(--color-text-sub);">위에서 멤버를 선택하거나 이름/숲 아이디를 입력해 추가해보세요.</span>';
     }
 
     function mvSetFocusTarget(soopId) {
