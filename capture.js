@@ -19,11 +19,13 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const PORT = 8791;
-// 요일칸이 110px 고정폭(가변 minmax 아님)으로 바뀌면서 캘린더 그리드 실제 너비가
-// 7일 × 110px = 770px로 고정됐다. 여기에 그리드를 감싸는 .clean-card의 패딩(p-3,
-// 좌우 16px씩)과 테두리(1px씩)를 더한 770 + 32 + 2 = 804px가 화면에 스크롤 없이
-// 꽉 차게 보이는 실제 캘린더 폭이므로, 이 값으로 캡처 너비를 고정한다.
-const CAPTURE_WIDTH = 804;
+// 캘린더 그리드 자체의 순수 콘텐츠 폭은 7일 × 110px = 770px + 카드 패딩(32px) +
+// 테두리(2px) = 804px로 고정이다(style.css의 .cal-weekdays/.cal-days-grid 참고).
+// 캡처 결과물은 그보다 여유를 둔 888px로 뽑는다 - admin.html/style.css 전역에서
+// 반응형 전환 기준점으로도 쓰는 값과 맞춰, 캘린더(804px) 좌우로 살짝 여백이
+// 남도록 한다(캘린더 자체가 888px로 늘어나 보이는 게 아니라, 그만큼 넓은
+// 배경 위에 804px 캘린더가 놓이는 그림이 된다).
+const CAPTURE_WIDTH = 888;
 
 function waitForServer(url, timeoutMs) {
     const start = Date.now();
