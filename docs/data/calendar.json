@@ -229,6 +229,26 @@
       "desc": "코려대CK",
       "detail": "",
       "color": "#f3e8ff"
+    },
+    {
+      "id": 1789013628235,
+      "startDate": "2026-09-11",
+      "endDate": "2026-09-11",
+      "time": "4:00",
+      "person": "왜냐맨",
+      "desc": "블리즈컨",
+      "detail": "",
+      "color": "#f3e8ff"
+    },
+    {
+      "id": 1789013686147,
+      "startDate": "2026-10-03",
+      "endDate": "2026-10-03",
+      "time": "시간미정",
+      "person": "캄몬",
+      "desc": "팬미팅",
+      "detail": "",
+      "color": "#dbeafe"
     }
   ],
   "offAir": {
