@@ -211,6 +211,14 @@
     <div id="view-tools-multiviewer">
         <div class="section-title">설정</div>
         <div class="mv-settings-bar">
+            <div class="mv-settings-group" id="mv-cols-group">
+                <span class="mv-settings-label">열 개수</span>
+                <div class="mv-stepper">
+                    <button type="button" onclick="mvChangeCols(-1)">−</button>
+                    <span class="mv-stepper-value" id="mv-cols-value">2</span>
+                    <button type="button" onclick="mvChangeCols(1)">+</button>
+                </div>
+            </div>
             <label class="mv-toggle">
                 <input type="checkbox" id="mv-focus-toggle" onchange="mvToggleFocusSetting()">
                 포커스 모드
