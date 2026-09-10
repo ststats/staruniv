@@ -10,6 +10,12 @@
     let calEvents = [];
     const CAL_DATA_URL = 'data/calendar.json';
 
+    // 날짜별 휴방 멤버 목록 - { "YYYY-MM-DD": ["soopId1", "soopId2"] } 형태.
+    // events와 별개로 관리한다(휴방은 시간/제목이 있는 "일정"이 아니라 그날의 멤버
+    // 상태에 가까워서, calEvents 배열에 억지로 끼워넣기보다 날짜->멤버ID 맵이 더 자연스럽다).
+    let calOffAir = {};
+    const calOffAirForDate = (dateStr) => calOffAir[dateStr] || [];
+
     // 공휴일 목록은 해마다 바뀌므로 코드에 박아두지 않고 별도 JSON(holidays.json)에서
     // fetch해온다 - 새해 공휴일을 추가할 때 코드를 안 건드리고 그 파일만 갱신하면 된다.
     let calPublicHolidays = {};
@@ -87,7 +93,9 @@
                 loadPublicHolidays(),
             ]);
             if (scheduleRes.ok) {
-                calEvents = calMigrateData(await scheduleRes.json());
+                const parsed = await scheduleRes.json();
+                calEvents = calMigrateData(parsed);
+                calOffAir = (parsed && parsed.offAir) || {};
             }
         } catch (e) {
             console.error(e);
@@ -207,7 +215,6 @@
         return `
             <div class="${cardClass}">
                 <div class="cal-card-main">
-                    <div class="cal-card-dot" style="background-color: ${item.color || '#eff6ff'};"></div>
                     ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''} 
                     ${item.person ? `<span class="cal-card-person">${calEscapeHTML(item.person)}</span>` : ''}
                     <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ` <span class="cal-card-detail">${calEscapeHTML(item.detail)}</span>` : ''}</span>
@@ -217,16 +224,22 @@
         `;
     };
 
+    // 휴방자 섹션은 window.calOffAirExtra가 정의돼 있을 때만(사이트/어드민 쪽에서
+    // 멤버 사진·이름을 알고 있을 때만) 렌더링한다 - calendar.js 자체는 멤버 정보를
+    // 모르기 때문에 calCardExtra와 같은 훅 패턴을 그대로 따른다.
+    const calOffAirExtraHtml = (dateStr, type) =>
+        typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr, type) : '';
+
     const calRenderTodaySchedules = () => {
         const container = document.getElementById('todayList');
         const today = new Date();
         const curTodayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
         const todayItems = calEventsForDate(curTodayStr);
-        if (todayItems.length === 0) {
-            container.innerHTML = `<div class="cal-no-schedule">오늘 등록된 일정이 없습니다.</div>`;
-            return;
-        }
-        container.innerHTML = todayItems.map(item => calEventCardHtml(item, curTodayStr, 'today')).join('');
+        const eventsHtml = todayItems.length
+            ? todayItems.map(item => calEventCardHtml(item, curTodayStr, 'today')).join('')
+            : `<div class="cal-no-schedule">오늘 등록된 일정이 없습니다.</div>`;
+        // 휴방자 섹션은 일정 유무와 무관하게 항상 목록 아래에 붙는다.
+        container.innerHTML = eventsHtml + calOffAirExtraHtml(curTodayStr, 'today');
     };
 
     const calRenderSelectedDateSchedules = () => {
@@ -236,9 +249,8 @@
             return;
         }
         const daySchedules = calEventsForDate(calSelectedDateStr);
-        if (daySchedules.length === 0) {
-            container.innerHTML = `<div class="cal-no-schedule">등록된 일정이 없습니다.</div>`;
-            return;
-        }
-        container.innerHTML = daySchedules.map(item => calEventCardHtml(item, calSelectedDateStr, 'selected')).join('');
+        const eventsHtml = daySchedules.length
+            ? daySchedules.map(item => calEventCardHtml(item, calSelectedDateStr, 'selected')).join('')
+            : `<div class="cal-no-schedule">등록된 일정이 없습니다.</div>`;
+        container.innerHTML = eventsHtml + calOffAirExtraHtml(calSelectedDateStr, 'selected');
     };

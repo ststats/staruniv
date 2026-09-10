@@ -246,6 +246,30 @@
         /* 사진은 오른쪽에 64x64 정사각형 썸네일로, 세로 가운데 정렬된다 */
         .home-notice-thumb { width: 64px; height: 64px; aspect-ratio: 1 / 1; align-self: center; object-fit: cover; border-radius: 10px; background: var(--color-bg-subtle); flex-shrink: 0; }
 
+        /* 공지 지난 글 리스트 전용 - 카드(그림자+둥근 테두리) 대신 가벼운 구분선 스타일.
+           홈 화면 "최근 공지"는 원래 카드 스타일 그대로 두고, 여기(news-past-item)만
+           덮어써서 리스트가 길어져도 화면이 무겁지 않고 메신저 리스트처럼 조밀하게 훑힌다. */
+        /* 최신 글 카드가 바뀔 때(리스트 클릭으로 다른 글이 올라올 때) 뚝 바뀌지 않고
+           살짝 페이드인되도록. innerHTML로 매번 새로 그려지는 요소라 이 클래스가 붙는
+           순간 애니메이션이 자동으로 다시 재생된다. */
+        @keyframes newsFeaturedFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .news-post-card-fade { animation: newsFeaturedFadeIn 0.25s ease; }
+
+        .news-past-item.home-notice-card {
+            background: transparent; box-shadow: none; border-radius: 0;
+            border-bottom: 1px solid var(--color-border); padding: 12px 4px;
+        }
+        .news-past-item.home-notice-card:hover { background: var(--color-bg-subtle); transform: none; }
+        .news-past-item.home-notice-card:last-child { border-bottom: none; }
+
+        /* 날짜 그룹 라벨(오늘/어제/이번 주 ...) - 지난 글 리스트/모바일 단일 리스트
+           둘 다에서 그룹이 바뀔 때마다 이 라벨이 끼워진다. */
+        .news-date-group-label {
+            font-size: 11px; font-weight: 800; color: var(--color-text-sub);
+            padding: 14px 4px 4px; text-transform: uppercase; letter-spacing: 0.02em;
+        }
+        .news-date-group-label:first-child { padding-top: 0; }
+
 
         /* 멤버 소식 피드 - 인스타그램 포스트 스타일: 사진은 카드 끝까지 꽉 채우고,
            헤더/본문/링크에만 안쪽 여백을 따로 준다 */
@@ -275,10 +299,18 @@
         }
         .news-post-photos::-webkit-scrollbar { display: none; }
         .news-post-photos img { flex: 0 0 100%; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center; border-radius: 0; scroll-snap-align: start; scroll-snap-stop: always; display: block; background: var(--color-bg-subtle); }
-        .news-post-photos-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 7px; pointer-events: none; }
-        .photo-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.55); border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: background 0.15s, transform 0.15s; }
-        .photo-dot.active { background: #fff; transform: scale(1.25); box-shadow: 0 1px 4px rgba(0,0,0,0.6); }
-        .news-post-link-row { display: flex; justify-content: flex-end; margin-top: 12px; padding: 0 16px 12px 16px; }
+        /* 사진 여러 장 인디케이터 - 사진 하단 중앙에, 지금 보고 있는 사진은 캡슐(pill)
+           모양으로 넓게, 나머지는 작은 점으로 표시한다(iOS 갤러리 인디케이터 느낌). */
+        .news-post-photos-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 6px; pointer-events: none; }
+        .photo-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.55); box-shadow: 0 1px 2px rgba(0,0,0,0.4); transition: width 0.2s, border-radius 0.2s, background 0.2s; }
+        .photo-dot.active { width: 16px; border-radius: 3px; background: rgba(255,255,255,0.95); }
+
+        /* 좋아요/조회수 - 원글 보기 링크와 같은 줄, 왼쪽에 배치 */
+        .news-post-stats { display: flex; gap: 14px; color: var(--color-text-sub); font-size: 12px; font-weight: 700; }
+        .news-post-stat { display: inline-flex; align-items: center; gap: 4px; }
+        .news-post-stat svg { flex-shrink: 0; opacity: 0.85; }
+
+        .news-post-link-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 0 16px 12px 16px; }
         .news-post-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
         .news-post-link:hover { color: var(--color-primary); }
 
@@ -307,7 +339,7 @@
            지금까지 "더보기"를 누를수록 리스트가 아래로 계속 길어지기만 했던 것.
            min-height:0으로 그 기본값을 없애야 진짜로 clip되어 스크롤이 생긴다.
            max-height는 대략 항목 5개 정도가 보이는 높이로 잡았다. */
-        #news-past-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; min-height: 0; max-height: 500px; padding-right: 2px; }
+        #news-past-list { display: flex; flex-direction: column; gap: 0; overflow-y: auto; flex: 1; min-height: 0; max-height: 500px; padding-right: 2px; }
         #news-past-list::-webkit-scrollbar { width: 5px; }
         #news-past-list::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
         .past-posts .news-load-more-wrap { flex-shrink: 0; text-align: center; padding-top: 12px; }
@@ -338,10 +370,11 @@
         @media (hover: none) {
             .news-photo-nav { display: none; }
         }
-        .news-load-more { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; font-size: var(--fs-body); font-weight: 700; color: var(--color-primary); padding: 0 16px 8px 16px; cursor: pointer; transition: opacity 0.15s; }
+        .news-load-more { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 1px solid var(--color-border); border-radius: 20px; font-size: var(--fs-body); font-weight: 700; color: var(--color-text-sub); padding: 8px 18px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
         /* 카드/표 아래 붙는 보조 요소(더보기 버튼, 이전 멤버 버튼, 업데이트 시각 캡션 등)의
-           위쪽 여백은 전부 이 클래스 하나로 통일한다. 버튼 자체는 위쪽 패딩을 갖지 않으므로
-           (클릭 영역 확보용 아래/좌우 패딩만 있음) 이 16px에 다른 값이 더해질 일이 없다. */
+           위쪽 여백은 전부 이 클래스 하나로 통일한다. 버튼 자체의 패딩(pill 모양을 위한
+           상하좌우 8px/18px)과는 별개로, 버튼과 그 위 콘텐츠 사이 간격은 항상 이
+           .section-trailer(또는 각 래퍼의 padding-top)로만 준다. */
         .section-trailer { padding-top: var(--space-trailer); }
         /* 이전 멤버 섹션은 display:none/block으로만 토글되므로(접혀있을 땐 아예
            렌더링 자체가 안 됨), 여기 margin-top을 줘도 접혀있을 때는 아무 공간도
@@ -355,7 +388,7 @@
            담당하며, 둘 다 --space-block-gap 하나의 값을 그대로 따라간다. */
         .gap-block { --bs-gutter-x: var(--space-block-gap); --bs-gutter-y: var(--space-block-gap); }
         .mb-block { margin-bottom: var(--space-block-gap) !important; }
-        .news-load-more:hover { opacity: 0.7; }
+        .news-load-more:hover { background: var(--color-bg-subtle); color: var(--color-text-main); border-color: var(--color-border-strong); }
 
         /* 도구 페이지 카드 */
         .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
@@ -508,8 +541,12 @@
         /* 숫자의 위치/레이아웃(margin, line-height 등)은 기존과 완전히 동일하게 두고,
            ::after는 absolute라 문서 흐름에 영향을 주지 않으므로 이 부분만 확대하고
            배경을 진하게 채워 눈에 훨씬 잘 띄는 알약형 배지로 바꾼다. */
+        /* 동그라미로: .cal-day-number 자체의 박스(width:max-content, 자연스러운 텍스트
+           흐름)는 그대로 두고, 장식용 ::after만 고정 크기(22px) 원으로 만들어 텍스트
+           중앙에 절대 위치시킨다. 텍스트 글자 수(1자리/2자리)에 따라 배지 모양이 달라지지
+           않고, absolute라 문서 흐름에도 영향이 없어 다른 요소 위치가 전혀 안 바뀐다. */
         .cal-day-cell.today .cal-day-number { width: max-content; position: relative; z-index: 1; color: #fff; }
-        .cal-day-cell.today .cal-day-number::after { content: ''; position: absolute; top: -3px; bottom: -3px; left: -6px; right: -6px; background-color: var(--color-primary); z-index: -1; border-radius: 6px; box-shadow: 0 1px 3px rgba(41,121,255,0.35); }
+        .cal-day-cell.today .cal-day-number::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; background-color: var(--color-primary); z-index: -1; border-radius: 50%; box-shadow: 0 1px 3px rgba(41,121,255,0.35); }
         /* 공휴일과 겹치는 오늘 날짜는 공휴일 빨간색(!important)보다 이 규칙이
            클래스 4개로 특정도가 더 높아 항상 이긴다 - 배경이 채워지므로 흰색으로. */
         .cal-day-cell.today.holiday .cal-day-number { color: #fff !important; }
@@ -524,13 +561,30 @@
            그림자가 이음매처럼 겹쳐 보이지 않도록 막대 전용으로만 그림자를 없앤다. */
         .cal-longterm-bar { box-shadow: none; }
 
+        /* 오늘의 일정/선택한 날짜 일정 박스는 바깥에 이미 .clean-card.p-4(24px)가 있는데,
+           안쪽 항목들도 위/아래에 자기만의 padding(12px)이나 안내문구 padding(16px)을
+           또 가지고 있어서 첫/마지막 항목 기준으로 24+12(또는 24+16)만큼 이중으로 여백이
+           쌓였다 - 사이트의 다른 리스트(예: 홈 화면 카드들)는 바깥 p-4 하나만 쓰고 안쪽엔
+           항목 사이 간격만 두는 방식이라, 여기도 첫/마지막 항목의 바깥쪽 여백만 지워서
+           맞춘다(항목 사이 간격과 구분선은 그대로 유지).
+        */
         .cal-today-list, .cal-selected-list { display: flex; flex-direction: column; gap: 0; max-height: 360px; overflow-y: auto; padding-right: 4px; }
         .cal-today-card, .cal-selected-card { padding: 12px 0; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--color-bg-subtle); }
-        .cal-today-card:last-child, .cal-selected-card:last-child { border-bottom: none; }
-        .cal-no-schedule { font-size: var(--fs-body); color: var(--color-text-sub); text-align: center; padding: 16px 0; width: 100%; }
+        .cal-today-card:first-child, .cal-selected-card:first-child { padding-top: 0; }
+        .cal-today-card:last-child, .cal-selected-card:last-child { padding-bottom: 0; border-bottom: none; }
+        .cal-no-schedule { font-size: var(--fs-body); color: var(--color-text-sub); text-align: center; padding: 0; width: 100%; }
         .cal-card-main { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); }
-        .cal-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .cal-card-time { color: var(--color-text-main); font-weight: 400; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
         .cal-card-person { font-weight: 800; color: var(--color-text-main); font-size: var(--fs-body); }
         .cal-card-desc { color: var(--color-text-main); font-size: var(--fs-body); flex-grow: 1; font-weight: 400; }
         .cal-card-detail { font-size: 12px; color: var(--color-text-sub); font-weight: 400; }
+
+        /* 휴방자 표시 - "오늘의 일정"/"선택한 날짜 일정" 카드 안, 일정 목록 아래에 붙는다.
+           일정이 없어서 .cal-no-schedule만 있을 때도 그 아래에 그대로 붙고, 휴방자
+           자체가 없는 날은 이 섹션 자체가 렌더링되지 않는다(calOffAirExtra가 빈 문자열 반환). */
+        .cal-offair-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-bg-subtle); }
+        .cal-offair-label { font-size: 11px; font-weight: 800; color: var(--color-text-sub); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 10px; }
+        .cal-offair-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .cal-offair-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--color-bg-subtle); border-radius: 20px; padding: 4px 12px 4px 4px; }
+        .cal-offair-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: var(--color-border); flex-shrink: 0; }
+        .cal-offair-name { font-size: 12px; font-weight: 700; color: var(--color-text-main); white-space: nowrap; }
