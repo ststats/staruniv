@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>멀티뷰어 - 캄몬스타즈</title>
+<title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="style.css">
 <style>
     /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
@@ -37,8 +37,6 @@
     .mv-settings-inner { padding: 16px; }
     .mv-settings-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .mv-title { font-size: 16px; font-weight: 800; }
-    .mv-icon-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-bg, #fff); color: var(--color-text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .mv-icon-btn:hover { border-color: var(--color-primary); }
 
     /* 설정 바(열 개수/포커스모드/다크모드)는 도구 탭의 .mv-settings-bar와 완전히
        같은 클래스(style.css 공용)를 그대로 쓴다 - 서랍 폭에 맞게 세로로 쌓이도록
@@ -88,8 +86,7 @@
 <div class="mv-settings-panel" id="mv-settings-panel">
     <div class="mv-settings-inner">
         <div class="mv-settings-top">
-            <div class="mv-title">🎬 멀티뷰어</div>
-            <button type="button" class="mv-icon-btn" onclick="mvToggleSettingsPanel()" title="닫기">✕</button>
+            <div class="mv-title">멀티뷰어</div>
         </div>
 
         <div class="section-title">설정</div>
@@ -112,15 +109,15 @@
             </label>
         </div>
 
+        <div class="section-title">선택된 목록</div>
+        <div class="mv-order-row" id="mv-order-row"></div>
+
         <div class="section-title">멤버 선택</div>
         <div class="mv-chip-row" id="mv-chip-row"></div>
         <div class="mv-add-row">
             <input type="text" id="mv-add-input" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
             <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
         </div>
-
-        <div class="section-title">선택된 목록</div>
-        <div class="mv-order-row" id="mv-order-row"></div>
     </div>
 </div>
 
@@ -273,9 +270,15 @@
     }
     function mvToggleMemberChip(soopId, name) {
         const idx = mvOrder.findIndex(e => e.soopId === soopId);
-        if (idx !== -1) mvOrder.splice(idx, 1);
-        else mvOrder.push({ soopId, name, isMember: true });
-        mvRenderAll();
+        if (idx !== -1) {
+            mvRemove(idx);
+        } else {
+            mvOrder.push({ soopId, name, isMember: true });
+            mvAddGridCell(mvOrder[mvOrder.length - 1]);
+            mvRenderMemberChips();
+            mvRenderOrderRow();
+            mvSaveState();
+        }
     }
     async function mvLoadMembers() {
         try {
@@ -328,12 +331,83 @@
     function mvMove(idx, dir) {
         const target = idx + dir;
         if (target < 0 || target >= mvOrder.length) return;
+        // 그리드를 통째로 다시 그리면(mvRenderAll) 모든 iframe이 새로 생성되면서
+        // 재생 중이던 영상까지 전부 리셋된다 - 실제로는 두 칸의 DOM 위치만
+        // 서로 맞바꾸면 되므로, 그 두 칸만 옮기고 나머지는 그대로 둔다.
+        mvSwapGridCells(idx, target);
         [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
-        mvRenderAll();
+        mvRenderOrderRow();
+        mvSaveState();
+    }
+    function mvSwapGridCells(idxA, idxB) {
+        const grid = document.getElementById('mv-grid');
+        if (!grid) return; // 남은 게 1개뿐이라 그리드 자체가 없는 경우(위/아래 버튼도 비활성화돼 있어 사실상 안 옴)
+        const cells = grid.children;
+        const elA = cells[idxA];
+        const elB = cells[idxB];
+        if (!elA || !elB) return;
+
+        // 포커스 모드에서 0번 자리는 "메인(2×2)" 취급이라, 그 자리가 바뀌면
+        // 어느 카드가 메인인지도 같이 옮겨줘야 한다 - 카드 내용(iframe)은 그대로
+        // 두고 클래스만 옮기므로 이것도 영상 재생에는 영향이 없다.
+        if (mvFocus) {
+            if (idxA === 0) { elA.classList.remove('mv-cell-main'); elB.classList.add('mv-cell-main'); }
+            else if (idxB === 0) { elB.classList.remove('mv-cell-main'); elA.classList.add('mv-cell-main'); }
+        }
+
+        // 두 엘리먼트의 DOM 위치를 실제로 맞바꾼다(임시 표시자로 안전하게 스왑).
+        const placeholder = document.createComment('mv-swap');
+        elA.replaceWith(placeholder);
+        elB.replaceWith(elA);
+        placeholder.replaceWith(elB);
     }
     function mvRemove(idx) {
+        // 삭제 후 구조 자체가 바뀌는 경계(그리드 자체가 필요 없어지거나, 포커스
+        // 모드에서 메인 혼자 남는 단독 구조로 바뀌는 경우)만 전체를 다시 그리고,
+        // 그 외에는 지우는 카드 하나만 없애서 나머지 iframe은 그대로 둔다.
+        const handled = mvRemoveGridCell(idx);
         mvOrder.splice(idx, 1);
-        mvRenderAll();
+        if (handled) mvRelayoutGridDims(); else mvRenderGrid();
+        mvRenderMemberChips();
+        mvRenderOrderRow();
+        mvSaveState();
+    }
+    function mvRemoveGridCell(idx) {
+        const remainingCount = mvOrder.length - 1;
+        if (remainingCount === 0 || (mvFocus && remainingCount === 1)) return false;
+        const grid = document.getElementById('mv-grid');
+        if (!grid) return false;
+        const el = grid.children[idx];
+        if (!el) return false;
+        el.remove();
+        // 포커스 모드에서 0번(메인)을 지운 경우, 다음 칸이 새 메인이 된다.
+        if (mvFocus && idx === 0 && grid.children[0]) grid.children[0].classList.add('mv-cell-main');
+        return true;
+    }
+    function mvAddGridCell(entry) {
+        // 처음 추가되거나(그리드 자체가 아직 없음), 포커스 모드에서 메인 혼자인
+        // 단독 구조 -> 메인+나머지 그리드 구조로 바뀌는 경계는 전체를 다시 그린다.
+        // 그 외에는 새 카드 하나만 맨 끝에 추가한다(항상 목록 끝에 붙으므로
+        // 메인이 될 일은 없다 - 기존 카드들은 안 건드리니 iframe도 그대로 유지).
+        const needsFullRebuild = mvOrder.length === 1 || (mvFocus && mvOrder.length === 2);
+        const grid = document.getElementById('mv-grid');
+        if (needsFullRebuild || !grid) { mvRenderGrid(); return; }
+        grid.insertAdjacentHTML('beforeend', mvCellHtml(entry, false));
+        mvRelayoutGridDims();
+    }
+    // 인원 수가 바뀌면 열/행 개수가 달라질 수 있어 그리드 크기(스타일)만 다시
+    // 계산한다 - 칸 내용(iframe)은 손대지 않는다.
+    function mvRelayoutGridDims() {
+        const grid = document.getElementById('mv-grid');
+        if (!grid) return;
+        if (mvFocus) {
+            const area = document.getElementById('mv-grid-area');
+            const { cols, rows } = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, mvOrder.length - 1);
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        } else {
+            mvApplyGridColumns();
+        }
     }
     function mvAddCustom() {
         const input = document.getElementById('mv-add-input');
@@ -345,8 +419,11 @@
         if (byName) {
             if (mvOrder.some(e => e.soopId === byName['SOOP ID'])) { alert('이미 선택된 목록에 있습니다.'); return; }
             mvOrder.push({ soopId: byName['SOOP ID'], name: byName['이름'], isMember: true });
+            mvAddGridCell(mvOrder[mvOrder.length - 1]);
+            mvRenderMemberChips();
+            mvRenderOrderRow();
+            mvSaveState();
             input.value = '';
-            mvRenderAll();
             return;
         }
 
@@ -355,19 +432,22 @@
         if (!/^[a-z0-9_-]+$/.test(id)) { alert('멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다.'); return; }
         if (mvOrder.some(e => e.soopId === id)) { alert('이미 추가된 아이디입니다.'); return; }
         const knownMember = mvMembers.find(m => m['SOOP ID'] === id);
-        mvOrder.push(knownMember ? { soopId: id, name: knownMember['이름'], isMember: true } : { soopId: id, name: id, isMember: false });
+        const entry = knownMember ? { soopId: id, name: knownMember['이름'], isMember: true } : { soopId: id, name: id, isMember: false };
+        mvOrder.push(entry);
+        mvAddGridCell(entry);
+        mvRenderMemberChips();
+        mvRenderOrderRow();
+        mvSaveState();
         input.value = '';
-        mvRenderAll();
     }
 
     // ===== 그리드: 실시간 영상은 SOOP의 공식 라이브 임베드 엔드포인트
     // (play.sooplive.com/{아이디}/embed)를 iframe으로 그대로 삽입한다. 채팅은
     // 요청대로 껐고(showChat=false), 자동재생을 켜뒀다(autoPlay=true).
-    // 화질을 1080p로 강제 요청하면 SOOP이 "고화질 스트리머"라는 로컬 프로그램을
-    // 거치려 하고, 그 로컬 프로그램에 연결하는 과정이 최근 크롬 정책(로컬
-    // 네트워크 접근)에 막혀 "연결이 차단되었습니다" 에러가 뜨는 걸로 보인다.
-    // 그래서 화질 파라미터를 빼고 기본(자동) 화질로 열어서, 애초에 그 로컬
-    // 프로그램을 거치지 않는 일반 브라우저 스트리밍 경로를 타게 한다.
+    // 화질을 1080p 등으로 강제 요청하면 SOOP이 "고화질 스트리머"라는 PC 전용
+    // 로컬 프로그램에 연결을 시도하는데, 이게 iframe 안에서는 막혀서 재생이
+    // 안 됐다 - 화질 파라미터를 아예 안 넘기고 기본(자동) 화질로 열면 그
+    // 로컬 프로그램을 거치지 않고 정상 재생됨을 실제 테스트로 확인함.
     function mvEmbedUrl(soopId) {
         const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
