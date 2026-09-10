@@ -105,6 +105,15 @@
     .admin-tool-detail { font-size: 12px; font-weight: 500; color: var(--color-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
     .admin-tool-row .delete-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--color-lose); cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
     .admin-tool-row .delete-btn:hover { text-decoration: underline; }
+
+    /* 휴방 멤버 선택 - 일정 추가 폼 하단, 스크롤 가능한 체크박스 목록 */
+    .admin-offair-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-bg-subtle); }
+    .admin-offair-list { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+    .admin-offair-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .admin-offair-item:hover { background: var(--color-bg-subtle); }
+    .admin-offair-item input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--color-primary); cursor: pointer; }
+    .admin-offair-item img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
+    .admin-offair-item span { font-size: var(--fs-body); font-weight: 600; color: var(--color-text-main); }
 </style>
 </head>
 <body>
@@ -228,6 +237,18 @@
                         <input type="text" id="inputDetail" placeholder="상세내용 (오늘의 일정에만 표시)">
                     </div>
                     <button class="admin-submit-btn" id="submitBtn" onclick="addOrUpdateSchedule()">일정 반영하기</button>
+
+                    <!-- 휴방 멤버 선택 - 위 일정 폼과는 별개로, 지금 선택된 날짜(캘린더에서
+                         클릭한 날짜)에 대해 체크한 멤버가 그 날 휴방자로 기록된다.
+                         "저장" 버튼은 상단의 저장 버튼(saveAllToGithub) 하나로 통일 -
+                         체크박스를 누르는 즉시 calOffAir가 메모리에서 갱신되고,
+                         상단 저장을 누르면 일정이랑 같이 한 번에 커밋된다. -->
+                    <div class="admin-offair-block">
+                        <div class="section-title-sm" style="margin-bottom:10px;">휴방 멤버 선택 - <span id="offairDateLabel">날짜를 선택하세요</span></div>
+                        <div class="admin-offair-list" id="offairMemberList">
+                            <div class="text-center text-muted py-3" style="font-size:var(--fs-body);">멤버 정보를 불러오는 중...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -309,6 +330,28 @@
 
     const escapeHTML = calEscapeHTML; // calendar.js가 이미 이스케이프 함수를 갖고 있어 그대로 재사용
 
+    // 휴방 멤버 체크박스에 사진+이름을 보여주기 위한 멤버 목록 - 사이트 본편(index.html)의
+    // app.js와 달리 이 어드민 페이지는 멤버 데이터를 안 쓰고 있었어서, 휴방 기능을 위해
+    // 여기서도 같은 site_data.json을 불러온다.
+    let dbMembers = [];
+    const loadMembersData = async () => {
+        try {
+            const res = await fetch('data/site_data.json', { cache: 'no-store' });
+            if (res.ok) dbMembers = (await res.json()).members || [];
+        } catch (e) {
+            console.error('멤버 데이터를 불러오지 못했습니다:', e);
+        }
+    };
+    // app.js의 getProfileImgUrl과 동일한 URL 규칙 (여기선 이 기능 하나만 쓰므로 통째로
+    // 가져오는 대신 URL 생성 로직만 그대로 복제)
+    function getProfileImgUrl(soopId) {
+        if (!soopId) return null;
+        const id = String(soopId).trim().toLowerCase();
+        if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
+        const prefix = id.substring(0, 2);
+        return `https://profile.img.sooplive.co.kr/LOGO/${prefix}/${id}/${id}.jpg`;
+    }
+
     const saveTokenLocally = () => {
         const token = document.getElementById('githubToken').value.trim();
         if (!token) return alert('토큰을 입력해주세요.');
@@ -328,7 +371,9 @@
             if (res.ok) {
                 const data = await res.json();
                 const decoded = decodeURIComponent(escape(atob(data.content)));
-                calEvents = calMigrateData(JSON.parse(decoded));
+                const parsed = JSON.parse(decoded);
+                calEvents = calMigrateData(parsed);
+                calOffAir = parsed.offAir || {};
                 calRenderCalendar();
             } else if (res.status === 404) {
                 calRenderCalendar();
@@ -349,7 +394,7 @@
         saveBtn.disabled = true;
 
         try {
-            const jsonContent = JSON.stringify({ events: calEvents }, null, 2);
+            const jsonContent = JSON.stringify({ events: calEvents, offAir: calOffAir }, null, 2);
 
             // 캘린더 그리드("이달의 일정")를 캡처해서 JSON이랑 같은 커밋에 같이 넣는다.
             // (따로 커밋하면 Vercel 배포가 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
@@ -567,6 +612,7 @@
     window.calOnDateSelect = (dateStr) => {
         cancelEdit();
         document.getElementById('inputStartDate').value = dateStr;
+        renderOffAirCheckboxList();
     };
 
     const inputDescEl = document.getElementById('inputDesc');
@@ -574,6 +620,67 @@
         this.style.height = '42px';
         this.style.height = this.scrollHeight + 'px';
     });
+
+    // ----- 휴방 멤버 선택 (calOffAir - calendar.js가 들고 있는 날짜별 휴방 멤버 맵) -----
+    // 체크박스를 누르면 그 자리에서 바로 calOffAir를 갱신하고(별도 저장 버튼 없음),
+    // 상단의 "저장" 버튼(saveAllToGithub)을 누르면 일정이랑 한 커밋에 같이 반영된다.
+    function renderOffAirCheckboxList() {
+        const listEl = document.getElementById('offairMemberList');
+        const labelEl = document.getElementById('offairDateLabel');
+        if (labelEl) labelEl.innerText = calSelectedDateStr || '날짜를 선택하세요';
+        if (!listEl) return;
+
+        if (!dbMembers.length) {
+            listEl.innerHTML = `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">멤버 정보를 불러오지 못했습니다.</div>`;
+            return;
+        }
+        const checkedIds = new Set(calOffAirForDate(calSelectedDateStr));
+        listEl.innerHTML = dbMembers.map(m => {
+            const soopId = m['SOOP ID'];
+            const name = m['이름'] || soopId;
+            const imgUrl = getProfileImgUrl(soopId);
+            const imgHtml = imgUrl
+                ? `<img src="${imgUrl}" alt="" onerror="this.style.visibility='hidden';">`
+                : `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--color-bg-subtle);flex-shrink:0;">👤</span>`;
+            return `
+                <label class="admin-offair-item">
+                    <input type="checkbox" data-soop-id="${escapeHTML(soopId)}" ${checkedIds.has(soopId) ? 'checked' : ''} onchange="toggleOffAirMember(this)">
+                    ${imgHtml}
+                    <span>${escapeHTML(name)}</span>
+                </label>`;
+        }).join('');
+    }
+
+    function toggleOffAirMember(checkbox) {
+        if (!calSelectedDateStr) { checkbox.checked = false; return alert('먼저 캘린더에서 날짜를 선택해주세요.'); }
+        const soopId = checkbox.getAttribute('data-soop-id');
+        const current = new Set(calOffAirForDate(calSelectedDateStr));
+        if (checkbox.checked) current.add(soopId); else current.delete(soopId);
+        // 아무도 없는 날짜 키는 지워서 저장 데이터가 계속 불어나지 않게 한다.
+        if (current.size) calOffAir[calSelectedDateStr] = [...current];
+        else delete calOffAir[calSelectedDateStr];
+        // 오늘/선택한 날짜 카드에 붙는 휴방 칩 미리보기도 바로 갱신
+        calRenderTodaySchedules();
+        calRenderSelectedDateSchedules();
+    }
+
+    // 어드민에서도 사이트와 동일하게 오늘의 일정/선택한 날짜 일정 카드 아래에
+    // 휴방 칩을 미리 보여준다 (실제 렌더링 로직은 사이트 쪽 app.js의 것과 동일).
+    window.calOffAirExtra = (dateStr, type) => {
+        const soopIds = calOffAirForDate(dateStr);
+        if (!soopIds.length) return '';
+        const chips = soopIds.map(soopId => {
+            const m = dbMembers.find(x => x['SOOP ID'] === soopId);
+            const name = m ? m['이름'] : soopId;
+            const imgUrl = getProfileImgUrl(soopId);
+            const avatarHtml = imgUrl
+                ? `<img class="cal-offair-avatar" src="${imgUrl}" alt="" onerror="this.style.visibility='hidden';">`
+                : `<span class="cal-offair-avatar" style="display:inline-flex;align-items:center;justify-content:center;">👤</span>`;
+            return `<div class="cal-offair-chip">${avatarHtml}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
+        }).join('');
+        const label = '휴방';
+        return `<div class="cal-offair-section"><div class="cal-offair-label">${label}</div><div class="cal-offair-chips">${chips}</div></div>`;
+    };
 
     // ----- 도구 관리 (docs/data/tools.json) -----
     // 캘린더와 달리 이미지 캡처가 없어서 GitHub Contents API의 단순 PUT(생성/수정 겸용)만
@@ -677,7 +784,7 @@
     };
 
     const init = async () => {
-        await loadPublicHolidays();
+        await Promise.all([loadPublicHolidays(), loadMembersData()]);
 
         const today = new Date();
         const todayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
@@ -690,6 +797,9 @@
         } else {
             calRenderCalendar();
         }
+        // calOffAir(휴방 데이터)가 이제 막 로드됐을 수 있으니, 위 calSelectDate 때
+        // 그렸던(비어있었을 수 있는) 체크박스 상태를 실제 데이터로 다시 맞춘다.
+        renderOffAirCheckboxList();
         await loadToolsFromGithub();
     };
 
