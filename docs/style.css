@@ -501,12 +501,18 @@
         .cal-calendar-area .clean-card { min-width: 0; max-width: 100%; display: flex; flex-direction: column; width: 100%; overflow: hidden; }
 
         /* 모바일(세로 배치) 전환 지점: "화면이 좁아서 어쩔 수 없이 넘어가는" 지점이
-           아니라 "그 시점에 세로배치 캘린더가 여백 없이 딱 804px를 채우는" 지점으로
+           아니라 "그 시점에 세로배치 캘린더(804px)가 여백 없이 딱 채워지는" 지점으로
            역산한 값이다. 이 구간(768~1199px)에서 .container 좌우 패딩은 32px씩
-           (64px)이므로, 뷰포트 폭 868px일 때 컨테이너 내부 폭이 정확히 804px(캘린더
-           고정 너비)가 된다 - 그보다 넓을 때 세로배치로 넘어가면 캘린더 옆으로
-           빈 여백이 남으므로, 정확히 이 값 이하로 줄어들었을 때만 전환한다. */
-        @media (max-width: 868px) {
+           (64px)이므로 이론상으로는 뷰포트 폭 868px(=804+64)이 정확한 경계다.
+           다만 <html>에 scrollbar-gutter:stable이 강제로 걸려있어서, 실제 사용 가능한
+           폭이 이 이론치보다 스크롤바 폭만큼(브라우저/OS마다 다르지만 보통 15~17px)
+           더 좁아질 수 있다 - 이론값을 그대로 쓰면 딱 그 경계에서 살짝 잘리는
+           문제가 생겨서, 20px 여유를 더해 888px에서 넘어가게 한다.
+           그 위 구간(888px~캘린더+사이드바가 전부 들어가는 폭 사이)은 세로배치가
+           아니라 그대로 가로배치를 유지하면서, 사이드바가 먼저 최소폭(280px)까지
+           줄어들고 그 다음에야 캘린더 영역이 자기 폭(804px)보다 좁아지며 내부적으로
+           가로 스크롤(.cal-calendar-inner)이 생기는 게 원래 설계다. */
+        @media (max-width: 888px) {
             .cal-main-layout { flex-direction: column; gap: 20px; }
             .cal-sidebar { display: contents; } 
             .cal-today-card-wrapper { order: 1; width: 100%; }
