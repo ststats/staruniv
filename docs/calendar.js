@@ -16,6 +16,47 @@
     let calOffAir = {};
     const calOffAirForDate = (dateStr) => calOffAir[dateStr] || [];
 
+    // '김윤환'이 휴방으로 등록된 날은 달력 칸 맨 위(다른 일정보다 위)에 노란 "휴방"
+    // 표시를 붙여준다 - 실제 일정이 아니라서 "오늘의 일정"/"선택한 날짜 일정"
+    // 목록에는 안 뜨고, 달력 칸 자체에만 표시된다. 연속으로 휴방이면 장기 일정
+    // 막대처럼 옆 칸과 이어붙인다.
+    const CAL_YOUNHWAN_NAME = '김윤환';
+    const CAL_YOUNHWAN_SHORT = '윤환';
+    const CAL_YOUNHWAN_COLOR = '#fff3b0';
+
+    const calShiftDate = (dateStr, delta) => {
+        const d = new Date(dateStr + 'T00:00:00');
+        d.setDate(d.getDate() + delta);
+        return calGetFormatDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    };
+
+    // calendar.js는 멤버 정보를 모르고 soopId만 다루므로, soopId -> 이름 변환은
+    // app.js가 걸어둔 훅(window.calOffAirMemberName)에 맡긴다. 훅이 아직 없는
+    // 페이지(app.js 로드 전/없는 경우)에서는 조용히 false를 반환한다.
+    const calIsYounhwanOffAir = (dateStr) => {
+        if (typeof window.calOffAirMemberName !== 'function') return false;
+        return calOffAirForDate(dateStr).some(soopId => window.calOffAirMemberName(soopId) === CAL_YOUNHWAN_NAME);
+    };
+
+    // 장기 일정 막대(calGetLongTermBarHTML)와 같은 이어붙이기 방식이지만, 진짜
+    // 시작/종료일 대신 "어제/내일도 김윤환 휴방인가"로 연결 여부를 판단한다.
+    const calGetYounhwanBarHTML = (dateStr, isWeekStart, isWeekEnd) => {
+        const connectsLeft = !isWeekStart && calIsYounhwanOffAir(calShiftDate(dateStr, -1));
+        const connectsRight = !isWeekEnd && calIsYounhwanOffAir(calShiftDate(dateStr, 1));
+        const roundLeft = !connectsLeft;
+        const roundRight = !connectsRight;
+        const bleedLeft = roundLeft ? '0' : '-8px';
+        const bleedRight = roundRight ? '0' : '-8px';
+        const padLeft = roundLeft ? '4px' : '12px';
+        const padRight = roundRight ? '4px' : '12px';
+        const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
+        return `
+            <div class="cal-cell-event cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; padding-left:${padLeft}; padding-right:${padRight}; border-radius:${radius}; background-color: ${CAL_YOUNHWAN_COLOR};">
+                <div class="cal-cell-top"><span class="cal-event-time">휴방</span><span class="cal-event-person">${CAL_YOUNHWAN_SHORT}</span></div>
+            </div>
+        `;
+    };
+
     // 공휴일 목록은 해마다 바뀌므로 코드에 박아두지 않고 별도 JSON(holidays.json)에서
     // fetch해온다 - 새해 공휴일을 추가할 때 코드를 안 건드리고 그 파일만 갱신하면 된다.
     let calPublicHolidays = {};
@@ -171,6 +212,11 @@
             if (dateStr === curTodayStr) dayDiv.classList.add('today');
             if (calPublicHolidays[dateStr]) dayDiv.classList.add('holiday');
             let dayHTML = `<span class="cal-day-number">${i}</span>`;
+
+            // '김윤환' 휴방 표시는 가장 상단(다른 일정보다 위)에 붙인다.
+            if (calIsYounhwanOffAir(dateStr)) {
+                dayHTML += calGetYounhwanBarHTML(dateStr, dayOfWeek === 0, dayOfWeek === 6);
+            }
 
             // 기간(장기)에 걸친 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는
             // 막대로, 하루짜리 일정은 그 아래에 기존과 동일한 카드로 표시한다.
