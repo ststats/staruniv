@@ -55,6 +55,9 @@
     .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
+    .mv-order-item .mv-order-focus { color: #555; }
+    .mv-order-item .mv-order-focus:hover { color: #e8a400; }
+    .mv-order-item .mv-order-focus.active { color: #f5a623; }
 
     /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 정확히 맞춘다. MultiTwitch 등
        다른 멀티뷰어들도 칸 크기를 직접 16:9로 계산하지 않고 그냥 칸을 꽉
@@ -135,14 +138,29 @@
     let mvOrder = [];
     let mvCols = 2;
     let mvFocus = false;
+    let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
     let mvMembers = [];   // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
     let mvLiveMap = {};   // soopId -> 방송중 여부
+
+    function mvFocusEntryId() {
+        // 명시적으로 지정한 포커스 대상이 있으면 그걸, 없으면(처음이거나 그 사람이
+        // 목록에서 빠진 경우) 목록 1번을 기본값으로 쓴다.
+        if (mvFocusId && mvOrder.some(e => e.soopId === mvFocusId)) return mvFocusId;
+        return mvOrder.length ? mvOrder[0].soopId : null;
+    }
+    function mvSetFocusTarget(soopId) {
+        mvFocusId = soopId;
+        mvRenderOrderRow();
+        mvRenderGrid(); // 누가 메인인지 자체가 바뀌는 일이라 그리드는 새로 그린다.
+        mvSaveState();
+    }
 
     function mvSaveState() {
         try {
             localStorage.setItem('mv-order', JSON.stringify(mvOrder));
             localStorage.setItem('mv-cols', String(mvCols));
             localStorage.setItem('mv-focus', mvFocus ? '1' : '0');
+            localStorage.setItem('mv-focus-id', mvFocusId || '');
         } catch (e) { /* localStorage 접근 불가한 환경이면 그냥 무시 */ }
     }
 
@@ -158,6 +176,7 @@
                 .map(e => ({ soopId: e.id.toLowerCase(), name: e.name || e.id, isMember: !!e.isMember }));
             mvCols = Math.min(4, Math.max(1, parseInt(params.get('cols'), 10) || 2));
             mvFocus = params.get('focus') === '1';
+            mvFocusId = params.get('focusId') || null;
             // 도구 탭에서 명시적으로 넘긴 다크모드 설정이 있으면 그걸 우선한다
             // (없으면 아래에서 마지막으로 써둔 localStorage 값을 그대로 쓴다).
             if (params.get('theme') === 'dark' || params.get('theme') === 'light') {
@@ -170,7 +189,8 @@
                 mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]');
                 mvCols = Math.min(4, Math.max(1, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
                 mvFocus = localStorage.getItem('mv-focus') === '1';
-            } catch (e) { mvOrder = []; mvCols = 2; mvFocus = false; }
+                mvFocusId = localStorage.getItem('mv-focus-id') || null;
+            } catch (e) { mvOrder = []; mvCols = 2; mvFocus = false; mvFocusId = null; }
         }
         document.getElementById('mv-focus-checkbox').checked = mvFocus;
     }
@@ -232,6 +252,7 @@
     function mvToggleFocus() {
         mvFocus = document.getElementById('mv-focus-checkbox').checked;
         mvApplyColsGroupVisibility();
+        mvRenderOrderRow();
         mvRenderGrid();
         mvSaveState();
     }
@@ -313,9 +334,11 @@
 
     // ===== 순서 목록 =====
     function mvOrderItemHtml(entry, idx) {
+        const isFocusTarget = mvFocus && mvFocusEntryId() === entry.soopId;
         return `
         <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
             <span class="mv-order-num">${idx + 1}.</span>
+            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">★</button>` : ''}
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>
             <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
@@ -331,10 +354,30 @@
     function mvMove(idx, dir) {
         const target = idx + dir;
         if (target < 0 || target >= mvOrder.length) return;
-        // 그리드를 통째로 다시 그리면(mvRenderAll) 모든 iframe이 새로 생성되면서
-        // 재생 중이던 영상까지 전부 리셋된다 - 실제로는 두 칸의 DOM 위치만
-        // 서로 맞바꾸면 되므로, 그 두 칸만 옮기고 나머지는 그대로 둔다.
-        mvSwapGridCells(idx, target);
+
+        if (mvFocus) {
+            const focusId = mvFocusEntryId();
+            const aIsFocus = mvOrder[idx].soopId === focusId;
+            const bIsFocus = mvOrder[target].soopId === focusId;
+            if (aIsFocus || bIsFocus) {
+                // 포커스 대상 본인은 순서가 바뀌어도 여전히 메인으로 그려지고,
+                // 상대방도 "나머지" 안에서의 상대적 순서가 그대로라 그리드 화면
+                // 자체는 안 바뀐다 - 순서 목록 UI(번호)만 갱신하면 된다.
+                [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
+                mvRenderOrderRow();
+                mvSaveState();
+                return;
+            }
+            // 포커스 대상이 아닌 둘 사이의 스왑 - 그리드 DOM은 "메인을 뺀 나머지"
+            // 순서로 그려지므로, 배열 인덱스를 그 렌더 인덱스로 변환해서 스왑한다.
+            const focusIdx = mvOrder.findIndex(e => e.soopId === focusId);
+            const toRenderIdx = i => 1 + (i < focusIdx ? i : i - 1);
+            mvSwapGridCells(toRenderIdx(idx), toRenderIdx(target));
+        } else {
+            // 그리드를 통째로 다시 그리면 모든 iframe이 새로 생성되면서 재생
+            // 중이던 영상까지 리셋된다 - 두 칸의 DOM 위치만 맞바꾼다.
+            mvSwapGridCells(idx, target);
+        }
         [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
         mvRenderOrderRow();
         mvSaveState();
@@ -342,46 +385,58 @@
     function mvSwapGridCells(idxA, idxB) {
         const grid = document.getElementById('mv-grid');
         if (!grid) return; // 남은 게 1개뿐이라 그리드 자체가 없는 경우(위/아래 버튼도 비활성화돼 있어 사실상 안 옴)
-        const cells = grid.children;
-        const elA = cells[idxA];
-        const elB = cells[idxB];
+        const elA = grid.children[idxA];
+        const elB = grid.children[idxB];
         if (!elA || !elB) return;
-
-        // 포커스 모드에서 0번 자리는 "메인(2×2)" 취급이라, 그 자리가 바뀌면
-        // 어느 카드가 메인인지도 같이 옮겨줘야 한다 - 카드 내용(iframe)은 그대로
-        // 두고 클래스만 옮기므로 이것도 영상 재생에는 영향이 없다.
-        if (mvFocus) {
-            if (idxA === 0) { elA.classList.remove('mv-cell-main'); elB.classList.add('mv-cell-main'); }
-            else if (idxB === 0) { elB.classList.remove('mv-cell-main'); elA.classList.add('mv-cell-main'); }
-        }
-
-        // 두 엘리먼트의 DOM 위치를 실제로 맞바꾼다(임시 표시자로 안전하게 스왑).
+        // 두 엘리먼트의 DOM 위치를 실제로 맞바꾼다(임시 표시자로 안전하게 스왑) -
+        // 카드 내용(iframe)은 그대로 두므로 재생 중이던 영상이 안 끊긴다.
         const placeholder = document.createComment('mv-swap');
         elA.replaceWith(placeholder);
         elB.replaceWith(elA);
         placeholder.replaceWith(elB);
     }
     function mvRemove(idx) {
-        // 삭제 후 구조 자체가 바뀌는 경계(그리드 자체가 필요 없어지거나, 포커스
-        // 모드에서 메인 혼자 남는 단독 구조로 바뀌는 경우)만 전체를 다시 그리고,
-        // 그 외에는 지우는 카드 하나만 없애서 나머지 iframe은 그대로 둔다.
-        const handled = mvRemoveGridCell(idx);
+        if (mvFocus) {
+            const focusId = mvFocusEntryId();
+            if (mvOrder[idx].soopId === focusId) {
+                // 메인 본인을 지우는 거라 누가 새 메인이 될지부터 다시 정해야
+                // 하므로(다음 사람이 기본값으로 승격) 전체를 다시 그린다.
+                mvOrder.splice(idx, 1);
+                if (mvFocusId === focusId) mvFocusId = null;
+                mvRenderGrid();
+                mvRenderMemberChips();
+                mvRenderOrderRow();
+                mvSaveState();
+                return;
+            }
+            const focusIdx = mvOrder.findIndex(e => e.soopId === focusId);
+            const renderIdx = 1 + (idx < focusIdx ? idx : idx - 1);
+            const handled = mvRemoveGridCellAt(renderIdx);
+            mvOrder.splice(idx, 1);
+            if (handled) mvRelayoutGridDims(); else mvRenderGrid();
+            mvRenderMemberChips();
+            mvRenderOrderRow();
+            mvSaveState();
+            return;
+        }
+        // 삭제 후 구조 자체가 바뀌는 경계(그리드 자체가 필요 없어지는 경우)만
+        // 전체를 다시 그리고, 그 외에는 지우는 카드 하나만 없애서 나머지
+        // iframe은 그대로 둔다.
+        const handled = mvRemoveGridCellAt(idx);
         mvOrder.splice(idx, 1);
         if (handled) mvRelayoutGridDims(); else mvRenderGrid();
         mvRenderMemberChips();
         mvRenderOrderRow();
         mvSaveState();
     }
-    function mvRemoveGridCell(idx) {
+    function mvRemoveGridCellAt(renderIdx) {
         const remainingCount = mvOrder.length - 1;
         if (remainingCount === 0 || (mvFocus && remainingCount === 1)) return false;
         const grid = document.getElementById('mv-grid');
         if (!grid) return false;
-        const el = grid.children[idx];
+        const el = grid.children[renderIdx];
         if (!el) return false;
         el.remove();
-        // 포커스 모드에서 0번(메인)을 지운 경우, 다음 칸이 새 메인이 된다.
-        if (mvFocus && idx === 0 && grid.children[0]) grid.children[0].classList.add('mv-cell-main');
         return true;
     }
     function mvAddGridCell(entry) {
@@ -474,10 +529,14 @@
             return;
         }
         if (mvFocus) {
-            // 포커스 모드: 메인이 2×2칸을 차지하는 균일 그리드로 만들고, 나머지는
-            // CSS Grid 기본 자동배치(grid-auto-flow)가 비어있는 칸에 순서대로
-            // 알아서 채워준다 - 남는 칸 좌표를 직접 계산할 필요가 없다.
-            const [main, ...rest] = mvOrder;
+            // 포커스 모드: 지정된 포커스 대상(mvFocusEntryId)이 2×2칸을 차지하는
+            // 균일 그리드로 만들고, 나머지는 CSS Grid 기본 자동배치(grid-auto-flow)가
+            // 비어있는 칸에 순서대로 알아서 채워준다 - 남는 칸 좌표를 직접
+            // 계산할 필요가 없다.
+            const focusId = mvFocusEntryId();
+            const focusIdx = mvOrder.findIndex(e => e.soopId === focusId);
+            const main = mvOrder[focusIdx];
+            const rest = mvOrder.filter((_, i) => i !== focusIdx);
             if (rest.length === 0) {
                 // 나머지가 없으면 메인 혼자 화면 전체를 그대로 쓴다(그리드 자체가 필요 없음).
                 area.innerHTML = mvCellHtml(main, false);

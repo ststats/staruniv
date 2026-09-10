@@ -409,10 +409,10 @@
             // 되돌린다. 스크롤 영역(.cal-calendar-inner)도 같이 리셋해서 잘림을 막는다.
             const captureEl = document.getElementById('captureMonth');
             // 캘린더 그리드 자체의 순수 콘텐츠 폭(770px)+카드 패딩/테두리(34px)는 804px로
-            // 고정이고, 캡처 결과물은 그보다 여유를 둔 888px로 뽑는다. capture.js(매일
-            // 자동 캡처)도 같은 값을 쓰도록 맞춰서, 수동 저장 때와 자동 캡처 때 이미지
-            // 크기가 서로 달라지지 않게 통일한다.
-            const CAPTURE_WIDTH = 888;
+            // 고정이다. style.css에서 .cal-calendar-area의 max-width를 804px !important로
+            // 못박아뒀기 때문에 여기서 그보다 크게 지정해도 실제로는 804px로 잘린다 -
+            // 그래서 아예 804로 맞춰서 capture.js(매일 자동 캡처)와도 통일한다.
+            const CAPTURE_WIDTH = 804;
 
             // 캡처 대상을 강제로 넓히면 옆의 .admin-side(오늘의 일정 카드)와 겹쳐서
             // 캘린더 오른쪽 요일들이 가려지는 게 실제 원인이었다 - 캡처하는 순간만
