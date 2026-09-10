@@ -99,11 +99,12 @@ function waitForServer(url, timeoutMs) {
             captureEl.style.flex = `0 0 ${w}px`;
             captureEl.style.width = w + 'px';
             captureEl.style.maxWidth = 'none';
-            captureEl.style.padding = '16px';
-            // border-box여야 위에서 지정한 width(w)가 padding까지 포함한 "최종
-            // 캡처 폭"이 된다. content-box로 두면 width(804px) + 양쪽 padding(16px×2)
-            // = 836px가 실제로 렌더링되는 폭이 돼서, 캡처 이미지가 의도한 804px보다
-            // 계속 더 넓게 나오는 원인이 된다.
+            // (예전엔 여기에 captureEl.style.padding='16px'를 추가해서 캡처
+            // 이미지에 여백을 주려 했는데, border-box라 이 패딩이 안쪽 카드가
+            // 쓸 수 있는 공간을 그만큼 깎아먹어서 - 안쪽 .clean-card는 804px가
+            // 그대로 필요한데 772px밖에 못 받아 - 매번 계산이 안 맞았다. 안쪽
+            // .clean-card 자체에 이미 자기 패딩(p-3, 16px)이 있어서 여백은
+            // 이미 충분하므로, 바깥에 패딩을 더 얹지 않는다.)
             captureEl.style.boxSizing = 'border-box';
             captureEl.style.background = '#f4f7fc';
             captureEl.querySelectorAll('.cal-calendar-inner').forEach(el => {
