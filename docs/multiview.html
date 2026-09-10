@@ -362,14 +362,14 @@
 
     // ===== 그리드: 실시간 영상은 SOOP의 공식 라이브 임베드 엔드포인트
     // (play.sooplive.com/{아이디}/embed)를 iframe으로 그대로 삽입한다. 채팅은
-    // 요청대로 껐고(showChat=false), 자동재생을 켜뒀다(autoPlay=true) - 브라우저의
-    // 자동재생 정책상 소리가 있는 자동재생은 막힐 수 있는데, 그건 SOOP 플레이어
-    // 자체가 처리하는 부분이라 우리 쪽에서 더 손볼 여지는 없다.
+    // 요청대로 껐고(showChat=false), 자동재생을 켜뒀다(autoPlay=true).
+    // 화질을 1080p로 강제 요청하면 SOOP이 "고화질 스트리머"라는 로컬 프로그램을
+    // 거치려 하고, 그 로컬 프로그램에 연결하는 과정이 최근 크롬 정책(로컬
+    // 네트워크 접근)에 막혀 "연결이 차단되었습니다" 에러가 뜨는 걸로 보인다.
+    // 그래서 화질 파라미터를 빼고 기본(자동) 화질로 열어서, 애초에 그 로컬
+    // 프로그램을 거치지 않는 일반 브라우저 스트리밍 경로를 타게 한다.
     function mvEmbedUrl(soopId) {
-        const params = new URLSearchParams({
-            quality: '1080p', resolution: '1080p', preferredQuality: '1080p',
-            vq: 'hd1080', hd: '1', showChat: 'false', autoPlay: 'true',
-        });
+        const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
     }
     function mvCellHtml(entry, isMain) {
