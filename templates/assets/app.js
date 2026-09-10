@@ -267,7 +267,7 @@
     let mvOrder = [];   // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
     let mvCols = 2;
     let mvDark = false;
-    let mvFocus = false;
+    let mvFocus = true;
     let mvFocusId = null; // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도로 지정
 
     function mvFocusEntryId() {
@@ -406,7 +406,7 @@
     }
 
     function mvToggleDarkSetting() {
-        mvDark = document.getElementById('mv-dark-toggle').checked;
+        mvDark = document.getElementById('mv-theme-toggle').classList.toggle('on');
     }
 
     function mvSetFocusMode(isFocus) {
@@ -416,7 +416,7 @@
         // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서 이 스테퍼가
         // 안 쓰이므로, 요소를 아예 숨기지 않고 흐릿하게 비활성화만 한다
         // (보였다 안 보였다 하면 레이아웃이 덜컹거려서 오히려 지저분해 보임).
-        document.getElementById('mv-cols-group').classList.toggle('disabled', mvFocus);
+        document.getElementById('mv-col-tile').classList.toggle('disabled', mvFocus);
         // 모드를 막 바꿨을 때 목록에 포커스 지정 표시가 보이거나 안 보이게 다시 그린다.
         mvRenderOrderRow();
     }
