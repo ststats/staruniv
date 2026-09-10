@@ -229,10 +229,16 @@
            1줄: 이름 / 2줄: 방송제목 · 몇시간전(오른쪽 정렬 아님) / 3줄: 공지내용(왼쪽부터, 아바타 없음)
            아바타는 1~2줄 높이에 걸치고, 오른쪽 썸네일은 1:1 정사각형으로 가운데 정렬된다.
            이 .home-notice-card는 공지 페이지의 "지난 글" 리스트에서도 그대로 재사용된다. */
-        .home-notice-list { display: flex; flex-direction: column; gap: 0; border-radius: var(--radius-card); overflow: hidden; }
-        .home-notice-card { display: flex; align-items: stretch; gap: 12px; cursor: pointer; padding: 14px 16px; background: var(--color-card); border-bottom: 1px solid var(--color-border); transition: background 0.15s; }
+        .home-notice-list { display: flex; flex-direction: column; gap: 0; }
+        .home-notice-card { display: flex; align-items: stretch; gap: 12px; cursor: pointer; padding: 14px 16px; background: var(--color-card); border-bottom: 1px solid var(--color-border); border-radius: var(--radius-card); transition: background 0.15s; }
         .home-notice-card:hover { background: var(--color-bg-subtle); }
         .home-notice-card:last-child { border-bottom: none; }
+        /* 항목 자체는 항상 둥근 모서리를 갖되, 같은 종류의 항목이 바로 위/아래로
+           이어질 때만 그 접점 쪽 모서리를 지워서 구분선으로만 이어지게 한다. 모바일처럼
+           이 항목이 다른 종류(최신 글 큰 카드, 날짜 그룹 라벨)와 섞여 있을 때는 이
+           선택자가 안 걸리므로 자동으로 그쪽 모서리는 둥글게 남는다. */
+        .home-notice-card + .home-notice-card { border-top-left-radius: 0; border-top-right-radius: 0; }
+        .home-notice-card:has(+ .home-notice-card) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
         .home-notice-main { min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
         .home-notice-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .home-notice-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
@@ -331,8 +337,9 @@
            지금까지 "더보기"를 누를수록 리스트가 아래로 계속 길어지기만 했던 것.
            min-height:0으로 그 기본값을 없애야 진짜로 clip되어 스크롤이 생긴다.
            max-height는 대략 항목 5개 정도가 보이는 높이로 잡았다. */
-        #news-past-list { display: flex; flex-direction: column; gap: 0; overflow-y: auto; flex: 1; min-height: 0; max-height: 500px; padding-right: 2px; border-radius: var(--radius-card); }
+        #news-past-list { display: flex; flex-direction: column; gap: 0; overflow-y: auto; flex: 1; min-height: 0; max-height: 500px; padding-right: 2px; }
         #news-past-list::-webkit-scrollbar { width: 5px; }
+        #news-past-list::-webkit-scrollbar-track { margin: 10px 0; background: transparent; }
         #news-past-list::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
         .past-posts .news-load-more-wrap { flex-shrink: 0; text-align: center; padding-top: 12px; }
 
