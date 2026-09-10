@@ -22,8 +22,8 @@
 
     /* 기본 화면은 그리드만 꽉 차게 보이는 게 목적이라, 여백/타이틀 같은 크롬은
        전부 없애고 오른쪽 위 ⚙️ 버튼 하나만 항상 떠 있게 한다. 설정은 그 버튼을
-       눌렀을 때만 위에서 내려오는 패널로 보여준다. */
-    html, body { height: 100%; margin: 0; }
+       눌렀을 때만 오른쪽에서 슬라이드로 펼쳐지는 패널로 보여준다. */
+    html, body { height: 100%; margin: 0; overflow: hidden; }
     body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
     /* ===== 설정 열기 버튼 (항상 떠 있음) ===== */
@@ -31,37 +31,29 @@
     .mv-fab:hover { opacity: 1; border-color: var(--color-primary); }
     .mv-fab.on { border-color: var(--color-primary); color: var(--color-primary); }
 
-    /* ===== 설정 패널 (기본 숨김, ⚙️ 누르면 위에서 펼쳐짐) ===== */
-    .mv-settings-panel { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--color-card, #fff); border-bottom: 1px solid var(--color-border); box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-height: 80vh; overflow-y: auto; display: none; }
-    .mv-settings-panel.open { display: block; }
-    .mv-settings-inner { padding: 16px 20px; max-width: 1400px; margin: 0 auto; }
+    /* ===== 설정 패널: 오른쪽에서 접혔다 펴지는 서랍 형태 ===== */
+    .mv-settings-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: 340px; max-width: 88vw; background: var(--color-card, #fff); border-left: 1px solid var(--color-border); box-shadow: -4px 0 16px rgba(0,0,0,0.15); overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease; }
+    .mv-settings-panel.open { transform: translateX(0); }
+    .mv-settings-inner { padding: 16px; }
     .mv-settings-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .mv-title { font-size: 16px; font-weight: 800; }
-    .mv-icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-bg, #fff); color: var(--color-text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .mv-icon-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-bg, #fff); color: var(--color-text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .mv-icon-btn:hover { border-color: var(--color-primary); }
-    .mv-icon-btn.on { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-tint); }
 
-    .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 16px; background: var(--color-bg-subtle, #f4f7fc); border: 1px solid var(--color-border); border-radius: 10px; margin-bottom: 12px; }
-    .mv-settings-group { display: flex; align-items: center; gap: 8px; }
-    .mv-settings-label { font-size: 12px; font-weight: 700; color: var(--color-text-sub); }
-    .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
-    .mv-stepper button { width: 26px; height: 26px; border: none; background: var(--color-card, #fff); color: var(--color-primary); font-weight: 800; font-size: 14px; cursor: pointer; }
-    .mv-stepper button:hover { background: var(--color-primary-tint); }
-    .mv-stepper button:disabled { color: #888; cursor: not-allowed; }
-    .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: 13px; border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
-    .mv-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--color-text-sub); cursor: pointer; }
-    .mv-checkbox-label input { width: 14px; height: 14px; accent-color: var(--color-primary); cursor: pointer; }
-    .mv-add-form { display: flex; gap: 6px; align-items: center; margin-left: auto; }
-    .mv-add-form input { padding: 6px 10px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: 12px; background: var(--color-bg, #fff); color: var(--color-text-main); width: 190px; }
-    .mv-add-form input:focus { outline: none; border-color: var(--color-primary); }
-    .mv-add-form button { border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); color: var(--color-text-main); border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
-    .mv-add-form button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    /* 설정 바(열 개수/포커스모드/다크모드)는 도구 탭의 .mv-settings-bar와 완전히
+       같은 클래스(style.css 공용)를 그대로 쓴다 - 서랍 폭에 맞게 세로로 쌓이도록
+       여기서만 방향을 바꾼다. */
+    .mv-settings-panel .mv-settings-bar { flex-direction: column; align-items: stretch; }
+    .mv-settings-panel .mv-settings-group { justify-content: space-between; }
+    .mv-settings-panel .mv-add-row input { flex: 1 1 auto; width: auto; }
 
-    .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-    .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-card, #fff); font-size: 12px; }
+    /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
+    .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
+    .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: 12px; }
     .mv-order-item.custom { border-style: dashed; }
-    .mv-order-name { font-weight: 700; margin-right: 2px; }
-    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+    .mv-order-num { font-weight: 800; color: var(--color-text-sub); flex-shrink: 0; }
+    .mv-order-name { font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
@@ -71,7 +63,6 @@
        채운 뒤 비율 처리는 임베드 플레이어 자체에 맡긴다 - SOOP 플레이어도
        마찬가지로 자기가 받은 박스 안에서 알아서 레터박스 처리를 해줄 걸로
        보고, 우리는 칸을 꽉 채우는 단순한 방식으로 돌아간다. */
-    html, body { overflow: hidden; }
     #mv-grid-area { height: 100vh; padding: 10px; box-sizing: border-box; }
     .mv-grid { display: grid; gap: 10px; height: 100%; }
     .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
@@ -79,13 +70,12 @@
     .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
     .mv-cell-header a:hover { color: var(--color-primary); }
     .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; }
-    .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; }
-    .mv-cell-video-wrap iframe { position: absolute; border: 0; display: block; }
+    .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; }
+    .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 
-    /* 포커스 모드: 스크린샷처럼 균일한 그리드 안에서 메인 하나만 2×2칸을
-       차지(grid-column/row span)하고, 나머지는 CSS Grid의 기본 자동배치가
-       비어있는 칸에 알아서 순서대로 채워준다 - 남는 칸 좌표를 직접 계산할
-       필요가 없다. */
+    /* 포커스 모드: 균일한 그리드 안에서 메인 하나만 2×2칸을 차지(grid-column/row
+       span)하고, 나머지는 CSS Grid의 기본 자동배치가 비어있는 칸에 알아서
+       순서대로 채워준다 - 남는 칸 좌표를 직접 계산할 필요가 없다. */
     .mv-cell-main { grid-column: span 2; grid-row: span 2; }
 
     .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 30vh 0; }
@@ -99,8 +89,10 @@
     <div class="mv-settings-inner">
         <div class="mv-settings-top">
             <div class="mv-title">🎬 멀티뷰어</div>
-            <button type="button" class="mv-icon-btn" id="mv-theme-btn" onclick="mvToggleTheme()" title="다크모드">🌙</button>
+            <button type="button" class="mv-icon-btn" onclick="mvToggleSettingsPanel()" title="닫기">✕</button>
         </div>
+
+        <div class="section-title">설정</div>
         <div class="mv-settings-bar">
             <div class="mv-settings-group" id="mv-cols-group">
                 <span class="mv-settings-label">열 개수</span>
@@ -110,15 +102,24 @@
                     <button type="button" onclick="mvChangeCols(1)">+</button>
                 </div>
             </div>
-            <label class="mv-checkbox-label">
+            <label class="mv-toggle">
                 <input type="checkbox" id="mv-focus-checkbox" onchange="mvToggleFocus()">
-                포커스 모드 (1번을 크게)
+                포커스 모드
             </label>
-            <form class="mv-add-form" onsubmit="event.preventDefault(); mvAddCustom();">
-                <input type="text" id="mv-add-input" placeholder="숲 아이디 직접 입력">
-                <button type="submit">추가</button>
-            </form>
+            <label class="mv-toggle">
+                <input type="checkbox" id="mv-theme-checkbox" onchange="mvToggleThemeCheckbox()">
+                다크모드
+            </label>
         </div>
+
+        <div class="section-title">멤버 선택</div>
+        <div class="mv-chip-row" id="mv-chip-row"></div>
+        <div class="mv-add-row">
+            <input type="text" id="mv-add-input" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
+            <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
+        </div>
+
+        <div class="section-title">선택된 목록</div>
         <div class="mv-order-row" id="mv-order-row"></div>
     </div>
 </div>
@@ -130,12 +131,15 @@
         if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[tag]));
     }
+    function jsStrEscape(str) { return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 
     // ===== 상태 =====
     // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
     let mvOrder = [];
     let mvCols = 2;
     let mvFocus = false;
+    let mvMembers = [];   // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
+    let mvLiveMap = {};   // soopId -> 방송중 여부
 
     function mvSaveState() {
         try {
@@ -174,16 +178,15 @@
         document.getElementById('mv-focus-checkbox').checked = mvFocus;
     }
 
-    // ===== 다크모드 =====
+    // ===== 다크모드 (도구 탭과 같은 체크박스 방식) =====
     function mvApplyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        document.getElementById('mv-theme-btn').innerText = theme === 'dark' ? '☀️' : '🌙';
-        document.getElementById('mv-theme-btn').classList.toggle('on', theme === 'dark');
+        const cb = document.getElementById('mv-theme-checkbox');
+        if (cb) cb.checked = theme === 'dark';
         localStorage.setItem('mv-theme', theme);
     }
-    function mvToggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-        mvApplyTheme(current === 'dark' ? 'light' : 'dark');
+    function mvToggleThemeCheckbox() {
+        mvApplyTheme(document.getElementById('mv-theme-checkbox').checked ? 'dark' : 'light');
     }
 
     // ===== 설정 패널 여닫기 =====
@@ -236,19 +239,83 @@
         mvSaveState();
     }
     function mvApplyColsGroupVisibility() {
-        // 포커스 모드에서는 열 개수가 화면 크기·인원 수 기준 자동 계산(mvComputeFocusGridDims)으로
-        // 정해지고 이 스테퍼 값은 아예 안 쓰이므로, 혼동 없게 그리드 모드일 때만
-        // 보여준다.
+        // 포커스 모드에서는 열 개수가 화면 크기·인원 수 기준 자동 계산
+        // (mvComputeFocusGridDims)으로 정해지고 이 스테퍼 값은 아예 안 쓰이므로,
+        // 혼동 없게 그리드 모드일 때만 보여준다.
         document.getElementById('mv-cols-group').style.display = mvFocus ? 'none' : 'flex';
+    }
+
+    // ===== 멤버 선택 칩 (도구 탭과 동일 - site_data.json에서 직접 불러온다) =====
+    function mvAvatarHtml(soopId) {
+        const id = String(soopId || '').trim().toLowerCase();
+        if (!id || !/^[a-z0-9_-]+$/.test(id)) return `<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>`;
+        const url = `https://profile.img.sooplive.co.kr/LOGO/${id.substring(0, 2)}/${id}/${id}.jpg`;
+        return `<img src="${url}" class="mv-chip-avatar" loading="lazy" onerror="this.outerHTML='<span class=\\'mv-chip-avatar d-flex align-items-center justify-content-center\\'>👤</span>';">`;
+    }
+    function mvChipHtml(m) {
+        const soopId = m['SOOP ID'];
+        const selected = mvOrder.some(e => e.soopId === soopId);
+        const isLive = !!mvLiveMap[soopId];
+        return `
+        <div class="mv-chip${selected ? ' selected' : ''}" onclick="mvToggleMemberChip('${jsStrEscape(soopId)}', '${jsStrEscape(m['이름'])}')">
+            ${mvAvatarHtml(soopId)}
+            ${isLive ? '<span class="mv-chip-live">LIVE</span>' : ''}
+            <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
+            <span class="mv-chip-check">✓</span>
+        </div>`;
+    }
+    function mvRenderMemberChips() {
+        const container = document.getElementById('mv-chip-row');
+        if (!container) return;
+        container.innerHTML = mvMembers.length
+            ? mvMembers.map(mvChipHtml).join('')
+            : '<div style="font-size:12px; color:var(--color-text-sub);">멤버 목록을 불러오지 못했습니다.</div>';
+    }
+    function mvToggleMemberChip(soopId, name) {
+        const idx = mvOrder.findIndex(e => e.soopId === soopId);
+        if (idx !== -1) mvOrder.splice(idx, 1);
+        else mvOrder.push({ soopId, name, isMember: true });
+        mvRenderAll();
+    }
+    async function mvLoadMembers() {
+        try {
+            const res = await fetch('data/site_data.json', { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                mvMembers = (data.members || []).filter(m => {
+                    const active = !m['퇴단일'] || String(m['퇴단일']).trim() === '';
+                    const soopId = m['SOOP ID'];
+                    return active && soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
+                });
+            }
+        } catch (e) { mvMembers = []; }
+        mvRenderMemberChips();
+        mvCheckLiveMembers();
+    }
+    // 홈 화면 방송중 체크와 같은 방식(bjapi.afreecatv.com 직접 fetch, CORS 허용됨)으로
+    // 멤버 목록 로드 후 딱 한 번만 라이브 여부를 확인해 LIVE 뱃지를 덧입힌다.
+    async function mvCheckLiveMembers() {
+        if (mvMembers.length === 0) return;
+        const settled = await Promise.allSettled(mvMembers.map(m => {
+            const soopId = m['SOOP ID'];
+            return fetch(`https://bjapi.afreecatv.com/api/${soopId}/station`)
+                .then(r => r.json())
+                .then(d => ({ soopId, live: !!(d && d.broad) }))
+                .catch(() => ({ soopId, live: false }));
+        }));
+        mvLiveMap = {};
+        settled.forEach(r => { if (r.status === 'fulfilled') mvLiveMap[r.value.soopId] = r.value.live; });
+        mvRenderMemberChips();
     }
 
     // ===== 순서 목록 =====
     function mvOrderItemHtml(entry, idx) {
         return `
         <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
+            <span class="mv-order-num">${idx + 1}.</span>
+            <span class="mv-order-name">${escapeHTML(entry.name)}</span>
             <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
-            <span class="mv-order-name">${escapeHTML(entry.name)}</span>
             <button type="button" class="mv-order-remove" title="빼기" onclick="mvRemove(${idx})">✕</button>
         </div>`;
     }
@@ -256,7 +323,7 @@
         const row = document.getElementById('mv-order-row');
         row.innerHTML = mvOrder.length
             ? mvOrder.map(mvOrderItemHtml).join('')
-            : '<span style="font-size:12px; color:var(--color-text-sub);">추가된 방송이 없습니다. 숲 아이디를 입력해 추가해보세요.</span>';
+            : '<span style="font-size:12px; color:var(--color-text-sub);">위에서 멤버를 선택하거나 이름/숲 아이디를 입력해 추가해보세요.</span>';
     }
     function mvMove(idx, dir) {
         const target = idx + dir;
@@ -270,11 +337,25 @@
     }
     function mvAddCustom() {
         const input = document.getElementById('mv-add-input');
-        const id = input.value.trim().toLowerCase();
-        if (!id) return;
-        if (!/^[a-z0-9_-]+$/.test(id)) { alert('숲 아이디 형식이 아닙니다 (영문/숫자/-/_ 만 가능).'); return; }
+        const raw = input.value.trim();
+        if (!raw) return;
+
+        // 1) 우리 멤버 이름과 정확히 일치하면(대소문자 무시) 그 멤버를 추가한다.
+        const byName = mvMembers.find(m => String(m['이름']).trim().toLowerCase() === raw.toLowerCase());
+        if (byName) {
+            if (mvOrder.some(e => e.soopId === byName['SOOP ID'])) { alert('이미 선택된 목록에 있습니다.'); return; }
+            mvOrder.push({ soopId: byName['SOOP ID'], name: byName['이름'], isMember: true });
+            input.value = '';
+            mvRenderAll();
+            return;
+        }
+
+        // 2) 이름이 아니면 숲 아이디로 취급한다.
+        const id = raw.toLowerCase();
+        if (!/^[a-z0-9_-]+$/.test(id)) { alert('멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다.'); return; }
         if (mvOrder.some(e => e.soopId === id)) { alert('이미 추가된 아이디입니다.'); return; }
-        mvOrder.push({ soopId: id, name: id, isMember: false });
+        const knownMember = mvMembers.find(m => m['SOOP ID'] === id);
+        mvOrder.push(knownMember ? { soopId: id, name: knownMember['이름'], isMember: true } : { soopId: id, name: id, isMember: false });
         input.value = '';
         mvRenderAll();
     }
@@ -309,7 +390,7 @@
     function mvRenderGrid() {
         const area = document.getElementById('mv-grid-area');
         if (mvOrder.length === 0) {
-            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 오른쪽 위 ⚙️를 눌러 숲 아이디를 추가해보세요.</div>';
+            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 오른쪽 위 ⚙️를 눌러 멤버를 선택하거나 아이디를 추가해보세요.</div>';
             return;
         }
         if (mvFocus) {
@@ -332,47 +413,20 @@
             area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(e => mvCellHtml(e, false)).join('')}</div>`;
             mvApplyGridColumns();
         }
-        mvCoverFitAll();
     }
 
     function mvRenderAll() {
+        mvRenderMemberChips();
         mvRenderOrderRow();
         mvRenderGrid();
         mvSaveState();
     }
 
-    // ===== 영상은 칸을 빈틈없이 꽉 채우고(레터박스/가운데 여백 없음), 비율이
-    // 안 맞는 만큼만 살짝 잘라낸다(overflow:hidden으로 크롭) - 늘어나거나
-    // 찌그러지지도 않고, 그렇다고 여백을 남기지도 않는 "꽉 채우기" 방식.
-    // 메인/그리드 셀 구분 없이 모든 .mv-cell-video-wrap에 똑같이 적용한다.
-    function mvCoverFitIframe(wrap) {
-        const iframe = wrap.querySelector('iframe');
-        if (!iframe) return;
-        const w = wrap.clientWidth;
-        const h = wrap.clientHeight;
-        if (w === 0 || h === 0) return;
-        let ifW = w;
-        let ifH = w * 9 / 16;
-        if (ifH < h) {
-            // 칸이 영상보다 세로로 더 길면(=너비 기준으로는 세로가 부족하면)
-            // 세로를 기준으로 다시 키워서 남는 세로가 없게 한다.
-            ifH = h;
-            ifW = h * 16 / 9;
-        }
-        ifW = Math.ceil(ifW);
-        ifH = Math.ceil(ifH);
-        iframe.style.width = ifW + 'px';
-        iframe.style.height = ifH + 'px';
-        iframe.style.left = Math.floor((w - ifW) / 2) + 'px';
-        iframe.style.top = Math.floor((h - ifH) / 2) + 'px';
-    }
-    function mvCoverFitAll() {
-        document.querySelectorAll('.mv-cell-video-wrap').forEach(mvCoverFitIframe);
-    }
-    // 창 크기가 바뀌면 포커스 모드의 ㄴ자 배치(오른쪽 열/아래 줄 인원수 포함)와
-    // 일반 그리드 열 개수, 각 영상의 크롭 크기가 전부 다시 계산돼야 하므로
-    // 그냥 전체를 다시 그린다(mvRenderGrid는 현재 mvOrder/mvFocus 상태를
-    // 그대로 다시 그리는 멱등 함수라 안전하다).
+    // 창 크기가 바뀌면 포커스 모드의 열/행 개수(화면 비율 기준)와 일반 그리드
+    // 열 개수가 다시 계산돼야 하므로 전체를 다시 그린다(mvRenderGrid는 현재
+    // mvOrder/mvFocus 상태를 그대로 다시 그리는 멱등 함수라 안전하다). 영상
+    // 자체의 비율 맞춤은 각 iframe이 칸을 100% 채우기만 하고, 실제 레터박스
+    // 처리는 SOOP 플레이어 자신에게 맡긴다.
     window.addEventListener('resize', mvRenderGrid);
 
     // ===== 초기화 =====
@@ -380,7 +434,9 @@
     mvInit();
     document.getElementById('mv-cols-value').innerText = mvCols;
     mvApplyColsGroupVisibility();
-    mvRenderAll();
+    mvRenderOrderRow();
+    mvRenderGrid();
+    mvLoadMembers();
 </script>
 </body>
 </html>
