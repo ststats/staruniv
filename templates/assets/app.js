@@ -36,9 +36,9 @@
     }
 
     // 공지 카드의 다중 사진 스와이프 - 스크롤 위치를 보고 현재 몇 번째 사진인지
-    // 계산해서 점(dot) 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
+    // 계산해서 스토리바 인디케이터의 active 표시와 좌/우 화살표의 표시 여부를 갱신한다.
     // (첫 장에선 이전 화살표를, 마지막 장에선 다음 화살표를 숨긴다)
-    // 공지 사진 갤러리 가로 스크롤 시 dot/화살표 갱신 - 모바일에서 스와이프하면
+    // 공지 사진 갤러리 가로 스크롤 시 인디케이터/화살표 갱신 - 모바일에서 스와이프하면
     // onscroll이 프레임당 여러 번 발생해 매번 나눗셈 연산이 도는 걸 막기 위해,
     // requestAnimationFrame으로 한 프레임당 한 번만 실행되도록 스로틀링한다.
     const newsPhotoDotsScheduled = new WeakSet();
@@ -284,6 +284,10 @@
 
     let allNewsPool = [];
     let allNewsShownCount = 0;
+    // "전체 공지"에서 멤버별로 다음에 가져올 페이지 번호와 총 페이지 수를 기억해둔다.
+    // Map<soopId, { nextPage, totalPages }> - 더보기를 눌렀을 때 풀에 남은 게 부족하면
+    // 여기 기록을 보고 아직 페이지가 남은 멤버들의 다음 페이지를 추가로 가져온다.
+    let allNewsMemberState = new Map();
 
     async function showNewsAll(skipHashUpdate) {
         document.querySelectorAll('#news-avatar-list .avatar-select-item').forEach(el => el.classList.remove('active'));
@@ -296,6 +300,7 @@
         content.innerHTML = emptyStateHtml('불러오는 중...');
 
         const activeMembers = activeMembersWithSoopId();
+        allNewsMemberState = new Map();
 
         // 멤버별로 최근 몇 개씩 후보를 모아서(공지+일반글 합친 것) 전체를 한 번에
         // 날짜순으로 다시 정렬 - "더보기"로 계속 더 볼 수 있게 넉넉히 모아둔다.
@@ -306,7 +311,8 @@
         // 만큼 조용히 누락된다. 그래서 자르지 않고 페이지 1에서 받은 걸 전부 담는다.
         const settled = await Promise.allSettled(
             activeMembers.map(async m => {
-                const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
+                const { posts, totalPages } = await fetchMemberFeed(m['SOOP ID'], 1);
+                allNewsMemberState.set(m['SOOP ID'], { nextPage: 2, totalPages });
                 return posts.map(post => ({ member: m, post }));
             })
         );
@@ -320,8 +326,16 @@
         newsFeaturedKey = null; // 새로 들어왔으니 제일 최신 글을 다시 왼쪽에 올린다
         allNewsShownCount = Math.min(10, allNewsPool.length);
         newsItems = allNewsPool.slice(0, allNewsShownCount);
-        newsHasMore = allNewsShownCount < allNewsPool.length;
+        newsHasMore = allNewsShownCount < allNewsPool.length || newsAnyMemberHasMorePages();
         renderNewsLayout(content);
+    }
+
+    // 아직 다음 페이지가 남아있는 멤버가 한 명이라도 있는지
+    function newsAnyMemberHasMorePages() {
+        for (const st of allNewsMemberState.values()) {
+            if (st.nextPage <= st.totalPages) return true;
+        }
+        return false;
     }
 
     // { member, post } 하나를 고유하게 식별하는 키 - 리스트 클릭으로 "최신 글" 자리를
@@ -377,6 +391,34 @@
         return content.clientWidth < NEWS_TWO_COL_MIN_WIDTH;
     }
 
+    // 오늘/어제/이번 주/이번 달/이전 - 리스트가 길어질수록 그냥 쭉 나열하는 것보다
+    // 이렇게 구간을 나눠주면 메신저 리스트처럼 스캔하기 쉬워진다.
+    function newsDateGroupLabel(dateStr) {
+        const d = new Date(String(dateStr).replace(' ', 'T'));
+        const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const today = new Date();
+        const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const diffDays = Math.round((todayDay - day) / 86400000);
+        if (diffDays <= 0) return '오늘';
+        if (diffDays === 1) return '어제';
+        if (diffDays <= 7) return '이번 주';
+        if (diffDays <= 30) return '이번 달';
+        return '이전';
+    }
+
+    // 이미 날짜순으로 정렬된 items를 렌더링하면서, 그룹(위 라벨)이 바뀌는 지점마다
+    // 구분 라벨을 끼워 넣는다. renderItemFn은 항목 하나를 어떻게 그릴지(최신 글 큰
+    // 카드로 그릴지, 지난 글 리스트 항목으로 그릴지)를 호출부에서 결정해서 넘겨준다.
+    function renderNewsItemsWithDateGroups(items, renderItemFn) {
+        let lastGroup = null;
+        return items.map(item => {
+            const group = newsDateGroupLabel(item.post.regDate);
+            const groupHtml = group !== lastGroup ? `<div class="news-date-group-label">${group}</div>` : '';
+            lastGroup = group;
+            return groupHtml + renderItemFn(item);
+        }).join('');
+    }
+
     function renderNewsLayout(content) {
         if (newsItems.length === 0) {
             content.classList.remove('news-feed-mobile');
@@ -395,20 +437,24 @@
 
         if (isNewsMobileLayout()) {
             content.classList.add('news-feed-mobile');
-            // 날짜순 그대로 하나의 리스트로 그리되, 선택된 글만 큰 카드로 바꿔서 그 자리에 끼워 넣는다.
-            const itemsHtml = sorted.map(item => newsItemKey(item) === newsFeaturedKey
+            // 날짜순 그대로 하나의 리스트로 그리되, 선택된 글만 큰 카드로 바꿔서 그 자리에
+            // 끼워 넣는다. 날짜 그룹 라벨도 큰 카드/지난 글 구분 없이 전체 흐름 기준으로 붙인다.
+            const itemsHtml = renderNewsItemsWithDateGroups(sorted, item => newsItemKey(item) === newsFeaturedKey
                 ? `<div class="featured-post" data-news-key="${escapeHTML(newsItemKey(item))}">${renderFeaturedPostHtml(item)}</div>`
                 : renderPastNoticeHtml(item)
-            ).join('');
+            );
             content.innerHTML = itemsHtml + loadMoreHtml;
         } else {
             content.classList.remove('news-feed-mobile');
             const featuredItem = sorted.find(it => newsItemKey(it) === newsFeaturedKey);
             const restItems = sorted.filter(it => newsItemKey(it) !== newsFeaturedKey);
+            const pastListHtml = restItems.length
+                ? renderNewsItemsWithDateGroups(restItems, renderPastNoticeHtml)
+                : emptyStateHtml('지난 글이 없습니다.');
             content.innerHTML = `
                 <div class="featured-post" data-news-key="${escapeHTML(newsItemKey(featuredItem))}">${renderFeaturedPostHtml(featuredItem)}</div>
                 <div class="past-posts">
-                    <div id="news-past-list">${restItems.length ? restItems.map(renderPastNoticeHtml).join('') : emptyStateHtml('지난 글이 없습니다.')}</div>
+                    <div id="news-past-list">${pastListHtml}</div>
                     ${loadMoreHtml}
                 </div>`;
         }
@@ -442,9 +488,35 @@
         const savedScrollTop = listElBefore ? listElBefore.scrollTop : 0;
         try {
             if (newsMode === 'all') {
+                const remainingInPool = allNewsPool.length - allNewsShownCount;
+                if (remainingInPool < 10 && newsAnyMemberHasMorePages()) {
+                    // 풀에 남은 게 한 페이지어치(10개)도 안 되면, 아직 다음 페이지가
+                    // 남아있는 멤버들의 다음 페이지를 마저 받아와서 풀을 채운다.
+                    const membersToFetch = activeMembersWithSoopId().filter(m => {
+                        const st = allNewsMemberState.get(m['SOOP ID']);
+                        return st && st.nextPage <= st.totalPages;
+                    });
+                    const settled = await Promise.allSettled(
+                        membersToFetch.map(async m => {
+                            const st = allNewsMemberState.get(m['SOOP ID']);
+                            const { posts, totalPages } = await fetchMemberFeed(m['SOOP ID'], st.nextPage);
+                            st.totalPages = totalPages;
+                            st.nextPage += 1;
+                            return posts.map(post => ({ member: m, post }));
+                        })
+                    );
+                    const fetched = settled.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
+                    // 공지가 페이지마다 같이 딸려올 수 있어, 이미 풀에 있는 글(titleNo 기준)은
+                    // 다시 추가하지 않는다.
+                    const existingKeys = new Set(allNewsPool.map(newsItemKey));
+                    const uniqueFetched = fetched.filter(item => !existingKeys.has(newsItemKey(item)));
+                    allNewsPool = allNewsPool
+                        .concat(uniqueFetched)
+                        .sort((a, b) => new Date(b.post.regDate) - new Date(a.post.regDate));
+                }
                 allNewsShownCount = Math.min(allNewsShownCount + 10, allNewsPool.length);
                 newsItems = allNewsPool.slice(0, allNewsShownCount);
-                newsHasMore = allNewsShownCount < allNewsPool.length;
+                newsHasMore = allNewsShownCount < allNewsPool.length || newsAnyMemberHasMorePages();
             } else if (newsMode === 'member' && currentNewsPlayer) {
                 newsCurrentPage += 1;
                 const { posts, totalPages } = await fetchMemberFeed(currentNewsPlayer['SOOP ID'], newsCurrentPage);
@@ -628,8 +700,8 @@
         const soopId = member ? member['SOOP ID'] : post.userId;
         const name = member ? member['이름'] : (post.userNick || '');
 
-        // 사진이 2장 이상이면 인스타처럼 가로 스와이프(스크롤 스냅)로 넘기고,
-        // 몇 번째 사진인지 보여주는 점(dot) 인디케이터를 같이 붙인다.
+        // 사진이 2장 이상이면 인스타처럼 가로 스와이프(스크롤 스냅)로 넘기고, 몇 번째
+        // 사진인지는 하단에 캡슐(활성) + 점(비활성) 인디케이터로 보여준다.
         // (사진이 1장뿐이면 굳이 스크롤 컨테이너로 감쌀 필요 없이 기존처럼 표시)
         const dotsHtml = photos.length > 1
             ? `<div class="news-post-photos-dots">${photos.map((_, i) => `<span class="photo-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
@@ -652,8 +724,19 @@
                </div>`
             : '';
 
+        // 좋아요/조회수 - API가 이미 count.likeCnt/count.readCnt로 내려주는데 지금까지
+        // 화면에 전혀 안 쓰고 있었다. "원글 보기" 링크와 같은 줄에 나란히 배치한다.
+        const likeCnt = post.count && post.count.likeCnt;
+        const readCnt = post.count && post.count.readCnt;
+        const statsHtml = (likeCnt || readCnt)
+            ? `<div class="news-post-stats">
+                    ${likeCnt ? `<span class="news-post-stat"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10.2 1.4 6.9 4 5.3c2.2-1.3 4.7-.6 6 1.2l2 2.7 2-2.7c1.3-1.8 3.8-2.5 6-1.2 2.6 1.6 3 4.9 1.3 7.6C18.7 16.65 12 21 12 21z"/></svg>${likeCnt.toLocaleString('ko-KR')}</span>` : ''}
+                    ${readCnt ? `<span class="news-post-stat"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>${readCnt.toLocaleString('ko-KR')}</span>` : ''}
+               </div>`
+            : '<div class="news-post-stats"></div>';
+
         return `
-        <div class="news-post-card">
+        <div class="news-post-card news-post-card-fade">
             <div class="news-post-header">
                 ${avatarHtml(soopId, 'news-post-avatar')}
                 <div>
@@ -665,6 +748,7 @@
             ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, ${post.titleNo})">더보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
             ${photosHtml}
             <div class="news-post-link-row">
+                ${statsHtml}
                 <a class="news-post-link" href="https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${post.titleNo}" target="_blank" rel="noopener">
                     원글 보기 <span class="ext-arrow">↗</span>
                 </a>
@@ -686,7 +770,7 @@
         const key = jsStrEscape(newsItemKey(item));
 
         return `
-        <div class="home-notice-card" onclick="setNewsFeatured('${key}')" data-news-key="${escapeHTML(newsItemKey(item))}">
+        <div class="home-notice-card news-past-item" onclick="setNewsFeatured('${key}')" data-news-key="${escapeHTML(newsItemKey(item))}">
             <div class="home-notice-main">
                 <div class="home-notice-top">
                     ${avatarHtml(soopId, 'home-notice-avatar')}
@@ -1612,4 +1696,21 @@
         const today = new Date();
         calSelectedDateStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
         calLoadPublicData();
+    };
+
+    // 캘린더 "오늘의 일정"/"선택한 날짜 일정" 카드 아래에 그 날 휴방하는 멤버를
+    // 프로필 사진 + 이름 칩으로 보여준다. calendar.js는 멤버 정보(사진/이름)를
+    // 모르기 때문에, calCardExtra와 같은 방식으로 훅을 걸어 이 사이트(dbMembers를
+    // 가진 쪽)에서 실제 내용을 채워 넣는다. 휴방자가 없는 날은 섹션 자체가 안 보이게
+    // 빈 문자열을 반환한다.
+    window.calOffAirExtra = (dateStr, type) => {
+        const soopIds = calOffAirForDate(dateStr);
+        if (!soopIds.length) return '';
+        const chips = soopIds.map(soopId => {
+            const m = dbMembers.find(x => x['SOOP ID'] === soopId);
+            const name = m ? m['이름'] : soopId;
+            return `<div class="cal-offair-chip">${avatarHtml(soopId, 'cal-offair-avatar')}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
+        }).join('');
+        const label = '휴방';
+        return `<div class="cal-offair-section"><div class="cal-offair-label">${label}</div><div class="cal-offair-chips">${chips}</div></div>`;
     };
