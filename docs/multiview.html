@@ -20,21 +20,28 @@
     }
     html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text-main); }
 
-    body { margin: 0; font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
-    .mv-wrap { padding: 14px 20px 32px; max-width: 1400px; margin: 0 auto; }
+    /* 기본 화면은 그리드만 꽉 차게 보이는 게 목적이라, 여백/타이틀 같은 크롬은
+       전부 없애고 오른쪽 위 ⚙️ 버튼 하나만 항상 떠 있게 한다. 설정은 그 버튼을
+       눌렀을 때만 위에서 내려오는 패널로 보여준다. */
+    html, body { height: 100%; margin: 0; }
+    body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
-    /* ===== 상단바 ===== */
-    .mv-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--color-border); }
-    .mv-title { font-size: 17px; font-weight: 800; }
-    .mv-topbar-actions { display: flex; align-items: center; gap: 8px; }
-    .mv-icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); color: var(--color-text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    /* ===== 설정 열기 버튼 (항상 떠 있음) ===== */
+    .mv-fab { position: fixed; top: 12px; right: 12px; z-index: 100; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); opacity: 0.85; color: var(--color-text-main); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .mv-fab:hover { opacity: 1; border-color: var(--color-primary); }
+    .mv-fab.on { border-color: var(--color-primary); color: var(--color-primary); }
+
+    /* ===== 설정 패널 (기본 숨김, ⚙️ 누르면 위에서 펼쳐짐) ===== */
+    .mv-settings-panel { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--color-card, #fff); border-bottom: 1px solid var(--color-border); box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-height: 80vh; overflow-y: auto; display: none; }
+    .mv-settings-panel.open { display: block; }
+    .mv-settings-inner { padding: 16px 20px; max-width: 1400px; margin: 0 auto; }
+    .mv-settings-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .mv-title { font-size: 16px; font-weight: 800; }
+    .mv-icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-bg, #fff); color: var(--color-text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .mv-icon-btn:hover { border-color: var(--color-primary); }
     .mv-icon-btn.on { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-tint); }
 
-    /* ===== 설정 패널 (여닫기 가능) ===== */
-    .mv-settings-panel { overflow: hidden; max-height: 400px; opacity: 1; transition: max-height 0.2s ease, opacity 0.15s ease, margin 0.2s ease; margin-bottom: 14px; }
-    .mv-settings-panel.collapsed { max-height: 0; opacity: 0; margin-bottom: 0; }
-    .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 16px; background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; margin-bottom: 12px; }
+    .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 16px; background: var(--color-bg-subtle, #f4f7fc); border: 1px solid var(--color-border); border-radius: 10px; margin-bottom: 12px; }
     .mv-settings-group { display: flex; align-items: center; gap: 8px; }
     .mv-settings-label { font-size: 12px; font-weight: 700; color: var(--color-text-sub); }
     .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
@@ -42,13 +49,15 @@
     .mv-stepper button:hover { background: var(--color-primary-tint); }
     .mv-stepper button:disabled { color: #888; cursor: not-allowed; }
     .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: 13px; border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
+    .mv-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--color-text-sub); cursor: pointer; }
+    .mv-checkbox-label input { width: 14px; height: 14px; accent-color: var(--color-primary); cursor: pointer; }
     .mv-add-form { display: flex; gap: 6px; align-items: center; margin-left: auto; }
     .mv-add-form input { padding: 6px 10px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: 12px; background: var(--color-bg, #fff); color: var(--color-text-main); width: 190px; }
     .mv-add-form input:focus { outline: none; border-color: var(--color-primary); }
     .mv-add-form button { border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); color: var(--color-text-main); border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
     .mv-add-form button:hover { border-color: var(--color-primary); color: var(--color-primary); }
 
-    .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
     .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-card, #fff); font-size: 12px; }
     .mv-order-item.custom { border-style: dashed; }
     .mv-order-name { font-weight: 700; margin-right: 2px; }
@@ -57,28 +66,29 @@
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
 
-    /* ===== 그리드 ===== */
-    .mv-grid { display: grid; gap: 12px; }
+    /* ===== 그리드: 화면 전체를 채운다 ===== */
+    #mv-grid-area { min-height: 100vh; padding: 10px; box-sizing: border-box; }
+    .mv-grid { display: grid; gap: 10px; }
     .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
     .mv-cell-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
     .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
     .mv-cell-header a:hover { color: var(--color-primary); }
     .mv-cell-video-wrap { position: relative; aspect-ratio: 16/9; background: #0b0c10; }
     .mv-cell-video-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
-    .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 64px 0; border: 1.5px dashed var(--color-border-strong); border-radius: 10px; }
+    .mv-focus-main { margin-bottom: 10px; }
+    .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 30vh 0; }
 </style>
 </head>
 <body>
-<div class="mv-wrap">
-    <div class="mv-topbar">
-        <div class="mv-title">🎬 멀티뷰어</div>
-        <div class="mv-topbar-actions">
-            <button type="button" class="mv-icon-btn" id="mv-settings-btn" onclick="mvToggleSettingsPanel()" title="설정 열기/닫기">⚙️</button>
+
+<button type="button" class="mv-fab" id="mv-fab" onclick="mvToggleSettingsPanel()" title="설정 열기/닫기">⚙️</button>
+
+<div class="mv-settings-panel" id="mv-settings-panel">
+    <div class="mv-settings-inner">
+        <div class="mv-settings-top">
+            <div class="mv-title">🎬 멀티뷰어</div>
             <button type="button" class="mv-icon-btn" id="mv-theme-btn" onclick="mvToggleTheme()" title="다크모드">🌙</button>
         </div>
-    </div>
-
-    <div class="mv-settings-panel" id="mv-settings-panel">
         <div class="mv-settings-bar">
             <div class="mv-settings-group">
                 <span class="mv-settings-label">열 개수</span>
@@ -88,16 +98,20 @@
                     <button type="button" onclick="mvChangeCols(1)">+</button>
                 </div>
             </div>
+            <label class="mv-checkbox-label">
+                <input type="checkbox" id="mv-focus-checkbox" onchange="mvToggleFocus()">
+                포커스 모드 (1번을 크게)
+            </label>
             <form class="mv-add-form" onsubmit="event.preventDefault(); mvAddCustom();">
-                <input type="text" id="mv-add-input" placeholder="숲(SOOP) 아이디 직접 입력">
+                <input type="text" id="mv-add-input" placeholder="숲 아이디 직접 입력">
                 <button type="submit">추가</button>
             </form>
         </div>
         <div class="mv-order-row" id="mv-order-row"></div>
     </div>
-
-    <div id="mv-grid-area"></div>
 </div>
+
+<div id="mv-grid-area"></div>
 
 <script>
     function escapeHTML(str) {
@@ -109,11 +123,13 @@
     // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
     let mvOrder = [];
     let mvCols = 2;
+    let mvFocus = false;
 
     function mvSaveState() {
         try {
             localStorage.setItem('mv-order', JSON.stringify(mvOrder));
             localStorage.setItem('mv-cols', String(mvCols));
+            localStorage.setItem('mv-focus', mvFocus ? '1' : '0');
         } catch (e) { /* localStorage 접근 불가한 환경이면 그냥 무시 */ }
     }
 
@@ -128,14 +144,22 @@
                 .filter(e => e && typeof e.id === 'string' && /^[a-z0-9_-]+$/i.test(e.id))
                 .map(e => ({ soopId: e.id.toLowerCase(), name: e.name || e.id, isMember: !!e.isMember }));
             mvCols = Math.min(4, Math.max(1, parseInt(params.get('cols'), 10) || 2));
+            mvFocus = params.get('focus') === '1';
+            // 도구 탭에서 명시적으로 넘긴 다크모드 설정이 있으면 그걸 우선한다
+            // (없으면 아래에서 마지막으로 써둔 localStorage 값을 그대로 쓴다).
+            if (params.get('theme') === 'dark' || params.get('theme') === 'light') {
+                mvApplyTheme(params.get('theme'));
+            }
         } else {
             // URL에 아무것도 없으면(직접 이 페이지를 열었거나 새로고침한 경우) 마지막으로
             // 저장해둔 상태를 이어서 보여준다.
             try {
                 mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]');
                 mvCols = Math.min(4, Math.max(1, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
-            } catch (e) { mvOrder = []; mvCols = 2; }
+                mvFocus = localStorage.getItem('mv-focus') === '1';
+            } catch (e) { mvOrder = []; mvCols = 2; mvFocus = false; }
         }
+        document.getElementById('mv-focus-checkbox').checked = mvFocus;
     }
 
     // ===== 다크모드 =====
@@ -152,12 +176,11 @@
 
     // ===== 설정 패널 여닫기 =====
     function mvApplySettingsPanel(open) {
-        document.getElementById('mv-settings-panel').classList.toggle('collapsed', !open);
-        document.getElementById('mv-settings-btn').classList.toggle('on', open);
-        localStorage.setItem('mv-settings-open', open ? '1' : '0');
+        document.getElementById('mv-settings-panel').classList.toggle('open', open);
+        document.getElementById('mv-fab').classList.toggle('on', open);
     }
     function mvToggleSettingsPanel() {
-        const isOpen = !document.getElementById('mv-settings-panel').classList.contains('collapsed');
+        const isOpen = document.getElementById('mv-settings-panel').classList.contains('open');
         mvApplySettingsPanel(!isOpen);
     }
 
@@ -171,6 +194,12 @@
     function mvApplyGridColumns() {
         const grid = document.getElementById('mv-grid');
         if (grid) grid.style.gridTemplateColumns = `repeat(${mvCols}, 1fr)`;
+    }
+
+    function mvToggleFocus() {
+        mvFocus = document.getElementById('mv-focus-checkbox').checked;
+        mvRenderGrid();
+        mvSaveState();
     }
 
     // ===== 순서 목록 =====
@@ -203,14 +232,25 @@
         const input = document.getElementById('mv-add-input');
         const id = input.value.trim().toLowerCase();
         if (!id) return;
-        if (!/^[a-z0-9_-]+$/.test(id)) { alert('숲(SOOP) 아이디 형식이 아닙니다 (영문/숫자/-/_ 만 가능).'); return; }
+        if (!/^[a-z0-9_-]+$/.test(id)) { alert('숲 아이디 형식이 아닙니다 (영문/숫자/-/_ 만 가능).'); return; }
         if (mvOrder.some(e => e.soopId === id)) { alert('이미 추가된 아이디입니다.'); return; }
         mvOrder.push({ soopId: id, name: id, isMember: false });
         input.value = '';
         mvRenderAll();
     }
 
-    // ===== 그리드 (실제 SOOP 라이브 채널 페이지를 iframe으로 삽입) =====
+    // ===== 그리드: 실시간 영상은 SOOP의 공식 라이브 임베드 엔드포인트
+    // (play.sooplive.com/{아이디}/embed)를 iframe으로 그대로 삽입한다. 채팅은
+    // 요청대로 껐고(showChat=false), 자동재생을 켜뒀다(autoPlay=true) - 브라우저의
+    // 자동재생 정책상 소리가 있는 자동재생은 막힐 수 있는데, 그건 SOOP 플레이어
+    // 자체가 처리하는 부분이라 우리 쪽에서 더 손볼 여지는 없다.
+    function mvEmbedUrl(soopId) {
+        const params = new URLSearchParams({
+            quality: '1080p', resolution: '1080p', preferredQuality: '1080p',
+            vq: 'hd1080', hd: '1', showChat: 'false', autoPlay: 'true',
+        });
+        return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
+    }
     function mvCellHtml(entry) {
         const channelUrl = `https://play.sooplive.co.kr/${encodeURIComponent(entry.soopId)}`;
         return `
@@ -220,17 +260,27 @@
                 <a href="${channelUrl}" target="_blank" rel="noopener">새 탭↗</a>
             </div>
             <div class="mv-cell-video-wrap">
-                <iframe src="${channelUrl}" allowfullscreen loading="lazy"></iframe>
+                <iframe src="${mvEmbedUrl(entry.soopId)}" allowfullscreen loading="lazy" allow="autoplay; encrypted-media; fullscreen"></iframe>
             </div>
         </div>`;
     }
     function mvRenderGrid() {
         const area = document.getElementById('mv-grid-area');
         if (mvOrder.length === 0) {
-            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 설정(⚙️)을 열어 숲 아이디를 추가해보세요.</div>';
+            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 오른쪽 위 ⚙️를 눌러 숲 아이디를 추가해보세요.</div>';
             return;
         }
-        area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
+        if (mvFocus) {
+            // 포커스 모드: 순서 1번(mvOrder[0])만 큰 화면으로, 나머지는 그 아래
+            // 작은 그리드로. 별도 컨테이너 두 개로 나누는 게 grid-column span으로
+            // 억지로 맞추는 것보다 단순하고 사고 여지가 적다.
+            const [main, ...rest] = mvOrder;
+            area.innerHTML = `
+                <div class="mv-focus-main">${mvCellHtml(main)}</div>
+                ${rest.length ? `<div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div>` : ''}`;
+        } else {
+            area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
+        }
         mvApplyGridColumns();
     }
 
@@ -242,7 +292,6 @@
 
     // ===== 초기화 =====
     mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
-    mvApplySettingsPanel(localStorage.getItem('mv-settings-open') !== '0');
     mvInit();
     document.getElementById('mv-cols-value').innerText = mvCols;
     mvRenderAll();
