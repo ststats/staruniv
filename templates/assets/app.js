@@ -1911,3 +1911,11 @@
         const label = '휴방';
         return `<div class="cal-offair-section"><div class="cal-offair-label">${label}</div><div class="cal-offair-chips">${chips}</div></div>`;
     };
+
+    // 달력 칸 맨 위에 특정 멤버(김윤환)의 휴방을 노란 띠로 표시해주기 위한 훅 -
+    // calendar.js는 멤버 정보(이름)를 모르고 soopId만 다루므로, soopId -> 이름
+    // 변환만 이 사이트(dbMembers를 가진 쪽)에서 해준다.
+    window.calOffAirMemberName = (soopId) => {
+        const m = dbMembers.find(x => x['SOOP ID'] === soopId);
+        return m ? m['이름'] : null;
+    };
