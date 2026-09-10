@@ -346,9 +346,7 @@
     }
 
     function mvUpdateActionbar() {
-        const count = mvOrder.length;
-        document.getElementById('mv-actionbar-count').innerText = count > 0 ? `${count}명 선택됨` : '선택된 대상이 없습니다.';
-        document.getElementById('mv-open-btn').disabled = count === 0;
+        document.getElementById('mv-open-btn').disabled = mvOrder.length === 0;
     }
 
     function mvRenderAll() {
