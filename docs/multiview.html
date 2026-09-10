@@ -66,16 +66,28 @@
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
 
-    /* ===== 그리드: 화면 전체를 채운다 ===== */
-    #mv-grid-area { min-height: 100vh; padding: 10px; box-sizing: border-box; }
-    .mv-grid { display: grid; gap: 10px; }
-    .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
-    .mv-cell-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
+    /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 정확히 맞춘다. 셀 높이를
+       16:9 같은 고정 비율(가로 기준)로 두면 세로로 넘칠 수 있어서, 대신 셀이
+       자기 그리드 칸/플렉스 칸의 높이를 그대로 채우게(flex:1) 만든다 - 실제
+       세로 여백은 rows 개수를 JS에서 계산해 grid-template-rows로 못박아 분배한다. */
+    html, body { overflow: hidden; }
+    #mv-grid-area { height: 100vh; padding: 10px; box-sizing: border-box; }
+    .mv-grid { display: grid; gap: 10px; height: 100%; }
+    .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
     .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
     .mv-cell-header a:hover { color: var(--color-primary); }
-    .mv-cell-video-wrap { position: relative; aspect-ratio: 16/9; background: #0b0c10; }
-    .mv-cell-video-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
-    .mv-focus-main { margin-bottom: 10px; }
+    .mv-cell-video-wrap { position: relative; flex: 1; min-height: 0; background: #0b0c10; }
+    .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+
+    /* 포커스 모드: 위(1번, 크게) + 아래(나머지, 작게)를 flex 비율로 나눈다 -
+       비율로만 나누면 뷰포트 높이가 그대로 정확히 소진되니 여기도 스크롤이 안 생긴다. */
+    .mv-focus-layout { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+    .mv-focus-main { flex: 3; min-height: 0; }
+    .mv-focus-main .mv-cell { height: 100%; }
+    .mv-focus-rest-wrap { flex: 1; min-height: 0; }
+    .mv-focus-rest-wrap .mv-grid { height: 100%; }
+
     .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 30vh 0; }
 </style>
 </head>
@@ -193,7 +205,16 @@
     }
     function mvApplyGridColumns() {
         const grid = document.getElementById('mv-grid');
-        if (grid) grid.style.gridTemplateColumns = `repeat(${mvCols}, 1fr)`;
+        if (!grid) return;
+        const count = grid.children.length;
+        if (count === 0) return;
+        // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에
+        // 휑하게 남지 않게 한다. rows는 남은 칸 수 기준으로 계산해서
+        // grid-template-rows에 못박아, 세로도 뷰포트 안에 딱 맞게 나눠진다.
+        const cols = Math.max(1, Math.min(mvCols, count));
+        const rows = Math.max(1, Math.ceil(count / cols));
+        grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     }
 
     function mvToggleFocus() {
@@ -271,13 +292,15 @@
             return;
         }
         if (mvFocus) {
-            // 포커스 모드: 순서 1번(mvOrder[0])만 큰 화면으로, 나머지는 그 아래
-            // 작은 그리드로. 별도 컨테이너 두 개로 나누는 게 grid-column span으로
-            // 억지로 맞추는 것보다 단순하고 사고 여지가 적다.
+            // 포커스 모드: 순서 1번(mvOrder[0])만 위쪽에 크게, 나머지는 그 아래
+            // 작은 그리드로 - 둘 다 flex 비율(3:1)로 뷰포트 높이를 나눠 가지므로
+            // 항목 수와 무관하게 스크롤 없이 항상 한 화면에 다 들어간다.
             const [main, ...rest] = mvOrder;
             area.innerHTML = `
-                <div class="mv-focus-main">${mvCellHtml(main)}</div>
-                ${rest.length ? `<div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div>` : ''}`;
+                <div class="mv-focus-layout">
+                    <div class="mv-focus-main">${mvCellHtml(main)}</div>
+                    ${rest.length ? `<div class="mv-focus-rest-wrap"><div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div></div>` : ''}
+                </div>`;
         } else {
             area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
         }
