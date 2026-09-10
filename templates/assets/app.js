@@ -326,14 +326,14 @@
 
     function mvOrderItemHtml(entry, idx) {
         const isFocusTarget = mvFocus && mvFocusEntryId() === entry.soopId;
+        const rowClick = mvFocus ? ` onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')"` : '';
         return `
-        <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
+        <div class="mv-order-item${entry.isMember ? '' : ' custom'}${isFocusTarget ? ' focus-target' : ''}${mvFocus ? ' selectable' : ''}"${rowClick}>
             <span class="mv-order-num">${idx + 1}.</span>
-            ${mvFocus ? `<button type="button" class="mv-order-focus${isFocusTarget ? ' active' : ''}" title="포커스 대상으로 지정" onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')">메인</button>` : ''}
-            <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-            <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
+            <button type="button" title="위로" onclick="event.stopPropagation(); mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+            <button type="button" title="아래로" onclick="event.stopPropagation(); mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
             <span class="mv-order-name">${escapeHTML(entry.name)}</span>
-            <button type="button" class="mv-order-remove" title="빼기" onclick="mvRemoveFromOrder(${idx})">✕</button>
+            <button type="button" class="mv-order-remove" title="빼기" onclick="event.stopPropagation(); mvRemoveFromOrder(${idx})">✕</button>
         </div>`;
     }
 
