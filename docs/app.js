@@ -324,7 +324,7 @@
 
         newsMode = 'all';
         newsFeaturedKey = null; // 새로 들어왔으니 제일 최신 글을 다시 왼쪽에 올린다
-        allNewsShownCount = Math.min(10, allNewsPool.length);
+        allNewsShownCount = allNewsPool.length; // 이미 멤버별로 가져온 건 처음부터 다 보여준다
         newsItems = allNewsPool.slice(0, allNewsShownCount);
         newsHasMore = allNewsShownCount < allNewsPool.length || newsAnyMemberHasMorePages();
         renderNewsLayout(content);
