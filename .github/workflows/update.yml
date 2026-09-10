@@ -2,6 +2,10 @@ name: Update Stats
 
 on:
   workflow_dispatch:
+  schedule:
+    # 매일 20:00 KST(=11:00 UTC)에 자동 실행. "오늘" 표시 등 날짜만 바뀌어도
+    # 캘린더 이미지를 새로 반영해야 하므로 최소 하루 한 번은 돌아야 한다.
+    - cron: '0 11 * * *'
 
 permissions:
   contents: write
@@ -17,9 +21,7 @@ jobs:
     steps:
     - name: 저장소 체크아웃
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GH_TOKEN }}  # GITHUB_TOKEN이 아니라 직접 등록한 GH_TOKEN으로 변경!
-        
+
     - name: 파이썬 환경 세팅
       uses: actions/setup-python@v5
       with:
@@ -59,7 +61,7 @@ jobs:
 
     - name: 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링)
       env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: node capture.js
 
     - name: 변경된 데이터 및 HTML 깃허브에 배포
@@ -68,5 +70,15 @@ jobs:
         git config --global user.email "actions@github.com"
         # index.html 뿐 아니라 분리된 정적 자산(css/js)과 캘린더 이미지도 같이 add
         git add data/*.json docs/index.html docs/style.css docs/app.js docs/calendar.js docs/holidays.json docs/data/site_data.json docs/data/calendar.png
-        git diff --quiet && git diff --staged --quiet || git commit -m "🚀 통계 웹페이지 자동 업데이트"
-        git push
+        # 디버그용: 뭐가 바뀌었는지(또는 안 바뀌었는지) 로그에 남겨서, 다음에 또
+        # "워크플로우는 도는데 반영이 안 됨" 문제가 생기면 여기 로그만 보고
+        # (1) 애초에 diff가 없었는지 (2) commit은 됐는데 push가 실패했는지 바로 구분한다.
+        echo "── git status (add 이후) ──"
+        git status --short
+        if git diff --staged --quiet; then
+          echo "ℹ️ 스테이징된 변경사항이 없습니다 (캡쳐/데이터가 이전과 동일) - 커밋을 건너뜁니다."
+        else
+          git commit -m "🚀 통계 웹페이지 자동 업데이트"
+          echo "── git push ──"
+          git push
+        fi
