@@ -480,12 +480,6 @@
         .mv-toggle-switch.on { background: var(--color-primary); }
         .mv-toggle-switch.on::before { transform: translateX(15px); }
 
-        .mv-mode-switch { display: inline-flex; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
-        .mv-mode-btn { border: none; background: var(--color-card, #fff); color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; padding: 6px 10px; cursor: pointer; transition: 0.12s; }
-        .mv-mode-btn + .mv-mode-btn { border-left: 1px solid var(--color-border-strong); }
-        .mv-mode-btn.active { background: var(--color-primary); color: #fff; }
-        .mv-mode-btn:not(.active):hover { background: var(--color-primary-tint); color: var(--color-primary); }
-
         .mv-run-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-deep)); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(41,121,255,0.32); transition: filter 0.1s, transform 0.1s; }
         .mv-run-btn:hover:not(:disabled) { filter: brightness(1.06); }
         .mv-run-btn:active:not(:disabled) { transform: scale(0.99); }

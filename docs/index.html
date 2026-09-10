@@ -212,13 +212,10 @@
         <div class="section-title">설정</div>
         <div class="mv-console">
             <div class="mv-console-tiles">
-                <div class="mv-tile">
+               <div class="mv-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
-                    <div class="mv-tile-label">보기</div>
-                    <div class="mv-mode-switch">
-                        <button type="button" class="mv-mode-btn active" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
-                        <button type="button" class="mv-mode-btn" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
-                    </div>
+                    <div class="mv-tile-label">그리드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" onclick="mvToggleFocusMode()"></button>
                 </div>
                 <div class="mv-tile disabled" id="mv-col-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
