@@ -67,19 +67,19 @@
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
 
     /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 맞추되, 영상 비율(16:9)은
-       절대 찌그러뜨리지 않는다. 셀 박스 자체는 그리드/flex 칸을 꽉 채우지만,
-       그 안의 실제 영상 박스(.mv-cell-video-wrap)는 JS(mvFitVideoBox)가 셀
-       크기에 맞춰 16:9를 유지하는 최대 크기로 계산해서 가운데 정렬한다 -
-       칸이 영상 비율과 안 맞으면 위아래(또는 좌우)에 여백이 남을 뿐,
-       영상 자체가 늘어나거나 눌리지 않는다. */
+       절대 찌그러뜨리지 않는다. 그리드 트랙(칸) 자체는 화면을 나눠 가지지만,
+       그 안의 카드(.mv-cell)는 칸을 꽉 채우지 않고 실제 영상 크기(JS가 16:9로
+       계산)에 딱 맞는 크기로만 그려서 칸 한가운데 놓인다 - 칸과 카드 사이
+       남는 공간은 카드 안쪽 여백(letterbox)이 아니라 카드 바깥(페이지 배경)에
+       남는다. */
     html, body { overflow: hidden; }
     #mv-grid-area { height: 100vh; padding: 10px; box-sizing: border-box; }
-    .mv-grid { display: grid; gap: 10px; height: 100%; }
-    .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .mv-grid { display: grid; gap: 10px; height: 100%; align-items: center; justify-items: center; }
+    .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
     .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
     .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
     .mv-cell-header a:hover { color: var(--color-primary); }
-    .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; display: flex; align-items: center; justify-content: center; }
+    .mv-cell-body { display: flex; background: #0b0c10; }
     .mv-cell-video-wrap { position: relative; }
     .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 
@@ -89,8 +89,7 @@
        인라인 style로 지정한다 - 인원이 늘수록 아래쪽에 줄 공간이 더 필요해서
        고정 비율 하나로는 항목이 많을 때 썸네일이 너무 눌린다. */
     .mv-focus-layout { display: flex; flex-direction: column; gap: 10px; height: 100%; }
-    .mv-focus-main { min-height: 0; }
-    .mv-focus-main .mv-cell { height: 100%; }
+    .mv-focus-main { min-height: 0; display: flex; align-items: center; justify-content: center; }
     .mv-focus-rest-wrap { min-height: 0; }
     .mv-focus-rest-wrap .mv-grid { height: 100%; }
 
@@ -223,6 +222,11 @@
         const rows = Math.max(1, Math.ceil(count / cols));
         grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
         grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        // mvLayoutGrid가 나중에 "칸 하나의 최대 크기"를 계산할 때 쓸 수 있도록
+        // 저장해둔다 (렌더된 카드 크기로 역산하면 카드가 칸을 안 채우는 지금
+        // 구조에서는 정확한 값을 구할 수 없다).
+        grid.dataset.cols = cols;
+        grid.dataset.rows = rows;
     }
 
     // 포커스 모드에서 "1번을 뺀 나머지 인원 수"별로 미리 손봐둔 비율/열 개수.
@@ -349,30 +353,53 @@
     }
 
     // ===== 영상 비율(16:9) 고정 =====
-    // 셀 박스(.mv-cell-body)는 그리드/flex 칸을 꽉 채우지만, 그 안의 실제 영상
-    // 크기는 셀 박스 안에서 16:9를 유지하는 최대 크기로 계산해 가운데 놓는다.
-    // 칸 비율이 16:9와 안 맞으면 위아래나 좌우에 여백이 남을 뿐, 영상 자체가
-    // 늘어나거나 눌리는 일은 없다.
-    function mvFitVideoBox(bodyEl) {
-        const w = bodyEl.clientWidth;
-        const h = bodyEl.clientHeight;
-        if (w === 0 || h === 0) return;
-        let videoW = w;
+    // 카드(.mv-cell)가 칸을 꽉 채우지 않으므로(위 CSS 참고), 렌더된 카드
+    // 크기를 거꾸로 재서 계산할 수 없다 - 대신 그리드/포커스존의 "전체 사용
+    // 가능 면적"을 열·행 개수로 직접 나눠서 칸 하나의 최대 크기를 구하고,
+    // 그 안에서 16:9를 유지하는 가장 큰 영상 크기를 계산한다.
+    const MV_GAP = 10;
+    function mvHeaderHeight() {
+        const sample = document.querySelector('.mv-cell-header');
+        return sample ? sample.offsetHeight : 27;
+    }
+    function mvFitBox(boxW, boxH) {
+        let videoW = boxW;
         let videoH = videoW * 9 / 16;
-        if (videoH > h) {
-            videoH = h;
+        if (videoH > boxH) {
+            videoH = boxH;
             videoW = videoH * 16 / 9;
         }
-        const wrap = bodyEl.querySelector('.mv-cell-video-wrap');
-        if (wrap) {
-            wrap.style.width = Math.floor(videoW) + 'px';
-            wrap.style.height = Math.floor(videoH) + 'px';
-        }
+        return { videoW: Math.max(0, Math.floor(videoW)), videoH: Math.max(0, Math.floor(videoH)) };
+    }
+    function mvSizeGrid(grid) {
+        if (!grid) return;
+        const cols = parseInt(grid.dataset.cols, 10) || 1;
+        const rows = parseInt(grid.dataset.rows, 10) || 1;
+        const w = grid.clientWidth;
+        const h = grid.clientHeight;
+        if (w === 0 || h === 0) return;
+        const cellBoxW = (w - MV_GAP * (cols - 1)) / cols;
+        const cellBoxH = (h - MV_GAP * (rows - 1)) / rows - mvHeaderHeight();
+        const { videoW, videoH } = mvFitBox(cellBoxW, cellBoxH);
+        grid.querySelectorAll('.mv-cell-video-wrap').forEach(wrap => {
+            wrap.style.width = videoW + 'px';
+            wrap.style.height = videoH + 'px';
+        });
+    }
+    function mvSizeSingle(zoneEl) {
+        if (!zoneEl) return;
+        const w = zoneEl.clientWidth;
+        const h = zoneEl.clientHeight - mvHeaderHeight();
+        if (w === 0 || h <= 0) return;
+        const { videoW, videoH } = mvFitBox(w, h);
+        const wrap = zoneEl.querySelector('.mv-cell-video-wrap');
+        if (wrap) { wrap.style.width = videoW + 'px'; wrap.style.height = videoH + 'px'; }
     }
     function mvLayoutGrid() {
-        document.querySelectorAll('.mv-cell-body').forEach(mvFitVideoBox);
+        mvSizeSingle(document.querySelector('.mv-focus-main'));
+        mvSizeGrid(document.getElementById('mv-grid'));
     }
-    // 창 크기가 바뀌면 셀 박스 크기도 바뀌므로 영상 크기를 다시 계산한다.
+    // 창 크기가 바뀌면 사용 가능 면적도 바뀌므로 영상 크기를 다시 계산한다.
     window.addEventListener('resize', mvLayoutGrid);
 
     // ===== 초기화 =====
