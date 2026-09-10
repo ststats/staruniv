@@ -586,9 +586,16 @@
         /* 휴방자 표시 - "오늘의 일정"/"선택한 날짜 일정" 카드 안, 일정 목록 아래에 붙는다.
            일정이 없어서 .cal-no-schedule만 있을 때도 그 아래에 그대로 붙고, 휴방자
            자체가 없는 날은 이 섹션 자체가 렌더링되지 않는다(calOffAirExtra가 빈 문자열 반환). */
-        .cal-offair-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-bg-subtle); }
-        .cal-offair-label { font-size: 11px; font-weight: 800; color: var(--color-text-sub); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 10px; }
-        .cal-offair-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        /* 휴방 표시 - 다른 일정 카드처럼 한 줄에 왼쪽엔 라벨, 오른쪽엔 칩들을 배치.
+           라벨은 시간 표시(.cal-card-time)와 폰트 크기/색상을 맞춘다. */
+        /* 휴방 표시 - 다른 일정 카드처럼 라벨 바로 옆에 자연스럽게 흘러가는 배치.
+           오른쪽 정렬 하지 않고, 줄바꿈이 필요하면 그냥 다음 줄로 자연스럽게 넘어간다. */
+        /* 휴방 표시 - 라벨은 고정폭으로 왼쪽에 두고, 칩 목록은 남은 폭을 차지하는
+           자기만의 영역으로 만든다. 그래야 줄바꿈이 필요할 때 그 칩 영역 안에서만
+           줄바꿈되어, 둘째 줄이 라벨 밑이 아니라 "첫 칩이 시작한 위치" 아래로 정렬된다. */
+        .cal-offair-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-bg-subtle); display: flex; align-items: flex-start; gap: 8px; }
+        .cal-offair-label { color: var(--color-text-main); font-weight: 400; font-size: 12px; white-space: nowrap; flex-shrink: 0; padding-top: 4px; }
+        .cal-offair-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
         .cal-offair-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--color-bg-subtle); border-radius: 20px; padding: 4px 12px 4px 4px; }
         .cal-offair-avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; background: var(--color-border); flex-shrink: 0; }
         .cal-offair-name { font-size: 12px; font-weight: 700; color: var(--color-text-main); white-space: nowrap; }
