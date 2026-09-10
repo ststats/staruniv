@@ -624,18 +624,25 @@
     // ----- 휴방 멤버 선택 (calOffAir - calendar.js가 들고 있는 날짜별 휴방 멤버 맵) -----
     // 체크박스를 누르면 그 자리에서 바로 calOffAir를 갱신하고(별도 저장 버튼 없음),
     // 상단의 "저장" 버튼(saveAllToGithub)을 누르면 일정이랑 한 커밋에 같이 반영된다.
+    // 사이트 app.js의 isActiveMember와 동일한 기준(퇴단일 필드가 비어있어야 활동중) -
+    // 이전 멤버까지 섞여 나오면 목록이 쓸데없이 길어지고 헷갈리니 여기서도 걸러낸다.
+    function isActiveMember(m) {
+        return !m['퇴단일'] || String(m['퇴단일']).trim() === '';
+    }
+
     function renderOffAirCheckboxList() {
         const listEl = document.getElementById('offairMemberList');
         const labelEl = document.getElementById('offairDateLabel');
         if (labelEl) labelEl.innerText = calSelectedDateStr || '날짜를 선택하세요';
         if (!listEl) return;
 
-        if (!dbMembers.length) {
+        const activeMembers = dbMembers.filter(isActiveMember);
+        if (!activeMembers.length) {
             listEl.innerHTML = `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">멤버 정보를 불러오지 못했습니다.</div>`;
             return;
         }
         const checkedIds = new Set(calOffAirForDate(calSelectedDateStr));
-        listEl.innerHTML = dbMembers.map(m => {
+        listEl.innerHTML = activeMembers.map(m => {
             const soopId = m['SOOP ID'];
             const name = m['이름'] || soopId;
             const imgUrl = getProfileImgUrl(soopId);
