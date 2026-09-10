@@ -162,6 +162,8 @@
             switchMemberView('status');
         } else if (pageId === 'stats') {
             setSynergyMetric('balloons');
+        } else if (pageId === 'tools') {
+            switchToolsView('multiviewer');
         }
     }
 
@@ -185,6 +187,9 @@
             const view = params.get('view');
             const metric = SYNERGY_METRIC_FROM_URL[view] || 'balloons';
             setSynergyMetric(metric);
+        } else if (pageId === 'tools') {
+            const view = params.get('view') === 'external' ? 'external' : 'multiviewer';
+            switchToolsView(view, true);
         }
     }
 
@@ -237,6 +242,107 @@
             showNewsAll(true);
         }
         if (!skipHashUpdate) updateMembersHash();
+    }
+
+    function updateToolsHash() {
+        const view = document.getElementById('tab-tools-external').classList.contains('active') ? 'external' : 'multiviewer';
+        const params = {};
+        if (view === 'external') params.view = 'external';
+        updateHash('tools', params);
+    }
+
+    function switchToolsView(viewType, skipHashUpdate) {
+        document.getElementById('tab-tools-multiviewer').classList.toggle('active', viewType === 'multiviewer');
+        document.getElementById('tab-tools-external').classList.toggle('active', viewType === 'external');
+        document.getElementById('view-tools-multiviewer').style.display = viewType === 'multiviewer' ? 'block' : 'none';
+        document.getElementById('view-tools-external').style.display = viewType === 'external' ? 'block' : 'none';
+        if (!skipHashUpdate) updateToolsHash();
+    }
+
+    // ===== 도구 - 멀티뷰어 (멤버 선택 -> Mul.Live 새 창으로 열기) =====
+    // 그리드 배치/채팅 표시 등은 Mul.Live(외부 멀티뷰어) 새 창에서 직접 설정하므로,
+    // 우리 사이트에서는 "우리 멤버 중 누구를 볼지" 고르는 기능만 담당한다.
+    let mvSelected = new Set();
+
+    function mvMemberCardHtml(m, isLive) {
+        const soopId = m['SOOP ID'];
+        const selected = mvSelected.has(soopId);
+        return `
+        <div class="member-card mv-member-card${selected ? ' selected' : ''}" data-soop-id="${escapeHTML(soopId)}" role="button" tabindex="0"
+             onclick="mvToggleMember('${jsStrEscape(soopId)}')" onkeydown="if(event.key==='Enter')mvToggleMember('${jsStrEscape(soopId)}')">
+            <span class="mv-check">${selected ? '✓' : ''}</span>
+            ${isLive ? '<span class="live-badge mv-live-badge">LIVE</span>' : ''}
+            ${avatarHtml(soopId, 'member-avatar-img')}
+            <div class="member-card-name">${escapeHTML(m['이름'])}</div>
+        </div>`;
+    }
+
+    function mvRenderGrid(members, liveMap) {
+        const container = document.getElementById('mv-member-grid');
+        if (!container) return;
+        container.innerHTML = members.length
+            ? members.map(m => mvMemberCardHtml(m, !!(liveMap && liveMap[m['SOOP ID']]))).join('')
+            : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body); grid-column:1/-1;">선택 가능한 멤버가 없습니다.</div>`;
+    }
+
+    function mvUpdateActionbar() {
+        const count = mvSelected.size;
+        document.getElementById('mv-actionbar-count').innerText = count > 0 ? `${count}명 선택됨` : '선택된 멤버가 없습니다.';
+        document.getElementById('mv-open-btn').disabled = count === 0;
+    }
+
+    function mvToggleMember(soopId) {
+        if (mvSelected.has(soopId)) mvSelected.delete(soopId);
+        else mvSelected.add(soopId);
+
+        const card = document.querySelector(`#mv-member-grid .mv-member-card[data-soop-id="${CSS.escape(soopId)}"]`);
+        if (card) {
+            const selected = mvSelected.has(soopId);
+            card.classList.toggle('selected', selected);
+            card.querySelector('.mv-check').innerText = selected ? '✓' : '';
+        }
+        mvUpdateActionbar();
+    }
+
+    function mvSelectAll() {
+        activeMembersWithSoopId().forEach(m => mvSelected.add(m['SOOP ID']));
+        document.querySelectorAll('#mv-member-grid .mv-member-card').forEach(card => {
+            card.classList.add('selected');
+            card.querySelector('.mv-check').innerText = '✓';
+        });
+        mvUpdateActionbar();
+    }
+
+    function mvClearSelection() {
+        mvSelected.clear();
+        document.querySelectorAll('#mv-member-grid .mv-member-card').forEach(card => {
+            card.classList.remove('selected');
+            card.querySelector('.mv-check').innerText = '';
+        });
+        mvUpdateActionbar();
+    }
+
+    function openMultiviewer() {
+        if (mvSelected.size === 0) return;
+        const ids = Array.from(mvSelected).map(id => encodeURIComponent(id));
+        window.open(`https://mul.live/${ids.join('/')}`, '_blank', 'noopener');
+    }
+
+    // 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송중 여부(LIVE 뱃지)는
+    // 홈 화면 방송중 체크와 같은 방식으로 비동기로 확인해 나중에 덧입힌다
+    // (선택 상태는 mvSelected에 별도로 저장돼 있어 재렌더링해도 유지된다).
+    async function renderMultiviewerPicker() {
+        const members = activeMembersWithSoopId();
+        mvRenderGrid(members);
+        mvUpdateActionbar();
+        if (members.length === 0) return;
+
+        const settled = await Promise.allSettled(
+            members.map(m => checkIsLiveRealtime(m['SOOP ID']).then(live => ({ soopId: m['SOOP ID'], live: !!live })))
+        );
+        const liveMap = {};
+        settled.forEach(r => { if (r.status === 'fulfilled') liveMap[r.value.soopId] = r.value.live; });
+        mvRenderGrid(members, liveMap);
     }
 
     // 홈 화면 "전체 보기"/공지 클릭 -> 멤버 페이지의 소식 탭으로 이동.
@@ -1689,6 +1795,7 @@
         renderLatestNotices();
         loadSynergyData();
         loadToolsData();
+        renderMultiviewerPicker();
 
         // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
         restoreFromHash();

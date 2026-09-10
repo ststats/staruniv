@@ -449,7 +449,23 @@
         .member-avatar-img { width: 46%; max-width: 72px; min-width: 40px; aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto; }
         .member-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
-        
+
+        /* 도구 - 멀티뷰어 멤버 선택 그리드 */
+        .mv-select-actions { display: flex; gap: 8px; }
+        .mv-member-card { cursor: pointer; }
+        .mv-member-card.selected { border-color: var(--color-primary); background: var(--color-primary-tint); box-shadow: 0 0 0 2px var(--color-primary) inset; }
+        .mv-check { position: absolute; top: 8px; right: 10px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #dcdfe4; background: #fff; box-sizing: border-box; font-size: 11px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
+        .mv-member-card.selected .mv-check { background: var(--color-primary); border-color: var(--color-primary); }
+        .mv-live-badge { top: 8px; left: 10px; }
+        .mv-actionbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; padding: 14px 18px; background: var(--color-primary-tint); border-radius: 10px; }
+        .mv-actionbar-count { font-size: var(--fs-body); font-weight: 700; color: #444; }
+        .mv-open-btn { background: var(--color-primary); color: #fff; border: none; border-radius: 6px; font-size: var(--fs-body); font-weight: 700; padding: 10px 18px; cursor: pointer; transition: 0.1s; }
+        .mv-open-btn:hover:not(:disabled) { filter: brightness(1.08); }
+        .mv-open-btn:disabled { background: #c8ccd2; cursor: not-allowed; }
+        .mv-hint { margin-top: 12px; font-size: var(--fs-body); }
+        .mv-hint a { color: var(--color-primary); font-weight: 600; }
+
+
         /* 도넛 차트 */
         .donut-wrap { display: flex; justify-content: space-around; }
         .donut-box { text-align: center; }
