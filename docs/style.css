@@ -463,11 +463,11 @@
         .mv-toggle input { width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; }
 
         .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-        .mv-chip { display: flex; align-items: center; gap: 6px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1.5px solid var(--color-border); background: #fff; cursor: pointer; transition: 0.12s; user-select: none; }
+        .mv-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; border: 1.5px solid var(--color-border); background: #fff; cursor: pointer; transition: 0.12s; user-select: none; }
         .mv-chip:hover { border-color: #b9cdf5; }
         .mv-chip.selected { border-color: var(--color-primary); background: var(--color-primary-tint); }
-        .mv-chip-avatar { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
-        .mv-chip-name { font-size: var(--fs-body); font-weight: 700; color: #444; }
+        .mv-chip-avatar { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--color-border); }
+        .mv-chip-name { font-size: 12px; font-weight: 700; color: #444; }
         .mv-chip.selected .mv-chip-name { color: var(--color-primary); font-weight: 800; }
         .mv-chip-check { display: none; width: 14px; height: 14px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 9px; align-items: center; justify-content: center; flex-shrink: 0; }
         .mv-chip.selected .mv-chip-check { display: flex; }
