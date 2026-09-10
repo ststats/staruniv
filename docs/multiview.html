@@ -18,7 +18,7 @@
         --color-primary-tint: #1c2740;
         --color-bg-subtle: #22262e;
     }
-    html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text-main); }
+    html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-t그리ext-main); }
 
     /* 기본 화면은 그리드만 꽉 차게 보이는 게 목적이라, 여백/타이틀 같은 크롬은
        전부 없애고 오른쪽 위 ⚙️ 버튼 하나만 항상 떠 있게 한다. 설정은 그 버튼을
@@ -39,6 +39,23 @@
     .mv-settings-top { margin-bottom: 20px; }
     .mv-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
     .mv-title-main { color: var(--color-text-main); }
+
+/* ===== 설정 패널(사이드바) 안에서는 PC 화면이라도 항상 바둑판(모바일) 레이아웃 유지 ===== */
+    .mv-settings-panel .mv-console { 
+        flex-direction: column !important; 
+        align-items: stretch !important; 
+        padding: 14px !important; 
+    }
+    .mv-settings-panel .mv-console-tiles { 
+        display: grid !important; 
+        grid-template-columns: repeat(3, 1fr) !important; 
+    }
+    .mv-settings-panel .mv-tile { 
+        flex-direction: column !important; 
+        align-items: center !important; 
+        gap: 7px !important; 
+        padding: 10px 6px 12px !important; 
+    }
 
     /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
     .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
@@ -89,11 +106,8 @@
             <div class="mv-console-tiles">
                 <div class="mv-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
-                    <div class="mv-tile-label">보기</div>
-                    <div class="mv-mode-switch">
-                        <button type="button" class="mv-mode-btn active" id="mv-mode-focus" onclick="mvSetFocusMode(true)">포커스</button>
-                        <button type="button" class="mv-mode-btn" id="mv-mode-grid" onclick="mvSetFocusMode(false)">그리드</button>
-                    </div>
+                    <div class="mv-tile-label">그리드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" onclick="mvToggleFocusMode()"></button>
                 </div>
                 <div class="mv-tile disabled" id="mv-col-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
@@ -245,8 +259,8 @@
     }
 
     function mvApplyModeButtons() {
-        document.getElementById('mv-mode-grid').classList.toggle('active', !mvFocus);
-        document.getElementById('mv-mode-focus').classList.toggle('active', mvFocus);
+        const toggle = document.getElementById('mv-mode-toggle');
+        if (toggle) toggle.classList.toggle('on', !mvFocus);
     }
     function mvSetFocusMode(isFocus) {
         if (isFocus === mvFocus) return;
@@ -256,6 +270,10 @@
         mvRenderOrderRow();
         mvRenderGrid();
         mvSaveState();
+    }
+    // 포커스/그리드 pill에 붙은 새로고침 버튼: 누를 때마다 현재 모드의 반대로 전환한다.
+    function mvToggleFocusMode() {
+        mvSetFocusMode(!mvFocus);
     }
     function mvApplyColsGroupVisibility() {
         // 포커스 모드에서는 열 개수가 화면 크기·인원 수 기준 자동 계산
