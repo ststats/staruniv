@@ -195,25 +195,51 @@
     <div class="text-center text-muted section-trailer" id="synergy-updated" style="font-size:11px;"></div>
 </div>
 
-<!-- 도구 페이지: 외부 링크 카드 모음 -->
+<!-- 도구 페이지 -->
 <div id="page-tools" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">도구</h1>
         <p class="page-header-subtitle">자주 쓰는 도구 모음입니다.</p>
     </div>
-    <hr class="page-header-divider">
-    <div class="section-title">외부 도구</div>
-    <div class="tool-grid" id="tools-grid-extTools"></div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs">
+        <div class="sub-tab active" id="tab-tools-multiviewer" onclick="switchToolsView('multiviewer')">멀티뷰어</div>
+        <div class="sub-tab" id="tab-tools-external" onclick="switchToolsView('external')">외부도구</div>
+    </div>
 
-    <div class="section-title" style="margin-top: 32px;">외부 사이트</div>
-    <div class="tool-grid" id="tools-grid-extSites"></div>
+    <!-- 1. 멀티뷰어 뷰 -->
+    <div id="view-tools-multiviewer">
+        <div class="section-title">
+            멤버 선택
+            <div class="mv-select-actions">
+                <button type="button" class="btn-clean" onclick="mvSelectAll()">전체 선택</button>
+                <button type="button" class="btn-clean" onclick="mvClearSelection()">선택 해제</button>
+            </div>
+        </div>
+        <div class="tool-grid" id="mv-member-grid"></div>
+
+        <div class="mv-actionbar">
+            <span class="mv-actionbar-count" id="mv-actionbar-count">선택된 멤버가 없습니다.</span>
+            <button type="button" class="mv-open-btn" id="mv-open-btn" onclick="openMultiviewer()" disabled>멀티뷰어로 보기</button>
+        </div>
+        <p class="mv-hint text-muted">선택한 멤버들을 <a href="https://mul.live/" target="_blank" rel="noopener">Mul.Live</a> 멀티뷰어 새 창으로 엽니다. 화면 배치 · 채팅 표시 등은 새 창에서 직접 설정할 수 있습니다.</p>
+    </div>
+
+    <!-- 2. 외부도구 뷰 (도구/사이트로 구분) -->
+    <div id="view-tools-external" style="display:none;">
+        <div class="section-title">외부 도구</div>
+        <div class="tool-grid" id="tools-grid-extTools"></div>
+
+        <div class="section-title" style="margin-top: 32px;">외부 사이트</div>
+        <div class="tool-grid" id="tools-grid-extSites"></div>
+    </div>
 </div>
 
 <!-- 전적 페이지 -->
 <div id="page-records" class="page-section container">
     <div class="page-header">
         <h1 class="page-header-title">전적</h1>
-        <p class="page-header-subtitle">캄몬스타즈 소속으로 참가한 대회 · 대전 · CK 전적입니다.</p>
+        <p class="page-header-subtitle">캄몬스타즈 소속으로 참가한 대회 · 대학대전 · 미니대전 · CK 전적입니다.</p>
     </div>
     <hr class="page-header-divider tight">
     <div class="sub-tabs">
