@@ -477,9 +477,11 @@
         .mv-mode-btn + .mv-mode-btn { border-left: 1px solid var(--color-border-strong); }
         .mv-mode-btn.active { background: var(--color-primary); color: #fff; }
         .mv-mode-btn:not(.active):hover { background: var(--color-primary-tint); color: var(--color-primary); }
+        .mv-settings-bar .mv-toggle { margin-left: auto; }
 
-        .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-        .mv-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; border: 1.5px solid var(--color-border); background: #fff; cursor: pointer; transition: 0.12s; user-select: none; }
+        .mv-settings-group.disabled { opacity: 0.4; pointer-events: none; }
+        .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; }
+        .mv-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; border: 1.5px solid var(--color-border); background: var(--color-bg); cursor: pointer; transition: 0.12s; user-select: none; }
         .mv-chip:hover { border-color: #b9cdf5; }
         .mv-chip.selected { border-color: var(--color-primary); background: var(--color-primary-tint); }
         .mv-chip-avatar { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--color-border); }
@@ -495,8 +497,13 @@
         .mv-add-btn { background: #fff; border: 1px solid var(--color-border-strong); border-radius: 6px; padding: 8px 16px; font-size: var(--fs-body); font-weight: 700; color: #555; cursor: pointer; }
         .mv-add-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
 
-        .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 20px; }
-        .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: #fff; font-size: var(--fs-body); }
+        .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; min-height: 20px; }
+        /* 선택된 목록 + 직접 추가 입력칸을 한 박스 안에 합친 경우: 박스 자체가
+           카드 스타일을 가지므로, 안쪽 order-row는 자기 카드 스타일을 지운다. */
+        .mv-selected-box { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 14px 18px; margin-bottom: 20px; }
+        .mv-selected-box .mv-order-row { background: none; border: none; box-shadow: none; padding: 0; margin: 0 0 12px 0; }
+        .mv-selected-box .mv-add-row { margin-bottom: 0; }
+        .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-bg); font-size: var(--fs-body); }
         .mv-order-item.custom { border-style: dashed; }
         .mv-order-num { font-weight: 800; color: var(--color-text-sub); margin-right: 2px; }
         .mv-order-name { font-weight: 700; margin-right: 2px; }

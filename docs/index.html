@@ -231,13 +231,15 @@
 
         <div class="section-title">멤버 선택</div>
         <div class="mv-chip-row" id="mv-chip-row"></div>
-        <div class="mv-add-row">
-            <input type="text" id="mv-custom-id" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter')mvAddCustom()">
-            <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
-        </div>
 
         <div class="section-title">선택된 목록</div>
-        <div class="mv-order-row" id="mv-order-row"></div>
+        <div class="mv-selected-box">
+            <div class="mv-order-row" id="mv-order-row"></div>
+            <div class="mv-add-row">
+                <input type="text" id="mv-custom-id" placeholder="멤버 이름이나 숲아이디 직접 입력" onkeydown="if(event.key==='Enter')mvAddCustom()">
+                <button type="button" class="mv-add-btn" onclick="mvAddCustom()">추가</button>
+            </div>
+        </div>
 
         <div class="mv-actionbar">
             <span class="mv-actionbar-count" id="mv-actionbar-count">선택된 대상이 없습니다.</span>
