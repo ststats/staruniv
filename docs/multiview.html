@@ -66,10 +66,12 @@
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
     .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
 
-    /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 정확히 맞춘다. 셀 높이를
-       16:9 같은 고정 비율(가로 기준)로 두면 세로로 넘칠 수 있어서, 대신 셀이
-       자기 그리드 칸/플렉스 칸의 높이를 그대로 채우게(flex:1) 만든다 - 실제
-       세로 여백은 rows 개수를 JS에서 계산해 grid-template-rows로 못박아 분배한다. */
+    /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 맞추되, 영상 비율(16:9)은
+       절대 찌그러뜨리지 않는다. 셀 박스 자체는 그리드/flex 칸을 꽉 채우지만,
+       그 안의 실제 영상 박스(.mv-cell-video-wrap)는 JS(mvFitVideoBox)가 셀
+       크기에 맞춰 16:9를 유지하는 최대 크기로 계산해서 가운데 정렬한다 -
+       칸이 영상 비율과 안 맞으면 위아래(또는 좌우)에 여백이 남을 뿐,
+       영상 자체가 늘어나거나 눌리지 않는다. */
     html, body { overflow: hidden; }
     #mv-grid-area { height: 100vh; padding: 10px; box-sizing: border-box; }
     .mv-grid { display: grid; gap: 10px; height: 100%; }
@@ -77,15 +79,19 @@
     .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
     .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
     .mv-cell-header a:hover { color: var(--color-primary); }
-    .mv-cell-video-wrap { position: relative; flex: 1; min-height: 0; background: #0b0c10; }
+    .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; display: flex; align-items: center; justify-content: center; }
+    .mv-cell-video-wrap { position: relative; }
     .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 
     /* 포커스 모드: 위(1번, 크게) + 아래(나머지, 작게)를 flex 비율로 나눈다 -
-       비율로만 나누면 뷰포트 높이가 그대로 정확히 소진되니 여기도 스크롤이 안 생긴다. */
+       비율로만 나누면 뷰포트 높이가 그대로 정확히 소진되니 여기도 스크롤이 안 생긴다.
+       실제 flex 비율/열 개수는 나머지 인원 수에 따라 JS(mvFocusLayoutFor)가
+       인라인 style로 지정한다 - 인원이 늘수록 아래쪽에 줄 공간이 더 필요해서
+       고정 비율 하나로는 항목이 많을 때 썸네일이 너무 눌린다. */
     .mv-focus-layout { display: flex; flex-direction: column; gap: 10px; height: 100%; }
-    .mv-focus-main { flex: 3; min-height: 0; }
+    .mv-focus-main { min-height: 0; }
     .mv-focus-main .mv-cell { height: 100%; }
-    .mv-focus-rest-wrap { flex: 1; min-height: 0; }
+    .mv-focus-rest-wrap { min-height: 0; }
     .mv-focus-rest-wrap .mv-grid { height: 100%; }
 
     .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 30vh 0; }
@@ -201,9 +207,10 @@
         mvCols = Math.min(4, Math.max(1, mvCols + delta));
         document.getElementById('mv-cols-value').innerText = mvCols;
         mvApplyGridColumns();
+        mvLayoutGrid();
         mvSaveState();
     }
-    function mvApplyGridColumns() {
+    function mvApplyGridColumns(explicitCols) {
         const grid = document.getElementById('mv-grid');
         if (!grid) return;
         const count = grid.children.length;
@@ -211,10 +218,32 @@
         // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에
         // 휑하게 남지 않게 한다. rows는 남은 칸 수 기준으로 계산해서
         // grid-template-rows에 못박아, 세로도 뷰포트 안에 딱 맞게 나눠진다.
-        const cols = Math.max(1, Math.min(mvCols, count));
+        const wantCols = explicitCols || mvCols;
+        const cols = Math.max(1, Math.min(wantCols, count));
         const rows = Math.max(1, Math.ceil(count / cols));
         grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
         grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    }
+
+    // 포커스 모드에서 "1번을 뺀 나머지 인원 수"별로 미리 손봐둔 비율/열 개수.
+    // 인원이 늘수록 아래쪽 썸네일 줄이 최소 2줄이 되는 시점(5명)부터는 메인이
+    // 차지하는 비율을 줄여서 썸네일이 너무 눌리지 않게 한다.
+    const MV_FOCUS_LAYOUTS = {
+        0: { mainFlex: 1, restFlex: 0, restCols: 1 },   // 나머지 없음: 메인이 화면 전체
+        1: { mainFlex: 4, restFlex: 1, restCols: 1 },
+        2: { mainFlex: 3, restFlex: 1, restCols: 2 },
+        3: { mainFlex: 3, restFlex: 1, restCols: 3 },
+        4: { mainFlex: 3, restFlex: 1, restCols: 4 },
+        5: { mainFlex: 2, restFlex: 1, restCols: 3 },   // 3+2 두 줄
+        6: { mainFlex: 2, restFlex: 1, restCols: 3 },   // 3+3 두 줄
+        7: { mainFlex: 2, restFlex: 1, restCols: 4 },   // 4+3 두 줄
+        8: { mainFlex: 2, restFlex: 1, restCols: 4 },   // 4+4 두 줄
+    };
+    function mvFocusLayoutFor(restCount) {
+        if (MV_FOCUS_LAYOUTS[restCount]) return MV_FOCUS_LAYOUTS[restCount];
+        // 표에 없는(9명 이상) 경우: 메인 비중을 더 줄이고, 열 개수는 정사각형에
+        // 가깝게(올림 제곱근) 배치해서 줄 수가 과하게 늘어나지 않게 한다.
+        return { mainFlex: 1.5, restFlex: 1, restCols: Math.max(1, Math.ceil(Math.sqrt(restCount))) };
     }
 
     function mvToggleFocus() {
@@ -280,8 +309,10 @@
                 <span>${escapeHTML(entry.name)}</span>
                 <a href="${channelUrl}" target="_blank" rel="noopener">새 탭↗</a>
             </div>
-            <div class="mv-cell-video-wrap">
-                <iframe src="${mvEmbedUrl(entry.soopId)}" allowfullscreen loading="lazy" allow="autoplay; encrypted-media; fullscreen"></iframe>
+            <div class="mv-cell-body">
+                <div class="mv-cell-video-wrap">
+                    <iframe src="${mvEmbedUrl(entry.soopId)}" allowfullscreen loading="lazy" allow="autoplay; encrypted-media; fullscreen"></iframe>
+                </div>
             </div>
         </div>`;
     }
@@ -293,18 +324,22 @@
         }
         if (mvFocus) {
             // 포커스 모드: 순서 1번(mvOrder[0])만 위쪽에 크게, 나머지는 그 아래
-            // 작은 그리드로 - 둘 다 flex 비율(3:1)로 뷰포트 높이를 나눠 가지므로
-            // 항목 수와 무관하게 스크롤 없이 항상 한 화면에 다 들어간다.
+            // 작은 그리드로 - 나머지 인원 수별로 미리 정해둔 비율/열 개수
+            // (mvFocusLayoutFor)를 써서, 인원이 많아져도 항상 한 화면 안에서
+            // 보기 좋게 배치되고 스크롤도 생기지 않는다.
             const [main, ...rest] = mvOrder;
+            const layout = mvFocusLayoutFor(rest.length);
             area.innerHTML = `
                 <div class="mv-focus-layout">
-                    <div class="mv-focus-main">${mvCellHtml(main)}</div>
-                    ${rest.length ? `<div class="mv-focus-rest-wrap"><div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div></div>` : ''}
+                    <div class="mv-focus-main" style="flex:${layout.mainFlex};">${mvCellHtml(main)}</div>
+                    ${rest.length ? `<div class="mv-focus-rest-wrap" style="flex:${layout.restFlex};"><div class="mv-grid" id="mv-grid">${rest.map(mvCellHtml).join('')}</div></div>` : ''}
                 </div>`;
+            mvApplyGridColumns(layout.restCols);
         } else {
             area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
+            mvApplyGridColumns();
         }
-        mvApplyGridColumns();
+        mvLayoutGrid();
     }
 
     function mvRenderAll() {
@@ -312,6 +347,33 @@
         mvRenderGrid();
         mvSaveState();
     }
+
+    // ===== 영상 비율(16:9) 고정 =====
+    // 셀 박스(.mv-cell-body)는 그리드/flex 칸을 꽉 채우지만, 그 안의 실제 영상
+    // 크기는 셀 박스 안에서 16:9를 유지하는 최대 크기로 계산해 가운데 놓는다.
+    // 칸 비율이 16:9와 안 맞으면 위아래나 좌우에 여백이 남을 뿐, 영상 자체가
+    // 늘어나거나 눌리는 일은 없다.
+    function mvFitVideoBox(bodyEl) {
+        const w = bodyEl.clientWidth;
+        const h = bodyEl.clientHeight;
+        if (w === 0 || h === 0) return;
+        let videoW = w;
+        let videoH = videoW * 9 / 16;
+        if (videoH > h) {
+            videoH = h;
+            videoW = videoH * 16 / 9;
+        }
+        const wrap = bodyEl.querySelector('.mv-cell-video-wrap');
+        if (wrap) {
+            wrap.style.width = Math.floor(videoW) + 'px';
+            wrap.style.height = Math.floor(videoH) + 'px';
+        }
+    }
+    function mvLayoutGrid() {
+        document.querySelectorAll('.mv-cell-body').forEach(mvFitVideoBox);
+    }
+    // 창 크기가 바뀌면 셀 박스 크기도 바뀌므로 영상 크기를 다시 계산한다.
+    window.addEventListener('resize', mvLayoutGrid);
 
     // ===== 초기화 =====
     mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
