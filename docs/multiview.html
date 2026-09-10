@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>멀티뷰어 - 캄몬스타즈</title>
+<link rel="stylesheet" href="style.css">
+<style>
+    /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
+    html[data-theme="dark"] {
+        --color-bg: #14161b;
+        --color-card: #1d2027;
+        --color-border: #2b2f38;
+        --color-border-strong: #3a3f4a;
+        --color-text-main: #e7e9ec;
+        --color-text-sub: #9aa1ac;
+        --color-primary: #5b93ff;
+        --color-primary-tint: #1c2740;
+        --color-bg-subtle: #22262e;
+    }
+    html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text-main); }
+
+    body { margin: 0; font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
+    .mv-wrap { padding: 14px 20px 32px; max-width: 1400px; margin: 0 auto; }
+
+    /* ===== 상단바 ===== */
+    .mv-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--color-border); }
+    .mv-title { font-size: 17px; font-weight: 800; }
+    .mv-topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .mv-icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); color: var(--color-text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .mv-icon-btn:hover { border-color: var(--color-primary); }
+    .mv-icon-btn.on { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-tint); }
+
+    /* ===== 설정 패널 (여닫기 가능) ===== */
+    .mv-settings-panel { overflow: hidden; max-height: 400px; opacity: 1; transition: max-height 0.2s ease, opacity 0.15s ease, margin 0.2s ease; margin-bottom: 14px; }
+    .mv-settings-panel.collapsed { max-height: 0; opacity: 0; margin-bottom: 0; }
+    .mv-settings-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 16px; background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; margin-bottom: 12px; }
+    .mv-settings-group { display: flex; align-items: center; gap: 8px; }
+    .mv-settings-label { font-size: 12px; font-weight: 700; color: var(--color-text-sub); }
+    .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
+    .mv-stepper button { width: 26px; height: 26px; border: none; background: var(--color-card, #fff); color: var(--color-primary); font-weight: 800; font-size: 14px; cursor: pointer; }
+    .mv-stepper button:hover { background: var(--color-primary-tint); }
+    .mv-stepper button:disabled { color: #888; cursor: not-allowed; }
+    .mv-stepper-value { width: 26px; text-align: center; font-weight: 800; font-size: 13px; border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 26px; }
+    .mv-add-form { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+    .mv-add-form input { padding: 6px 10px; border: 1px solid var(--color-border-strong); border-radius: 6px; font-size: 12px; background: var(--color-bg, #fff); color: var(--color-text-main); width: 190px; }
+    .mv-add-form input:focus { outline: none; border-color: var(--color-primary); }
+    .mv-add-form button { border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); color: var(--color-text-main); border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .mv-add-form button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+    .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mv-order-item { display: flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-card, #fff); font-size: 12px; }
+    .mv-order-item.custom { border-style: dashed; }
+    .mv-order-name { font-weight: 700; margin-right: 2px; }
+    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+    .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
+    .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
+
+    /* ===== 그리드 ===== */
+    .mv-grid { display: grid; gap: 12px; }
+    .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+    .mv-cell-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 800; }
+    .mv-cell-header a { color: var(--color-text-sub); font-size: 11px; font-weight: 700; text-decoration: none; }
+    .mv-cell-header a:hover { color: var(--color-primary); }
+    .mv-cell-video-wrap { position: relative; aspect-ratio: 16/9; background: #0b0c10; }
+    .mv-cell-video-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .mv-empty { text-align: center; color: var(--color-text-sub); font-size: 13px; padding: 64px 0; border: 1.5px dashed var(--color-border-strong); border-radius: 10px; }
+</style>
+</head>
+<body>
+<div class="mv-wrap">
+    <div class="mv-topbar">
+        <div class="mv-title">🎬 멀티뷰어</div>
+        <div class="mv-topbar-actions">
+            <button type="button" class="mv-icon-btn" id="mv-settings-btn" onclick="mvToggleSettingsPanel()" title="설정 열기/닫기">⚙️</button>
+            <button type="button" class="mv-icon-btn" id="mv-theme-btn" onclick="mvToggleTheme()" title="다크모드">🌙</button>
+        </div>
+    </div>
+
+    <div class="mv-settings-panel" id="mv-settings-panel">
+        <div class="mv-settings-bar">
+            <div class="mv-settings-group">
+                <span class="mv-settings-label">열 개수</span>
+                <div class="mv-stepper">
+                    <button type="button" onclick="mvChangeCols(-1)">−</button>
+                    <span class="mv-stepper-value" id="mv-cols-value">2</span>
+                    <button type="button" onclick="mvChangeCols(1)">+</button>
+                </div>
+            </div>
+            <form class="mv-add-form" onsubmit="event.preventDefault(); mvAddCustom();">
+                <input type="text" id="mv-add-input" placeholder="숲(SOOP) 아이디 직접 입력">
+                <button type="submit">추가</button>
+            </form>
+        </div>
+        <div class="mv-order-row" id="mv-order-row"></div>
+    </div>
+
+    <div id="mv-grid-area"></div>
+</div>
+
+<script>
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>'"]/g, tag => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[tag]));
+    }
+
+    // ===== 상태 =====
+    // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
+    let mvOrder = [];
+    let mvCols = 2;
+
+    function mvSaveState() {
+        try {
+            localStorage.setItem('mv-order', JSON.stringify(mvOrder));
+            localStorage.setItem('mv-cols', String(mvCols));
+        } catch (e) { /* localStorage 접근 불가한 환경이면 그냥 무시 */ }
+    }
+
+    function mvInit() {
+        const params = new URLSearchParams(location.search);
+        let list = null;
+        if (params.has('list')) {
+            try { list = JSON.parse(params.get('list')); } catch (e) { list = null; }
+        }
+        if (Array.isArray(list) && list.length > 0) {
+            mvOrder = list
+                .filter(e => e && typeof e.id === 'string' && /^[a-z0-9_-]+$/i.test(e.id))
+                .map(e => ({ soopId: e.id.toLowerCase(), name: e.name || e.id, isMember: !!e.isMember }));
+            mvCols = Math.min(4, Math.max(1, parseInt(params.get('cols'), 10) || 2));
+        } else {
+            // URL에 아무것도 없으면(직접 이 페이지를 열었거나 새로고침한 경우) 마지막으로
+            // 저장해둔 상태를 이어서 보여준다.
+            try {
+                mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]');
+                mvCols = Math.min(4, Math.max(1, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
+            } catch (e) { mvOrder = []; mvCols = 2; }
+        }
+    }
+
+    // ===== 다크모드 =====
+    function mvApplyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('mv-theme-btn').innerText = theme === 'dark' ? '☀️' : '🌙';
+        document.getElementById('mv-theme-btn').classList.toggle('on', theme === 'dark');
+        localStorage.setItem('mv-theme', theme);
+    }
+    function mvToggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        mvApplyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    // ===== 설정 패널 여닫기 =====
+    function mvApplySettingsPanel(open) {
+        document.getElementById('mv-settings-panel').classList.toggle('collapsed', !open);
+        document.getElementById('mv-settings-btn').classList.toggle('on', open);
+        localStorage.setItem('mv-settings-open', open ? '1' : '0');
+    }
+    function mvToggleSettingsPanel() {
+        const isOpen = !document.getElementById('mv-settings-panel').classList.contains('collapsed');
+        mvApplySettingsPanel(!isOpen);
+    }
+
+    // ===== 열 개수 =====
+    function mvChangeCols(delta) {
+        mvCols = Math.min(4, Math.max(1, mvCols + delta));
+        document.getElementById('mv-cols-value').innerText = mvCols;
+        mvApplyGridColumns();
+        mvSaveState();
+    }
+    function mvApplyGridColumns() {
+        const grid = document.getElementById('mv-grid');
+        if (grid) grid.style.gridTemplateColumns = `repeat(${mvCols}, 1fr)`;
+    }
+
+    // ===== 순서 목록 =====
+    function mvOrderItemHtml(entry, idx) {
+        return `
+        <div class="mv-order-item${entry.isMember ? '' : ' custom'}">
+            <button type="button" title="위로" onclick="mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+            <button type="button" title="아래로" onclick="mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
+            <span class="mv-order-name">${escapeHTML(entry.name)}</span>
+            <button type="button" class="mv-order-remove" title="빼기" onclick="mvRemove(${idx})">✕</button>
+        </div>`;
+    }
+    function mvRenderOrderRow() {
+        const row = document.getElementById('mv-order-row');
+        row.innerHTML = mvOrder.length
+            ? mvOrder.map(mvOrderItemHtml).join('')
+            : '<span style="font-size:12px; color:var(--color-text-sub);">추가된 방송이 없습니다. 숲 아이디를 입력해 추가해보세요.</span>';
+    }
+    function mvMove(idx, dir) {
+        const target = idx + dir;
+        if (target < 0 || target >= mvOrder.length) return;
+        [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
+        mvRenderAll();
+    }
+    function mvRemove(idx) {
+        mvOrder.splice(idx, 1);
+        mvRenderAll();
+    }
+    function mvAddCustom() {
+        const input = document.getElementById('mv-add-input');
+        const id = input.value.trim().toLowerCase();
+        if (!id) return;
+        if (!/^[a-z0-9_-]+$/.test(id)) { alert('숲(SOOP) 아이디 형식이 아닙니다 (영문/숫자/-/_ 만 가능).'); return; }
+        if (mvOrder.some(e => e.soopId === id)) { alert('이미 추가된 아이디입니다.'); return; }
+        mvOrder.push({ soopId: id, name: id, isMember: false });
+        input.value = '';
+        mvRenderAll();
+    }
+
+    // ===== 그리드 (실제 SOOP 라이브 채널 페이지를 iframe으로 삽입) =====
+    function mvCellHtml(entry) {
+        const channelUrl = `https://play.sooplive.co.kr/${encodeURIComponent(entry.soopId)}`;
+        return `
+        <div class="mv-cell">
+            <div class="mv-cell-header">
+                <span>${escapeHTML(entry.name)}</span>
+                <a href="${channelUrl}" target="_blank" rel="noopener">새 탭↗</a>
+            </div>
+            <div class="mv-cell-video-wrap">
+                <iframe src="${channelUrl}" allowfullscreen loading="lazy"></iframe>
+            </div>
+        </div>`;
+    }
+    function mvRenderGrid() {
+        const area = document.getElementById('mv-grid-area');
+        if (mvOrder.length === 0) {
+            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 설정(⚙️)을 열어 숲 아이디를 추가해보세요.</div>';
+            return;
+        }
+        area.innerHTML = `<div class="mv-grid" id="mv-grid">${mvOrder.map(mvCellHtml).join('')}</div>`;
+        mvApplyGridColumns();
+    }
+
+    function mvRenderAll() {
+        mvRenderOrderRow();
+        mvRenderGrid();
+        mvSaveState();
+    }
+
+    // ===== 초기화 =====
+    mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
+    mvApplySettingsPanel(localStorage.getItem('mv-settings-open') !== '0');
+    mvInit();
+    document.getElementById('mv-cols-value').innerText = mvCols;
+    mvRenderAll();
+</script>
+</body>
+</html>
