@@ -29,8 +29,12 @@
     /* ===== 설정 열기 버튼 (항상 떠 있음) ===== */
     /* 각 방송 카드의 새로고침(⟳) 버튼은 헤더 맨 위 우측에 있어서, 이 버튼을
        화면 우상단에 두면 그리드 첫 칸의 새로고침 버튼을 정확히 가려버린다.
-       그래서 우하단으로 옮기고, 아이콘 대신 눈에 잘 띄는 파란 배경으로 바꿨다. */
-    .mv-fab { position: fixed; bottom: 16px; right: 16px; z-index: 100; width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--color-primary); opacity: 0.92; color: #fff; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(41,121,255,0.4); transition: opacity 0.15s, transform 0.1s; }
+       그래서 우하단으로 옮기고, 아이콘 대신 눈에 잘 띄는 파란 배경으로 바꿨다.
+       이모지(⚙️)는 폰트/OS마다 모양·정렬이 제각각이라 SVG 아이콘으로 바꿔
+       확실하게 깔끔한 흰색 톱니바퀴가 나오게 했다. 평소(닫혀있을 때)엔 살짝
+       투명하게 두어 화면을 덜 가리고, 열려있거나 호버 중일 땐 또렷하게 보인다. */
+    .mv-fab { position: fixed; bottom: 16px; right: 16px; z-index: 100; width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--color-primary); opacity: 0.7; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(41,121,255,0.35); transition: opacity 0.15s, transform 0.1s, background 0.15s; }
+    .mv-fab svg { width: 18px; height: 18px; }
     .mv-fab:hover { opacity: 1; transform: scale(1.05); }
     .mv-fab.on { background: var(--color-primary-deep, var(--color-primary)); opacity: 1; }
 
@@ -96,7 +100,12 @@
 </head>
 <body>
 
-<button type="button" class="mv-fab" id="mv-fab" onclick="mvToggleSettingsPanel()" title="설정 열기/닫기">⚙️</button>
+<button type="button" class="mv-fab" id="mv-fab" onclick="mvToggleSettingsPanel()" title="설정 열기/닫기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+</button>
 
 <div class="mv-settings-panel" id="mv-settings-panel">
     <div class="mv-settings-inner">
@@ -137,7 +146,7 @@
             <div class="mv-chip-row" id="mv-chip-row"></div>
             <div class="mv-quickadd">
                 <input type="text" id="mv-add-input" placeholder="숲아이디 직접 입력" maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
-                <button type="button" class="mv-quickadd-btn" title="추가" onclick="mvAddCustom()">+</button>
+                <button type="button" class="mv-quickadd-btn" title="추가" onclick="mvAddCustom()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
             </div>
         </div>
     </div>
