@@ -63,7 +63,13 @@ function waitForServer(url, timeoutMs) {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         const page = await browser.newPage();
-        await page.setViewport({ width: Math.round(CAPTURE_WIDTH) + 300, height: 1000 });
+        // "오늘의 일정"까지 위에 얹으면서 전체 높이가 늘어나 뷰포트(기존 1000px)를
+        // 넘길 수 있다. 넘치면 Puppeteer가 대상 요소를 보이게 하려고 스크롤을
+        // 내리는데, admin.html 상단바(.top-navbar)가 position:sticky라 스크롤
+        // 위치와 무관하게 화면 맨 위에 계속 떠 있으면서 캡처 영역 위쪽을 덮어버려
+        // "오늘의 일정" 대신 상단바가 찍히는 문제가 있었다. 뷰포트를 넉넉히
+        // 키워서 스크롤 자체가 필요 없게 만든다.
+        await page.setViewport({ width: Math.round(CAPTURE_WIDTH) + 300, height: 1600 });
 
         await page.evaluateOnNewDocument((t) => {
             localStorage.setItem('gh_token', t);
@@ -92,6 +98,12 @@ function waitForServer(url, timeoutMs) {
             const mainEl = document.querySelector('.admin-main');
 
             if (sideEl) sideEl.style.display = 'none';
+
+            // 뷰포트를 넉넉히 키워도 혹시 모를 스크롤 상황(콘텐츠가 유난히 길어지는
+            // 경우 등)에 대비해, sticky 상단바 자체를 캡처 도중엔 아예 숨겨서
+            // 겹침 가능성을 원천 차단한다.
+            const navEl = document.querySelector('.top-navbar');
+            if (navEl) navEl.style.display = 'none';
 
             const wrapper = document.createElement('div');
             wrapper.id = 'captureCombined';
@@ -137,6 +149,10 @@ function waitForServer(url, timeoutMs) {
         }, CAPTURE_WIDTH);
 
         await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // 스크롤 위치가 0이 아니면 sticky/fixed 요소와 elementHandle.screenshot()의
+        // 클리핑 좌표 계산이 어긋날 여지가 있으므로, 안전하게 맨 위로 고정해둔다.
+        await page.evaluate(() => window.scrollTo(0, 0));
 
         const target = await page.$('#captureCombined');
         if (!target) throw new Error('#captureCombined 요소를 찾을 수 없습니다.');
