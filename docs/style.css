@@ -514,7 +514,8 @@
         .mv-quickadd:focus-within { border-color: var(--color-primary); }
         .mv-quickadd input { flex: 1; min-width: 0; border: none; background: transparent; font-size: var(--fs-body); outline: none; color: var(--color-text-main); }
         .mv-quickadd input::placeholder { color: #aaa; }
-        .mv-quickadd-btn { width: 28px; height: 28px; box-sizing: border-box; padding: 0; border-radius: 50%; border: none; background: var(--color-primary); color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
+        .mv-quickadd-btn { width: 28px; height: 28px; box-sizing: border-box; padding: 0; border-radius: 50%; border: none; background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .mv-quickadd-btn svg { width: 14px; height: 14px; }
         .mv-quickadd-btn:hover { filter: brightness(1.08); }
 
         .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; min-height: 20px; }
