@@ -766,16 +766,25 @@
             const list = document.getElementById('tools-list-' + key);
             if (!list) return;
             const items = (toolsData[key] && toolsData[key].items) || [];
-            list.innerHTML = items.length ? items.map((t, i) => `
+            list.innerHTML = items.length ? items.map((t, i) => {
+                // 파비콘은 도메인 것만 있으면 충분한데, 전체 URL(쿼리스트링 포함)을
+                // 그대로 encodeURIComponent에 넣으면 URL 안에 이미 퍼센트 인코딩된
+                // 문자가 있는 경우 이중 인코딩되어 구글 파비콘 서비스가 도메인을
+                // 못 알아본다(app.js의 도구 탭 카드와 동일한 문제/해결). 경로·
+                // 쿼리스트링을 뗀 origin만 넘긴다.
+                let origin = t.url;
+                try { origin = new URL(t.url).origin; } catch (e) { /* URL 파싱 실패 시 원본 그대로 시도 */ }
+                return `
                 <div class="admin-tool-row">
-                    <img src="https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(t.url)}" alt="" onerror="this.style.display='none';">
+                    <img src="https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(origin)}" alt="" onerror="this.style.display='none';">
                     <div class="admin-tool-info">
                         <div class="admin-tool-name">${escapeHTML(t.name)}</div>
                         <div class="admin-tool-url">${escapeHTML(t.url)}</div>
                     </div>
                     <button class="delete-btn" onclick="deleteTool('${key}', ${i})">삭제</button>
                 </div>
-            `).join('') : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">등록된 도구가 없습니다.</div>`;
+            `;
+            }).join('') : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">등록된 도구가 없습니다.</div>`;
         });
     }
 

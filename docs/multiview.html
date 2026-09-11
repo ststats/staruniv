@@ -154,7 +154,11 @@
 
 <div id="mv-grid-area"></div>
 
+<script src="mv-shared.js"></script>
 <script>
+    // escapeHTML/jsStrEscape는 이 페이지 전용 범용 유틸이라 여기서 정의한다.
+    // mv-shared.js(선택 목록 관련 순수 로직)가 내부적으로 이 두 함수를
+    // 그대로 호출하므로 반드시 이 파일에도 있어야 한다.
     function escapeHTML(str) {
         if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[tag]));
@@ -163,17 +167,14 @@
 
     // ===== 상태 =====
     // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
+    // 선택 목록에 관한 순수 로직(mvFocusEntryId/mvOrderItemHtml/mvResolveCustomInput)은
+    // app.js(도구 탭)와 동일하게 필요해서 mv-shared.js로 공유한다.
     let mvOrder = [];
     let mvCols = 2;
     let mvFocus = true;
     let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
     let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
     let mvLiveMap = {};    // soopId -> 방송중 여부
-
-    function mvFocusEntryId() {
-        if (mvFocusId && mvOrder.some(e => e.soopId === mvFocusId)) return mvFocusId;
-        return mvOrder.length ? mvOrder[0].soopId : null;
-    }
 
     function mvSaveState() {
         try {
@@ -365,27 +366,16 @@
     }
 
     // ===== 순서 목록 =====
-    function mvOrderItemHtml(entry, idx) {
-        const isFocusTarget = mvFocus && mvFocusEntryId() === entry.soopId;
-        const rowClick = mvFocus ? ` onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')"` : '';
-        return `
-        <div class="mv-order-item${entry.isMember ? '' : ' custom'}${isFocusTarget ? ' focus-target' : ''}${mvFocus ? ' selectable' : ''}"${rowClick}>
-            <span class="mv-order-num">${idx + 1}.</span>
-            <button type="button" title="위로" onclick="event.stopPropagation(); mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-            <button type="button" title="아래로" onclick="event.stopPropagation(); mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
-            <span class="mv-order-name">${escapeHTML(entry.name)}</span>
-            <button type="button" class="mv-order-remove" title="빼기" onclick="event.stopPropagation(); mvRemove(${idx})">✕</button>
-        </div>`;
-    }
     function mvRenderOrderRow() {
         const row = document.getElementById('mv-order-row');
+        const focusEntryId = mvFocusEntryId(mvOrder, mvFocusId);
         row.innerHTML = mvOrder.length
-            ? mvOrder.map(mvOrderItemHtml).join('')
+            ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId)).join('')
             : '<span style="font-size:var(--fs-body); color:var(--color-text-sub);">위에서 멤버를 선택하거나 이름/숲 아이디를 입력해 추가해보세요.</span>';
     }
 
     function mvSetFocusTarget(soopId) {
-        const oldFocusId = mvFocusEntryId();
+        const oldFocusId = mvFocusEntryId(mvOrder, mvFocusId);
         if (soopId === oldFocusId) return; // 이미 메인인 사람을 다시 누른 경우
 
         if (mvFocus) {
@@ -425,7 +415,7 @@
         if (target < 0 || target >= mvOrder.length) return;
 
         if (mvFocus) {
-            const focusId = mvFocusEntryId();
+            const focusId = mvFocusEntryId(mvOrder, mvFocusId);
             const aIsFocus = mvOrder[idx].soopId === focusId;
             const bIsFocus = mvOrder[target].soopId === focusId;
             if (aIsFocus || bIsFocus) {
@@ -466,7 +456,7 @@
     }
     function mvRemove(idx) {
         if (mvFocus) {
-            const focusId = mvFocusEntryId();
+            const focusId = mvFocusEntryId(mvOrder, mvFocusId);
             if (mvOrder[idx].soopId === focusId) {
                 // 메인 본인을 지우는 거라 누가 새 메인이 될지부터 다시 정해야
                 // 하므로(다음 사람이 기본값으로 승격) 전체를 다시 그린다.
@@ -535,30 +525,11 @@
     }
     function mvAddCustom() {
         const input = document.getElementById('mv-add-input');
-        const raw = input.value.trim();
-        if (!raw) return;
-
-        // 1) 우리 멤버 이름과 정확히 일치하면(대소문자 무시) 그 멤버를 추가한다.
-        const byName = mvMembers.find(m => String(m['이름']).trim().toLowerCase() === raw.toLowerCase());
-        if (byName) {
-            if (mvOrder.some(e => e.soopId === byName['SOOP ID'])) { alert('이미 선택된 목록에 있습니다.'); return; }
-            mvOrder.push({ soopId: byName['SOOP ID'], name: byName['이름'], isMember: true });
-            mvAddGridCell(mvOrder[mvOrder.length - 1]);
-            mvRenderMemberChips();
-            mvRenderOrderRow();
-            mvSaveState();
-            input.value = '';
-            return;
-        }
-
-        // 2) 이름이 아니면 숲 아이디로 취급한다.
-        const id = raw.toLowerCase();
-        if (!/^[a-z0-9_-]+$/.test(id)) { alert('멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다.'); return; }
-        if (mvOrder.some(e => e.soopId === id)) { alert('이미 추가된 아이디입니다.'); return; }
-        const knownMember = mvMembers.find(m => m['SOOP ID'] === id);
-        const entry = knownMember ? { soopId: id, name: knownMember['이름'], isMember: true } : { soopId: id, name: id, isMember: false };
-        mvOrder.push(entry);
-        mvAddGridCell(entry);
+        const result = mvResolveCustomInput(input.value, mvOrder, mvMembers);
+        if (!result) return;
+        if (result.error) { alert(result.error); return; }
+        mvOrder.push(result.entry);
+        mvAddGridCell(mvOrder[mvOrder.length - 1]);
         mvRenderMemberChips();
         mvRenderOrderRow();
         mvSaveState();
@@ -612,7 +583,7 @@
             // 균일 그리드로 만들고, 나머지는 CSS Grid 기본 자동배치(grid-auto-flow)가
             // 비어있는 칸에 순서대로 알아서 채워준다 - 남는 칸 좌표를 직접
             // 계산할 필요가 없다.
-            const focusId = mvFocusEntryId();
+            const focusId = mvFocusEntryId(mvOrder, mvFocusId);
             const focusIdx = mvOrder.findIndex(e => e.soopId === focusId);
             const main = mvOrder[focusIdx];
             const rest = mvOrder.filter((_, i) => i !== focusIdx);
