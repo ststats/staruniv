@@ -130,6 +130,31 @@ def fmt_wl_rate(wins, losses):
     if total == 0: return "-"
     return f"{int(wins)}승 {int(losses)}패 ({wins/total*100:.1f}%)"
 
+# 팀표(최종 결과 컬럼)와 개인표(결과 컬럼)가 "FORMATS 각각에 대해 승/패를 세서
+# {'{형식} 전적': 문자열} 딕셔너리를 만드는" 로직을 완전히 동일하게 반복하고
+# 있었다 - 결과 컬럼 이름과 표시 방식(fmt_wl 승패만 vs fmt_wl_rate 승률까지)만
+# 다르므로 그 둘만 인자로 받는 공용 함수로 뺐다.
+def format_breakdown_by_format(group, result_col, formatter):
+    breakdown = {}
+    for fmt in FORMATS:
+        fmt_group = group[group['형식'] == fmt]
+        wins = (fmt_group[result_col] == '승').sum()
+        losses = (fmt_group[result_col] == '패').sum()
+        breakdown[f'{fmt} 전적'] = formatter(wins, losses)
+    return breakdown
+
+# 맵 전적/상대 전적이 "특정 컬럼으로 그룹핑해서 승/패를 세고, 총 전적이 많은
+# 순으로 top_n개를 'A(N승M패)' 형태로 이어붙이는" 로직을 완전히 동일하게
+# 반복하고 있었다 - 그룹핑 기준 컬럼만 다르므로 그것만 인자로 받는다.
+def top_n_wl_summary(group, by_col, result_col='결과', top_n=3):
+    stats = group.groupby(by_col)[result_col].value_counts().unstack(fill_value=0)
+    if '승' not in stats: stats['승'] = 0
+    if '패' not in stats: stats['패'] = 0
+    stats['총전적'] = stats['승'] + stats['패']
+    top = stats.sort_values('총전적', ascending=False).head(top_n)
+    parts = [f"{key}({row['승']}승{row['패']}패)" for key, row in top.iterrows()]
+    return " · ".join(parts) if parts else "-"
+
 # ==========================================
 # 🏆 [크루표 통계 산출]
 # ==========================================
@@ -145,14 +170,8 @@ def build_crew_stats():
         season_stats = []
         for team, group in df.groupby('상대팀'):
             team_data = {'상대': team}
-            
-            # 형식별 승패 (대회, 대학, 미니, CK)
-            for fmt in FORMATS:
-                fmt_group = group[group['형식'] == fmt]
-                wins = (fmt_group['최종 결과'] == '승').sum()
-                losses = (fmt_group['최종 결과'] == '패').sum()
-                team_data[f'{fmt} 전적'] = fmt_wl(wins, losses)
-                
+            team_data.update(format_breakdown_by_format(group, '최종 결과', fmt_wl))
+
             # 자금 정보 계산 (숫자가 없거나 컬럼 자체가 없어도 죽지 않게 처리)
             funding = numeric_sum(group, '펀딩')
             support = numeric_sum(group, '지원금')
@@ -185,41 +204,18 @@ def build_member_stats():
             if pd.isna(player) or str(player).strip() == "": continue
             
             player_data = {'이름': str(player).strip()}
-            
-            # 1. 형식별 전적 ('결과' 열 사용)
-            for fmt in FORMATS:
-                fmt_group = group[group['형식'] == fmt]
-                wins = (fmt_group['결과'] == '승').sum()
-                losses = (fmt_group['결과'] == '패').sum()
-                player_data[f'{fmt} 전적'] = fmt_wl_rate(wins, losses)
-                
-            # 2. 종족전 전적 (T, Z, P) ('결과' 열 사용)
+            player_data.update(format_breakdown_by_format(group, '결과', fmt_wl_rate))
+
+            # 종족전 전적 (T, Z, P) ('결과' 열 사용)
             for race, col_name in [('T', '테란전'), ('Z', '저그전'), ('P', '프로토스전')]:
                 race_group = group[group['상대 종족'].str.upper() == race]
                 wins = (race_group['결과'] == '승').sum()
                 losses = (race_group['결과'] == '패').sum()
                 player_data[f'{col_name} 전적'] = fmt_wl_rate(wins, losses)
-                
-            # 3. 맵 전적 ('결과' 열 사용)
-            map_stats = group.groupby('맵')['결과'].value_counts().unstack(fill_value=0)
-            if '승' not in map_stats: map_stats['승'] = 0
-            if '패' not in map_stats: map_stats['패'] = 0
-            map_stats['총전적'] = map_stats['승'] + map_stats['패']
-            
-            top_maps = map_stats.sort_values('총전적', ascending=False).head(3)
-            map_strings = [f"{m}({r['승']}승{r['패']}패)" for m, r in top_maps.iterrows()]
-            player_data['맵 전적'] = " · ".join(map_strings) if map_strings else "-"
-            
-            # 4. 최다 상대 전적 ('결과' 열 사용)
-            opp_stats = group.groupby('상대 선수')['결과'].value_counts().unstack(fill_value=0)
-            if '승' not in opp_stats: opp_stats['승'] = 0
-            if '패' not in opp_stats: opp_stats['패'] = 0
-            opp_stats['총전적'] = opp_stats['승'] + opp_stats['패']
-            
-            top_opps = opp_stats.sort_values('총전적', ascending=False).head(3)
-            opp_strings = [f"{opp}({r['승']}승{r['패']}패)" for opp, r in top_opps.iterrows()]
-            player_data['상대전적'] = " · ".join(opp_strings) if opp_strings else "-"
-            
+
+            player_data['맵 전적'] = top_n_wl_summary(group, '맵')
+            player_data['상대전적'] = top_n_wl_summary(group, '상대 선수')
+
             season_stats.append(player_data)
             
         member_result[season] = season_stats

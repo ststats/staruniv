@@ -69,8 +69,12 @@ with open('docs/data/site_data.json', 'w', encoding='utf-8') as f:
     json.dump(site_data, f, ensure_ascii=False)
 print(f"✅ site_data.json 저장 완료 ({os.path.getsize('docs/data/site_data.json') / 1024:.1f} KB)")
 
-# 정적 자산(style.css / app.js / calendar.js)은 데이터와 무관하게 그대로 복사.
+# 정적 자산(CSS/JS 등)은 데이터와 무관하게 그대로 복사.
 # templates/assets/ 아래에 두고 소스로 관리, 빌드마다 docs/로 동기화.
+# (여기 주석에 파일명을 나열하지 않는 이유: 예전에 update.yml의 git add가
+# 파일명을 하나하나 나열하는 방식이라 새 파일을 추가하고 그 목록에 반영하는 걸
+# 깜빡해 배포가 안 됐던 적이 있다 - 같은 실수를 반복하지 않도록 여기서도
+# "폴더 안의 전부"로만 설명한다.)
 static_src = os.path.join('templates', 'assets')
 if os.path.isdir(static_src):
     for filename in os.listdir(static_src):

@@ -21,7 +21,7 @@ db_dict = {}
 # 시트 이름(구글 시트)과 딕셔너리에 들어갈 Key 이름(JSON) 매핑
 sheet_mapping = {
     '설정': 'settings',
-    '팀 목록': 'teams',      # <-- 이 부분이 크루 목록에서 팀 목록으로, Key가 teams로 변경되었습니다!
+    '팀 목록': 'teams',
     '멤버 목록': 'members',
     '매치 목록': 'matches',
     '매치 전적': 'rounds'

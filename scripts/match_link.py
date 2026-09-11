@@ -128,26 +128,22 @@ def link_rounds_to_matches(matches, rounds, members=None):
         num = _extract_round_num(r.get('라운드'))
         seq = round_seq_counter.get(key, 0)
 
-        # '세트' 값이 있으면 그것으로 새 경기 여부를 1차 판단한다:
-        #  - '세트' 값이 바뀌었으면: 지금 이 경기(chunk) 안에서 이미 등장했던 값으로
-        #    되돌아간 것이면 새 경기, 처음 보는 값이면 같은 경기 안의 다음 세트로 진행.
-        #  - '세트' 값이 직전 라운드와 동일하면: 보통은 같은 세트 안의 다음 라운드지만,
-        #    '단일'/'끝장전'처럼 세트값이 경기 내내 안 바뀌는 형식에서는 라운드 번호가
-        #    줄어드는 것(예: 9R 다음에 다시 1R)이 재대결의 유일한 신호이므로 그걸로 판단한다.
+        # '세트' 값이 있고 바뀌었으면: 지금 이 경기(chunk) 안에서 이미 등장했던 값으로
+        # 되돌아간 것이면 새 경기, 처음 보는 값이면 같은 경기 안의 다음 세트로 진행.
+        # 그 외의 경우(세트 값이 직전과 같거나, 세트 값 자체가 없는 옛날 데이터)는
+        # 라운드 번호가 줄어드는 것(예: 9R 다음에 다시 1R)만으로 재대결을 판단한다 -
+        # '단일'/'끝장전'처럼 세트값이 경기 내내 안 바뀌는 형식에서는 이게 유일한 신호다.
         # 'ACE'/빈 라운드처럼 번호를 못 뽑는 라운드가 중간에 껴 있어도 어차피 그 라운드
         # 자체가 리셋 판단에 안 쓰이면(직전 라운드가 됐을 때만 prev_num으로 쓰임) 문제없다.
-        # '세트' 값이 아예 없는 옛날 데이터에서는 처음부터 라운드 번호 리셋으로 판단한다.
-        if set_name:
-            prev_set = last_set_name.get(key)
-            if set_name != prev_set:
-                seen = seen_sets_in_chunk.get(key, set())
-                is_new_match = set_name in seen
-            else:
-                prev_num = last_round_num.get(key)
-                is_new_match = prev_num is not None and num is not None and num <= prev_num
+        prev_num = last_round_num.get(key)
+        round_num_reset = prev_num is not None and num is not None and num <= prev_num
+        prev_set = last_set_name.get(key)
+
+        if set_name and set_name != prev_set:
+            seen = seen_sets_in_chunk.get(key, set())
+            is_new_match = set_name in seen
         else:
-            prev_num = last_round_num.get(key)
-            is_new_match = prev_num is not None and num is not None and num <= prev_num
+            is_new_match = round_num_reset
 
         if is_new_match:
             seq += 1
