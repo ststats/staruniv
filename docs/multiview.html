@@ -18,7 +18,7 @@
         --color-primary-tint: #1c2740;
         --color-bg-subtle: #22262e;
     }
-    html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-t그리ext-main); }
+    html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text-main); }
 
     /* 기본 화면은 그리드만 꽉 차게 보이는 게 목적이라, 여백/타이틀 같은 크롬은
        전부 없애고 오른쪽 위 ⚙️ 버튼 하나만 항상 떠 있게 한다. 설정은 그 버튼을
@@ -27,9 +27,12 @@
     body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
     /* ===== 설정 열기 버튼 (항상 떠 있음) ===== */
-    .mv-fab { position: fixed; top: 12px; right: 12px; z-index: 100; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-card, #fff); opacity: 0.85; color: var(--color-text-main); font-size: var(--fs-body); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-    .mv-fab:hover { opacity: 1; border-color: var(--color-primary); }
-    .mv-fab.on { border-color: var(--color-primary); color: var(--color-primary); }
+    /* 각 방송 카드의 새로고침(⟳) 버튼은 헤더 맨 위 우측에 있어서, 이 버튼을
+       화면 우상단에 두면 그리드 첫 칸의 새로고침 버튼을 정확히 가려버린다.
+       그래서 우하단으로 옮기고, 아이콘 대신 눈에 잘 띄는 파란 배경으로 바꿨다. */
+    .mv-fab { position: fixed; bottom: 16px; right: 16px; z-index: 100; width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--color-primary); opacity: 0.92; color: #fff; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(41,121,255,0.4); transition: opacity 0.15s, transform 0.1s; }
+    .mv-fab:hover { opacity: 1; transform: scale(1.05); }
+    .mv-fab.on { background: var(--color-primary-deep, var(--color-primary)); opacity: 1; }
 
     /* ===== 설정 패널: 오른쪽에서 접혔다 펴지는 서랍 형태 ===== */
     .mv-settings-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: 340px; max-width: 88vw; background: rgba(255,255,255,0.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid var(--color-border); box-shadow: -4px 0 16px rgba(0,0,0,0.15); overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease; }
@@ -62,7 +65,7 @@
     .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: var(--fs-body); }
     .mv-order-item.custom { border-style: dashed; }
     .mv-order-num { font-weight: 800; color: var(--color-text-sub); flex-shrink: 0; }
-    .mv-order-name { font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mv-order-name { font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-main); }
     .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
     .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -76,7 +79,7 @@
     #mv-grid-area { height: 100vh; height: 100dvh; padding: 10px; box-sizing: border-box; }
     .mv-grid { display: grid; gap: 10px; height: 100%; }
     .mv-cell { background: var(--color-card, #fff); border: 1px solid var(--color-border); border-radius: var(--radius-card, 12px); overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-    .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: var(--fs-body); font-weight: 800; }
+    .mv-cell-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: var(--fs-body); font-weight: 800; color: var(--color-text-main); }
     .mv-cell-refresh { border: none; background: transparent; color: var(--color-text-sub); font-size: var(--fs-body); font-weight: 700; cursor: pointer; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
     .mv-cell-refresh:hover { background: var(--color-bg-subtle); color: var(--color-primary); }
     .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; }
