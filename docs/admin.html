@@ -196,7 +196,7 @@
 
         <!-- 오른쪽: 오늘의 일정 / 선택한 날짜 + 일정 편집 폼 (전부 어드민 전용) -->
         <aside class="admin-side">
-            <div>
+            <div id="captureToday">
                 <div class="section-title">오늘의 일정</div>
                 <div class="clean-card p-4">
                     <div class="cal-today-list" id="todayList"></div>
@@ -400,23 +400,26 @@
         try {
             const jsonContent = JSON.stringify({ events: calEvents, offAir: calOffAir }, null, 2);
 
-            // 캘린더 그리드("이달의 일정")를 캡처해서 JSON이랑 같은 커밋에 같이 넣는다.
-            // (따로 커밋하면 Vercel 배포가 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
+            // 캘린더 그리드("이달의 일정") 위에 "오늘의 일정"을 옮겨 붙여서 한 장으로
+            // 캡처해 JSON이랑 같은 커밋에 같이 넣는다. (따로 커밋하면 Vercel 배포가
+            // 두 번 트리거되니, 한 커밋에 묶어서 배포는 한 번만.)
             // windowWidth(가상 클론)만으로는 html2canvas가 캔버스 크기 자체를 원래(좁은)
             // 페이지에서 측정한 요소 크기로 잡아버려서 잘려 나온다. 대신 캡처 대상 요소
             // 자체의 width를 캡처 직전에 실제로(진짜 DOM에) 넓게 강제로 바꿔서, 안의
             // 그리드가 실제로 넓게 다시 배치된 상태를 그대로 캡처하고, 끝나면 원래대로
             // 되돌린다. 스크롤 영역(.cal-calendar-inner)도 같이 리셋해서 잘림을 막는다.
             const captureEl = document.getElementById('captureMonth');
+            const todayEl = document.getElementById('captureToday');
             // 캘린더 그리드 자체의 순수 콘텐츠 폭(770px)+카드 패딩/테두리(34px)는 804px로
             // 고정이다. style.css에서 .cal-calendar-area의 max-width를 804px !important로
             // 못박아뒀기 때문에 여기서 그보다 크게 지정해도 실제로는 804px로 잘린다 -
             // 그래서 아예 804로 맞춰서 capture.js(매일 자동 캡처)와도 통일한다.
             const CAPTURE_WIDTH = 804;
 
-            // 캡처 대상을 강제로 넓히면 옆의 .admin-side(오늘의 일정 카드)와 겹쳐서
-            // 캘린더 오른쪽 요일들이 가려지는 게 실제 원인이었다 - 캡처하는 순간만
-            // 사이드바를 잠깐 숨겨서 겹침 자체를 없앤다.
+            // 캡처 대상을 강제로 넓히면 옆의 .admin-side(오늘의 일정 카드가 원래 있던 곳)와
+            // 겹쳐서 캘린더 오른쪽 요일들이 가려지는 게 실제 원인이었다 - 캡처하는 순간만
+            // 사이드바를 잠깐 숨겨서 겹침 자체를 없앤다. (오늘의 일정 카드는 아래에서
+            // 캘린더 위로 옮겨 붙이므로 사이드바째로 숨겨도 같이 사라지지 않는다.)
             const sideEl = document.querySelector('.admin-side');
             const prevSideDisplay = sideEl ? sideEl.style.display : null;
             if (sideEl) sideEl.style.display = 'none';
@@ -433,6 +436,26 @@
                 mainEl.style.flex = `0 0 ${CAPTURE_WIDTH}px`;
                 mainEl.style.width = CAPTURE_WIDTH + 'px';
             }
+
+            // "오늘의 일정"을 원래 자리(사이드바)에서 빼내 캘린더 그리드 바로 위에
+            // 붙일 wrapper를 만든다. 캡처가 끝나면 두 요소 모두 원래 있던 자리로
+            // 되돌리고 wrapper는 제거해서, 화면(및 이후 편집 동작)에는 영향이 없게 한다.
+            const todayOriginalParent = todayEl.parentNode;
+            const todayOriginalNext = todayEl.nextSibling;
+            const captureOriginalParent = captureEl.parentNode;
+            const captureOriginalNext = captureEl.nextSibling;
+
+            const wrapper = document.createElement('div');
+            wrapper.style.background = '#f4f7fc';
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.gap = '16px';
+            wrapper.style.width = CAPTURE_WIDTH + 'px';
+            wrapper.style.boxSizing = 'border-box';
+
+            captureOriginalParent.insertBefore(wrapper, captureEl);
+            wrapper.appendChild(todayEl);
+            wrapper.appendChild(captureEl);
 
             const prevElWidth = captureEl.style.width;
             const prevElMaxWidth = captureEl.style.maxWidth;
@@ -464,9 +487,9 @@
 
             let canvas;
             try {
-                canvas = await html2canvas(captureEl, {
+                canvas = await html2canvas(wrapper, {
                     scale: 2, useCORS: true, backgroundColor: '#f4f7fc',
-                    width: captureEl.scrollWidth, windowWidth: Math.max(CAPTURE_WIDTH + 200, 1200)
+                    width: wrapper.scrollWidth, windowWidth: Math.max(CAPTURE_WIDTH + 200, 1200)
                 });
             } finally {
                 restoreFns.forEach(fn => fn());
@@ -474,6 +497,10 @@
                 captureEl.style.maxWidth = prevElMaxWidth;
                 captureEl.style.boxSizing = prevElBoxSizing;
                 captureEl.style.background = prevElBackground;
+                // 옮겨 붙였던 두 요소를 원래 자리로 되돌리고 wrapper는 제거한다.
+                captureOriginalParent.insertBefore(captureEl, captureOriginalNext);
+                todayOriginalParent.insertBefore(todayEl, todayOriginalNext);
+                wrapper.remove();
                 if (sideEl) sideEl.style.display = prevSideDisplay;
                 if (mainEl) {
                     mainEl.style.flex = prevMainFlex;
