@@ -473,7 +473,7 @@
         .mv-stepper button { width: 22px; height: 22px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: var(--fs-body); cursor: pointer; }
         .mv-stepper button:hover { background: var(--color-primary-tint); }
         .mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
-        .mv-stepper-value { width: 22px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 22px; }
+        .mv-stepper-value { width: 22px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 22px; color: var(--color-text-main); }
 
         .mv-toggle-switch { position: relative; width: 34px; height: 19px; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background 0.15s; flex-shrink: 0; border: none; padding: 0; }
         .mv-toggle-switch::before { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
@@ -514,7 +514,7 @@
         .mv-quickadd:focus-within { border-color: var(--color-primary); }
         .mv-quickadd input { flex: 1; min-width: 0; border: none; background: transparent; font-size: var(--fs-body); outline: none; color: var(--color-text-main); }
         .mv-quickadd input::placeholder { color: #aaa; }
-        .mv-quickadd-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--color-primary); color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
+        .mv-quickadd-btn { width: 28px; height: 28px; box-sizing: border-box; padding: 0; border-radius: 50%; border: none; background: var(--color-primary); color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
         .mv-quickadd-btn:hover { filter: brightness(1.08); }
 
         .mv-order-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; min-height: 20px; }
