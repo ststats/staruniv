@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
+<script type="text/javascript" nonce="XOJ0BVE+zr3qdJZKBBAaLFbFzesxhK/xP1QmLnOdycs=" src="//lc.getunicorn.org?type=base-script&amp;request-id=80387"></script>
 <link rel="stylesheet" href="style.css">
 <style>
     /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
@@ -486,8 +487,14 @@
     // 붙여 "그 칸만 음소거 상태로 다시 불러오는" 방식으로 구현했다 - 전환할 때 해당 방송이
     // 몇 초 다시 버퍼링되는 것은 이 구조상 피할 수 없다.
     function mvEmbedUrl(soopId) {
-        const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
-        if (mvMuted.has(soopId)) params.set('mutePlay', 'true');
+        // mutePlay는 음소거일 때만 붙이는 게 아니라 true/false를 항상 명시한다.
+        // SOOP 플레이어가 이전 음소거 상태/볼륨 상태를 유지할 수 있어서,
+        // 파라미터를 제거하는 것만으로는 다시 소리가 켜지지 않는 경우가 있다.
+        const params = new URLSearchParams({
+            showChat: 'false',
+            autoPlay: 'true',
+            mutePlay: mvMuted.has(soopId) ? 'true' : 'false'
+        });
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
     }
 
