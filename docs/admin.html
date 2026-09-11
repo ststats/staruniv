@@ -769,14 +769,25 @@
             list.innerHTML = items.length ? items.map((t, i) => {
                 // 파비콘은 도메인 것만 있으면 충분한데, 전체 URL(쿼리스트링 포함)을
                 // 그대로 encodeURIComponent에 넣으면 URL 안에 이미 퍼센트 인코딩된
-                // 문자가 있는 경우 이중 인코딩되어 구글 파비콘 서비스가 도메인을
-                // 못 알아본다(app.js의 도구 탭 카드와 동일한 문제/해결). 경로·
-                // 쿼리스트링을 뗀 origin만 넘긴다.
-                let origin = t.url;
-                try { origin = new URL(t.url).origin; } catch (e) { /* URL 파싱 실패 시 원본 그대로 시도 */ }
+                // 문자가 있는 경우 이중 인코딩되어 도메인을 못 알아본다(app.js의
+                // 도구 탭 카드와 동일한 문제). 경로·쿼리스트링을 뗀 호스트명만 넘긴다.
+                let host = t.url;
+                try { host = new URL(t.url).hostname; } catch (e) { /* URL 파싱 실패 시 원본 그대로 시도 */ }
+
+                // 구글의 s2/favicons는 비공식·비지원 API라 가동이 불안정하다(특정
+                // 도메인만 갑자기 안 뜨거나, 잘 뜨던 것도 예고 없이 멈추는 사례가
+                // 있음) - app.js의 도구 탭 카드와 동일하게 더 안정적인 DuckDuckGo
+                // 아이콘 서비스를 기본으로 쓰고, 실패하면 구글로 한 번 더 시도한다.
+                const duckFaviconUrl = `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico`;
+                const googleFaviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(host)}`;
+                const onErrorChain = `
+                    if (!this.dataset.fallbackTried) { this.dataset.fallbackTried = '1'; this.src = '${googleFaviconUrl}'; }
+                    else { this.style.display = 'none'; }
+                `.replace(/\s+/g, ' ').trim();
+
                 return `
                 <div class="admin-tool-row">
-                    <img src="https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(origin)}" alt="" onerror="this.style.display='none';">
+                    <img src="${duckFaviconUrl}" alt="" onerror="${escapeHTML(onErrorChain)}">
                     <div class="admin-tool-info">
                         <div class="admin-tool-name">${escapeHTML(t.name)}</div>
                         <div class="admin-tool-url">${escapeHTML(t.url)}</div>
