@@ -38,18 +38,26 @@
         return calOffAirForDate(dateStr).some(soopId => window.calOffAirMemberName(soopId) === CAL_YOUNHWAN_NAME);
     };
 
+    // 이어붙는 막대(장기 일정/김윤환 휴방)의 좌우 모서리 스타일을 계산한다. 옆 칸과
+    // 이어지는 쪽은 모서리를 각지게 하고 칸 경계 밖으로 살짝 튀어나가게(bleed) 해서
+    // 끊김 없이 이어진 것처럼 보이게 하고, 끊기는 쪽은 원래대로 둥글게 마감한다.
+    // bleed(음수 마진)만큼 박스가 칸 경계 밖으로 나가는 쪽은 padding을 8px 더
+    // 줘서(4px+8px=12px) 텍스트가 항상 "칸 경계에서 4px" 위치를 유지하도록 상쇄한다
+    // - bleed가 없는 하루짜리 일정 카드(패딩 4px)와도 정렬 위치가 정확히 맞는다.
+    const calBarEdgeStyle = (roundLeft, roundRight) => ({
+        bleedLeft: roundLeft ? '0' : '-8px',
+        bleedRight: roundRight ? '0' : '-8px',
+        padLeft: roundLeft ? '4px' : '12px',
+        padRight: roundRight ? '4px' : '12px',
+        radius: `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`,
+    });
+
     // 장기 일정 막대(calGetLongTermBarHTML)와 같은 이어붙이기 방식이지만, 진짜
     // 시작/종료일 대신 "어제/내일도 김윤환 휴방인가"로 연결 여부를 판단한다.
     const calGetYounhwanBarHTML = (dateStr, isWeekStart, isWeekEnd) => {
         const connectsLeft = !isWeekStart && calIsYounhwanOffAir(calShiftDate(dateStr, -1));
         const connectsRight = !isWeekEnd && calIsYounhwanOffAir(calShiftDate(dateStr, 1));
-        const roundLeft = !connectsLeft;
-        const roundRight = !connectsRight;
-        const bleedLeft = roundLeft ? '0' : '-8px';
-        const bleedRight = roundRight ? '0' : '-8px';
-        const padLeft = roundLeft ? '4px' : '12px';
-        const padRight = roundRight ? '4px' : '12px';
-        const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
+        const { bleedLeft, bleedRight, padLeft, padRight, radius } = calBarEdgeStyle(!connectsLeft, !connectsRight);
         return `
             <div class="cal-cell-event cal-longterm-bar" style="margin-left:${bleedLeft}; margin-right:${bleedRight}; padding-left:${padLeft}; padding-right:${padRight}; border-radius:${radius}; background-color: ${CAL_YOUNHWAN_COLOR};">
                 <div class="cal-cell-top"><span class="cal-event-time">휴방</span><span class="cal-event-person">${CAL_YOUNHWAN_SHORT}</span></div>
@@ -164,18 +172,7 @@
     const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) => {
         const isTrueStart = dateStr === ev.startDate;
         const isTrueEnd = dateStr === ev.endDate;
-        const roundLeft = isTrueStart || isWeekStart;
-        const roundRight = isTrueEnd || isWeekEnd;
-        const bleedLeft = roundLeft ? '0' : '-8px';
-        const bleedRight = roundRight ? '0' : '-8px';
-        // bleed(음수 마진)만큼 박스가 실제 칸 경계 밖으로 튀어나가는데, 기본 padding(4px)을
-        // 그대로 두면 안쪽 텍스트도 그만큼 같이 밀려나가 칸 경계에 딱 붙어버린다(장기 일정을
-        // 오른쪽 정렬했을 때 스치듯 붙는 문제). bleed 나가는 쪽만 padding을 8px만큼 더 줘서
-        // (4px+8px=12px) 상쇄하면, 텍스트는 항상 "실제 칸 경계에서 4px" 위치를 유지하고,
-        // bleed가 없는 하루짜리 일정 카드(패딩 4px)와도 오른쪽/왼쪽 정렬 위치가 정확히 맞는다.
-        const padLeft = roundLeft ? '4px' : '12px';
-        const padRight = roundRight ? '4px' : '12px';
-        const radius = `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`;
+        const { bleedLeft, bleedRight, padLeft, padRight, radius } = calBarEdgeStyle(isTrueStart || isWeekStart, isTrueEnd || isWeekEnd);
         const timeHtml = ev.time ? `<span class="cal-event-time">${calEscapeHTML(ev.time)}</span>` : '';
         const personHtml = ev.person ? `<span class="cal-event-person">${calEscapeHTML(ev.person)}</span>` : '';
         const descHtml = ev.desc ? `<div class="cal-event-desc">${calEscapeHTML(ev.desc)}</div>` : '';

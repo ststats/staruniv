@@ -264,18 +264,16 @@
     // 실제 영상 그리드/다크모드/설정 열고닫기는 자체 제작한 새 창(multiview.html)에서
     // 처리한다. 선택 상태(mvOrder)는 도구 탭과 새 창 둘 다에서 똑같이 조정 가능하도록
     // 새 창을 열 때 현재 상태를 그대로 URL로 넘긴다.
+    // "선택 목록"에 관한 순수 로직(mvFocusEntryId/mvOrderItemHtml/mvResolveCustomInput)은
+    // multiview.html과 완전히 동일하게 필요해서 mv-shared.js로 뽑아 공유한다 -
+    // 그리드 DOM을 직접 다루는 부분(mvMove/mvRemove/mvSetFocusTarget 등)은 이
+    // 페이지엔 그리드 자체가 없어 매번 통째로 다시 그리면 되므로 각자 둔다.
     let mvOrder = [];   // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
     let mvCols = 2;
     let mvDark = false;
     let mvFocus = true;
     let mvFocusId = null; // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도로 지정
 
-    function mvFocusEntryId() {
-        // 명시적으로 지정한 포커스 대상이 있으면 그걸, 없으면(처음이거나 지워진 경우)
-        // 목록 1번을 기본값으로 쓴다.
-        if (mvFocusId && mvOrder.some(e => e.soopId === mvFocusId)) return mvFocusId;
-        return mvOrder.length ? mvOrder[0].soopId : null;
-    }
     function mvSetFocusTarget(soopId) {
         mvFocusId = soopId;
         mvRenderOrderRow();
@@ -324,24 +322,12 @@
         mvRenderChips();
     }
 
-    function mvOrderItemHtml(entry, idx) {
-        const isFocusTarget = mvFocus && mvFocusEntryId() === entry.soopId;
-        const rowClick = mvFocus ? ` onclick="mvSetFocusTarget('${jsStrEscape(entry.soopId)}')"` : '';
-        return `
-        <div class="mv-order-item${entry.isMember ? '' : ' custom'}${isFocusTarget ? ' focus-target' : ''}${mvFocus ? ' selectable' : ''}"${rowClick}>
-            <span class="mv-order-num">${idx + 1}.</span>
-            <button type="button" title="위로" onclick="event.stopPropagation(); mvMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-            <button type="button" title="아래로" onclick="event.stopPropagation(); mvMove(${idx}, 1)" ${idx === mvOrder.length - 1 ? 'disabled' : ''}>▼</button>
-            <span class="mv-order-name">${escapeHTML(entry.name)}</span>
-            <button type="button" class="mv-order-remove" title="빼기" onclick="event.stopPropagation(); mvRemoveFromOrder(${idx})">✕</button>
-        </div>`;
-    }
-
     function mvRenderOrderRow() {
         const row = document.getElementById('mv-order-row');
         if (!row) return;
+        const focusEntryId = mvFocusEntryId(mvOrder, mvFocusId);
         row.innerHTML = mvOrder.length
-            ? mvOrder.map(mvOrderItemHtml).join('')
+            ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId)).join('')
             : `<span class="mv-order-empty">위에서 멤버를 선택하거나 숲 아이디를 직접 추가해보세요.</span>`;
     }
 
@@ -364,26 +350,10 @@
 
     function mvAddCustom() {
         const input = document.getElementById('mv-custom-id');
-        const raw = input.value.trim();
-        if (!raw) return;
-
-        // 1) 우리 멤버 이름과 정확히 일치하면(대소문자 무시) 그 멤버를 추가한다.
-        const byName = activeMembersWithSoopId().find(m => String(m['이름']).trim().toLowerCase() === raw.toLowerCase());
-        if (byName) {
-            if (mvIndexOf(byName['SOOP ID']) !== -1) { alert('이미 선택된 목록에 있습니다.'); return; }
-            mvOrder.push({ soopId: byName['SOOP ID'], name: byName['이름'], isMember: true });
-            input.value = '';
-            mvRenderAll();
-            return;
-        }
-
-        // 2) 이름이 아니면 숲 아이디로 취급한다.
-        const id = raw.toLowerCase();
-        if (!/^[a-z0-9_-]+$/.test(id)) { alert('멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다.'); return; }
-        if (mvIndexOf(id) !== -1) { alert('이미 선택된 목록에 있습니다.'); return; }
-        // 우리 멤버의 아이디를 그대로 입력한 경우, 익명 항목이 아니라 실제 이름으로 추가한다.
-        const knownMember = activeMembersWithSoopId().find(m => m['SOOP ID'] === id);
-        mvOrder.push(knownMember ? { soopId: id, name: knownMember['이름'], isMember: true } : { soopId: id, name: id, isMember: false });
+        const result = mvResolveCustomInput(input.value, mvOrder, activeMembersWithSoopId());
+        if (!result) return;
+        if (result.error) { alert(result.error); return; }
+        mvOrder.push(result.entry);
         input.value = '';
         mvRenderAll();
     }
@@ -395,7 +365,7 @@
         mvRenderAll();
     }
 
-    function mvRemoveFromOrder(idx) {
+    function mvRemove(idx) {
         mvOrder.splice(idx, 1);
         mvRenderAll();
     }
@@ -413,7 +383,6 @@
         mvFocus = isFocus;
         const toggle = document.getElementById('mv-mode-toggle');
         if (toggle) toggle.classList.toggle('on', !mvFocus);
-        // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서...
         // 포커스 모드에서는 열 개수가 인원 수 기준으로 자동 계산돼서 이 스테퍼가
         // 안 쓰이므로, 요소를 아예 숨기지 않고 흐릿하게 비활성화만 한다
         // (보였다 안 보였다 하면 레이아웃이 덜컹거려서 오히려 지저분해 보임).
@@ -434,7 +403,7 @@
             cols: String(mvCols),
             theme: mvDark ? 'dark' : 'light',
             focus: mvFocus ? '1' : '0',
-            focusId: mvFocus ? (mvFocusEntryId() || '') : '',
+            focusId: mvFocus ? (mvFocusEntryId(mvOrder, mvFocusId) || '') : '',
         });
         window.open(`multiview.html?${params.toString()}`, '_blank', 'noopener');
     }
@@ -956,21 +925,17 @@
         </div>`;
     }
 
-    // 오른쪽 "지난 글" 리스트 - 홈 화면 "최근 공지"의 home-notice-card를 그대로 재사용한다.
-    // 다른 점은 클릭 시 원글로 나가는 게 아니라, 그 글을 왼쪽 최신 글 자리로 올린다는 것.
-    function renderPastNoticeHtml(item) {
-        const { member, post } = item;
-        const soopId = member ? member['SOOP ID'] : post.userId;
-        const name = member ? member['이름'] : (post.userNick || '');
-        const title = post.titleName || '(제목 없음)';
-        const snippet = (post.content && post.content.textContent) || '';
-        const timeText = formatRelativeTime(post.regDate);
-        const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
+    // "최근 공지"/"지난 글" 카드 한 장의 마크업 - 홈 화면 목록과 멤버 공지 탭의
+    // "지난 글" 리스트가 완전히 같은 모양이라 공용 함수로 뺐다. 클릭했을 때
+    // 동작(원글 이동/소식 탭 이동/최신 글 자리로 올리기)만 서로 달라서 onclick
+    // 속성 문자열만 인자로 받고, "지난 글" 쪽에서만 필요한 클래스/data 속성은
+    // extra로 선택적으로 받는다.
+    function homeNoticeCardHtml({ soopId, name, title, snippet, timeText, thumbUrl }, onclickAttr, extra) {
         const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
-        const key = jsStrEscape(newsItemKey(item));
-
+        const extraClass = extra && extra.extraClass ? ' ' + extra.extraClass : '';
+        const extraAttr = extra && extra.dataAttr ? ' ' + extra.dataAttr : '';
         return `
-        <div class="home-notice-card news-past-item" onclick="setNewsFeatured('${key}')" data-news-key="${escapeHTML(newsItemKey(item))}">
+        <div class="home-notice-card${extraClass}" onclick="${onclickAttr}"${extraAttr}>
             <div class="home-notice-main">
                 <div class="home-notice-top">
                     ${avatarHtml(soopId, 'home-notice-avatar')}
@@ -987,6 +952,26 @@
             </div>
             ${thumbHtml}
         </div>`;
+    }
+
+    // 오른쪽 "지난 글" 리스트 - 홈 화면 "최근 공지"와 같은 카드(homeNoticeCardHtml)를
+    // 재사용한다. 다른 점은 클릭 시 원글로 나가는 게 아니라, 그 글을 왼쪽 최신 글
+    // 자리로 올린다는 것.
+    function renderPastNoticeHtml(item) {
+        const { member, post } = item;
+        const soopId = member ? member['SOOP ID'] : post.userId;
+        const name = member ? member['이름'] : (post.userNick || '');
+        const title = post.titleName || '(제목 없음)';
+        const snippet = (post.content && post.content.textContent) || '';
+        const timeText = formatRelativeTime(post.regDate);
+        const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
+        const key = jsStrEscape(newsItemKey(item));
+
+        return homeNoticeCardHtml(
+            { soopId, name, title, snippet, timeText, thumbUrl },
+            `setNewsFeatured('${key}')`,
+            { extraClass: 'news-past-item', dataAttr: `data-news-key="${escapeHTML(newsItemKey(item))}"` }
+        );
     }
 
     async function loadNewsFeed() {
@@ -1414,26 +1399,7 @@
             const title = post.titleName || '(제목 없음)';
             const snippet = (post.content && post.content.textContent) || '';
             const thumbUrl = post.photos && post.photos[0] && post.photos[0].url;
-            const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
-
-            return `
-            <div class="home-notice-card" onclick="goToNewsFeed('${jsStrEscape(name)}')">
-                <div class="home-notice-main">
-                    <div class="home-notice-top">
-                        ${avatarHtml(soopId, 'home-notice-avatar')}
-                        <div class="home-notice-toptext">
-                            <div class="home-notice-name">${escapeHTML(name)}</div>
-                            <div class="home-notice-title-row">
-                                <span class="home-notice-title">${escapeHTML(title)}</span>
-                                <span class="home-notice-dot">·</span>
-                                <span class="home-notice-meta">${escapeHTML(timeText)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    ${snippet ? `<div class="home-notice-snippet">${formatNewsContent(snippet)}</div>` : ''}
-                </div>
-                ${thumbHtml}
-            </div>`;
+            return homeNoticeCardHtml({ soopId, name, title, snippet, timeText, thumbUrl }, `goToNewsFeed('${jsStrEscape(name)}')`);
         }).join('');
     }
 
