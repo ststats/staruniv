@@ -766,9 +766,12 @@
             const list = document.getElementById('tools-list-' + key);
             if (!list) return;
             const items = (toolsData[key] && toolsData[key].items) || [];
+            // t.favicon이 직접 지정돼 있으면(네이버 사다리처럼 구글 서비스로는
+            // 안 뜨는 경우를 위한 수동 지정) 그 값을 그대로 쓰고, 없으면 기존대로
+            // 구글의 s2/favicons를 쓴다 (app.js의 도구 탭 카드와 동일한 우선순위).
             list.innerHTML = items.length ? items.map((t, i) => `
                 <div class="admin-tool-row">
-                    <img src="https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(t.url)}" alt="" onerror="this.style.display='none';">
+                    <img src="${t.favicon ? escapeHTML(t.favicon) : `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(t.url)}`}" alt="" onerror="this.style.display='none';">
                     <div class="admin-tool-info">
                         <div class="admin-tool-name">${escapeHTML(t.name)}</div>
                         <div class="admin-tool-url">${escapeHTML(t.url)}</div>
