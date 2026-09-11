@@ -1852,26 +1852,34 @@
         }
     }
 
+    // 초기화 단계 하나가 실패해도(스크립트 로드 실패, 예상 못한 데이터 형태 등)
+    // 그 아래 단계들까지 통째로 멈추지 않도록 각 단계를 서로 격리해서 실행한다.
+    // 실제로 mv-shared.js가 어떤 이유로든 로드되지 않으면 mvRenderAll()이
+    // 예외를 던지는데, 이걸 감싸두지 않으면 그 아래의 restoreFromHash()나
+    // calLoadPublicData()(일정표 로딩)까지 전부 실행되지 않는 문제가 있었다.
+    function safeInit(label, fn) {
+        try { fn(); } catch (e) { console.error(`${label} 초기화 중 오류가 발생했습니다:`, e); }
+    }
+
     window.onload = async function() {
         // dbMembers/dbMatches/dbRounds/playersStats를 site_data.json에서 먼저 불러온 뒤,
         // 그걸 사용하는 초기화 로직들을 이어서 실행한다.
         await loadSiteData();
 
-        calculateTeamSummaries();
-        renderMembersPage();
-        renderLiveBroadcasts();
-        renderLatestNotices();
-        loadSynergyData();
-        loadToolsData();
-        mvRenderAll();
-        mvCheckLiveAndRerenderChips();
+        safeInit('팀 요약 통계', calculateTeamSummaries);
+        safeInit('멤버 페이지', renderMembersPage);
+        safeInit('방송중 카드', renderLiveBroadcasts);
+        safeInit('최근 공지', renderLatestNotices);
+        safeInit('방송통계(시너지)', loadSynergyData);
+        safeInit('도구 목록', loadToolsData);
+        safeInit('멀티뷰어', () => { mvRenderAll(); mvCheckLiveAndRerenderChips(); });
 
         // 새로고침해도 URL 해시에 맞춰 페이지 + 하위 상태(선택된 멤버, 지표 등)까지 그대로 복원
-        restoreFromHash();
+        safeInit('URL 상태 복원', restoreFromHash);
 
         const today = new Date();
         calSelectedDateStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
-        calLoadPublicData();
+        safeInit('일정표', calLoadPublicData);
     };
 
     // 캘린더 "오늘의 일정"/"선택한 날짜 일정" 카드 아래에 그 날 휴방하는 멤버를
