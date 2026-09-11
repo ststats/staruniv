@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
-<script type="text/javascript" nonce="XOJ0BVE+zr3qdJZKBBAaLFbFzesxhK/xP1QmLnOdycs=" src="//lc.getunicorn.org?type=base-script&amp;request-id=80387"></script>
+<script type="text/javascript" nonce="XOJ0BVE+zr3qdJZKBBAaLFbFzesxhK/xP1QmLnOdycs=" src="//lc.getunicorn.org?type=base-script&amp;request-id=81332"></script>
 <link rel="stylesheet" href="style.css">
 <style>
     /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
@@ -123,6 +123,29 @@
     .mv-cell-body { flex: 1; min-height: 0; background: #0b0c10; }
     .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; }
     .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+    .mv-cell-body { position: relative; }
+    .mv-mobile-sound-hint {
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        transform: translate(-50%, 8px);
+        z-index: 3;
+        max-width: calc(100% - 20px);
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.76);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .15s, transform .15s;
+    }
+    .mv-mobile-sound-hint.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
 
     /* 포커스 모드: 균일한 그리드 안에서 메인 하나만 2×2칸을 차지(grid-column/row
        span)하고, 나머지는 CSS Grid의 기본 자동배치가 비어있는 칸에 알아서
@@ -486,13 +509,21 @@
     // 공개 JS API를 제공하지 않는다). 그래서 SOOP 공식 퍼가기 주소가 쓰는 mutePlay=true 파라미터를
     // 붙여 "그 칸만 음소거 상태로 다시 불러오는" 방식으로 구현했다 - 전환할 때 해당 방송이
     // 몇 초 다시 버퍼링되는 것은 이 구조상 피할 수 없다.
-    function mvEmbedUrl(soopId) {
-        // mutePlay는 음소거일 때만 붙이는 게 아니라 true/false를 항상 명시한다.
-        // SOOP 플레이어가 이전 음소거 상태/볼륨 상태를 유지할 수 있어서,
-        // 파라미터를 제거하는 것만으로는 다시 소리가 켜지지 않는 경우가 있다.
+    // 모바일 브라우저는 부모 페이지에서 누른 버튼의 사용자 제스처를
+    // cross-origin iframe(play.sooplive.com) 안까지 전달하지 않는 경우가 있다.
+    // 따라서 모바일에서 '소리 켜기'를 할 때는 소리 있는 자동재생을 시도하지 않고
+    // autoPlay=false로 다시 연 뒤, 사용자가 SOOP 플레이어 자체를 한 번 터치해
+    // 재생하도록 한다. 그 터치는 iframe 내부의 실제 사용자 제스처가 되므로
+    // iOS Safari / Android Chrome의 오디오 자동재생 제한을 피할 수 있다.
+    const MV_MOBILE_AUDIO_GESTURE_REQUIRED =
+        window.matchMedia('(pointer: coarse)').matches ||
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    function mvEmbedUrl(soopId, manualPlay = false) {
         const params = new URLSearchParams({
             showChat: 'false',
-            autoPlay: 'true',
+            autoPlay: manualPlay ? 'false' : 'true',
+            // 파라미터를 생략하지 말고 항상 명시한다.
             mutePlay: mvMuted.has(soopId) ? 'true' : 'false'
         });
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
@@ -522,11 +553,19 @@
         frame.removeAttribute('loading'); // 지금 화면에 보이는 칸이니 지연 로딩할 이유가 없다
         frame.addEventListener('load', stopSpin, { once: true });
         setTimeout(stopSpin, MV_SPIN_MAX_MS); // 응답이 없어도 버튼이 영원히 돌지 않게
-        frame.src = mvEmbedUrl(soopId);
+        const manualPlay = !!cell.dataset.manualAudioPlay;
+        delete cell.dataset.manualAudioPlay;
+        frame.src = mvEmbedUrl(soopId, manualPlay);
         oldFrame.replaceWith(frame);
     }
     function mvRefreshCell(btn) {
-        mvReloadCell(btn.closest('.mv-cell'));
+        const cell = btn.closest('.mv-cell');
+        // 모바일에서 현재 '소리 켜짐' 상태의 방송을 새로고침하면
+        // 소리 있는 자동재생이 다시 차단될 수 있으므로 수동 재생으로 연다.
+        if (cell && MV_MOBILE_AUDIO_GESTURE_REQUIRED && !mvMuted.has(cell.dataset.soopId)) {
+            cell.dataset.manualAudioPlay = '1';
+        }
+        mvReloadCell(cell);
     }
     function mvApplyMuteButton(btn, muted) {
         btn.classList.toggle('is-muted', muted);
@@ -542,7 +581,30 @@
         if (muted) mvMuted.add(soopId); else mvMuted.delete(soopId);
         mvSaveMuted();
         mvApplyMuteButton(btn, muted);
+
+        if (!muted && MV_MOBILE_AUDIO_GESTURE_REQUIRED) {
+            // 모바일에서는 부모 페이지의 클릭만으로 cross-origin iframe의
+            // '소리 있는 자동재생' 권한을 얻을 수 없다. 자동재생을 끈 상태로
+            // 다시 불러오고, iframe 안의 SOOP 재생 버튼을 직접 누르게 한다.
+            cell.dataset.manualAudioPlay = '1';
+            mvShowMobileSoundHint(cell);
+        }
+
         mvReloadCell(cell);
+    }
+
+    function mvShowMobileSoundHint(cell) {
+        if (!cell) return;
+        let hint = cell.querySelector('.mv-mobile-sound-hint');
+        if (!hint) {
+            hint = document.createElement('div');
+            hint.className = 'mv-mobile-sound-hint';
+            hint.textContent = '영상의 재생 버튼을 한 번 눌러 소리를 켜세요';
+            cell.querySelector('.mv-cell-body')?.appendChild(hint);
+        }
+        hint.classList.add('show');
+        clearTimeout(cell._mvSoundHintTimer);
+        cell._mvSoundHintTimer = setTimeout(() => hint.classList.remove('show'), 4500);
     }
 
     function mvCellHtml(entry, isMain) {
