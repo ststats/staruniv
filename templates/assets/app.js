@@ -1817,29 +1817,11 @@
     // 어드민 페이지 '도구' 탭에서 추가/삭제하고 GitHub에 저장하면 여기 반영된다. =====
     function toolCardHtml(tool) {
         const url = tool.url || '';
-        // 파비콘은 사이트(도메인) 것만 있으면 충분한데, 전체 URL을 그대로 쓰면
-        // "네이버 사다리"처럼 쿼리스트링에 이미 퍼센트 인코딩된 값(한글 검색어
-        // 등)이 들어있는 경우 인코딩이 겹쳐 도메인을 아예 못 알아보는 문제가
-        // 있었다. 경로/쿼리스트링을 다 뗀 호스트명만 넘긴다.
-        let host = url;
-        try { host = new URL(url).hostname; } catch (e) { /* URL 파싱 실패 시 원본 그대로 시도 */ }
-
-        // 구글의 s2/favicons는 공식 지원되지 않는 API라 가동이 불안정하다 -
-        // 특정 도메인만 갑자기 안 뜨거나, 이전엔 잘 뜨던 것도 예고 없이 멈추는
-        // 사례가 보고돼 있다. 더 안정적이라고 알려진 DuckDuckGo 아이콘 서비스를
-        // 기본으로 쓰고, 혹시 거기서도 못 찾으면(onerror) 구글 걸로 한 번 더
-        // 시도한 뒤, 그마저 실패하면 아이콘 없이 이름만 보여준다.
-        const duckFaviconUrl = `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico`;
-        const googleFaviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(host)}`;
-        const onErrorChain = `
-            if (!this.dataset.fallbackTried) { this.dataset.fallbackTried = '1'; this.src = '${googleFaviconUrl}'; }
-            else { this.style.display = 'none'; }
-        `.replace(/\s+/g, ' ').trim();
-
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url)}`;
         return `
         <a class="tool-card" href="${escapeHTML(url)}" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
-            <div class="tool-card-icon"><img loading="lazy" src="${duckFaviconUrl}" alt="" onerror="${escapeHTML(onErrorChain)}"></div>
+            <div class="tool-card-icon"><img loading="lazy" src="${faviconUrl}" alt="" onerror="this.style.display='none';"></div>
             <div class="tool-card-name">${escapeHTML(tool.name)}</div>
         </a>`;
     }
