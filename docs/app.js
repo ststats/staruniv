@@ -1851,7 +1851,15 @@
     // 어드민 페이지 '도구' 탭에서 추가/삭제하고 GitHub에 저장하면 여기 반영된다. =====
     function toolCardHtml(tool) {
         const url = tool.url || '';
-        const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url)}`;
+        // 파비콘은 사이트(도메인) 것만 있으면 충분한데, 전체 URL을 그대로 쓰면
+        // "네이버 사다리"처럼 쿼리스트링에 이미 퍼센트 인코딩된 값(한글 검색어
+        // 등)이 들어있는 경우 여기서 encodeURIComponent를 한 번 더 씌우면서
+        // '%'가 '%25'로 이중 인코딩돼 구글 파비콘 서비스가 도메인을 아예 못
+        // 알아보고 실패한다. 경로/쿼리스트링을 다 떼고 origin(메인 페이지
+        // 주소)만 넘기면 이 문제가 없고 다른 항목들에도 더 안전하다.
+        let origin = url;
+        try { origin = new URL(url).origin; } catch (e) { /* URL 파싱 실패 시 원본 그대로 시도 */ }
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(origin)}`;
         return `
         <a class="tool-card" href="${escapeHTML(url)}" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
