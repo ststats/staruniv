@@ -1817,7 +1817,18 @@
     // 어드민 페이지 '도구' 탭에서 추가/삭제하고 GitHub에 저장하면 여기 반영된다. =====
     function toolCardHtml(tool) {
         const url = tool.url || '';
-        const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url)}`;
+        // URL 안에 이미 퍼센트 인코딩된 문자(예: 네이버 사다리 쿼리스트링의 한글)가
+        // 있으면 그대로 encodeURIComponent를 씌울 때 '%'가 '%25'로 다시
+        // 인코딩되면서(이중 인코딩) 구글이 도메인을 못 알아본다. 인코딩을 한 번
+        // 풀었다가 다시 인코딩하면 이미 인코딩돼 있던 부분과 그렇지 않은 부분이
+        // 전부 한 번만 인코딩된 상태로 맞춰진다 - 인코딩된 문자가 애초에 없는
+        // 나머지 링크들은 디코딩해도 원래 문자열 그대로라 동작이 전혀 안 바뀐다.
+        // (경로/쿼리스트링을 잘라내는 방식은 시도하지 않는다 - 구글이 정확한
+        // 페이지 단위로 파비콘을 캐시해두는 경우가 있어서, 도메인만 남기면
+        // 오히려 이미 잘 뜨던 다른 링크들이 깨질 수 있다.)
+        let normalizedUrl = url;
+        try { normalizedUrl = decodeURIComponent(url); } catch (e) { /* 잘못된 인코딩 형식이면 원본 그대로 사용 */ }
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(normalizedUrl)}`;
         return `
         <a class="tool-card" href="${escapeHTML(url)}" target="_blank" rel="noopener">
             <span class="tool-card-ext">↗</span>
