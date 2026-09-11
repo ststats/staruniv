@@ -27,7 +27,7 @@
     body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
     /* ===== 설정 열기 버튼 (항상 떠 있음) - 화면 우상단 ===== */
-    /* 우상단에 두면 맨 위 오른쪽 칸의 헤더 버튼(음소거/새로고침)과 겹친다. 그래서
+    /* 우상단에 두면 맨 위 오른쪽 칸의 헤더 버튼(새로고침)과 겹친다. 그래서
        ① 버튼을 헤더 높이(약 36px) 안에 쏙 들어가는 28px로 줄여 영상은 가리지 않고,
        ② 실제로 그 자리에 오는 칸 하나(.mv-cell-corner, mvMarkCornerCell이 레이아웃을
        보고 매번 계산)만 헤더 오른쪽 여백을 넓혀 버튼들을 왼쪽으로 비켜 준다.
@@ -91,31 +91,25 @@
     .mv-cell-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 우상단 설정 버튼 아래에 오는 칸만 버튼 묶음을 왼쪽으로 비켜준다 */
     .mv-cell-corner .mv-cell-header { padding-right: 46px; }
-    /* 그 칸이 너무 좁으면(휴대폰 세로 화면에 4열 등, 폭 140px 미만) 이름+버튼+설정 버튼 자리가 한 줄에
+    /* 그 칸이 너무 좁으면(휴대폰 세로 화면에 4열 등, 폭 115px 미만) 이름+버튼+설정 버튼 자리가 한 줄에
        안 들어가므로, 그 칸만 헤더 내용을 설정 버튼 아래로 내린다. */
     .mv-cell-corner.mv-cell-corner-compact .mv-cell-header { padding-top: 36px; padding-right: 10px; }
-    /* 칸이 좁으면(휴대폰 세로 화면에 3~4열 등) 이름이 버튼에 밀려 한두 글자만 보이게 되므로,
+    /* 칸이 아주 좁으면(휴대폰 세로 화면에 4열 등, 폭 100px 미만) 이름이 버튼에 밀려 한두 글자만 보이게 되므로,
        이름을 한 줄 전부 쓰게 하고 버튼은 그 아래 오른쪽으로 내린다. (컨테이너 쿼리 미지원
        브라우저에서는 무시되고 한 줄 배치가 그대로 유지된다) */
-    @container mv-cell (max-width: 139.98px) {
+    @container mv-cell (max-width: 99.98px) {
         .mv-cell-header { flex-wrap: wrap; row-gap: 2px; }
         .mv-cell-name { flex: 1 0 100%; }
         .mv-cell-actions { margin-left: auto; }
     }
 
-    /* 칸 헤더 버튼(음소거/새로고침): 글자 기호(⟳) 대신 SVG 아이콘 + 둥근 사각 버튼.
-       평소엔 옅은 회색, 호버 시 파란 틴트. 새로고침 중엔 아이콘이 돌고, 음소거
-       상태는 빨간 스피커(×) 아이콘으로 한눈에 구분된다. */
+    /* 칸 헤더 버튼(새로고침): 글자 기호(⟳) 대신 SVG 아이콘 + 둥근 사각 버튼.
+       평소엔 옅은 회색, 호버 시 파란 틴트. 새로고침 중엔 아이콘이 돈다. */
     .mv-cell-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
     .mv-cell-btn { width: 24px; height: 24px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--color-text-sub); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
     .mv-cell-btn svg { width: 15px; height: 15px; display: block; }
     .mv-cell-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); }
     .mv-cell-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
-    .mv-cell-mute .mv-icon-muted { display: none; }
-    .mv-cell-mute.is-muted { color: var(--color-lose, #f03e3e); }
-    .mv-cell-mute.is-muted:hover { background: rgba(240,62,62,0.12); color: var(--color-lose, #f03e3e); }
-    .mv-cell-mute.is-muted .mv-icon-sound { display: none; }
-    .mv-cell-mute.is-muted .mv-icon-muted { display: block; }
     @keyframes mvSpin { to { transform: rotate(360deg); } }
     .mv-cell-refresh.is-loading { color: var(--color-primary); pointer-events: none; }
     .mv-cell-refresh.is-loading svg { animation: mvSpin 0.8s linear infinite; }
@@ -209,12 +203,9 @@
     let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
     let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
     let mvLiveMap = {};    // soopId -> 방송중 여부
-    // 음소거로 불러올 방송(soopId) 목록 - 새로고침/다음 접속 때도 유지되도록 저장한다.
-    let mvMuted = new Set();
-    try { mvMuted = new Set(JSON.parse(localStorage.getItem('mv-muted') || '[]').filter(id => typeof id === 'string')); } catch (e) { mvMuted = new Set(); }
-    function mvSaveMuted() {
-        try { localStorage.setItem('mv-muted', JSON.stringify([...mvMuted])); } catch (e) { /* 저장 불가 환경이면 이번 세션에만 유지 */ }
-    }
+    // (음소거 기능은 제거했다 - 음소거 후 해제해도 SOOP 플레이어의 소리가 돌아오지 않는 문제가 있었다.
+    //  잠깐 배포됐던 버전이 저장해둔 음소거 목록이 남아 있으면 지운다.)
+    try { localStorage.removeItem('mv-muted'); } catch (e) { /* 무시 */ }
 
     function mvSaveState() {
         try {
@@ -479,21 +470,12 @@
     // 로컬 프로그램에 연결을 시도하는데, 이게 iframe 안에서는 막혀서 재생이
     // 안 됐다 - 화질 파라미터를 아예 안 넘기고 기본(자동) 화질로 열면 그
     // 로컬 프로그램을 거치지 않고 정상 재생됨을 실제 테스트로 확인함.
-    //
-    // [음소거] 영상은 다른 도메인(play.sooplive.com)의 iframe 안에서 재생되기 때문에, 브라우저
-    // 보안상 이 페이지에서 그 안의 소리를 직접 끄거나 볼륨을 조절할 방법이 없다(SOOP도 이를 위한
-    // 공개 JS API를 제공하지 않는다). 그래서 SOOP 공식 퍼가기 주소가 쓰는 mutePlay=true 파라미터를
-    // 붙여 "그 칸만 음소거 상태로 다시 불러오는" 방식으로 구현했다 - 전환할 때 해당 방송이
-    // 몇 초 다시 버퍼링되는 것은 이 구조상 피할 수 없다.
     function mvEmbedUrl(soopId) {
         const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
-        if (mvMuted.has(soopId)) params.set('mutePlay', 'true');
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
     }
 
     const MV_ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>';
-    const MV_ICON_SOUND = '<svg class="mv-icon-sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-    const MV_ICON_MUTED = '<svg class="mv-icon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>';
 
     // 칸 하나의 영상만 다시 불러온다(다른 칸의 재생에는 영향 없음). 예전엔 src를 about:blank로
     // 비웠다가 다시 넣었는데, 그러면 load 이벤트가 두 번 와서 "로딩 끝" 시점을 알 수 없었다.
@@ -527,32 +509,13 @@
     function mvRefreshCell(btn) {
         mvReloadCell(btn.closest('.mv-cell'));
     }
-    function mvApplyMuteButton(btn, muted) {
-        btn.classList.toggle('is-muted', muted);
-        btn.setAttribute('aria-pressed', String(muted));
-        btn.title = muted ? '소리 켜기' : '음소거';
-        btn.setAttribute('aria-label', btn.title);
-    }
-    function mvToggleMute(btn) {
-        const cell = btn.closest('.mv-cell');
-        const soopId = cell && cell.dataset.soopId;
-        if (!soopId) return;
-        const muted = !mvMuted.has(soopId);
-        if (muted) mvMuted.add(soopId); else mvMuted.delete(soopId);
-        mvSaveMuted();
-        mvApplyMuteButton(btn, muted);
-        mvReloadCell(cell);
-    }
 
     function mvCellHtml(entry, isMain) {
-        const muted = mvMuted.has(entry.soopId);
-        const muteLabel = muted ? '소리 켜기' : '음소거';
         return `
         <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${escapeHTML(entry.soopId)}">
             <div class="mv-cell-header">
                 <span class="mv-cell-name">${escapeHTML(entry.name)}</span>
                 <div class="mv-cell-actions">
-                    <button type="button" class="mv-cell-btn mv-cell-mute${muted ? ' is-muted' : ''}" title="${muteLabel}" aria-label="${muteLabel}" aria-pressed="${muted}" onclick="mvToggleMute(this)">${MV_ICON_SOUND}${MV_ICON_MUTED}</button>
                     <button type="button" class="mv-cell-btn mv-cell-refresh" title="새로고침" aria-label="새로고침" onclick="mvRefreshCell(this)">${MV_ICON_REFRESH}</button>
                 </div>
             </div>
@@ -638,7 +601,7 @@
                 best = r; corner = cell;
             }
         });
-        const MV_CORNER_MIN_WIDTH = 140; // 이름(최소)+버튼 2개+설정 버튼 자리가 한 줄에 들어가는 폭
+        const MV_CORNER_MIN_WIDTH = 115; // 이름(최소)+새로고침 버튼+설정 버튼 자리가 한 줄에 들어가는 폭
         cells.forEach(cell => {
             cell.classList.toggle('mv-cell-corner', cell === corner);
             cell.classList.toggle('mv-cell-corner-compact', cell === corner && best.width < MV_CORNER_MIN_WIDTH);
