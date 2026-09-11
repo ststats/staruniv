@@ -1,4 +1,15 @@
 /* ============================================================
+   [리팩토링 메모]
+   - 여러 규칙에 흩어져 반복되던 색 리터럴(#111/#222/#888/#999/#ccc/#b9cdf5, 종족색 등)을
+     아래 :root 변수로 모았다. 값은 그대로라 화면(계산된 스타일)은 바뀌지 않는다.
+     종족색은 app.js의 개인전적 도넛 색과도 이 변수를 공유한다(예전엔 JS에 따로 박혀 있었다).
+   - index.html/modals.html/app.js의 인라인 style 속성을 파일 끝 "템플릿/동적 마크업 공용
+     클래스" 섹션의 클래스로 옮겼다(부트스트랩 선택자와의 우선순위를 고려해 작성).
+   - 어디에서도 쓰지 않던 규칙(.btn-clean, .top-navbar .logo img, 접이식 섹션 제목용
+     .section-title-chevron 등)과 중복 선언(.news-post-card 2곳, .modal-body.p-0)을 정리했다.
+   ============================================================ */
+
+/* ============================================================
    전역 변수
    ============================================================ */
 :root {
@@ -18,6 +29,25 @@
     --color-bg-subtle: #f1f3f5;
     --color-border-strong: #d8dce3;
     --color-logo-black: #141821;
+
+    /* 반복 사용되는 중립 텍스트/아이콘 톤 */
+    --color-text-strong: #111;
+    --color-text-dark: #222;
+    --color-text-body: #333;
+    --color-text-soft: #555;
+    --color-text-table-head: #666;
+    --color-text-muted: #888;
+    --color-text-faint: #999;
+    --color-icon-faint: #ccc;
+    --color-border-hover: #b9cdf5;
+    --color-placeholder-bg: #e9ecef;
+    --color-donut-track: #eee;
+    --color-modal-body-bg: #fcfcfc;
+
+    /* 종족 색상 (종족 뱃지 + 종족전 승률 도넛 공용) */
+    --color-race-t: #1976d2;
+    --color-race-z: #7b1fa2;
+    --color-race-p: #f57f17;
 
     --fs-hero: 28px;
     --fs-heading: 16px;
@@ -56,7 +86,6 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .top-navbar { background-color: #fff; height: 64px; border-bottom: 1px solid var(--color-border); position: sticky; top: 0; z-index: 100; }
 .top-navbar .navbar-inner { height: 100%; display: flex; align-items: center; width: 100%; }
 .top-navbar .logo { font-size: 20px; font-weight: 800; margin-right: 32px; display: flex; align-items: center; flex-shrink: 0; }
-.top-navbar .logo img { height: 28px; margin-right: 12px; }
 .logo-black { color: var(--color-logo-black); }
 .logo-accent { color: var(--color-primary); }
 
@@ -67,10 +96,10 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 
 .nav-menu { display: flex; height: 100%; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; margin-left: auto; }
 .nav-menu::-webkit-scrollbar { display: none; }
-.nav-menu .nav-item { height: 100%; display: flex; align-items: center; margin-right: 24px; font-size: 15px; font-weight: 700; color: #888; position: relative; cursor: pointer; flex-shrink: 0; transition: color 0.15s; }
+.nav-menu .nav-item { height: 100%; display: flex; align-items: center; margin-right: 24px; font-size: 15px; font-weight: 700; color: var(--color-text-muted); position: relative; cursor: pointer; flex-shrink: 0; transition: color 0.15s; }
 .nav-menu .nav-item:last-child { margin-right: 0; }
-.nav-menu .nav-item:hover { color: #111; }
-.nav-menu .nav-item.active { color: #111; }
+.nav-menu .nav-item:hover { color: var(--color-text-strong); }
+.nav-menu .nav-item.active { color: var(--color-text-strong); }
 .nav-menu .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background-color: var(--color-primary); }
 
 /* 얇은 커스텀 스크롤바 (가로/세로 스크롤 컨테이너 공통) */
@@ -121,9 +150,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 }
 
 .section-title { font-size: var(--fs-heading); font-weight: 800; color: var(--color-text-main); margin-bottom: var(--space-title-gap); display: flex; justify-content: space-between; align-items: center; height: 32px; padding-left: 12px; border-left: 4px solid var(--color-primary); }
-.section-title-sm { font-size: var(--fs-subheading); font-weight: 800; color: #111; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-.section-title-chevron { color: #999; transition: transform 0.2s; flex-shrink: 0; }
-.section-title.collapsed .section-title-chevron { transform: rotate(-90deg); }
+.section-title-sm { font-size: var(--fs-subheading); font-weight: 800; color: var(--color-text-strong); padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 /* 멤버현황 '역할 N명'처럼 제목 옆에 짧은 구분바로 숫자를 붙일 때 사용 */
 .section-title-label { display: inline-flex; align-items: center; }
 .title-count-divider { display: inline-block; width: 2px; height: 14px; background: var(--color-border-strong); margin: 0 10px; }
@@ -137,46 +164,45 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .clean-card, .live-broadcast-card, .news-post-card, .avatar-selector-scroll { box-shadow: var(--shadow-card); }
 
 .live-broadcast-card { display: block; overflow: hidden; text-decoration: none; color: inherit; transition: box-shadow 0.15s, transform 0.15s; }
-.news-post-card { padding: 0; margin-bottom: 16px; overflow: hidden; }
+.news-post-card { padding: 0; margin-bottom: 16px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; }
 .tool-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px 12px; text-decoration: none; color: inherit; position: relative; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
 .avatar-selector-scroll { overflow-x: auto; margin-bottom: 20px; }
 .member-card { padding: 20px 12px 16px; text-align: center; cursor: pointer; transition: 0.15s; aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
 
 /* ===== 버튼 ===== */
-.btn-view-all { background: transparent; border: none; font-size: 12px; font-weight: 700; color: #888; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
-.btn-view-all:hover { background: var(--color-bg-subtle); color: #222; }
-.btn-clean { background: #fff; border: 1px solid #dcdfe4; border-radius: 6px; font-size: var(--fs-body); font-weight: 600; padding: 8px 16px; color: #555; transition: 0.1s; cursor: pointer; }
-.btn-clean:hover, .btn-clean.active { background: var(--color-primary-tint); color: var(--color-primary); border-color: #b9cdf5; }
+.btn-view-all { background: transparent; border: none; font-size: 12px; font-weight: 700; color: var(--color-text-muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.15s; }
+.btn-view-all:hover { background: var(--color-bg-subtle); color: var(--color-text-dark); }
 
 /* stretch로는 overflow-x:auto가 걸린 filter-nav가 실제로 늘어나지 않아서,
    라벨/filter-nav 둘 다 같은 높이(24px)로 고정해 구분바를 맞춘다. */
-.filter-nav-label { display: flex; align-items: center; height: 24px; }
+.filter-nav-label { display: flex; align-items: center; height: 24px; flex-shrink: 0; }
 .filter-nav { display: flex; height: 24px; gap: 16px; margin-left: 16px; border-left: 2px solid var(--color-border); padding-left: 16px; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
 .filter-nav::-webkit-scrollbar { display: none; }
-.filter-item { font-size: var(--fs-body); font-weight: 600; color: #888; cursor: pointer; position: relative; padding: 4px 0; transition: color 0.15s; flex-shrink: 0; }
-.filter-item:hover { color: #111; }
+.filter-item { font-size: var(--fs-body); font-weight: 600; color: var(--color-text-muted); cursor: pointer; position: relative; padding: 4px 0; transition: color 0.15s; flex-shrink: 0; }
+.filter-item:hover { color: var(--color-text-strong); }
 .filter-item.active { color: var(--color-primary); font-weight: 800; }
 .filter-item.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background-color: var(--color-primary); border-radius: 2px; }
 
 .stat-card-box { position: relative; text-align: center; padding: 22px 16px 20px; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
 .stat-card-box:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
 .stat-card-box .label { font-size: var(--fs-subheading); color: var(--color-text-sub); font-weight: 800; margin-bottom: 14px; }
-.stat-card-box .wl { font-size: var(--fs-subheading); color: #888; font-weight: 800; margin-top: 14px; }
+.stat-card-box .wl { font-size: var(--fs-subheading); color: var(--color-text-muted); font-weight: 800; margin-top: 14px; }
 .stat-card-box .donut { width: 92px; height: 92px; margin-bottom: 4px; }
 .stat-card-box .donut::before { width: 70px; height: 70px; }
 .stat-card-box .donut-text { font-size: 19px; font-weight: 800; color: var(--color-primary); }
 /* 우상단 화살표 - 도구 페이지 외부링크 화살표(↗)와 같은 모양으로, 카드 전체가
    클릭 가능함을 알려주는 시각적 표시일 뿐이다(클릭은 카드 자체에 걸림). */
-.stat-card-arrow { position: absolute; top: 14px; right: 14px; color: #ccc; font-size: 12px; transition: color 0.15s; }
+.stat-card-arrow { position: absolute; top: 14px; right: 14px; color: var(--color-icon-faint); font-size: 12px; transition: color 0.15s; }
 .stat-card-box:hover .stat-card-arrow { color: var(--color-primary); }
 
+.match-row { cursor: pointer; }
 .match-row:hover { background: var(--color-primary-tint); }
 .team-logo-icon { object-fit: contain; border-radius: 4px; vertical-align: middle; margin-right: 4px; flex-shrink: 0; }
 /* 팀 로고 이미지가 없을 때(임시) 원형 배지 + 이니셜로 대신 표시 */
-.team-logo-fallback { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-bg-subtle); color: #888; font-weight: 800; line-height: 1; vertical-align: middle; margin-right: 4px; flex-shrink: 0; }
+.team-logo-fallback { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-bg-subtle); color: var(--color-text-muted); font-weight: 800; line-height: 1; vertical-align: middle; margin-right: 4px; flex-shrink: 0; }
 
 /* 아코디언 화살표(세트 상세보기 토글) */
-.m-arrow { text-align: center; color: #adb5bd; display: flex; justify-content: center; transition: transform 0.2s; }
+.m-arrow { text-align: center; color: #adb5bd; display: inline-flex; justify-content: center; transition: transform 0.2s; }
 .m-arrow svg { display: block; }
 .match-row[aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
 
@@ -184,9 +210,9 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .tag-badge { height: 18px; box-sizing: border-box; padding: 0 6px; border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; background: var(--color-primary-tint); color: #2c5cc9; border: 1px solid var(--color-primary-tint-strong); }
 /* 종족 뱃지(T/Z/P): 정사각형 + 종족전 승률 도넛(#1976d2/#7b1fa2/#f57f17)과 동일 색상 */
 .tag-badge.race-badge { width: 18px; padding: 0; color: #fff; border: none; }
-.tag-badge.race-badge.race-T { background: #1976d2; }
-.tag-badge.race-badge.race-Z { background: #7b1fa2; }
-.tag-badge.race-badge.race-P { background: #f57f17; }
+.tag-badge.race-badge.race-T { background: var(--color-race-t); }
+.tag-badge.race-badge.race-Z { background: var(--color-race-z); }
+.tag-badge.race-badge.race-P { background: var(--color-race-p); }
 /* 티어 뱃지: 티어별 색 구분 없이 심플한 중립 톤으로 통일 */
 .tag-badge.tier-badge { background: #eef0f3; color: #5b6270; border: 1px solid #e1e4e9; }
 /* 직책 뱃지: 감독/코치/선수 외 임의의 직책 문자열도 팔레트에서 색을 받아 표시(배경색은 JS에서 지정) */
@@ -202,23 +228,23 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .live-broadcast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .live-broadcast-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
 .live-broadcast-card:hover .live-thumb { transform: scale(1.04); }
-.live-thumb-wrap { position: relative; background: #e9ecef; overflow: hidden; }
-.live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #e9ecef; transition: transform 0.25s ease; }
+.live-thumb-wrap { position: relative; background: var(--color-placeholder-bg); overflow: hidden; }
+.live-thumb { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--color-placeholder-bg); transition: transform 0.25s ease; }
 /* 썸네일 하단을 살짝 어둡게 그라데이션 처리해 배지/여백이 붕 떠 보이지 않게 */
 .live-thumb-wrap::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.28), rgba(0,0,0,0)); pointer-events: none; }
 .live-badge { position: absolute; top: 10px; left: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; background: var(--color-lose); color: #fff; font-size: 9px; font-weight: 800; padding: 4px 9px; border-radius: 20px; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(240,62,62,0.35); }
 .live-card-body { padding: 12px 14px 14px; }
-.live-card-title { font-weight: 700; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 12px; }
+.live-card-title { font-weight: 700; font-size: var(--fs-body); color: var(--color-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 12px; }
 .live-card-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .live-card-who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* 인스타그램 라이브 스토리 링 느낌의 그라디언트 테두리 (남성 멤버는 파란 원테두리로 구분) */
 .live-card-avatar-ring { width: 32px; height: 32px; border-radius: 50%; padding: 2.5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
 .live-card-avatar-ring.live-card-avatar-ring--male { background: linear-gradient(45deg, #2979ff, #4facfe, #00c6ff); }
 .live-card-avatar { width: 27px; height: 27px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; border: 2px solid #fff; box-sizing: border-box; }
-.live-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-card-name { font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .live-card-stats { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
-.live-card-viewers { font-weight: 700; font-size: var(--fs-body); color: #222; }
-.live-card-elapsed { font-size: 10px; color: #999; margin-top: 4px; }
+.live-card-viewers { font-weight: 700; font-size: var(--fs-body); color: var(--color-text-dark); }
+.live-card-elapsed { font-size: 10px; color: var(--color-text-faint); margin-top: 4px; }
 
 /* ===== 홈 화면 - 최근 공지 ===== */
 /* 항목 한 줄 = 글 한 개, 구분선으로 이어붙는 리스트. 1줄: 이름 / 2줄: 방송제목 ·
@@ -243,12 +269,12 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .home-notice-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .home-notice-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
 .home-notice-toptext { min-width: 0; flex: 1; }
-.home-notice-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-notice-name { font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 시간을 오른쪽으로 밀지 않고, 제목 바로 옆에 자연스럽게 흐르게 한다 */
 .home-notice-title-row { display: flex; align-items: baseline; gap: 5px; margin-top: 2px; min-width: 0; }
-.home-notice-title { font-weight: 700; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.home-notice-dot { color: #ccc; font-size: 11px; flex-shrink: 0; }
-.home-notice-meta { font-size: 11px; color: #999; flex-shrink: 0; white-space: nowrap; }
+.home-notice-title { font-weight: 700; font-size: var(--fs-body); color: var(--color-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.home-notice-dot { color: var(--color-icon-faint); font-size: 11px; flex-shrink: 0; }
+.home-notice-meta { font-size: 11px; color: var(--color-text-faint); flex-shrink: 0; white-space: nowrap; }
 .home-notice-snippet { font-size: 12px; color: var(--color-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 사진은 오른쪽에 64x64 정사각형 썸네일로, 세로 가운데 정렬 */
 .home-notice-thumb { width: 64px; height: 64px; aspect-ratio: 1 / 1; align-self: center; object-fit: cover; border-radius: 10px; background: var(--color-bg-subtle); flex-shrink: 0; }
@@ -321,14 +347,13 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
     .news-photo-nav { display: none; }
 }
 
-.news-post-card { transition: box-shadow 0.15s, transform 0.15s; }
 .news-post-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
 .news-post-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0 16px; margin-bottom: 12px; }
 .news-post-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); border: 1px solid var(--color-border); flex-shrink: 0; }
-.news-post-name { font-weight: 800; font-size: var(--fs-body); color: #222; }
-.news-post-meta { font-size: 11px; color: #999; margin-top: 4px; }
-.news-post-title { font-weight: 800; font-size: var(--fs-heading); color: #111; margin-bottom: 8px; padding: 0 16px; overflow-wrap: anywhere; word-break: break-word; }
-.news-post-body { font-size: var(--fs-body); color: #333; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
+.news-post-name { font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark); }
+.news-post-meta { font-size: 11px; color: var(--color-text-faint); margin-top: 4px; }
+.news-post-title { font-weight: 800; font-size: var(--fs-heading); color: var(--color-text-strong); margin-bottom: 8px; padding: 0 16px; overflow-wrap: anywhere; word-break: break-word; }
+.news-post-body { font-size: var(--fs-body); color: var(--color-text-body); white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.5; margin-bottom: 12px; padding: 0 16px; }
 .news-post-body p { margin: 0 0 8px; }
 .news-post-body p:last-child { margin-bottom: 0; }
 .news-post-body-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -358,7 +383,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .news-post-stat { display: inline-flex; align-items: center; gap: 4px; }
 .news-post-stat svg { flex-shrink: 0; opacity: 0.85; }
 .news-post-link-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 0 16px 12px 16px; }
-.news-post-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #999; text-decoration: none; transition: color 0.15s; }
+.news-post-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--color-text-faint); text-decoration: none; transition: color 0.15s; }
 .news-post-link:hover { color: var(--color-primary); }
 
 /* 카드/표 아래 붙는 보조 요소(더보기 버튼, 이전 멤버 버튼, 업데이트 시각 캡션 등)의
@@ -382,23 +407,22 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 
 /* ===== 도구 페이지 카드 ===== */
 .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
-.tool-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
+.tool-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: var(--color-border-hover); }
 .tool-card-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--color-primary-tint); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--fs-heading); overflow: hidden; }
 .tool-card-icon img { width: 24px; height: 24px; object-fit: contain; }
-.tool-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; text-align: center; }
-.tool-card-ext { position: absolute; top: 10px; right: 12px; color: #ccc; font-size: 12px; }
+.tool-card-name { font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark); text-align: center; }
+.tool-card-ext { position: absolute; top: 10px; right: 12px; color: var(--color-icon-faint); font-size: 12px; }
 .member-card .tool-card-ext { top: 8px; right: 10px; }
 /* 텍스트 링크 옆에 붙는 인라인 화살표(원글 보기 등) - 도구모음 카드 화살표와 동일한 모양 */
 .ext-arrow { display: inline-block; margin-left: 3px; font-size: 11px; }
-.stat-table .ext-arrow { margin-left: 0; color: #ccc; font-size: 12px; }
+.stat-table .ext-arrow { margin-left: 0; color: var(--color-icon-faint); font-size: 12px; }
 
 /* ===== 모달 ===== */
 .modal-content { overflow: hidden; }
 .modal-header { position: relative; display: flex; align-items: center; justify-content: center; padding: 20px; border-bottom: 1px solid var(--color-border) !important; background: #fff; }
-.modal-title { font-size: var(--fs-heading); font-weight: 800; text-align: center; width: 100%; margin: 0; color: #111; }
+.modal-title { font-size: var(--fs-heading); font-weight: 800; text-align: center; width: 100%; margin: 0; color: var(--color-text-strong); }
 .modal-header .btn-close { position: absolute; right: 18px; top: 50%; transform: translateY(-50%) scale(0.7); margin: 0; }
-.modal-body { background: #fcfcfc; }
-.modal-body.p-0 { background: #fcfcfc; }
+.modal-body { background: var(--color-modal-body-bg); }
 
 /* ===== 아바타 선택 바 (개인전적/소식 상단, 가로 나열) ===== */
 .avatar-selector-list { display: flex; gap: 8px; width: max-content; padding: 8px 12px; }
@@ -409,25 +433,25 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .avatar-select-fallback { display: flex; align-items: center; justify-content: center; font-size: 11px; }
 .avatar-select-item.active .avatar-select-img, .avatar-select-item.active .avatar-select-fallback { border-color: var(--color-primary); }
 .avatar-select-all .avatar-select-fallback { background: var(--color-primary-tint); color: var(--color-primary); font-weight: 800; font-size: 10px; }
-.avatar-select-toggle .avatar-select-fallback { background: var(--color-bg-subtle); color: #888; font-weight: 800; font-size: var(--fs-subheading); }
+.avatar-select-toggle .avatar-select-fallback { background: var(--color-bg-subtle); color: var(--color-text-muted); font-weight: 800; font-size: var(--fs-subheading); }
 .avatar-select-toggle .avatar-select-name { color: var(--color-primary); }
-.avatar-select-name { font-size: var(--fs-body); font-weight: 700; color: #555; white-space: nowrap; }
+.avatar-select-name { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-soft); white-space: nowrap; }
 .avatar-select-item.active .avatar-select-name { color: var(--color-primary); font-weight: 800; }
 
 /* 18px로 맞춘 이유: 뱃지(.tag-badge/.match-badge)와 팀로고 아이콘이 다 18px/16px라
    이 표만 아바타가 24px면 행이 유독 커진다. 18px로 맞추면 다른 stat-table(최근
    전적, 상대 전적 등)과 행 높이가 완전히 같아진다(실측 35px로 통일). */
-.player-avatar-sm { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; background: #e9ecef; flex-shrink: 0; }
+.player-avatar-sm { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; background: var(--color-placeholder-bg); flex-shrink: 0; }
 .profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--color-bg-subtle); font-size: var(--fs-hero); display: flex; align-items: center; justify-content: center; margin-right: 20px; overflow: hidden; flex-shrink: 0; }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 /* ===== 멤버 페이지 카드 ===== */
 .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; }
-.member-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: #b9cdf5; }
+.member-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: var(--color-border-hover); }
 .member-card.former { opacity: 0.55; }
 .member-card.former:hover { opacity: 0.85; }
 .member-avatar-img { width: 46%; max-width: 72px; min-width: 40px; aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto; }
-.member-card-name { font-weight: 800; font-size: var(--fs-body); color: #222; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.member-card-name { font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .member-card-tags { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 
 /* ===== 도구 - 멀티뷰어 설정 콘솔 ===== */
@@ -446,7 +470,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .mv-stepper { display: flex; align-items: center; border: 1px solid var(--color-border-strong); border-radius: 8px; overflow: hidden; }
 .mv-stepper button { width: 22px; height: 22px; border: none; background: #fff; color: var(--color-primary); font-weight: 800; font-size: var(--fs-body); cursor: pointer; }
 .mv-stepper button:hover { background: var(--color-primary-tint); }
-.mv-stepper button:disabled { color: #ccc; cursor: not-allowed; }
+.mv-stepper button:disabled { color: var(--color-icon-faint); cursor: not-allowed; }
 .mv-stepper-value { width: 22px; text-align: center; font-weight: 800; font-size: var(--fs-body); border-left: 1px solid var(--color-border-strong); border-right: 1px solid var(--color-border-strong); line-height: 22px; color: var(--color-text-main); }
 
 .mv-toggle-switch { position: relative; width: 34px; height: 19px; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background 0.15s; flex-shrink: 0; border: none; padding: 0; }
@@ -473,7 +497,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .mv-chip-box .mv-chip-row { background: none; border: none; box-shadow: none; padding: 0; margin-bottom: 12px; }
 .mv-chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 20px; }
 .mv-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 20px; border: 1.5px solid var(--color-border); background: var(--color-bg); cursor: pointer; transition: 0.12s; user-select: none; }
-.mv-chip:hover { border-color: #b9cdf5; }
+.mv-chip:hover { border-color: var(--color-border-hover); }
 .mv-chip.selected { border-color: var(--color-primary); background: var(--color-primary-tint); }
 .mv-chip-avatar { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; object-fit: cover; background: var(--color-border); }
 .mv-chip-name { font-size: var(--fs-body); font-weight: 700; color: #444; }
@@ -499,10 +523,10 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .mv-order-item.custom { border-style: dashed; }
 .mv-order-num { font-weight: 800; color: var(--color-text-sub); margin-right: 2px; }
 .mv-order-name { font-weight: 700; margin-right: 2px; }
-.mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: #999; cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; }
-.mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: #333; }
+.mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-faint); cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; }
+.mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-body); }
 .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
-.mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
+.mv-order-item .mv-order-remove:hover:not(:disabled) { color: var(--color-lose); }
 .mv-order-item.selectable { cursor: pointer; }
 .mv-order-item.focus-target { border-color: var(--color-primary); background: var(--color-primary-tint); }
 .mv-order-empty { font-size: var(--fs-body); color: var(--color-text-sub); }
@@ -512,13 +536,13 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .donut-box { text-align: center; }
 .donut { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto; background: #e7edf9; position: relative; }
 .donut::before { content: ""; width: 56px; height: 56px; background: #fff; border-radius: 50%; position: absolute; }
-.donut-text { position: relative; font-size: var(--fs-body); font-weight: 800; color: #111; }
-.donut-label { font-size: var(--fs-body); font-weight: 700; color: #555; margin-bottom: 4px; }
-.donut-sub { font-size: var(--fs-body); color: #999; }
+.donut-text { position: relative; font-size: var(--fs-body); font-weight: 800; color: var(--color-text-strong); }
+.donut-label { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-soft); margin-bottom: 4px; }
+.donut-sub { font-size: var(--fs-body); color: var(--color-text-faint); }
 
 /* ===== 전적 테이블 공통 ===== */
 .stat-table { font-size: var(--fs-body); }
-.stat-table thead th { background: #fff; border-bottom: 2px solid var(--color-border-strong); font-size: var(--fs-body); color: #666; font-weight: 800; padding-top: 8px; padding-bottom: 8px; }
+.stat-table thead th { background: #fff; border-bottom: 2px solid var(--color-border-strong); font-size: var(--fs-body); color: var(--color-text-table-head); font-weight: 800; padding-top: 8px; padding-bottom: 8px; }
 .stat-table tbody td { vertical-align: middle; }
 /* line-height:0을 셀 전체(tbody td)에 걸면 뱃지 없는 텍스트 전용 표(예: 상대
    전적)까지 줄높이가 눌려 뱃지 있는 표(예: 최근 전적)와 행 높이가 달라진다.
@@ -572,7 +596,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .cal-nav-group { display: flex; align-items: center; gap: 4px; }
 .cal-nav-btn { background: transparent; border: none; color: var(--color-text-sub); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; }
 .cal-nav-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); }
-.cal-nav-badge { font-size: var(--fs-subheading); font-weight: 800; color: #111; min-width: 78px; text-align: center; }
+.cal-nav-badge { font-size: var(--fs-subheading); font-weight: 800; color: var(--color-text-strong); min-width: 78px; text-align: center; }
 
 /* 달력 내부 스크롤 및 칸 크기 유지 */
 .cal-calendar-inner { width: 100%; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
@@ -580,7 +604,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 
 /* 요일 헤더는 사이트의 다른 표 헤더(.stat-table thead th)와 폰트크기/굵기/색을
    통일해서 달력만 따로 노는 느낌이 없게 한다. */
-.cal-weekdays { display: grid; grid-template-columns: repeat(7, 110px); text-align: center; font-size: var(--fs-body); font-weight: 800; color: #666; background: #fff; padding: 8px 0; border-bottom: 2px solid var(--color-border-strong); margin-bottom: 0; }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7, 110px); text-align: center; font-size: var(--fs-body); font-weight: 800; color: var(--color-text-table-head); background: #fff; padding: 8px 0; border-bottom: 2px solid var(--color-border-strong); margin-bottom: 0; }
 .cal-weekdays div:first-child { color: var(--color-lose); }
 .cal-weekdays div:last-child { color: var(--color-primary); }
 
@@ -606,7 +630,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    특정도가 더 높은 이 규칙이 항상 이긴다 - 배경이 채워지므로 흰색으로. */
 .cal-day-cell.today.holiday .cal-day-number { color: #fff !important; }
 
-.cal-cell-event { border-radius: 6px; padding: 0 4px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; color: #222; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.cal-cell-event { border-radius: 6px; padding: 0 4px; margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; color: var(--color-text-dark); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 /* 한 줄짜리 일정과 2줄짜리 일정의 총 높이를 맞추기 위해, 두 줄 다 같은
    고정 line-height(19px)를 쓴다 - 원래는 cal-cell-top이 상속받은 기본
    line-height(1.5)와 cal-event-desc의 1.25가 서로 달라 폰트 크기 차이보다
@@ -645,3 +669,76 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .cal-offair-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--color-bg-subtle); border-radius: 20px; padding: 4px 12px 4px 4px; }
 .cal-offair-avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; background: var(--color-border); flex-shrink: 0; }
 .cal-offair-name { font-size: 12px; font-weight: 700; color: var(--color-text-main); white-space: nowrap; }
+
+/* ============================================================
+   템플릿/동적 마크업 공용 클래스 (예전 인라인 style 속성 대체)
+   ------------------------------------------------------------
+   주의: 부트스트랩의 표 셀 규칙(.table > :not(caption) > * > *, 특정도 0,1,1)이
+   padding/border를 지정하므로, 표 셀의 padding/border를 바꾸는 규칙은 반드시
+   그보다 특정도가 높게(.stat-table td.xxx 등) 작성해야 인라인일 때와 결과가 같다.
+   ============================================================ */
+
+/* ----- 텍스트 ----- */
+.fs-body { font-size: var(--fs-body); }
+.text-caption { font-size: 11px; }
+/* '역할 N명', '이번 달 방송 활동' 옆 상태처럼 제목 옆에 붙는 보조 숫자/문구 */
+.title-count { font-size: var(--fs-body); font-weight: 600; }
+/* 말줄임 텍스트(표 안 이름/팀명). 줄바꿈 금지가 필요한 곳은 .text-nowrap을 같이 쓴다. */
+.ellipsis-text { overflow: hidden; text-overflow: ellipsis; line-height: normal; }
+.min-w-0 { min-width: 0; }
+.grid-span-all { grid-column: 1 / -1; }
+.scroll-y-auto { overflow-y: auto; }
+
+/* ----- 표 레이아웃 ----- */
+.table-fixed { table-layout: fixed; }
+.minw-320 { min-width: 320px; }
+.minw-480 { min-width: 480px; }
+.minw-615 { min-width: 615px; }
+.minw-650 { min-width: 650px; }
+/* 고정 레이아웃 표의 열 너비 (예전 style="width:18.8%" 등) */
+.colw-6 { width: 6%; }
+.colw-16-66 { width: 16.66%; }
+.colw-18-8 { width: 18.8%; }
+.colw-20 { width: 20%; }
+.colw-40 { width: 40%; }
+/* 표 행 사이 옅은 구분선 */
+.stat-row { border-bottom: 1px solid var(--color-bg-subtle); }
+.clickable-row { cursor: pointer; }
+.cell-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ----- 팀 최근 전적: 펼치면 보이는 세트별 상세 ----- */
+.stat-table td.set-detail-host { padding: 0; border: none; }
+.set-detail-panel { background-color: #fcfcfd; border-top: 1px dashed var(--color-border); padding: 0 12px; }
+.set-detail-table { table-layout: fixed; width: 100%; font-size: var(--fs-body); }
+.set-detail-table td.set-detail-label { font-weight: 800; color: var(--color-text-muted); white-space: nowrap; }
+.set-detail-table td.set-detail-map { color: var(--color-text-soft); }
+/* 팀 요약 카드의 "N승 M패" 숫자 색 */
+.wl-win { color: var(--color-win); }
+.wl-lose { color: var(--color-lose); }
+
+/* ----- 카드/제목 변형 ----- */
+.clean-card.card-radius-sm { border-radius: 10px; }
+.section-title.section-title-spaced { margin-top: 32px; }
+.section-title.section-title-filters { height: auto; flex-wrap: wrap; gap: 10px; }
+.btn-view-all svg { margin-left: 2px; vertical-align: middle; }
+.profile-name { letter-spacing: -1px; }
+.donut-label-z { color: purple; }
+/* 표 셀 글자색은 부트스트랩(.table > :not(caption) > * > *)이 지정하므로 그보다 특정도를 높인다 */
+.stat-table td.synergy-value { color: var(--color-primary); }
+.soop-logo-icon { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; }
+
+/* ----- 접기/펼치기 쉐브론 (이전 멤버 버튼 등) ----- */
+.chevron-rotatable { transition: transform 0.2s; }
+.chevron-rotatable.is-open { transform: rotate(180deg); }
+/* 개인 전적 아바타 바의 이전 멤버 묶음: 펼쳤을 때 자식들이 바의 flex 항목으로 바로 참여 */
+#indiv-former-wrap { display: contents; }
+
+/* ----- 모달 ----- */
+.modal-dialog.modal-w-400 { max-width: 400px; }
+.modal-dialog.modal-w-550 { max-width: 550px; }
+.modal-dialog.modal-w-600 { max-width: 600px; }
+.modal-body.profile-modal-body { padding: 12px 24px 24px 24px; }
+.profile-modal-name { font-size: var(--fs-heading); margin-bottom: 8px; }
+.activity-label { font-size: var(--fs-body); font-weight: 700; }
+.profile-info-table td.profile-info-label { width: 90px; font-weight: 700; border-color: var(--color-bg-subtle); padding-left: 0; }
+.profile-info-table td.profile-info-value { border-color: var(--color-bg-subtle); }
