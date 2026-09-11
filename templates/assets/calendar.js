@@ -25,6 +25,9 @@
     //           detail(상세내용, 선택), color }
     // 하루짜리 일정은 startDate === endDate 인 항목일 뿐, 기간 일정과 데이터/렌더링 방식이 동일하다.
     let calEvents = [];
+    // calendar.json/holidays.json은 관리자 페이지가 GitHub에 바로 저장하는 파일이라 빌드 버전을
+    // 붙일 수 없다. no-store(매번 전체 다운로드) 대신 no-cache로 받아, 바뀌지 않았으면 서버가
+    // 304(본문 없음)로 답해 전송량이 거의 없고, 바뀌었으면 즉시 새 내용을 받는다.
     const CAL_DATA_URL = 'data/calendar.json';
 
     // 날짜별 휴방 멤버 목록 - { "YYYY-MM-DD": ["soopId1", "soopId2"] } 형태.
@@ -119,7 +122,7 @@
     let calPublicHolidays = {};
     const loadPublicHolidays = async () => {
         try {
-            const res = await fetch('holidays.json', { cache: 'no-store' });
+            const res = await fetch('holidays.json', { cache: 'no-cache' });
             if (res.ok) {
                 const data = await res.json();
                 calPublicHolidays = (data && typeof data === 'object') ? data : {};
@@ -182,7 +185,7 @@
     const calLoadPublicData = async () => {
         try {
             const [scheduleRes] = await Promise.all([
-                fetch(CAL_DATA_URL, { cache: 'no-store' }),
+                fetch(CAL_DATA_URL, { cache: 'no-cache' }),
                 loadPublicHolidays(),
             ]);
             if (scheduleRes.ok) {

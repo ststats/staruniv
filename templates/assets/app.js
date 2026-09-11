@@ -174,9 +174,22 @@ const SiteData = {
 };
 const asArray = v => (Array.isArray(v) ? v : []);
 
+// [캐시] 예전엔 매번 no-store로 받아서 브라우저 캐시를 전혀 못 썼다. 빌드가 index.html에 넣어준
+// 버전(<meta name="site-data-version">)을 주소에 붙이면, 데이터가 바뀐 배포에서만 주소가 바뀌므로
+// 평소엔 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면(옛 index.html 등) 매번
+// 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
+function siteDataRequest() {
+    const meta = document.querySelector('meta[name="site-data-version"]');
+    const version = meta && meta.content;
+    return version
+        ? { url: `data/site_data.json?v=${encodeURIComponent(version)}`, cache: 'default' }
+        : { url: 'data/site_data.json', cache: 'no-cache' };
+}
+
 async function loadSiteData() {
     try {
-        const res = await fetch('data/site_data.json', { cache: 'no-store' });
+        const { url, cache } = siteDataRequest();
+        const res = await fetch(url, { cache });
         if (res.ok) {
             const data = await res.json();
             SiteData.members = asArray(data && data.members);
@@ -1516,36 +1529,69 @@ function formatNewsContent(text) {
     return escapeHTML(String(text).replace(/<br\s*\/?>/gi, '\n'));
 }
 
-// 게시글 원본 HTML을 꽂기 전에 위험한 요소/속성만 제거한다. 정렬/색상 같은 일반 서식은 유지.
-// 사진(figure/img)은 카드 하단 갤러리(post.photos)가 따로 보여주므로 본문에서는 제거한다.
-// [보강] - noscript/template/svg/math 등 "파싱 문맥에 따라 다르게 해석되는" 요소 제거(mXSS 차단:
-//          DOMParser 문서는 스크립트가 꺼진 상태라 noscript 속 내용을 요소로 해석하지만, 실제
-//          페이지에 꽂히면 텍스트로 재해석되며 속성값 안에 숨긴 태그가 살아난다).
-//        - URL 속성 검사 시 제어문자/공백을 지운 뒤 판단("java\tscript:"도 브라우저는 실행한다),
-//          vbscript:/data: 스킴과 formaction/xlink:href 등 URL 속성도 함께 검사.
-const NEWS_BLOCKED_TAGS = 'script, style, iframe, object, embed, link, meta, form, figure, img, noscript, template, base, frame, frameset, applet, svg, math, noembed, noframes';
-const NEWS_URL_ATTRS = new Set(['href', 'src', 'action', 'formaction', 'xlink:href', 'background', 'poster', 'srcset']);
-const NEWS_BLOCKED_URL = /^(javascript|vbscript|data):/i;
+// ----- 공지 본문(외부 HTML) 정제 -----
+// [보안] 공지 본문은 SOOP에서 받아온 외부 HTML이다. 예전엔 위험한 태그/속성을 직접 골라 지우는
+// 차단 목록 방식이었는데, 새로운 우회 기법이 나올 때마다 뚫릴 수밖에 없다(실제로 원본에서 3종 우회
+// 확인). 이제 검증된 라이브러리 DOMPurify(저장소에 포함, index.html에서 로드)로 "허용한 것만 남기는"
+// 방식으로 정제한다. 서식(정렬/색/굵기/표/목록/링크)은 유지된다.
+//   - class는 허용하지 않는다: 본문이 우리 사이트/부트스트랩 클래스(position-fixed 등)를 빌려 써서
+//     화면을 덮는 가짜 UI를 만들 수 있기 때문(원본 SOOP 편집기 클래스는 우리 사이트에서 의미가 없다).
+//   - style은 서식 때문에 허용하되, 화면 위에 떠서 사이트를 덮을 수 있는 위치 관련 속성은 뺀다.
+//   - 결과를 문자열로 다시 직렬화해 innerHTML에 넣지 않고 DOM 조각 그대로 붙인다(파싱을 두 번
+//     거치며 의미가 바뀌는 mutation XSS의 여지를 없앰).
+//   - DOMPurify가 없으면(로드 실패 등) HTML을 쓰지 않고 순수 텍스트로만 보여준다(안전한 쪽으로 실패).
+const NEWS_ALLOWED_TAGS = [
+    'p', 'br', 'div', 'span', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'ins', 'sub', 'sup',
+    'small', 'mark', 'font', 'a', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr',
+    'pre', 'code', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
+    'figure', 'figcaption', // 아래에서 통째로 지우기 위해 허용(허용 안 하면 안의 캡션 글자만 남는다)
+];
+const NEWS_ALLOWED_ATTR = ['href', 'target', 'title', 'style', 'align', 'color', 'size', 'face', 'colspan', 'rowspan', 'dir', 'lang'];
+const NEWS_STRIPPED_STYLE_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'inset', 'z-index', 'transform'];
 
-function sanitizeNewsHtml(html) {
-    if (!html) return '';
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll(NEWS_BLOCKED_TAGS).forEach(el => el.remove());
-    doc.querySelectorAll('*').forEach(el => {
-        Array.from(el.attributes).forEach(attr => {
-            const n = attr.name.toLowerCase();
-            const compactValue = (attr.value || '').replace(/[\u0000-\u0020\u007f-\u009f]/g, '');
-            if (n.startsWith('on') || n === 'srcdoc' || (NEWS_URL_ATTRS.has(n) && NEWS_BLOCKED_URL.test(compactValue))) {
-                el.removeAttribute(attr.name);
-            }
-        });
+// DOMPurify를 쓸 수 없을 때: 문단/줄바꿈만 살린 순수 텍스트(.news-post-body가 pre-wrap이라 줄바꿈이 보인다)
+function newsPlainTextFragment(html) {
+    const withBreaks = String(html).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n');
+    const doc = new DOMParser().parseFromString(withBreaks, 'text/html'); // 스크립트가 실행되지 않는 문서
+    doc.querySelectorAll('figure, script, style, noscript, template').forEach(el => el.remove()); // 사진 캡션·코드 글자 제외
+    const text = doc.body.textContent || '';
+    const frag = document.createDocumentFragment();
+    frag.append(document.createTextNode(text.replace(/\n{3,}/g, '\n\n').trim()));
+    return frag;
+}
+
+function sanitizeNewsFragment(html) {
+    if (!html) return document.createDocumentFragment();
+    const purifier = window.DOMPurify;
+    if (!purifier || !purifier.isSupported || typeof purifier.sanitize !== 'function') return newsPlainTextFragment(html);
+
+    const frag = purifier.sanitize(String(html), {
+        ALLOWED_TAGS: NEWS_ALLOWED_TAGS,
+        ALLOWED_ATTR: NEWS_ALLOWED_ATTR,
+        ALLOW_DATA_ATTR: false,
+        RETURN_DOM_FRAGMENT: true,
     });
+    // 사진(figure)은 카드 하단 갤러리(post.photos)가 따로 보여주므로 본문에서는 캡션까지 통째로 뺀다.
+    frag.querySelectorAll('figure').forEach(el => el.remove());
+    frag.querySelectorAll('[style]').forEach(el => {
+        NEWS_STRIPPED_STYLE_PROPS.forEach(prop => el.style.removeProperty(prop));
+        if (!el.getAttribute('style').trim()) el.removeAttribute('style');
+    });
+    // 새 창으로 여는 링크가 원래 페이지(우리 사이트)를 조작하지 못하게 한다.
+    frag.querySelectorAll('a[target]').forEach(a => a.setAttribute('rel', 'noopener noreferrer'));
     // 사진을 지우고 남은, 원래부터 비어있던 문단(<p></p>, <p>&nbsp;</p>, <p><br></p>)은 정리한다.
-    doc.querySelectorAll('p').forEach(p => {
+    frag.querySelectorAll('p').forEach(p => {
         const onlyBr = p.children.length === 1 && p.children[0].tagName === 'BR';
         if (!p.textContent.trim() && (p.children.length === 0 || onlyBr)) p.remove();
     });
-    return doc.body.innerHTML;
+    return frag;
+}
+
+// 문자열이 필요한 곳(테스트 등)을 위한 호환용. 화면에 넣을 때는 sanitizeNewsFragment를 쓴다.
+function sanitizeNewsHtml(html) {
+    const box = document.createElement('div');
+    box.appendChild(sanitizeNewsFragment(html));
+    return box.innerHTML;
 }
 
 // 렌더링 직후 "더보기"가 필요한지 판단한다: 1) 실제로 3줄 안에 다 안 들어가거나
@@ -1567,7 +1613,7 @@ function expandNewsPost(btn, titleNo) {
     const body = btn.previousElementSibling;
     const fullHtml = NewsState.fullContent[String(titleNo)];
     if (!fullHtml || !body) return;
-    body.innerHTML = sanitizeNewsHtml(fullHtml);
+    body.replaceChildren(sanitizeNewsFragment(fullHtml));
     body.classList.remove('news-post-body-clamp');
     btn.remove();
 }
@@ -1735,7 +1781,7 @@ function synergyMetricConfig(metric) {
 
 async function loadSynergyData() {
     try {
-        const datesRes = await fetch(`${STSTATS_BASE}/data/dates.js`, { cache: 'no-store' });
+        const datesRes = await fetch(`${STSTATS_BASE}/data/dates.js`, { cache: 'no-cache' });
         if (!datesRes.ok) throw new Error(`dates.js HTTP ${datesRes.status}`);
         const datesText = await datesRes.text();
         const match = datesText.match(/window\.AVAILABLE_DATES\s*=\s*(\[[^\]]*\])/);
@@ -1744,7 +1790,7 @@ async function loadSynergyData() {
         const latestDate = Array.isArray(dates) ? dates[0] : null;
         if (!latestDate) throw new Error('사용 가능한 날짜가 없습니다.');
 
-        const dataRes = await fetch(`${STSTATS_BASE}/data/daily/${encodeURIComponent(latestDate)}.json`, { cache: 'no-store' });
+        const dataRes = await fetch(`${STSTATS_BASE}/data/daily/${encodeURIComponent(latestDate)}.json`, { cache: 'no-cache' });
         if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
         const data = await dataRes.json();
 
@@ -2025,7 +2071,7 @@ function toolCardHtml(tool) {
 
 async function loadToolsData() {
     try {
-        const res = await fetch('data/tools.json', { cache: 'no-store' });
+        const res = await fetch('data/tools.json', { cache: 'no-cache' });
         if (!res.ok) return;
         const data = await res.json();
         ['extTools', 'extSites'].forEach(key => {

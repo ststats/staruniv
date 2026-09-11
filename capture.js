@@ -7,9 +7,11 @@
  * 날짜가 바뀌면 데이터가 그대로여도 이미지가 달라져야 하므로, 관리자가
  * "저장"을 안 눌러도 최소 하루에 한 번은 최신 상태로 갱신돼야 한다.
  *
- * admin.html의 init()은 localStorage에 GitHub 토큰이 있으면 자동으로
+ * admin.html의 init()은 sessionStorage에 GitHub 토큰이 있으면 자동으로
  * loadDataFromGithub()를 호출해서 최신 일정을 불러와 렌더링하므로, 페이지가
  * 로드되기 전에(evaluateOnNewDocument) 토큰만 미리 넣어두면 된다.
+ * (admin.html이 보안상 토큰 보관 위치를 localStorage → sessionStorage로 바꿨으므로 여기도 맞춘다.
+ *  헤드리스 브라우저는 매번 새 프로필이라 어느 쪽이든 실행이 끝나면 사라진다.)
  *
  * file:// 프로토콜에서는 브라우저가 fetch 자체를 막아서(holidays.json 등을 못
  * 불러옴) admin.html이 정상 렌더링되지 않으므로, 로컬 HTTP 서버를 잠깐 띄워서
@@ -72,7 +74,7 @@ function waitForServer(url, timeoutMs) {
         await page.setViewport({ width: Math.round(CAPTURE_WIDTH) + 300, height: 1600 });
 
         await page.evaluateOnNewDocument((t) => {
-            localStorage.setItem('gh_token', t);
+            sessionStorage.setItem('gh_token', t);
         }, token);
 
         await page.goto(`http://localhost:${PORT}/admin.html`, { waitUntil: 'networkidle0' });

@@ -22,7 +22,9 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+    {#- 빌드마다 바뀌는 site_data.json 버전 - app.js가 이 값을 붙여 요청해서, 데이터가 바뀌었을 때만 새로 받는다 #}
+    <meta name="site-data-version" content="{{ site_data_version }}">
 </head>
 <body>
 
@@ -33,7 +35,9 @@
     - 시맨틱 태그(header/nav/main/section)와 접근성 속성(role, tabindex, aria-*)을 보강했다.
       클릭 가능한 div는 role="button"/"tab" + tabindex="0"을 달아 키보드(Enter/Space)로도
       누를 수 있다(처리는 app.js 상단의 공용 keydown 핸들러 한 곳).
-    - site_data.json을 불러오던 인라인 <script>는 app.js(2. 사이트 데이터 섹션)로 옮겼다. -#}
+    - site_data.json을 불러오던 인라인 <script>는 app.js(2. 사이트 데이터 섹션)로 옮겼다.
+    - CSS/JS 주소는 asset_url()로 내용 해시를 붙인다(build_html.py 참고) - 배포 직후 옛 파일과
+      새 파일이 섞여 받아지는 캐시 불일치를 막는다. -#}
 
 <!-- GNB -->
 <header class="top-navbar">
@@ -447,8 +451,10 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="mv-shared.js"></script>
-<script src="app.js"></script>
-<script src="calendar.js"></script>
+{#- 공지 본문 HTML 정제용 DOMPurify(외부 CDN 대신 저장소에 포함해 직접 서빙) #}
+<script src="{{ asset_url('purify.min.js') }}"></script>
+<script src="{{ asset_url('mv-shared.js') }}"></script>
+<script src="{{ asset_url('app.js') }}"></script>
+<script src="{{ asset_url('calendar.js') }}"></script>
 </body>
 </html>

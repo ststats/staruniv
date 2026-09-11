@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import shutil
@@ -17,6 +18,12 @@ from match_link import load_linked_db
 #   전체를 죽이던 문제를 막았다(파일만 복사).
 # - 템플릿의 팀 로고 파일명 규칙('내전'→캄몬스타즈, URL 인코딩)을 app.js의 teamLogoHtml과
 #   똑같이 맞추는 team_logo_src 필터를 추가했다(예전엔 템플릿에 규칙이 따로 박혀 있었다).
+# - [캐시] 정적 자산 주소에 내용 해시를 붙인다(asset_url: app.js → app.js?v=1a2b3c4d5e).
+#   GitHub Pages는 정적 파일을 약 10분간 캐시하므로, 배포 직후 "새 index.html + 옛 app.js"
+#   조합을 받는 사용자가 생길 수 있었다. 파일 내용이 바뀌면 주소 자체가 바뀌므로 이런 불일치가
+#   생기지 않고, 반대로 안 바뀐 파일은 브라우저 캐시를 그대로 재사용한다.
+#   site_data.json도 같은 방식으로 버전을 <meta name="site-data-version">에 넣어,
+#   app.js가 매번 no-store로 새로 받지 않고 버전이 바뀔 때만 새로 받게 했다.
 
 TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
@@ -63,11 +70,34 @@ def write_text_atomic(path, text):
     os.replace(tmp_path, path)
 
 
-def write_json_atomic(path, obj):
-    tmp_path = path + '.tmp'
-    with open(tmp_path, 'w', encoding='utf-8') as f:
-        json.dump(obj, f, ensure_ascii=False)
-    os.replace(tmp_path, path)
+def content_version(data):
+    """캐시 무효화용 짧은 버전 문자열(내용 해시 앞 10자리). 내용이 같으면 항상 같은 값."""
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    return hashlib.sha256(data).hexdigest()[:10]
+
+
+def static_asset_versions():
+    """templates/assets/ 안 파일별 버전. 템플릿의 asset_url()이 이 값을 쓴다."""
+    versions = {}
+    if os.path.isdir(STATIC_SRC):
+        for filename in os.listdir(STATIC_SRC):
+            path = os.path.join(STATIC_SRC, filename)
+            if os.path.isfile(path):
+                with open(path, 'rb') as f:
+                    versions[filename] = content_version(f.read())
+    return versions
+
+
+def make_asset_url(versions):
+    def asset_url(filename):
+        version = versions.get(filename)
+        if version is None:
+            # 템플릿이 없는 파일을 가리키면 조용히 404가 나는 대신 빌드 로그로 바로 알 수 있게 한다
+            print(f"⚠️ asset_url: templates/assets/{filename} 파일이 없습니다. 버전 없이 출력합니다.")
+            return filename
+        return f"{filename}?v={version}"
+    return asset_url
 
 
 def load_inputs():
@@ -113,25 +143,30 @@ def main():
     matches_list = sorted(linked_matches, key=lambda x: str(x.get('날짜', '')), reverse=True)
     rounds_list = sorted(linked_rounds, key=lambda x: str(x.get('날짜', '')), reverse=True)
 
-    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-    env.filters['team_logo_src'] = team_logo_src
-    template = env.get_template('index.html')
-    html_output = template.render(crew_stats=stats_data['crew_stats'])
-
-    os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
-    write_text_atomic(os.path.join(OUT_DIR, 'index.html'), html_output)
-
     # 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, index.html에
     # 직접 박아넣지 않고 별도 JSON으로 빼서 브라우저가 비동기로 fetch하게 한다.
     # (초기 HTML 용량이 데이터량과 무관하게 항상 일정하게 유지됨)
+    # 버전(해시)을 index.html에 넣어야 하므로 템플릿 렌더링보다 먼저 직렬화한다.
     site_data = {
         'members': sorted_members,
         'matches': matches_list,
         'rounds': rounds_list,
         'playersStats': stats_data['member_stats']['전체'],
     }
+    site_data_text = json.dumps(site_data, ensure_ascii=False)
+
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    env.filters['team_logo_src'] = team_logo_src
+    env.globals['asset_url'] = make_asset_url(static_asset_versions())
+    template = env.get_template('index.html')
+    html_output = template.render(crew_stats=stats_data['crew_stats'],
+                                  site_data_version=content_version(site_data_text))
+
+    os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
+    write_text_atomic(os.path.join(OUT_DIR, 'index.html'), html_output)
+
     site_data_path = os.path.join(OUT_DIR, 'data', 'site_data.json')
-    write_json_atomic(site_data_path, site_data)
+    write_text_atomic(site_data_path, site_data_text)
     print(f"✅ site_data.json 저장 완료 ({os.path.getsize(site_data_path) / 1024:.1f} KB)")
 
     copy_static_assets()

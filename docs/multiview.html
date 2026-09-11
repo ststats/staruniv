@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
-<script type="text/javascript" nonce="XOJ0BVE+zr3qdJZKBBAaLFbFzesxhK/xP1QmLnOdycs=" src="//lc.getunicorn.org?type=base-script&amp;request-id=84171"></script>
 <link rel="stylesheet" href="style.css">
 <style>
     /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
@@ -28,7 +27,7 @@
     body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
     /* ===== 설정 열기 버튼 (항상 떠 있음) - 화면 우상단 ===== */
-    /* 우상단에 두면 맨 위 오른쪽 칸의 헤더 새로고침 버튼과 겹친다. 그래서
+    /* 우상단에 두면 맨 위 오른쪽 칸의 헤더 버튼(음소거/새로고침)과 겹친다. 그래서
        ① 버튼을 헤더 높이(약 36px) 안에 쏙 들어가는 28px로 줄여 영상은 가리지 않고,
        ② 실제로 그 자리에 오는 칸 하나(.mv-cell-corner, mvMarkCornerCell이 레이아웃을
        보고 매번 계산)만 헤더 오른쪽 여백을 넓혀 버튼들을 왼쪽으로 비켜 준다.
@@ -104,13 +103,19 @@
         .mv-cell-actions { margin-left: auto; }
     }
 
-    /* 칸 헤더 새로고침 버튼: 글자 기호 대신 SVG 아이콘 + 둥근 사각 버튼.
-       평소엔 옅은 회색, 호버 시 파란 틴트. 새로고침 중에는 아이콘이 돈다. */
+    /* 칸 헤더 버튼(음소거/새로고침): 글자 기호(⟳) 대신 SVG 아이콘 + 둥근 사각 버튼.
+       평소엔 옅은 회색, 호버 시 파란 틴트. 새로고침 중엔 아이콘이 돌고, 음소거
+       상태는 빨간 스피커(×) 아이콘으로 한눈에 구분된다. */
     .mv-cell-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
     .mv-cell-btn { width: 24px; height: 24px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--color-text-sub); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
     .mv-cell-btn svg { width: 15px; height: 15px; display: block; }
     .mv-cell-btn:hover { background: var(--color-primary-tint); color: var(--color-primary); }
     .mv-cell-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+    .mv-cell-mute .mv-icon-muted { display: none; }
+    .mv-cell-mute.is-muted { color: var(--color-lose, #f03e3e); }
+    .mv-cell-mute.is-muted:hover { background: rgba(240,62,62,0.12); color: var(--color-lose, #f03e3e); }
+    .mv-cell-mute.is-muted .mv-icon-sound { display: none; }
+    .mv-cell-mute.is-muted .mv-icon-muted { display: block; }
     @keyframes mvSpin { to { transform: rotate(360deg); } }
     .mv-cell-refresh.is-loading { color: var(--color-primary); pointer-events: none; }
     .mv-cell-refresh.is-loading svg { animation: mvSpin 0.8s linear infinite; }
@@ -204,6 +209,12 @@
     let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
     let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
     let mvLiveMap = {};    // soopId -> 방송중 여부
+    // 음소거로 불러올 방송(soopId) 목록 - 새로고침/다음 접속 때도 유지되도록 저장한다.
+    let mvMuted = new Set();
+    try { mvMuted = new Set(JSON.parse(localStorage.getItem('mv-muted') || '[]').filter(id => typeof id === 'string')); } catch (e) { mvMuted = new Set(); }
+    function mvSaveMuted() {
+        try { localStorage.setItem('mv-muted', JSON.stringify([...mvMuted])); } catch (e) { /* 저장 불가 환경이면 이번 세션에만 유지 */ }
+    }
 
     function mvSaveState() {
         try {
@@ -469,22 +480,31 @@
     // 안 됐다 - 화질 파라미터를 아예 안 넘기고 기본(자동) 화질로 열면 그
     // 로컬 프로그램을 거치지 않고 정상 재생됨을 실제 테스트로 확인함.
     //
-    // SOOP 플레이어의 오디오 상태는 플레이어 자체에 맡긴다.
-    // 멀티뷰는 오디오 관련 파라미터를 전달하거나 플레이어의 저장 상태를 변경하지 않는다.
+    // [음소거] 영상은 다른 도메인(play.sooplive.com)의 iframe 안에서 재생되기 때문에, 브라우저
+    // 보안상 이 페이지에서 그 안의 소리를 직접 끄거나 볼륨을 조절할 방법이 없다(SOOP도 이를 위한
+    // 공개 JS API를 제공하지 않는다). 그래서 SOOP 공식 퍼가기 주소가 쓰는 mutePlay=true 파라미터를
+    // 붙여 "그 칸만 음소거 상태로 다시 불러오는" 방식으로 구현했다 - 전환할 때 해당 방송이
+    // 몇 초 다시 버퍼링되는 것은 이 구조상 피할 수 없다.
     function mvEmbedUrl(soopId) {
-        const params = new URLSearchParams({
-            showChat: 'false',
-            autoPlay: 'true'
-        });
+        const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
+        if (mvMuted.has(soopId)) params.set('mutePlay', 'true');
         return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
     }
 
     const MV_ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>';
+    const MV_ICON_SOUND = '<svg class="mv-icon-sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+    const MV_ICON_MUTED = '<svg class="mv-icon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/></svg>';
 
     // 칸 하나의 영상만 다시 불러온다(다른 칸의 재생에는 영향 없음). 예전엔 src를 about:blank로
     // 비웠다가 다시 넣었는데, 그러면 load 이벤트가 두 번 와서 "로딩 끝" 시점을 알 수 없었다.
     // 새 iframe으로 통째로 바꾸면 로드가 딱 한 번이라, 그 load 이벤트로 로딩 표시를 끈다.
     const MV_SPIN_MIN_MS = 500, MV_SPIN_MAX_MS = 10000;
+
+    // iframe에 넘기는 권한. local-network-access/loopback-network는 SOOP 플레이어가 PC의
+    // '고화질 스트리머' 로컬 프로그램에 접속할 때 쓰는 권한으로, 실제 방송 재생에 영향이 없는지
+    // 확인되지 않아 원래대로 유지한다(보안상으로는 빼는 편이 좋으니, 실제 방송으로 재생이
+    // 문제없음을 확인한 뒤 이 두 항목만 지우면 된다).
+    const MV_IFRAME_ALLOW = 'autoplay; encrypted-media; fullscreen; local-network-access; loopback-network';
     function mvReloadCell(cell) {
         const oldFrame = cell && cell.querySelector('iframe');
         if (!oldFrame) return;
@@ -507,19 +527,38 @@
     function mvRefreshCell(btn) {
         mvReloadCell(btn.closest('.mv-cell'));
     }
+    function mvApplyMuteButton(btn, muted) {
+        btn.classList.toggle('is-muted', muted);
+        btn.setAttribute('aria-pressed', String(muted));
+        btn.title = muted ? '소리 켜기' : '음소거';
+        btn.setAttribute('aria-label', btn.title);
+    }
+    function mvToggleMute(btn) {
+        const cell = btn.closest('.mv-cell');
+        const soopId = cell && cell.dataset.soopId;
+        if (!soopId) return;
+        const muted = !mvMuted.has(soopId);
+        if (muted) mvMuted.add(soopId); else mvMuted.delete(soopId);
+        mvSaveMuted();
+        mvApplyMuteButton(btn, muted);
+        mvReloadCell(cell);
+    }
 
     function mvCellHtml(entry, isMain) {
+        const muted = mvMuted.has(entry.soopId);
+        const muteLabel = muted ? '소리 켜기' : '음소거';
         return `
         <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${escapeHTML(entry.soopId)}">
             <div class="mv-cell-header">
                 <span class="mv-cell-name">${escapeHTML(entry.name)}</span>
                 <div class="mv-cell-actions">
+                    <button type="button" class="mv-cell-btn mv-cell-mute${muted ? ' is-muted' : ''}" title="${muteLabel}" aria-label="${muteLabel}" aria-pressed="${muted}" onclick="mvToggleMute(this)">${MV_ICON_SOUND}${MV_ICON_MUTED}</button>
                     <button type="button" class="mv-cell-btn mv-cell-refresh" title="새로고침" aria-label="새로고침" onclick="mvRefreshCell(this)">${MV_ICON_REFRESH}</button>
                 </div>
             </div>
             <div class="mv-cell-body">
                 <div class="mv-cell-video-wrap">
-                    <iframe src="${mvEmbedUrl(entry.soopId)}" allowfullscreen loading="lazy" allow="autoplay; encrypted-media; fullscreen; local-network-access; loopback-network"></iframe>
+                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"></iframe>
                 </div>
             </div>
         </div>`;
@@ -574,7 +613,7 @@
     // 때마다 모든 iframe이 새로 만들어졌다 = 모든 방송이 처음부터 다시 로드됐다. 모바일은
     // 키보드가 열리고 닫힐 때, 화면을 돌릴 때, 주소창이 움직일 때마다 resize가 오기 때문에
     // "소리가 끊겼다 다시 나오거나, 어떤 방송은 소리가 켜지고 어떤 건 꺼지는" 증상의 주원인이었다
-    // (다시 로드된 플레이어는 사용자 터치 없이 자동재생되므로 브라우저 정책의 영향을 받을 수 있다).
+    // (다시 로드된 플레이어는 사용자 터치 없이 자동재생되므로 브라우저가 음소거로 시작시키기도 한다).
     // 칸 크기만 CSS로 바뀌면 되므로 칸 내용(iframe)은 건드리지 않는다. 일반 그리드는 열 개수가
     // 화면 크기와 무관(인원 수 기준)해서 원래 다시 그릴 필요 자체가 없었다.
     let mvResizeScheduled = false;
