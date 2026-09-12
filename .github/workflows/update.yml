@@ -79,7 +79,9 @@ jobs:
         # 깜빡하기 쉽고, 실제로 mv-shared.js가 그렇게 빠져서 배포가 안 된 적이 있다 -
         # 그래서 이 폴더의 실제 파일 목록을 그대로 따라가도록 바꿔 같은 문제가
         # 다시 생기지 않게 한다.
-        git add data/*.json docs/index.html docs/holidays.json docs/data/site_data.json docs/data/calendar.png
+        # 페이지는 메뉴마다 실제 파일로 생성된다(docs/index.html + docs/<메뉴>/index.html).
+        # 메뉴가 늘어도 이 줄을 고칠 필요가 없도록 폴더 패턴으로 추가한다.
+        git add data/*.json docs/index.html docs/*/index.html docs/holidays.json docs/data/site_data.json docs/data/calendar.png
         for f in templates/assets/*; do
           git add "docs/$(basename "$f")"
         done
