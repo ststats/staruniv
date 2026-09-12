@@ -2466,8 +2466,9 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
    바쁜 순간과 겹친다. 전역 [hidden] 규칙이 !important 라 여기서도 맞받는다. */
 .race-hud #finalBadge[hidden]{display:inline-block!important;visibility:hidden}
 
-#trackLayer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;}
-#game{position:relative;background:transparent;}
+#trackLayer{z-index:0;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;}
+#game{position:relative;z-index:1;background:transparent;}
+.race-hud,#countdown,#miniMap{z-index:2;}
 
 #countdown{color:#2979ff;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:none;filter:none;font-weight:900;}
 </style><!-- Pretendard license: Copyright (c) 2021, Kil Hyung-jin (https://github.com/orioncactus/pretendard),
@@ -2966,7 +2967,7 @@ const RASTER_SCALE=1;
 // Prepare static scenery during initial loading, before enabling race start.
 
 const trackLayer=$('trackLayer'),trackLayerContext=trackLayer.getContext('2d');
-let layerX=NaN,layerY=NaN,layerZ=NaN,layerRaster=null;
+let layerX=NaN,layerY=NaN,layerZ=NaN,layerRaster=null,trackLayerFailed=false;
 function drawTrackLayer(){
  let resized=false;if(trackLayer.width!==cv.width||trackLayer.height!==cv.height){trackLayer.width=cv.width;trackLayer.height=cv.height;resized=true;}
  if(!resized&&layerRaster===trackRaster&&layerX===camera.x&&layerY===camera.y&&layerZ===camera.z)return;
@@ -2978,7 +2979,19 @@ function prepareTrackInWorker(){
  if(trackRaster)return Promise.resolve();
  return new Promise(resolve=>{
   let worker=null,url=null,timer=null,finished=false;
-  function finish(bitmap){if(finished){bitmap?.close?.();return;}finished=true;if(timer!==null)clearTimeout(timer);if(worker)worker.terminate();if(url)URL.revokeObjectURL(url);if(bitmap)trackRaster=bitmap;else prepareTrackRaster();resolve();}
+  function finish(bitmap){
+ if(finished){bitmap?.close?.();return;}finished=true;if(timer!==null)clearTimeout(timer);
+ try{
+  if(!bitmap||bitmap.width!==W||bitmap.height!==H)throw Error('Worker track image missing or invalid');
+  // Materialize transferred pixels before terminating the producing worker.
+  const stable=document.createElement('canvas');stable.width=W;stable.height=H;const ctx=stable.getContext('2d');
+  if(!ctx)throw Error('Track canvas context unavailable');ctx.drawImage(bitmap,0,0);
+  if(ctx.getImageData(0,0,1,1).data[3]!==255)throw Error('Worker returned an empty track');
+  trackRaster=stable;
+ }catch(error){trackRaster=null;prepareTrackRaster();}
+ finally{bitmap?.close?.();if(worker)worker.terminate();if(url)URL.revokeObjectURL(url);}
+ resolve();
+}
   try{
    const src='const W=1200,H=740;const trackPoints=new Map();'+[point,trackPoint,path,paintPark,paintTrack].map(f=>f.toString()).join('\n')+';onmessage=()=>{try{const canvas=new OffscreenCanvas(1200,740);paintTrack(canvas.getContext("2d"));const bitmap=canvas.transferToImageBitmap();postMessage({bitmap},[bitmap]);}catch(error){postMessage({error:String(error)})}};';
    url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));worker=new Worker(url);worker.onmessage=e=>finish(e.data.bitmap||null);worker.onerror=e=>{e.preventDefault();finish(null)};worker.onmessageerror=()=>finish(null);timer=setTimeout(()=>finish(null),5000);worker.postMessage({});
@@ -3243,7 +3256,8 @@ function drawNameplates(list=order()){
   g.fillStyle=focused===r.id?'#173660':'#ffffff';g.fillText(s.text,x,y+4);
  }
 }
-function render(dt=.016){prepareTrackRaster();g.setTransform(canvasScale,0,0,canvasScale,0,0);const list=order();cameraStep(state==='paused'?0:dt,list);drawTrackLayer();g.clearRect(0,0,W,H);g.save();g.translate(W/2,H/2);g.scale(camera.z,camera.z);g.translate(-camera.x,-camera.y);if(ready){if(state==='setup'){[...chosen].forEach((id,i)=>drawKart({id,progress:-Math.floor(i/3)*.014,lane:(i%3-1)*20,boost:0},true));}else{visibleKarts.length=0;const halfW=W/(2*camera.z)+100,halfH=H/(2*camera.z)+100;
+function render(dt=.016){prepareTrackRaster();g.setTransform(canvasScale,0,0,canvasScale,0,0);const list=order();cameraStep(state==='paused'?0:dt,list);if(!trackLayerFailed){try{drawTrackLayer();}catch(error){trackLayerFailed=true;trackLayer.style.display='none';trackRaster=null;prepareTrackRaster();console.warn('Background layer recovered on main canvas',error);}}
+ g.clearRect(0,0,W,H);if(trackLayerFailed){g.fillStyle='#e9f0fa';g.fillRect(0,0,W,H);}g.save();g.translate(W/2,H/2);g.scale(camera.z,camera.z);g.translate(-camera.x,-camera.y);if(trackLayerFailed)drawTrack();if(ready){if(state==='setup'){[...chosen].forEach((id,i)=>drawKart({id,progress:-Math.floor(i/3)*.014,lane:(i%3-1)*20,boost:0},true));}else{visibleKarts.length=0;const halfW=W/(2*camera.z)+100,halfH=H/(2*camera.z)+100;
 for(const r of racers){if(r.finish!==null)continue;const p=racerPoint(r),entry=kartDrawEntries.get(r.id);if(Math.abs(p.x-camera.x)<=halfW&&Math.abs(p.y-camera.y)<=halfH)visibleKarts.push(entry);}
 visibleKarts.sort(compareKartDepth);for(const entry of visibleKarts)drawKart(entry.r,false,entry.p);}}drawEffects();g.restore();drawNameplates(list);drawMini(dt);}
 // Frame-stall log. Always on: a stall is rare, and the whole cost is one comparison
