@@ -9,6 +9,7 @@
     <hr class="page-header-divider tight">
     <div class="sub-tabs" role="tablist">
         <div class="sub-tab active" id="tab-tools-multiviewer" role="tab" tabindex="0" aria-selected="true" onclick="switchToolsView('multiviewer')">멀티뷰어</div>
+        <div class="sub-tab" id="tab-tools-rider" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('rider')">캄몬라이더</div>
         <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('external')">외부도구</div>
     </div>
 
@@ -56,7 +57,28 @@
         <div class="mv-order-row" id="mv-order-row"></div>
     </div>
 
-    <!-- 2. 외부도구 뷰 (도구/사이트로 구분) -->
+    {#- 2. 캄몬라이더 뷰
+        자체 제작 레이싱 게임(docs/calmmon-rider.html)을 그대로 끼워 넣는다. 게임은 스타일/스크립트/
+        스프라이트 이미지까지 전부 들어있는 완전한 단독 페이지라, 사이트 CSS와 섞이지 않게 iframe으로
+        띄우는 게 제일 안전하다(게임을 새 버전으로 갈아끼울 때도 그 파일만 덮어쓰면 끝).
+        iframe의 src를 여기 미리 박아두지 않는 이유: 게임 파일 하나가 4MB에 가까워서(스프라이트가
+        파일 안에 통째로 들어있다) 이 탭을 열지도 않은 사람까지 그걸 받게 된다. 그래서 src는
+        비워두고 이 탭을 실제로 처음 열 때 page-tools.js(riderEnsureLoaded)가 채운다. #}
+    <div id="view-tools-rider" class="d-none">
+        <div class="section-title">
+            캄몬라이더
+            <span class="rider-actions">
+                <button type="button" class="btn-view-all" onclick="riderFullscreen()">전체화면 ⛶</button>
+                <button type="button" class="btn-view-all" onclick="riderOpenWindow()">새 창으로 열기<span class="ext-arrow" aria-hidden="true">↗</span></button>
+            </span>
+        </div>
+        <div class="rider-stage" id="rider-stage">
+            <iframe id="rider-frame" title="캄몬라이더" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+        <p class="rider-hint">선수를 고르고 경기를 시작하면 자동으로 레이스가 진행됩니다. 화면이 좁으면 전체화면으로 보는 걸 추천합니다.</p>
+    </div>
+
+    <!-- 3. 외부도구 뷰 (도구/사이트로 구분) -->
     <div id="view-tools-external" class="d-none">
         <div class="section-title">도구</div>
         <div class="tool-grid" id="tools-grid-extTools"></div>

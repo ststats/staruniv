@@ -4,14 +4,68 @@
  * URL: /tools/[?view=external]
  */
 
-const TOOLS_TABS = { multiviewer: ['tab-tools-multiviewer', 'view-tools-multiviewer'], external: ['tab-tools-external', 'view-tools-external'] };
+const TOOLS_TABS = {
+    multiviewer: ['tab-tools-multiviewer', 'view-tools-multiviewer'],
+    rider: ['tab-tools-rider', 'view-tools-rider'],
+    external: ['tab-tools-external', 'view-tools-external'],
+};
+// 기본 탭(멀티뷰어)만 주소에 아무것도 안 붙이고, 나머지는 ?view=<탭>으로 남겨 새로고침/공유해도 유지된다.
+const TOOLS_DEFAULT_VIEW = 'multiviewer';
+const TOOLS_VIEW_IDS = Object.keys(TOOLS_TABS);
+
+function toolsViewFromUrl(value) {
+    return TOOLS_VIEW_IDS.includes(value) ? value : TOOLS_DEFAULT_VIEW;
+}
+
+function currentToolsView() {
+    return TOOLS_VIEW_IDS.find(isToolsTabActive) || TOOLS_DEFAULT_VIEW;
+}
+
+function isToolsTabActive(view) {
+    return isTabActive(TOOLS_TABS[view][0]);
+}
 
 function updateToolsHash() {
-    PageState.update(isTabActive('tab-tools-external') ? { view: 'external' } : {});
+    const view = currentToolsView();
+    PageState.update(view === TOOLS_DEFAULT_VIEW ? {} : { view });
+}
+
+// ----- 캄몬라이더 (자체 제작 레이싱 게임을 iframe으로 임베드) -----
+// 게임 파일 하나가 4MB에 가까워서(스프라이트가 파일 안에 들어있다) 페이지를 열자마자 불러오면
+// 이 탭을 보지도 않는 사람까지 그 용량을 받게 된다. 그래서 이 탭을 처음 열 때 한 번만 src를 채운다.
+// (두 번째부터는 이미 들어있는 iframe을 그대로 둬서 진행 중이던 게임이 초기화되지 않는다.)
+const RIDER_PAGE_URL = 'calmmon-rider.html';
+
+function riderEnsureLoaded() {
+    const frame = document.getElementById('rider-frame');
+    if (frame && !frame.getAttribute('src')) frame.src = RIDER_PAGE_URL;
+}
+
+// 게임 화면만 전체화면으로. 게임 안의 레이아웃이 화면 높이에 맞춰 늘어나므로 그대로 커진다.
+// (iframe 자체가 아니라 그것을 감싼 상자를 전체화면으로 만들어야 테두리/배경이 같이 따라간다)
+function riderFullscreen() {
+    const stage = document.getElementById('rider-stage');
+    if (!stage) return;
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+        return;
+    }
+    if (!stage.requestFullscreen) {
+        // iOS 사파리처럼 요소 전체화면을 지원하지 않는 환경에서는 새 창으로 여는 게 가장 크게 보는 방법이다
+        riderOpenWindow();
+        return;
+    }
+    const result = stage.requestFullscreen();
+    if (result && typeof result.catch === 'function') result.catch(() => riderOpenWindow());
+}
+
+function riderOpenWindow() {
+    window.open(RIDER_PAGE_URL, '_blank', 'noopener');
 }
 
 function switchToolsView(viewType, skipHashUpdate) {
     activateTabView(TOOLS_TABS, viewType);
+    if (viewType === 'rider') riderEnsureLoaded();
     if (!skipHashUpdate) updateToolsHash();
 }
 
@@ -225,6 +279,6 @@ bootPage(() => {
     safeInit('도구 목록', loadToolsData);
     safeInit('멀티뷰어', () => { mvRenderAll(); return mvCheckLiveAndRerenderChips(); });
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        switchToolsView(params.get('view') === 'external' ? 'external' : 'multiviewer', true);
+        switchToolsView(toolsViewFromUrl(params.get('view')), true);
     }));
 });
