@@ -269,6 +269,16 @@
       "desc": "클암CK",
       "detail": "",
       "color": "#d1fae5"
+    },
+    {
+      "id": 1789186098219,
+      "startDate": "2026-09-12",
+      "endDate": "2026-09-12",
+      "time": "16:00",
+      "person": "낭니",
+      "desc": "도낭CK",
+      "detail": "",
+      "color": "#ffe4e6"
     }
   ],
   "offAir": {
@@ -297,7 +307,8 @@
     "2026-09-12": [
       "freshtomato",
       "rnaqpdrjf",
-      "dlaguswl501"
+      "dlaguswl501",
+      "wjswlgns09"
     ],
     "2026-09-13": [
       "freshtomato",
