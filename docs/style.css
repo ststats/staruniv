@@ -747,20 +747,22 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    게임(calmmon-rider.html)은 자기 스타일을 전부 들고 있는 단독 페이지라 iframe으로 띄운다.
    게임 내부 레이아웃이 높이를 100dvh 기준으로 잡는데, iframe 안에서는 그 100dvh가 곧 이
    상자의 높이라서 - 여기서 정한 높이가 그대로 게임 화면 크기가 된다.
-   식의 뜻: "화면 높이 - 상단바(64px)". 상단바는 position:sticky라 스크롤해도 계속 화면에 붙어
-   있는 유일한 요소이므로, 게임이 있는 위치까지 내리면 이 상자가 남는 화면을 정확히 꽉 채운다
-   (페이지 제목·탭·섹션 제목은 스크롤과 함께 위로 밀려 올라가므로 빼지 않는다).
+   [높이] "화면 높이 - 상단바(64px) - 사이트 공통 하단 여백". 상단바는 position:sticky라
+   스크롤해도 계속 화면에 붙어 있는 유일한 요소이므로(페이지 제목·탭·섹션 제목은 위로 밀려
+   올라간다), 게임이 있는 위치까지 내리면 게임 아래에 사이트 다른 페이지와 똑같은 여백만
+   남기고 화면을 정확히 채운다.
      - 세로로 긴 화면에서 끝없이 길어지지 않게 860px를 상한으로,
-     - 낮은 화면에서 게임이 너무 납작해지지 않게 420px를 하한으로 둔다.
-   예: 화면 900px → 836px, 844px 폰 → 780px, 1024px → 860px(상한), 480px → 420px(하한).
-   첫 줄은 dvh를 모르는 구형 브라우저용 예비값이다 - 그런 브라우저는 두 번째 줄을 통째로 무시한다.
+     - 낮은 화면에서 게임이 너무 납작해지지 않게 420px를 하한으로 둔다
+       (하한에 걸리면 그만큼 페이지를 조금 내려야 하고, 전체화면 버튼으로 크게 볼 수 있다).
+   첫 줄은 dvh를 모르는 구형 브라우저용 예비값이다 - 그런 브라우저는 두 번째 줄을 무시한다.
    배경색은 게임 페이지의 배경(#15201f)과 같은 값이라 불러오는 동안 흰 칸이 번쩍이지 않는다. */
-.rider-stage { position: relative; height: min(860px, max(420px, calc(100vh - 64px))); height: min(860px, max(420px, calc(100dvh - 64px))); background: #15201f; border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; }
+.rider-stage { position: relative; margin-bottom: var(--space-page-bottom); background: #15201f; border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden;
+    height: min(860px, max(420px, calc(100vh - 64px - var(--space-page-bottom))));
+    height: min(860px, max(420px, calc(100dvh - 64px - var(--space-page-bottom)))); }
 .rider-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
 /* 전체화면일 때는 둥근 모서리/그림자/높이 제한을 풀어 화면을 꽉 채운다 */
 .rider-stage:fullscreen { height: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
 .rider-actions { display: flex; align-items: center; gap: 2px; }
-.rider-hint { font-size: var(--fs-body); color: var(--color-text-sub); margin: 10px 2px 20px; }
 
 /* ----- 진짜 링크(<a href>)로 바뀐 요소 (페이지 분리) -----
    상단 메뉴·홈 "전체 보기"·홈 공지 카드는 이제 다른 페이지로 가는 실제 링크다. 부트스트랩의
