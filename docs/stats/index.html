@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방송통계 | 스타대학</title>
+    <meta name="description" content="캄몬스타즈 멤버들의 이번 달 방송 통계입니다.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="스타대학">
+    <meta property="og:title" content="방송통계 | 스타대학">
+    <meta property="og:description" content="캄몬스타즈 멤버들의 이번 달 방송 통계입니다.">
+    <link rel="canonical" href="https://ststats.github.io/staruniv/stats/">
+    <meta property="og:url" content="https://ststats.github.io/staruniv/stats/">
+    <meta property="og:image" content="https://ststats.github.io/staruniv/images/%EC%BA%84%EB%AA%AC%EC%8A%A4%ED%83%80%EC%A6%88.webp">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/webp" href="images/파비콘.webp">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" href="style.css?v=daa6addf3f">
+    <meta name="site-data-version" content="27394db133">
+</head>
+<body><header class="top-navbar">
+    <div class="navbar-inner container">
+        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
+        <nav class="nav-menu" id="mainMenu" aria-label="주 메뉴">
+            <a class="nav-item" href="./" data-page="home">홈</a>
+            <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
+            <a class="nav-item" href="members/" data-page="members">멤버</a>
+            <a class="nav-item" href="records/" data-page="records">전적</a>
+            <a class="nav-item active" href="stats/" data-page="stats" aria-current="page">방송통계</a>
+            <a class="nav-item" href="tools/" data-page="tools">도구</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+
+<!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
+<section id="page-stats" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">방송통계</h1>
+        <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+    </div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs" id="synergy-metric-filter" role="tablist">
+        <div class="sub-tab active" data-metric="balloons" role="tab" tabindex="0" aria-selected="true" onclick="setSynergyMetric('balloons')">별풍선</div>
+        <div class="sub-tab" data-metric="broadcast_seconds" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('broadcast_seconds')">방송시간</div>
+        <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
+        <div class="sub-tab" data-metric="sponsor" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('sponsor')">스폰전적</div>
+    </div>
+    <div class="row gap-block mb-block">
+        <div class="col-md-6">
+            <div class="section-title">남자 멤버</div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-male">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="section-title">여자 멤버</div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-female">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-center text-muted section-trailer text-caption" id="synergy-updated"></div>
+</section>
+
+</main>
+
+
+
+
+<script src="core.js?v=35d4f9479f"></script>
+<script src="page-stats.js?v=b5ceb00981"></script>
+
+</body>
+</html>
