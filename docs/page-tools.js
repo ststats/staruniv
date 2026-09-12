@@ -41,6 +41,59 @@ function riderEnsureLoaded() {
     if (frame && !frame.getAttribute('src')) frame.src = RIDER_PAGE_URL;
 }
 
+// ----- 다른 탭으로 갔을 때 게임 멈추기 -----
+// 탭을 바꿔도 iframe은 화면에서 숨겨질 뿐 그대로 살아 있어서, 그냥 두면 레이스가 계속 진행되고
+// 음악도 계속 나온다. 게임 자체도 "브라우저 탭이 가려지면 일시정지"하는 기능이 있지만, 그건 브라우저
+// 탭 전체가 가려질 때만 동작해서 사이트 안에서 하위 탭만 바꾸는 경우에는 걸리지 않는다.
+//
+// 게임은 우리 사이트와 같은 도메인의 파일이라(멀티뷰어의 SOOP 방송과 달리) 안쪽 버튼을 대신 눌러줄 수
+// 있다. 그래서 게임 내부 코드를 건드리지 않고, 게임이 이미 갖고 있는 "일시 정지"·"소리" 버튼을 그대로
+// 사용한다 - 나중에 게임을 새 버전으로 갈아끼워서 이 버튼들이 없어져도 아래 코드는 조용히 아무 일도
+// 하지 않을 뿐 오류가 나지 않는다. 진행 중이던 레이스는 그대로 남아 돌아오면 이어서 볼 수 있다.
+const riderPaused = { race: false, sound: false };
+
+function riderDoc() {
+    const frame = document.getElementById('rider-frame');
+    if (!frame || !frame.getAttribute('src')) return null;
+    try {
+        return frame.contentDocument; // 같은 도메인이라 접근 가능(혹시 모를 예외는 아래에서 무시)
+    } catch (e) {
+        return null;
+    }
+}
+
+// 게임이 지금 실제로 달리는 중인지(일시 정지 버튼이 보이고, 그 버튼이 "일시 정지"를 제안하는 상태인지)
+function riderIsRunning(doc) {
+    const btn = doc.getElementById('pause');
+    return !!btn && !btn.hidden && btn.textContent.includes('일시 정지');
+}
+function riderSoundOn(doc) {
+    const btn = doc.getElementById('soundToggle');
+    return !!btn && btn.getAttribute('aria-pressed') === 'true';
+}
+
+// 캄몬라이더 탭을 떠날 때: 달리는 중이면 일시정지하고, 소리가 켜져 있으면 끈다(무엇을 껐는지 기억).
+function riderSuspend() {
+    const doc = riderDoc();
+    if (!doc) return;
+    riderPaused.race = riderIsRunning(doc);
+    if (riderPaused.race) doc.getElementById('pause').click();
+    riderPaused.sound = riderSoundOn(doc);
+    if (riderPaused.sound) doc.getElementById('soundToggle').click();
+}
+
+// 돌아왔을 때: 우리가 껐던 것만 되돌린다(사용자가 직접 꺼둔 소리는 켜지 않는다).
+function riderResume() {
+    const doc = riderDoc();
+    if (!doc) return;
+    if (riderPaused.sound && !riderSoundOn(doc)) doc.getElementById('soundToggle').click();
+    if (riderPaused.race && !riderIsRunning(doc)) {
+        const btn = doc.getElementById('pause');
+        if (btn && !btn.hidden) btn.click();
+    }
+    riderPaused.race = riderPaused.sound = false;
+}
+
 // 게임 화면만 전체화면으로. 게임 안의 레이아웃이 화면 높이에 맞춰 늘어나므로 그대로 커진다.
 // (iframe 자체가 아니라 그것을 감싼 상자를 전체화면으로 만들어야 테두리/배경이 같이 따라간다)
 function riderFullscreen() {
@@ -64,8 +117,14 @@ function riderOpenWindow() {
 }
 
 function switchToolsView(viewType, skipHashUpdate) {
+    const wasRider = isToolsTabActive('rider');
     activateTabView(TOOLS_TABS, viewType);
-    if (viewType === 'rider') riderEnsureLoaded();
+    if (viewType === 'rider') {
+        riderEnsureLoaded();
+        if (!wasRider) riderResume();
+    } else if (wasRider) {
+        riderSuspend();
+    }
     if (!skipHashUpdate) updateToolsHash();
 }
 
