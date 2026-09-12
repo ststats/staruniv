@@ -2662,10 +2662,15 @@ function createLeaderRow(r){
  button.onclick=()=>{if(state!=='setup')focus(r.id);};
  return {button,rank,status,gap};
 }
+// Three kinds of status share one line, so they take three grammatical shapes and
+// never reuse an item's own name for anything but holding it:
+//   당한 것  - what happened to you   (미끄러짐, 감전, 붙잡힘)
+//   쓴 것    - what you are doing     (방어 중, 가속 중, 추격 중)
+//   보유     - the item's plain name  (🛡 실드, 🔥 부스터, 🛸 우주선)
 function racerStatus(r){
  if(state==='setup')return '출전 대기';if(r.finish!==null)return 'FINISHED';
  if(r.stun>0)return ({missile:'💥 폭발 충격',banana:'🍌 미끄러짐',water:'💧 물방울 감금',lightning:'ϟ 감전'})[r.hitKind]||'피격';
- if(r.ufo>0)return '🛸 견인 광선';if(r.shield>0)return '🛡 방어 중';if(r.boost>0)return '🔥 부스터';if(r.magnet>0)return '🧲 추격 중';
+ if(r.ufo>0)return '🛸 붙잡힘';if(r.shield>0)return '🛡 방어 중';if(r.boost>0)return '🔥 가속 중';if(r.magnet>0)return '🧲 추격 중';
  return r.item?itemNames[r.item]:Math.floor(Math.max(0,r.progress)/laps*100)+'%';
 }
 function updateUI(){
