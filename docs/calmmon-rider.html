@@ -2493,7 +2493,7 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
- --></head><body><main id="opening" class="opening"><div class="opening-title"><span class="opening-watermark" aria-hidden="true">01</span><h1 class="opening-wordmark"><span>캄몬</span>라이더</h1><p>17명의 멤버와 예측불가 아이템전. 오늘의 우승자는?</p></div><div class="opening-grid"><div class="lineup-card"><section id="selection"><div class="panel-head"><h2>선수 선택 <span id="selectedCount">8</span></h2><button id="all" class="text-btn">전체 선택</button></div><p class="subtle">카드를 눌러 출전 / 제외 · 최소 2명</p><div id="roster"></div><div id="guestMobileSlot"></div><form id="addDriverForm" class="add-driver"><label for="driverName">게스트 선수 추가</label><div><input id="driverName" maxlength="16" placeholder="이번 경기의 게스트 이름" autocomplete="off" required><button class="small-btn" type="submit">추가 +</button></div><p id="driverMessage" role="status"></p></form><div class="selection-bottom"><button id="random" class="small-btn">랜덤 8명</button><button id="clear" class="text-btn">선택 해제</button></div></section></div><aside class="setup-card"><div class="setup-heading"><h2>경기 설정</h2></div><button id="start" class="primary start-race">경기 시작 <span aria-hidden="true">▶</span></button><div class="entry-summary"><span>출전 선수</span><b id="entryCount">08 <small>RACERS</small></b></div><div class="setting-block"><label for="laps">레이스 길이</label><select id="laps"><option value="1">1바퀴</option><option value="3" selected>3바퀴</option><option value="5">5바퀴</option></select></div><div class="setting-block"><label>관전 배속</label><div class="segmented" id="speedButtons"><button data-speed="1" class="active">1×</button><button data-speed="2">2×</button><button data-speed="4">4×</button></div></div><div class="setting-block"><label>카메라</label><div class="camera-controls"><button data-camera="auto" class="active">자동</button><button data-camera="wide">전체</button><button data-camera="leader">선두</button></div></div><div id="guestDesktopSlot"></div><div class="item-lineup" aria-label="8종 아이템"><span title="바나나">🍌</span><span title="우주선">🛸</span><span title="물풍선">💧</span><span title="미사일">🚀</span><span title="실드">🛡</span><span title="번개">ϟ</span><span title="추격 로켓">🔥</span><span title="자석">🧲</span></div><p id="error" role="status"></p></aside></div></main><main id="broadcast" class="workspace" hidden><aside class="rank-panel"><div class="panel-head"><h2 id="rankTitle">실시간 순위</h2></div><section id="standings"><div id="leaderList"></div></section></aside><section class="race-panel"><div class="track-wrap"><canvas id="game" aria-label="아이템 레이싱 화면"></canvas><div class="race-hud"><span class="track-name">몬스타즈파크</span><b id="lapLabel">3 LAPS</b><span id="timer">00:00.00</span><span id="finalBadge" hidden>FINAL LAP</span></div><div id="countdown" aria-live="polite"></div><canvas id="miniMap" width="240" height="150" aria-label="전체 코스"></canvas><div id="itemToast" role="status"></div></div><div class="race-actions"><div class="live-options" role="group" aria-label="관전 설정"><button id="soundToggle" class="small-btn" aria-pressed="true" aria-label="소리 켜짐, 눌러서 끄기"><span class="sound-label">소리 켜짐</span><svg class="sound-icon" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7H4v6h4l5 3V4L8 7Z"/><path class="sound-waves" d="M16 7a5 5 0 0 1 0 6"/><path class="sound-slash" d="M3 3l14 14"/></svg></button><button id="pause" class="small-btn" hidden>일시 정지 Ⅱ</button><button id="reset" class="small-btn" hidden>나가기</button><button id="cinema" class="small-btn" hidden>화면 확대 ⛶</button><div class="camera-controls"><button data-camera="auto" class="active">자동 카메라</button><button data-camera="wide">전체</button><button data-camera="leader">선두</button></div><div class="segmented"><button data-speed="1" class="active">1×</button><button data-speed="2">2×</button><button data-speed="4">4×</button></div></div></div></section></main><div hidden><div class="session-controls" role="group" aria-label="경기 조작"><button id="ceremonyOpen" class="small-btn" hidden>시상식 보기</button><button id="replay" class="primary" hidden>다시 경기</button></div><span id="cameraLabel"></span><span id="sessionStatus"></span><span id="trackState"></span><span id="focusLabel"></span><span id="commentary"></span><span id="centerOverlay"></span></div><dialog id="ceremony" aria-labelledby="ceremonyTitle"><button id="ceremonyClose" class="ceremony-close" aria-label="시상식 닫고 시작 화면으로 나가기">×</button><div class="ceremony-heading"><span>RACE COMPLETE</span><h2 id="ceremonyTitle">오늘의 주인공</h2><p id="ceremonySummary"></p></div><div id="podium" class="podium"></div><div id="ceremonyResults" class="ceremony-results" hidden aria-label="전체 순위"></div><div class="ceremony-actions"><button id="ceremonyReplay" class="primary">다시 경기 ▶</button><button id="ceremonyRanking" class="small-btn">전체 순위</button><button id="ceremonyLineup" class="small-btn">나가기</button></div></dialog><script>'use strict';
+ --></head><body><main id="opening" class="opening"><div class="opening-title"><span class="opening-watermark" aria-hidden="true">01</span><h1 class="opening-wordmark"><span>캄몬</span>라이더</h1><p>17명의 멤버와 예측불가 아이템전. 오늘의 우승자는?</p></div><div class="opening-grid"><div class="lineup-card"><section id="selection"><div class="panel-head"><h2>선수 선택 <span id="selectedCount">8</span></h2><button id="all" class="text-btn">전체 선택</button></div><p class="subtle">카드를 눌러 출전 / 제외 · 최소 2명</p><div id="roster"></div><div id="guestMobileSlot"></div><form id="addDriverForm" class="add-driver"><label for="driverName">게스트 선수 추가</label><div><input id="driverName" maxlength="16" placeholder="이번 경기의 게스트 이름" autocomplete="off" required><button class="small-btn" type="submit">추가 +</button></div><p id="driverMessage" role="status"></p></form><div class="selection-bottom"><button id="random" class="small-btn">랜덤 8명</button><button id="clear" class="text-btn">선택 해제</button></div></section></div><aside class="setup-card"><div class="setup-heading"><h2>경기 설정</h2></div><button id="start" class="primary start-race">경기 시작 <span aria-hidden="true">▶</span></button><div class="entry-summary"><span>출전 선수</span><b id="entryCount">08 <small>RACERS</small></b></div><div class="setting-block"><label for="laps">레이스 길이</label><select id="laps"><option value="1">1바퀴</option><option value="3" selected>3바퀴</option><option value="5">5바퀴</option></select></div><div class="setting-block"><label>관전 배속</label><div class="segmented" id="speedButtons"><button data-speed="1" class="active">1×</button><button data-speed="2">2×</button><button data-speed="4">4×</button></div></div><div class="setting-block"><label>카메라</label><div class="camera-controls"><button data-camera="auto" class="active">자동</button><button data-camera="wide">전체</button><button data-camera="leader">선두</button></div></div><div id="guestDesktopSlot"></div><div class="item-lineup" aria-label="8종 아이템"><span title="바나나">🍌</span><span title="우주선">🛸</span><span title="물풍선">💧</span><span title="미사일">🚀</span><span title="실드">🛡</span><span title="번개">ϟ</span><span title="부스터">🔥</span><span title="자석">🧲</span></div><p id="error" role="status"></p></aside></div></main><main id="broadcast" class="workspace" hidden><aside class="rank-panel"><div class="panel-head"><h2 id="rankTitle">실시간 순위</h2></div><section id="standings"><div id="leaderList"></div></section></aside><section class="race-panel"><div class="track-wrap"><canvas id="game" aria-label="아이템 레이싱 화면"></canvas><div class="race-hud"><span class="track-name">몬스타즈파크</span><b id="lapLabel">3 LAPS</b><span id="timer">00:00.00</span><span id="finalBadge" hidden>FINAL LAP</span></div><div id="countdown" aria-live="polite"></div><canvas id="miniMap" width="240" height="150" aria-label="전체 코스"></canvas><div id="itemToast" role="status"></div></div><div class="race-actions"><div class="live-options" role="group" aria-label="관전 설정"><button id="soundToggle" class="small-btn" aria-pressed="true" aria-label="소리 켜짐, 눌러서 끄기"><span class="sound-label">소리 켜짐</span><svg class="sound-icon" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7H4v6h4l5 3V4L8 7Z"/><path class="sound-waves" d="M16 7a5 5 0 0 1 0 6"/><path class="sound-slash" d="M3 3l14 14"/></svg></button><button id="pause" class="small-btn" hidden>일시 정지 Ⅱ</button><button id="reset" class="small-btn" hidden>나가기</button><button id="cinema" class="small-btn" hidden>화면 확대 ⛶</button><div class="camera-controls"><button data-camera="auto" class="active">자동 카메라</button><button data-camera="wide">전체</button><button data-camera="leader">선두</button></div><div class="segmented"><button data-speed="1" class="active">1×</button><button data-speed="2">2×</button><button data-speed="4">4×</button></div></div></div></section></main><div hidden><div class="session-controls" role="group" aria-label="경기 조작"><button id="ceremonyOpen" class="small-btn" hidden>시상식 보기</button><button id="replay" class="primary" hidden>다시 경기</button></div><span id="cameraLabel"></span><span id="sessionStatus"></span><span id="trackState"></span><span id="focusLabel"></span><span id="commentary"></span><span id="centerOverlay"></span></div><dialog id="ceremony" aria-labelledby="ceremonyTitle"><button id="ceremonyClose" class="ceremony-close" aria-label="시상식 닫고 시작 화면으로 나가기">×</button><div class="ceremony-heading"><span>RACE COMPLETE</span><h2 id="ceremonyTitle">오늘의 주인공</h2><p id="ceremonySummary"></p></div><div id="podium" class="podium"></div><div id="ceremonyResults" class="ceremony-results" hidden aria-label="전체 순위"></div><div class="ceremony-actions"><button id="ceremonyReplay" class="primary">다시 경기 ▶</button><button id="ceremonyRanking" class="small-btn">전체 순위</button><button id="ceremonyLineup" class="small-btn">나가기</button></div></dialog><script>'use strict';
 // Small procedural soundtrack: no downloads, one context, bounded voices.
 const raceAudio=(()=>{
  let ctx,bus,enabled=true,timer=null,step=0,next=0,lastFx=-10,voices=0,noise;
@@ -2539,7 +2539,7 @@ const colors=['#56b3ec','#e374aa','#56b3ec','#e374aa','#8b6dc2','#e374aa','#e374
 let chosen=new Set([0,1,2,4,7,8,9,14]),portraits=[],racers=[],state='setup',elapsed=0,countdown=3,rate=1,laps=3,focused=null,ready=false,last=0,accumulator=0,uiClock=0,lastLeader=null,eventAt=-20,raceNumber=0;
 cv.width=1200;cv.height=740;
 let traps=[],effects=[],cameraMode='auto',camera={x:600,y:370,z:1,angle:0},cameraTarget=null,cameraUntil=0,finishAt=null,slowMotion=false,finalAnnounced=false,itemStats={used:0,hits:0,blocks:0,leadChanges:0};
-const itemNames={missile:'🚀 유도 미사일',shield:'🛡 실드',lightning:'ϟ 번개',rocket:'🔥 추격 로켓',magnet:'🧲 자석',banana:'🍌 바나나',ufo:'🛸 우주선',water:'💧 물풍선'};
+const itemNames={missile:'🚀 유도 미사일',shield:'🛡 실드',lightning:'ϟ 번개',rocket:'🔥 부스터',magnet:'🧲 자석',banana:'🍌 바나나',ufo:'🛸 우주선',water:'💧 물풍선'};
 const minimap=$('miniMap').getContext('2d');
 let renderDirty=true,settleFrames=0,renderClock=0,frameHandle=null;
 function stopLoop(){raceAudio.stop();if(frameHandle!==null&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(frameHandle);frameHandle=null;last=0;}
@@ -2572,7 +2572,7 @@ $('replay').onclick=()=>start();
 $('cinema').onclick=()=>{document.body.classList.toggle('cinema');$('cinema').textContent=document.body.classList.contains('cinema')?'화면 복원 ⛶':'화면 확대 ⛶'};
 for(const b of cameraButtons)b.onclick=()=>setCamera(b.dataset.camera);
 function setCamera(mode){renderDirty=true;if(!['auto','wide','leader','driver'].includes(mode))throw Error('Invalid camera');cameraMode=mode;if(mode!=='driver')focused=null;cameraButtons.forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));wakeLoop();}
-function resetRaceFX(){autoShot=null;autoShotRemaining=0;drawElapsed=0;visibleKarts.length=0;kartDrawEntries.clear();miniState='';miniClock=0;renderClock=0;renderDirty=true;settleFrames=0;leaderOrder='';traps=[];if(cameraMode==='driver')setCamera('auto');effects=[];camera={x:600,y:370,z:1,angle:0};cameraTarget=null;cameraUntil=0;finishAt=null;slowMotion=false;finalAnnounced=false;itemStats={used:0,hits:0,blocks:0,leadChanges:0};$('itemToast').textContent='';$('finalBadge').hidden=true;}
+function resetRaceFX(){autoShot=null;autoShotRemaining=0;drawElapsed=0;freezeLog.length=0;visibleKarts.length=0;kartDrawEntries.clear();miniState='';miniClock=0;renderClock=0;renderDirty=true;settleFrames=0;leaderOrder='';traps=[];if(cameraMode==='driver')setCamera('auto');effects=[];camera={x:600,y:370,z:1,angle:0};cameraTarget=null;cameraUntil=0;finishAt=null;slowMotion=false;finalAnnounced=false;itemStats={used:0,hits:0,blocks:0,leadChanges:0};$('itemToast').textContent='';$('finalBadge').hidden=true;}
 function itemEvent(text,id){announce(text);$('itemToast').textContent=text;if(elapsed>=cameraUntil){cameraTarget=id;cameraUntil=elapsed+2.2;}}
 function strike(target,kind,owner){if(target.finish!==null||target.immunity>0)return;if(target.shield>0){raceAudio.effect('shield');target.shield=0;target.immunity=1.5;itemStats.blocks++;effects.push({type:'block',id:target.id,ttl:.8});if(elapsed-eventAt>1)itemEvent(target.name+' 실드로 공격 방어!',target.id);return;}raceAudio.effect(kind);target.stun=kind==='ufo'?0:kind==='water'?1.7:kind==='banana'?1.2:kind==='lightning'?1.05:1.45;if(kind==='ufo')target.ufo=3;target.hitKind=kind;target.hitAt=elapsed;target.immunity=2.5;target.boost=0;itemStats.hits++;if(kind!=='ufo')effects.push({type:'hit_'+kind,id:target.id,ttl:.85,total:.85});if(elapsed-eventAt>1)itemEvent(owner+' → '+target.name+' '+({lightning:'번개 적중!',banana:'바나나에 미끄러졌습니다!',water:'물풍선 적중!',ufo:'우주선 감속!',missile:'미사일 적중!'})[kind],target.id);}
 const ITEM_POOLS={
@@ -2581,7 +2581,7 @@ const ITEM_POOLS={
  middle:['missile','shield','rocket','magnet','water','water','banana','ufo']
 };
 function giveItem(r,list){const q=list.indexOf(r)/Math.max(1,list.length-1),pool=q<.25?ITEM_POOLS.front:q>.58?ITEM_POOLS.rear:ITEM_POOLS.middle;r.item=list.some(o=>o.finish===null&&o!==r&&o.progress>r.progress)&&Math.random()<.03?'lightning':pool[Math.floor(Math.random()*pool.length)];r.useIn=.45+Math.random()*.9;r.itemTimer=4+Math.random()*2.5;}
-function useItem(r,list){const kind=r.item;if(!kind)return;itemStats.used++;if(['rocket','magnet','shield'].includes(kind))raceAudio.effect(kind);r.item=null;r.lastItem=kind;r.lastItemUntil=elapsed+1.7;const ahead=list.filter(o=>o.finish===null&&o!==r&&o.progress>r.progress);if(kind==='banana'){traps.push({owner:r.id,progress:r.progress-.008,lane:r.lane,ttl:12});if(elapsed-eventAt>1.8)itemEvent(r.name+' 바나나 설치! 뒤따르는 선수 주의!',r.id);}else if(kind==='ufo'){const target=ahead[0];if(target){strike(target,'ufo',r.name);if(target.ufo>0)effects.push({type:'ufo',id:target.id,ttl:3});itemEvent(r.name+' 우주선! '+target.name+' 추격 저지!',target.id);}else r.shield=2;}else if(kind==='water'){const target=ahead[ahead.length-1];if(target){effects.push({type:'water',from:r.id,id:target.id,ttl:.75,total:.75,owner:r.name});if(elapsed-eventAt>1.5)itemEvent(r.name+' 물풍선 투척!',target.id);}else{traps.push({owner:r.id,progress:r.progress-.008,lane:r.lane,ttl:10,water:true});}}else if(kind==='shield'){r.shield=4.5;}else if(kind==='rocket'){r.boost=2.7;r.immunity=Math.max(r.immunity,1);if(elapsed-eventAt>1.8)itemEvent(r.name+' 추격 로켓! 단숨에 거리를 좁힙니다.',r.id);}else if(kind==='magnet'){r.magnet=3.2;if(elapsed-eventAt>2)itemEvent(r.name+' 자석으로 앞차를 추격합니다!',r.id);}else if(kind==='missile'){const target=ahead[ahead.length-1];if(target){effects.push({type:'missile',from:r.id,id:target.id,ttl:.65,total:.65,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 유도 미사일 발사!',target.id);}else r.shield=2.2;}else if(kind==='lightning'){const targets=ahead;targets.forEach(t=>strike(t,'lightning',r.name));if(targets.length)itemEvent(r.name+' 번개! 앞선 선수 전원 감속 공격!',targets[0].id);else r.boost=1.6;}}
+function useItem(r,list){const kind=r.item;if(!kind)return;itemStats.used++;if(['rocket','magnet','shield'].includes(kind))raceAudio.effect(kind);r.item=null;r.lastItem=kind;r.lastItemUntil=elapsed+1.7;const ahead=list.filter(o=>o.finish===null&&o!==r&&o.progress>r.progress);if(kind==='banana'){traps.push({owner:r.id,progress:r.progress-.008,lane:r.lane,ttl:12});if(elapsed-eventAt>1.8)itemEvent(r.name+' 바나나 설치! 뒤따르는 선수 주의!',r.id);}else if(kind==='ufo'){const target=ahead[0];if(target){strike(target,'ufo',r.name);if(target.ufo>0)effects.push({type:'ufo',id:target.id,ttl:3});itemEvent(r.name+' 우주선! '+target.name+' 추격 저지!',target.id);}else r.shield=2;}else if(kind==='water'){const target=ahead[ahead.length-1];if(target){effects.push({type:'water',from:r.id,id:target.id,ttl:.75,total:.75,owner:r.name});if(elapsed-eventAt>1.5)itemEvent(r.name+' 물풍선 투척!',target.id);}else r.shield=2;}else if(kind==='shield'){r.shield=4.5;}else if(kind==='rocket'){r.boost=2.7;r.immunity=Math.max(r.immunity,1);if(elapsed-eventAt>1.8)itemEvent(r.name+' 부스터! 단숨에 거리를 좁힙니다.',r.id);}else if(kind==='magnet'){r.magnet=3.2;if(elapsed-eventAt>2)itemEvent(r.name+' 자석으로 앞차를 추격합니다!',r.id);}else if(kind==='missile'){const target=ahead[ahead.length-1];if(target){effects.push({type:'missile',from:r.id,id:target.id,ttl:.65,total:.65,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 유도 미사일 발사!',target.id);}else r.shield=2.2;}else if(kind==='lightning'){const targets=ahead;targets.forEach(t=>strike(t,'lightning',r.name));if(targets.length)itemEvent(r.name+' 번개! 앞선 선수 전원 감속 공격!',targets[0].id);else r.boost=1.6;}}
 
 const BASE_DRIVERS=17,MAX_DRIVERS=48;
 const CARD_ORDER=[8,9,13,10,0,5,1,11,14,15,12,3,6,16,7,4,2];
@@ -2637,12 +2637,15 @@ if(state!=='racing')return;elapsed+=dt;const standings=order();
 // backward scan instead of a full search per racer (that search was O(n^2) per tick).
 const active=activeRacers;active.length=0;for(const r of standings)if(r.finish===null){r.ai=active.length;active.push(r);}
 const frontProgress=active[0]?.progress||0;
-for(const t of traps)t.ttl-=dt;compact(traps,t=>t.ttl>0);for(const e of effects){e.ttl-=dt;if(e.ttl<=0&&e.type==='water'&&!e.done){e.done=true;const target=getRacer(e.id);if(target){for(const r of racers)if(r.id!==e.from&&r.finish===null&&Math.abs(r.progress-target.progress)<.032)strike(r,'water',e.owner);effects.push({type:'splash',id:target.id,ttl:.9});}}if(e.ttl<=0&&e.type==='missile'&&!e.done){e.done=true;const target=getRacer(e.id);if(target)strike(target,'missile',e.owner);}}compact(effects,e=>e.ttl>0);
+for(const t of traps)t.ttl-=dt;compact(traps,t=>t.ttl>0);for(const e of effects){e.ttl-=dt;if(e.ttl<=0&&e.type==='water'&&!e.done){e.done=true;const target=getRacer(e.id),thrower=getRacer(e.from);
+ // The splash only reaches forward: everyone caught by it has to be ahead of whoever
+ // threw it, so a water balloon can never hit the pack chasing you.
+ if(target){for(const r of racers)if(r.id!==e.from&&r.finish===null&&(!thrower||r.progress>thrower.progress)&&Math.abs(r.progress-target.progress)<.032)strike(r,'water',e.owner);effects.push({type:'splash',id:target.id,ttl:.9});}}if(e.ttl<=0&&e.type==='missile'&&!e.done){e.done=true;const target=getRacer(e.id);if(target)strike(target,'missile',e.owner);}}compact(effects,e=>e.ttl>0);
 for(const r of racers){if(r.finish!==null)continue;r.decision-=dt;r.boost=Math.max(0,r.boost-dt);r.stun=Math.max(0,r.stun-dt);r.ufo=Math.max(0,r.ufo-dt);r.shield=Math.max(0,r.shield-dt);r.immunity=Math.max(0,r.immunity-dt);r.magnet=Math.max(0,r.magnet-dt);r.itemTimer-=dt;
 if(r.item){r.useIn-=dt;if(r.useIn<=0)useItem(r,standings);}else if(r.itemTimer<=0)giveItem(r,standings);
 if(r.decision<=0){r.formTarget=(Math.random()-.5)*.18;r.laneTarget=(Math.random()-.5)*38;r.decision=1.5+Math.random()*2.8;}r.form+=(r.formTarget-r.form)*dt*.8;
 const a=(r.progress%1)*Math.PI*2,catchup=Math.min(.17,Math.max(0,frontProgress-r.progress)*.32);let target=.043*(1+r.form+catchup+.035*Math.sin(a*2+r.phase))*(r.boost>0?1.68:r.magnet>0?1.38:1)*(r.stun>0?.27:r.ufo>0?.52:1);
-let front=null;for(let j=r.ai-1;j>=0;j--){const other=active[j],d=other.progress-r.progress;if(d>=.011)break;if(d>0&&Math.abs(other.lane-r.lane)<12)front=other;}if(front){target*=.92;r.laneTarget=r.lane>=0?-18:18;}r.speed+=(target-r.speed)*Math.min(1,dt*(r.stun>0?8:2.4));r.lane+=(r.laneTarget-r.lane)*Math.min(1,dt*1.5);const before=r.progress;r.progress+=r.speed*dt;for(const t of traps){if(t.ttl>0&&r.id!==t.owner&&Math.abs(r.lane-t.lane)<20&&Math.floor(r.progress-t.progress)>Math.floor(before-t.progress)){strike(r,t.water?'water':'banana',names[t.owner]);t.ttl=0;}}
+let front=null;for(let j=r.ai-1;j>=0;j--){const other=active[j],d=other.progress-r.progress;if(d>=.011)break;if(d>0&&Math.abs(other.lane-r.lane)<12)front=other;}if(front){target*=.92;r.laneTarget=r.lane>=0?-18:18;}r.speed+=(target-r.speed)*Math.min(1,dt*(r.stun>0?8:2.4));r.lane+=(r.laneTarget-r.lane)*Math.min(1,dt*1.5);const before=r.progress;r.progress+=r.speed*dt;for(const t of traps){if(t.ttl>0&&r.id!==t.owner&&Math.abs(r.lane-t.lane)<20&&Math.floor(r.progress-t.progress)>Math.floor(before-t.progress)){strike(r,'banana',names[t.owner]);t.ttl=0;}}
 if(r.progress>=laps){r.finish=elapsed-dt+(laps-before)/r.speed;r.progress=laps;if(finishAt===null){finishAt=r.finish;itemEvent(r.name+' 체커기 통과! 끝까지 달린 승부!',r.id);}else if(elapsed-eventAt>2)announce(r.name+' 결승선 통과!');}}
 const sorted=order();if(sorted[0]&&lastLeader!==sorted[0].id){if(lastLeader!==null){itemStats.leadChanges++;if(elapsed-eventAt>1.6&&sorted[0].finish===null)itemEvent(sorted[0].name+' 선두 탈환! 승부가 뒤집힙니다.',sorted[0].id);}lastLeader=sorted[0].id;}
 if(!finalAnnounced&&sorted[0]?.progress>=laps-1){finalAnnounced=true;$('finalBadge').hidden=false;announce('FINAL LAP · 마지막 아이템 하나가 승부를 바꿉니다!');}
@@ -2662,7 +2665,7 @@ function createLeaderRow(r){
 function racerStatus(r){
  if(state==='setup')return '출전 대기';if(r.finish!==null)return 'FINISHED';
  if(r.stun>0)return ({missile:'💥 폭발 충격',banana:'🍌 미끄러짐',water:'💧 물방울 감금',lightning:'ϟ 감전'})[r.hitKind]||'피격';
- if(r.ufo>0)return '🛸 견인 광선';if(r.shield>0)return '🛡 방어 중';if(r.boost>0)return '🔥 추격 로켓';if(r.magnet>0)return '🧲 추격 중';
+ if(r.ufo>0)return '🛸 견인 광선';if(r.shield>0)return '🛡 방어 중';if(r.boost>0)return '🔥 부스터';if(r.magnet>0)return '🧲 추격 중';
  return r.item?itemNames[r.item]:Math.floor(Math.max(0,r.progress)/laps*100)+'%';
 }
 function updateUI(){
@@ -2816,7 +2819,7 @@ if(cameraMode==='auto'){
 }else{autoShot=null;autoShotRemaining=0;}
 if(subject){const p=point(subject.progress,subject.lane);tx=p.x;ty=p.y;z=cameraMode==='driver'?3.5:finalLap?2.9:2.3;label=cameraMode==='driver'?'CAM 05 · '+subject.name:label==='CAM 01 · 전체 서킷'?'CAM 02 · '+subject.name:label;if(cameraMode==='auto'&&elapsed>=cameraUntil){const next=alive.find(r=>r.id!==subject.id&&Math.abs(r.progress-subject.progress)<.10);if(next){const q=point(next.progress,next.lane);tx=(tx+q.x)/2;ty=(ty+q.y)/2;z=Math.min(z,2.6);}}}}
 const blend=1-Math.exp(-dt*3);camera.x+=(tx-camera.x)*blend;camera.y+=(ty-camera.y)*blend;camera.z+=(z-camera.z)*blend;camera.angle=0;setText($('cameraLabel'),label);setText($('focusLabel'),slowMotion?'PHOTO FINISH · SLOW MOTION':cameraMode==='auto'?'AUTO DIRECTOR':cameraMode==='wide'?'FULL CIRCUIT VIEW':'FOLLOW CAMERA');}
-function drawEffects(){if(traps.length){g.font='22px Pretendard,sans-serif';g.textAlign='center';for(const t of traps){const p=point(t.progress,t.lane);g.fillText(t.water?'💧':'🍌',p.x,p.y+7);}}for(const e of effects){const r=getRacer(e.id);if(!r)continue;const p=point(r.progress,r.lane);if(e.type.startsWith('hit_')){drawImpact(e,p);}else if(e.type==='ufo'){g.fillStyle='#b0a3ff55';g.beginPath();g.moveTo(p.x,p.y-54);g.lineTo(p.x-22,p.y+8);g.lineTo(p.x+22,p.y+8);g.fill();g.font='30px Pretendard,sans-serif';g.textAlign='center';g.fillText('🛸',p.x,p.y-38);}else if(e.type==='missile'||e.type==='water'){const from=getRacer(e.from),a=point(from.progress,from.lane),t=1-e.ttl/e.total,x=a.x+(p.x-a.x)*t,y=a.y+(p.y-a.y)*t;g.strokeStyle=e.type==='water'?'#5acaff':'#ff9c4c';g.lineWidth=3;g.setLineDash([4,6]);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(x,y);g.stroke();g.setLineDash([]);g.fillStyle=e.type==='water'?'#41b9ff':'#ff653c';g.beginPath();g.arc(x,y,6,0,7);g.fill();}else{g.strokeStyle=e.type==='block'||e.type==='splash'?'#6ae6ff':'#ffbb45';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,15+(1-e.ttl)*35,0,7);g.stroke();}}}
+function drawEffects(){if(traps.length){g.font='22px Pretendard,sans-serif';g.textAlign='center';for(const t of traps){const p=point(t.progress,t.lane);g.fillText('🍌',p.x,p.y+7);}}for(const e of effects){const r=getRacer(e.id);if(!r)continue;const p=point(r.progress,r.lane);if(e.type.startsWith('hit_')){drawImpact(e,p);}else if(e.type==='ufo'){g.fillStyle='#b0a3ff55';g.beginPath();g.moveTo(p.x,p.y-54);g.lineTo(p.x-22,p.y+8);g.lineTo(p.x+22,p.y+8);g.fill();g.font='30px Pretendard,sans-serif';g.textAlign='center';g.fillText('🛸',p.x,p.y-38);}else if(e.type==='missile'||e.type==='water'){const from=getRacer(e.from),a=point(from.progress,from.lane),t=1-e.ttl/e.total,x=a.x+(p.x-a.x)*t,y=a.y+(p.y-a.y)*t;g.strokeStyle=e.type==='water'?'#5acaff':'#ff9c4c';g.lineWidth=3;g.setLineDash([4,6]);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(x,y);g.stroke();g.setLineDash([]);g.fillStyle=e.type==='water'?'#41b9ff':'#ff653c';g.beginPath();g.arc(x,y,6,0,7);g.fill();}else{g.strokeStyle=e.type==='block'||e.type==='splash'?'#6ae6ff':'#ffbb45';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,15+(1-e.ttl)*35,0,7);g.stroke();}}}
 // Static minimap geometry is painted once; position dots refresh at 20 Hz.
 let miniBackground=null,miniClock=0,miniState='';
 function drawMini(dt=1/60){
@@ -2828,44 +2831,107 @@ function drawMini(dt=1/60){
  for(const r of racers){const p=point(r.progress);minimap.fillStyle=r.place===1?'#d8ff73':r.id===focused?'#67e9ff':'#fff';minimap.beginPath();minimap.arc(p.x,p.y,r.place===1?12:7,0,7);minimap.fill();}
  minimap.restore();minimap.fillStyle='#d6e0cb';minimap.font='9px Pretendard,sans-serif';minimap.fillText('LIVE CIRCUIT',12,16);
 }
-// The same collision rule, narrowed to adjacent vertical bands.
-function nameplateCollision(bands,x,y,width,height){
- const band=Math.floor(y/26);
- for(let k=band-1;k<=band+1;k++){const boxes=bands.get(k);if(!boxes)continue;for(const b of boxes)if(Math.abs(x-b.x)<(width+b.w)/2+4&&Math.abs(y-b.y)<height+3)return true;}
- return false;
+// Plate placement.
+//
+// A plate wants to sit just above its kart; if that spot is taken it steps up a row.
+// The stacking is what keeps a tight pack readable, so it stays generous - what changed
+// is how a taken spot is detected. It used to compare the candidate box against every
+// plate already placed in three neighbouring bands, up to 60 times per plate. Now the
+// screen is a fixed grid of plate-sized cells and a step is three Set lookups, so the
+// whole pass is a few hundred hash probes regardless of how the field is bunched.
+//
+// Two deliberate consequences: cells are a little narrower than a typical plate, so
+// crowded plates may clip each other by a few pixels rather than being pushed away, and
+// when a column runs out of headroom the plate simply overlaps instead of being thrown
+// to the far edge of the screen with a leader line across the whole view.
+//
+// Placement runs best-rank-first so leaders get first pick; drawing runs in reverse so a
+// leader's plate ends up on top of anything that overlaps it.
+const NAMEPLATE_BUDGET=17,PLATE_H=23,PLATE_ROW=27,PLATE_CELL_W=84,PLATE_STEPS=18,PLATE_TOP=90;
+const nameplatePicks=[],platePool=[],prefixWidths=new Map(),plateCells=new Set();
+function plateCell(x,y){return Math.round(x/PLATE_CELL_W)*4096+Math.round(y/PLATE_ROW);}
+function plateTaken(x,y,half){
+ return plateCells.has(plateCell(x,y))||plateCells.has(plateCell(x-half,y))||plateCells.has(plateCell(x+half,y));
 }
-// Labelling all 48 karts is both unreadable and superlinear: the collision solver
-// retries up to 60 times per plate against every neighbouring band. Only karts that
-// are actually on screen get a plate, highest placed first, up to a fixed budget.
-const NAMEPLATE_BUDGET=14,nameplatePicks=[],prefixWidths=new Map();
+function plateClaim(x,y,half){
+ plateCells.add(plateCell(x,y));plateCells.add(plateCell(x-half,y));plateCells.add(plateCell(x+half,y));
+}
 function plateWidth(prefix,name){
  let a=prefixWidths.get(prefix);if(a===undefined){a=g.measureText(prefix).width;prefixWidths.set(prefix,a);}
  let b=nameWidths.get(name);if(b===undefined){b=g.measureText(name).width;nameWidths.set(name,b);}
  return Math.min(W-24,a+b+18);
 }
-function drawNameplates(list=order()){if(state==='setup')return;const bands=new Map();g.font='bold 13px Pretendard,sans-serif';g.textAlign='center';g.textBaseline='alphabetic';
+function drawNameplates(list=order()){
+ if(state==='setup')return;
+ g.font='bold 13px Pretendard,sans-serif';g.textAlign='center';g.textBaseline='alphabetic';
  const picks=nameplatePicks;picks.length=0;
  for(const r of list){
   const entry=kartDrawEntries.get(r.id);
   const p=entry&&entry.progress===r.progress&&entry.lane===r.lane?entry.p:point(r.progress,r.lane);
   const px=W/2+(p.x-camera.x)*camera.z,py=H/2+(p.y-camera.y)*camera.z;
   if((px<-70||px>W+70||py<-70||py>H+70)&&focused!==r.id)continue;
-  picks.push(r,p,px,py);
-  if(picks.length>=NAMEPLATE_BUDGET*4)break;
+  const slot=platePool[picks.length]||(platePool[picks.length]={});
+  slot.r=r;slot.px=px;slot.py=py;picks.push(slot);
+  if(picks.length>=NAMEPLATE_BUDGET)break;
  }
- for(let k=0;k<picks.length;k+=4){const r=picks[k],p=picks[k+1],px=picks[k+2],py=picks[k+3];const outside=px<12||px>W-12||py<12||py>H-12;const prefix=(outside?'↗ ':'')+(r.finish!==null?'✓ ':r.place+' ');const text=prefix+r.name;const width=plateWidth(prefix,r.name);const height=23;let x=Math.max(width/2+8,Math.min(W-width/2-8,px)),y=Math.max(90,Math.min(H-55,py-38));for(let attempt=0;attempt<60;attempt++){if(!nameplateCollision(bands,x,y,width,height))break;y-=height+4;if(y<90){y=H-55;x=Math.max(width/2+8,Math.min(W-width/2-8,x+width+8));}}const band=Math.floor(y/26);if(!bands.has(band))bands.set(band,[]);bands.get(band).push({x,y,w:width});g.strokeStyle=focused===r.id?'#82b3ff':'#477dc7aa';g.lineWidth=1;g.beginPath();g.moveTo(x,y+height/2);g.lineTo(Math.max(8,Math.min(W-8,px)),Math.max(8,Math.min(H-8,py)));g.stroke();g.fillStyle=focused===r.id?'#b9d4ff':r.finish!==null?'#687b96ee':'#16386aef';g.beginPath();g.roundRect(x-width/2,y-height/2,width,height,5);g.fill();g.fillStyle=focused===r.id?'#173660':'#ffffff';g.fillText(text,x,y+4);}}
+ plateCells.clear();
+ for(let i=0;i<picks.length;i++){
+  const s=picks[i],r=s.r;
+  const outside=s.px<12||s.px>W-12||s.py<12||s.py>H-12;
+  s.prefix=(outside?'↗ ':'')+(r.finish!==null?'✓ ':r.place+' ');
+  s.text=s.prefix+r.name;
+  s.w=plateWidth(s.prefix,r.name);
+  const half=Math.max(0,s.w/2-12);
+  // Karts are drawn inside the camera transform, so a close shot makes them several
+  // times larger on screen; a fixed 38px lift left the plate sitting on top of the kart
+  // it was labelling. Scale the lift with the zoom, and let a crowded anchor spill into
+  // a neighbouring column instead of growing one tower straight through the pack.
+  const lift=38*Math.min(camera.z,2.6);
+  const anchorY=Math.max(PLATE_TOP,Math.min(H-55,s.py-lift));
+  let x=0,y=0,placed=false;
+  for(let col=0;col<3&&!placed;col++){
+   const spread=col===0?0:col===1?s.w/2+42:-(s.w/2+42);
+   const cx=Math.max(s.w/2+8,Math.min(W-s.w/2-8,s.px+spread));
+   let cy=anchorY;
+   for(let step=0;step<PLATE_STEPS;step++){
+    if(!plateTaken(cx,cy,half)){x=cx;y=cy;placed=true;break;}
+    const next=cy-PLATE_ROW;
+    if(next<PLATE_TOP)break;
+    cy=next;
+   }
+  }
+  if(!placed){x=Math.max(s.w/2+8,Math.min(W-s.w/2-8,s.px));y=anchorY;}
+  plateClaim(x,y,half);
+  s.x=x;s.y=y;
+ }
+ for(let i=picks.length-1;i>=0;i--){
+  const s=picks[i],r=s.r,x=s.x,y=s.y;
+  g.strokeStyle=focused===r.id?'#82b3ff':'#477dc7aa';g.lineWidth=1;
+  g.beginPath();g.moveTo(x,y+PLATE_H/2);g.lineTo(Math.max(8,Math.min(W-8,s.px)),Math.max(8,Math.min(H-8,s.py)));g.stroke();
+  g.fillStyle=focused===r.id?'#b9d4ff':r.finish!==null?'#687b96ee':'#16386aef';
+  g.beginPath();g.roundRect(x-s.w/2,y-PLATE_H/2,s.w,PLATE_H,5);g.fill();
+  g.fillStyle=focused===r.id?'#173660':'#ffffff';g.fillText(s.text,x,y+4);
+ }
+}
 function render(dt=.016){prepareTrackRaster();g.setTransform(canvasScale,0,0,canvasScale,0,0);const list=order();cameraStep(state==='paused'?0:dt,list);g.fillStyle='#e9f0fa';g.fillRect(0,0,W,H);g.save();g.translate(W/2,H/2);g.scale(camera.z,camera.z);g.translate(-camera.x,-camera.y);drawTrack();if(ready){if(state==='setup'){[...chosen].forEach((id,i)=>drawKart({id,progress:-Math.floor(i/3)*.014,lane:(i%3-1)*20,boost:0},true));}else{visibleKarts.length=0;const halfW=W/(2*camera.z)+100,halfH=H/(2*camera.z)+100;
 for(const r of racers){if(r.finish!==null)continue;const p=point(r.progress,r.lane);let entry=kartDrawEntries.get(r.id);if(!entry){entry={r,p};kartDrawEntries.set(r.id,entry);}else{entry.r=r;entry.p=p;}entry.progress=r.progress;entry.lane=r.lane;if(Math.abs(p.x-camera.x)<=halfW&&Math.abs(p.y-camera.y)<=halfH)visibleKarts.push(entry);}
 visibleKarts.sort((a,b)=>a.p.y-b.p.y);for(const entry of visibleKarts)drawKart(entry.r,false,entry.p);}}drawEffects();g.restore();drawNameplates(list);drawMini(dt);}
-// Opt-in frame-freeze log: open the page with #perf to record every stall over 100 ms
-// together with what the camera was doing, then read raceFreezes() from the console.
-const PERF=typeof location!=='undefined'&&location.hash==='#perf';
+// Frame-stall log. Always on: a stall is rare, and the whole cost is one comparison
+// per frame, so there is nothing to opt into and nothing to forget to switch on.
+// raceFreezes() prints the current race's stalls; add #perf to the URL - at any time,
+// no reload needed - to also have each one printed the moment it happens.
 const freezeLog=[];
-if(PERF)globalThis.raceFreezes=()=>freezeLog.slice();
+globalThis.raceFreezes=function(){
+ if(!freezeLog.length){console.log('기록된 멈춤 없음 — 이번 레이스에서 100ms를 넘긴 프레임이 없었습니다.');return [];}
+ const worst=freezeLog.reduce((a,b)=>b.stallMs>a.stallMs?b:a);
+ console.log('멈춤 '+freezeLog.length+'회 · 최악 '+worst.stallMs+'ms · 그중 자바스크립트 '+worst.js+'ms');
+ (console.table||console.log)(freezeLog);
+ return freezeLog.slice();
+};
 // Fixed-step simulation. SIM_HZ is the single knob; item probabilities are unchanged.
 const SIM_HZ=60,SIM_STEP=1/SIM_HZ,MAX_SUBSTEPS=8;
 function frame(now){
- frameHandle=null;const frameStart=PERF?performance.now():0;
+ frameHandle=null;const frameStart=performance.now();
  const rawDt=last===0?0:(now-last)/1000;const dt=Math.min(.10,rawDt);last=now;
  if(document.hidden||state==='setup'){last=0;return;}
  if(state==='countdown')tick(dt);
@@ -2876,8 +2942,15 @@ function frame(now){
  const animated=state==='countdown'||state==='racing';
  if(animated){uiClock+=dt;if(uiClock>.16){updateUI();uiClock=0;}}
  drawElapsed+=dt;renderClock+=dt;if((animated||renderDirty||settleFrames>0)&&(renderDirty||renderClock+0.0001>=renderInterval)){const drawDt=drawElapsed;drawElapsed=0;renderClock=Math.max(0,renderClock-renderInterval);if(renderClock>=renderInterval)renderClock%=renderInterval;render(drawDt);renderDirty=false;if(settleFrames>0)settleFrames--;}
- if(PERF&&animated&&rawDt>.1)freezeLog.push({at:+elapsed.toFixed(2),stallMs:Math.round(rawDt*1000),
-  js:+(performance.now()-frameStart).toFixed(1),camZ:+camera.z.toFixed(2),cam:cameraMode,drivers:racers.length});
+ if(animated&&rawDt>.1){
+  const stall={at:+elapsed.toFixed(2),stallMs:Math.round(rawDt*1000),js:+(performance.now()-frameStart).toFixed(1),
+   camZ:+camera.z.toFixed(2),cam:cameraMode,drivers:racers.length};
+  if(freezeLog.length>=200)freezeLog.shift();
+  freezeLog.push(stall);
+  // Read the hash now rather than at load: typing #perf into the address bar of an
+  // already-open page changes it without reloading.
+  if(location.hash==='#perf')console.warn('[stall]',stall);
+ }
  if(animated||renderDirty||settleFrames>0)frameHandle=requestAnimationFrame(frame);else last=0;
 }
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'get_race_status',description:'관전 레이스의 출전 선수, 진행 상태 및 실제 통과 순위를 확인합니다.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state,entrants:[...chosen].map(id=>names[id]),elapsed,laps,standings:order().map((r,i)=>({rank:i+1,name:r.name,finish:r.finish}))})})).catch(()=>{})}catch{}}
