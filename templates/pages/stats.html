@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
+<section id="page-stats" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">방송통계</h1>
+        <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+    </div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs" id="synergy-metric-filter" role="tablist">
+        <div class="sub-tab active" data-metric="balloons" role="tab" tabindex="0" aria-selected="true" onclick="setSynergyMetric('balloons')">별풍선</div>
+        <div class="sub-tab" data-metric="broadcast_seconds" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('broadcast_seconds')">방송시간</div>
+        <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
+        <div class="sub-tab" data-metric="sponsor" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('sponsor')">스폰전적</div>
+    </div>
+    <div class="row gap-block mb-block">
+        {%- for gender_key, gender_label in [('male', '남자 멤버'), ('female', '여자 멤버')] %}
+        <div class="col-md-6">
+            <div class="section-title">{{ gender_label }}</div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-{{ gender_key }}">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {%- endfor %}
+    </div>
+    <div class="text-center text-muted section-trailer text-caption" id="synergy-updated"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('page-stats.js') }}"></script>
+{% endblock %}

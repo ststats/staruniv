@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block content %}
+{% from 'partials/macros.html' import match_table_head %}
+<!-- 전적 페이지 -->
+<section id="page-records" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">전적</h1>
+        <p class="page-header-subtitle">캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.</p>
+    </div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs" role="tablist">
+        <div class="sub-tab active" id="tab-team" role="tab" tabindex="0" aria-selected="true" onclick="switchStatView('team')">팀</div>
+        <div class="sub-tab" id="tab-individual" role="tab" tabindex="0" aria-selected="false" onclick="switchStatView('individual')">개인</div>
+    </div>
+
+    <!-- 1. 팀 뷰 -->
+    <div id="view-team-stat">
+        <div class="section-title">전체 전적</div>
+        <div class="row g-3 mb-block">
+            {%- for fmt in ['대회', '대학', '미니', 'CK'] %}
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('{{ fmt }}')">
+                <span class="stat-card-arrow" aria-hidden="true">↗</span>
+                <div class="label">{{ fmt }}</div>
+                <div class="donut" id="t-sum-{{ fmt }}-donut"><span class="donut-text" id="t-sum-{{ fmt }}-r">0%</span></div>
+                <div class="wl" id="t-sum-{{ fmt }}-w">0승 0패</div>
+            </div></div>
+            {%- endfor %}
+        </div>
+
+        <div class="row gap-block align-items-stretch mb-block">
+            <div class="col-lg-7 d-flex flex-column">
+                <div class="section-title">상대 전적</div>
+                <div class="clean-card p-0 overflow-hidden d-flex flex-column flex-grow-1">
+                    <div class="table-responsive flex-grow-1 scroll-y-auto">
+                        <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-615">
+                            <thead>
+                                <tr><th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-18-8">상대</th><th scope="col" class="text-center text-nowrap colw-18-8">대회</th><th scope="col" class="text-center text-nowrap colw-18-8">대학</th><th scope="col" class="text-center text-nowrap colw-18-8">미니</th><th scope="col" class="text-center text-nowrap colw-18-8">CK</th><th scope="col" class="colw-6" aria-label="상세"></th></tr>
+                            </thead>
+                            <tbody>
+                                {% for row in crew_stats['전체'] %}
+                                <tr class="team-row-clickable stat-row" role="button" tabindex="0" data-team="{{ row['상대'] | e }}">
+                                    <td class="fw-bold text-dark text-center stat-table-sticky-col text-nowrap colw-18-8">
+                                        <span class="d-flex align-items-center justify-content-center gap-2">
+                                            <img src="{{ row['상대'] | team_logo_src }}" alt="" class="team-logo-icon" loading="lazy" style="width:16px;height:16px;" data-team="{{ row['상대'] | e }}" onerror="this.dataset.logoFailed = '1'; if (window.teamLogoFallback) teamLogoFallback(this, this.dataset.team);">
+                                            <span class="ellipsis-text text-nowrap">{{ row['상대'] | e }}</span>
+                                        </span>
+                                    </td>
+                                    <td class="text-center text-nowrap colw-18-8">{{ row['대회 전적'] | e }}</td><td class="text-center text-nowrap colw-18-8">{{ row['대학 전적'] | e }}</td>
+                                    <td class="text-center text-nowrap colw-18-8">{{ row['미니 전적'] | e }}</td><td class="text-center text-nowrap colw-18-8">{{ row['CK 전적'] | e }}</td>
+                                    <!-- 이 행은 클릭 시 팝업(모달)이 열리므로, 도구 페이지의 외부링크
+                                         화살표(↗)와 같은 모양을 써서 "이동/열기"라는 의미를 통일한다. -->
+                                    <td class="text-center colw-6">
+                                        <span class="ext-arrow" aria-hidden="true">↗</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 d-flex flex-column">
+                <div class="section-title">
+                    최근 전적
+                    <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+                </div>
+                <div class="clean-card flex-grow-0 p-0 overflow-hidden card-radius-sm">
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-480">
+{{- match_table_head() }}
+                            <tbody id="team-recent-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 개인 뷰 -->
+    <div id="view-indiv-stat" class="d-none">
+        <div class="avatar-selector-scroll">
+            <div class="avatar-selector-list" id="indiv-avatar-list"></div>
+        </div>
+
+        <div class="section-title" id="indiv-content-title">전체 전적</div>
+
+        <div id="indiv-summary-content">
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-650">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-20">멤버</th>
+                                <th scope="col" class="text-nowrap colw-20">대회</th>
+                                <th scope="col" class="text-nowrap colw-20">대학</th>
+                                <th scope="col" class="text-nowrap colw-20">미니</th>
+                                <th scope="col" class="text-nowrap colw-20">CK</th>
+                            </tr>
+                        </thead>
+                        <tbody id="indiv-summary-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="statContent" class="d-none">
+            <div class="clean-card d-flex align-items-center mb-block p-4">
+                <div class="profile-avatar" id="p-avatar">👤</div>
+                <div>
+                    <h3 class="fw-bold m-0 mb-2 profile-name" id="p-name">이름</h3>
+                    <div class="d-flex gap-2">
+                        <span class="tag-badge" id="p-tier">티어</span>
+                        <span class="tag-badge" id="p-race">종족</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-block">
+                <div class="col-md-6">
+                    <div class="clean-card h-100 p-3">
+                        <div class="section-title-sm">형식별 승률</div>
+                        <div class="donut-wrap">
+                            <div class="donut-box"><div class="donut" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label">대회</div><div class="donut-sub" id="dw-fmt-1">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label">대학</div><div class="donut-sub" id="dw-fmt-2">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-fmt-3"><span class="donut-text" id="dt-fmt-3">0%</span></div><div class="donut-label">미니</div><div class="donut-sub" id="dw-fmt-3">-</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="clean-card h-100 p-3">
+                        <div class="section-title-sm">종족전 승률</div>
+                        <div class="donut-wrap">
+                            <div class="donut-box"><div class="donut" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label text-primary">vs T</div><div class="donut-sub" id="dw-race-t">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label donut-label-z">vs Z</div><div class="donut-sub" id="dw-race-z">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-race-p"><span class="donut-text" id="dt-race-p">0%</span></div><div class="donut-label text-warning">vs P</div><div class="donut-sub" id="dw-race-p">-</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title mt-4 section-title-filters">
+                <div class="d-flex align-items-center mw-100 overflow-hidden">
+                    <span class="filter-nav-label">최근 전적</span>
+                    <div id="indiv-filters" class="filter-nav" role="tablist">
+                        <div class="filter-item active" role="tab" tabindex="0" onclick="setIndivFilter('전체')">전체</div>
+                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대회')">대회</div>
+                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대학')">대학</div>
+                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('미니')">미니</div>
+                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('CK')">CK</div>
+                    </div>
+                </div>
+                <button class="btn-view-all" onclick="openIndivMatchModal()">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+            </div>
+
+            <div class="clean-card p-0 overflow-hidden card-radius-sm">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-480">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center stat-table-sticky-col colw-16-66">상대</th>
+                                <th scope="col" class="text-center colw-16-66">상대 팀</th>
+                                <th scope="col" class="text-center colw-16-66">형식</th>
+                                <th scope="col" class="text-center colw-16-66">맵</th>
+                                <th scope="col" class="text-center colw-16-66">결과</th>
+                                <th scope="col" class="text-center colw-16-66">날짜</th>
+                            </tr>
+                        </thead>
+                        <tbody id="indiv-recent-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block modals %}
+{% include 'partials/match_modals.html' %}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('page-records.js') }}"></script>
+{% endblock %}

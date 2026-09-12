@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    {#- 하위 페이지(/records/ 등)는 모든 상대 경로(CSS/JS/이미지/data/..., JS의 fetch 포함)를
+        사이트 루트 기준으로 해석하게 한다. 절대 경로 대신 이렇게 해야 GitHub Pages 프로젝트 페이지
+        (/staruniv/)와 루트 배포(Vercel) 양쪽에서 같은 결과물이 그대로 동작한다. #}
+    {%- if root %}
+    <base href="{{ root }}">
+    {%- endif %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ full_title }}</title>
+    <meta name="description" content="{{ description }}">
+    {#- 카카오톡/디스코드 등에 링크를 붙였을 때 보이는 미리보기 #}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="스타대학">
+    <meta property="og:title" content="{{ full_title }}">
+    <meta property="og:description" content="{{ description }}">
+    {%- if canonical_url %}
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    {%- endif %}
+    {%- if og_image_url %}
+    <meta property="og:image" content="{{ og_image_url }}">
+    {%- endif %}
+    <meta name="twitter:card" content="summary">
+    {%- block head_scripts %}{% endblock %}
+    <link rel="icon" type="image/webp" href="images/파비콘.webp">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+    {#- 빌드마다 바뀌는 site_data.json 버전 - core.js가 이 값을 붙여 요청해서, 데이터가 바뀌었을 때만 새로 받는다 #}
+    <meta name="site-data-version" content="{{ site_data_version }}">
+</head>
+<body>
+
+{#- [구조] 예전엔 이 파일(index.html) 하나에 모든 메뉴를 넣고 JS로 보였다 숨겼다 했다(SPA).
+    이제 build_html.py가 templates/pages/*.html을 이 레이아웃에 끼워 메뉴마다 실제 페이지
+    (docs/index.html, docs/records/index.html ...)를 만든다. 상단 메뉴는 진짜 링크(<a href>)라
+    새 탭 열기/Ctrl+클릭이 되고, JS 없이도 이동한다. -#}
+
+<header class="top-navbar">
+    <div class="navbar-inner container">
+        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
+        <nav class="nav-menu" id="mainMenu" aria-label="주 메뉴">
+            {%- for nav in nav_items %}
+            <a class="nav-item{% if nav.id == page_id %} active{% endif %}" href="{{ nav.href }}" data-page="{{ nav.id }}"{% if nav.id == page_id %} aria-current="page"{% endif %}>{{ nav.label }}</a>
+            {%- endfor %}
+        </nav>
+    </div>
+</header>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+{% block modals %}{% endblock %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

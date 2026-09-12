@@ -1,0 +1,48 @@
+{#- 전적 페이지 전용 모달: 팀 전적 / 개인 전체 전적 -#}
+{% from 'partials/macros.html' import match_table_head %}
+<div class="modal fade" id="teamMatchesModal" tabindex="-1" aria-labelledby="teamModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-w-550">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="teamModalTitle">팀 전체 전적</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-480">
+{{- match_table_head() }}
+                        <tbody id="team-modal-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="indivMatchesModal" tabindex="-1" aria-labelledby="indivModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-w-600">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="indivModalTitle">개인 전체 전적</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-480">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center stat-table-sticky-col colw-16-66">상대</th>
+                                <th scope="col" class="text-center colw-16-66">상대 팀</th>
+                                <th scope="col" class="text-center colw-16-66">형식</th>
+                                <th scope="col" class="text-center colw-16-66">맵</th>
+                                <th scope="col" class="text-center colw-16-66">결과</th>
+                                <th scope="col" class="text-center colw-16-66">날짜</th>
+                            </tr>
+                        </thead>
+                        <tbody id="indiv-modal-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

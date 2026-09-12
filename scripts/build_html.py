@@ -29,6 +29,27 @@ TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
 OUT_DIR = 'docs'
 
+# ----- 페이지 구성 -----
+# [구조 변경] 예전엔 index.html 하나(SPA)였다. 이제 메뉴마다 실제 페이지를 만든다:
+#   docs/index.html(홈), docs/schedule/index.html, docs/members/index.html, ...
+# 각 페이지는 templates/pages/<id>.html이 templates/base.html(공통 머리/메뉴)을 상속한다.
+# 메뉴를 추가하려면 여기 한 줄 + templates/pages/<id>.html + (필요하면) page-<id>.js만 만들면 된다.
+# (id, 메뉴 이름, 페이지 제목(None이면 사이트 이름만), 검색/링크 미리보기 설명)
+PAGES = [
+    ('home', '홈', None, '캄몬스타즈 멤버들의 방송·공지·일정·전적을 한곳에서 보는 스타대학입니다.'),
+    ('schedule', '일정', '일정', '캄몬스타즈 멤버들의 이번 달 일정입니다.'),
+    ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다.'),
+    ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.'),
+    ('stats', '방송통계', '방송통계', '캄몬스타즈 멤버들의 이번 달 방송 통계입니다.'),
+    ('tools', '도구', '도구', '자주 쓰는 도구 모음입니다.'),
+]
+SITE_NAME = '스타대학'
+# 대표 주소(검색엔진 대표 URL, 링크 미리보기 이미지 주소에 쓰임 - 절대 주소여야 한다).
+# 다른 주소로 배포하면 워크플로 환경변수 SITE_URL로 바꾸면 된다(끝의 / 없이).
+SITE_URL = os.environ.get('SITE_URL', 'https://ststats.github.io/staruniv').rstrip('/')
+# 링크 미리보기 이미지. 가로 1200×630 PNG/JPG를 따로 만들어 images/에 넣고 이 값을 바꾸면 더 잘 보인다.
+OG_IMAGE_PATH = 'images/캄몬스타즈.webp'
+
 # app.js의 TIER_ORDER와 완전히 동일한 순서 - 멤버카드 그리드 정렬이랑 아바타 바
 # 정렬이 서로 다르게 나오지 않도록 여기서도 같은 기준을 쓴다. (참고: app.js의
 # tierIndex()는 목록에 없는 값이면 배열 길이를 반환해 맨 뒤로 보내는데, 여기서도
@@ -61,6 +82,29 @@ def team_logo_src(team_name):
     name = str(team_name or '').strip()
     file_name = OWN_TEAM_LOGO_NAME if name == '내전' else name
     return f"images/{quote(file_name, safe=_URI_COMPONENT_SAFE)}.webp"
+
+
+def page_output_path(page_id):
+    return os.path.join(OUT_DIR, 'index.html') if page_id == 'home' else os.path.join(OUT_DIR, page_id, 'index.html')
+
+
+def page_url_path(page_id):
+    """사이트 루트 기준 상대 경로('' 또는 'records/'). 메뉴 링크와 대표 주소에 쓴다."""
+    return '' if page_id == 'home' else f'{page_id}/'
+
+
+def page_context(page_id, title, description):
+    """페이지별로 달라지는 템플릿 값(제목/설명/대표 주소/<base>/메뉴 링크)."""
+    return {
+        'page_id': page_id,
+        # 하위 폴더 페이지는 <base href="../">로 모든 상대 경로를 사이트 루트 기준으로 맞춘다
+        'root': '' if page_id == 'home' else '../',
+        'full_title': f'{title} | {SITE_NAME}' if title else SITE_NAME,
+        'description': description,
+        'canonical_url': f'{SITE_URL}/{page_url_path(page_id)}',
+        'og_image_url': f'{SITE_URL}/{quote(OG_IMAGE_PATH)}',
+        'nav_items': [{'id': pid, 'label': label, 'href': page_url_path(pid) or './'} for pid, label, _, _ in PAGES],
+    }
 
 
 def write_text_atomic(path, text):
@@ -158,12 +202,15 @@ def main():
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     env.filters['team_logo_src'] = team_logo_src
     env.globals['asset_url'] = make_asset_url(static_asset_versions())
-    template = env.get_template('index.html')
-    html_output = template.render(crew_stats=stats_data['crew_stats'],
-                                  site_data_version=content_version(site_data_text))
+    common = {'crew_stats': stats_data['crew_stats'], 'site_data_version': content_version(site_data_text)}
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
-    write_text_atomic(os.path.join(OUT_DIR, 'index.html'), html_output)
+    for page_id, _, title, description in PAGES:
+        html_output = env.get_template(f'pages/{page_id}.html').render(**common, **page_context(page_id, title, description))
+        out_path = page_output_path(page_id)
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        write_text_atomic(out_path, html_output)
+    print(f"✅ 페이지 {len(PAGES)}개 생성: {', '.join(page_output_path(p[0]) for p in PAGES)}")
 
     site_data_path = os.path.join(OUT_DIR, 'data', 'site_data.json')
     write_text_atomic(site_data_path, site_data_text)

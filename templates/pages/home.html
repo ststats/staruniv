@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block head_scripts %}
+    <script>
+        // 예전 SPA 시절 GitHub Pages 404 우회가 만들던 주소(/?/records&view=solo)로 들어오면
+        // 새 실제 페이지 주소(records/?view=solo)로 옮겨준다. (옛 링크 호환용 - 새로 생기지는 않는다)
+        (function (l) {
+            if (l.search[1] !== '/') return;
+            var decoded = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&'); }).join('?');
+            var path = decoded.slice(1), q = path.indexOf('?');
+            var page = (q === -1 ? path : path.slice(0, q)).replace(/\/+$/, '');
+            l.replace(l.pathname + (page ? page + '/' : '') + (q === -1 ? '' : path.slice(q)) + l.hash);
+        }(window.location));
+    </script>
+{% endblock %}
+{% block content %}
+<section id="page-home" class="page-section active container">
+    <div class="clean-card p-4 mb-block text-center home-wordmark">
+        <div class="home-wordmark-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
+        <div class="home-wordmark-sub">STAR UNIVERSITY</div>
+    </div>
+    <hr class="page-header-divider mt-0">
+    <div class="section-title">방송 중</div>
+    <div class="clean-card p-4" id="home-live-broadcast" aria-live="polite">
+        <div class="text-center text-muted py-4 fs-body">실시간 방송 상태 연동 준비중입니다.</div>
+    </div>
+
+    <div class="section-title mt-4">
+        최근 공지
+        <a class="btn-view-all" href="members/?view=news">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></a>
+    </div>
+    <div class="home-notice-list" id="home-notice-list" aria-live="polite">
+        <div class="clean-card text-center text-muted py-4 fs-body">불러오는 중...</div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('soop.js') }}"></script>
+<script src="{{ asset_url('page-home.js') }}"></script>
+{% endblock %}

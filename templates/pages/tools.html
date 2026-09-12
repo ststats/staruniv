@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- 도구 페이지 -->
+<section id="page-tools" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">도구</h1>
+        <p class="page-header-subtitle">자주 쓰는 도구 모음입니다.</p>
+    </div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs" role="tablist">
+        <div class="sub-tab active" id="tab-tools-multiviewer" role="tab" tabindex="0" aria-selected="true" onclick="switchToolsView('multiviewer')">멀티뷰어</div>
+        <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('external')">외부도구</div>
+    </div>
+
+    <!-- 1. 멀티뷰어 뷰 -->
+    <div id="view-tools-multiviewer">
+        <div class="section-title">설정</div>
+        <div class="mv-console">
+            <div class="mv-console-tiles">
+               <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+                    <div class="mv-tile-label">그리드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" aria-label="그리드 모드" aria-pressed="false" onclick="mvToggleFocusMode()"></button>
+                </div>
+                <div class="mv-tile disabled" id="mv-col-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
+                    <div class="mv-tile-label">열 개수</div>
+                    <div class="mv-stepper">
+                        <button type="button" aria-label="열 줄이기" onclick="mvChangeCols(-1)">−</button>
+                        <span class="mv-stepper-value" id="mv-cols-value" aria-live="polite">2</span>
+                        <button type="button" aria-label="열 늘리기" onclick="mvChangeCols(1)">+</button>
+                    </div>
+                </div>
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                    <div class="mv-tile-label">다크 모드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" aria-label="다크 모드" aria-pressed="false" onclick="mvToggleDarkSetting()"></button>
+                </div>
+            </div>
+            <button type="button" class="mv-run-btn" id="mv-open-btn" onclick="openMultiviewer()" disabled>
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                멀티뷰어 실행
+            </button>
+        </div>
+
+        <div class="section-title">멤버 선택</div>
+        <div class="mv-chip-box">
+            <div class="mv-chip-row" id="mv-chip-row"></div>
+            <div class="mv-quickadd">
+                <input type="text" id="mv-custom-id" placeholder="숲아이디 직접 입력" aria-label="숲아이디 직접 입력" maxlength="20" onkeydown="if(event.key==='Enter')mvAddCustom()">
+                <button type="button" class="mv-quickadd-btn" title="추가" aria-label="추가" onclick="mvAddCustom()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+        </div>
+
+        <div class="section-title">선택된 목록</div>
+        <div class="mv-order-row" id="mv-order-row"></div>
+    </div>
+
+    <!-- 2. 외부도구 뷰 (도구/사이트로 구분) -->
+    <div id="view-tools-external" class="d-none">
+        <div class="section-title">도구</div>
+        <div class="tool-grid" id="tools-grid-extTools"></div>
+
+        <div class="section-title section-title-spaced">사이트</div>
+        <div class="tool-grid" id="tools-grid-extSites"></div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('mv-shared.js') }}"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('soop.js') }}"></script>
+<script src="{{ asset_url('page-tools.js') }}"></script>
+{% endblock %}

@@ -2,28 +2,39 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>스타대학</title>
-<script>
-    // GitHub Pages는 순수 정적 파일 서버라 /records, /stats 같은 경로에 실제
-    // 파일이 없으면 이 404.html을 대신 보여준다(Vercel은 vercel.json rewrite로
-    // 처리하지만, GitHub Pages엔 그런 설정이 없어서 이 트릭이 필요하다).
-    // 진짜 index.html로 되돌리면서, 원래 요청했던 경로를 쿼리스트링에 인코딩해
-    // 넘긴다 - index.html이 로드될 때 그 쿼리스트링을 다시 원래 경로로 복원한다.
-    // (rafgraph/spa-github-pages 패턴)
-    //
-    // 저장소가 프로젝트 페이지(https://ststats.github.io/staruniv/)로 배포된다는
-    // 가정 하에 pathSegmentsToKeep=1로 잡았다. 만약 커스텀 도메인이나 유저/조직
-    // 루트 페이지(https://ststats.github.io/)로 배포한다면 0으로 바꿔야 한다.
-    var pathSegmentsToKeep = 1;
-    var l = window.location;
-    l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-    );
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>페이지를 찾을 수 없습니다 | 스타대학</title>
+<meta name="robots" content="noindex">
+<!--
+    [변경] 예전엔 이 파일이 GitHub Pages에서 SPA 경로(/records 등)를 index.html로 되돌리는
+    우회 장치였다(rafgraph/spa-github-pages 패턴). 이제 메뉴마다 실제 페이지(docs/records/index.html
+    등)가 있어서 그 우회가 필요 없고, 이 파일은 정말로 없는 주소에만 보이는 안내 페이지다.
+    어느 경로에서 보여질지 모르므로 외부 CSS/이미지 없이 이 파일 안에서 모양을 정한다.
+-->
+<style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f4f7fc; color: #222; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+    main { text-align: center; padding: 24px; }
+    .code { font-size: 56px; font-weight: 800; letter-spacing: -2px; color: #2979ff; }
+    h1 { font-size: 20px; margin: 8px 0; }
+    p { color: #888; font-size: 14px; margin: 0 0 24px; }
+    a { display: inline-block; padding: 10px 20px; border-radius: 8px; background: #2979ff; color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+</style>
 </head>
-<body></body>
+<body>
+<main>
+    <div class="code">404</div>
+    <h1>페이지를 찾을 수 없습니다</h1>
+    <p>주소가 바뀌었거나 없는 페이지입니다.</p>
+    <a id="home-link" href="/">스타대학 홈으로</a>
+</main>
+<script>
+    // GitHub Pages 프로젝트 페이지(https://ststats.github.io/staruniv/)는 첫 경로 조각(저장소 이름)까지가
+    // 사이트 루트이고, 그 외(Vercel 등 루트 배포, 커스텀 도메인)는 "/"가 루트다.
+    (function () {
+        var segs = location.pathname.split('/').filter(Boolean);
+        var isProjectPage = /\.github\.io$/.test(location.hostname) && segs.length > 0;
+        document.getElementById('home-link').href = isProjectPage ? '/' + segs[0] + '/' : '/';
+    })();
+</script>
+</body>
 </html>

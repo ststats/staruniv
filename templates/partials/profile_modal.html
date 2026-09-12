@@ -1,0 +1,44 @@
+{#- 멤버 페이지 전용 모달: 멤버 프로필 -#}
+<div class="modal fade" id="memberProfileModal" tabindex="-1" aria-labelledby="memberProfileTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-w-400">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="memberProfileTitle">프로필</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body profile-modal-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="profile-avatar" id="mp-avatar">👤</div>
+                    <div>
+                        <div class="fw-bold profile-modal-name" id="mp-name">이름</div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="tag-badge" id="mp-role-badge">직책</span>
+                            <span class="tag-badge" id="mp-tier-badge">티어</span>
+                            <span class="tag-badge" id="mp-race-badge">종족</span>
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-borderless mb-0 fs-body profile-info-table">
+                    <tbody id="mp-info-body"></tbody>
+                </table>
+
+                <div class="mt-3">
+                    <div class="section-title-sm">
+                        이번 달 방송 활동
+                        <span class="text-secondary title-count" id="mp-activity-status">데이터 준비중</span>
+                    </div>
+                    <div class="row g-2">
+                        {%- for stat_id, stat_label in [('mp-balloons', '별풍선'), ('mp-broadcast-hours', '방송시간'), ('mp-viewers', '누적시청자'), ('mp-sponsor-record', '스폰전적')] %}
+                        <div class="col-6">
+                            <div class="clean-card text-center py-2">
+                                <div class="text-secondary activity-label">{{ stat_label }}</div>
+                                <div class="fw-bold fs-body" id="{{ stat_id }}">-</div>
+                            </div>
+                        </div>
+                        {%- endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

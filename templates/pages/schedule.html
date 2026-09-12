@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<section id="page-schedule" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">일정</h1>
+        <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 일정입니다.</p>
+    </div>
+    <hr class="page-header-divider">
+    <div class="cal-app-root">
+        <div class="cal-main-layout">
+            <!-- 모바일 분리용 사이드바 -->
+            <aside class="cal-sidebar">
+                <div class="cal-today-card-wrapper">
+                    <div class="section-title">오늘의 일정</div>
+                    <div class="clean-card p-4">
+                        <div class="cal-today-list" id="todayList"></div>
+                    </div>
+                </div>
+                <div class="cal-selected-card-wrapper">
+                    <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
+                    <div class="clean-card p-4">
+                        <div class="cal-selected-list" id="selectedDateList"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="cal-calendar-area">
+                <div class="section-title">
+                    이달의 일정
+                    <div class="cal-nav-group">
+                        <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                        <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    </div>
+                </div>
+                <div class="clean-card p-3">
+                    <!-- 가로 스크롤 허용 캘린더 구역 -->
+                    <div class="cal-calendar-inner">
+                        <div class="cal-calendar-scroll-content">
+                            <div class="cal-weekdays">
+                                <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                            </div>
+                            <div class="cal-days-grid" id="daysGrid"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('calendar.js') }}"></script>
+<script src="{{ asset_url('page-schedule.js') }}"></script>
+{% endblock %}
