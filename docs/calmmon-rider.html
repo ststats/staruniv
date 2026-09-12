@@ -2460,6 +2460,11 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
  .opening .panel-head h2,.opening .setup-heading h2{font-size:16px}
  .tool-btn{padding:2px 4px;font-size:11px}
 }
+
+/* FINAL LAP 배지는 처음부터 자리에 있고 투명할 뿐이다. hidden 을 벗기는 순간
+   HUD 한 줄이 통째로 다시 배치되는데, 하필 마지막 바퀴 진입이라 화면이 가장
+   바쁜 순간과 겹친다. 전역 [hidden] 규칙이 !important 라 여기서도 맞받는다. */
+.race-hud #finalBadge[hidden]{display:inline-block!important;visibility:hidden}
 </style><!-- Pretendard license: Copyright (c) 2021, Kil Hyung-jin (https://github.com/orioncactus/pretendard),
 with Reserved Font Name 'Pretendard'.
 
@@ -2619,20 +2624,66 @@ function wakeLoop(){raceAudio.music();if(frameHandle===null&&state!=='setup'&&!d
 
 // Size rendering to the actual embed, while retaining logical track coordinates.
 let renderInterval=1/60,canvasScale=1,drawElapsed=0;
-const visibleKarts=[],kartDrawEntries=new Map();
+const visibleKarts=[],kartDrawEntries=new Map(),cameraAlive=[];
+// The backing store follows the container, but only in meaningful steps.
+//
+// Reallocating it is not a cheap assignment: the old bitmap is thrown away and, on a
+// real GPU, its texture is dropped and re-uploaded. Measured here it turns a 0.51ms
+// frame into a 6.93ms one, and hardware makes that worse, not better. Meanwhile a page
+// can wobble the container width by a pixel for all sorts of reasons that have nothing
+// to do with the game - a scrollbar appearing, a webfont landing, a mobile URL bar
+// sliding, or the parent page of an embed animating anything at all. Following those
+// pixel-for-pixel meant one stall per wobble, at any camera setting, all race long.
+//
+// So the size only moves when it moves by something worth paying for. Up to
+// RESIZE_STEP of mismatch, the canvas is sampled very slightly off 1:1 instead, which
+// at this scale is under 2.5% and invisible.
+const RESIZE_STEP=24;
 function fitRaceCanvas(){
  const width=cv.clientWidth;if(!width)return;
  const mobile=width<=750;
- const pixels=Math.min(1200,Math.max(600,Math.round(width*Math.min(globalThis.devicePixelRatio||1,1.5))));
- const height=Math.round(pixels*740/1200);
- if(cv.width!==pixels||cv.height!==height){cv.width=pixels;cv.height=height;canvasScale=pixels/1200;renderDirty=true;}
+ const wanted=Math.min(1200,Math.max(600,Math.round(width*Math.min(globalThis.devicePixelRatio||1,1.5))));
+ if(!cv.width||Math.abs(wanted-cv.width)>=RESIZE_STEP){
+  const height=Math.round(wanted*740/1200);
+  cv.width=wanted;cv.height=height;canvasScale=wanted/1200;renderDirty=true;
+ }
  renderInterval=mobile?1/30:1/60;
  if(state!=='setup'&&state!=='paused')wakeLoop();
 }
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(fitRaceCanvas).observe(cv);
-const kartFaces=new Map();
-function kartFace(id){
- if(!kartFaces.has(id)){const c=document.createElement('canvas');c.width=c.height=42;const b=c.getContext('2d');b.beginPath();b.arc(21,21,21,0,Math.PI*2);b.clip();if(portraits[id])b.drawImage(portraits[id],0,0,42,42);kartFaces.set(id,c);}return kartFaces.get(id);
+// 카트 얼굴은 한 장의 아틀라스에 모아 둔다.
+//
+// 예전에는 선수마다 42x42 캔버스를 따로 만들었다. 소프트웨어 렌더링에서는 아무 차이가
+// 없지만, GPU 가 그리는 브라우저에서는 한 프레임에 서로 다른 텍스처를 최대 48개
+// 물려야 한다는 뜻이다. 텍스처가 많으면 브라우저가 캔버스를 GPU 에 두지 못하고
+// 소프트웨어로 강등하거나 다시 승격하는 일이 생기고, 그 전환은 한 번에 수백 ms 다.
+// 이제 프레임마다 쓰이는 텍스처는 트랙 래스터와 이 아틀라스 둘뿐이다.
+const FACE_PX=42,FACE_COLS=8;
+let faceAtlas=null,faceAtlasCtx=null;
+const faceSlots=new Map();
+function kartFaceSlot(id){
+ let slot=faceSlots.get(id);
+ if(slot!==undefined)return slot;
+ if(!faceAtlas){
+  faceAtlas=document.createElement('canvas');
+  faceAtlas.width=FACE_PX*FACE_COLS;
+  faceAtlas.height=FACE_PX*Math.ceil(MAX_DRIVERS/FACE_COLS);
+  faceAtlasCtx=faceAtlas.getContext('2d');
+ }
+ slot=faceSlots.size;
+ const sx=(slot%FACE_COLS)*FACE_PX,sy=Math.floor(slot/FACE_COLS)*FACE_PX,b=faceAtlasCtx;
+ b.save();b.beginPath();b.arc(sx+FACE_PX/2,sy+FACE_PX/2,FACE_PX/2,0,Math.PI*2);b.clip();
+ if(portraits[id])b.drawImage(portraits[id],sx,sy,FACE_PX,FACE_PX);
+ b.restore();
+ faceSlots.set(id,slot);
+ return slot;
+}
+// 아틀라스에 쓰는 일은 레이스 시작 때 다 끝낸다. 그리는 도중에 텍스처 원본을 고치면
+// 그 프레임에 다시 업로드해야 한다.
+function warmKartFaces(){for(const r of racers)kartFaceSlot(r.id);}
+function drawKartFace(id,x,y,size){
+ const slot=kartFaceSlot(id),sx=(slot%FACE_COLS)*FACE_PX,sy=Math.floor(slot/FACE_COLS)*FACE_PX;
+ g.drawImage(faceAtlas,sx,sy,FACE_PX,FACE_PX,x,y,size,size);
 }
 
 const nameWidths=new Map();
@@ -2642,8 +2693,8 @@ function toggleSettings(open){$('opening').hidden=!open;$('broadcast').hidden=op
 $('replay').onclick=()=>start();
 $('cinema').onclick=()=>{document.body.classList.toggle('cinema');$('cinema').textContent=document.body.classList.contains('cinema')?'화면 복원 ⛶':'화면 확대 ⛶'};
 for(const b of cameraButtons)b.onclick=()=>setCamera(b.dataset.camera);
-function setCamera(mode){renderDirty=true;if(!['auto','wide','leader','driver'].includes(mode))throw Error('Invalid camera');cameraMode=mode;if(mode!=='driver')focused=null;cameraButtons.forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));wakeLoop();}
-function resetRaceFX(){autoShot=null;autoShotRemaining=0;drawElapsed=0;freezeLog.length=0;visibleKarts.length=0;kartDrawEntries.clear();miniState='';miniClock=0;renderClock=0;renderDirty=true;settleFrames=0;leaderOrder='';traps=[];if(cameraMode==='driver')setCamera('auto');effects=[];camera={x:600,y:370,z:1,angle:0};cameraTarget=null;cameraUntil=0;finishAt=null;slowMotion=false;finalAnnounced=false;itemStats={used:0,hits:0,blocks:0,leadChanges:0};$('itemToast').textContent='';$('finalBadge').hidden=true;}
+function setCamera(mode){renderDirty=true;if(!['auto','wide','leader','driver'].includes(mode))throw Error('Invalid camera');cameraMode=mode;shot=null;shotAge=0;if(mode!=='driver')focused=null;cameraButtons.forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));wakeLoop();}
+function resetRaceFX(){shot=null;shotAge=0;drawElapsed=0;freezeLog.length=0;visibleKarts.length=0;kartDrawEntries.clear();miniState='';miniClock=0;renderClock=0;renderDirty=true;settleFrames=0;leaderOrder='';traps=[];if(cameraMode==='driver')setCamera('auto');effects=[];camera={x:600,y:370,z:1,angle:0};cameraTarget=null;cameraUntil=0;finishAt=null;slowMotion=false;finalAnnounced=false;itemStats={used:0,hits:0,blocks:0,leadChanges:0};$('itemToast').textContent='';$('finalBadge').hidden=true;}
 function itemEvent(text,id){announce(text);$('itemToast').textContent=text;if(elapsed>=cameraUntil){cameraTarget=id;cameraUntil=elapsed+2.2;}}
 function strike(target,kind,owner){if(target.finish!==null||target.immunity>0)return;if(target.shield>0){raceAudio.effect('shield');target.shield=0;target.immunity=1.5;itemStats.blocks++;effects.push({type:'block',id:target.id,ttl:.8});if(elapsed-eventAt>1)itemEvent(target.name+' 실드로 공격 방어!',target.id);return;}raceAudio.effect(kind);target.stun=kind==='ufo'?0:kind==='water'?1.7:kind==='banana'?1.2:kind==='lightning'?1.05:1.45;if(kind==='ufo')target.ufo=3;target.hitKind=kind;target.hitAt=elapsed;target.immunity=2.5;target.boost=0;itemStats.hits++;if(kind!=='ufo')effects.push({type:'hit_'+kind,id:target.id,ttl:.85,total:.85});if(elapsed-eventAt>1)itemEvent(owner+' → '+target.name+' '+({lightning:'번개 적중!',banana:'바나나에 미끄러졌습니다!',water:'물풍선 적중!',ufo:'우주선 감속!',missile:'미사일 적중!'})[kind],target.id);}
 const ITEM_POOLS={
@@ -2726,11 +2777,11 @@ $('all').onclick=()=>{chosen=chosen.size===names.length?new Set():new Set(names.
 $('laps').onchange=()=>{$('lapLabel').textContent=$('laps').value+' LAPS'};
 for(const b of speedButtons)b.onclick=()=>setRate(Number(b.dataset.speed));
 function setRate(n){if(![1,2,4].includes(n))throw Error('Invalid rate');rate=n;speedButtons.forEach(b=>b.classList.toggle('active',+b.dataset.speed===n))}
-function start(){if(!ready||chosen.size<2)return false;raceAudio.init();closeCeremony();$('ceremonyOpen').hidden=true;laps=+$('laps').value;elapsed=0;countdown=3;accumulator=0;eventAt=-20;lastLeader=null;raceNumber++;focused=null;resetRaceFX();document.body.classList.add('watching');racers=[...chosen].map((id,index)=>({id,name:names[id],progress:-Math.floor(index/3)*.010,lane:(index%3-1)*17,laneTarget:(index%3-1)*17,speed:0,form:0,formTarget:0,decision:1+Math.random()*2,boost:0,cooldown:3+Math.random()*5,finish:null,phase:Math.random()*Math.PI*2,place:index+1,ai:index,stun:0,hitKind:null,hitAt:0,ufo:0,shield:0,immunity:0,magnet:0,item:null,useIn:0,itemTimer:2+Math.random()*3,lastItem:null,lastItemUntil:0}));state='countdown';$('replay').hidden=true;toggleSettings(false);$('rankTitle').textContent='실시간 순위';$('selection').hidden=true;$('standings').hidden=false;$('start').hidden=true;$('pause').hidden=false;$('reset').hidden=false;$('laps').disabled=true;$('centerOverlay').hidden=true;$('sessionStatus').textContent='ON THE GRID';$('pause').textContent='일시 정지 Ⅱ';$('commentary').textContent=racers.length+'명의 드라이버, 출발 준비!';$('trackState').textContent='STARTING GRID';document.body.classList.add('racing');updateUI();wakeLoop();return true}
+function start(){if(!ready||chosen.size<2)return false;raceAudio.init();closeCeremony();$('ceremonyOpen').hidden=true;laps=+$('laps').value;elapsed=0;countdown=3;accumulator=0;eventAt=-20;lastLeader=null;raceNumber++;focused=null;resetRaceFX();document.body.classList.add('watching');racers=[...chosen].map((id,index)=>({id,name:names[id],progress:-Math.floor(index/3)*.010,lane:(index%3-1)*17,laneTarget:(index%3-1)*17,speed:0,form:0,formTarget:0,decision:1+Math.random()*2,boost:0,cooldown:3+Math.random()*5,finish:null,phase:Math.random()*Math.PI*2,place:index+1,ai:index,stun:0,hitKind:null,hitAt:0,ufo:0,shield:0,immunity:0,magnet:0,item:null,useIn:0,itemTimer:2+Math.random()*3,lastItem:null,lastItemUntil:0}));warmKartFaces();state='countdown';$('replay').hidden=true;toggleSettings(false);$('rankTitle').textContent='실시간 순위';$('selection').hidden=true;$('standings').hidden=false;$('start').hidden=true;$('pause').hidden=false;$('reset').hidden=false;$('laps').disabled=true;$('centerOverlay').hidden=true;$('sessionStatus').textContent='ON THE GRID';$('pause').textContent='일시 정지 Ⅱ';$('commentary').textContent=racers.length+'명의 드라이버, 출발 준비!';$('trackState').textContent='STARTING GRID';document.body.classList.add('racing');updateUI();wakeLoop();return true}
 function reset(){closeCeremony();$('ceremonyOpen').hidden=true;stopLoop();state='setup';resetRaceFX();
 // Only the lineup change invalidates per-driver caches; a rematch reuses them, which
 // is what made start() spend ~130 ms rebuilding 48 portraits and rows on a phone.
-kartFaces.clear();nameWidths.clear();prefixWidths.clear();leaderRows.clear();$('leaderList').replaceChildren();
+faceSlots.clear();faceAtlas=null;faceAtlasCtx=null;nameWidths.clear();prefixWidths.clear();leaderRows.clear();$('leaderList').replaceChildren();
 document.body.classList.remove('watching');state='setup';names.splice(BASE_DRIVERS);colors.splice(BASE_DRIVERS);portraits.splice(BASE_DRIVERS);chosen=new Set([...chosen].filter(id=>id<BASE_DRIVERS));if(chosen.size<2)chosen=new Set([0,1,2,4,7,8,9,14]);$('roster').replaceChildren();CARD_ORDER.forEach(id=>addCard(id));$('driverMessage').textContent='';toggleSettings(true);$('rankTitle').textContent='출전 선수';$('start').innerHTML='경기 시작 <span aria-hidden="true">▶</span>';racers=[];focused=null;elapsed=0;$('selection').hidden=false;$('standings').hidden=false;$('start').hidden=false;$('pause').hidden=true;$('reset').hidden=true;$('laps').disabled=false;$('centerOverlay').hidden=false;$('countdown').textContent='';$('trackState').textContent='READY TO RACE';$('sessionStatus').textContent='ENTRY OPEN';$('timer').textContent='00:00.00';$('lapLabel').textContent=$('laps').value+' LAPS';$('focusLabel').textContent='FULL CIRCUIT VIEW';document.body.classList.remove('racing');syncSelection()}
 let resumeState='racing';function pause(){if(state==='countdown'||state==='racing'){resumeState=state;state='paused';stopLoop();$('pause').textContent='계속 관전 ▶';$('trackState').textContent='PAUSED';$('countdown').textContent='Ⅱ';document.body.classList.remove('racing')}else if(state==='paused'){state=resumeState;wakeLoop();$('pause').textContent='일시 정지 Ⅱ';$('countdown').textContent='';$('trackState').textContent=state==='countdown'?'STARTING GRID':'LIVE RACE';document.body.classList.add('racing')}else if(state==='finished')showResults()}
 $('start').onclick=start;$('pause').onclick=pause;$('reset').onclick=reset;let visibilityPaused=false;
@@ -2853,7 +2904,9 @@ function toggleCeremonyRanking(){
  }
  panel.hidden=!show;$('podium').hidden=show;$('ceremonyRanking').textContent=show?'시상대 보기':'전체 순위';$('ceremonyTitle').textContent=show?'전체 순위':'오늘의 주인공';
 }
-function showResults(){raceAudio.stop();raceAudio.cue('finish');settleFrames=90;$('replay').hidden=false;$('ceremonyOpen').hidden=false;$('rankTitle').textContent='최종 순위';$('pause').hidden=true;$('start').hidden=false;$('start').textContent='다시 경기';updateUI();buildCeremony();openCeremony();}
+function showResults(){raceAudio.stop();raceAudio.cue('finish');
+ if(freezeLog.length){const worst=freezeLog.reduce((a,b)=>b.stallMs>a.stallMs?b:a);
+  console.info('[캄몬라이더] 이번 레이스 화면 멈춤 '+freezeLog.length+'회 · 최악 '+worst.stallMs+'ms (그중 자바스크립트 '+worst.js+'ms) · 자세히 보려면 raceFreezes()');}settleFrames=90;$('replay').hidden=false;$('ceremonyOpen').hidden=false;$('rankTitle').textContent='최종 순위';$('pause').hidden=true;$('start').hidden=false;$('start').textContent='다시 경기';updateUI();buildCeremony();openCeremony();}
 $('ceremonyClose').onclick=reset;$('ceremony').oncancel=e=>{e.preventDefault();reset();};$('ceremonyRanking').onclick=toggleCeremonyRanking;$('ceremonyReplay').onclick=start;$('ceremonyLineup').onclick=reset;$('ceremonyOpen').onclick=openCeremony;
 const W=1200,H=740;function point(p,lane=0){const a=p*Math.PI*2+Math.PI/2;const x=W*.5+W*.355*Math.cos(a)+42*Math.sin(a*2);const y=H*.515+H*.295*Math.sin(a)+40*Math.sin(a*3);const dx=-W*.355*Math.sin(a)+84*Math.cos(a*2),dy=H*.295*Math.cos(a)+120*Math.cos(a*3),angle=Math.atan2(dy,dx);return {x:x-Math.sin(angle)*lane,y:y+Math.cos(angle)*lane,angle}}
 const trackPoints=new Map();
@@ -2877,15 +2930,17 @@ for(const [x,y] of [[415,440],[455,455],[890,295]]){g.fillStyle='#b99165';g.fill
 for(let i=0;i<22;i++){g.fillStyle=['#f4a8bb','#fff3a5','#c8b8f3'][i%3];g.beginPath();g.arc(590+(i%11)*9,470+Math.floor(i/11)*9,3,0,7);g.fill();}
 
 }
-// One cached copy of the static circuit, and only one on purpose. Keeping a second
-// oversampled copy made the wide shot cheaper to blit, but the auto-director crosses
-// between wide and close roughly every 7 seconds - five or six times in a race - and
-// each crossing swapped which multi-megabyte bitmap the compositor had to have
-// resident. That trade is invisible without a GPU and expensive with one.
-// 1.5x is the compromise: sharper than the original 1x at every zoom the director
-// uses, at half the bitmap of 2x, and never swapped.
+// One cached copy of the static circuit, at 1:1 with the logical track.
+//
+// This was 1.5x for a while, for sharpness when the director zooms in. It is back to
+// 1x because that raster is by far the largest bitmap the page holds - 7.6MB against
+// 3.4MB - and the stalls being chased here are 200ms main-thread blocks that the
+// browser does not report as long tasks, with the JS heap sitting at 4MB and the
+// game's own code accounting for half a millisecond of them. Nothing left inside the
+// JavaScript can cause that; what is left is memory the JS heap does not see, and this
+// is the biggest piece of it that was added rather than inherited.
 let trackRaster=null;
-const RASTER_SCALE=1.5;
+const RASTER_SCALE=1;
 // Prepare static scenery during initial loading, before enabling race start.
 function prepareTrackRaster(){
  if(trackRaster)return;
@@ -2929,25 +2984,102 @@ function drawKart(r,preview=false,p=point(r.progress,r.lane)){const isFocused=fo
  g.fillStyle=colors[r.id];g.beginPath();g.roundRect(-9,-16,18,33,5);g.fill();
  if(detail){g.fillStyle='#f4f4d7';g.fillRect(-5,-14,10,3);}
  g.fillStyle='#253039';g.fillRect(-14,10,28,4);g.restore();
- g.drawImage(kartFace(r.id),p.x-10.5,p.y-14.5,21,21);if(r.shield>0){g.strokeStyle='#62dbff';g.fillStyle='#6feaff22';g.lineWidth=2;g.beginPath();g.arc(p.x,p.y,21,0,7);g.fill();g.stroke();}if(r.stun>0)drawHitStatus(r,p);
+ drawKartFace(r.id,p.x-10.5,p.y-14.5,21);if(r.shield>0){g.strokeStyle='#62dbff';g.fillStyle='#6feaff22';g.lineWidth=2;g.beginPath();g.arc(p.x,p.y,21,0,7);g.fill();g.stroke();}if(r.stun>0)drawHitStatus(r,p);
  // At 14 px the item glyph is unreadable in the wide shot and the standings list
  // already spells the same item out, so it is only drawn when the kart is legible.
  if(detail&&(r.item||r.lastItemUntil>elapsed)){g.font='14px Pretendard,sans-serif';g.textAlign='center';g.fillText(itemNames[r.item||r.lastItem].split(' ')[0],p.x+19,p.y+7);}if(isFocused){g.strokeStyle='#eaff8d';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,22,0,7);g.stroke()}}
-let autoShot=null,autoShotRemaining=0;
-function cameraStep(dt,list=order()){autoShotRemaining=Math.max(0,autoShotRemaining-dt);let tx=W/2,ty=H/2,z=1,label='CAM 01 · 전체 서킷';const alive=list.filter(r=>r.finish===null),leader=alive[0]||list[0];let subject=null;slowMotion=false;
-if(state!=='setup'&&state!=='countdown'&&leader){const finalLap=(list[0]?.progress||0)>=laps-1,nearFinish=(list[0]?.progress||0)>laps-.14;
-if(cameraMode==='driver')subject=getRacer(focused)||leader;else if(cameraMode==='leader')subject=leader;else if(cameraMode==='auto'){
-if(nearFinish&&(finishAt===null||elapsed-finishAt<2.2)){const p=point(0);tx=p.x;ty=p.y-8;z=2.5;label='CAM 04 · FINISH LINE';slowMotion=finishAt===null||elapsed-finishAt<1.2;}
-else if(elapsed<cameraUntil){subject=getRacer(cameraTarget);label='CAM 03 · ITEM ACTION';}
-else if(finalLap||Math.floor(elapsed/7)%3!==0){subject=leader;label=finalLap?'CAM 02 · FINAL BATTLE':'CAM 02 · LEAD BATTLE';}
+// ------------------------------------------------------------------ 카메라 디렉터
+//
+// 규칙은 여기 일곱 줄이 전부다.
+//  1. 수동 모드(전체·선두·드라이버)는 즉시 적용되고 유지 시간이 없다.
+//  2. 자동 모드는 "샷" 단위로 움직인다. 어떤 샷도 SHOT_MIN 보다 짧게 끝나지 않는다.
+//  3. 샷 우선순위: 결승선 > 전체 서킷(주기가 정한 차례) > 아이템 액션 > 선두 추격.
+//  4. 진행 중인 샷을 끊을 수 있는 것은 결승선 샷뿐이다. 결승선을 놓치는 것이
+//     샷이 짧아지는 것보다 나쁘고, 그게 레이스의 마지막 샷이라 뒤탈도 없다.
+//  5. 샷이 시작되면 대상·동반 선수·줌이 그 샷 내내 고정된다. 카메라가 움직이는
+//     이유는 프레임에 담긴 선수가 움직였기 때문뿐이다.
+//  6. 같은 그림이 다시 선택되면 컷 없이 그대로 이어간다.
+//  7. 추격 BATTLE_RUN초 → 전체 WIDE_RUN초 주기. 마지막 바퀴에는 전체로 빠지지 않는다.
+//
+// 예전 코드는 이 결정이 두 겹으로 갈라져 있었다. 규칙이 대상과 라벨을 정하면 래치가
+// 그 위에서 다시 덮어쓰고, 결승선 여부는 라벨 문자열을 비교해서 알아냈고, 구도를
+// 잡는 계산만 래치 바깥에 남아 매 프레임 다시 돌았다. 그래서 "샷 유지 중"인데도
+// 화면이 한 프레임에 수백 픽셀씩 튀었다.
+const SHOT_MIN=2,        // 샷 최소 유지 시간(초)
+      BATTLE_RUN=14,     // 선두 추격을 보여주는 시간
+      WIDE_RUN=7,        // 그 뒤 전체 서킷을 보여주는 시간
+      RIVAL_GAP=.10,     // 이 안에 있으면 같은 화면에 담을 라이벌로 본다
+      CUT_RATE=7,        // 컷 직후 카메라가 목표로 붙는 속도
+      FOLLOW_RATE=3,     // 샷이 자리잡은 뒤 따라가는 속도
+      CUT_EASE=.35;      // 빠르게 붙는 구간의 길이(초)
+let shot=null,shotAge=0;
+
+// 지금 어떤 샷이어야 하는가. 상태를 읽기만 하고 아무것도 바꾸지 않는다.
+function chooseShot(list,alive,leader){
+ const progress=list[0]?.progress||0,finalLap=progress>=laps-1;
+ if(progress>laps-.14&&(finishAt===null||elapsed-finishAt<2.2))
+  return {kind:'finish',subjectId:null,partnerId:null,zoom:2.5,label:'CAM 04 · FINISH LINE'};
+ // 주기는 경과 시간에서 바로 계산한다. 별도 상태가 없으니 어긋날 일도 없다.
+ // 전체 서킷 차례는 아이템 액션보다 앞선다. 48명 필드에서는 아이템 이벤트가 끊이지
+ // 않아서, 액션이 더 세면 전체 화면이 레이스 내내 한 번도 나오지 않는다 - 필드가
+ // 클수록 오히려 더 보고 싶은 그림인데.
+ const wideTurn=!finalLap&&(elapsed%(BATTLE_RUN+WIDE_RUN))>=BATTLE_RUN;
+ if(wideTurn||!leader)return {kind:'wide',subjectId:null,partnerId:null,zoom:1,label:'CAM 01 · 전체 서킷'};
+ if(elapsed<cameraUntil){
+  const target=getRacer(cameraTarget)||leader;
+  if(target)return {kind:'action',subjectId:target.id,partnerId:null,zoom:2.4,label:'CAM 03 · ITEM ACTION'};
+ }
+ let rival=null;
+ for(const r of alive)if(r.id!==leader.id&&Math.abs(r.progress-leader.progress)<RIVAL_GAP){rival=r;break;}
+ return {kind:'battle',subjectId:leader.id,partnerId:rival?rival.id:null,
+         zoom:finalLap?2.9:rival?2.6:2.3,
+         label:finalLap?'CAM 02 · FINAL BATTLE':'CAM 02 · LEAD BATTLE'};
 }
-if(cameraMode==='auto'){
- if(label==='CAM 04 · FINISH LINE'){autoShot=null;autoShotRemaining=0;}
- else if(autoShot&&autoShotRemaining>0){subject=autoShot.id===null?null:getRacer(autoShot.id);label=autoShot.label;}
- else{autoShot={id:subject?.id??null,label};autoShotRemaining=2;}
-}else{autoShot=null;autoShotRemaining=0;}
-if(subject){const p=point(subject.progress,subject.lane);tx=p.x;ty=p.y;z=cameraMode==='driver'?3.5:finalLap?2.9:2.3;label=cameraMode==='driver'?'CAM 05 · '+subject.name:label==='CAM 01 · 전체 서킷'?'CAM 02 · '+subject.name:label;if(cameraMode==='auto'&&elapsed>=cameraUntil){const next=alive.find(r=>r.id!==subject.id&&Math.abs(r.progress-subject.progress)<.10);if(next){const q=point(next.progress,next.lane);tx=(tx+q.x)/2;ty=(ty+q.y)/2;z=Math.min(z,2.6);}}}}
-const blend=1-Math.exp(-dt*3);camera.x+=(tx-camera.x)*blend;camera.y+=(ty-camera.y)*blend;camera.z+=(z-camera.z)*blend;camera.angle=0;setText($('cameraLabel'),label);setText($('focusLabel'),slowMotion?'PHOTO FINISH · SLOW MOTION':cameraMode==='auto'?'AUTO DIRECTOR':cameraMode==='wide'?'FULL CIRCUIT VIEW':'FOLLOW CAMERA');}
+const sameShot=(a,b)=>!!a&&a.kind===b.kind&&a.subjectId===b.subjectId&&a.partnerId===b.partnerId;
+
+function cameraStep(dt,list=order()){
+ const alive=cameraAlive;alive.length=0;
+ for(const r of list)if(r.finish===null)alive.push(r);
+ const leader=alive[0]||list[0];
+ let tx=W/2,ty=H/2,z=1,label='CAM 01 · 전체 서킷';
+ shotAge+=dt;
+
+ if(state==='setup'||state==='countdown'||!leader){
+  shot=null;shotAge=0;
+ }else if(cameraMode!=='auto'){
+  // 규칙 1 - 사람이 고른 화면은 기다리게 하지 않는다.
+  shot=null;
+  const subject=cameraMode==='driver'?(getRacer(focused)||leader):cameraMode==='leader'?leader:null;
+  if(subject){
+   const p=point(subject.progress,subject.lane);tx=p.x;ty=p.y;
+   z=cameraMode==='driver'?3.5:2.3;
+   label=(cameraMode==='driver'?'CAM 05 · ':'CAM 02 · ')+subject.name;
+  }
+ }else{
+  const next=chooseShot(list,alive,leader);
+  // 규칙 2 와 4.
+  if(shot===null||shotAge>=SHOT_MIN||(next.kind==='finish'&&shot.kind!=='finish')){
+   if(!sameShot(shot,next))shot=next;   // 규칙 6 - 같은 그림이면 컷 없이 시간만 연장
+   shotAge=0;
+  }
+  // 규칙 5 - 여기서부터는 저장된 샷만 읽는다. 다시 고르지 않는다.
+  label=shot.label;z=shot.zoom;
+  if(shot.kind==='finish'){const p=point(0);tx=p.x;ty=p.y-8;}
+  else if(shot.subjectId!=null){
+   const subject=getRacer(shot.subjectId);
+   if(subject){
+    const p=point(subject.progress,subject.lane);tx=p.x;ty=p.y;
+    const mate=shot.partnerId==null?null:getRacer(shot.partnerId);
+    if(mate&&mate.finish===null){const q=point(mate.progress,mate.lane);tx=(tx+q.x)/2;ty=(ty+q.y)/2;}
+   }else{z=1;label='CAM 01 · 전체 서킷';}   // 담고 있던 선수가 사라지면 전체로 물러난다
+  }
+ }
+
+ const blend=1-Math.exp(-dt*(shotAge<CUT_EASE?CUT_RATE:FOLLOW_RATE));
+ camera.x+=(tx-camera.x)*blend;camera.y+=(ty-camera.y)*blend;camera.z+=(z-camera.z)*blend;camera.angle=0;
+ setText($('cameraLabel'),label);
+ setText($('focusLabel'),slowMotion?'PHOTO FINISH · SLOW MOTION':cameraMode==='auto'?'AUTO DIRECTOR':cameraMode==='wide'?'FULL CIRCUIT VIEW':'FOLLOW CAMERA');
+}
 function drawEffects(){if(traps.length){g.font='22px Pretendard,sans-serif';g.textAlign='center';for(const t of traps){const p=point(t.progress,t.lane);g.fillText('🍌',p.x,p.y+7);}}for(const e of effects){const r=getRacer(e.id);if(!r)continue;const p=point(r.progress,r.lane);if(e.type.startsWith('hit_')){drawImpact(e,p);}else if(e.type==='ufo'){g.fillStyle='#b0a3ff55';g.beginPath();g.moveTo(p.x,p.y-54);g.lineTo(p.x-22,p.y+8);g.lineTo(p.x+22,p.y+8);g.fill();g.font='30px Pretendard,sans-serif';g.textAlign='center';g.fillText('🛸',p.x,p.y-38);}else if(e.type==='missile'||e.type==='water'){const from=getRacer(e.from),a=point(from.progress,from.lane),t=1-e.ttl/e.total,x=a.x+(p.x-a.x)*t,y=a.y+(p.y-a.y)*t;g.strokeStyle=e.type==='water'?'#5acaff':'#ff9c4c';g.lineWidth=3;g.setLineDash([4,6]);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(x,y);g.stroke();g.setLineDash([]);g.fillStyle=e.type==='water'?'#41b9ff':'#ff653c';g.beginPath();g.arc(x,y,6,0,7);g.fill();}else{g.strokeStyle=e.type==='block'||e.type==='splash'?'#6ae6ff':'#ffbb45';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,15+(1-e.ttl)*35,0,7);g.stroke();}}}
 // Static minimap geometry is painted once; position dots refresh at 20 Hz.
 let miniBackground=null,miniClock=0,miniState='';
@@ -3064,7 +3196,11 @@ function frame(now){
  const rawDt=last===0?0:(now-last)/1000;const dt=Math.min(.10,rawDt);last=now;
  if(document.hidden||state==='setup'){last=0;return;}
  if(state==='countdown')tick(dt);
- else if(state==='racing'){accumulator+=dt*(slowMotion?Math.min(rate,1)*.38:rate);
+ else if(state==='racing'){
+  // 사진 판정 슬로모션은 시뮬레이션 속도를 바꾸는 값이라, 렌더를 건너뛴 프레임에서도
+  // 최신이어야 한다. 그래서 카메라 안이 아니라 여기서 매 프레임 정한다.
+  slowMotion=cameraMode==='auto'&&(order()[0]?.progress||0)>laps-.14&&(finishAt===null||elapsed-finishAt<1.2);
+  accumulator+=dt*(slowMotion?Math.min(rate,1)*.38:rate);
   let steps=0;while(accumulator>=SIM_STEP&&state==='racing'&&steps<MAX_SUBSTEPS){tick(SIM_STEP);accumulator-=SIM_STEP;steps++;}
   // Drop the backlog rather than carry it: a slow frame must not make the next one slower.
   if(accumulator>SIM_STEP*MAX_SUBSTEPS)accumulator=SIM_STEP*MAX_SUBSTEPS;}
