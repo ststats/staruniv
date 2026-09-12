@@ -2491,7 +2491,21 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
 .entry-start-row .entry-summary,.setup-card .entry-start-row .start-race{min-width:0;white-space:nowrap;flex-wrap:nowrap;padding-inline:6px;gap:4px;font-size:13px;font-weight:700;letter-spacing:-.2px;}
 .entry-start-row .entry-summary>span,.entry-start-row .entry-summary small,.setup-card .entry-start-row .start-race,.entry-start-row .start-race span{font-size:13px;font-weight:700;line-height:1.2;letter-spacing:-.2px;}
 .entry-start-row .entry-summary small{margin-left:2px;}
-@container(max-width:250px){.entry-start-row .entry-summary>span,.entry-start-row .entry-summary small,.setup-card .entry-start-row .start-race,.entry-start-row .start-race span{font-size:11px;}.entry-start-row .entry-summary,.setup-card .entry-start-row .start-race{padding-inline:3px;gap:3px;}}
+
+
+.entry-start-row .entry-summary>span,.entry-start-row .entry-summary b,.entry-start-row .entry-summary small{font-size:13px;font-weight:700;line-height:1.2;letter-spacing:-.2px;}
+.entry-start-row .entry-summary b{display:inline-flex;align-items:baseline;gap:4px;}
+.entry-start-row .entry-summary small{margin:0;}
+
+/* Consistent type size across entrant, start, speed and camera controls. */
+.entry-start-row .entry-summary>span,
+.entry-start-row .entry-summary b,
+.entry-start-row .entry-summary small,
+.setup-card .entry-start-row .start-race,
+.entry-start-row .start-race span,
+button[data-speed],button[data-camera],
+.setup-card button[data-speed],.setup-card button[data-camera],
+.race-actions button[data-speed],.race-actions button[data-camera]{font-size:13px;}
 </style><!-- Pretendard license: Copyright (c) 2021, Kil Hyung-jin (https://github.com/orioncactus/pretendard),
 with Reserved Font Name 'Pretendard'.
 
