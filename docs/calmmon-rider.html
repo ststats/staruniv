@@ -2745,22 +2745,23 @@ for(const [x,y] of [[415,440],[455,455],[890,295]]){g.fillStyle='#b99165';g.fill
 for(let i=0;i<22;i++){g.fillStyle=['#f4a8bb','#fff3a5','#c8b8f3'][i%3];g.beginPath();g.arc(590+(i%11)*9,470+Math.floor(i/11)*9,3,0,7);g.fill();}
 
 }
-// Two cached copies of the static circuit. The director zooms to 3.5x, where a 1x
-// raster is visibly upscaled - but blitting a 2x raster down to a 1x wide shot costs
-// four texel reads per pixel, which showed up as a fill-rate regression. So: a 1:1
-// copy for the wide shot, the oversampled one once the camera is actually close.
-let trackRaster=null,trackRasterWide=null;
-const RASTER_SCALE=(typeof innerWidth==='number'&&innerWidth<=750)?1.5:2;
+// One cached copy of the static circuit, and only one on purpose. Keeping a second
+// oversampled copy made the wide shot cheaper to blit, but the auto-director crosses
+// between wide and close roughly every 7 seconds - five or six times in a race - and
+// each crossing swapped which multi-megabyte bitmap the compositor had to have
+// resident. That trade is invisible without a GPU and expensive with one.
+// 1.5x is the compromise: sharper than the original 1x at every zoom the director
+// uses, at half the bitmap of 2x, and never swapped.
+let trackRaster=null;
+const RASTER_SCALE=1.5;
 // Prepare static scenery during initial loading, before enabling race start.
 function prepareTrackRaster(){
  if(trackRaster)return;
  const raster=document.createElement('canvas');raster.width=Math.round(W*RASTER_SCALE);raster.height=Math.round(H*RASTER_SCALE);
  const ctx=raster.getContext('2d');ctx.scale(RASTER_SCALE,RASTER_SCALE);
  paintTrack(ctx);trackRaster=raster;
- const wide=document.createElement('canvas');wide.width=W;wide.height=H;
- wide.getContext('2d').drawImage(raster,0,0,W,H);trackRasterWide=wide;
 }
-function drawTrack(){g.drawImage(camera.z<KART_DETAIL_Z?trackRasterWide:trackRaster,0,0,W,H);}
+function drawTrack(){g.drawImage(trackRaster,0,0,W,H);}
 function paintTrack(context){const g=context;paintPark(g);
 // Layered run-off, rumble strips and a continuous racing surface.
 path(0,g);g.strokeStyle='#c4d2b8';g.lineWidth=127;g.stroke();path(0,g);g.strokeStyle='#d8cbb0';g.lineWidth=111;g.stroke();path(0,g);g.strokeStyle='#f3f5e9';g.lineWidth=91;g.stroke();
@@ -2856,10 +2857,16 @@ function drawNameplates(list=order()){if(state==='setup')return;const bands=new 
 function render(dt=.016){prepareTrackRaster();g.setTransform(canvasScale,0,0,canvasScale,0,0);const list=order();cameraStep(state==='paused'?0:dt,list);g.fillStyle='#e9f0fa';g.fillRect(0,0,W,H);g.save();g.translate(W/2,H/2);g.scale(camera.z,camera.z);g.translate(-camera.x,-camera.y);drawTrack();if(ready){if(state==='setup'){[...chosen].forEach((id,i)=>drawKart({id,progress:-Math.floor(i/3)*.014,lane:(i%3-1)*20,boost:0},true));}else{visibleKarts.length=0;const halfW=W/(2*camera.z)+100,halfH=H/(2*camera.z)+100;
 for(const r of racers){if(r.finish!==null)continue;const p=point(r.progress,r.lane);let entry=kartDrawEntries.get(r.id);if(!entry){entry={r,p};kartDrawEntries.set(r.id,entry);}else{entry.r=r;entry.p=p;}entry.progress=r.progress;entry.lane=r.lane;if(Math.abs(p.x-camera.x)<=halfW&&Math.abs(p.y-camera.y)<=halfH)visibleKarts.push(entry);}
 visibleKarts.sort((a,b)=>a.p.y-b.p.y);for(const entry of visibleKarts)drawKart(entry.r,false,entry.p);}}drawEffects();g.restore();drawNameplates(list);drawMini(dt);}
+// Opt-in frame-freeze log: open the page with #perf to record every stall over 100 ms
+// together with what the camera was doing, then read raceFreezes() from the console.
+const PERF=typeof location!=='undefined'&&location.hash==='#perf';
+const freezeLog=[];
+if(PERF)globalThis.raceFreezes=()=>freezeLog.slice();
 // Fixed-step simulation. SIM_HZ is the single knob; item probabilities are unchanged.
 const SIM_HZ=60,SIM_STEP=1/SIM_HZ,MAX_SUBSTEPS=8;
 function frame(now){
- frameHandle=null;const dt=last===0?0:Math.min(.10,(now-last)/1000);last=now;
+ frameHandle=null;const frameStart=PERF?performance.now():0;
+ const rawDt=last===0?0:(now-last)/1000;const dt=Math.min(.10,rawDt);last=now;
  if(document.hidden||state==='setup'){last=0;return;}
  if(state==='countdown')tick(dt);
  else if(state==='racing'){accumulator+=dt*(slowMotion?Math.min(rate,1)*.38:rate);
@@ -2869,6 +2876,8 @@ function frame(now){
  const animated=state==='countdown'||state==='racing';
  if(animated){uiClock+=dt;if(uiClock>.16){updateUI();uiClock=0;}}
  drawElapsed+=dt;renderClock+=dt;if((animated||renderDirty||settleFrames>0)&&(renderDirty||renderClock+0.0001>=renderInterval)){const drawDt=drawElapsed;drawElapsed=0;renderClock=Math.max(0,renderClock-renderInterval);if(renderClock>=renderInterval)renderClock%=renderInterval;render(drawDt);renderDirty=false;if(settleFrames>0)settleFrames--;}
+ if(PERF&&animated&&rawDt>.1)freezeLog.push({at:+elapsed.toFixed(2),stallMs:Math.round(rawDt*1000),
+  js:+(performance.now()-frameStart).toFixed(1),camZ:+camera.z.toFixed(2),cam:cameraMode,drivers:racers.length});
  if(animated||renderDirty||settleFrames>0)frameHandle=requestAnimationFrame(frame);else last=0;
 }
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'get_race_status',description:'관전 레이스의 출전 선수, 진행 상태 및 실제 통과 순위를 확인합니다.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state,entrants:[...chosen].map(id=>names[id]),elapsed,laps,standings:order().map((r,i)=>({rank:i+1,name:r.name,finish:r.finish}))})})).catch(()=>{})}catch{}}
