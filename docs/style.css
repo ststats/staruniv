@@ -770,3 +770,136 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .nav-menu .nav-item { text-decoration: none; }
 a.btn-view-all { display: inline-block; text-align: center; text-decoration: none; }
 a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: none; }
+
+/* ===== 상단 메뉴: 로고를 홈 링크로 =====
+   메뉴에서 '홈'을 뺐으므로 왼쪽 로고가 홈으로 가는 유일한 길이 된다.
+   부트스트랩의 기본 링크 스타일(밑줄)이 끼어들지 않게 맞춘다. */
+.top-navbar a.logo { text-decoration: none; cursor: pointer; }
+.top-navbar a.logo:hover .logo-black { color: var(--color-primary); }
+.top-navbar a.logo:hover .logo-accent { color: var(--color-primary-deep, var(--color-primary)); }
+
+/* ===================== 티어표 ===================== */
+/* 상단 메뉴 높이. 티어 바를 그 아래에 붙이고, 스크롤 이동 지점을 잡는 데 쓴다.
+   .top-navbar의 height와 반드시 같아야 한다(지금 64px). */
+:root { --tier-navbar-h: 64px; --tier-bar-h: 46px; }
+
+.tier-meta { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-faint); white-space: nowrap; }
+.tier-empty { padding: 48px 0; text-align: center; color: var(--color-text-sub); font-size: var(--fs-body); }
+
+/* ----- 티어 바로가기 바 -----
+   상단 메뉴가 sticky(top:0, 64px)라 그 바로 밑에 붙인다. 좌우 스크롤이 되도록 두고
+   스크롤바는 숨긴다(.nav-menu와 같은 방식). */
+.tier-bar {
+    position: sticky; top: var(--tier-navbar-h); z-index: 90;
+    display: flex; gap: 6px; align-items: center;
+    height: var(--tier-bar-h);
+    margin: 0 0 16px; padding: 0 2px;
+    overflow-x: auto; white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+}
+.tier-bar::-webkit-scrollbar { display: none; }
+.tier-bar-item {
+    display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+    border: 1px solid transparent; background: transparent; font-family: inherit;
+    font-size: var(--fs-body); font-weight: 800; color: var(--color-text-muted);
+    padding: 5px 11px; border-radius: 20px; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.tier-bar-item:hover { background: var(--color-bg-subtle); color: var(--color-text-main); }
+.tier-bar-item.on { background: var(--color-primary-tint); color: var(--color-primary); }
+.tier-bar-count { font-size: 10px; font-weight: 700; color: var(--color-text-faint); }
+.tier-bar-item.on .tier-bar-count { color: var(--color-primary); }
+
+/* ----- 필터 줄 ----- */
+.tier-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.tier-filters { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.tier-filter {
+    border: 1px solid var(--color-border-strong); background: var(--color-card);
+    color: var(--color-text-sub); font-family: inherit;
+    font-size: var(--fs-body); font-weight: 700;
+    padding: 5px 12px; border-radius: 20px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.tier-filter:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.tier-filter.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+/* 방송중 필터는 팀 필터와 성격이 다르니(겹쳐서 걸리는 조건) 색도 다르게 둔다 */
+.tier-filter-live.on { background: var(--color-lose); border-color: var(--color-lose); }
+.tier-filter-live:hover { border-color: var(--color-lose); color: var(--color-lose); }
+.tier-filter-live.on:hover { color: #fff; }
+.tier-filter-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-lose); flex-shrink: 0; }
+.tier-filter-live.on .tier-filter-dot { background: #fff; }
+
+/* ----- 티어 한 덩어리 ----- */
+.tier-row {
+    margin-bottom: 32px;
+    /* 티어 바로가기로 이동했을 때 제목이 상단 메뉴+티어 바 밑에 가리지 않게 띄운다 */
+    scroll-margin-top: calc(var(--tier-navbar-h) + var(--tier-bar-h) + 12px);
+}
+.tier-head {
+    display: flex; align-items: center; gap: 10px; height: 32px; padding-left: 12px;
+    border-left: 4px solid var(--color-border-strong);
+    margin-bottom: var(--space-title-gap);
+}
+/* 최상위 티어만 포인트 색 - 전부 파란 줄이면 어디가 위인지 안 보인다 */
+.tier-head.is-top { border-left-color: var(--color-primary); }
+.tier-name { font-size: var(--fs-heading); font-weight: 800; color: var(--color-text-main); }
+.tier-count { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-faint); }
+.tier-live { margin-left: auto; font-size: var(--fs-body); font-weight: 800; color: var(--color-lose); }
+
+/* ----- 카드 ----- */
+.tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+.tier-card {
+    display: block; background: var(--color-card);
+    border: 1px solid var(--color-border); border-radius: var(--radius-card);
+    overflow: hidden; color: inherit; text-decoration: none;
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+}
+.tier-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: var(--color-border-hover); }
+.tier-card.is-live { border-color: var(--color-lose); }
+
+/* 방송 중이면 16:9 썸네일, 아니면 같은 크기 박스 안에 동그란 프로필.
+   두 경우의 높이가 같아야 그리드가 들쭉날쭉해지지 않는다. */
+.tier-card-media {
+    position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+    background: var(--color-bg-subtle);
+    display: flex; align-items: center; justify-content: center;
+}
+.tier-card-thumb { width: 100%; height: 100%; object-fit: cover; display: block; background: #0b0c10; }
+.tier-card:hover .tier-card-thumb { transform: scale(1.04); transition: transform 0.25s ease; }
+.tier-card-avatar {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    background: var(--color-placeholder-bg);
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+/* 썸네일 위에 얹히는 것들 */
+.tier-card-media .live-badge { top: 6px; left: 6px; }
+.tier-card-viewers {
+    position: absolute; right: 6px; bottom: 6px; z-index: 1;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.tier-card-body { padding: 10px 10px 12px; text-align: center; }
+.tier-card-name {
+    font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tier-card-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+
+/* ----- 휴대폰 ----- */
+@media (max-width: 767.98px) {
+    :root { --tier-bar-h: 42px; }
+    .tier-bar { margin-bottom: 12px; gap: 4px; }
+    .tier-bar-item { padding: 4px 9px; }
+    .tier-toolbar { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 16px; }
+    .tier-meta { text-align: right; }
+    .tier-row { margin-bottom: 24px; }
+    .tier-head { height: 28px; gap: 8px; }
+    .tier-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+    .tier-card-avatar { width: 42px; height: 42px; font-size: 18px; }
+    .tier-card-body { padding: 8px 8px 10px; }
+}
