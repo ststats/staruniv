@@ -2267,6 +2267,10 @@ html,body {
 .race-hud{flex-wrap:wrap}
 .race-hud>*,.race-hud #lapLabel,.race-hud #timer,.race-hud #finalBadge{font:700 12px/1.2 Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}
 .race-actions .camera-controls,.race-actions .segmented{flex-shrink:0;width:max-content;max-width:100%}
+/* 알약 묶음도 버튼과 같은 테두리 · 같은 36px 높이로 맞춘다. 테두리 1px 을 더하면서
+   안쪽 버튼을 28px 로 줄여 전체 높이는 그대로 둔다. */
+.race-actions .camera-controls,.race-actions .segmented{box-sizing:border-box;height:36px;border:1px solid #e5ebf4;align-items:center}
+.race-actions .camera-controls button,.race-actions .segmented button{min-height:28px}
 .race-actions button,.race-actions #pause,.race-actions #reset,.race-actions #cinema{font:600 12px/1.2 Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:0}
 @container race (max-width:450px){
   .race-actions .live-options .camera-controls{width:100%}
@@ -2335,7 +2339,32 @@ html,body {
  .race-actions #cinema,.race-actions #soundToggle,.race-actions #pause,.race-actions #reset{font-size:10px;padding:8px 1px}
 }
 
-.race-actions #soundToggle[aria-pressed="true"]{background:#2979ff;color:#fff;border-color:#2979ff}.race-actions #soundToggle[aria-pressed="true"]:hover{background:#1967e8}.race-actions #soundToggle[aria-pressed="false"]{background:#eef1f5;color:#687589;border-color:#dce2eb}
+/* 한 줄로 펴질 때의 배치. 두 줄일 때는 그리드가 화면 확대 · 소리 · 일시 정지 · 나가기를
+   윗줄에, 카메라 · 속도를 아랫줄에 놓는다. 한 줄에서는 DOM 순서가 그대로 드러나서 화면
+   확대가 나가기 뒤로 밀리고 여섯 덩어리가 오른쪽에 뭉쳐 보였다. 보기 설정(카메라 · 속도)은
+   왼쪽, 동작 버튼은 오른쪽으로 갈라놓고, 네 버튼의 순서는 두 줄일 때와 같게 맞춘다. */
+@container race not (max-width:760px){
+ .race-actions .live-options{width:100%;margin:0;justify-content:flex-start;flex-wrap:wrap;gap:10px}
+ .race-actions #cinema{order:1}
+ .race-actions #soundToggle{order:2}
+ .race-actions #pause{order:3}
+ .race-actions #reset{order:4}
+ .race-actions .live-options .camera-controls{order:5;margin-left:auto}
+ .race-actions .live-options .segmented{order:6}
+ /* 네 버튼은 두 줄일 때 그리드가 똑같은 폭으로 깔아준다. 한 줄에서도 같은 폭으로 묶어야
+    글자 수에 따라 들쭉날쭉해 보이지 않는다. 88px 은 가장 넓은 '소리 켜짐'(아이콘 포함)
+    기준이고, '계속 관전 ▶' · '결과 보기 ↗' 처럼 글자가 바뀌어도 폭이 흔들리지 않는다. */
+ .race-actions #cinema,.race-actions #soundToggle,.race-actions #pause,.race-actions #reset{flex:0 0 auto;min-width:88px}
+}
+
+.race-actions #soundToggle[aria-pressed="true"]{background:#2979ff;color:#fff;border-color:#2979ff}
+/* 파란 버튼 두 개의 테두리 처리가 서로 달랐다. #pause 는 파란 바탕에 회색 테두리(#d8e0ed)와
+   파란 그림자가 남아 있어서 옆의 '소리 켜짐'보다 한 겹 더 도드라졌다. 네 버튼 모두 테두리는
+   자기 바탕색, 그림자는 없음으로 맞춘다. */
+.race-actions #pause{border:1px solid #2979ff;box-shadow:none}
+.race-actions #pause:hover{border-color:#1967e8}
+/* 아이콘도 옆 버튼의 글자 기호(⛶ · Ⅱ · ↗)와 같은 12px 로. */
+.race-actions #soundToggle .sound-icon{flex:0 0 12px;width:12px;height:12px}.race-actions #soundToggle[aria-pressed="true"]:hover{background:#1967e8}.race-actions #soundToggle[aria-pressed="false"]{background:#f1f5fb;color:#8795a8;border-color:#e5ebf4}
 
 /* Prevent changing status text from resizing the standings grid. */
 .rank-panel,#standings,#leaderList{min-width:0}
@@ -2505,7 +2534,7 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
 .entry-start-row .start-race span,
 button[data-speed],button[data-camera],
 .setup-card button[data-speed],.setup-card button[data-camera],
-.race-actions button[data-speed],.race-actions button[data-camera]{font-size:13px;}
+.race-actions button[data-speed],.race-actions button[data-camera]{font-size:12px;}
 </style><!-- Pretendard license: Copyright (c) 2021, Kil Hyung-jin (https://github.com/orioncactus/pretendard),
 with Reserved Font Name 'Pretendard'.
 
@@ -2749,7 +2778,8 @@ const cameraButtons=[...document.querySelectorAll('[data-camera]')],speedButtons
 function setText(node,text){text=String(text);if(node.textContent!==text)node.textContent=text;}
 function toggleSettings(open){$('opening').hidden=!open;$('broadcast').hidden=open;$('cinema').hidden=open;}
 $('replay').onclick=()=>start();
-$('cinema').onclick=()=>{document.body.classList.toggle('cinema');$('cinema').textContent=document.body.classList.contains('cinema')?'화면 복원 ⛶':'화면 확대 ⛶'};
+// 화면 확대 버튼은 레이아웃을 건드리지 않는다. 중계 카메라 배율만 2배 <-> 4배로 바꾼다.
+$('cinema').onclick=()=>{camBoost=camBoost>2?2:4;$('cinema').textContent=camBoost>2?'화면 복원 ⛶':'화면 확대 ⛶'};
 for(const b of cameraButtons)b.onclick=()=>setCamera(b.dataset.camera);
 function setCamera(mode){renderDirty=true;if(!['auto','wide','leader','driver'].includes(mode))throw Error('Invalid camera');cameraMode=mode;shot=null;shotAge=0;if(mode!=='driver')focused=null;cameraButtons.forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));wakeLoop();}
 function resetRaceFX(){finishShotOn=false;finishShotDone=false;finishSlowAge=0;finishPostAge=0;finishScale=1;shot=null;shotAge=0;drawElapsed=0;freezeLog.length=0;visibleKarts.length=0;kartDrawEntries.clear();miniState='';miniClock=0;renderClock=0;renderDirty=true;settleFrames=0;leaderOrder='';traps=[];if(cameraMode==='driver')setCamera('auto');effects=[];camera={x:W/2,y:H/2,z:1,angle:0};cameraTarget=null;cameraUntil=0;finishAt=null;slowMotion=false;finalAnnounced=false;itemStats={used:0,hits:0,blocks:0,leadChanges:0};$('itemToast').textContent='';$('finalBadge').hidden=true;}
@@ -3098,6 +3128,8 @@ const SHOT_MIN=2,        // 샷 최소 유지 시간(초)
       FOLLOW_RATE=3,     // 샷이 자리잡은 뒤 따라가는 속도
       CUT_EASE=.35;      // 빠르게 붙는 구간의 길이(초)
 let shot=null,shotAge=0;
+// 근접 샷(리더/드라이버/배틀/액션) 배율. 기본 2배, '화면 확대' 버튼을 누르면 4배.
+let camBoost=2;
 
 // 지금 어떤 샷이어야 하는가. 상태를 읽기만 하고 아무것도 바꾸지 않는다.
 let finishShotOn=false,finishShotDone=false,finishSlowAge=0,finishPostAge=0,finishScale=1;
@@ -3172,7 +3204,7 @@ function cameraStep(dt,list=order()){
   }
  }
 
- if(state!=='setup'&&state!=='countdown'&&(cameraMode==='leader'||cameraMode==='driver'||(cameraMode==='auto'&&(shot?.kind==='battle'||shot?.kind==='action'))))z=4;
+ if(state!=='setup'&&state!=='countdown'&&(cameraMode==='leader'||cameraMode==='driver'||(cameraMode==='auto'&&(shot?.kind==='battle'||shot?.kind==='action'))))z=camBoost;
  const blend=1-Math.exp(-dt*(shot?.kind==='finish'?5:shotAge<CUT_EASE?CUT_RATE:FOLLOW_RATE));
  camera.x+=(tx-camera.x)*blend;camera.y+=(ty-camera.y)*blend;camera.z+=(z-camera.z)*blend;camera.angle=0;
  setText($('cameraLabel'),label);
