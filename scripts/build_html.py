@@ -41,6 +41,10 @@ PAGES = [
     ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다.'),
     ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.'),
     ('stats', '방송통계', '방송통계', '캄몬스타즈 멤버들의 이번 달 방송 통계입니다.'),
+    # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다. 명단은 시너지가
+    # 매일 만들어 공개하는 것을 page-tier.js가 그대로 읽고(우리 db.json과 무관),
+    # 방송 중 여부는 시너지 워커에서 받아온다. 그래서 이 빌드 스크립트가 넘겨줄 데이터는 없다.
+    ('tier', '티어표', '티어표', '스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다.'),
     ('tools', '도구', '도구', '자주 쓰는 도구 모음입니다.'),
 ]
 SITE_NAME = '스타대학'
@@ -103,7 +107,10 @@ def page_context(page_id, title, description):
         'description': description,
         'canonical_url': f'{SITE_URL}/{page_url_path(page_id)}',
         'og_image_url': f'{SITE_URL}/{quote(OG_IMAGE_PATH)}',
-        'nav_items': [{'id': pid, 'label': label, 'href': page_url_path(pid) or './'} for pid, label, _, _ in PAGES],
+        # 상단 메뉴에서 '홈'은 뺀다 - 왼쪽 로고가 홈 링크라(base.html) 중복이고, 메뉴 칸도
+        # 아낀다. 홈 페이지 자체는 PAGES에 그대로 있으니 계속 생성된다.
+        'nav_items': [{'id': pid, 'label': label, 'href': page_url_path(pid) or './'}
+                      for pid, label, _, _ in PAGES if pid != 'home'],
     }
 
 
