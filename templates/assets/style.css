@@ -110,6 +110,38 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .cal-calendar-inner::-webkit-scrollbar-thumb, .cal-today-list::-webkit-scrollbar-thumb,
 .cal-selected-list::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 4px; }
 
+/* ----- 가로 스크롤 바 밑의 커스텀 스크롤바 (데스크탑 전용) -----
+   .tier-bar-list / .avatar-selector-scroll는 네이티브 스크롤바를 아예 숨기고 있어서
+   (위 규칙과 반대로 이 두 컨테이너는 스크롤은 되는데 손잡이가 안 보인다) 데스크탑에서
+   마우스로는 밀 방법이 트랙패드/시프트+휠뿐이었다. 바로 밑, 바가 원래 갖고 있던
+   margin-bottom 여백 안에 얇은 트랙+손잡이를 겹쳐 놓아 그 자리를 채운다 -
+   position:absolute라 문서 흐름을 안 밀어내므로 다른 요소는 그대로다.
+   생성/갱신은 core.js의 attachHScrollbar()가 맡는다. 휴대폰은 손가락으로 이미
+   밀 수 있고 화면도 좁아 안 보여준다. */
+.hscrollbar-track {
+    display: none;
+    position: absolute;
+    bottom: -12px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--color-bg-subtle);
+    cursor: pointer;
+    z-index: 1;
+}
+.hscrollbar-track.is-visible { display: block; }
+.hscrollbar-thumb {
+    position: absolute; top: 0; left: 0; height: 100%; width: 0;
+    border-radius: 999px;
+    background: var(--color-scrollbar-thumb);
+    transition: background 0.15s;
+}
+.hscrollbar-track:hover .hscrollbar-thumb,
+.hscrollbar-track.is-dragging .hscrollbar-thumb { background: var(--color-primary); }
+
+@media (max-width: 767.98px) {
+    .hscrollbar-track { display: none !important; }
+}
+
 /* ===== 페이지 공통 레이아웃 ===== */
 .sub-tabs { display: flex; gap: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--color-border); }
 .sub-tab { padding: 12px 4px; font-size: var(--fs-heading); font-weight: 600; color: var(--color-text-sub); cursor: pointer; margin-bottom: -1px; border-bottom: 3px solid transparent; }
