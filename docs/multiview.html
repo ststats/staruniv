@@ -23,7 +23,13 @@
     /* 기본 화면은 그리드만 꽉 차게 보이는 게 목적이라, 여백/타이틀 같은 크롬은
        전부 없애고 오른쪽 위 ⚙️ 버튼 하나만 항상 떠 있게 한다. 설정은 그 버튼을
        눌렀을 때만 오른쪽에서 슬라이드로 펼쳐지는 패널로 보여준다. */
-    html, body { height: 100%; margin: 0; overflow: hidden; }
+    /* style.css의 리셋이 모달 화면 밀림을 막으려고 html에 overflow-y: scroll !important +
+       scrollbar-gutter: stable을 걸어둔다. 이 페이지는 스크롤이 아예 없는 전체화면 그리드라
+       그 규칙이 살아 있으면 "움직이지도 않는 빈 스크롤바"가 오른쪽에 계속 남는다.
+       !important를 !important로 덮고, gutter도 auto로 되돌린다(overflow:hidden이어도
+       stable이면 스크롤바 폭만큼 빈 띠를 그대로 잡아두기 때문). */
+    html, body { height: 100%; margin: 0; overflow: hidden !important; }
+    html { scrollbar-gutter: auto !important; }
     body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
 
     /* ===== 설정 열기 버튼 (항상 떠 있음) - 화면 우상단 ===== */
@@ -526,6 +532,10 @@
         mvReloadCell(btn.closest('.mv-cell'));
     }
 
+    // scrolling="no": SOOP 임베드 페이지가 자기 쪽에서 띄우는 스크롤바를 없앤다. 남의 문서라
+    // CSS(::-webkit-scrollbar 등)로는 못 건드리지만, 이 속성은 iframe을 넣는 우리 쪽 설정이라
+    // 크로스 오리진에도 그대로 먹는다. 명세상 deprecated지만 모든 브라우저가 지원하고,
+    // 영상 플레이어라 안에서 스크롤할 일도 없으니 잃는 게 없다.
     function mvCellHtml(entry, isMain) {
         return `
         <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${escapeHTML(entry.soopId)}">
@@ -537,7 +547,7 @@
             </div>
             <div class="mv-cell-body">
                 <div class="mv-cell-video-wrap">
-                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"></iframe>
+                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" scrolling="no" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"></iframe>
                 </div>
             </div>
         </div>`;
