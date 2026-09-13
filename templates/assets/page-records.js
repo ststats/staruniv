@@ -241,7 +241,7 @@ function showIndivSummary() {
         const pStat = findPlayerStats(m['이름']);
         const name = m['이름'];
         return `<tr class="stat-row clickable-row" role="button" tabindex="0" onclick="selectPlayer('${jsAttr(name)}')">
-                <td class="fw-bold text-dark text-center stat-table-sticky-col text-nowrap colw-20"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span class="ellipsis-text">${escapeHTML(name)}</span></span></td>
+                <td class="text-center stat-table-sticky-col text-nowrap colw-20"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span class="ellipsis-text">${escapeHTML(name)}</span></span></td>
                 ${FORMAT_KEYS.map(fmt => `<td class="text-nowrap colw-20">${escapeHTML(pStat[`${fmt} 전적`]) || '-'}</td>`).join('\n                ')}
             </tr>`;
     }).join('');

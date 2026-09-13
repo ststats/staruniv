@@ -720,6 +720,12 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    그래서 뱃지가 유일한 내용인 셀(.badge-cell)에만 좁혀서 strut을 없앤다. */
 .stat-table tbody td.badge-cell { line-height: 0; }
 .stat-table-sticky-col { position: sticky; left: 0; z-index: 2; background: #fff; }
+/* 표의 첫 열은 "이 행이 무엇에 관한 행인지"를 말해주는 행 머리글이다(상대 팀 / 멤버 /
+   상대 선수) - 어느 표에서든 굵게 둔다. 여기 한 곳에서만 정하는 이유: 예전엔 템플릿이
+   그린 표(상대 전적)만 셀에 fw-bold가 붙어 있고 JS가 그린 표(최근 전적, 모달)는 안
+   붙어서, 같은 팀 이름이 표마다 굵기가 달랐다. 머리글 행(thead th)은 이 규칙과 무관하게
+   원래 800이다. */
+.stat-table tbody td.stat-table-sticky-col { font-weight: 700; color: var(--color-text-dark); }
 .stat-table thead .stat-table-sticky-col { z-index: 3; }
 .stat-table tbody tr:hover .stat-table-sticky-col { background: var(--color-primary-tint); }
 .team-row-clickable { cursor: pointer; transition: background 0.1s; }
@@ -863,10 +869,15 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .table-fixed { table-layout: fixed; }
 .minw-320 { min-width: 320px; }
 .minw-480 { min-width: 480px; }
-/* 560px인 이유: 표 박스 폭은 PC 최대 폭에서 한 칸 기준 약 606px인데, 세로 스크롤바가
-   10~17px(OS/브라우저마다 다르다)를 먹는다. 600으로 잡으면 세로 스크롤이 생기는 순간
-   가로 스크롤까지 같이 생겨버린다 - 여유를 두고 560으로 낮춘다(칸당 105px). */
-.minw-560 { min-width: 560px; }
+/* 520px인 이유: 실측한 "내용이 안 잘리는 최소 폭"이다. 열 비율이 18.8%×5 + 6%라,
+   필요한 표 폭은 (가장 넓은 셀 / 그 열의 비율)로 정해진다:
+     상대 전적 - 상대 칸(로고 16 + 팀이름) 96px / 0.188 = 511px  ← 여기가 결정
+     상대 전적 - CK 칸("20승 19패")     75px / 0.188 = 399px
+     최근 전적 - 상대 칸               83px / 0.188 = 442px
+   511을 올림해 520으로 잡았다. 더 줄이면 팀 이름부터 말줄임(…)이 시작된다 -
+   그보다 낮추려면 min-width가 아니라 열 비율을 손봐야 한다(상대 칸을 넓히고
+   숫자 칸들을 좁히면 약 440까지 내려간다). */
+.minw-520 { min-width: 520px; }
 /* 고정 레이아웃 표의 열 너비 (예전 style="width:18.8%" 등) */
 .colw-6 { width: 6%; }
 .colw-16-66 { width: 16.66%; }
