@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<section id="page-tier" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">티어표</h1>
+        <p class="page-header-subtitle" id="tier-subtitle">불러오는 중...</p>
+    </div>
+    <hr class="page-header-divider tight">
+
+    {#- 소분류: 티어표 / 분석. 멤버 페이지의 현황/공지 탭과 같은 모양(.sub-tabs)을 쓴다. -#}
+    <div class="sub-tabs" role="tablist">
+        <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true"
+             onclick="switchTierView('list')">티어표</div>
+        <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false"
+             onclick="switchTierView('analysis')">분석</div>
+    </div>
+
+    <div id="view-tier-list">
+        {#- 티어 바로가기 바. 상단 메뉴 바로 아래에 붙어서 같이 따라다닌다. -#}
+        <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기"></nav>
+
+        <div class="tier-toolbar">
+            <div class="tier-filters" id="tier-filters"></div>
+            <span class="tier-meta" id="tier-total"></span>
+        </div>
+
+        <div id="tier-root">
+            <div class="tier-empty">불러오는 중...</div>
+        </div>
+    </div>
+
+    <div id="view-tier-analysis" class="d-none">
+        <div class="tier-empty">준비 중입니다.</div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('page-tier.js') }}"></script>
+{% endblock %}
