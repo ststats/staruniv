@@ -5,33 +5,41 @@
 
 // 팀 매치 → 세트(라운드) 목록 조회 인덱스.
 // 예전엔 매치 한 줄을 그릴 때마다 전체 라운드를 filter해서 O(매치 수 × 라운드 수)였다.
-// 라운드를 한 번만 훑어 (날짜, 상대팀) 묶음으로 나눠두고, 매치마다 그 묶음 안에서만
-// 예전과 똑같은 조건으로 거른다. 원래 순서도 그대로 유지된다.
-//   - 내전 미러 라운드(_mirrored)는 개인 통계 전용이라 세트 상세에서는 뺀다(match_link.py 참고).
-//   - _match_key가 매치/라운드 양쪽에 있으면 그걸로 정확히 매칭하고(같은 날 여러 경기 구분),
-//     어느 한쪽이라도 없을 때만 날짜+상대팀으로 대체한다.
-//   - _match_key는 "날짜__상대팀__순번" 형태라 같은 키는 항상 같은 (날짜, 상대팀) 묶음 안에 있다.
-let _roundIndex = { source: null, byDateTeam: new Map() };
+// 라운드를 한 번만 훑어 묶음으로 나눠두고 매치마다 그 묶음만 본다.
+//   - 1순위: _match_key(시트의 매치 번호로 만들어진 키. match_link.py 참고)로 바로 찾는다.
+//     번호로 연결된 경기는 날짜나 상대팀을 잘못 적어도 정확히 붙는다.
+//   - 2순위: 번호가 없는 과거 데이터를 위해 (날짜, 상대팀) 묶음으로 대체한다.
+//   - 내전 미러 라운드(_mirrored)는 개인 통계 전용이라 세트 상세에서는 뺀다.
+let _roundIndex = { source: null, byMatchKey: new Map(), byDateTeam: new Map() };
 
 // (===와 똑같이 구분되도록: 숫자 2024와 문자열 "2024", undefined와 null을 서로 다른 키로 만든다)
 const _keyPart = v => (v === undefined ? 'u' : 'v' + JSON.stringify(v));
-
 const dateTeamKey = (date, team) => _keyPart(date) + '|' + _keyPart(team);
 
+function buildRoundIndex() {
+    const byMatchKey = new Map(), byDateTeam = new Map();
+    SiteData.rounds.forEach(r => {
+        if (r['_mirrored']) return;
+        const push = (map, key) => {
+            if (!map.has(key)) map.set(key, []);
+            map.get(key).push(r);
+        };
+        if (r['_match_key']) push(byMatchKey, r['_match_key']);
+        push(byDateTeam, dateTeamKey(r['날짜'], r['상대팀']));
+    });
+    _roundIndex = { source: SiteData.rounds, byMatchKey, byDateTeam };
+}
+
 function roundsForMatch(m) {
-    if (_roundIndex.source !== SiteData.rounds) {
-        const byDateTeam = new Map();
-        SiteData.rounds.forEach(r => {
-            if (r['_mirrored']) return;
-            const key = dateTeamKey(r['날짜'], r['상대팀']);
-            if (!byDateTeam.has(key)) byDateTeam.set(key, []);
-            byDateTeam.get(key).push(r);
-        });
-        _roundIndex = { source: SiteData.rounds, byDateTeam };
-    }
+    if (_roundIndex.source !== SiteData.rounds) buildRoundIndex();
+
+    const key = m['_match_key'];
+    if (key && _roundIndex.byMatchKey.has(key)) return _roundIndex.byMatchKey.get(key);
+
+    // 매치 번호가 없던 시절 데이터: 날짜+상대팀으로 묶고, 키가 있는 라운드는 키까지 맞는 것만 고른다.
     const group = _roundIndex.byDateTeam.get(dateTeamKey(m['날짜'], m['상대팀'])) || [];
-    if (!m['_match_key']) return group;
-    return group.filter(r => !r['_match_key'] || r['_match_key'] === m['_match_key']);
+    if (!key) return group;
+    return group.filter(r => !r['_match_key'] || r['_match_key'] === key);
 }
 
 const RecordsState = {
