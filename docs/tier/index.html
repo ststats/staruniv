@@ -17,7 +17,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=066e38d84d">
+    <link rel="stylesheet" href="style.css?v=0cacd4fd28">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -48,7 +48,9 @@
              onclick="switchTierView('analysis')">분석</div>
     </div>
 
-    <div id="view-tier-list"><nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기"></nav>
+    <div id="view-tier-list"><nav class="avatar-selector-scroll tier-bar" id="tier-bar" aria-label="티어 바로가기">
+            <div class="avatar-selector-list" id="tier-bar-list"></div>
+        </nav>
 
         <div class="tier-toolbar">
             <div class="tier-filters" id="tier-filters"></div>
@@ -71,7 +73,7 @@
 
 
 <script src="core.js?v=35d4f9479f"></script>
-<script src="page-tier.js?v=a7a1e8c70a"></script>
+<script src="page-tier.js?v=b83fbe2169"></script>
 
 </body>
 </html>
