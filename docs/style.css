@@ -909,7 +909,13 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     background: var(--color-bg-subtle);
     display: flex; align-items: center; justify-content: center; font-size: 22px;
 }
-.tier-card-media .live-badge { top: 6px; left: 6px; }
+/* 스타크래프트가 아닌 방송(저챗·다른 게임)은 살짝 눌러둔다. 명단에서 빼지는 않는다 -
+   그 사람이 방송을 켠 건 사실이고, 보러 가고 싶은 사람도 있다. 훑을 때 눈에 덜 걸리게만
+   한다. 마우스를 올리면 원래 색이 거의 돌아와서 뭘 하는 방송인지 볼 수 있다. */
+.tier-card.is-offcate .tier-card-thumb { filter: grayscale(0.9); opacity: 0.72; }
+.tier-card.is-offcate:hover .tier-card-thumb { filter: grayscale(0.3); opacity: 0.95; }
+.tier-card.is-offcate .tier-card-viewers { background: rgba(0,0,0,0.42); color: rgba(255,255,255,0.85); }
+
 .tier-card-viewers {
     position: absolute; right: 6px; bottom: 6px; z-index: 1;
     background: rgba(0,0,0,0.55); color: #fff;
