@@ -138,8 +138,10 @@ function tierCardMediaHtml(member, live) {
     const soopId = String(member.id).trim();
     if (live) {
         const fallback = getProfileImgUrl(soopId) || '';
+        // LIVE 알약은 뺐다 - 카드 열에서 방송 화면이 보이는 것 자체가 이미 "켜져 있다"는
+        // 표시고, 시청자 수도 방송 중일 때만 붙는다. 작은 카드에 배지까지 얹으면 정작
+        // 봐야 할 방송 화면을 가린다.
         return `
-            <span class="live-badge">LIVE</span>
             <span class="tier-card-viewers">${live.viewers.toLocaleString('ko-KR')}</span>
             <img class="tier-card-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt="" loading="lazy"
                  ${fallback ? `onerror="this.src='${jsAttr(fallback)}';"` : ''}>`;
@@ -147,13 +149,20 @@ function tierCardMediaHtml(member, live) {
     return avatarHtml(soopId, 'tier-card-avatar');
 }
 
+// 스타크래프트가 아닌 방송은 카드를 살짝 회색으로 눌러둔다(명단에서 빼지는 않는다 -
+// 방송을 켠 건 맞으니까). 제목 옆에 카테고리도 같이 달아 왜 회색인지 알 수 있게 한다.
+function tierCardTitle(member, live) {
+    const base = live ? live.title : (member.nickname || String(member.id).trim());
+    return (live && live.category && !live.isStar) ? `[${live.category}] ${base}` : base;
+}
+
 function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
     return `
-    <a class="tier-card${live ? ' is-live' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
+    <a class="tier-card${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
        href="https://ch.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
-       title="${escapeHTML(live ? live.title : (member.nickname || soopId))}">
+       title="${escapeHTML(tierCardTitle(member, live))}">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
         <div class="tier-card-body">
             <div class="tier-card-nameline">
@@ -199,6 +208,8 @@ function tierRaceBlocksHtml(members) {
 }
 
 function renderTierGroups() {
+    // 다시 그리면 문서 높이가 바뀐다 - 그 전에 지금 보던 티어의 위치를 재둔다.
+    const anchor = captureTierAnchor();
     const list = tierVisibleMembers();
 
     // 제목에 쓸 "그 티어의 전체 인원"은 필터와 무관하게 항상 같은 값이어야 한다.
@@ -247,6 +258,7 @@ function renderTierGroups() {
     observeTierThumbs();
     renderTierBar();
     updateTierRowLiveCounts();
+    restoreTierAnchor(anchor);
     highlightTierBar();  // 칩을 새로 만들었으니 지금 보고 있는 티어를 바로 강조해준다
 }
 
@@ -311,9 +323,9 @@ function onTierBarClick(event) {
 // 차지한 티어가 강조된다.
 const TIER_HIGHLIGHT_RATIO = 0.35;
 
-// 스크롤에 따라 지금 보고 있는 티어를 바에서 강조한다.
-function highlightTierBar() {
-    if (TierState.sections.length === 0) return;
+// 지금 화면을 차지하고 있는 티어 섹션의 id.
+function currentTierSectionId() {
+    if (TierState.sections.length === 0) return null;
     const offset = tierStickyOffset();
     const viewport = window.innerHeight || document.documentElement.clientHeight;
     const line = offset + Math.max(72, (viewport - offset) * TIER_HIGHLIGHT_RATIO);
@@ -331,6 +343,13 @@ function highlightTierBar() {
     if (window.scrollY + viewport >= docHeight - 2) {
         currentId = TierState.sections[TierState.sections.length - 1].id;
     }
+    return currentId;
+}
+
+// 스크롤에 따라 지금 보고 있는 티어를 바에서 강조한다.
+function highlightTierBar() {
+    const currentId = currentTierSectionId();
+    if (!currentId) return;
 
     // 활성 티어가 그대로면 아무것도 건드리지 않는다. 스크롤은 초당 수십 번 오는데 그때마다
     // scrollTo(smooth)를 다시 부르면 애니메이션이 매번 처음부터 다시 시작해서, 사용자가 바를
@@ -357,7 +376,15 @@ function scrollTierBarItemIntoView(btn) {
     // 왼쪽 전환 버튼이 먹고 남은 폭이 좁아서, 가장자리에 걸쳐 놓으면 다음 티어로 넘어가는
     // 순간 바로 화면 밖으로 밀린다. 가운데면 앞뒤 티어도 같이 보인다.
     // (목록의 처음/끝에서는 더 갈 데가 없으므로 자연스럽게 왼쪽/오른쪽 끝에 붙는다.)
-    const centered = btn.offsetLeft - (list.clientWidth - btn.offsetWidth) / 2;
+    //
+    // [주의] 여기서 offsetLeft를 쓰면 안 된다. offsetLeft는 "스크롤되는 목록"이 아니라
+    // offsetParent 기준인데, .tier-bar가 position:sticky라 그게 offsetParent가 된다.
+    // 그래서 칩 위치에 왼쪽 전환 버튼 폭까지 얹혀서 계산되고, 딱 그만큼 어긋난 자리로
+    // 스크롤됐다(폭이 좁은 휴대폰에서 티가 크게 났다). 목록 기준 좌표를 직접 구한다.
+    const listRect = list.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const btnLeft = btnRect.left - listRect.left + list.scrollLeft;  // 목록 내용 기준 x
+    const centered = btnLeft - (list.clientWidth - btnRect.width) / 2;
     const maxLeft = list.scrollWidth - list.clientWidth;
     const left = Math.max(0, Math.min(centered, maxLeft));
     if (Math.abs(left - list.scrollLeft) < 1) return;
@@ -406,6 +433,65 @@ function onTierScopeClick(event) {
 }
 
 // ---------------------------------------------------------------------------
+// 다시 그릴 때 보던 자리 지키기
+// ---------------------------------------------------------------------------
+// '방송중'을 켜면 카드가 확 줄어들면서 문서 전체가 짧아진다. 브라우저는 스크롤 위치를
+// 픽셀 값으로만 기억하므로, 2티어를 보고 있었어도 같은 높이에 있던 7티어로 튀어버린다.
+// 그래서 다시 그리기 직전에 "지금 보던 티어가 화면 어디쯤에 걸려 있었는지"를 재두고,
+// 다 그린 뒤 그 티어를 같은 자리로 되돌린다. 섹션 id는 순번이라 필터가 바뀌면 값이
+// 달라지므로 id가 아니라 티어 이름으로 찾는다.
+function captureTierAnchor() {
+    const id = TierState.activeId || currentTierSectionId();
+    const sec = TierState.sections.find(s => s.id === id);
+    const el = sec && document.getElementById(sec.id);
+    if (!el) return null;
+    return { tier: sec.tier, top: el.getBoundingClientRect().top };
+}
+
+function restoreTierAnchor(anchor) {
+    if (!anchor) return;
+    const offset = tierStickyOffset() + 16;  // .tier-row의 scroll-margin-top과 같은 기준
+
+    let sec = TierState.sections.find(s => s.tier === anchor.tier);
+    let keepOffset = true;
+    if (!sec) {
+        // 보던 티어가 통째로 사라진 경우(그 티어에 방송 중인 사람이 한 명도 없음).
+        // 맨 위로 튕기지 말고 원래 순서상 바로 다음 티어로 - 없으면 마지막 티어로 - 데려간다.
+        const idx = tierIndex(anchor.tier);
+        sec = TierState.sections.find(s => tierIndex(s.tier) >= idx)
+            || TierState.sections[TierState.sections.length - 1];
+        keepOffset = false;  // 남의 티어에 원래 높이를 맞출 이유는 없다. 그 티어의 처음부터.
+    }
+    const el = sec && document.getElementById(sec.id);
+    if (!el) return;
+
+    // 원래 걸려 있던 높이를 그대로 지키되, 그 티어가 짧아졌으면 지나쳐 가지 않게 잡아둔다
+    // (예: 20명짜리 티어 한가운데를 보고 있었는데 방송 중은 2명이면 그 2명 위로 올라온다).
+    const top = keepOffset ? Math.max(anchor.top, offset + 80 - el.offsetHeight) : offset;
+    const delta = el.getBoundingClientRect().top - top;
+    if (Math.abs(delta) < 1) return;
+    window.scrollBy({ top: delta, behavior: 'auto' });  // 순간이동이어야 자리가 안 흔들린 것처럼 보인다
+}
+
+// ---------------------------------------------------------------------------
+// 카테고리 (스타크래프트인지)
+// ---------------------------------------------------------------------------
+// SOOP 방송 목록이 주는 값을 워커가 그대로 실어준다(category_name: "스타크래프트",
+// broad_cate_no: "00040001"). 이름을 먼저 보고, 이름이 없을 때만 번호로 판단한다 -
+// 번호 체계는 SOOP이 언제든 바꿀 수 있지만 이름은 사람이 읽는 값이라 덜 흔들린다.
+const TIER_STARCRAFT_CATE_NOS = new Set(['00040001']);
+const TIER_STARCRAFT_NAME_RE = /스타\s*크래프트|starcraft|브루드\s*워|brood\s*war/i;
+
+// 판단할 근거가 아예 없으면 "스타로 친다"(true). 워커가 아직 카테고리를 안 싣고 있거나
+// 필드 이름이 바뀌었을 때 멀쩡한 방송이 전부 회색이 되면 안 된다 - 모를 때는 아무 표시도
+// 안 하는 쪽이 안전하다.
+function isStarcraftCategory(name, no) {
+    if (name) return TIER_STARCRAFT_NAME_RE.test(name);
+    if (no) return TIER_STARCRAFT_CATE_NOS.has(no);
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // 방송 상태
 // ---------------------------------------------------------------------------
 function chunkArray(arr, size) {
@@ -436,12 +522,16 @@ async function refreshTierLive() {
         const key = String(id).toLowerCase();
         const member = TierState.byId[key];
         if (!member || !info || !info.broad_no) return;
+        const categoryName = String(info.category_name || '').trim();
+        const categoryNo = String(info.broad_cate_no || '').trim();
         next[key] = {
             id,
             member,
             broadNo: info.broad_no,
             title: info.broad_title || '',
             viewers: Number(info.current_sum_viewer) || 0,
+            category: categoryName,
+            isStar: isStarcraftCategory(categoryName, categoryNo),
         };
     });
 
@@ -479,9 +569,13 @@ function applyLiveToCards(setChanged) {
             if (!member) return;
             media.innerHTML = tierCardMediaHtml(member, live);
             card.classList.toggle('is-live', !!live);
-            card.title = live ? live.title : (member.nickname || member.id);
+            card.classList.toggle('is-offcate', !!live && !live.isStar);
+            card.title = tierCardTitle(member, live);
             needsObserve = true;
         } else if (live) {
+            // 방송 중에 카테고리를 바꾸는 일은 흔하다(스타 하다가 저챗 등) - 회색 여부도 따라간다.
+            card.classList.toggle('is-offcate', !live.isStar);
+            card.title = tierCardTitle(TierState.byId[key] || live.member, live);
             // 계속 방송 중이면 숫자만 고치고, 썸네일은 화면에 보이는 것만 새로 받는다.
             const viewers = media.querySelector('.tier-card-viewers');
             if (viewers) viewers.textContent = live.viewers.toLocaleString('ko-KR');
