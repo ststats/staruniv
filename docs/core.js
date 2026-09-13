@@ -517,6 +517,9 @@ function attachHScrollbar(scrollEl, barEl) {
     if (!scrollEl || !barEl) return null;
     if (scrollEl._hscrollbarRefresh) return scrollEl._hscrollbarRefresh;
 
+    // 바 밖에 겹쳐 그리지 않고, 바 안에 진짜 자식으로 넣는다. flex-wrap(스타일시트에서
+    // .tier-bar/.avatar-bar에 걸어둠) 덕분에 폭이 넘치는 이 요소(flex: 0 0 100%)가
+    // 저절로 다음 줄로 내려가 바 안쪽 둘째 줄이 된다.
     const track = document.createElement('div');
     track.className = 'hscrollbar-track';
     const thumb = document.createElement('div');
@@ -524,31 +527,22 @@ function attachHScrollbar(scrollEl, barEl) {
     track.appendChild(thumb);
     barEl.appendChild(track);
 
-    // 트랙을 스크롤 영역과 같은 가로 위치·폭으로 맞춘다(왼쪽 고정 칸만큼 들여쓴다).
-    function layout() {
-        const barRect = barEl.getBoundingClientRect();
-        const scrollRect = scrollEl.getBoundingClientRect();
-        track.style.left = `${scrollRect.left - barRect.left}px`;
-        track.style.width = `${scrollRect.width}px`;
-    }
-
     function update() {
         const overflow = scrollEl.scrollWidth - scrollEl.clientWidth;
         const hasOverflow = overflow > 1;
         track.classList.toggle('is-visible', hasOverflow);
         if (!hasOverflow) return;
         const trackWidth = track.clientWidth;
-        const thumbWidth = Math.min(trackWidth, Math.max(40, (scrollEl.clientWidth / scrollEl.scrollWidth) * trackWidth));
+        // 손잡이 최소 폭을 넉넉히 잡아(48px) 손으로 집기 쉽게 한다.
+        const thumbWidth = Math.min(trackWidth, Math.max(48, (scrollEl.clientWidth / scrollEl.scrollWidth) * trackWidth));
         const maxThumbLeft = trackWidth - thumbWidth;
         const ratio = maxThumbLeft > 0 ? scrollEl.scrollLeft / overflow : 0;
         thumb.style.width = `${thumbWidth}px`;
         thumb.style.transform = `translateX(${ratio * maxThumbLeft}px)`;
     }
 
-    function refresh() { layout(); update(); }
-
     scrollEl.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', refresh);
+    window.addEventListener('resize', update);
 
     // 트랙을 클릭하거나 손잡이를 드래그해서도 스크롤할 수 있게 한다.
     function scrollToClientX(clientX) {
@@ -577,9 +571,9 @@ function attachHScrollbar(scrollEl, barEl) {
         track.classList.remove('is-dragging');
     });
 
-    scrollEl._hscrollbarRefresh = refresh;
-    refresh();
-    return refresh;
+    scrollEl._hscrollbarRefresh = update;
+    update();
+    return update;
 }
 
 // 바 내용이 (다시) 그려질 때마다 이걸 부른다 - 처음이면 트랙을 붙이고, 이미 있으면
