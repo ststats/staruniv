@@ -2699,7 +2699,7 @@ const $=id=>{if(!elements.has(id))elements.set(id,document.getElementById(id));r
 const names=['주하랑','소주양','왜냐맨','지두두','남덕선','햇살','사테','김민철','김윤환','토마토','박준오','먼진','아리송이','임조이','배성흠','비타밍','낭니'];
 const coords=Array.from({length:17},(_,i)=>[(i%6)*116,Math.floor(i/6)*132]);
 const colors=['#56b3ec','#e374aa','#56b3ec','#e374aa','#8b6dc2','#e374aa','#e374aa','#8b6dc2','#ee674e','#56b3ec','#8b6dc2','#8b6dc2','#56b3ec','#8b6dc2','#8b6dc2','#e374aa','#8b6dc2'];
-let chosen=new Set([0,1,2,4,7,8,9,14]),portraits=[],racers=[],state='setup',elapsed=0,countdown=3,rate=1,laps=3,focused=null,ready=false,last=0,accumulator=0,uiClock=0,lastLeader=null,eventAt=-20,raceNumber=0;
+let chosen=new Set([8,9,0,1,15,3,7,4]),portraits=[],racers=[],state='setup',elapsed=0,countdown=3,rate=1,laps=3,focused=null,ready=false,last=0,accumulator=0,uiClock=0,lastLeader=null,eventAt=-20,raceNumber=0;
 cv.width=1200;cv.height=740;
 let traps=[],effects=[],cameraMode='auto',camera={x:600,y:370,z:1,angle:0},cameraTarget=null,cameraUntil=0,finishAt=null,slowMotion=false,finalAnnounced=false,itemStats={used:0,hits:0,blocks:0,leadChanges:0};
 const itemNames={missile:'🚀 미사일',shield:'🛡 방어막',lightning:'ϟ 번개',rocket:'🔥 부스터',magnet:'🧲 자석',banana:'🍌 바나나',ufo:'🛸 우주선',water:'💧 물폭탄',wisp:'💧 물파리',barricade:'🚧 바리케이드'};
