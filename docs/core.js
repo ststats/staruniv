@@ -475,7 +475,7 @@ function avatarSelectAllItemHtml(id, onclickJs) {
 function renderAvatarBar(listId, allItemHtml, itemsHtml) {
     const list = document.getElementById(listId);
     if (!list) return;
-    avatarBarTools(list).innerHTML = allItemHtml;
+    avatarBarTools(list).querySelector('.bar-scope').innerHTML = allItemHtml;
     list.innerHTML = itemsHtml;
 }
 
@@ -490,6 +490,11 @@ function avatarBarTools(list) {
     bar.className = 'avatar-bar';
     const tools = document.createElement('div');
     tools.className = 'avatar-bar-tools';
+    // '전체'는 티어 바의 보기 전환과 같은 컨트롤 박스(.bar-scope) 안에 들어간다 -
+    // 두 바의 왼쪽 고정 칸이 같은 크기(34px)가 되어 바 높이까지 똑같아진다.
+    const scope = document.createElement('div');
+    scope.className = 'bar-scope';
+    tools.appendChild(scope);
     scroll.replaceWith(bar);   // 껍데기가 있던 자리에 바를 놓고
     bar.appendChild(tools);    // 그 안에 '전체' 칸과
     bar.appendChild(scroll);   // 원래 껍데기를 차례로 넣는다
