@@ -817,12 +817,17 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     transition: background 0.15s, color 0.15s;
 }
 .tier-bar-item:hover { background: var(--color-bg-subtle); color: var(--color-text-strong); }
-.tier-bar-item.active { background: var(--color-primary-tint); color: var(--color-primary); font-weight: 800; }
+/* 선택된 칩은 전체/방송중 버튼과 같은 규칙을 따른다 - 글자는 검게, 색은 숫자에만.
+   배경을 파랗게 물들이지 않는 이유: 방송중 보기에서는 숫자가 빨개지는데 파란 배경 위에
+   빨간 숫자가 앉으면 색이 싸운다. 회색 알약은 어느 보기에서든 중립이다. */
+.tier-bar-item.active { background: var(--color-bg-subtle); color: var(--color-text-dark); font-weight: 800; }
 .tier-bar-count {
     font-size: 10px; font-weight: 700; color: var(--color-text-faint);
     font-variant-numeric: tabular-nums;
 }
 .tier-bar-item.active .tier-bar-count { color: var(--color-primary); }
+/* 방송중 보기에서는 칩의 숫자도 "그 티어에서 방송 중인 수"라 방송중 버튼과 같은 빨강. */
+.tier-bar.is-live-only .tier-bar-item.active .tier-bar-count { color: var(--color-lose); }
 
 /* ----- 보기 전환(전체 / 방송중) -----
    예전엔 "512명"이라는 맨 글자 옆에 방송중 알약 버튼이 따로 있었다. 둘은 사실 같은 축
@@ -884,7 +889,7 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
-    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s, filter 0.15s, opacity 0.15s;
 }
 .tier-card:hover {
     box-shadow: var(--shadow-card-hover);
@@ -909,19 +914,12 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     background: var(--color-bg-subtle);
     display: flex; align-items: center; justify-content: center; font-size: 22px;
 }
-/* 스타크래프트가 아닌 방송(저챗·다른 게임)은 살짝 눌러둔다. 명단에서 빼지는 않는다 -
-   그 사람이 방송을 켠 건 사실이고, 보러 가고 싶은 사람도 있다. 훑을 때 눈에 덜 걸리게만
-   한다. 마우스를 올리면 원래 색이 거의 돌아와서 뭘 하는 방송인지 볼 수 있다. */
-.tier-card.is-offcate .tier-card-thumb { filter: grayscale(0.9); opacity: 0.72; }
-.tier-card.is-offcate:hover .tier-card-thumb { filter: grayscale(0.3); opacity: 0.95; }
-.tier-card.is-offcate .tier-card-viewers { background: rgba(0,0,0,0.42); color: rgba(255,255,255,0.85); }
-
-.tier-card-viewers {
-    position: absolute; right: 6px; bottom: 6px; z-index: 1;
-    background: rgba(0,0,0,0.55); color: #fff;
-    font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
-    font-variant-numeric: tabular-nums;
-}
+/* 스타크래프트가 아닌 방송(저챗·다른 게임)은 카드를 통째로 눌러둔다. 썸네일만 회색으로
+   하면 종족 뱃지·팀 로고가 그대로 색을 뿜어서 티가 안 났다. 카드 전체에 필터를 걸면 그
+   안의 모든 색이 같이 빠진다. 명단에서 빼지는 않는다 - 방송을 켠 건 사실이고 보러 가고
+   싶은 사람도 있다. 마우스를 올리면 색이 완전히 돌아와서 뭘 하는 방송인지 볼 수 있다. */
+.tier-card.is-offcate { filter: grayscale(1); opacity: 0.6; }
+.tier-card.is-offcate:hover { filter: none; opacity: 1; }
 
 /* 이름 + 종족 뱃지 / 그 아래 소속 로고 + 이름.
    카드 아래 글자는 가운데로 모은다 - 위쪽 미디어(썸네일/동그란 프로필)가 이미 가운데
