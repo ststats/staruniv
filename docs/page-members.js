@@ -75,6 +75,11 @@ function renderMembersPage() {
     }
 
     document.getElementById('members-groups').innerHTML = html || '<div class="text-center text-muted py-5">등록된 멤버가 없습니다.</div>';
+    // '이전 멤버' 더보기 버튼이 있을 땐 그 버튼이 화면상 마지막 요소라, 다른 탭처럼
+    // 큰 하단 여백(--space-page-bottom)까지 얹으면 버튼 밑만 유난히 휑해 보인다.
+    // 버튼이 없을 때(이전 멤버가 아예 없는 경우)는 원래대로 큰 여백을 쓴다.
+    const viewStatus = document.getElementById('view-member-status');
+    if (viewStatus) viewStatus.classList.toggle('has-trailer', formerMembers.length > 0);
 }
 
 function toggleFormerMembersSection() {
@@ -447,9 +452,13 @@ const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more
 
 // "전체 공지"/"멤버별 공지" 공용 렌더러.
 function renderNewsLayout(content) {
+    // '더 보기' 버튼이 화면 마지막 요소일 땐 다른 탭처럼 큰 하단 여백을 더 얹지 않는다
+    // (renderMembersPage의 '이전 멤버'와 같은 이유). 버튼이 없으면 원래 여백을 쓴다.
+    const viewNews = document.getElementById('view-member-news');
     if (NewsState.items.length === 0) {
         content.classList.remove('news-feed-mobile');
         content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');
+        if (viewNews) viewNews.classList.remove('has-trailer');
         return;
     }
 
@@ -458,6 +467,7 @@ function renderNewsLayout(content) {
         NewsState.featuredKey = newsItemKey(sorted[0]); // 기본값: 가장 최신 글
     }
     const loadMoreHtml = NewsState.hasMore ? NEWS_LOAD_MORE_HTML : '';
+    if (viewNews) viewNews.classList.toggle('has-trailer', NewsState.hasMore);
 
     const mobile = isNewsMobileLayout();
     content.classList.toggle('news-feed-mobile', mobile);
