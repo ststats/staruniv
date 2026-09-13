@@ -424,19 +424,53 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .modal-header .btn-close { position: absolute; right: 18px; top: 50%; transform: translateY(-50%) scale(0.7); margin: 0; }
 .modal-body { background: var(--color-modal-body-bg); }
 
-/* ===== 아바타 선택 바 (개인전적/소식 상단, 가로 나열) ===== */
-.avatar-selector-list { display: flex; gap: 8px; width: max-content; padding: 8px 12px; }
-.avatar-select-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0; width: 56px; padding: 4px 4px; border-radius: 8px; transition: background 0.15s; }
-.avatar-select-item:hover { background: #f5f7fa; }
-.avatar-select-item.active { background: var(--color-primary-tint); }
-.avatar-select-img, .avatar-select-fallback { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); border: 2px solid transparent; box-sizing: border-box; flex-shrink: 0; }
-.avatar-select-fallback { display: flex; align-items: center; justify-content: center; font-size: 11px; }
-.avatar-select-item.active .avatar-select-img, .avatar-select-item.active .avatar-select-fallback { border-color: var(--color-primary); }
-.avatar-select-all .avatar-select-fallback { background: var(--color-primary-tint); color: var(--color-primary); font-weight: 800; font-size: 10px; }
-.avatar-select-toggle .avatar-select-fallback { background: var(--color-bg-subtle); color: var(--color-text-muted); font-weight: 800; font-size: var(--fs-subheading); }
+/* ===== 아바타 선택 바 (개인전적/소식 상단, 가로 나열) =====
+   예전엔 아바타 위·이름 아래로 쌓은 56px짜리 칸이 줄지어 있어 바 높이가 76px쯤 됐다.
+   티어표의 바로가기 칩과 같은 가로 알약(아바타 24px + 이름)으로 바꿔 48px로 낮추고,
+   상단 메뉴 밑에 붙여 같이 따라다니게 했다 - 목록을 한참 내려가서도 사람을 바꿀 수 있다.
+   선택 표시도 티어 칩과 같은 규칙이다(파란 테두리·파란 글씨 대신 회색 알약 + 검은 글씨). */
+.avatar-selector-scroll {
+    position: sticky; top: var(--tier-navbar-h); z-index: 90;
+    scrollbar-width: none;
+}
+.avatar-selector-scroll::-webkit-scrollbar { display: none; }
+.avatar-selector-list { display: flex; align-items: center; gap: 4px; width: max-content; padding: 7px 10px; }
+.avatar-select-item {
+    display: inline-flex; flex-direction: row; align-items: center; gap: 6px;
+    width: auto; flex-shrink: 0; cursor: pointer;
+    padding: 4px 12px 4px 4px; border-radius: 999px;
+    transition: background 0.15s, color 0.15s;
+}
+.avatar-select-item:hover { background: var(--color-bg-subtle); }
+.avatar-select-item.active { background: var(--color-bg-subtle); }
+.avatar-select-img, .avatar-select-fallback { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); box-sizing: border-box; flex-shrink: 0; }
+.avatar-select-fallback { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+.avatar-select-name { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-sub); white-space: nowrap; }
+.avatar-select-item.active .avatar-select-name { color: var(--color-text-dark); font-weight: 800; }
+
+/* '전체'는 동그라미 없이 글자만 - 얼굴이 없는 항목에 억지로 원을 씌우면 옆의 진짜
+   아바타들과 같은 무게로 보여서 오히려 눈이 헷갈린다.
+   왼쪽에 붙여두고(sticky) 목록만 그 아래로 흘려보낸다 - 티어 바가 전환 버튼을 왼쪽에
+   고정해 둔 것과 같은 자리다. 밑으로 칩이 지나갈 때만 오른쪽에 그림자 선이 생긴다. */
+.avatar-select-all {
+    position: sticky; left: 0; z-index: 1;
+    padding-left: 12px; margin-right: 6px;
+    background: var(--color-card);
+    box-shadow: 8px 0 8px -8px rgba(0,0,0,0.14);
+}
+.avatar-select-all.active { background: var(--color-bg-subtle); }
+.avatar-select-all .avatar-select-fallback { display: none; }
+
+.avatar-select-toggle .avatar-select-fallback { background: var(--color-bg-subtle); color: var(--color-text-muted); font-weight: 800; font-size: var(--fs-body); }
 .avatar-select-toggle .avatar-select-name { color: var(--color-primary); }
-.avatar-select-name { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-soft); white-space: nowrap; }
-.avatar-select-item.active .avatar-select-name { color: var(--color-primary); font-weight: 800; }
+
+@media (max-width: 767.98px) {
+    .avatar-selector-list { padding: 6px 8px; }
+    .avatar-select-item { padding: 4px 10px 4px 4px; gap: 5px; }
+    .avatar-select-img, .avatar-select-fallback { width: 22px; height: 22px; }
+    .avatar-select-name { font-size: 12px; }
+    .avatar-select-all { padding-left: 10px; }
+}
 
 /* 18px로 맞춘 이유: 뱃지(.tag-badge/.match-badge)와 팀로고 아이콘이 다 18px/16px라
    이 표만 아바타가 24px면 행이 유독 커진다. 18px로 맞추면 다른 stat-table(최근
