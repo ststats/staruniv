@@ -185,11 +185,13 @@ const NewsState = {
 };
 
 function renderNewsSidebar() {
-    const html = [avatarSelectAllItemHtml('news-side-btn-all', 'showNewsAll()')];
-    activeMembersWithSoopId().forEach(m => {
-        html.push(avatarSelectItemHtml('news-side-player-', m['이름'], m['SOOP ID'], 'selectNewsPlayer'));
-    });
-    document.getElementById('news-avatar-list').innerHTML = html.join('');
+    renderAvatarBar(
+        'news-avatar-list',
+        avatarSelectAllItemHtml('news-side-btn-all', 'showNewsAll()'),
+        activeMembersWithSoopId()
+            .map(mem => avatarSelectItemHtml('news-side-player-', mem['이름'], mem['SOOP ID'], 'selectNewsPlayer'))
+            .join('')
+    );
 }
 
 // 아직 다음 페이지가 남아있는 멤버가 한 명이라도 있는지

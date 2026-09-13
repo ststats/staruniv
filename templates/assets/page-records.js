@@ -204,7 +204,8 @@ document.addEventListener('click', function(e) {
 });
 
 function renderIndividualSidebar() {
-    const html = [avatarSelectAllItemHtml('side-btn-summary', 'showIndivSummary()')];
+    // '전체'는 목록이 아니라 바의 고정 칸으로 들어간다(renderAvatarBar가 자리를 만든다).
+    const html = [];
     const formerHtml = [];
     SiteData.members.forEach(m => {
         const item = avatarSelectItemHtml('side-player-', m['이름'], m['SOOP ID'], 'selectPlayer');
@@ -219,7 +220,9 @@ function renderIndividualSidebar() {
                    </div>`);
     html.push(`<span id="indiv-former-wrap" class="d-none">${formerHtml.join('')}</span>`);
 
-    document.getElementById('indiv-avatar-list').innerHTML = html.join('');
+    renderAvatarBar('indiv-avatar-list',
+        avatarSelectAllItemHtml('side-btn-summary', 'showIndivSummary()'),
+        html.join(''));
 }
 
 
