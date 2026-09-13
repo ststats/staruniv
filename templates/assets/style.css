@@ -94,9 +94,8 @@
        최대 높이가 이 값 하나를 같이 본다. */
     --news-photo-h: 400px;
 
-    /* 표를 박스 안에 넣고 스크롤시킬 때의 박스 높이(캘린더 일정 리스트와 같은 방식).
-       나란히 놓인 표들의 카드 높이가 서로 달라지지 않게 하는 것이 주 목적이다. */
-    --table-box-h: 360px;
+    /* 캘린더 '오늘의 일정' / '선택한 날짜 일정' 리스트의 최대 높이. */
+    --day-list-h: 360px;
 }
 
 /* ===== 기본 리셋 ===== */
@@ -131,95 +130,60 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 .nav-menu .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background-color: var(--color-primary); }
 
 /* ============================================================
-   스크롤 3패턴 (사이트 전체 공통 - 새 스크롤 영역은 반드시 이 중 하나를 쓴다)
+   스크롤 (사이트 전체 공통)
    ------------------------------------------------------------
-   [A] .scroll-area  박스(카드) 안에서 내용이 넘칠 때. 표/리스트/모달 본문 등 대부분이
-       여기 해당한다. 손잡이는 항상 보이되 얇고 중립색이며, 그 박스에 마우스를 올리면
-       파랗게 진해진다.
-   [B] .hscrollbar-track  화면에 붙어 다니는 알약 바(티어 바/아바타 바)의 가로 스크롤.
-       네이티브 손잡이를 숨기고, 바 안쪽 둘째 줄에 진짜 트랙을 놓는다(core.js
-       attachHScrollbar). 바 밖에 겹쳐 그리지 않는 것이 핵심이다.
-   [C] .tab-scroll  서브탭/필터/GNB처럼 높이가 24~44px인 얇은 줄. 손잡이를 넣을 자리가
-       없어서 네이티브를 숨기는 대신, 넘치는 쪽 끝을 흐리게 마스킹해 "더 있다"를 알린다
-       (core.js attachEdgeFade).
+   [A] .scroll-area  스크롤이 생기는 모든 곳이 이 막대 하나를 쓴다 - 가로/세로,
+       표/리스트/모달/캘린더/티어 바·아바타 바까지 전부. 10px 폭 안에 4px 손잡이가
+       들어가고(투명 테두리 3px), 평소엔 중립 회색이며 그 박스에 마우스를 올리면
+       파랗게 진해진다. .modal-body는 부트스트랩이 만드는 스크롤 컨테이너라 클래스를
+       붙일 자리가 없어서 선택자에 함께 적는다.
+   [B] .tab-scroll   서브탭/필터/GNB처럼 높이가 24~44px인 얇은 줄. 10px 막대를 넣으면
+       줄 높이의 절반을 먹어버려서, 여기서만 예외로 막대를 숨기고 넘치는 쪽 끝을
+       흐리게 마스킹해 "더 있다"를 알린다 (core.js attachEdgeFade).
 
-   [예전 상태] A가 세 가지 다른 수치로 흩어져 있었다(표 8px 연파랑 / 지난 글 리스트 5px
-   회색+트랙여백 10px / 캘린더 8px 연파랑). C는 아무 표시도 없어서 좁은 화면에서 탭이
-   잘려 있는 걸 알 방법이 없었다. 이제 값은 :root의 --scroll-* 토큰 4개로만 결정된다.
+   [예전 상태] 막대 모양이 네 가지로 흩어져 있었다 - 표 8px 연파랑 / 지난 글 리스트
+   5px 회색+트랙여백 / 캘린더 8px 연파랑 / 티어·아바타 바는 네이티브를 숨기고 JS로
+   그린 별도 트랙(약 110줄). 이제 값은 :root의 --scroll-* 토큰 4개로만 결정된다.
    ============================================================ */
 
-/* ----- [A] 박스 안 스크롤 ----- */
-.scroll-area {
+.scroll-area, .modal-body {
     -webkit-overflow-scrolling: touch;
-    /* 휠이 끝에 닿았을 때 뒤 페이지까지 따라 밀리는 것(스크롤 체이닝)을 막는다 -
-       표 안에서 스크롤하다 페이지가 통째로 움직여버리는 일이 없어진다. */
-    overscroll-behavior: contain;
     /* 파이어폭스는 두께/색만 지정할 수 있어서 webkit과 픽셀 단위로 같게는 못 맞춘다.
        같은 색을 쓰므로 인상은 동일하다. */
     scrollbar-width: thin;
     scrollbar-color: var(--scroll-thumb) transparent;
 }
-.scroll-area::-webkit-scrollbar { width: var(--scroll-gutter); height: var(--scroll-gutter); }
-.scroll-area::-webkit-scrollbar-track { background: transparent; }
+/* [중요] overscroll-behavior를 걸지 않는다. contain을 주면 이 박스 위에 마우스를
+   올린 동안 휠이 이 박스에 "잠겨서", 가로로만 스크롤되는 표 위에서 휠을 굴려도
+   페이지가 안 내려갔다. 기본값(auto)이어야 안 걸리는 방향의 휠이 페이지로 넘어간다. */
+.scroll-area::-webkit-scrollbar, .modal-body::-webkit-scrollbar { width: var(--scroll-gutter); height: var(--scroll-gutter); }
+.scroll-area::-webkit-scrollbar-track, .modal-body::-webkit-scrollbar-track { background: transparent; }
 /* 손잡이를 gutter 안쪽으로 밀어넣는 관용적인 방법: 투명한 테두리를 두르고
    background-clip:content-box로 테두리 안쪽만 색칠한다. 트랙에 margin을 주는 예전
-   방식과 달리 위아래 끝에서도 여백이 일정하다. */
-.scroll-area::-webkit-scrollbar-thumb {
+   방식과 달리 양 끝에서도 여백이 일정하다. */
+.scroll-area::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb {
     background-color: var(--scroll-thumb);
     background-clip: content-box;
     border: var(--scroll-thumb-inset) solid transparent;
     border-radius: 999px;
 }
-.scroll-area:hover::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb-hover); }
-.scroll-area::-webkit-scrollbar-corner { background: transparent; }
+.scroll-area:hover::-webkit-scrollbar-thumb, .modal-body:hover::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb-hover); }
+.scroll-area::-webkit-scrollbar-corner, .modal-body::-webkit-scrollbar-corner { background: transparent; }
 
 /* 스크롤 방향 - 방향을 지정하지 않으면(예: 부트스트랩 .table-responsive가 이미
    overflow-x를 갖고 있는 경우) 위 손잡이 모양만 적용된다. */
 .scroll-area.scroll-y { overflow-y: auto; overflow-x: hidden; }
 .scroll-area.scroll-x { overflow-x: auto; overflow-y: hidden; }
-.scroll-area.scroll-both { overflow: auto; }
 
-/* ----- [B] 알약 바 안의 가로 스크롤 (데스크탑 전용) -----
-   .tier-bar-list / .avatar-selector-scroll는 네이티브 스크롤바를 아예 숨기고 있어서
-   데스크탑에서 마우스로는 밀 방법이 트랙패드/시프트+휠뿐이었다. 바 바깥에 겹쳐 두지
-   않고 바 안에 진짜 한 줄로 넣는다 - flex-wrap으로 새 줄을 만들고 거기에 트랙을
-   앉힌다. 그래야 카드 테두리 안에 자연스럽게 포함되고, 두께도 눈치 안 보고 넉넉히
-   잡을 수 있다. 생성/갱신은 core.js의 attachHScrollbar()가 맡는다. 휴대폰은 손가락으로
-   이미 밀 수 있고 화면도 좁아 안 보여준다. */
-.tier-bar, .avatar-bar { flex-wrap: wrap; }
-.hscrollbar-track {
-    display: none;
-    position: relative;
-    flex: 0 0 100%;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--color-bg-subtle);
-    cursor: pointer;
-}
-.hscrollbar-track.is-visible { display: block; }
-.hscrollbar-thumb {
-    position: absolute; top: 0; left: 0; height: 100%; width: 0;
-    border-radius: 999px;
-    background: var(--scroll-thumb);
-    transition: background 0.15s;
-}
-.hscrollbar-track:hover .hscrollbar-thumb,
-.hscrollbar-track.is-dragging .hscrollbar-thumb { background: var(--scroll-thumb-hover); }
-
-@media (max-width: 767.98px) {
-    .hscrollbar-track { display: none !important; }
-}
-
-/* ----- [C] 얇은 줄(탭/필터/GNB)의 가로 스크롤 -----
-   네이티브 손잡이는 숨기고, 넘치는 쪽 끝만 흐려지게 한다. 스크롤 위치는 CSS가 알 수
-   없으므로 core.js의 attachEdgeFade()가 is-fade-start / is-fade-end를 붙여준다.
+/* ----- [B] 얇은 줄(탭/필터/GNB)의 가로 스크롤 -----
+   막대는 숨기고, 넘치는 쪽 끝만 흐려지게 한다. 스크롤 위치는 CSS가 알 수 없으므로
+   core.js의 attachEdgeFade()가 is-fade-start / is-fade-end를 붙여준다.
    mask-image는 여러 개를 겹칠 수 없어서, 양쪽이 동시에 흐려지는 경우의 그라디언트를
    따로 둔다(--fade-mask 한 곳에서만 값을 바꾸고 속성 선언은 한 번만 한다). */
 .tab-scroll {
     overflow-x: auto; overflow-y: hidden;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
     scrollbar-width: none;
 }
 .tab-scroll::-webkit-scrollbar { display: none; }
@@ -438,15 +402,18 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    등 기능 유지), 사진만 인스타처럼 정사각으로 꽉 차게 보이도록 아래에서 덮어쓴다. */
 #news-feed-content { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 28px; align-items: stretch; }
 
-/* 최신 글 카드는 왼쪽에 고정 폭(600px)으로 붙어있고, 오른쪽 지난 글 목록만 그
-   카드 높이에 맞춰(align-items:stretch) 내부적으로 스크롤된다. */
-.featured-post { flex: 0 1 500px; min-width: 300px; }
+/* [폭] 왼쪽 최신 글 카드와 오른쪽 지난 글 목록이 정확히 같은 폭을 갖는다.
+   flex: 1 1 0 을 양쪽에 똑같이 주면 기준 폭(flex-basis)이 0이라 남는 공간을 1:1로
+   나눠 갖는다 - 예전엔 왼쪽만 500px 기준폭이었고 오른쪽이 나머지를 다 먹어서 두
+   칸 폭이 달랐다. min-width 300px은 둘 다 같고, 이 값이 모바일 전환 기준선
+   (page-members.js의 NEWS_TWO_COL_MIN_WIDTH)과 짝을 이룬다. */
+.featured-post { flex: 1 1 0; min-width: 300px; }
 .featured-post .news-post-card { margin-bottom: 0; }
 
 /* 오른쪽 지난 글 목록 - 왼쪽 카드 높이에 맞춰 늘어나고, 넘치는 만큼만
    스크롤된다. 항목을 클릭하면(홈 화면과 달리 원글 이동이 아니라) 그 글을
    왼쪽 "최신 글" 자리로 올린다. */
-.past-posts { flex: 1 1 340px; min-width: 300px; min-height: 0; display: flex; flex-direction: column; }
+.past-posts { flex: 1 1 0; min-width: 300px; min-height: 0; display: flex; flex-direction: column; }
 /* flex 자식은 기본 min-height가 auto라 overflow-y:auto를 줘도 내용물 크기만큼
    계속 늘어나기만 하고 스크롤이 안 걸린다 - min-height:0으로 그 기본값을
    없애야 실제로 clip되어 스크롤이 생긴다. */
@@ -458,9 +425,8 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    눌려 사라지지 않도록 flex-shrink만 따로 잠근다(여백은 공통 규칙을 그대로 쓴다). */
 .past-posts .news-load-more-wrap { flex-shrink: 0; }
 
-/* 모바일(700px 이하): 좌우 분리 대신 날짜순 단일 리스트로 그려지고, 선택된
-   글만 그 자리에서 커진다. 큰 카드의 flex-basis(600px)는 세로 스택에 안
-   맞으니 여기서 되돌린다. */
+/* 모바일: 좌우 분리 대신 날짜순 단일 리스트로 그려지고, 선택된 글만 그 자리에서
+   커진다. 큰 카드의 flex 규칙은 세로 스택에 안 맞으니 여기서 되돌린다. */
 #news-feed-content.news-feed-mobile { flex-direction: column; flex-wrap: nowrap; gap: 12px; max-width: 100%; overflow-x: hidden; }
 #news-feed-content.news-feed-mobile > .featured-post { flex: 0 0 auto; width: 100%; min-width: 0; max-width: 100%; }
 #news-feed-content.news-feed-mobile > .home-notice-card { min-width: 0; max-width: 100%; }
@@ -587,11 +553,13 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    바와 공유하고, 여기서는 아바타 바만의 것(스크롤 껍데기, 칩 모양)만 남긴다.
    예전엔 margin-bottom이 20px(티어 바는 24px)이고 모바일 축소도 아바타 바에만 걸려
    있어서, 같은 물건인데 페이지를 옮기면 줄 높이가 미묘하게 달라졌다. */
+/* 가로 스크롤 막대는 .scroll-area(공통)가 담당한다 - 예전엔 네이티브 막대를 숨기고
+   core.js가 바 안쪽 둘째 줄에 별도 트랙을 그렸다(약 110줄). 이제 사이트의 다른
+   스크롤과 똑같은 막대가 칩 줄 바로 아래에 붙는다. */
 .avatar-selector-scroll {
     flex: 1; min-width: 0;
-    overflow-x: auto; scrollbar-width: none;
+    overflow-x: auto;
 }
-.avatar-selector-scroll::-webkit-scrollbar { display: none; }
 .avatar-selector-list { display: flex; align-items: center; gap: 4px; width: max-content; }
 .avatar-select-item {
     display: inline-flex; align-items: center; gap: 6px;
@@ -827,7 +795,7 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    있는데 안쪽 항목들도 자기 padding을 갖고 있어 첫/마지막 항목 기준으로
    여백이 이중으로 쌓였다 - 사이트의 다른 리스트처럼 바깥 p-4 하나만 쓰도록
    첫/마지막 항목의 바깥쪽 여백만 지운다(항목 사이 간격/구분선은 유지). */
-.cal-today-list, .cal-selected-list { display: flex; flex-direction: column; gap: 0; max-height: var(--table-box-h); overflow-y: auto; }
+.cal-today-list, .cal-selected-list { display: flex; flex-direction: column; gap: 0; max-height: var(--day-list-h); overflow-y: auto; }
 .cal-today-card, .cal-selected-card { padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .cal-today-card + .cal-today-card, .cal-selected-card + .cal-selected-card { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-bg-subtle); }
 .cal-no-schedule { font-size: var(--fs-body); color: var(--color-text-sub); text-align: center; padding: 0; width: 100%; }
@@ -875,24 +843,6 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    10~17px(OS/브라우저마다 다르다)를 먹는다. 600으로 잡으면 세로 스크롤이 생기는 순간
    가로 스크롤까지 같이 생겨버린다 - 여유를 두고 560으로 낮춘다(칸당 105px). */
 .minw-560 { min-width: 560px; }
-
-/* ----- 표를 박스 안에 넣고 스크롤시키기 -----
-   캘린더의 '오늘의 일정' 리스트(.cal-today-list)와 같은 방식이다: 높이를 한 값으로
-   못박고 넘치는 만큼만 안에서 스크롤한다. 표가 나란히 놓일 때 내용 길이에 따라 카드
-   높이가 제각각 달라지는 걸 막는 게 주 목적이고(전적 페이지의 상대 전적 / 최근 전적),
-   덤으로 페이지가 표 길이만큼 무한히 길어지지 않는다.
-   스크롤바 모양은 .scroll-area(패턴 A)가 함께 붙어서 담당한다. */
-.table-box { max-height: var(--table-box-h); overflow: auto; }
-/* 박스 안에서 세로로 스크롤되면 머리글이 같이 올라가버려 어느 열인지 알 수 없다.
-   [border 대신 box-shadow] border-collapse된 표에서는 테두리가 셀이 아니라 표에
-   속해서, sticky로 셀만 따라 올라올 때 머리글 밑줄이 사라진다. 안쪽 그림자로 같은
-   2px 선을 그리면 셀과 함께 움직인다.
-   [z-index 층] 본문 고정 첫 열 2 < 머리글 3 < 머리글의 고정 첫 열 4 */
-.table-box .stat-table thead th {
-    position: sticky; top: 0; z-index: 3;
-    box-shadow: inset 0 -2px 0 var(--color-border-strong);
-}
-.table-box .stat-table thead .stat-table-sticky-col { z-index: 4; }
 /* 고정 레이아웃 표의 열 너비 (예전 style="width:18.8%" 등) */
 .colw-6 { width: 6%; }
 .colw-16-66 { width: 16.66%; }
@@ -999,7 +949,10 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
    주고 있어서 여기서는 겹쳐 쓰지 않는다. */
 .tier-bar, .avatar-bar {
     position: sticky; top: var(--navbar-h); z-index: 90;
-    display: flex; align-items: center; gap: var(--bar-gap);
+    /* [align-items] center가 아니라 flex-start다 - 가로 스크롤 막대가 생기면 칩이 든
+       칸만 10px 높아지는데, center로 두면 그만큼 칩 줄이 왼쪽 고정 칸('전체' /
+       전체·방송중 전환)보다 위로 5px 밀려 두 줄이 어긋난다. */
+    display: flex; align-items: flex-start; gap: var(--bar-gap);
     margin-bottom: var(--space-block-gap);
     padding: var(--bar-pad-y) var(--bar-pad-x);
     background: var(--color-card);
@@ -1020,10 +973,7 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     display: flex; align-items: center; gap: 4px;
     flex: 1; min-width: 0;
     overflow-x: auto; white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
 }
-.tier-bar-list::-webkit-scrollbar { display: none; }
 .tier-bar-item {
     display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
     background: none; border: none; font-family: inherit;

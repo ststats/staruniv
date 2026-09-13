@@ -296,7 +296,6 @@ function renderTierBar() {
         </button>`).join('');
     TierState.activeId = null;  // 칩을 새로 만들었으니 강조도 다시 붙여야 한다
     syncTierBarHeight();
-    refreshHScrollbar(list, document.getElementById('tier-bar'));
 }
 
 // 티어 바 높이를 CSS 변수로 넘겨서, 바로가기로 이동했을 때 제목이 바 뒤에 가리지 않게 한다.

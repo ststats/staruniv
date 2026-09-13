@@ -469,6 +469,7 @@ function avatarSelectAllItemHtml(id, onclickJs) {
 // '전체'를 목록 안에 두면 같이 가로로 흘러가버린다. 붙잡아 두려고 sticky를 걸고 뒤를
 // 가상 요소로 가리는 방법을 써봤지만, 알약의 둥근 모서리로 뒤 칩이 비치고 목록 여백만큼
 // 밀리는 문제가 남았다. 스크롤되는 영역 밖으로 꺼내면 가릴 것도 붙잡을 것도 없어진다.
+// 가로 스크롤 막대는 .avatar-selector-scroll에 걸린 공용 스타일(.scroll-area)이 그린다.
 // 템플릿이 아니라 여기서 감싸는 이유: 이 바를 쓰는 페이지가 둘(멤버 공지/개인 전적)인데,
 // 템플릿을 각각 고치는 것보다 목록 요소 하나만 알면 되는 이 방식이 손이 덜 간다.
 function renderAvatarBar(listId, allItemHtml, itemsHtml) {
@@ -476,8 +477,6 @@ function renderAvatarBar(listId, allItemHtml, itemsHtml) {
     if (!list) return;
     avatarBarTools(list).innerHTML = allItemHtml;
     list.innerHTML = itemsHtml;
-    const scroll = list.parentElement;          // .avatar-selector-scroll
-    refreshHScrollbar(scroll, scroll.parentElement); // .avatar-bar
 }
 
 // 바 구조를 한 번만 만들고, 그 다음부터는 만들어 둔 '전체' 칸을 그대로 돌려준다.
@@ -507,82 +506,6 @@ function setActiveAvatarItem(listId, activeEl) {
     if (activeEl) activeEl.classList.add('active');
 }
 
-// ---------------------------------------------------------------------------
-// 가로 스크롤 바 밑의 커스텀 스크롤바 (.tier-bar-list, .avatar-selector-scroll 공용)
-// ---------------------------------------------------------------------------
-// scrollEl: overflow-x:auto가 걸린 실제 스크롤 컨테이너.
-// barEl: 그 스크롤 컨테이너를 담은 바깥 바(.tier-bar / .avatar-bar - 둘 다
-//        position:sticky라 절대배치 기준이 되어준다).
-// 한 번 붙이면 refresh 함수를 scrollEl에 매달아 재사용한다(중복 바인딩 방지).
-function attachHScrollbar(scrollEl, barEl) {
-    if (!scrollEl || !barEl) return null;
-    if (scrollEl._hscrollbarRefresh) return scrollEl._hscrollbarRefresh;
-
-    // 바 밖에 겹쳐 그리지 않고, 바 안에 진짜 자식으로 넣는다. flex-wrap(스타일시트에서
-    // .tier-bar/.avatar-bar에 걸어둠) 덕분에 폭이 넘치는 이 요소(flex: 0 0 100%)가
-    // 저절로 다음 줄로 내려가 바 안쪽 둘째 줄이 된다.
-    const track = document.createElement('div');
-    track.className = 'hscrollbar-track';
-    const thumb = document.createElement('div');
-    thumb.className = 'hscrollbar-thumb';
-    track.appendChild(thumb);
-    barEl.appendChild(track);
-
-    function update() {
-        const overflow = scrollEl.scrollWidth - scrollEl.clientWidth;
-        const hasOverflow = overflow > 1;
-        track.classList.toggle('is-visible', hasOverflow);
-        if (!hasOverflow) return;
-        const trackWidth = track.clientWidth;
-        // 손잡이 최소 폭을 넉넉히 잡아(48px) 손으로 집기 쉽게 한다.
-        const thumbWidth = Math.min(trackWidth, Math.max(48, (scrollEl.clientWidth / scrollEl.scrollWidth) * trackWidth));
-        const maxThumbLeft = trackWidth - thumbWidth;
-        const ratio = maxThumbLeft > 0 ? scrollEl.scrollLeft / overflow : 0;
-        thumb.style.width = `${thumbWidth}px`;
-        thumb.style.transform = `translateX(${ratio * maxThumbLeft}px)`;
-    }
-
-    scrollEl.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-
-    // 트랙을 클릭하거나 손잡이를 드래그해서도 스크롤할 수 있게 한다.
-    function scrollToClientX(clientX) {
-        const trackWidth = track.clientWidth;
-        const thumbWidth = thumb.offsetWidth;
-        const maxThumbLeft = trackWidth - thumbWidth;
-        if (maxThumbLeft <= 0) return;
-        const rect = track.getBoundingClientRect();
-        const x = Math.min(Math.max(clientX - rect.left - thumbWidth / 2, 0), maxThumbLeft);
-        const overflow = scrollEl.scrollWidth - scrollEl.clientWidth;
-        scrollEl.scrollLeft = (x / maxThumbLeft) * overflow;
-    }
-    let dragging = false;
-    thumb.addEventListener('mousedown', e => {
-        dragging = true;
-        track.classList.add('is-dragging');
-        e.preventDefault();
-    });
-    track.addEventListener('mousedown', e => {
-        if (e.target !== thumb) scrollToClientX(e.clientX);
-    });
-    window.addEventListener('mousemove', e => { if (dragging) scrollToClientX(e.clientX); });
-    window.addEventListener('mouseup', () => {
-        if (!dragging) return;
-        dragging = false;
-        track.classList.remove('is-dragging');
-    });
-
-    scrollEl._hscrollbarRefresh = update;
-    update();
-    return update;
-}
-
-// 바 내용이 (다시) 그려질 때마다 이걸 부른다 - 처음이면 트랙을 붙이고, 이미 있으면
-// 폭/내용이 바뀐 데 맞춰 다시 잰다.
-function refreshHScrollbar(scrollEl, barEl) {
-    const fn = attachHScrollbar(scrollEl, barEl);
-    if (fn) fn();
-}
 
 // ---------------------------------------------------------------------------
 // 얇은 줄(서브탭 / 필터 / GNB)의 가로 스크롤 끝 흐림 - 스크롤 패턴 [C]
