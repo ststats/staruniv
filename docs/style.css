@@ -781,19 +781,19 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
 /* ===================== 티어표 ===================== */
 /* 상단 메뉴 높이. 티어 바를 그 아래에 붙이고, 스크롤 이동 지점을 잡는 데 쓴다.
    .top-navbar의 height와 반드시 같아야 한다(지금 64px). */
-:root { --tier-navbar-h: 64px; --tier-bar-h: 46px; }
+:root { --tier-navbar-h: 64px; --tier-bar-h: 44px; }
 
 .tier-meta { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-faint); white-space: nowrap; }
 .tier-empty { padding: 48px 0; text-align: center; color: var(--color-text-sub); font-size: var(--fs-body); }
 
 /* ----- 티어 바로가기 바 -----
-   상단 메뉴가 sticky(top:0, 64px)라 그 바로 밑에 붙인다. 좌우 스크롤이 되도록 두고
-   스크롤바는 숨긴다(.nav-menu와 같은 방식). */
+   .sub-tabs(밑줄 탭)와 같은 언어를 쓰되 한 단계 작게 해서, 바로 위의 티어표/분석 탭과
+   위아래 관계가 눈에 들어오게 한다. 상단 메뉴가 sticky(top:0, 64px)라 그 바로 밑에 붙인다. */
 .tier-bar {
     position: sticky; top: var(--tier-navbar-h); z-index: 90;
-    display: flex; gap: 6px; align-items: center;
+    display: flex; align-items: stretch; gap: 18px;
     height: var(--tier-bar-h);
-    margin: 0 0 16px; padding: 0 2px;
+    margin: -8px 0 20px;
     overflow-x: auto; white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     background: var(--color-bg);
@@ -802,17 +802,18 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
 .tier-bar::-webkit-scrollbar { display: none; }
 .tier-bar-item {
     display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
-    border: 1px solid transparent; background: transparent; font-family: inherit;
-    font-size: var(--fs-body); font-weight: 800; color: var(--color-text-muted);
-    padding: 5px 11px; border-radius: 20px; cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    background: none; border: none; padding: 0 2px; margin-bottom: -1px;
+    border-bottom: 3px solid transparent;
+    font-family: inherit; font-size: var(--fs-body); font-weight: 700;
+    color: var(--color-text-sub); cursor: pointer;
+    transition: color 0.15s;
 }
-.tier-bar-item:hover { background: var(--color-bg-subtle); color: var(--color-text-main); }
-.tier-bar-item.on { background: var(--color-primary-tint); color: var(--color-primary); }
+.tier-bar-item:hover { color: var(--color-text-strong); }
+.tier-bar-item.on { color: var(--color-primary); font-weight: 800; border-bottom-color: var(--color-primary); }
 .tier-bar-count { font-size: 10px; font-weight: 700; color: var(--color-text-faint); }
 .tier-bar-item.on .tier-bar-count { color: var(--color-primary); }
 
-/* ----- 필터 줄 ----- */
+/* ----- 필터 줄 (방송중 토글) ----- */
 .tier-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .tier-filters { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
 .tier-filter {
@@ -823,18 +824,15 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     display: inline-flex; align-items: center; gap: 5px;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
-.tier-filter:hover { border-color: var(--color-primary); color: var(--color-primary); }
-.tier-filter.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-/* 방송중 필터는 팀 필터와 성격이 다르니(겹쳐서 걸리는 조건) 색도 다르게 둔다 */
-.tier-filter-live.on { background: var(--color-lose); border-color: var(--color-lose); }
 .tier-filter-live:hover { border-color: var(--color-lose); color: var(--color-lose); }
+.tier-filter-live.on { background: var(--color-lose); border-color: var(--color-lose); color: #fff; }
 .tier-filter-live.on:hover { color: #fff; }
 .tier-filter-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-lose); flex-shrink: 0; }
 .tier-filter-live.on .tier-filter-dot { background: #fff; }
 
 /* ----- 티어 한 덩어리 ----- */
 .tier-row {
-    margin-bottom: 32px;
+    margin-bottom: 36px;
     /* 티어 바로가기로 이동했을 때 제목이 상단 메뉴+티어 바 밑에 가리지 않게 띄운다 */
     scroll-margin-top: calc(var(--tier-navbar-h) + var(--tier-bar-h) + 12px);
 }
@@ -849,32 +847,33 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
 .tier-count { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-faint); }
 .tier-live { margin-left: auto; font-size: var(--fs-body); font-weight: 800; color: var(--color-lose); }
 
+/* 한 티어 안에서 종족끼리 줄을 나눈다(테란 → 저그 → 프로토스). */
+.tier-race-block + .tier-race-block { margin-top: 18px; }
+
 /* ----- 카드 ----- */
-.tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
-.tier-card {
-    display: block; background: var(--color-card);
-    border: 1px solid var(--color-border); border-radius: var(--radius-card);
-    overflow: hidden; color: inherit; text-decoration: none;
-    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
-}
-.tier-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-2px); border-color: var(--color-border-hover); }
-.tier-card.is-live { border-color: var(--color-lose); }
+/* 테두리·배경 없이 썸네일만 떠 있는 형태. 카드 상자를 그리지 않으니 여백이 구분을 맡는다. */
+.tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 18px 14px; }
+.tier-card { display: block; background: none; border: 0; color: inherit; text-decoration: none; }
 
 /* 방송 중이면 16:9 썸네일, 아니면 같은 크기 박스 안에 동그란 프로필.
    두 경우의 높이가 같아야 그리드가 들쭉날쭉해지지 않는다. */
 .tier-card-media {
     position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+    border-radius: var(--radius-card);
     background: var(--color-bg-subtle);
     display: flex; align-items: center; justify-content: center;
 }
-.tier-card-thumb { width: 100%; height: 100%; object-fit: cover; display: block; background: #0b0c10; }
-.tier-card:hover .tier-card-thumb { transform: scale(1.04); transition: transform 0.25s ease; }
+.tier-card.is-live .tier-card-media { box-shadow: 0 0 0 2px var(--color-lose); }
+.tier-card-thumb {
+    width: 100%; height: 100%; object-fit: cover; display: block; background: #0b0c10;
+    transition: transform 0.25s ease;
+}
+.tier-card:hover .tier-card-thumb { transform: scale(1.05); }
 .tier-card-avatar {
     width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
     background: var(--color-placeholder-bg);
     display: flex; align-items: center; justify-content: center; font-size: 22px;
 }
-/* 썸네일 위에 얹히는 것들 */
 .tier-card-media .live-badge { top: 6px; left: 6px; }
 .tier-card-viewers {
     position: absolute; right: 6px; bottom: 6px; z-index: 1;
@@ -883,23 +882,32 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     font-variant-numeric: tabular-nums;
 }
 
-.tier-card-body { padding: 10px 10px 12px; text-align: center; }
+/* 이름 + 종족 뱃지 / 그 아래 소속 로고 + 이름 */
+.tier-card-body { padding: 8px 2px 0; }
+.tier-card-nameline { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .tier-card-name {
     font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.tier-card:hover .tier-card-name { color: var(--color-primary); }
+.tier-card-nameline .tag-badge { flex-shrink: 0; }
+.tier-card-team { display: flex; align-items: center; gap: 4px; margin-top: 4px; min-width: 0; }
+.tier-card-team-logo { width: 16px; height: 16px; margin-right: 0; }
+.tier-card-team-name {
+    font-size: 11px; font-weight: 700; color: var(--color-text-muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.tier-card-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
 
 /* ----- 휴대폰 ----- */
 @media (max-width: 767.98px) {
-    :root { --tier-bar-h: 42px; }
-    .tier-bar { margin-bottom: 12px; gap: 4px; }
-    .tier-bar-item { padding: 4px 9px; }
-    .tier-toolbar { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 16px; }
-    .tier-meta { text-align: right; }
-    .tier-row { margin-bottom: 24px; }
+    :root { --tier-bar-h: 40px; }
+    .tier-bar { gap: 14px; margin-bottom: 16px; }
+    .tier-toolbar { margin-bottom: 16px; }
+    .tier-row { margin-bottom: 28px; }
     .tier-head { height: 28px; gap: 8px; }
-    .tier-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
-    .tier-card-avatar { width: 42px; height: 42px; font-size: 18px; }
-    .tier-card-body { padding: 8px 8px 10px; }
+    .tier-race-block + .tier-race-block { margin-top: 14px; }
+    .tier-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 14px 10px; }
+    .tier-card-avatar { width: 40px; height: 40px; font-size: 18px; }
+    .tier-card-team-logo { width: 14px; height: 14px; }
+    .tier-card-team-name { font-size: 10px; }
 }
