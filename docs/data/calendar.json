@@ -196,7 +196,7 @@
       "endDate": "2026-09-19",
       "time": "미정",
       "person": "중만컵",
-      "desc": "케이대 vs 미정",
+      "desc": "케이대 vs 뉴캣슬",
       "detail": "결승",
       "color": "#f1f5f9"
     },
@@ -279,6 +279,16 @@
       "desc": "도낭CK",
       "detail": "",
       "color": "#ffe4e6"
+    },
+    {
+      "id": 1789304358823,
+      "startDate": "2026-09-13",
+      "endDate": "2026-09-13",
+      "time": "22:00",
+      "person": "윤환",
+      "desc": "랜피엘",
+      "detail": "",
+      "color": "#d1fae5"
     }
   ],
   "offAir": {
