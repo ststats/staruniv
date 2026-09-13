@@ -301,7 +301,8 @@
             <input type="text" id="toolNameInput-extTools" placeholder="이름 (예: 혹시)">
             <input type="text" id="toolUrlInput-extTools" placeholder="URL (예: https://calm-hoxy.vercel.app/)">
         </div>
-        <button class="admin-submit-btn" onclick="addTool('extTools')">추가하기</button>
+        <button id="toolSubmit-extTools" class="admin-submit-btn" onclick="addTool('extTools')">추가하기</button>
+        <button id="toolCancel-extTools" class="admin-submit-btn" style="display:none;" onclick="cancelToolEdit('extTools')">수정 취소</button>
     </div>
 
     <div class="section-title">외부 사이트</div>
@@ -311,7 +312,8 @@
             <input type="text" id="toolNameInput-extSites" placeholder="이름 (예: 스대게)">
             <input type="text" id="toolUrlInput-extSites" placeholder="URL (예: https://ygosu.com/board/pan_monstarz)">
         </div>
-        <button class="admin-submit-btn" onclick="addTool('extSites')">추가하기</button>
+        <button id="toolSubmit-extSites" class="admin-submit-btn" onclick="addTool('extSites')">추가하기</button>
+        <button id="toolCancel-extSites" class="admin-submit-btn" style="display:none;" onclick="cancelToolEdit('extSites')">수정 취소</button>
     </div>
 </div>
 
@@ -797,6 +799,29 @@
         extTools: { title: '외부 도구', items: [] },
         extSites: { title: '외부 사이트', items: [] },
     };
+    let editingTool = null;
+    let toolsLoaded = false;
+
+    function cancelToolEdit(key) {
+        if (editingTool && editingTool.key !== key) return;
+        editingTool = null;
+        document.getElementById('toolNameInput-' + key).value = '';
+        document.getElementById('toolUrlInput-' + key).value = '';
+        document.getElementById('toolSubmit-' + key).innerText = '추가하기';
+        document.getElementById('toolCancel-' + key).style.display = 'none';
+    }
+
+    function editTool(key, idx) {
+        if (editingTool) cancelToolEdit(editingTool.key);
+        const item = toolsData[key]?.items?.[idx];
+        if (!item) return;
+        editingTool = { key, idx };
+        document.getElementById('toolNameInput-' + key).value = item.name || '';
+        document.getElementById('toolUrlInput-' + key).value = item.url || '';
+        document.getElementById('toolSubmit-' + key).innerText = '수정 반영하기';
+        document.getElementById('toolCancel-' + key).style.display = '';
+        document.getElementById('toolNameInput-' + key).focus();
+    }
 
     function renderToolsAdmin() {
         TOOL_SECTION_KEYS.forEach(key => {
@@ -813,6 +838,7 @@
                         <div class="admin-tool-name">${escapeHTML(t.name)}</div>
                         <div class="admin-tool-url">${escapeHTML(t.url)}</div>
                     </div>
+                    <button class="edit-btn" onclick="editTool('${key}', ${i})">수정</button>
                     <button class="delete-btn" onclick="deleteTool('${key}', ${i})">삭제</button>
                 </div>
             `).join('') : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">등록된 도구가 없습니다.</div>`;
@@ -827,22 +853,29 @@
         if (!name || !url) return alert('이름과 URL을 모두 입력해주세요.');
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
+        if (!toolsLoaded) return alert('GitHub에서 도구 목록을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
         if (!toolsData[key]) toolsData[key] = { title: key, items: [] };
-        toolsData[key].items.push({ name, url });
-        nameInput.value = '';
-        urlInput.value = '';
+        if (editingTool?.key === key) {
+            // favicon 등 URL/이름 이외의 기존 속성은 유지한다.
+            Object.assign(toolsData[key].items[editingTool.idx], { name, url });
+        } else {
+            toolsData[key].items.push({ name, url });
+        }
+        cancelToolEdit(key);
         renderToolsAdmin();
     };
 
     const deleteTool = (key, idx) => {
         if (!confirm('이 도구를 삭제하시겠습니까?')) return;
+        if (!toolsLoaded) return alert('GitHub에서 도구 목록을 먼저 불러와주세요.');
+        if (editingTool?.key === key) cancelToolEdit(key);
         toolsData[key].items.splice(idx, 1);
         renderToolsAdmin();
     };
 
     const loadToolsFromGithub = async () => {
         const token = adminTokenStore.get();
-        if (!token) { renderToolsAdmin(); return; }
+        if (!token) { toolsLoaded = false; renderToolsAdmin(); return; }
         try {
             const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TOOLS_FILE_PATH}`, {
                 headers: { Authorization: `token ${token}` }
@@ -851,10 +884,14 @@
                 const data = await res.json();
                 const decoded = decodeURIComponent(escape(atob(data.content)));
                 toolsData = JSON.parse(decoded);
+                toolsLoaded = true;
+            } else {
+                toolsLoaded = false;
+                throw new Error(`도구 목록 불러오기 실패 (HTTP ${res.status})`);
             }
-            // 404면 파일이 아직 없는 것 - 기본 빈 구조를 그대로 쓴다.
         } catch (e) {
             console.error(e);
+            alert(e.message);
         }
         renderToolsAdmin();
     };
@@ -862,6 +899,7 @@
     const saveToolsToGithub = async () => {
         const token = adminTokenStore.get();
         if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 메뉴에서 연동할 수 있습니다)');
+        if (!toolsLoaded) return alert('도구 목록을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
 
         const btn = document.getElementById('saveToolsBtn');
         btn.innerText = '저장중...';
@@ -873,14 +911,18 @@
             // 이미 파일이 있으면 sha가 있어야 덮어쓰기가 되고, 처음 저장하는 거면 sha 없이 새로 만든다.
             let sha;
             const existing = await fetch(`${repoUrl}/contents/${TOOLS_FILE_PATH}`, { headers });
-            if (existing.ok) sha = (await existing.json()).sha;
+            if (!existing.ok) throw new Error(`최신 도구 목록 확인 실패 (HTTP ${existing.status})`);
+            sha = (await existing.json()).sha;
 
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(toolsData, null, 2))));
             const body = { message: '🔧 도구 목록 업데이트', content, ...(sha ? { sha } : {}) };
             const putRes = await fetch(`${repoUrl}/contents/${TOOLS_FILE_PATH}`, {
                 method: 'PUT', headers, body: JSON.stringify(body)
             });
-            if (!putRes.ok) throw new Error('저장 실패');
+            if (!putRes.ok) {
+                const detail = await putRes.json().catch(() => ({}));
+                throw new Error(`도구 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
+            }
 
             alert('✅ 도구 목록이 저장되었습니다!');
         } catch (error) {
