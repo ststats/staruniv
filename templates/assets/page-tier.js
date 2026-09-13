@@ -1,5 +1,5 @@
 /**
- * 티어표 페이지 - 스타 커뮤니티 전체 명단을 티어별로 보여준다.
+ * 티어표 페이지 - 스타 커뮤니티 전체 명단을 티어별로, 티어 안에서는 종족별로 보여준다.
  *
  * core.js의 fetchSynergyData()를 안 쓰는 이유:
  *   그 함수는 시너지 명단에서 "우리 멤버"만 남기고 나머지를 버린다(방송통계 페이지는
@@ -26,11 +26,13 @@ const TIER_LIVE_CHUNK = 600;
 // 여기 없는 값은 전부 통과시킨다 - 'FA'처럼 나중에 새로 생기는 팀이 자동으로 들어오게.
 const TIER_HIDDEN_TEAMS = new Set(['휴면']);
 
+// 티어 안에서 종족을 이 순서로 줄을 나눈다. 여기 없는 값(랜덤 등)은 뒤에 따로 묶인다.
+const TIER_RACE_ORDER = ['테란', '저그', '프로토스'];
+
 const TierState = {
     members: [],       // 표시 대상 전체
     byId: {},          // soopId(소문자) -> member
     live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
-    teamFilter: '',    // '' = 전체
     liveOnly: false,   // 방송 중인 사람만 보기
     sections: [],      // [{ tier, id, count }] - 티어 바로가기 바가 쓴다
     visibleThumbs: new Set(),
@@ -71,10 +73,9 @@ async function fetchAllSynergyMembers() {
     if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
     const data = await dataRes.json();
 
-    // 팀 값이 비어 있는 사람은 티어표에서 뺀다(티어표는 팀 단위로 보는 화면이라).
-    // 다만 조용히 버리지는 않는다 - 시트에서 팀 셀이 실수로 지워지면 그 사람이 아무
-    // 흔적 없이 사라져서 원인을 찾기가 매우 어려워진다. 콘솔에 남겨두면 "쟤 왜 없지?"
-    // 할 때 F12 한 번으로 답이 나온다.
+    // 팀 값이 비어 있는 사람은 뺀다. 다만 조용히 버리지는 않는다 - 시트에서 팀 셀이
+    // 실수로 지워지면 그 사람이 아무 흔적 없이 사라져서 원인을 찾기가 매우 어려워진다.
+    // 콘솔에 남겨두면 "쟤 왜 없지?" 할 때 F12 한 번으로 답이 나온다.
     const noTeam = [];
     const members = asArray(data && data.members).filter(m => {
         if (!m || !isValidSoopId(m.id)) return false;
@@ -97,6 +98,11 @@ function tierGroupKey(member) {
     return raw || '미분류';
 }
 
+function tierRaceKey(member) {
+    const raw = String(member.race || '').trim();
+    return raw || '기타';
+}
+
 function tierIdKey(member) {
     return String(member.id).trim().toLowerCase();
 }
@@ -106,6 +112,15 @@ function tierIdKey(member) {
 // 비우기 위한 것(매번 새로 받으면 낭비).
 function tierThumbUrl(broadNo) {
     return `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broadNo)}?t=${Math.floor(Date.now() / 60000)}`;
+}
+
+// 팀 로고 경로 규칙은 build_html.py의 team_logo_src와 같다(images/{팀이름}.webp).
+// 로고 파일이 없는 팀도 있으므로 실패하면 이미지만 조용히 숨긴다 - 팀 이름은 남는다.
+function tierTeamLogoHtml(team) {
+    if (!team) return '';
+    const src = `images/${encodeURIComponent(team)}.webp`;
+    return `<img class="team-logo-icon tier-card-team-logo" src="${escapeHTML(src)}" alt=""
+                 loading="lazy" onerror="this.remove();">`;
 }
 
 // 카드 위쪽 영역. 방송 중이면 16:9 썸네일, 아니면 같은 크기 박스 안에 동그란 프로필.
@@ -125,16 +140,19 @@ function tierCardMediaHtml(member, live) {
 
 function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
+    const team = String(member.team || '').trim();
     return `
     <a class="tier-card${live ? ' is-live' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
        href="https://ch.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
        title="${escapeHTML(live ? live.title : (member.nickname || soopId))}">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
         <div class="tier-card-body">
-            <div class="tier-card-name">${escapeHTML(member.nickname || soopId)}</div>
-            <div class="tier-card-tags">
+            <div class="tier-card-nameline">
+                <span class="tier-card-name">${escapeHTML(member.nickname || soopId)}</span>
                 ${member.race ? raceBadgeHtml(member.race) : ''}
-                ${tierBadgeHtml(member.tier)}
+            </div>
+            <div class="tier-card-team">
+                ${tierTeamLogoHtml(team)}<span class="tier-card-team-name">${escapeHTML(team)}</span>
             </div>
         </div>
     </a>`;
@@ -144,11 +162,31 @@ function tierCardHtml(member, live) {
 // 그리드
 // ---------------------------------------------------------------------------
 function tierVisibleMembers() {
-    return TierState.members.filter(m => {
-        if (TierState.teamFilter && m.team !== TierState.teamFilter) return false;
-        if (TierState.liveOnly && !TierState.live[tierIdKey(m)]) return false;
-        return true;
+    if (!TierState.liveOnly) return TierState.members;
+    return TierState.members.filter(m => TierState.live[tierIdKey(m)]);
+}
+
+// 한 티어 안을 종족별로 줄을 나눈다. 종족이 섞여 있으면 누가 뭘 하는지 한눈에 안 들어와서,
+// 테란 → 저그 → 프로토스 순으로 묶어 각각 한 줄(그리드)로 만든다.
+function tierRaceBlocksHtml(members) {
+    const byRace = new Map();
+    members.forEach(m => {
+        const race = tierRaceKey(m);
+        if (!byRace.has(race)) byRace.set(race, []);
+        byRace.get(race).push(m);
     });
+
+    const known = TIER_RACE_ORDER.filter(r => byRace.has(r));
+    const unknown = Array.from(byRace.keys())
+        .filter(r => !TIER_RACE_ORDER.includes(r))
+        .sort((a, b) => a.localeCompare(b, 'ko'));
+
+    return known.concat(unknown).map(race => `
+        <div class="tier-race-block" data-race="${escapeHTML(race)}">
+            <div class="tier-grid">
+                ${byRace.get(race).map(m => tierCardHtml(m, TierState.live[tierIdKey(m)])).join('')}
+            </div>
+        </div>`).join('');
 }
 
 function renderTierGroups() {
@@ -185,9 +223,7 @@ function renderTierGroups() {
                     <span class="tier-count">${sec.count}명</span>
                     <span class="tier-live" data-tier-live></span>
                 </div>
-                <div class="tier-grid">
-                    ${groups.get(sec.tier).map(m => tierCardHtml(m, TierState.live[tierIdKey(m)])).join('')}
-                </div>
+                ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')
         : `<div class="tier-empty">${TierState.liveOnly ? '방송 중인 사람이 없습니다.' : '표시할 인원이 없습니다.'}</div>`;
 
@@ -237,7 +273,6 @@ function onTierBarClick(event) {
 // 스크롤에 따라 지금 보고 있는 티어를 바에서 강조한다.
 function highlightTierBar() {
     if (TierState.sections.length === 0) return;
-    // 티어 바 바로 아래에 걸쳐 있는 구간을 "현재"로 본다.
     const line = tierStickyOffset() + 8;
     let currentId = TierState.sections[0].id;
     for (const sec of TierState.sections) {
@@ -245,9 +280,16 @@ function highlightTierBar() {
         if (el && el.getBoundingClientRect().top <= line) currentId = sec.id;
         else break;
     }
+    let activeBtn = null;
     document.querySelectorAll('#tier-bar .tier-bar-item').forEach(btn => {
-        btn.classList.toggle('on', btn.dataset.target === currentId);
+        const on = btn.dataset.target === currentId;
+        btn.classList.toggle('on', on);
+        if (on) activeBtn = btn;
     });
+    // 티어가 많으면 바가 좌우로 스크롤되는데, 강조된 항목이 화면 밖이면 의미가 없다.
+    if (activeBtn && activeBtn.scrollIntoView) {
+        activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
 }
 
 function tierStickyOffset() {
@@ -257,34 +299,21 @@ function tierStickyOffset() {
 }
 
 // ---------------------------------------------------------------------------
-// 필터 (팀 + 방송중만)
+// 방송중 필터
 // ---------------------------------------------------------------------------
 function renderTierFilters() {
-    const teams = Array.from(new Set(TierState.members.map(m => m.team).filter(Boolean)))
-        .sort((a, b) => a.localeCompare(b, 'ko'));
     const liveCount = Object.keys(TierState.live).length;
-
-    const teamChips = [''].concat(teams).map(team => `
-        <button type="button" class="tier-filter${team === TierState.teamFilter ? ' on' : ''}"
-                data-team="${escapeHTML(team)}">${team ? escapeHTML(team) : '전체'}</button>`).join('');
-
-    const liveChip = `
+    document.getElementById('tier-filters').innerHTML = `
         <button type="button" class="tier-filter tier-filter-live${TierState.liveOnly ? ' on' : ''}"
-                data-live-only="1">
+                data-live-only="1" aria-pressed="${TierState.liveOnly}">
             <span class="tier-filter-dot"></span>방송중${liveCount ? ` ${liveCount}` : ''}
         </button>`;
-
-    document.getElementById('tier-filters').innerHTML = teamChips + liveChip;
 }
 
 function onTierFilterClick(event) {
     const btn = event.target.closest('.tier-filter');
     if (!btn) return;
-    if (btn.dataset.liveOnly) {
-        TierState.liveOnly = !TierState.liveOnly;
-    } else {
-        TierState.teamFilter = btn.dataset.team || '';
-    }
+    TierState.liveOnly = !TierState.liveOnly;
     renderTierFilters();
     renderTierGroups();
 }
@@ -331,24 +360,21 @@ async function refreshTierLive() {
 
     const changed = liveSetChanged(TierState.live, next);
     TierState.live = next;
+    renderTierFilters();
 
-    // 방송 중인 사람 목록 자체가 바뀌었고 "방송중만" 필터가 켜져 있으면 명단이 달라지므로
-    // 통째로 다시 그린다. 그 외에는 카드를 다시 만들지 않고 필요한 카드만 손본다 -
-    // 전부 다시 그리면 수백 장의 이미지가 매번 새로 로드된다.
+    // "방송중만"이 켜져 있고 명단 자체가 바뀌었으면 통째로 다시 그린다. 그 외에는 카드를
+    // 다시 만들지 않고 필요한 카드만 손본다 - 전부 다시 그리면 수백 장의 이미지가
+    // 매번 새로 로드된다.
     if (changed && TierState.liveOnly) {
-        renderTierFilters();
         renderTierGroups();
         return;
     }
-    renderTierFilters();
     applyLiveToCards(changed);
     updateTierRowLiveCounts();
 }
 
 function liveSetChanged(prev, next) {
-    const a = Object.keys(prev).sort().join(',');
-    const b = Object.keys(next).sort().join(',');
-    return a !== b;
+    return Object.keys(prev).sort().join(',') !== Object.keys(next).sort().join(',');
 }
 
 function applyLiveToCards(setChanged) {
