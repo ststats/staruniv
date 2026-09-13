@@ -138,11 +138,10 @@ function tierCardMediaHtml(member, live) {
     const soopId = String(member.id).trim();
     if (live) {
         const fallback = getProfileImgUrl(soopId) || '';
-        // LIVE 알약은 뺐다 - 카드 열에서 방송 화면이 보이는 것 자체가 이미 "켜져 있다"는
-        // 표시고, 시청자 수도 방송 중일 때만 붙는다. 작은 카드에 배지까지 얹으면 정작
-        // 봐야 할 방송 화면을 가린다.
+        // 미디어 영역에는 방송 화면만 둔다. LIVE 알약도 시청자 수도 뺐다 - 화면이 보이는
+        // 것 자체가 이미 "켜져 있다"는 표시고, 티어표는 누가 방송 중인지 훑는 곳이지
+        // 시청자 수를 비교하는 곳이 아니다. 작은 카드에 얹을수록 방송 화면만 가린다.
         return `
-            <span class="tier-card-viewers">${live.viewers.toLocaleString('ko-KR')}</span>
             <img class="tier-card-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt="" loading="lazy"
                  ${fallback ? `onerror="this.src='${jsAttr(fallback)}';"` : ''}>`;
     }
@@ -407,6 +406,9 @@ function tierStickyOffset() {
 function renderTierScope() {
     const scope = document.getElementById('tier-scope');
     if (!scope) return;
+    // 바로가기 칩의 숫자 색을 지금 보기에 맞추려고 바 자체에 표시해둔다(색은 CSS가 정한다).
+    const bar = document.getElementById('tier-bar');
+    if (bar) bar.classList.toggle('is-live-only', TierState.liveOnly);
     const total = TierState.members.length;
     const liveCount = Object.keys(TierState.live).length;
     scope.innerHTML = `
@@ -576,9 +578,7 @@ function applyLiveToCards(setChanged) {
             // 방송 중에 카테고리를 바꾸는 일은 흔하다(스타 하다가 저챗 등) - 회색 여부도 따라간다.
             card.classList.toggle('is-offcate', !live.isStar);
             card.title = tierCardTitle(TierState.byId[key] || live.member, live);
-            // 계속 방송 중이면 숫자만 고치고, 썸네일은 화면에 보이는 것만 새로 받는다.
-            const viewers = media.querySelector('.tier-card-viewers');
-            if (viewers) viewers.textContent = live.viewers.toLocaleString('ko-KR');
+            // 계속 방송 중이면 썸네일만, 그것도 화면에 보이는 것만 새로 받는다.
             const img = media.querySelector('.tier-card-thumb');
             if (img && TierState.visibleThumbs.has(img)) img.src = tierThumbUrl(live.broadNo);
         }
