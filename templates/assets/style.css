@@ -782,19 +782,20 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
 /* --tier-navbar-h는 .top-navbar의 height와 같아야 한다(지금 64px).
    --tier-bar-h는 티어 바 높이인데, page-tier.js가 실제 값을 재서 넣어준다
    (여기 값은 스크립트가 돌기 전까지만 쓰이는 대략치). */
-:root { --tier-navbar-h: 64px; --tier-bar-h: 56px; }
+:root { --tier-navbar-h: 64px; --tier-bar-h: 52px; }
 
-.tier-meta { font-size: var(--fs-body); font-weight: 700; color: var(--color-text-faint); white-space: nowrap; }
 .tier-empty { padding: 48px 0; text-align: center; color: var(--color-text-sub); font-size: var(--fs-body); }
 
 /* ----- 티어 바 -----
-   전체 인원 + 방송중 필터를 왼쪽에 두고, 그 오른쪽에 티어 바로가기 목록을 둔다.
-   상단 메뉴가 sticky(64px)라 그 바로 밑에 붙여 같이 따라다닌다. 티어가 많으면
-   오른쪽 목록만 가로로 흐르고, 왼쪽 도구는 자리를 지킨다. */
+   왼쪽에 보기 전환(전체/방송중), 오른쪽에 티어 바로가기 목록. 상단 메뉴가 sticky(64px)라
+   그 바로 밑에 붙어 같이 따라다닌다. 티어가 많으면 오른쪽 목록만 가로로 흐르고,
+   왼쪽 전환 버튼은 자리를 지킨다.
+   [중요] 휴대폰에서도 세로로 쌓지 않고 한 줄을 유지한다 - 바는 화면에 계속 붙어 있는
+   물건이라 두 줄이 되면 그만큼 본문을 계속 가린다. 좁으면 오른쪽 목록만 더 스크롤된다. */
 .tier-bar {
     position: sticky; top: var(--tier-navbar-h); z-index: 90;
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 24px; padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px; padding: 7px 10px;
     background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
@@ -823,30 +824,53 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
 }
 .tier-bar-item.active .tier-bar-count { color: var(--color-primary); }
 
-/* 왼쪽 도구 묶음(전체 인원 + 방송중 필터) - 오른쪽 티어 목록과 세로 선으로 나눈다
-   (.filter-nav가 라벨과 목록을 나누는 방식과 같다) */
+/* ----- 보기 전환(전체 / 방송중) -----
+   예전엔 "512명"이라는 맨 글자 옆에 방송중 알약 버튼이 따로 있었다. 둘은 사실 같은 축
+   (무엇을 보여줄까)의 두 선택지라, 하나의 세그먼트 컨트롤로 묶었다. 숫자를 항상 둘 다
+   보여주므로 "전체 몇 명 중 몇 명이 방송 중인지"가 누르지 않아도 읽힌다. */
 .tier-bar-tools {
-    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-    padding-right: 12px; border-right: 2px solid var(--color-border);
+    display: flex; align-items: center; flex-shrink: 0;
+    padding-right: 10px; border-right: 1px solid var(--color-border);
 }
-.tier-filters { display: flex; align-items: center; gap: 6px; }
-.tier-filter {
-    border: 1px solid var(--color-border-strong); background: var(--color-card);
-    color: var(--color-text-sub); font-family: inherit;
-    font-size: var(--fs-body); font-weight: 700;
-    padding: 4px 11px; border-radius: 20px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
+.tier-scope {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 2px; border-radius: 999px;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
 }
-.tier-filter-live:hover { border-color: var(--color-lose); color: var(--color-lose); }
-.tier-filter-live.on { background: var(--color-lose); border-color: var(--color-lose); color: #fff; }
-.tier-filter-live.on:hover { color: #fff; }
-.tier-filter-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-lose); flex-shrink: 0; }
-.tier-filter-live.on .tier-filter-dot { background: #fff; }
+.tier-scope-btn {
+    display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+    border: none; background: none; font-family: inherit; cursor: pointer;
+    padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+    font-size: var(--fs-body); font-weight: 700; color: var(--color-text-muted);
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.tier-scope-btn:hover { color: var(--color-text-strong); }
+.tier-scope-btn.on {
+    background: var(--color-card); color: var(--color-text-strong);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.tier-scope-num { font-weight: 800; color: var(--color-text-faint); font-variant-numeric: tabular-nums; }
+.tier-scope-all.on .tier-scope-num { color: var(--color-primary); }
+.tier-scope-live.on { color: var(--color-lose); }
+.tier-scope-live.on .tier-scope-num { color: var(--color-lose); }
+/* 꺼져 있을 때도 점은 남겨두되 회색 - 켜면 빨갛게 살아난다(방송 중이 0명이면 회색 유지). */
+.tier-scope-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    background: var(--color-border-strong);
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.tier-scope-live.has-live .tier-scope-dot {
+    background: var(--color-lose);
+    box-shadow: 0 0 0 3px rgba(240,62,62,0.15);
+}
 
 /* ----- 티어 한 덩어리 -----
    제목은 멤버-현황의 그룹 제목과 똑같이 .section-title을 쓴다(파란 세로줄 + 구분선 + "N명"이
-   이미 그 규칙에 다 들어 있다). 방송중 인원은 그 뒤에 구분점을 두고 이어 붙인다. */
+   이미 그 규칙에 다 들어 있다). 방송중 인원은 그 뒤에 구분점을 두고 이어 붙인다.
+   [규칙] 제목의 "N명"은 그 티어의 전체 인원이라 '방송중'을 눌러도 변하지 않는다. 필터를
+   켜면 어차피 뒤의 "N명 방송중"이 지금 보이는 인원을 말해주므로, 두 숫자가 같아지면
+   전체 규모라는 정보만 사라진다. */
 .tier-row {
     margin-bottom: 36px;
     /* 티어 바로가기로 이동했을 때 제목이 상단 메뉴+티어 바 밑에 가리지 않게 띄운다 */
@@ -901,16 +925,18 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
     font-variant-numeric: tabular-nums;
 }
 
-/* 이름 + 종족 뱃지 / 그 아래 소속 로고 + 이름 */
-.tier-card-body { padding: 10px 12px 12px; }
-.tier-card-nameline { display: flex; align-items: center; gap: 5px; min-width: 0; }
+/* 이름 + 종족 뱃지 / 그 아래 소속 로고 + 이름.
+   카드 아래 글자는 가운데로 모은다 - 위쪽 미디어(썸네일/동그란 프로필)가 이미 가운데
+   기준이라, 글자만 왼쪽에 붙어 있으면 축이 두 개로 보인다. */
+.tier-card-body { padding: 10px 12px 12px; text-align: center; }
+.tier-card-nameline { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; }
 .tier-card-name {
     font-weight: 800; font-size: var(--fs-body); color: var(--color-text-dark);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 .tier-card:hover .tier-card-name { color: var(--color-primary); }
 .tier-card-nameline .tag-badge { flex-shrink: 0; }
-.tier-card-team { display: flex; align-items: center; gap: 4px; margin-top: 5px; min-width: 0; }
+.tier-card-team { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 5px; min-width: 0; }
 .tier-card-team-logo { width: 16px; height: 16px; margin-right: 0; }
 .tier-card-team-name {
     font-size: 11px; font-weight: 700; color: var(--color-text-muted);
@@ -918,16 +944,13 @@ a.home-notice-card, a.home-notice-card:hover { color: inherit; text-decoration: 
 }
 
 /* ----- 휴대폰 -----
-   폭이 좁으면 바 안에 목록과 도구가 한 줄로 안 들어간다. 도구를 아래로 내리고 세로 선 대신
-   가로 선으로 나눈다. */
+   바는 한 줄을 유지하고, 대신 안에 든 것들을 조금씩 줄여 자리를 만든다.
+   (전환 버튼은 고정 폭, 남는 폭은 전부 티어 목록이 쓰고 모자라면 옆으로 스크롤) */
 @media (max-width: 767.98px) {
-    .tier-bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 10px; margin-bottom: 18px; }
-    .tier-bar-list { width: 100%; }
-    .tier-bar-tools {
-        padding-right: 0; padding-bottom: 8px;
-        border-right: none; border-bottom: 1px solid var(--color-border);
-        justify-content: space-between;
-    }
+    .tier-bar { gap: 8px; padding: 6px 8px; margin-bottom: 18px; }
+    .tier-bar-tools { padding-right: 8px; }
+    .tier-scope-btn { padding: 4px 9px; gap: 4px; font-size: 12px; }
+    .tier-bar-item { padding: 5px 9px; gap: 5px; }
     .tier-row { margin-bottom: 28px; }
     .tier-race-block + .tier-race-block { margin-top: 12px; }
     .tier-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }

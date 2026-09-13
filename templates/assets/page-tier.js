@@ -200,6 +200,15 @@ function tierRaceBlocksHtml(members) {
 function renderTierGroups() {
     const list = tierVisibleMembers();
 
+    // 제목에 쓸 "그 티어의 전체 인원"은 필터와 무관하게 항상 같은 값이어야 한다.
+    // '방송중'을 켰을 때 이 숫자까지 줄어들면, 뒤에 붙는 "N명 방송중"과 같은 값이 되어
+    // 같은 말을 두 번 하게 되고 정작 티어 규모라는 정보만 사라진다.
+    const totals = new Map();
+    TierState.members.forEach(m => {
+        const key = tierGroupKey(m);
+        totals.set(key, (totals.get(key) || 0) + 1);
+    });
+
     const groups = new Map();
     list.forEach(m => {
         const key = tierGroupKey(m);
@@ -216,18 +225,19 @@ function renderTierGroups() {
     });
 
     // 티어 이름을 그대로 id에 쓰면(한글·숫자·공백) 선택자에서 다루기 번거로워서 순번으로 만든다.
+    // count = 지금 화면에 그려지는 수(바로가기 칩), total = 필터와 무관한 티어 전체 인원(제목).
     TierState.sections = tiers.map((tier, i) => ({
         tier,
         id: `tier-sec-${i}`,
         count: groups.get(tier).length,
+        total: totals.get(tier) || groups.get(tier).length,
     }));
 
-    document.getElementById('tier-total').textContent = `${list.length}명`;
     document.getElementById('tier-root').innerHTML = TierState.sections.length
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title">
-                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.count}명</span><span class="tier-live" data-tier-live></span></span>
+                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.total}명</span><span class="tier-live" data-tier-live></span></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')
@@ -291,25 +301,56 @@ function onTierBarClick(event) {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// 지금 보고 있는 티어로 판정하는 가로선을, 바 바로 밑이 아니라 "바 아래 남은 화면"의
+// 이만큼 내려온 곳에 둔다. 예전엔 바 바로 밑(+8px)이라, 다음 티어의 제목이 바에 겨우
+// 걸치기만 해도 - 화면의 90%는 아직 윗 티어인데 - 아랫 티어로 넘어가지 않고 반대로
+// 윗 티어가 화면에서 거의 사라질 때까지 계속 강조됐다. 0.35면 화면의 3분의 1 이상을
+// 차지한 티어가 강조된다.
+const TIER_HIGHLIGHT_RATIO = 0.35;
+
 // 스크롤에 따라 지금 보고 있는 티어를 바에서 강조한다.
 function highlightTierBar() {
     if (TierState.sections.length === 0) return;
-    const line = tierStickyOffset() + 8;
+    const offset = tierStickyOffset();
+    const viewport = window.innerHeight || document.documentElement.clientHeight;
+    const line = offset + Math.max(72, (viewport - offset) * TIER_HIGHLIGHT_RATIO);
+
     let currentId = TierState.sections[0].id;
     for (const sec of TierState.sections) {
         const el = document.getElementById(sec.id);
-        if (el && el.getBoundingClientRect().top <= line) currentId = sec.id;
+        if (!el) continue;
+        if (el.getBoundingClientRect().top <= line) currentId = sec.id;
         else break;
     }
+    // 맨 아래에서는 마지막 티어가 짧으면 판정선까지 못 올라온다 - 더 스크롤할 데가 없으니
+    // 그 티어를 보고 있는 게 맞다.
+    const docHeight = document.documentElement.scrollHeight;
+    if (window.scrollY + viewport >= docHeight - 2) {
+        currentId = TierState.sections[TierState.sections.length - 1].id;
+    }
+
     let activeBtn = null;
     document.querySelectorAll('#tier-bar .tier-bar-item').forEach(btn => {
         const on = btn.dataset.target === currentId;
         btn.classList.toggle('active', on);   // 아바타 바와 같은 클래스명
         if (on) activeBtn = btn;
     });
-    // 티어가 많으면 바가 좌우로 스크롤되는데, 강조된 항목이 화면 밖이면 의미가 없다.
-    if (activeBtn && activeBtn.scrollIntoView) {
-        activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (activeBtn) scrollTierBarItemIntoView(activeBtn);
+}
+
+// 티어가 많으면 바가 좌우로 스크롤되는데, 강조된 항목이 화면 밖이면 의미가 없다.
+// scrollIntoView 대신 바 자체의 scrollLeft만 건드린다 - scrollIntoView는 조상 요소까지
+// 같이 움직여서, 사용자가 스크롤하는 중에 페이지가 세로로 튀는 일이 생길 수 있다.
+function scrollTierBarItemIntoView(btn) {
+    const list = document.getElementById('tier-bar-list');
+    if (!list || list.scrollWidth <= list.clientWidth) return;
+    const pad = 24;  // 양옆에 다음 칩이 살짝 보이게 여유를 둔다
+    const left = btn.offsetLeft - pad;
+    const right = btn.offsetLeft + btn.offsetWidth + pad;
+    if (left < list.scrollLeft) {
+        list.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+    } else if (right > list.scrollLeft + list.clientWidth) {
+        list.scrollTo({ left: right - list.clientWidth, behavior: 'smooth' });
     }
 }
 
@@ -320,22 +361,35 @@ function tierStickyOffset() {
 }
 
 // ---------------------------------------------------------------------------
-// 방송중 필터
+// 보기 전환 (전체 / 방송중)
 // ---------------------------------------------------------------------------
-function renderTierFilters() {
+// 예전엔 "512명"이라는 맨 글자 옆에 방송중 토글이 따로 있었다. 둘은 사실 "무엇을 보여줄까"
+// 라는 같은 축의 두 선택지라, 숫자를 각자 달고 있는 세그먼트 컨트롤 하나로 합쳤다.
+// 누르지 않아도 전체 대비 방송 중 인원이 바로 읽히고, 차지하는 폭도 줄어 휴대폰에서
+// 티어 바가 한 줄에 들어간다.
+function renderTierScope() {
+    const scope = document.getElementById('tier-scope');
+    if (!scope) return;
+    const total = TierState.members.length;
     const liveCount = Object.keys(TierState.live).length;
-    document.getElementById('tier-filters').innerHTML = `
-        <button type="button" class="tier-filter tier-filter-live${TierState.liveOnly ? ' on' : ''}"
+    scope.innerHTML = `
+        <button type="button" class="tier-scope-btn tier-scope-all${TierState.liveOnly ? '' : ' on'}"
+                data-live-only="0" aria-pressed="${!TierState.liveOnly}">
+            전체<span class="tier-scope-num">${total.toLocaleString('ko-KR')}</span>
+        </button>
+        <button type="button" class="tier-scope-btn tier-scope-live${TierState.liveOnly ? ' on' : ''}${liveCount ? ' has-live' : ''}"
                 data-live-only="1" aria-pressed="${TierState.liveOnly}">
-            <span class="tier-filter-dot"></span>방송중${liveCount ? ` ${liveCount}` : ''}
+            <span class="tier-scope-dot"></span>방송중<span class="tier-scope-num">${liveCount.toLocaleString('ko-KR')}</span>
         </button>`;
 }
 
-function onTierFilterClick(event) {
-    const btn = event.target.closest('.tier-filter');
+function onTierScopeClick(event) {
+    const btn = event.target.closest('.tier-scope-btn');
     if (!btn) return;
-    TierState.liveOnly = !TierState.liveOnly;
-    renderTierFilters();
+    const liveOnly = btn.dataset.liveOnly === '1';
+    if (liveOnly === TierState.liveOnly) return;  // 이미 그 보기면 다시 그릴 필요가 없다
+    TierState.liveOnly = liveOnly;
+    renderTierScope();
     renderTierGroups();
 }
 
@@ -381,7 +435,7 @@ async function refreshTierLive() {
 
     const changed = liveSetChanged(TierState.live, next);
     TierState.live = next;
-    renderTierFilters();
+    renderTierScope();
 
     // "방송중만"이 켜져 있고 명단 자체가 바뀌었으면 통째로 다시 그린다. 그 외에는 카드를
     // 다시 만들지 않고 필요한 카드만 손본다 - 전부 다시 그리면 수백 장의 이미지가
@@ -463,7 +517,7 @@ bootPage(async () => {
         }, { rootMargin: '200px' });
     }
 
-    document.getElementById('tier-filters').addEventListener('click', onTierFilterClick);
+    document.getElementById('tier-scope').addEventListener('click', onTierScopeClick);
     document.getElementById('tier-bar').addEventListener('click', onTierBarClick);
 
     // 스크롤 이벤트는 초당 수십 번 온다. 프레임당 한 번만 계산한다.
@@ -476,7 +530,7 @@ bootPage(async () => {
 
     window.addEventListener('resize', syncTierBarHeight);
 
-    renderTierFilters();
+    renderTierScope();
     renderTierGroups();
     highlightTierBar();
 

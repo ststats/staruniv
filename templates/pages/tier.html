@@ -16,12 +16,14 @@
     </div>
 
     <div id="view-tier-list">
-        {#- 티어 바로가기 + 방송중 필터 + 전체 인원을 한 줄에 모은 바.
-            상단 메뉴 바로 아래에 붙어서 같이 따라다닌다. -#}
+        {#- 티어 바로가기 + 보기 전환(전체/방송중)을 한 줄에 모은 바.
+            상단 메뉴 바로 아래에 붙어서 같이 따라다닌다.
+            '전체 N명'과 '방송중 N명'은 결국 같은 축의 두 선택지라 세그먼트 컨트롤 하나로
+            묶었다(예전엔 맨 글자 + 알약 버튼이 따로였다). 휴대폰에서도 이 바는 한 줄을
+            유지한다 - 화면에 계속 붙어 있어서 두 줄이 되면 본문을 그만큼 계속 가린다. -#}
         <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
             <div class="tier-bar-tools">
-                <span class="tier-meta" id="tier-total"></span>
-                <div class="tier-filters" id="tier-filters"></div>
+                <div class="tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
             </div>
             <div class="tier-bar-list" id="tier-bar-list"></div>
         </nav>
