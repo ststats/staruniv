@@ -34,7 +34,8 @@ const TierState = {
     byId: {},          // soopId(소문자) -> member
     live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
     liveOnly: false,   // 방송 중인 사람만 보기
-    sections: [],      // [{ tier, id, count }] - 티어 바로가기 바가 쓴다
+    sections: [],      // [{ tier, id, count, total }] - 티어 바로가기 바가 쓴다
+    activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
     visibleThumbs: new Set(),
     thumbObserver: null,
 };
@@ -246,6 +247,7 @@ function renderTierGroups() {
     observeTierThumbs();
     renderTierBar();
     updateTierRowLiveCounts();
+    highlightTierBar();  // 칩을 새로 만들었으니 지금 보고 있는 티어를 바로 강조해준다
 }
 
 function observeTierThumbs() {
@@ -281,6 +283,7 @@ function renderTierBar() {
             <span class="tier-bar-name">${escapeHTML(tierDisplayName(sec.tier))}</span>
             <span class="tier-bar-count">${sec.count}</span>
         </button>`).join('');
+    TierState.activeId = null;  // 칩을 새로 만들었으니 강조도 다시 붙여야 한다
     syncTierBarHeight();
 }
 
@@ -329,6 +332,12 @@ function highlightTierBar() {
         currentId = TierState.sections[TierState.sections.length - 1].id;
     }
 
+    // 활성 티어가 그대로면 아무것도 건드리지 않는다. 스크롤은 초당 수십 번 오는데 그때마다
+    // scrollTo(smooth)를 다시 부르면 애니메이션이 매번 처음부터 다시 시작해서, 사용자가 바를
+    // 손으로 밀고 있을 때 서로 잡아당기는 것처럼 보인다.
+    if (currentId === TierState.activeId) return;
+    TierState.activeId = currentId;
+
     let activeBtn = null;
     document.querySelectorAll('#tier-bar .tier-bar-item').forEach(btn => {
         const on = btn.dataset.target === currentId;
@@ -344,14 +353,15 @@ function highlightTierBar() {
 function scrollTierBarItemIntoView(btn) {
     const list = document.getElementById('tier-bar-list');
     if (!list || list.scrollWidth <= list.clientWidth) return;
-    const pad = 24;  // 양옆에 다음 칩이 살짝 보이게 여유를 둔다
-    const left = btn.offsetLeft - pad;
-    const right = btn.offsetLeft + btn.offsetWidth + pad;
-    if (left < list.scrollLeft) {
-        list.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
-    } else if (right > list.scrollLeft + list.clientWidth) {
-        list.scrollTo({ left: right - list.clientWidth, behavior: 'smooth' });
-    }
+    // 보이는 범위 안에 "들어오기만" 하면 되는 게 아니라 가운데로 데려온다. 휴대폰에서는
+    // 왼쪽 전환 버튼이 먹고 남은 폭이 좁아서, 가장자리에 걸쳐 놓으면 다음 티어로 넘어가는
+    // 순간 바로 화면 밖으로 밀린다. 가운데면 앞뒤 티어도 같이 보인다.
+    // (목록의 처음/끝에서는 더 갈 데가 없으므로 자연스럽게 왼쪽/오른쪽 끝에 붙는다.)
+    const centered = btn.offsetLeft - (list.clientWidth - btn.offsetWidth) / 2;
+    const maxLeft = list.scrollWidth - list.clientWidth;
+    const left = Math.max(0, Math.min(centered, maxLeft));
+    if (Math.abs(left - list.scrollLeft) < 1) return;
+    list.scrollTo({ left, behavior: 'smooth' });
 }
 
 function tierStickyOffset() {
@@ -365,8 +375,8 @@ function tierStickyOffset() {
 // ---------------------------------------------------------------------------
 // 예전엔 "512명"이라는 맨 글자 옆에 방송중 토글이 따로 있었다. 둘은 사실 "무엇을 보여줄까"
 // 라는 같은 축의 두 선택지라, 숫자를 각자 달고 있는 세그먼트 컨트롤 하나로 합쳤다.
-// 누르지 않아도 전체 대비 방송 중 인원이 바로 읽히고, 차지하는 폭도 줄어 휴대폰에서
-// 티어 바가 한 줄에 들어간다.
+// 누르지 않아도 전체 대비 방송 중 인원이 바로 읽힌다. 두 버튼은 생김새가 완전히 같고,
+// 숫자 색(전체=파랑, 방송중=빨강)만 다르다.
 function renderTierScope() {
     const scope = document.getElementById('tier-scope');
     if (!scope) return;
@@ -377,18 +387,20 @@ function renderTierScope() {
                 data-live-only="0" aria-pressed="${!TierState.liveOnly}">
             전체<span class="tier-scope-num">${total.toLocaleString('ko-KR')}</span>
         </button>
-        <button type="button" class="tier-scope-btn tier-scope-live${TierState.liveOnly ? ' on' : ''}${liveCount ? ' has-live' : ''}"
+        <button type="button" class="tier-scope-btn tier-scope-live${TierState.liveOnly ? ' on' : ''}"
                 data-live-only="1" aria-pressed="${TierState.liveOnly}">
-            <span class="tier-scope-dot"></span>방송중<span class="tier-scope-num">${liveCount.toLocaleString('ko-KR')}</span>
+            방송중<span class="tier-scope-num">${liveCount.toLocaleString('ko-KR')}</span>
         </button>`;
 }
 
 function onTierScopeClick(event) {
     const btn = event.target.closest('.tier-scope-btn');
     if (!btn) return;
-    const liveOnly = btn.dataset.liveOnly === '1';
-    if (liveOnly === TierState.liveOnly) return;  // 이미 그 보기면 다시 그릴 필요가 없다
-    TierState.liveOnly = liveOnly;
+    const wantLive = btn.dataset.liveOnly === '1';
+    // '방송중'을 다시 눌러도 꺼지게 둔다(옛 필터 버튼의 습관이 남아 있는 사람용).
+    const next = wantLive ? !TierState.liveOnly : false;
+    if (next === TierState.liveOnly) return;  // 이미 그 보기면 다시 그릴 필요가 없다
+    TierState.liveOnly = next;
     renderTierScope();
     renderTierGroups();
 }
@@ -498,13 +510,6 @@ bootPage(async () => {
     TierState.members = payload.members;
     TierState.byId = {};
     TierState.members.forEach(m => { TierState.byId[tierIdKey(m)] = m; });
-
-    const subtitle = document.getElementById('tier-subtitle');
-    if (subtitle) {
-        subtitle.textContent = payload.date
-            ? `${payload.date} 기준 · 방송 중이면 카드에 방송 화면이 보입니다.`
-            : '방송 중이면 카드에 방송 화면이 보입니다.';
-    }
 
     // 썸네일은 화면에 보이는 것만 갱신한다. 방송 중인 사람이 100명을 넘어가면
     // 30초마다 전부 새로 받는 순간 수 MB가 나간다.
