@@ -44,18 +44,24 @@ def write_json_atomic(path, obj, **dump_kwargs):
     os.replace(tmp_path, path)
 
 
+# 눈에 안 보이는데 값은 들어있는 문자들. 시트를 복사·붙여넣기 하다 보면 섞여 들어오는데,
+# 빈칸처럼 보이지만 비교(== 'T' 등)에는 걸리지 않아 조용히 통계에서 빠지거나 경고만 울린다.
+# 폭 없는 공백(200B~200D), 단어 결합자(2060), BOM(FEFF), 줄바꿈 없는 공백(00A0) 등.
+INVISIBLE_CHARS = r'[\u200b-\u200d\u2060\ufeff\u00a0\u180e]'
+
+
 def clean_str_col(df, col):
-    """문자열로 정확히 비교(== '승' 등)하는 컬럼은 양 끝 공백을 제거해둔다.
+    """문자열로 정확히 비교(== '승' 등)하는 컬럼은 양 끝 공백과 보이지 않는 문자를 제거해둔다.
     시트 셀에 실수로 공백이 붙으면('승 ') 비교가 조용히 실패해서 그 경기가
-    승패 집계에서 통째로 빠지는 사고로 이어질 수 있다.
-    (예전 apply(lambda v: str(v).strip() if notna else v)와 결과가 같은 벡터 연산 버전 -
-    결측값은 원래 객체(None/NaN) 그대로 두고, 나머지만 str()로 바꿔 strip한다.)"""
+    승패 집계에서 통째로 빠지는 사고로 이어질 수 있다. 보이지 않는 문자만 들어있는 칸은
+    빈칸으로 정리되므로, 그런 칸이 '이상한 값'으로 경고에 잡히지도 않는다.
+    (결측값은 원래 객체(None/NaN) 그대로 두고, 나머지만 문자열로 바꿔 정리한다.)"""
     if col not in df.columns:
         return
     s = df[col]
     notna = s.notna()
-    stripped = s[notna].astype(str).str.strip()
-    df[col] = s.astype(object).where(~notna, stripped)
+    cleaned = s[notna].astype(str).str.replace(INVISIBLE_CHARS, '', regex=True).str.strip()
+    df[col] = s.astype(object).where(~notna, cleaned)
 
 
 def warn_invalid_values(df, col, valid_values, label):
