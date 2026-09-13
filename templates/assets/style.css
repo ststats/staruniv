@@ -166,13 +166,18 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
    - 그래서 :last-child 규칙이 안 먹는 뷰들은 여기서 직접 하단 여백을 지정한다. */
 #view-tools-multiviewer, #view-tools-external,
 #view-member-status, #view-member-news,
-#view-team-stat, #view-indiv-stat { margin-bottom: var(--space-page-bottom); }
+#view-team-stat, #view-indiv-stat,
+#view-tier-list, #view-tier-analysis { margin-bottom: var(--space-page-bottom); }
 /* '더 보기'/'이전 멤버' 버튼이 화면상 마지막 요소일 때는(has-trailer, page-members.js가
    붙인다) 다른 탭과 같은 큰 하단 여백 대신 버튼 위 여백(.section-trailer/.news-load-more-wrap
-   의 padding-top, 12px)과 같은 크기로 줄인다 - 버튼 밑에 40px씩 비워두면 버튼만 붕 떠 보인다. */
-#view-member-status.has-trailer, #view-member-news.has-trailer { margin-bottom: 12px; }
+   의 padding-top, 12px)과 같은 크기로 줄인다 - 버튼 밑에 40px씩 비워두면 버튼만 붕 떠 보인다.
+   [!important 필요한 이유] 현황/공지 두 뷰는 형제 뷰라 DOM상 뒤에 오는 쪽(공지)이 항상
+   .page-section의 진짜 :last-child다 - 그래서 위 `.page-section > *:last-child` 규칙(40px,
+   !important)이 has-trailer와 무관하게 공지 뷰에는 항상 걸린다. !important 없이는 이 규칙이
+   절대 못 이기므로 공지의 '더 보기' 버튼은 늘 40px로 고정되고 has-trailer가 있으나 마나였다. */
+#view-member-status.has-trailer, #view-member-news.has-trailer { margin-bottom: 12px !important; }
 @media (max-width: 767.98px) {
-    #view-member-status.has-trailer, #view-member-news.has-trailer { margin-bottom: 4px; }
+    #view-member-status.has-trailer, #view-member-news.has-trailer { margin-bottom: 4px !important; }
 }
 
 /* 좌우 여백: 부트스트랩 기본(12px)은 PC에서도 좁아서 화면 크기별 계단식으로 늘린다.
@@ -432,6 +437,11 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 @media (max-width: 767.98px) {
     .section-trailer { padding-top: 4px; }
 }
+/* 멤버 현황의 '이전 멤버' 버튼 바로 위는 마지막 역할 그룹(.member-grid.mb-block)이 이미
+   --space-block-gap(24px)만큼 자기 여백을 만들어두고 있어서, 거기에 .section-trailer의
+   padding-top(12px)까지 그대로 더해지면 버튼 위만 36px로 유난히 벌어진다. mb-block과 정확히
+   같은 크기만큼 끌어올려(margin collapsing) 상쇄하고, section-trailer 고유의 여백만 남긴다. */
+#members-groups > .section-trailer { margin-top: calc(-1 * var(--space-block-gap)); }
 .news-load-more { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 1px solid var(--color-border); border-radius: 20px; font-size: var(--fs-body); font-weight: 700; color: var(--color-text-sub); padding: 8px 18px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .news-load-more:hover { background: var(--color-bg-subtle); color: var(--color-text-main); border-color: var(--color-border-strong); }
 /* 이전 멤버 섹션은 display:none/block으로만 토글되어(접혀있을 땐 렌더링 자체가
