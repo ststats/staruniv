@@ -107,6 +107,14 @@ function tierIdKey(member) {
     return String(member.id).trim().toLowerCase();
 }
 
+// 화면에 쓰는 티어 이름. 숫자 티어(0~8)는 그냥 "3"이라고만 쓰면 인원수인지 티어인지
+// 헷갈려서 "3티어"로 적는다. 갓/킹/잭처럼 이름이 있는 티어는 그대로 둔다
+// ("갓티어"는 어색하다). 그룹 키는 원본 값 그대로 쓰고 표기만 바꾼다.
+function tierDisplayName(tier) {
+    const label = String(tier);
+    return /^\d+$/.test(label) ? `${label}티어` : label;
+}
+
 // 썸네일 주소에는 아이디가 아니라 방송번호가 들어간다 - 방송을 켤 때마다 새로 생기는
 // 값이라 아이디만으로는 만들 수 없다. 뒤의 분 단위 값은 브라우저 캐시를 1분에 한 번만
 // 비우기 위한 것(매번 새로 받으면 낭비).
@@ -219,8 +227,7 @@ function renderTierGroups() {
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title">
-                    <span class="section-title-label">${escapeHTML(sec.tier)}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.count}명</span></span>
-                    <span class="tier-live" data-tier-live></span>
+                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.count}명</span><span class="tier-live" data-tier-live></span></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')
@@ -243,28 +250,27 @@ function updateTierRowLiveCounts() {
     document.querySelectorAll('#tier-root .tier-row').forEach(row => {
         const count = row.querySelectorAll('.tier-card.is-live').length;
         const slot = row.querySelector('[data-tier-live]');
-        if (slot) slot.textContent = count > 0 ? `${count}명 방송중` : '';
+        if (!slot) return;
+        // 0명이면 앞의 구분점까지 같이 사라져야 한다(점만 덩그러니 남으면 이상하다).
+        slot.innerHTML = count > 0
+            ? `<span class="tier-live-sep">·</span>${count}명 방송중`
+            : '';
     });
 }
 
 // ---------------------------------------------------------------------------
 // 티어 바로가기 바
 // ---------------------------------------------------------------------------
-// 공지/전적 페이지의 아바타 바(.avatar-selector-scroll)와 같은 모양을 쓴다.
-// 티어는 사진이 없으니 아바타 자리(.avatar-select-fallback)에 티어 이름을 넣고,
-// 이름 자리에는 인원수를 넣는다.
+// 공지/전적의 아바타 바처럼 가로로 흐르는 한 줄짜리 바인데, 티어는 사진이 없으니
+// 동그라미 대신 이름+인원이 들어간 알약형 칩으로 만든다.
 function renderTierBar() {
     const list = document.getElementById('tier-bar-list');
     if (!list) return;
-    list.innerHTML = TierState.sections.map(sec => {
-        // '베이비'처럼 긴 이름은 동그라미 안에서 글자를 한 단계 줄인다
-        const long = String(sec.tier).length >= 3 ? ' is-long' : '';
-        return `
-        <button type="button" class="avatar-select-item tier-bar-item" data-target="${sec.id}">
-            <span class="avatar-select-fallback tier-bar-mark${long}">${escapeHTML(sec.tier)}</span>
-            <span class="avatar-select-name">${sec.count}</span>
-        </button>`;
-    }).join('');
+    list.innerHTML = TierState.sections.map(sec => `
+        <button type="button" class="tier-bar-item" data-target="${sec.id}">
+            <span class="tier-bar-name">${escapeHTML(tierDisplayName(sec.tier))}</span>
+            <span class="tier-bar-count">${sec.count}</span>
+        </button>`).join('');
     syncTierBarHeight();
 }
 
