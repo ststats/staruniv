@@ -584,6 +584,42 @@ function refreshHScrollbar(scrollEl, barEl) {
     if (fn) fn();
 }
 
+// ---------------------------------------------------------------------------
+// 얇은 줄(서브탭 / 필터 / GNB)의 가로 스크롤 끝 흐림 - 스크롤 패턴 [C]
+// ---------------------------------------------------------------------------
+// 높이가 24~44px인 줄에는 스크롤 손잡이를 넣을 자리가 없다. 그렇다고 네이티브
+// 스크롤바를 그냥 숨겨두면(예전 상태) 좁은 화면에서 탭이 잘려 있다는 걸 알 방법이
+// 없었다. 넘치는 쪽 끝을 흐리게 해서 "저쪽에 더 있다"를 보여준다.
+// 흐림 자체는 CSS(.tab-scroll.is-fade-*)가 그리고, 여기서는 지금 스크롤 위치가
+// 양 끝인지 아닌지만 판단해 클래스를 토글한다(CSS는 스크롤 위치를 모른다).
+function attachEdgeFade(el) {
+    if (!el) return null;
+    if (el._edgeFadeUpdate) return el._edgeFadeUpdate;
+
+    const update = () => {
+        const max = el.scrollWidth - el.clientWidth;
+        // 소수점 오차(브라우저 확대/기기 배율)로 끝에 닿아도 1px쯤 남는 경우가 있어 여유를 둔다.
+        el.classList.toggle('is-fade-start', el.scrollLeft > 1);
+        el.classList.toggle('is-fade-end', max > 1 && el.scrollLeft < max - 1);
+    };
+    el.addEventListener('scroll', update, { passive: true });
+
+    // 숨어 있는 탭(d-none) 안의 줄은 폭이 0으로 재져서 "넘치지 않는다"로 판단된다.
+    // resize 이벤트만 듣고 있으면 그 줄이 처음 보여질 때 흐림이 안 생긴다 - 요소
+    // 크기가 바뀌는 순간을 직접 보는 ResizeObserver가 이 경우까지 한 번에 해결한다.
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(update).observe(el);
+    else window.addEventListener('resize', update);
+
+    el._edgeFadeUpdate = update;
+    update();
+    return update;
+}
+
+// .tab-scroll이 붙은 줄은 페이지마다 따로 챙기지 않고 여기서 한 번에 처리한다.
+function initEdgeFades(root) {
+    (root || document).querySelectorAll('.tab-scroll').forEach(attachEdgeFade);
+}
+
 // =====================================================================
 // 5. 방송통계 데이터 (ststats 외부 데이터에서 우리 로스터만 추림 - 방송통계 표, 멤버 프로필 공용)
 // =====================================================================
@@ -693,11 +729,44 @@ const PageState = {
     },
 };
 
+// ---------------------------------------------------------------------------
+// 상단 메뉴 표시/숨김 (docs/data/nav.json - 어드민 페이지에서 관리)
+// ---------------------------------------------------------------------------
+// 메뉴는 빌드 타임에 HTML로 박히므로(build_html.py가 nav.json을 읽어 hidden을 붙인다)
+// 평소엔 이 함수가 할 일이 없다. 이 함수가 필요한 이유는 어드민에서 저장한 직후다 -
+// 다음 빌드(데이터 갱신 워크플로)까지 기다리지 않고 바로 반영되게 한다.
+// 실패하면(파일 없음/깨짐/오프라인) 아무것도 건드리지 않는다 - 메뉴가 사라지는 쪽보다
+// HTML에 이미 박혀 있는 상태를 그대로 두는 쪽이 안전한 실패다.
+async function applyNavVisibility() {
+    let hidden;
+    try {
+        const res = await fetch('data/nav.json', { cache: 'no-cache' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data && data.hidden)) return;
+        hidden = new Set(data.hidden.map(String));
+    } catch (e) {
+        return;   // 조용히 포기 - 빌드가 넣어둔 상태가 이미 정답에 가깝다
+    }
+    document.querySelectorAll('.top-navbar .nav-item[data-page]').forEach(el => {
+        // 지금 보고 있는 페이지의 메뉴는 숨기지 않는다 - 여기까지 왔는데 어디 있는지
+        // 알려주는 표시만 사라지면 길을 잃는다(주소로 직접 들어온 경우도 마찬가지).
+        el.hidden = hidden.has(el.dataset.page) && !el.classList.contains('active');
+    });
+    // 메뉴 개수가 바뀌면 넘침 여부도 바뀌므로 끝 흐림을 다시 잰다.
+    const menu = document.getElementById('mainMenu');
+    if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
+}
+
 // 페이지 시작: 사이트 데이터(멤버/경기 등)를 먼저 불러온 뒤 페이지별 초기화를 실행한다.
 // 이 스크립트들은 body 맨 끝에서 실행되므로 DOM은 이미 준비돼 있지만, 순서를 확실히 하려고
 // DOMContentLoaded에 맞춘다(이미지 로딩까지 기다리는 window.onload보다 빠르다).
 function bootPage(init) {
     const start = async () => {
+        // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
+        // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
+        initEdgeFades();
+        applyNavVisibility();   // 메뉴는 사이트 데이터와 무관하므로 기다리지 않는다
         await loadSiteData();
         safeInit('페이지', init);
     };

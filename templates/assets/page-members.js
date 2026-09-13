@@ -448,7 +448,7 @@ function newsDesktopLayoutHtml(sorted, loadMoreHtml) {
     return `
                 ${featuredPostWrapHtml(featuredItem)}
                 <div class="past-posts">
-                    <div id="news-past-list">${pastListHtml}</div>
+                    <div id="news-past-list" class="scroll-area scroll-y">${pastListHtml}</div>
                     ${loadMoreHtml}
                 </div>`;
 }

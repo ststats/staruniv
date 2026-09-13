@@ -112,6 +112,14 @@
     .admin-tool-row .delete-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--color-lose); cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
     .admin-tool-row .delete-btn:hover { text-decoration: underline; }
 
+    /* 상단바 메뉴 표시/숨김 - 도구 관리의 행(.admin-tool-row)을 그대로 쓰고 체크박스만 얹는다 */
+    .admin-nav-list { display: flex; flex-direction: column; gap: 8px; }
+    .admin-nav-row { cursor: pointer; margin: 0; }
+    .admin-nav-row input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--color-primary); cursor: pointer; }
+    .admin-nav-state { font-size: 11px; font-weight: 800; color: var(--color-text-faint); flex-shrink: 0; }
+    .admin-nav-row.is-on .admin-nav-state { color: var(--color-primary); }
+    .admin-nav-row.is-off { opacity: 0.55; }
+
     /* 휴방 멤버 선택 - 일정 추가 폼 하단, 스크롤 가능한 체크박스 목록 */
     .admin-offair-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-bg-subtle); }
     .admin-offair-list { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
@@ -141,8 +149,9 @@
 
 <!-- 아래 각 탭은 준비만 해둔 빈 페이지 - 나중에 탭별로 관리 기능을 채워 넣으면 됨 -->
 <div id="page-home" class="page-section active container">
-    <div class="page-header">
+    <div class="page-header admin-header-row">
         <h1 class="page-header-title">홈 관리</h1>
+        <button id="saveNavBtn" class="btn-solid btn-solid-primary" onclick="saveNavToGithub()">저장</button>
     </div>
     <hr class="page-header-divider">
 
@@ -159,7 +168,15 @@
         </div>
     </div>
 
-    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+    <div class="section-title">상단바 메뉴</div>
+    <div class="clean-card p-4">
+        <div id="navToggleList" class="admin-nav-list"></div>
+        <div class="text-secondary mt-2" style="font-size:11px;">
+            끈 메뉴는 사이트 상단바에서 사라집니다. 페이지 자체는 그대로 남아 있어 주소로는 계속 열 수 있고,
+            그 페이지를 보고 있는 동안에는 길을 잃지 않도록 메뉴가 예외적으로 표시됩니다.
+            저장하면 방문자에게 바로 반영되고, 다음 배포 때 HTML에도 함께 반영됩니다.
+        </div>
+    </div>
 </div>
 
 <div id="page-schedule" class="page-section container">
@@ -184,7 +201,7 @@
                             </div>
                         </div>
                         <div class="clean-card p-3">
-                            <div class="cal-calendar-inner">
+                            <div class="cal-calendar-inner scroll-area">
                                 <div class="cal-calendar-scroll-content">
                                     <div class="cal-weekdays">
                                         <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
@@ -203,14 +220,14 @@
             <div id="captureToday">
                 <div class="section-title">오늘의 일정</div>
                 <div class="clean-card p-4">
-                    <div class="cal-today-list" id="todayList"></div>
+                    <div class="cal-today-list scroll-area" id="todayList"></div>
                 </div>
             </div>
 
             <div>
                 <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
                 <div class="clean-card p-4">
-                    <div class="cal-selected-list" id="selectedDateList"></div>
+                    <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
                 </div>
             </div>
 
@@ -253,7 +270,7 @@
                          상단 저장을 누르면 일정이랑 같이 한 번에 커밋된다. -->
                     <div class="admin-offair-block">
                         <div class="section-title-sm" style="margin-bottom:10px;">휴방 멤버 선택 - <span id="offairDateLabel">날짜를 선택하세요</span></div>
-                        <div class="admin-offair-list" id="offairMemberList">
+                        <div class="admin-offair-list scroll-area" id="offairMemberList">
                             <div class="text-center text-muted py-3" style="font-size:var(--fs-body);">멤버 정보를 불러오는 중...</div>
                         </div>
                     </div>
@@ -396,6 +413,7 @@
         alert('연동되었습니다. 이 탭을 닫으면 토큰은 자동으로 지워집니다.');
         loadDataFromGithub();
         loadToolsFromGithub();
+        loadNavFromGithub();
     };
 
     const clearGithubToken = () => {
@@ -790,6 +808,120 @@
         return m ? m['이름'] : null;
     };
 
+    // ----- 상단바 메뉴 표시/숨김 (docs/data/nav.json) -----
+    // [구조] 사이트의 상단 메뉴는 빌드 타임에 HTML로 박힌다(build_html.py가 이 파일을 읽어
+    // 숨길 항목에 hidden을 붙인다). 그래서 여기서 고치는 건 "빌드가 읽는 설정 파일"이고,
+    // core.js가 페이지를 열 때 같은 파일을 한 번 더 읽어 반영하므로 다음 배포를 기다리지
+    // 않아도 방문자에게 즉시 적용된다.
+    // [주의] 아래 목록은 build_html.py의 PAGES에서 '홈'을 뺀 것과 같아야 한다(홈은 왼쪽
+    // 로고가 대신하므로 메뉴에 없다). 메뉴를 새로 추가하면 여기도 한 줄 추가한다.
+    const NAV_FILE_PATH = 'docs/data/nav.json';
+    const NAV_PAGES = [
+        { id: 'schedule', label: '일정' },
+        { id: 'members', label: '멤버' },
+        { id: 'records', label: '전적' },
+        { id: 'stats', label: '방송통계' },
+        { id: 'tier', label: '티어표' },
+        { id: 'tools', label: '도구' },
+    ];
+    let navHidden = new Set();
+    let navLoaded = false;
+
+    function renderNavAdmin() {
+        const list = document.getElementById('navToggleList');
+        if (!list) return;
+        const rows = NAV_PAGES.map(page => {
+            const on = !navHidden.has(page.id);
+            return `
+                <label class="admin-tool-row admin-nav-row ${on ? 'is-on' : 'is-off'}">
+                    <input type="checkbox" ${on ? 'checked' : ''} ${navLoaded ? '' : 'disabled'} onchange="toggleNavItem('${page.id}', this.checked)">
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(page.label)}</div>
+                        <div class="admin-tool-url">/${escapeHTML(page.id)}/</div>
+                    </div>
+                    <span class="admin-nav-state">${on ? '표시' : '숨김'}</span>
+                </label>`;
+        }).join('');
+        const notice = navLoaded ? '' : `<div class="text-center text-muted py-2" style="font-size:11px;">GitHub 연동 후 불러옵니다.</div>`;
+        list.innerHTML = rows + notice;
+    }
+
+    const toggleNavItem = (id, visible) => {
+        if (!navLoaded) return;
+        if (visible) navHidden.delete(id);
+        else navHidden.add(id);
+        renderNavAdmin();
+    };
+
+    const loadNavFromGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) { navLoaded = false; renderNavAdmin(); return; }
+        try {
+            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${NAV_FILE_PATH}`, {
+                headers: { Authorization: `token ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const parsed = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                navHidden = new Set((Array.isArray(parsed.hidden) ? parsed.hidden : []).map(String));
+                navLoaded = true;
+            } else if (res.status === 404) {
+                // 아직 파일이 없는 저장소 - "아무것도 숨기지 않음"에서 시작해 첫 저장 때 만든다.
+                navHidden = new Set();
+                navLoaded = true;
+            } else {
+                navLoaded = false;
+                throw new Error(`메뉴 설정 불러오기 실패 (HTTP ${res.status})`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderNavAdmin();
+    };
+
+    const saveNavToGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (위 GitHub 연동에서 할 수 있습니다)');
+        if (!navLoaded) return alert('메뉴 설정을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+        if (navHidden.size >= NAV_PAGES.length) return alert('메뉴를 전부 숨길 수는 없습니다. 하나 이상은 남겨주세요.');
+
+        const btn = document.getElementById('saveNavBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+            // 파일이 이미 있으면 sha가 있어야 덮어쓰기가 되고, 없으면(404) sha 없이 새로 만든다.
+            const existing = await fetch(`${repoUrl}/contents/${NAV_FILE_PATH}`, { headers });
+            let sha;
+            if (existing.ok) sha = (await existing.json()).sha;
+            else if (existing.status !== 404) throw new Error(`최신 메뉴 설정 확인 실패 (HTTP ${existing.status})`);
+
+            // 순서는 NAV_PAGES를 따라 정렬해 둔다 - 저장할 때마다 순서가 뒤바뀌면 실제로
+            // 바뀐 게 없는데도 커밋 차이가 생긴다.
+            const payload = { hidden: NAV_PAGES.map(p => p.id).filter(id => navHidden.has(id)) };
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2) + '\n')));
+            const putRes = await fetch(`${repoUrl}/contents/${NAV_FILE_PATH}`, {
+                method: 'PUT', headers,
+                body: JSON.stringify({ message: '🧭 상단바 메뉴 표시 설정 업데이트', content, ...(sha ? { sha } : {}) })
+            });
+            if (!putRes.ok) {
+                const detail = await putRes.json().catch(() => ({}));
+                throw new Error(`메뉴 설정 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
+            }
+
+            alert('✅ 상단바 메뉴 설정이 저장되었습니다!');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '저장';
+            btn.disabled = false;
+        }
+    };
+
     // ----- 도구 관리 (docs/data/tools.json) -----
     // 캘린더와 달리 이미지 캡처가 없어서 GitHub Contents API의 단순 PUT(생성/수정 겸용)만
     // 쓰면 충분하다. 토큰은 홈 메뉴에서 이미 연동한 걸(adminTokenStore, sessionStorage) 그대로 쓴다.
@@ -952,7 +1084,8 @@
         // calOffAir(휴방 데이터)가 이제 막 로드됐을 수 있으니, 위 calSelectDate 때
         // 그렸던(비어있었을 수 있는) 체크박스 상태를 실제 데이터로 다시 맞춘다.
         renderOffAirCheckboxList();
-        await loadToolsFromGithub();
+        renderNavAdmin();
+        await Promise.all([loadToolsFromGithub(), loadNavFromGithub()]);
     };
 
     init();

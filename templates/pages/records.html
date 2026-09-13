@@ -8,7 +8,7 @@
         <p class="page-header-subtitle">캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.</p>
     </div>
     <hr class="page-header-divider tight">
-    <div class="sub-tabs" role="tablist">
+    <div class="sub-tabs tab-scroll" role="tablist">
         <div class="sub-tab active" id="tab-team" role="tab" tabindex="0" aria-selected="true" onclick="switchStatView('team')">팀</div>
         <div class="sub-tab" id="tab-individual" role="tab" tabindex="0" aria-selected="false" onclick="switchStatView('individual')">개인</div>
     </div>
@@ -27,12 +27,16 @@
             {%- endfor %}
         </div>
 
-        <div class="row gap-block align-items-stretch mb-block">
-            <div class="col-lg-7 d-flex flex-column">
+        <!-- [폭/높이 통일] 예전엔 7:5로 나뉘고, 왼쪽은 flex-grow로 늘어나며 스크롤,
+             오른쪽은 스크롤 없이 내용만큼 늘어나는 서로 다른 물건이었다. 두 표는 헤더가
+             똑같이 6칸이라 같은 폭(6:6)·같은 min-width·같은 박스 높이(.table-box)로
+             맞춘다. 스크롤도 둘 다 "카드 안에서만" 생긴다. -->
+        <div class="row gap-block mb-block">
+            <div class="col-lg-6">
                 <div class="section-title">상대 전적</div>
-                <div class="clean-card p-0 overflow-hidden d-flex flex-column flex-grow-1">
-                    <div class="table-responsive flex-grow-1 scroll-y-auto">
-                        <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-615">
+                <div class="clean-card p-0 overflow-hidden">
+                    <div class="table-responsive table-box scroll-area">
+                        <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-560">
                             <thead>
                                 <tr><th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-18-8">상대</th><th scope="col" class="text-center text-nowrap colw-18-8">대회</th><th scope="col" class="text-center text-nowrap colw-18-8">대학</th><th scope="col" class="text-center text-nowrap colw-18-8">미니</th><th scope="col" class="text-center text-nowrap colw-18-8">CK</th><th scope="col" class="colw-6" aria-label="상세"></th></tr>
                             </thead>
@@ -60,14 +64,14 @@
                 </div>
             </div>
 
-            <div class="col-lg-5 d-flex flex-column">
+            <div class="col-lg-6">
                 <div class="section-title">
                     최근 전적
                     <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                 </div>
-                <div class="clean-card flex-grow-0 p-0 overflow-hidden card-radius-sm">
-                    <div class="table-responsive">
-                        <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-480">
+                <div class="clean-card p-0 overflow-hidden">
+                    <div class="table-responsive table-box scroll-area">
+                        <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-560">
 {{- match_table_head() }}
                             <tbody id="team-recent-list"></tbody>
                         </table>
@@ -87,8 +91,10 @@
 
         <div id="indiv-summary-content">
             <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-650">
+                <!-- 팀 뷰의 두 표와 같은 박스(.table-box)·같은 min-width를 쓴다 - 멤버가
+                     늘어도 페이지가 그만큼 길어지지 않고, 머리글이 sticky로 남는다. -->
+                <div class="table-responsive table-box scroll-area">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-560">
                         <thead>
                             <tr>
                                 <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-20">멤버</th>
@@ -143,7 +149,7 @@
             <div class="section-title mt-4 section-title-filters">
                 <div class="d-flex align-items-center mw-100 overflow-hidden">
                     <span class="filter-nav-label">최근 전적</span>
-                    <div id="indiv-filters" class="filter-nav" role="tablist">
+                    <div id="indiv-filters" class="filter-nav tab-scroll" role="tablist">
                         <div class="filter-item active" role="tab" tabindex="0" onclick="setIndivFilter('전체')">전체</div>
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대회')">대회</div>
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대학')">대학</div>
@@ -154,9 +160,9 @@
                 <button class="btn-view-all" onclick="openIndivMatchModal()">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
             </div>
 
-            <div class="clean-card p-0 overflow-hidden card-radius-sm">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-480">
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive table-box scroll-area">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-560">
                         <thead>
                             <tr>
                                 <th scope="col" class="text-center stat-table-sticky-col colw-16-66">상대</th>

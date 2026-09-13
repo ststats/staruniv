@@ -7,7 +7,7 @@
         <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
     </div>
     <hr class="page-header-divider tight">
-    <div class="sub-tabs" id="synergy-metric-filter" role="tablist">
+    <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
         <div class="sub-tab active" data-metric="balloons" role="tab" tabindex="0" aria-selected="true" onclick="setSynergyMetric('balloons')">별풍선</div>
         <div class="sub-tab" data-metric="broadcast_seconds" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('broadcast_seconds')">방송시간</div>
         <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
@@ -18,7 +18,7 @@
         <div class="col-md-6">
             <div class="section-title">{{ gender_label }}</div>
             <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive">
+                <div class="table-responsive scroll-area">
                     <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
                         <thead>
                             <tr>

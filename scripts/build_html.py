@@ -28,6 +28,11 @@ from match_link import load_linked_db
 TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
 OUT_DIR = 'docs'
+# 상단 메뉴에서 숨길 항목 목록. 어드민 페이지(admin.html)가 GitHub에 직접 써서 고친다.
+# 빌드가 이 파일을 읽는 이유: 숨긴 메뉴를 HTML에 처음부터 hidden으로 내보내면, 페이지를
+# 열 때 잠깐 보였다가 사라지는 깜빡임이 없다. core.js도 런타임에 같은 파일을 다시 읽어
+# 반영하므로(다음 빌드를 기다리지 않아도 즉시 적용), 두 경로가 항상 같은 결론에 도달한다.
+NAV_FILE = os.path.join(OUT_DIR, 'data', 'nav.json')
 
 # ----- 페이지 구성 -----
 # [구조 변경] 예전엔 index.html 하나(SPA)였다. 이제 메뉴마다 실제 페이지를 만든다:
@@ -88,6 +93,19 @@ def team_logo_src(team_name):
     return f"images/{quote(file_name, safe=_URI_COMPONENT_SAFE)}.webp"
 
 
+def load_hidden_nav_ids():
+    """숨김 처리할 메뉴 id 집합. 파일이 없거나 깨져 있으면 "아무것도 숨기지 않음"으로
+    돌아간다 - 메뉴가 사라지는 쪽보다 다 보이는 쪽이 안전한 실패다."""
+    try:
+        with open(NAV_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except (FileNotFoundError, ValueError) as e:
+        if not isinstance(e, FileNotFoundError):
+            print(f"⚠️ {NAV_FILE} 을 읽을 수 없어 메뉴를 모두 표시합니다: {e}")
+        return set()
+    return {str(x) for x in data.get('hidden', []) if isinstance(x, (str, int))}
+
+
 def page_output_path(page_id):
     return os.path.join(OUT_DIR, 'index.html') if page_id == 'home' else os.path.join(OUT_DIR, page_id, 'index.html')
 
@@ -97,7 +115,7 @@ def page_url_path(page_id):
     return '' if page_id == 'home' else f'{page_id}/'
 
 
-def page_context(page_id, title, description):
+def page_context(page_id, title, description, hidden_nav_ids=frozenset()):
     """페이지별로 달라지는 템플릿 값(제목/설명/대표 주소/<base>/메뉴 링크)."""
     return {
         'page_id': page_id,
@@ -109,7 +127,10 @@ def page_context(page_id, title, description):
         'og_image_url': f'{SITE_URL}/{quote(OG_IMAGE_PATH)}',
         # 상단 메뉴에서 '홈'은 뺀다 - 왼쪽 로고가 홈 링크라(base.html) 중복이고, 메뉴 칸도
         # 아낀다. 홈 페이지 자체는 PAGES에 그대로 있으니 계속 생성된다.
-        'nav_items': [{'id': pid, 'label': label, 'href': page_url_path(pid) or './'}
+        # 숨긴 메뉴도 마크업에는 남기고 hidden 속성만 붙인다 - core.js가 런타임에
+        # nav.json을 다시 읽어 다시 보이게 할 수 있어야 하기 때문(지워버리면 불가능).
+        'nav_items': [{'id': pid, 'label': label, 'href': page_url_path(pid) or './',
+                       'hidden': pid in hidden_nav_ids}
                       for pid, label, _, _ in PAGES if pid != 'home'],
     }
 
@@ -212,8 +233,11 @@ def main():
     common = {'crew_stats': stats_data['crew_stats'], 'site_data_version': content_version(site_data_text)}
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
+    hidden_nav_ids = load_hidden_nav_ids()
+    if hidden_nav_ids:
+        print(f"ℹ️ 상단 메뉴에서 숨김: {', '.join(sorted(hidden_nav_ids))}")
     for page_id, _, title, description in PAGES:
-        html_output = env.get_template(f'pages/{page_id}.html').render(**common, **page_context(page_id, title, description))
+        html_output = env.get_template(f'pages/{page_id}.html').render(**common, **page_context(page_id, title, description, hidden_nav_ids))
         out_path = page_output_path(page_id)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         write_text_atomic(out_path, html_output)
