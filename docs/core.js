@@ -463,9 +463,44 @@ function avatarSelectAllItemHtml(id, onclickJs) {
                        </div>`;
 }
 
-// 아바타 선택 바에서 하나만 활성 표시
+// 아바타 선택 바를 티어 바와 같은 구조로 그린다:
+//   .avatar-bar > [ .avatar-bar-tools('전체') , .avatar-selector-scroll > .avatar-selector-list(나머지) ]
+// '전체'를 목록 안에 두면 같이 가로로 흘러가버린다. 붙잡아 두려고 sticky를 걸고 뒤를
+// 가상 요소로 가리는 방법을 써봤지만, 알약의 둥근 모서리로 뒤 칩이 비치고 목록 여백만큼
+// 밀리는 문제가 남았다. 스크롤되는 영역 밖으로 꺼내면 가릴 것도 붙잡을 것도 없어진다.
+// 템플릿이 아니라 여기서 감싸는 이유: 이 바를 쓰는 페이지가 둘(멤버 공지/개인 전적)인데,
+// 템플릿을 각각 고치는 것보다 목록 요소 하나만 알면 되는 이 방식이 손이 덜 간다.
+function renderAvatarBar(listId, allItemHtml, itemsHtml) {
+    const list = document.getElementById(listId);
+    if (!list) return;
+    avatarBarTools(list).innerHTML = allItemHtml;
+    list.innerHTML = itemsHtml;
+}
+
+// 바 구조를 한 번만 만들고, 그 다음부터는 만들어 둔 '전체' 칸을 그대로 돌려준다.
+function avatarBarTools(list) {
+    const scroll = list.parentElement;
+    const parent = scroll.parentElement;
+    if (parent && parent.classList.contains('avatar-bar')) {
+        return parent.querySelector('.avatar-bar-tools');
+    }
+    const bar = document.createElement('div');
+    bar.className = 'avatar-bar';
+    const tools = document.createElement('div');
+    tools.className = 'avatar-bar-tools';
+    scroll.replaceWith(bar);   // 껍데기가 있던 자리에 바를 놓고
+    bar.appendChild(tools);    // 그 안에 '전체' 칸과
+    bar.appendChild(scroll);   // 원래 껍데기를 차례로 넣는다
+    return tools;
+}
+
+// 아바타 선택 바에서 하나만 활성 표시.
+// '전체'는 목록 밖(.avatar-bar-tools)에 있으므로 목록이 아니라 바 전체에서 지운다 -
+// 목록 안만 지우면 멤버를 골라도 '전체'가 계속 눌린 것처럼 남는다.
 function setActiveAvatarItem(listId, activeEl) {
-    document.querySelectorAll(`#${listId} .avatar-select-item`).forEach(el => el.classList.remove('active'));
+    const list = document.getElementById(listId);
+    const scope = list && (list.closest('.avatar-bar') || list);
+    if (scope) scope.querySelectorAll('.avatar-select-item').forEach(el => el.classList.remove('active'));
     if (activeEl) activeEl.classList.add('active');
 }
 
