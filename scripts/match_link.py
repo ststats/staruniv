@@ -257,6 +257,7 @@ def link_rounds_to_matches(matches, rounds, members=None):
     # 2. 라운드에 키 부여
     sequencer = _RoundSequencer()
     rounds_without_no = 0
+    format_conflicts = []   # 매치와 라운드의 '형식'이 서로 다른 경우
     for r in rounds:
         no = _match_no(r, round_no_col)
         if no:
@@ -271,12 +272,19 @@ def link_rounds_to_matches(matches, rounds, members=None):
         r['_match_key'] = m_key
 
         # 라운드 자체에 형식 값이 없을 때만 매치에서 유추해서 채운다 (fallback)
-        if not str(r.get('형식', '')).strip():
-            matched = match_by_key.get(m_key)
+        round_fmt = str(r.get('형식', '')).strip()
+        matched = match_by_key.get(m_key)
+        if not round_fmt:
             r['형식'] = matched.get('형식', '') if matched else ''
+        elif matched:
+            match_fmt = str(matched.get('형식', '')).strip()
+            # 값이 둘 다 있는데 서로 다르면 둘 중 하나가 오타다. 라운드 값을 함부로 덮어쓰지 않고
+            # (어느 쪽이 맞는지는 사람만 안다) 어긋난 건수만 모아 아래에서 알려준다.
+            if match_fmt and match_fmt != round_fmt:
+                format_conflicts.append((m_key, matched, match_fmt, round_fmt))
 
     _report_linking(match_no_col, round_no_col, global_numbering, matches, rounds,
-                    match_by_key, rounds_without_no, match_nos)
+                    match_by_key, rounds_without_no, match_nos, format_conflicts)
 
     # 3. 내전 라운드는 반대편 관점의 미러 라운드를 만들어 추가한다.
     #    (_match_key가 이미 원본과 동일하게 붙어 있으므로 미러도 같은 매치로 묶인다)
@@ -286,7 +294,7 @@ def link_rounds_to_matches(matches, rounds, members=None):
 
 
 def _report_linking(match_no_col, round_no_col, global_numbering, matches, rounds,
-                    match_by_key, rounds_without_no, match_nos):
+                    match_by_key, rounds_without_no, match_nos, format_conflicts=()):
     """연결이 어떻게 됐는지 빌드 로그에 남긴다. 시트에 오타가 나면 조용히 빠지는 대신
     여기서 바로 드러나게 하는 것이 목적이다."""
     if not match_no_col:
@@ -315,6 +323,18 @@ def _report_linking(match_no_col, round_no_col, global_numbering, matches, round
         sample = list(orphans.items())[:5]
         print(f"⚠️ 대응하는 매치를 찾지 못한 라운드가 {sum(orphans.values())}행 있습니다(번호 오타일 수 있음). "
               f"예시: {[f'{k} x{v}' for k, v in sample]}")
+
+    # 매치와 라운드의 '형식'이 서로 다른 경우 - 한쪽이 오타이므로 시트를 고쳐야 한다.
+    if format_conflicts:
+        by_match = {}
+        for m_key, match, match_fmt, round_fmt in format_conflicts:
+            entry = by_match.setdefault(m_key, {'match': match, 'match_fmt': match_fmt, 'round_fmts': {}})
+            entry['round_fmts'][round_fmt] = entry['round_fmts'].get(round_fmt, 0) + 1
+        print(f"⚠️ 매치와 세트의 '형식'이 어긋난 매치가 {len(by_match)}건 있습니다(둘 중 하나가 오타):")
+        for entry in list(by_match.values())[:5]:
+            m = entry['match']
+            detail = ', '.join(f"{fmt} {cnt}행" for fmt, cnt in entry['round_fmts'].items())
+            print(f"   {m.get('날짜')} vs {m.get('상대팀')} - 매치 목록은 '{entry['match_fmt']}', 매치 전적은 {detail}")
 
     # 라운드가 하나도 없는 매치(전적 미입력)도 알려준다.
     used_keys = {r['_match_key'] for r in rounds}
