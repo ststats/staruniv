@@ -37,11 +37,15 @@
 {#- [구조] 예전엔 이 파일(index.html) 하나에 모든 메뉴를 넣고 JS로 보였다 숨겼다 했다(SPA).
     이제 build_html.py가 templates/pages/*.html을 이 레이아웃에 끼워 메뉴마다 실제 페이지
     (docs/index.html, docs/records/index.html ...)를 만든다. 상단 메뉴는 진짜 링크(<a href>)라
-    새 탭 열기/Ctrl+클릭이 되고, JS 없이도 이동한다. -#}
+    새 탭 열기/Ctrl+클릭이 되고, JS 없이도 이동한다.
+
+    [변경] 메뉴에서 '홈'을 뺐다. 대신 왼쪽 로고가 홈으로 가는 링크다(사이트 로고를 누르면
+    첫 화면으로 가는 건 거의 모든 사이트의 관습이라, 메뉴 칸을 하나 덜 쓰면서도 길을 잃지
+    않는다). href="./"는 <base href="../">가 걸린 하위 페이지에서도 사이트 루트를 가리킨다. -#}
 
 <header class="top-navbar">
     <div class="navbar-inner container">
-        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span></div>
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-black">스타</span><span class="logo-accent">대학</span></a>
         <nav class="nav-menu" id="mainMenu" aria-label="주 메뉴">
             {%- for nav in nav_items %}
             <a class="nav-item{% if nav.id == page_id %} active{% endif %}" href="{{ nav.href }}" data-page="{{ nav.id }}"{% if nav.id == page_id %} aria-current="page"{% endif %}>{{ nav.label }}</a>
