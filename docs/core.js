@@ -90,6 +90,7 @@ function toggleCollapsible(areaId, chevronId) {
     const nowOpen = !isVisible(area);
     setVisible(area, nowOpen);
     if (chevron) chevron.classList.toggle('is-open', nowOpen);
+    return nowOpen;
 }
 
 // 정적 HTML에 처음부터 있고 절대 다시 그려지지 않는 요소 목록 전용 캐시.

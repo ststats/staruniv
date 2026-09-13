@@ -83,7 +83,12 @@ function renderMembersPage() {
 }
 
 function toggleFormerMembersSection() {
-    toggleCollapsible('former-members-section', 'former-members-toggle-chevron');
+    // 펼쳐지면 화면 마지막 요소가 버튼이 아니라 이전 멤버 카드 목록이 되므로,
+    // 버튼용 축소 여백(has-trailer) 대신 다른 탭과 같은 표준 하단 여백을 쓴다.
+    // 다시 접으면 버튼이 마지막 요소로 돌아오니 has-trailer를 되살린다.
+    const nowOpen = toggleCollapsible('former-members-section', 'former-members-toggle-chevron');
+    const viewStatus = document.getElementById('view-member-status');
+    if (viewStatus) viewStatus.classList.toggle('has-trailer', !nowOpen);
 }
 
 let _profileMember = null; // 지금 프로필 팝업에 떠 있는 멤버(방송 활동 데이터가 늦게 오면 다시 채우기용)
