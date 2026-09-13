@@ -475,6 +475,8 @@ function renderAvatarBar(listId, allItemHtml, itemsHtml) {
     if (!list) return;
     avatarBarTools(list).innerHTML = allItemHtml;
     list.innerHTML = itemsHtml;
+    const scroll = list.parentElement;          // .avatar-selector-scroll
+    refreshHScrollbar(scroll, scroll.parentElement); // .avatar-bar
 }
 
 // 바 구조를 한 번만 만들고, 그 다음부터는 만들어 둔 '전체' 칸을 그대로 돌려준다.
@@ -502,6 +504,89 @@ function setActiveAvatarItem(listId, activeEl) {
     const scope = list && (list.closest('.avatar-bar') || list);
     if (scope) scope.querySelectorAll('.avatar-select-item').forEach(el => el.classList.remove('active'));
     if (activeEl) activeEl.classList.add('active');
+}
+
+// ---------------------------------------------------------------------------
+// 가로 스크롤 바 밑의 커스텀 스크롤바 (.tier-bar-list, .avatar-selector-scroll 공용)
+// ---------------------------------------------------------------------------
+// scrollEl: overflow-x:auto가 걸린 실제 스크롤 컨테이너.
+// barEl: 그 스크롤 컨테이너를 담은 바깥 바(.tier-bar / .avatar-bar - 둘 다
+//        position:sticky라 절대배치 기준이 되어준다).
+// 한 번 붙이면 refresh 함수를 scrollEl에 매달아 재사용한다(중복 바인딩 방지).
+function attachHScrollbar(scrollEl, barEl) {
+    if (!scrollEl || !barEl) return null;
+    if (scrollEl._hscrollbarRefresh) return scrollEl._hscrollbarRefresh;
+
+    const track = document.createElement('div');
+    track.className = 'hscrollbar-track';
+    const thumb = document.createElement('div');
+    thumb.className = 'hscrollbar-thumb';
+    track.appendChild(thumb);
+    barEl.appendChild(track);
+
+    // 트랙을 스크롤 영역과 같은 가로 위치·폭으로 맞춘다(왼쪽 고정 칸만큼 들여쓴다).
+    function layout() {
+        const barRect = barEl.getBoundingClientRect();
+        const scrollRect = scrollEl.getBoundingClientRect();
+        track.style.left = `${scrollRect.left - barRect.left}px`;
+        track.style.width = `${scrollRect.width}px`;
+    }
+
+    function update() {
+        const overflow = scrollEl.scrollWidth - scrollEl.clientWidth;
+        const hasOverflow = overflow > 1;
+        track.classList.toggle('is-visible', hasOverflow);
+        if (!hasOverflow) return;
+        const trackWidth = track.clientWidth;
+        const thumbWidth = Math.min(trackWidth, Math.max(40, (scrollEl.clientWidth / scrollEl.scrollWidth) * trackWidth));
+        const maxThumbLeft = trackWidth - thumbWidth;
+        const ratio = maxThumbLeft > 0 ? scrollEl.scrollLeft / overflow : 0;
+        thumb.style.width = `${thumbWidth}px`;
+        thumb.style.transform = `translateX(${ratio * maxThumbLeft}px)`;
+    }
+
+    function refresh() { layout(); update(); }
+
+    scrollEl.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', refresh);
+
+    // 트랙을 클릭하거나 손잡이를 드래그해서도 스크롤할 수 있게 한다.
+    function scrollToClientX(clientX) {
+        const trackWidth = track.clientWidth;
+        const thumbWidth = thumb.offsetWidth;
+        const maxThumbLeft = trackWidth - thumbWidth;
+        if (maxThumbLeft <= 0) return;
+        const rect = track.getBoundingClientRect();
+        const x = Math.min(Math.max(clientX - rect.left - thumbWidth / 2, 0), maxThumbLeft);
+        const overflow = scrollEl.scrollWidth - scrollEl.clientWidth;
+        scrollEl.scrollLeft = (x / maxThumbLeft) * overflow;
+    }
+    let dragging = false;
+    thumb.addEventListener('mousedown', e => {
+        dragging = true;
+        track.classList.add('is-dragging');
+        e.preventDefault();
+    });
+    track.addEventListener('mousedown', e => {
+        if (e.target !== thumb) scrollToClientX(e.clientX);
+    });
+    window.addEventListener('mousemove', e => { if (dragging) scrollToClientX(e.clientX); });
+    window.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        track.classList.remove('is-dragging');
+    });
+
+    scrollEl._hscrollbarRefresh = refresh;
+    refresh();
+    return refresh;
+}
+
+// 바 내용이 (다시) 그려질 때마다 이걸 부른다 - 처음이면 트랙을 붙이고, 이미 있으면
+// 폭/내용이 바뀐 데 맞춰 다시 잰다.
+function refreshHScrollbar(scrollEl, barEl) {
+    const fn = attachHScrollbar(scrollEl, barEl);
+    if (fn) fn();
 }
 
 // =====================================================================
