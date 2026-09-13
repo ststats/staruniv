@@ -216,11 +216,10 @@ function renderTierGroups() {
 
     document.getElementById('tier-total').textContent = `${list.length}명`;
     document.getElementById('tier-root').innerHTML = TierState.sections.length
-        ? TierState.sections.map((sec, i) => `
+        ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
-                <div class="tier-head${i === 0 ? ' is-top' : ''}">
-                    <span class="tier-name">${escapeHTML(sec.tier)}</span>
-                    <span class="tier-count">${sec.count}명</span>
+                <div class="section-title">
+                    <span class="section-title-label">${escapeHTML(sec.tier)}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.count}명</span></span>
                     <span class="tier-live" data-tier-live></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
@@ -251,14 +250,30 @@ function updateTierRowLiveCounts() {
 // ---------------------------------------------------------------------------
 // 티어 바로가기 바
 // ---------------------------------------------------------------------------
+// 공지/전적 페이지의 아바타 바(.avatar-selector-scroll)와 같은 모양을 쓴다.
+// 티어는 사진이 없으니 아바타 자리(.avatar-select-fallback)에 티어 이름을 넣고,
+// 이름 자리에는 인원수를 넣는다.
 function renderTierBar() {
+    const list = document.getElementById('tier-bar-list');
+    if (!list) return;
+    list.innerHTML = TierState.sections.map(sec => {
+        // '베이비'처럼 긴 이름은 동그라미 안에서 글자를 한 단계 줄인다
+        const long = String(sec.tier).length >= 3 ? ' is-long' : '';
+        return `
+        <button type="button" class="avatar-select-item tier-bar-item" data-target="${sec.id}">
+            <span class="avatar-select-fallback tier-bar-mark${long}">${escapeHTML(sec.tier)}</span>
+            <span class="avatar-select-name">${sec.count}</span>
+        </button>`;
+    }).join('');
+    syncTierBarHeight();
+}
+
+// 티어 바 높이를 CSS 변수로 넘겨서, 바로가기로 이동했을 때 제목이 바 뒤에 가리지 않게 한다.
+// (아바타 바는 내용에 따라 높이가 달라져서 CSS에 숫자로 못 박아둔다.)
+function syncTierBarHeight() {
     const bar = document.getElementById('tier-bar');
     if (!bar) return;
-    bar.innerHTML = TierState.sections.map(sec => `
-        <button type="button" class="tier-bar-item" data-target="${sec.id}">
-            <span class="tier-bar-name">${escapeHTML(sec.tier)}</span>
-            <span class="tier-bar-count">${sec.count}</span>
-        </button>`).join('');
+    document.documentElement.style.setProperty('--tier-bar-h', `${bar.offsetHeight}px`);
 }
 
 function onTierBarClick(event) {
@@ -283,7 +298,7 @@ function highlightTierBar() {
     let activeBtn = null;
     document.querySelectorAll('#tier-bar .tier-bar-item').forEach(btn => {
         const on = btn.dataset.target === currentId;
-        btn.classList.toggle('on', on);
+        btn.classList.toggle('active', on);   // 아바타 바와 같은 클래스명
         if (on) activeBtn = btn;
     });
     // 티어가 많으면 바가 좌우로 스크롤되는데, 강조된 항목이 화면 밖이면 의미가 없다.
@@ -452,6 +467,8 @@ bootPage(async () => {
         highlightScheduled = true;
         requestAnimationFrame(() => { highlightScheduled = false; highlightTierBar(); });
     }, { passive: true });
+
+    window.addEventListener('resize', syncTierBarHeight);
 
     renderTierFilters();
     renderTierGroups();

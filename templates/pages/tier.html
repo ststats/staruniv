@@ -16,8 +16,11 @@
     </div>
 
     <div id="view-tier-list">
-        {#- 티어 바로가기 바. 상단 메뉴 바로 아래에 붙어서 같이 따라다닌다. -#}
-        <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기"></nav>
+        {#- 티어 바로가기 바. 공지/전적의 아바타 바와 같은 모양(.avatar-selector-scroll)을 쓰고,
+            상단 메뉴 바로 아래에 붙어서 같이 따라다닌다. -#}
+        <nav class="avatar-selector-scroll tier-bar" id="tier-bar" aria-label="티어 바로가기">
+            <div class="avatar-selector-list" id="tier-bar-list"></div>
+        </nav>
 
         <div class="tier-toolbar">
             <div class="tier-filters" id="tier-filters"></div>
