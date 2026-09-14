@@ -743,7 +743,10 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
    도넛 링/트랙 색은 updateDonut이 var(--color-win)/var(--color-lose)/var(--color-donut-track)로
    넣는다. 잉크 면 위에서는 원래 값(#0066ff / #f03e3e / #eee)이 탁해 보이므로, 이 카드
    안에서만 변수를 밝은 쪽으로 다시 정의한다 - JS를 고치지 않고 색만 바뀐다. */
-.stat-card-box {
+/* [범위 주의] 변수는 도넛에만 다시 정의한다. 카드 전체에 걸면 아래 승패 바의 빨강까지
+   연해져서, 시안의 진한 빨강(#f03e3e) 바가 흐려진다. 도넛은 어두운 면 위에 얇은 링이라
+   밝은 색이 필요하고, 바는 넓은 면이라 진한 색이 맞다. */
+.stat-card-box .donut {
     --color-win: #4d90ff;
     --color-lose: #ff8080;
     --color-donut-track: #2b3442;
@@ -915,3 +918,200 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
     .cal-month-bar { padding: 13px 15px; }
     .cal-month-name { font-size: 19px; }
 }
+
+
+/* ============================================================
+   시안 대조 4차 — 지적 14개
+   ============================================================ */
+
+/* ── 1. 캐러셀 인디케이터
+   동그란 점 + 회색 화살표에서, 시안처럼 각진 막대 + 잉크 버튼으로. 활성 점은 길어진다. */
+.home-carousel-controls { gap: 18px; }
+.home-carousel-controls > button {
+    width: 30px; height: 30px; background: var(--color-ink-3, #2b3442); color: #fff;
+    font-size: 18px; line-height: 1;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+.home-carousel-controls > button:hover { background: var(--color-primary); }
+.home-carousel-dots { gap: 5px; align-items: center; }
+.home-carousel-dots button {
+    width: 7px; height: 7px; border-radius: 0; background: #39445a; transition: width .2s, background .2s;
+}
+.home-carousel-dots button.active { width: 22px; border-radius: 0; background: var(--color-primary); }
+
+/* ── 2. 장별 미리보기 줄 (page-home.js가 채운다) */
+.home-preview-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 11px;
+    padding: 9px 0; border-top: 1px solid var(--color-ink-3, #2b3442);
+}
+.home-preview-row:first-of-type { border-top: 0; }
+.home-preview-row span { font-size: 12px; color: #8b97ab; }
+.home-preview-row b { font-family: var(--font-num); font-size: 14px; font-weight: 700; color: #fff; }
+
+/* ── 3·4. 방송중 카드 : 오버레이를 오른쪽 위로, 본문 여백 축소
+   본문이 [제목 / 프로필+이름] 순서라 제목 줄이 비면 흰 면만 길게 남았다.
+   column-reverse로 [프로필+이름 / 제목] 순서로 뒤집고 여백을 줄인다. */
+.live-thumb-overlay { top: 9px; bottom: auto; right: 9px; gap: 4px; }
+.live-thumb-overlay span:last-child { background: rgba(10,14,23,.55); color: rgba(255,255,255,.82); }
+.live-card-body { display: flex; flex-direction: column-reverse; padding: 11px 13px 12px; gap: 5px; }
+.live-card-title { margin: 0; font-weight: 400; color: var(--color-text-sub); }
+.live-card-meta-row { margin: 0; }
+.live-card-who { margin: 0; gap: 9px; }
+.live-thumb-wrap::after { display: none; }
+
+/* ── 5. 멤버 현황 : 방송중 하늘색 배경 제거 (LIVE 배지 + 아바타 링으로만 알린다) */
+.member-card.is-live { background: var(--color-card); }
+
+/* ── 6. 전체전적 카드 : 패 수만 회색 (시안대로 승은 흰색) */
+.wl-text i { font-style: normal; color: #66738a; }
+.wl-text i small { color: #66738a; }
+
+/* ── 7. 페이지 라틴 라벨이 두 칸 머리에서 사라지던 문제
+   .page-header-with-stats에서 ::before를 껐는데, 다시 켜준 건 멤버 페이지뿐이었다.
+   나머지 페이지도 왼쪽 칸이 자기 라벨을 그리게 한다. */
+.page-header-with-stats .page-header-main::before {
+    display: block; order: 0; margin-bottom: 7px;
+    color: #7e8aa0; font-family: 'Chakra Petch', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: .16em;
+}
+#page-schedule .page-header-with-stats .page-header-main::before { content: 'SCHEDULE'; }
+#page-members .page-header-with-stats .page-header-main::before { content: 'ROSTER'; }
+#page-records .page-header-with-stats .page-header-main::before { content: 'RECORDS'; }
+#page-stats   .page-header-with-stats .page-header-main::before { content: 'BROADCAST ANALYTICS'; }
+#page-tier    .page-header-with-stats .page-header-main::before { content: 'STARCRAFT RANKING'; }
+#page-tools   .page-header-with-stats .page-header-main::before { content: 'UTILITY CONSOLE'; }
+
+/* ── 8. 티어 제목 플레이트를 전부 잉크로
+   색 계단이 티어마다 다른 파랑을 만들어서, 같은 페이지 안에 파랑이 여러 톤 생겼다.
+   전부 잉크로 맞추고 구분은 티어 이름과 라틴 코드가 한다. */
+.tier-plate-p1, .tier-plate-p2, .tier-plate-p3,
+.tier-plate-p4, .tier-plate-p5, .tier-plate-p6, .tier-plate-pn { background: #141821; }
+
+/* ── 9. 티어 사이드바 전체 / 방송중 : 두 칸을 정확히 반반으로 */
+.selection-layout > .tier-bar .bar-scope { grid-template-columns: 1fr 1fr; }
+.selection-layout > .tier-bar .tier-scope-btn {
+    min-width: 0; overflow: hidden; padding: 0 4px; gap: 4px;
+    flex: none; white-space: nowrap;
+}
+.selection-layout > .tier-bar .tier-scope-btn > * { min-width: 0; }
+
+/* ── 10. 멀티뷰어 열 개수 : 숫자가 검은 글자라 어두운 타일에서 안 보였다 */
+.mv-stepper { background: #0e1218; border: 0; }
+.mv-stepper button { background: #0e1218; color: #9aa6ba; }
+.mv-stepper button:hover { background: var(--color-primary); color: #fff; }
+.mv-stepper button:disabled { color: #4a566b; background: #0e1218; }
+.mv-stepper-value { background: #0e1218; color: #fff; border-color: #2b3442; }
+.mv-toggle-switch { background: #0e1218; }
+.mv-toggle-switch::before { background: #66738a; }
+.mv-toggle-switch.on { background: var(--color-primary); }
+.mv-toggle-switch.on::before { background: #fff; }
+
+/* ── 11. 멀티뷰어 : 두 칸 배치 + 멤버 칩 모양·색 (시안대로)
+   고른 칩은 잉크 면 + 흰 글자, 안 고른 칩은 연회색 면. 테두리로 구분하던 것을 면으로 바꾼다. */
+.mv-pick-layout { align-items: start; }
+.mv-chip-box, .mv-order-row { margin-bottom: 0; }
+.mv-chip {
+    height: 34px; padding: 0 13px 0 5px; gap: 8px;
+    background: #eef1f6; border: 0;
+}
+.mv-chip:hover { background: #e3e8f0; }
+.mv-chip.selected { background: var(--color-ink, #141821); border: 0; }
+.mv-chip-avatar { width: 24px; height: 24px; background: #dfe5ef; }
+.mv-chip.selected .mv-chip-avatar { background: var(--color-primary); }
+.mv-chip-name { font-size: 12px; font-weight: 500; color: var(--color-text-main); }
+.mv-chip.selected .mv-chip-name { color: #fff; font-weight: 700; }
+.mv-chip-check { width: 12px; height: 12px; background: none; color: #4d90ff; }
+.mv-order-row { padding: 14px 18px; }
+.mv-order-item { height: 32px; padding: 0 8px 0 11px; background: #eef1f6; border: 0; }
+.mv-order-item.focus-target { background: var(--color-primary-tint); box-shadow: inset 3px 0 0 var(--color-primary); }
+
+/* ── 12·13·14. 일정
+   [칸 안의 일정 칩] 파스텔 배경 -> 잉크 면 + 흰 글자 + 왼쪽에 원래 색 엣지.
+   시안의 칩은 1줄이 '시간 · 형식'(작고 흐림), 2줄이 내용(굵게)이다. */
+.cal-cell-event {
+    background: var(--color-ink, #141821) !important;
+    border-left: 3px solid var(--ev-color, var(--color-primary));
+    padding: 3px 6px; margin-bottom: 4px; gap: 1px;
+    color: #fff;
+}
+.cal-day-cell.today .cal-cell-event { background: var(--color-primary) !important; }
+.cal-cell-top { line-height: 1.35; gap: 5px; }
+.cal-event-time, .cal-event-person {
+    font-size: 9px; font-weight: 600; color: rgba(255,255,255,.72);
+    font-family: var(--font-num);
+}
+.cal-event-person { font-weight: 700; }
+.cal-event-desc {
+    font-size: 10px; font-weight: 600; line-height: 1.3; color: #fff;
+    text-align: left; margin-left: 0;
+}
+.cal-longterm-bar { border-left-width: 3px; }
+
+/* [오늘 / 선택한 날짜 카드] 오늘은 잉크, 선택은 흰 면. 카드 오른쪽 위에 날짜 라벨. */
+.cal-day-card { padding: 20px !important; }
+/* 날짜 라벨은 흐름 안에 둔다 - 절대배치로 오른쪽 위에 띄우면 첫 줄 글자와 겹친다. */
+.cal-day-card-date {
+    display: block; text-align: right; margin-bottom: 8px;
+    font-family: var(--font-num); font-size: 11px; font-weight: 600; color: var(--color-text-sub);
+}
+.cal-day-card-date:empty { display: none; }
+/* [중요] .card-ink는 시안에만 있던 클래스다(실제 style.css에는 없다).
+   그래서 배경을 여기서 직접 준다 - 안 주면 흰 카드에 흰 글자가 되어 내용이 사라진다. */
+.cal-day-card-today {
+    border: 0; color: #fff;
+    background: var(--color-ink, #141821);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px);
+}
+.cal-day-card-today .cal-day-card-date { color: #66738a; }
+.cal-day-card-today .cal-card-time,
+.cal-day-card-today .cal-card-person,
+.cal-day-card-today .cal-card-desc { color: #fff; }
+.cal-day-card-today .cal-card-detail { color: #8b97ab; }
+.cal-day-card-today .cal-no-schedule { color: #66738a; }
+.cal-day-card-today .cal-today-card + .cal-today-card { border-top-color: #2b3442; }
+.cal-day-card-today .cal-offair-section { border-top-color: #2b3442; }
+.cal-day-card-today .cal-offair-label { color: #66738a; }
+.cal-day-card-today .cal-offair-chip { background: #2b3442; }
+.cal-day-card-today .cal-offair-name { color: #c3ccdb; }
+/* 한 줄 = 시간 + 내용. 시안처럼 시간을 굵은 숫자로 세우고 내용을 그 옆에 둔다. */
+.cal-today-card, .cal-selected-card { padding: 12px 0 0; gap: 0; }
+.cal-card-main { align-items: flex-start; gap: 13px; }
+.cal-card-time {
+    font-family: var(--font-num); font-size: 15px; font-weight: 700; flex: none;
+    color: var(--color-text-main);
+}
+.cal-card-person { font-size: 13px; font-weight: 700; }
+.cal-card-desc { font-size: 13px; font-weight: 500; }
+.cal-today-card + .cal-today-card, .cal-selected-card + .cal-selected-card {
+    margin-top: 0; padding-top: 12px; border-top: 1px solid var(--color-border);
+}
+.cal-offair-section { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--color-border); }
+.cal-offair-label {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .14em; color: var(--color-text-sub); text-transform: uppercase; padding-top: 5px;
+}
+.cal-offair-chip { padding: 4px 9px 4px 4px; background: var(--color-bg-subtle); }
+.cal-offair-avatar { width: 18px; height: 18px; }
+.cal-offair-name { font-size: 11px; }
+/* 달력 카드가 오른쪽에 남는 빈 폭을 쓰도록 한다(시안은 달력이 남는 폭을 다 먹었다) */
+.cal-calendar-area { width: auto; max-width: none !important; flex-grow: 1; }
+.cal-days-grid, .cal-weekdays { grid-template-columns: repeat(7, minmax(110px, 1fr)); }
+
+
+/* ── 11 보강. .g2 (두 칸 그리드) 정의 + 멀티뷰어 타일을 시안 모양으로
+   .g2는 시안에서 쓰던 클래스인데 실제 CSS에는 없었다 - 그래서 멤버 선택과 선택된 목록이
+   그냥 세로로 쌓였다. 여기서 정의한다. */
+.g2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; }
+@media (max-width: 920px) { .g2 { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
+
+/* 타일은 시안처럼 아이콘 위 / 라벨 / 컨트롤 아래로 쌓는다.
+   한 줄로 눕히면 세 타일의 컨트롤(토글·스테퍼·토글)이 폭이 달라 오른쪽 끝이 어긋난다. */
+.mv-tile {
+    flex-direction: column; justify-content: flex-start; align-items: center;
+    gap: 9px; padding: 15px 14px 13px;
+}
+.mv-tile-label { margin-right: 0; }
+.mv-tile-icon { width: 20px; height: 20px; }
+.mv-console { padding: 20px; gap: 18px; align-items: stretch; }
+.mv-run-btn { height: 100%; flex-direction: column; gap: 7px; padding: 18px 14px; }
+.mv-run-btn svg { width: 22px; height: 22px; }

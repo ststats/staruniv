@@ -21,6 +21,37 @@ function formatLiveElapsed(broadStart) {
 }
 
 let homeCarouselIndex = 0;
+
+// [리디자인] 오른쪽 칸은 장마다 다른 걸 보여준다. 예전엔 최근 경기 하나가 모든 장에 그대로
+// 붙어 있어서, 2·3번째 장(전적 / 멤버 안내)에서도 같은 경기 결과가 떠 있었다.
+// 장별 내용은 SiteData에서 뽑고, 못 뽑으면 그 칸을 비운다.
+const HOME_PREVIEWS = [
+    null,  // 1장은 최근 경기(renderHeroMatchPreview)가 채운다
+    { label: 'RECORDS', rows: () => [
+        ['상대 팀', `${new Set((SiteData.matches || []).map(m => m['상대팀'])).size}팀`],
+        ['누적 경기', `${(SiteData.matches || []).length}경기`],
+        ['누적 세트', `${(SiteData.rounds || []).length}세트`],
+    ] },
+    { label: 'ROSTER', rows: () => {
+        const active = (SiteData.members || []).filter(isActiveMember);
+        const byRole = role => active.filter(m => (m['직책'] || '') === role).length;
+        return [['감독', `${byRole('감독')}명`], ['코치', `${byRole('코치')}명`], ['선수', `${byRole('선수')}명`]];
+    } },
+];
+
+function renderHomePreviewPane(index) {
+    const box = document.getElementById('home-carousel-preview');
+    if (!box) return;
+    if (index === 0) { renderHeroMatchPreview(); return; }
+    const cfg = HOME_PREVIEWS[index];
+    if (!cfg) { box.innerHTML = ''; return; }
+    let rows = [];
+    try { rows = cfg.rows(); } catch (e) { rows = []; }
+    box.innerHTML = `<div class="home-preview-label">${escapeHTML(cfg.label)}</div>`
+        + rows.map(([k, v]) => `<div class="home-preview-row"><span>${escapeHTML(k)}</span>`
+            + `<b>${escapeHTML(String(v))}</b></div>`).join('');
+}
+
 function goHomeCarousel(index) {
     const track = document.getElementById('home-carousel-track');
     const dots = document.querySelectorAll('#home-carousel-dots button');
@@ -28,6 +59,7 @@ function goHomeCarousel(index) {
     homeCarouselIndex = (index + dots.length) % dots.length;
     track.style.transform = `translateX(-${homeCarouselIndex * 100}%)`;
     dots.forEach((dot, i) => dot.classList.toggle('active', i === homeCarouselIndex));
+    renderHomePreviewPane(homeCarouselIndex);
 }
 function moveHomeCarousel(direction) { goHomeCarousel(homeCarouselIndex + direction); }
 

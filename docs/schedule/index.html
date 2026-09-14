@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=9facd68748">
+    <link rel="stylesheet" href="redesign.css?v=2fbfa5d11b">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -54,13 +54,15 @@
             <aside class="cal-sidebar">
                 <div class="cal-today-card-wrapper">
                     <div class="section-title" data-en="TODAY">오늘의 일정</div>
-                    <div class="clean-card p-4">
+                    <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
+                        <div class="cal-day-card-date" id="todayDateLabel"></div>
                         <div class="cal-today-list scroll-area" id="todayList"></div>
                     </div>
                 </div>
                 <div class="cal-selected-card-wrapper">
                     <div class="section-title" id="selectedListTitle" data-en="SELECTED">선택한 날짜 일정</div>
-                    <div class="clean-card p-4">
+                    <div class="clean-card p-4 cal-day-card">
+                        <div class="cal-day-card-date" id="selectedDateLabel"></div>
                         <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
                     </div>
                 </div>
@@ -100,7 +102,7 @@
 
 
 <script src="core.js?v=38fca05527"></script>
-<script src="calendar.js?v=ba6fd7f34f"></script>
+<script src="calendar.js?v=60b3fcbf20"></script>
 <script src="page-schedule.js?v=073d6c594a"></script>
 
 </body>
