@@ -1539,3 +1539,123 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 }
 
 /* 5. 어드민은 본 페이지의 redesign.css를 함께 사용하므로 일정표도 동일한 노치/색상 규칙을 공유한다. */
+
+
+/* ============================================================
+   사용자 추가 보정 — 일정 색상 / 섹션 레일 / 노치 윤곽
+   ============================================================ */
+
+/* 일정 색상은 왼쪽 엣지만 바꾸는 것이 아니라 일정 박스 전체 배경에 적용한다. */
+.cal-cell-event,
+.cal-cell-event.cal-longterm-bar {
+    background: var(--ev-color, var(--color-ink, #141821)) !important;
+    color: #fff;
+    border-left: 3px solid rgba(255,255,255,.26);
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+    filter: drop-shadow(0 0 0 var(--color-border));
+}
+.cal-day-cell.today .cal-cell-event,
+.cal-day-cell.today .cal-cell-event.cal-longterm-bar {
+    background: var(--ev-color, var(--color-ink, #141821)) !important;
+}
+.cal-event-desc {
+    text-align: right !important;
+}
+
+/* 일정 제목/오늘의 일정/티어 제목의 영문 레일은 다른 section-title과 동일하게 통일한다.
+   한국어 제목 아래의 가로 구분선과 같은 축을 유지하고, 영문은 위 한 줄을 사용한다. */
+.section-title.cal-month-section-title {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0 !important;
+    min-height: 32px !important;
+    height: auto !important;
+    padding: 0 0 9px !important;
+    margin-bottom: 16px !important;
+    border-left: 0 !important;
+    border-bottom: 2px solid var(--color-text-main) !important;
+}
+.section-title.cal-month-section-title::before {
+    content: attr(data-en) !important;
+    flex: 0 0 100% !important;
+    order: -1 !important;
+    display: block !important;
+    margin: 0 0 5px 0 !important;
+    color: var(--color-text-sub) !important;
+    font-family: 'Chakra Petch','Pretendard',sans-serif !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    letter-spacing: .16em !important;
+    text-transform: uppercase !important;
+}
+.section-title.cal-month-section-title .section-title-label {
+    order: 1 !important;
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+.section-title.cal-month-section-title .cal-nav-group {
+    order: 2 !important;
+    margin-left: auto !important;
+}
+
+/* 티어 제목도 영문 레일이 다른 section-title과 같은 한 줄 폭을 갖도록 고정한다. */
+.tier-row > .section-title[data-en] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+}
+.tier-row > .section-title[data-en]::before {
+    flex: 0 0 100% !important;
+    order: -1 !important;
+    display: block !important;
+    margin-bottom: 5px !important;
+}
+
+/* 노치 버튼의 테두리는 border가 아니라 잘린 외곽선을 따라가는 drop-shadow로 만든다. */
+.home-carousel .home-hero-links a {
+    position: relative;
+    border: 0 !important;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%) !important;
+    filter: drop-shadow(0 0 0 rgba(255,255,255,.32));
+}
+.home-carousel .home-hero-links a::before {
+    content: none !important;
+}
+.home-carousel .home-hero-links a:hover {
+    filter: drop-shadow(0 0 0 var(--color-primary));
+}
+
+/* 홈 최근공지: 목록의 첫 카드만 노치. 이어지는 카드들은 하나의 세로 리스트로 유지한다. */
+.home-notice-list > .home-notice-card {
+    clip-path: none !important;
+    filter: none;
+}
+.home-notice-list > .home-notice-card:first-child {
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%) !important;
+    filter: drop-shadow(0 0 0 var(--color-border));
+}
+
+/* 공지 페이지 오른쪽 지난 글 목록도 목록 전체 외곽만 노치 처리한다. */
+#news-past-list {
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%) !important;
+    filter: drop-shadow(0 0 0 var(--color-border));
+}
+#news-past-list .home-notice-card {
+    clip-path: none !important;
+    filter: none;
+}
+
+/* 티어 사이드바 전체/방송중 바는 바 자체의 노치 윤곽을 살리고 내부 선택지는 그대로 둔다. */
+.selection-layout > .tier-bar .bar-scope {
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%) !important;
+    filter: drop-shadow(0 0 0 var(--color-border));
+}
+
+/* 선택 박스/영문 레일 등 작은 노치 요소의 외곽선도 동일한 방식으로 보강 */
+.section-title,
+.section-title-sm {
+    position: relative;
+}

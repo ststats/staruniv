@@ -248,14 +248,14 @@
                     </div>
                     <div class="admin-form-row">
                         <select id="inputColor">
-                            <option value="#ffe4e6">🔴 빨강</option>
-                            <option value="#ffedd5">🟠 주황</option>
-                            <option value="#fef3c7">🟡 노랑</option>
-                            <option value="#d1fae5" selected>🟢 초록</option>
-                            <option value="#dbeafe">🔵 파랑</option>
-                            <option value="#e0e7ff">🟤 남색</option>
-                            <option value="#f3e8ff">🟣 보라</option>
-                            <option value="#f1f5f9">⚪ 회색</option>
+                            <option value="#ef4444">🔴 빨강</option>
+                            <option value="#f97316">🟠 주황</option>
+                            <option value="#eab308">🟡 노랑</option>
+                            <option value="#22c55e" selected>🟢 초록</option>
+                            <option value="#3b82f6">🔵 파랑</option>
+                            <option value="#6366f1">🟤 남색</option>
+                            <option value="#a855f7">🟣 보라</option>
+                            <option value="#64748b">⚪ 회색</option>
                             <option value="#141821">⚫ 검은색</option>
                         </select>
                         <textarea id="inputDesc" placeholder="간략내용 (줄바꿈 가능)"></textarea>
@@ -637,7 +637,7 @@
         document.getElementById('inputDesc').value = '';
         document.getElementById('inputDesc').style.height = '42px';
         document.getElementById('inputDetail').value = '';
-        document.getElementById('inputColor').value = '#d1fae5';
+        document.getElementById('inputColor').value = '#22c55e';
         document.getElementById('inputStartDate').value = calSelectedDateStr || '';
         document.getElementById('inputEndDate').value = '';
     };
@@ -692,7 +692,7 @@
         inputDesc.style.height = inputDesc.scrollHeight + 'px';
 
         document.getElementById('inputDetail').value = item.detail || '';
-        document.getElementById('inputColor').value = item.color || '#d1fae5';
+        document.getElementById('inputColor').value = item.color || '#22c55e';
 
         const rangeLabel = (item.endDate && item.endDate !== item.startDate) ? `${item.startDate} ~ ${item.endDate}` : item.startDate;
         document.getElementById('formTitle').innerText = `✏️ [${rangeLabel}] 일정 수정`;
