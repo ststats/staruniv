@@ -92,6 +92,9 @@
     });
 
     // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
+    // [리디자인] 예전엔 일정별 파스텔색을 배경(background-color)에 바로 넣었다. 시안의 칩은
+    // 잉크 면 + 흰 글자라, 색은 --ev-color로만 넘기고 CSS가 왼쪽 3px 엣지에 쓴다.
+    // (색이 구분 정보를 갖고 있어서 버리지 않고 엣지로 옮겼다)
     const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
         const timeHtml = timeText ? `<span class="cal-event-time">${calEscapeHTML(timeText)}</span>` : '';
         const personHtml = personText ? `<span class="cal-event-person">${calEscapeHTML(personText)}</span>` : '';
@@ -100,7 +103,7 @@
             ? `margin-left:${bar.bleedLeft}; margin-right:${bar.bleedRight}; padding-left:${bar.padLeft}; padding-right:${bar.padRight}; border-radius:${bar.radius}; `
             : '';
         return `
-            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}background-color: ${color};">
+            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}--ev-color: ${color};">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>
@@ -336,7 +339,20 @@
         container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr, type);
     };
 
+    // [리디자인] 카드 오른쪽 위의 '09.14 MON' 라벨. 시안에 있던 표시다.
+    const calDayLabel = (dateStr) => {
+        if (!dateStr) return '';
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        return `${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} ${DOW[new Date(y, m - 1, d).getDay()]}`;
+    };
+    const calSetDayLabel = (id, dateStr) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = calDayLabel(dateStr);
+    };
+
     const calRenderTodaySchedules = () => {
+        calSetDayLabel('todayDateLabel', calTodayStr());
         calRenderScheduleList('todayList', calTodayStr(), 'today', '오늘 등록된 일정이 없습니다.');
     };
 
@@ -346,5 +362,6 @@
             if (container) container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`;
             return;
         }
+        calSetDayLabel('selectedDateLabel', calSelectedDateStr);
         calRenderScheduleList('selectedDateList', calSelectedDateStr, 'selected', '등록된 일정이 없습니다.');
     };

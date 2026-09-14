@@ -44,6 +44,10 @@
             </button>
         </div>
 
+        {#- [리디자인] 시안에서는 멤버 선택과 선택된 목록이 나란히 두 칸이었다.
+            세로로 쌓으면 "고른다 → 순서를 본다"가 한 화면에 안 들어와서 계속 스크롤해야 한다. #}
+        <div class="g2 mv-pick-layout">
+        <div>
         <div class="section-title" data-en="MEMBERS">멤버 선택</div>
         <div class="mv-chip-box">
             <div class="mv-chip-row" id="mv-chip-row"></div>
@@ -53,8 +57,12 @@
             </div>
         </div>
 
+        </div>
+        <div>
         <div class="section-title" data-en="ORDER">선택된 목록</div>
         <div class="mv-order-row" id="mv-order-row"></div>
+        </div>
+        </div>
     </div>
 
     {#- 2. 캄몬라이더 뷰

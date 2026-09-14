@@ -116,9 +116,10 @@ function calculateTeamSummaries() {
         const wlTotal = w + l;
         const wlText = document.getElementById(`t-sum-${fmt}-t`);
         if (wlText) {
+            // 시안에서 승 수만 흰색이고 패 수는 회색이었다 - 이겼다는 쪽에 무게를 준다.
             wlText.innerHTML = wlTotal === 0
                 ? '<small>기록 없음</small>'
-                : `${w}<small>승</small> ${l}<small>패</small>`;
+                : `${w}<small>승</small> <i>${l}<small>패</small></i>`;
         }
         wlBox.setAttribute('title', `${w}승 ${l}패`);
         wlBox.setAttribute('aria-label', `${w}승 ${l}패`);
