@@ -1,35 +1,58 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block content %}
-<div class="page-container tier-page">
-  <div class="section-header-bar">
-    <div class="header-title-group">
-      <h2>스타크래프트 티어표</h2>
+<section id="page-tier" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">티어표</h1>
+        {#- 명단 출처를 밝혀둔다. 이 표는 우리가 매기는 게 아니라 시너지가 매일 정리해
+            공개하는 것을 그대로 읽어온다. -#}
+        <p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
+            <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
     </div>
-    <!-- 25번: 티어표에서도 검은색 박스로 인원수 오른쪽 정렬(빨간색 박스 바로 왼쪽) -->
-    <div class="header-badge-group">
-      <span class="badge-count-black" id="tierTotalCount">총 0명</span>
-      <span class="badge-live-red" id="tierLiveCount">0명 방송중</span>
+    <hr class="page-header-divider tight">
+
+    {#- 소분류: 티어표 / 분석. 멤버 페이지의 현황/공지 탭과 같은 모양(.sub-tabs)을 쓴다. -#}
+    <div class="sub-tabs tab-scroll" role="tablist">
+        <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true"
+             onclick="switchTierView('list')">티어표</div>
+        <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false"
+             onclick="switchTierView('analysis')">분석</div>
     </div>
-  </div>
 
-  <!-- 22번: 모바일에서 상단 sticky 고정되는 필터 바 -->
-  <div class="tier-filter-bar">
-    <!-- 26번: '방송중'이 기본 선택 -->
-    <button class="filter-btn is-active" data-filter="onair">방송중</button>
-    <button class="filter-btn" data-filter="all">전체</button>
-    <button class="filter-btn" data-filter="terran">테란</button>
-    <button class="filter-btn" data-filter="zerg">저그</button>
-    <button class="filter-btn" data-filter="protoss">프로토스</button>
-  </div>
+    <div id="view-tier-list">
+        {#- 티어 바로가기 + 보기 전환(전체/방송중)을 한 줄에 모은 바.
+            상단 메뉴 바로 아래에 붙어서 같이 따라다닌다.
+            '전체 N명'과 '방송중 N명'은 결국 같은 축의 두 선택지라 세그먼트 컨트롤 하나로
+            묶었다(예전엔 맨 글자 + 알약 버튼이 따로였다). 휴대폰에서도 이 바는 한 줄을
+            유지한다 - 화면에 계속 붙어 있어서 두 줄이 되면 본문을 그만큼 계속 가린다.
+            좁은 화면에서 전환 컨트롤이 왼쪽을 얼마간 먹는 건 그대로 두고, 대신 강조된 티어
+            칩을 남은 폭의 가운데로 끌어온다(page-tier.js). -#}
+        {#- [리디자인] 이 바를 화면 위에 눕히지 않고 왼쪽 세로 사이드바로 세운다.
+            15개 티어가 한눈에 들어오고, 본문을 가리지 않으니 바 높이만큼 스크롤 여백을
+            띄울 필요도 없어진다. 개인 전적·멤버 공지의 선택 사이드바와 같은 틀(.selection-layout)이다.
+            920px 아래에서는 redesign.css가 다시 한 줄 가로 바로 눕힌다 - 좁은 화면에서
+            세로 목록이 화면을 다 먹는 것보다 낫다. -#}
+        <div class="selection-layout">
+            <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
+                <div class="tier-bar-tools">
+                    <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
+                </div>
+                <div class="tier-bar-list scroll-area" id="tier-bar-list"></div>
+            </nav>
 
-  <!-- 티어별 카드 목록 (24번: 종족별 좌측 선, 30번: 썸네일 밑 얇은 선 제거) -->
-  <div class="tier-sections-container" id="tierSections">
-    <!-- page-tier.js 동적 렌더링 -->
-  </div>
-</div>
+            <div class="selection-content">
+                <div id="tier-root">
+                    <div class="tier-empty">불러오는 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-tier-analysis" class="d-none">
+        <div class="tier-empty">준비 중입니다.</div>
+    </div>
+</section>
 {% endblock %}
-
 {% block scripts %}
-<script src="/assets/page-tier.js"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('page-tier.js') }}"></script>
 {% endblock %}

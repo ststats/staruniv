@@ -1,43 +1,75 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block content %}
-<div class="page-container stats-page">
-  <!-- 27번: 방송통계 요약 카드들 위에 '전체 요약' 타이틀 추가 -->
-  <div class="stats-summary-header">
-    <div class="section-header-bar">
-      <div class="header-title-group">
-        <h2 class="title-ko">전체 요약</h2>
-        <span class="title-en" style="font-size: 13px; color: var(--text-muted); margin-left: 8px;">OVERALL SUMMARY</span>
-      </div>
+<!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
+<section id="page-stats" class="page-section active container">
+    {#- [리디자인] 갱신 시각은 시안처럼 머리 오른쪽 칸으로 올린다.
+        예전엔 페이지 맨 아래 회색 한 줄이라 "옛 디자인의 잔재"처럼 떠 있었다. #}
+    <div class="page-header page-header-with-stats">
+        <div class="page-header-main">
+            <h1 class="page-header-title">방송통계</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+        </div>
+        <div class="page-header-stats">
+            <div class="head-stat head-stat-wide">
+                <div class="head-stat-label">UPDATED</div>
+                <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
+            </div>
+        </div>
     </div>
-  </div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
+        <div class="sub-tab active" data-metric="balloons" role="tab" tabindex="0" aria-selected="true" onclick="setSynergyMetric('balloons')">별풍선</div>
+        <div class="sub-tab" data-metric="broadcast_seconds" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('broadcast_seconds')">방송시간</div>
+        <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
+        <div class="sub-tab" data-metric="sponsor" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('sponsor')">스폰전적</div>
+    </div>
+    {#- [리디자인] 시안대로 표 위에 잉크 요약 타일 3개. 지금 고른 지표의 합계 / 1위 /
+        집계 인원을 보여준다. 숫자는 page-stats.js가 표를 그릴 때 같이 채운다.
+        (합계는 남녀 표를 합친 값이다 - 표는 나눠 보지만 크루 전체 규모는 하나로 읽는 게 맞다) #}
+    <div class="row g-3 mb-block" id="synergy-summary">
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label" id="synergy-sum-label">TOTAL</div>
+            <div class="head-plate-value" id="synergy-sum-total">-</div>
+            <div class="head-plate-sub">이번 달 합계</div>
+        </div></div>
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label">TOP</div>
+            <div class="head-plate-value" id="synergy-sum-top">-</div>
+            <div class="head-plate-sub" id="synergy-sum-top-name">1위</div>
+        </div></div>
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label">MEMBERS</div>
+            <div class="head-plate-value" id="synergy-sum-count">-</div>
+            <div class="head-plate-sub">집계 인원</div>
+        </div></div>
+    </div>
+    <div class="row gap-block mb-block">
+        {%- for gender_key, gender_label in [('male', '남자 멤버'), ('female', '여자 멤버')] %}
+        <div class="col-md-6">
+            <div class="section-title" data-en="{{ gender_key|upper }}">{{ gender_label }}</div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive scroll-area">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-{{ gender_key }}">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {%- endfor %}
+    </div>
 
-  <div class="stats-summary-cards-grid" id="statsSummaryGrid">
-    <div class="stat-card cut-box">
-      <span class="stat-label">총 경기수</span>
-      <span class="stat-value" id="statTotalMatches">-</span>
-    </div>
-    <div class="stat-card cut-box">
-      <span class="stat-label">최다 승리 크루</span>
-      <span class="stat-value" id="statTopCrew">-</span>
-    </div>
-    <div class="stat-card cut-box">
-      <span class="stat-label">승률 1위 플레이어</span>
-      <span class="stat-value" id="statTopPlayer">-</span>
-    </div>
-  </div>
-
-  <div class="stats-detail-section">
-    <div class="section-header-bar" style="margin-top: 24px;">
-      <h3>상세 전적 및 승률</h3>
-    </div>
-    <div class="stats-table-wrapper cut-box" id="statsTableContainer">
-      <!-- page-stats.js 동적 렌더링 -->
-    </div>
-  </div>
-</div>
+</section>
 {% endblock %}
-
 {% block scripts %}
-<script src="/assets/page-stats.js"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('page-stats.js') }}"></script>
 {% endblock %}
