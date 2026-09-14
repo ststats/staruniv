@@ -1425,9 +1425,23 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
     .home-carousel h1 span,.home-carousel h1 i { display:block; }
 }
 
-/* 선택 필터 박스: 기존 시안의 노치 형태를 복원한다. */
+/* 선택 컨트롤: 기존 공통 선택 컴포넌트에만 노치를 적용한다. */
 .section-title-filters .filter-item,
-.filter-nav .filter-item {
+.filter-nav .filter-item,
+.selection-layout > .avatar-bar .avatar-select-all,
+.selection-layout > .avatar-bar .avatar-select-item,
+.selection-layout > .tier-bar .bar-scope,
+.selection-layout > .tier-bar .tier-scope-btn {
     border-radius: 0 !important;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%) !important;
+}
+
+.selection-layout > .avatar-bar .avatar-select-all,
+.selection-layout > .avatar-bar .avatar-select-item {
+    position: relative;
+}
+
+.selection-layout > .avatar-bar .avatar-select-all.active,
+.selection-layout > .avatar-bar .avatar-select-item.active {
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%) !important;
 }
