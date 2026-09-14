@@ -1424,3 +1424,10 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 @media (max-width:767.98px) {
     .home-carousel h1 span,.home-carousel h1 i { display:block; }
 }
+
+/* 선택 필터 박스: 기존 시안의 노치 형태를 복원한다. */
+.section-title-filters .filter-item,
+.filter-nav .filter-item {
+    border-radius: 0 !important;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+}
