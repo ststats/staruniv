@@ -78,9 +78,16 @@ function startHomeCarouselAuto() {
 function stopHomeCarouselAuto() {
     if (homeCarouselTimer) { clearInterval(homeCarouselTimer); homeCarouselTimer = null; }
 }
-function initHomeCarousel() {
+async function initHomeCarousel() {
     const car = document.querySelector('.home-carousel');
     if (!car) return;
+    try {
+        const res = await fetch('data/calendar.json', { cache: 'no-cache' });
+        if (res.ok) {
+            const data = await res.json();
+            SiteData.calendarEvents = Array.isArray(data.events) ? data.events : [];
+        }
+    } catch (e) { SiteData.calendarEvents = []; }
     renderHomePreviewPanes();
     car.addEventListener('mouseenter', stopHomeCarouselAuto);
     car.addEventListener('mouseleave', startHomeCarouselAuto);
@@ -100,11 +107,14 @@ function moveHomeCarousel(direction) {
 function renderHeroMatchPreview(target) {
     const box = target || document.querySelector('.home-carousel-preview[data-preview="0"]');
     if (!box) return;
-    const match = SiteData.matches[0];
-    if (!match) { box.innerHTML = '<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-loading">경기 기록이 없습니다.</div>'; return; }
-    const result = match['최종 결과'] || match['최근 결과'] || '-';
-    const resultClass = result === '승' ? 'win' : result === '패' ? 'lose' : 'draw';
-    box.innerHTML = `<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-teams"><b>캄몬스타즈</b><span class="home-preview-result ${resultClass}">${escapeHTML(result)}</span><b>${escapeHTML(match['상대팀'] || '-')}</b></div><div class="home-preview-meta"><span>${escapeHTML(match['형식'] || '-')}</span><span>${escapeHTML(match['세트 결과'] || '-')}</span><time>${escapeHTML(shortMatchDate(match['날짜']))}</time></div>`;
+    const today = todayStr();
+    const events = Array.isArray(window.SiteData && SiteData.calendarEvents) ? SiteData.calendarEvents : [];
+    const todays = events.filter(ev => ev && String(ev.startDate || '') <= today && String(ev.endDate || ev.startDate || '') >= today)
+        .sort((a,b) => String(a.time || '').localeCompare(String(b.time || '')));
+    box.innerHTML = `<div class="home-preview-label">TODAY · SCHEDULE</div>` +
+        (todays.length
+            ? todays.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '일정')}</span><b>${escapeHTML([ev.person, ev.desc].filter(Boolean).join(' · ') || '일정')}</b></div>`).join('')
+            : '<div class="home-preview-loading">오늘 예정된 일정이 없습니다.</div>');
 }
 
 // [리디자인] 방송중 카드도 멤버 카드와 같은 규칙 - 왼쪽 3px 엣지에 종족 색.

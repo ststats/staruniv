@@ -33,7 +33,7 @@ const TierState = {
     members: [],       // 표시 대상 전체
     byId: {},          // soopId(소문자) -> member
     live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
-    liveOnly: false,   // 방송 중인 사람만 보기
+    liveOnly: true,   // 방송 중인 사람만 보기
     sections: [],      // [{ tier, id, count, total }] - 티어 바로가기 바가 쓴다
     activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
     visibleThumbs: new Set(),
@@ -248,8 +248,8 @@ function renderTierGroups() {
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title" data-en="${tierLatinLabel(sec.tier)} TIER">
-                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.total}명</span></span>
-                    <span class="tier-live" data-tier-live></span>
+                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span>
+                    <span class="tier-title-badges"><span class="title-count-badge">${sec.total}명</span><span class="tier-live" data-tier-live></span></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')

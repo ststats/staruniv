@@ -30,7 +30,7 @@ body { background:var(--color-bg); }
 /* 개인 전적·멤버 공지: 가로 아바타 바를 시안처럼 실제 선택 사이드바로 전환한다. */
 .selection-layout { display:grid;grid-template-columns:224px minmax(0,1fr);gap:26px;align-items:start; }.selection-layout>.avatar-bar { grid-column:1;position:sticky;top:84px;display:block;margin:0;background:#141821;color:#fff;border:0;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); }.selection-layout>.avatar-bar::before { content:'멤버  ·  ROSTER';display:block;padding:14px 15px 11px;border-bottom:1px solid #2b3442;color:#fff;font-family:'Chakra Petch','Pretendard',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em; }.selection-layout>.avatar-bar-tools { min-height:0;padding:0;border:0;display:block; }.selection-layout>.avatar-bar .bar-scope { display:block;height:auto;padding:0;background:none;border:0; }.selection-layout>.avatar-bar .avatar-select-all { height:42px;padding:0 15px;border-bottom:1px solid #2b3442;background:transparent;justify-content:flex-start; }.selection-layout>.avatar-bar .avatar-select-all.active { background:#2979ff; }.selection-layout>.avatar-bar .avatar-select-all .avatar-select-name { color:#c3ccdb; }.selection-layout>.avatar-bar .avatar-select-all.active .avatar-select-name { color:#fff; }.selection-layout>.avatar-bar .avatar-selector-scroll { width:100%;max-height:520px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:auto; }.selection-layout>.avatar-bar .avatar-selector-list { display:flex;flex-direction:column;align-items:stretch;gap:0;width:100%;padding:7px 0; }.selection-layout>.avatar-bar .avatar-select-item { width:100%;height:38px;padding:0 13px;border-left:3px solid transparent;border-radius:0;background:transparent;justify-content:flex-start; }.selection-layout>.avatar-bar .avatar-select-item:hover { background:#1e2531; }.selection-layout>.avatar-bar .avatar-select-item.active { border-left-color:#fff;background:#2979ff; }.selection-layout>.avatar-bar .avatar-select-name { color:#c3ccdb;font-size:12px; }.selection-layout>.avatar-bar .avatar-select-item.active .avatar-select-name { color:#fff; }.selection-layout>.avatar-bar .avatar-select-img,.selection-layout>.avatar-bar .avatar-select-fallback { width:22px;height:22px;border-radius:0;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%); }.selection-content { min-width:0; }.selection-content>.section-title { margin-top:0; }
 /* 각 페이지가 단순히 같은 제목을 반복하지 않고 시안의 상단 라벨 위계를 갖는다. */
-#page-schedule .page-header::before,#page-members .page-header::before,#page-records .page-header::before,#page-stats .page-header::before,#page-tier .page-header::before,#page-tools .page-header::before { display:block;margin-bottom:7px;color:#7e8aa0;font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;letter-spacing:.16em; } #page-schedule .page-header::before{content:'SCHEDULE';}#page-members .page-header::before{content:'ROSTER';}#page-records .page-header::before{content:'RECORDS';}#page-stats .page-header::before{content:'BROADCAST ANALYTICS';}#page-tier .page-header::before{content:'STARCRAFT RANKING';}#page-tools .page-header::before{content:'UTILITY CONSOLE';}
+#page-schedule .page-header::before,#page-members .page-header::before,#page-records .page-header::before,#page-stats .page-header::before,#page-tier .page-header::before,#page-tools .page-header::before { display:block;margin-bottom:7px;color:#7e8aa0;font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;letter-spacing:.16em; } #page-schedule .page-header::before{content:'SCHEDULE';}#page-members .page-header::before{content:'ROSTER';}#page-records .page-header::before{content:'RECORDS';}#page-stats .page-header::before{content:'BROADCAST ANALYTICS';}#page-tier .page-header::before{content:'TIER';}#page-tools .page-header::before{content:'UTILITY CONSOLE';}
 html[data-theme='dark'] { --color-bg:#10141c;--color-card:#1a202b;--color-border:#2c3645;--color-text-main:#edf2fb;--color-text-strong:#fff;--color-text-dark:#edf2fb;--color-text-sub:#9eabc0;--color-bg-subtle:#252e3c;--color-text-table-head:#c5d1e3;--color-primary-tint:#1b335c; } html[data-theme='dark'] .top-navbar { background:#0d1016; } html[data-theme='dark'] .page-header-divider,html[data-theme='dark'] .section-title,html[data-theme='dark'] .section-title-sm { border-color:#dbe6fa; } html[data-theme='dark'] .stat-table thead th { background:#202d42;color:#d6e5ff;border-color:#4877c5; } html[data-theme='dark'] .stat-table tbody td,html[data-theme='dark'] .stat-table-sticky-col { background:var(--color-card);border-color:#293445; } html[data-theme='dark'] .stat-table tbody tr:hover td,html[data-theme='dark'] .stat-table tbody tr:hover .stat-table-sticky-col { background:#202e45; } html[data-theme='dark'] .tag-badge.tier-badge { background:#303a49;color:#e0e8f5; } html[data-theme='dark'] .home-notice-card:hover { background:#232d3c; }
 @media (max-width:920px) { .selection-layout { grid-template-columns:1fr;gap:16px; }.selection-layout>.avatar-bar { position:sticky;top:60px;z-index:90;display:flex;align-items:stretch;overflow:hidden;max-width:100%; }.selection-layout>.avatar-bar::before { display:none; }.selection-layout>.avatar-bar-tools { display:flex;flex:none;border-right:1px solid #2b3442; }.selection-layout>.avatar-bar .bar-scope { display:flex; }.selection-layout>.avatar-bar .avatar-select-all { height:auto;padding:0 13px;border:0; }.selection-layout>.avatar-bar .avatar-selector-scroll { display:block;flex:1;min-width:0;max-height:none;overflow-x:auto;overflow-y:hidden; }.selection-layout>.avatar-bar .avatar-selector-list { display:flex;flex-direction:row;align-items:stretch;width:max-content;height:44px;padding:0; }.selection-layout>.avatar-bar .avatar-select-item { width:auto;height:44px;padding:0 12px;border-left:0;border-bottom:3px solid transparent; }.selection-layout>.avatar-bar .avatar-select-item.active { border-bottom-color:#fff; }.selection-layout>.avatar-bar .avatar-select-img,.selection-layout>.avatar-bar .avatar-select-fallback { width:21px;height:21px; } }
 @media (max-width:767.98px) { .top-navbar,.nav-menu .nav-item { height:60px; }.top-navbar .logo { font-size:19px; }.theme-toggle { margin-left:12px; }.page-section { padding-top:22px; }.container { padding-left:18px!important;padding-right:18px!important; }.page-header-title { font-size:30px; }.home-carousel-slide { min-height:244px;padding:32px 24px 60px; }.home-carousel p { font-size:13px; }.sub-tab { padding:0 13px; }.tier-bar,.avatar-bar { top:60px; }.live-broadcast-grid { grid-template-columns:1fr; } }
@@ -978,7 +978,7 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 #page-members .page-header-with-stats .page-header-main::before { content: 'ROSTER'; }
 #page-records .page-header-with-stats .page-header-main::before { content: 'RECORDS'; }
 #page-stats   .page-header-with-stats .page-header-main::before { content: 'BROADCAST ANALYTICS'; }
-#page-tier    .page-header-with-stats .page-header-main::before { content: 'STARCRAFT RANKING'; }
+#page-tier    .page-header-with-stats .page-header-main::before { content: 'TIER'; }
 #page-tools   .page-header-with-stats .page-header-main::before { content: 'UTILITY CONSOLE'; }
 
 /* ── 8. 티어 제목 플레이트를 전부 잉크로
@@ -1258,4 +1258,88 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 @media (max-width: 1100px) {
     /* 미리보기 칸이 한 칸으로 내려올 때는 격자 열 지정을 풀어준다 */
     .home-carousel-preview { grid-column: 1; margin-top: 22px; }
+}
+
+
+/* ============================================================
+   스타유니브 요청사항 최종 보정
+   ============================================================ */
+/* 9, 23. 테두리/선택 영역은 clip-path로 자르지 않아 경계가 사라지지 않게 한다. */
+.clean-card, .live-broadcast-card, .news-post-card, .tool-card, .member-card, .avatar-bar, .tier-bar, .tier-card, .stat-card-box, .home-notice-card, .mv-chip-box, .mv-order-row, .mv-chip-row {
+    clip-path: none;
+}
+/* 노치가 필요한 잉크 장식은 테두리 없는 요소에만 남긴다. */
+.home-carousel, .home-carousel-preview, .home-hero-links a, .home-carousel-controls > button, .tier-scope-btn, .tier-bar-item, .tag-badge, .live-badge {
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+/* 11, 33. 히어로 본문은 사이트 컨테이너 열에 정확히 맞춘다. */
+.home-carousel-slide {
+    min-height: 286px;
+    padding-left: max(var(--container-pad), calc((100% - 1240px) / 2 + var(--container-pad)));
+    padding-right: max(var(--container-pad), calc((100% - 1240px) / 2 + var(--container-pad)));
+}
+.home-carousel h1 .hero-star { color:#fff; }
+.home-carousel h1 .hero-univ { color:#4d90ff; }
+/* 12. 히어로 높이 소폭 축소 */
+@media (min-width: 1101px) { .home-carousel-slide { min-height: 286px; } }
+/* 13. 방송 시간은 항상 썸네일 오른쪽 아래 */
+.live-thumb-overlay { top:auto !important; bottom:9px !important; right:9px; }
+/* 14. 방송 카드 텍스트 영역 표준화 */
+.live-card-body { padding: 11px 13px 12px; }
+/* 15, 20. 연결형 리스트에서는 항목을 각각 잘라버리지 않는다. */
+.home-notice-list > .home-notice-card { clip-path:none; }
+/* 16. 일정 제목 */
+.calendar-page-title { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 10px; }
+.calendar-page-title span { font-size:18px; font-weight:800; letter-spacing:-.03em; }
+.calendar-page-title small { font-family:'Chakra Petch',sans-serif; font-size:9px; letter-spacing:.14em; color:var(--color-text-sub); }
+/* 18. 오늘 날짜 셀만 파란 배경. 일정 내용 자체는 파란 박스를 쓰지 않는다. */
+.cal-day-cell.today { background:var(--color-primary-tint); }
+.cal-day-cell.today .cal-cell-event { background:var(--color-ink,#141821) !important; }
+.cal-day-cell.today .cal-day-number::after { background:var(--color-primary); }
+/* 21, 22. 개인/공지/티어 사이드바의 sticky 기준을 동일하게 */
+.selection-layout > .avatar-bar, .selection-layout > .tier-bar { position:sticky; top:84px; z-index:90; align-self:start; }
+/* 24. 티어 카드 종족 엣지 */
+.tier-card.edge-T { border-left:3px solid var(--color-race-t) !important; }
+.tier-card.edge-Z { border-left:3px solid var(--color-race-z) !important; }
+.tier-card.edge-P { border-left:3px solid var(--color-race-p) !important; }
+/* 25. 제목 오른쪽 인원 badge */
+.section-title { display:flex; align-items:center; gap:10px; }
+.section-title-label { min-width:0; }
+.title-count-badge { margin-left:auto; flex:none; display:inline-flex; align-items:center; justify-content:center; min-height:20px; padding:0 9px; background:#141821; color:#fff; font-family:var(--font-num); font-size:10px; font-weight:700; line-height:20px; clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%); }
+.tier-title-badges { margin-left:auto; display:flex; align-items:center; gap:6px; }
+.tier-title-badges .title-count-badge { margin-left:0; }
+.tier-title-badges .tier-live { margin-left:0; }
+/* 28, 29. 도구 영역 정렬 */
+.mv-console { align-items:stretch; }
+.mv-console-tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; }
+.mv-tile { min-width:0; justify-content:center; }
+.tool-card { align-items:center; text-align:center; }
+.tool-card-icon, .tool-card-name { margin-left:auto; margin-right:auto; text-align:center; }
+/* 30. 티어 썸네일과 본문 사이 얇은 선 제거 */
+.tier-card-body { border-top:0 !important; }
+/* 31. 멤버 LIVE를 카드 좌상단 */
+.member-card-live { top:9px !important; left:9px !important; right:auto !important; }
+/* 32. 시안의 파랑에 맞춰 핵심 액센트를 조금 더 선명하게 */
+:root { --color-primary:#2979ff; --color-primary-deep:#155ed9; }
+/* 34. 스타/대학 분리 표시 */
+.home-carousel h1 .hero-star, .home-carousel h1 .hero-univ { display:inline; }
+/* 27. 방송통계 요약 제목 간격 */
+#page-stats #synergy-summary { margin-top:0; }
+/* 35. 다크모드의 카드/선/선택 상태 대비 통일 */
+html[data-theme='dark'] { --color-primary:#4d90ff; --color-primary-deep:#2f72db; --color-primary-tint:#1d3b6c; --color-border:#303b4c; --color-bg-subtle:#222c3a; }
+html[data-theme='dark'] .sub-tab { border-color:#394658; }
+html[data-theme='dark'] .sub-tab:not(.active) { background:#1a202b; color:#aab7c9; }
+html[data-theme='dark'] .home-notice-list, html[data-theme='dark'] .home-notice-card { background:#1a202b; }
+html[data-theme='dark'] .tool-card, html[data-theme='dark'] .member-card, html[data-theme='dark'] .tier-card, html[data-theme='dark'] .news-post-card { border-color:#303b4c; }
+html[data-theme='dark'] .title-count-badge { background:#0d1016; }
+@media (max-width:920px) {
+    .selection-layout > .avatar-bar, .selection-layout > .tier-bar { top:60px; z-index:120; }
+    .selection-layout > .tier-bar { top:60px; }
+}
+@media (max-width:767.98px) {
+    .home-carousel-slide { min-height:0; padding:30px 24px 56px; }
+    .home-carousel h1 { font-size:34px; }
+    .live-card-body { padding:10px 11px 11px; }
+    .calendar-page-title { margin-top:0; }
+    .mv-console-tiles { grid-template-columns:1fr; }
 }
