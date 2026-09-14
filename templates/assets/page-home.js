@@ -39,17 +39,21 @@ const HOME_PREVIEWS = [
     } },
 ];
 
-function renderHomePreviewPane(index) {
-    const box = document.getElementById('home-carousel-preview');
-    if (!box) return;
-    if (index === 0) { renderHeroMatchPreview(); return; }
-    const cfg = HOME_PREVIEWS[index];
-    if (!cfg) { box.innerHTML = ''; return; }
-    let rows = [];
-    try { rows = cfg.rows(); } catch (e) { rows = []; }
-    box.innerHTML = `<div class="home-preview-label">${escapeHTML(cfg.label)}</div>`
-        + rows.map(([k, v]) => `<div class="home-preview-row"><span>${escapeHTML(k)}</span>`
-            + `<b>${escapeHTML(String(v))}</b></div>`).join('');
+// 미리보기 칸은 장 안에 하나씩 들어 있다(data-preview="0|1|2"). 그래서 트랙이 밀릴 때
+// 글과 같이 따라 움직인다 - 예전엔 캐러셀 기준 절대배치라 칸만 제자리에 남아 있었다.
+// 넘길 때마다 다시 그리지 않고 처음에 전부 채운다.
+function renderHomePreviewPanes() {
+    document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(box => {
+        const index = Number(box.dataset.preview);
+        if (index === 0) { renderHeroMatchPreview(box); return; }
+        const cfg = HOME_PREVIEWS[index];
+        if (!cfg) { box.innerHTML = ''; return; }
+        let rows = [];
+        try { rows = cfg.rows(); } catch (e) { rows = []; }
+        box.innerHTML = `<div class="home-preview-label">${escapeHTML(cfg.label)}</div>`
+            + rows.map(([k, v]) => `<div class="home-preview-row"><span>${escapeHTML(k)}</span>`
+                + `<b>${escapeHTML(String(v))}</b></div>`).join('');
+    });
 }
 
 function goHomeCarousel(index) {
@@ -59,12 +63,42 @@ function goHomeCarousel(index) {
     homeCarouselIndex = (index + dots.length) % dots.length;
     track.style.transform = `translateX(-${homeCarouselIndex * 100}%)`;
     dots.forEach((dot, i) => dot.classList.toggle('active', i === homeCarouselIndex));
-    renderHomePreviewPane(homeCarouselIndex);
 }
-function moveHomeCarousel(direction) { goHomeCarousel(homeCarouselIndex + direction); }
 
-function renderHeroMatchPreview() {
-    const box = document.getElementById('home-carousel-preview');
+// 자동 넘김. 마우스를 올리거나 키보드 초점이 들어오면 멈춘다(읽는 중에 넘어가면 성가시다).
+// 사용자가 직접 넘기면 타이머를 처음부터 다시 센다 - 누른 직후 곧바로 넘어가지 않게.
+let homeCarouselTimer = null;
+const HOME_CAROUSEL_MS = 6000;
+function startHomeCarouselAuto() {
+    stopHomeCarouselAuto();
+    const dots = document.querySelectorAll('#home-carousel-dots button');
+    if (dots.length < 2) return;
+    homeCarouselTimer = setInterval(() => goHomeCarousel(homeCarouselIndex + 1), HOME_CAROUSEL_MS);
+}
+function stopHomeCarouselAuto() {
+    if (homeCarouselTimer) { clearInterval(homeCarouselTimer); homeCarouselTimer = null; }
+}
+function initHomeCarousel() {
+    const car = document.querySelector('.home-carousel');
+    if (!car) return;
+    renderHomePreviewPanes();
+    car.addEventListener('mouseenter', stopHomeCarouselAuto);
+    car.addEventListener('mouseleave', startHomeCarouselAuto);
+    car.addEventListener('focusin', stopHomeCarouselAuto);
+    car.addEventListener('focusout', startHomeCarouselAuto);
+    // 다른 탭을 보고 있을 때는 돌리지 않는다.
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopHomeCarouselAuto(); else startHomeCarouselAuto();
+    });
+    startHomeCarouselAuto();
+}
+function moveHomeCarousel(direction) {
+    goHomeCarousel(homeCarouselIndex + direction);
+    if (homeCarouselTimer) startHomeCarouselAuto();   // 누른 직후 바로 또 넘어가지 않게 다시 센다
+}
+
+function renderHeroMatchPreview(target) {
+    const box = target || document.querySelector('.home-carousel-preview[data-preview="0"]');
     if (!box) return;
     const match = SiteData.matches[0];
     if (!match) { box.innerHTML = '<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-loading">경기 기록이 없습니다.</div>'; return; }
@@ -97,13 +131,9 @@ function liveCardHtml({ member: m, live }) {
                     </div>
                 </div>
                 <div class="live-card-body">
+                    <span class="${avatarRingClass}">${avatarHtml(soopId, 'live-card-avatar')}</span>
+                    <span class="live-card-name">${escapeHTML(m['이름'])}</span>
                     <div class="live-card-title">${escapeHTML(broad.broad_title || '')}</div>
-                    <div class="live-card-meta-row">
-                        <div class="live-card-who">
-                            <span class="${avatarRingClass}">${avatarHtml(soopId, 'live-card-avatar')}</span>
-                            <span class="live-card-name">${escapeHTML(m['이름'])}</span>
-                        </div>
-                    </div>
                 </div>
             </a>`;
 }
@@ -158,7 +188,7 @@ async function renderLatestNotices() {
 }
 
 bootPage(() => {
-    renderHeroMatchPreview();
+    safeInit('홈 캐러셀', initHomeCarousel);
     safeInit('방송중 카드', renderLiveBroadcasts);
     safeInit('최근 공지', renderLatestNotices);
 });

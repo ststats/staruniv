@@ -1115,3 +1115,147 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 .mv-console { padding: 20px; gap: 18px; align-items: stretch; }
 .mv-run-btn { height: 100%; flex-direction: column; gap: 7px; padding: 18px 14px; }
 .mv-run-btn svg { width: 22px; height: 22px; }
+
+
+/* ============================================================
+   시안 대조 5차 — 지적 10개
+   ============================================================ */
+
+/* ── 1. 미리보기 칸이 장과 같이 슬라이드
+   칸이 각 장 안(.home-carousel-slide > .home-carousel-preview)으로 들어갔다.
+   그래서 절대배치를 풀고 격자의 오른쪽 칸으로 앉힌다. */
+.home-carousel-preview {
+    position: static; transform: none; right: auto; width: auto;
+    grid-column: 2; align-self: center;
+    padding: 20px; background: var(--color-ink-2, #1e2531);
+}
+.home-carousel-track { transition: transform .42s cubic-bezier(.4, 0, .2, 1); }
+
+/* ── 5. 히어로 버튼도 깎은 면 */
+.home-hero-links a {
+    padding: 0 15px; height: 40px; display: inline-flex; align-items: center; gap: 7px;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+
+/* ── 10. 히어로를 상단바에 딱 붙인다
+   .page-section의 padding-top(34px)이 위에 틈을 만들고 있었다. 홈에서는 그 패딩을
+   섹션이 아니라 안쪽 .container가 갖게 한다. */
+#page-home { padding-top: 0; }
+#page-home > .container { padding-top: var(--space-page-top); }
+.home-carousel { margin: 0 0 30px; }
+
+/* ── 2·3. 방송중 카드
+   [사진 | 이름]
+   [사진 | 제목]   - 사진이 두 줄을 차지하고 이름·제목이 각 줄을 맡는다. */
+.live-card-body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'avatar name' 'avatar title';
+    align-items: center;
+    column-gap: 10px; row-gap: 2px;
+    padding: 12px 13px 13px;
+}
+.live-card-body > .live-card-avatar-ring { grid-area: avatar; align-self: center; }
+.live-card-name { grid-area: name; align-self: end; font-size: 14px; font-weight: 700; }
+.live-card-title { grid-area: title; align-self: start; margin: 0; font-weight: 400; color: var(--color-text-sub); }
+/* 사진이 두 줄 높이를 받으니 조금 키운다 */
+.live-card-avatar-ring, .live-card-avatar-ring.live-card-avatar-ring--male { width: 34px; height: 34px; }
+.live-card-avatar { width: 34px; height: 34px; }
+
+/* ── 4. 최근 공지 : 세로로 이어지는 목록이라 항목마다 깎은 면은 과하다.
+   구분선으로 잇고 모서리는 첫 항목 위쪽만 남긴다. */
+.home-notice-list { background: var(--color-card); }
+.home-notice-list > .home-notice-card {
+    clip-path: none; margin: 0; background: transparent;
+}
+.home-notice-list > .home-notice-card + .home-notice-card { border-top: 1px solid var(--color-border); }
+.home-notice-list > .home-notice-card:first-child {
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+
+/* ── 6. 상단바 메뉴를 로고 옆으로 (오른쪽 정렬 해제)
+   base의 .nav-menu{margin-left:auto}가 메뉴를 오른쪽으로 밀고 있었다. */
+.top-navbar .nav-menu { margin-left: 0; margin-right: auto; }
+.top-navbar .theme-toggle { margin-left: 16px; }
+
+/* ── 7. 모바일 상단바 서랍 */
+.nav-drawer-btn {
+    display: none; width: 34px; height: 34px; margin-left: auto; flex: none;
+    padding: 0; border: 0; background: var(--color-ink-3, #2b3442); cursor: pointer;
+    flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+.nav-drawer-btn span { display: block; width: 16px; height: 2px; background: #fff; }
+.top-navbar.menu-open .nav-drawer-btn { background: var(--color-primary); }
+
+@media (max-width: 767.98px) {
+    .nav-drawer-btn { display: flex; }
+    .top-navbar { position: sticky; }
+    .top-navbar .navbar-inner { position: relative; }
+    /* 메뉴는 상단바 아래로 떨어지는 서랍이 된다. 닫혀 있을 때는 아예 자리를 차지하지 않는다. */
+    .top-navbar .nav-menu {
+        display: none; position: absolute; left: 0; right: 0; top: 100%;
+        margin: 0; padding: 6px 0 8px; height: auto; flex-direction: column;
+        background: var(--color-ink, #141821);
+        border-bottom: 3px solid var(--color-primary);
+        z-index: 120;
+    }
+    .top-navbar.menu-open .nav-menu { display: flex; }
+    .top-navbar .nav-menu .nav-item {
+        height: 44px; width: 100%; padding: 0 24px; margin: 0; font-size: 14px;
+    }
+    .top-navbar .nav-menu .nav-item.active { background: var(--color-ink-2, #1e2531); }
+    .top-navbar .nav-menu .nav-item.active::after { left: 0; right: auto; top: 0; bottom: 0; width: 3px; height: auto; }
+    .top-navbar .theme-toggle { margin-left: 10px; }
+    /* 서랍 버튼이 오른쪽 끝으로 가야 하므로 로고 뒤 여백을 없앤다 */
+    .top-navbar .logo { margin-right: 0; }
+}
+
+/* ── 8. 티어 사이드바 모바일 : 접히는 한 줄 선택 바 (아바타 사이드바와 같은 방식) */
+.tier-bar-pick { display: none; }
+@media (max-width: 920px) {
+    .selection-layout > .tier-bar {
+        display: block; padding: 0; top: 0;
+    }
+    .selection-layout > .tier-bar::before { display: none; }
+    .tier-bar-pick {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        width: 100%; height: 46px; padding: 0 15px;
+        background: transparent; border: 0; cursor: pointer;
+        font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .tier-bar-pick svg { width: 15px; height: 15px; color: #8b97ab; flex: none; transition: transform .15s; }
+    .selection-layout > .tier-bar:not(.is-closed) .tier-bar-pick svg { transform: rotate(180deg); }
+    .selection-layout > .tier-bar.is-closed .tier-bar-tools,
+    .selection-layout > .tier-bar.is-closed .tier-bar-list { display: none; }
+    .selection-layout > .tier-bar .tier-bar-tools {
+        display: block; padding: 9px 10px; border-right: 0; border-top: 1px solid #2b3442; border-bottom: 0;
+    }
+    .selection-layout > .tier-bar .bar-scope { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+    .selection-layout > .tier-bar .tier-bar-list {
+        display: block; width: 100%; max-height: 55vh; padding: 6px 0;
+        overflow-x: hidden; overflow-y: auto; white-space: normal;
+    }
+    .selection-layout > .tier-bar .tier-bar-item {
+        display: flex; width: 100%; height: 38px; padding: 0 14px;
+        justify-content: space-between; border-left: 3px solid transparent; clip-path: none;
+    }
+    .selection-layout > .tier-bar .tier-bar-item.active { border-left-color: #fff; background: var(--color-primary); }
+}
+
+/* ── 9. 티어 제목을 다른 섹션 제목과 같은 형식으로 (플레이트 제거)
+   .tier-plate 규칙은 더 이상 쓰이지 않지만, 혹시 남은 마크업이 있으면 구분선 형식으로 보이게. */
+.tier-row > .section-title { margin-bottom: 14px; }
+.tier-row > .section-title .tier-live:not(:empty) {
+    display: inline-flex; align-items: center; height: 20px; padding: 0 9px; margin-left: auto;
+    background: var(--color-lose); color: #fff; font-family: var(--font-num);
+    font-size: 9px; font-weight: 700; letter-spacing: .1em;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.tier-row > .section-title .tier-live-sep { display: none; }
+.tier-row + .tier-row { margin-top: 30px; }
+
+@media (max-width: 1100px) {
+    /* 미리보기 칸이 한 칸으로 내려올 때는 격자 열 지정을 풀어준다 */
+    .home-carousel-preview { grid-column: 1; margin-top: 22px; }
+}

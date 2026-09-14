@@ -83,6 +83,27 @@ function isVisible(el) {
     return !!el && !el.classList.contains('d-none');
 }
 
+// [리디자인] 모바일 상단바 서랍. 열림 상태는 <header>에 클래스로 붙여서 CSS가 그린다.
+// 메뉴를 누르면(페이지 이동) 자동으로 닫히고, 화면이 넓어지면 열림 상태를 지운다.
+function toggleMainMenu(force) {
+    const bar = document.querySelector('.top-navbar');
+    const btn = document.getElementById('navDrawerBtn');
+    if (!bar) return;
+    const open = typeof force === 'boolean' ? force : !bar.classList.contains('menu-open');
+    bar.classList.toggle('menu-open', open);
+    if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? '메뉴 닫기' : '메뉴 열기');
+    }
+}
+document.addEventListener('click', (e) => {
+    const bar = document.querySelector('.top-navbar');
+    if (!bar || !bar.classList.contains('menu-open')) return;
+    // 메뉴 항목을 눌렀거나 상단바 밖을 눌렀으면 닫는다
+    if (e.target.closest('.nav-menu .nav-item') || !e.target.closest('.top-navbar')) toggleMainMenu(false);
+});
+window.addEventListener('resize', () => { if (window.innerWidth > 767.98) toggleMainMenu(false); });
+
 // 사용자가 고른 테마는 다음 방문에도 유지한다. 시스템 설정은 첫 방문의 기본값으로만 쓴다.
 function applyTheme(theme) {
     const dark = theme === 'dark';

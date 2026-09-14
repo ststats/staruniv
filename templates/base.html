@@ -52,6 +52,13 @@
 <header class="top-navbar">
     <div class="navbar-inner container">
         <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        {#- [리디자인] 모바일에서는 메뉴를 서랍으로 넣는다. 좁은 화면에서 메뉴 6개를 한 줄에
+            담으려면 글자를 계속 줄이거나 가로로 밀어야 했다. 버튼 하나로 여닫는다.
+            (열고 닫는 건 core.js의 toggleMainMenu) #}
+        <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
+                aria-expanded="false" aria-controls="mainMenu" onclick="toggleMainMenu()">
+            <span></span><span></span><span></span>
+        </button>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
             {%- for nav in nav_items %}
             {#- 숨긴 메뉴(어드민에서 관리, docs/data/nav.json)는 지우지 않고 hidden만 붙인다.
