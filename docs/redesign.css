@@ -1445,3 +1445,44 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 .selection-layout > .avatar-bar .avatar-select-item.active {
     clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%) !important;
 }
+
+/* 선택 상태 노치 — 실제 파란 활성 면 자체를 깎는다. */
+.sub-tabs .sub-tab.active {
+    border: 0 !important;
+    border-radius: 0 !important;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%) !important;
+}
+.selection-layout > .tier-bar .tier-bar-item.active,
+.selection-layout > .tier-bar .tier-scope-btn.on,
+.selection-layout > .avatar-bar .avatar-select-all.active,
+.selection-layout > .avatar-bar .avatar-select-item.active {
+    border-radius: 0 !important;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%) !important;
+}
+
+/* 멀티뷰어 설정: 세 설정 타일의 높이·정렬을 동일하게 맞추고 실행 버튼을 별도 열로 정렬 */
+.mv-console {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 180px !important;
+    align-items: stretch !important;
+}
+.mv-console-tiles { display: contents; }
+.mv-console .mv-tile {
+    min-height: 108px;
+    height: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+}
+.mv-console .mv-run-btn {
+    min-height: 108px;
+    height: 100%;
+    align-self: stretch;
+    justify-self: stretch;
+}
+@media (max-width: 991.98px) {
+    .mv-console { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .mv-console .mv-run-btn { grid-column: 1 / -1; min-height: 58px; }
+}
+@media (max-width: 767.98px) {
+    .mv-console { grid-template-columns: 1fr !important; }
+    .mv-console .mv-run-btn { grid-column: auto; }
+}
