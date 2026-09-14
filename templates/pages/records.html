@@ -82,13 +82,14 @@
 
     <!-- 2. 개인 뷰 -->
     <div id="view-indiv-stat" class="d-none">
-        <div class="avatar-selector-scroll scroll-area">
-            <div class="avatar-selector-list" id="indiv-avatar-list"></div>
-        </div>
+        <div class="selection-layout">
+            <div class="avatar-selector-scroll scroll-area">
+                <div class="avatar-selector-list" id="indiv-avatar-list"></div>
+            </div>
+            <div class="selection-content">
+            <div class="section-title" id="indiv-content-title">전체 전적</div>
 
-        <div class="section-title" id="indiv-content-title">전체 전적</div>
-
-        <div id="indiv-summary-content">
+            <div id="indiv-summary-content">
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
                     <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
@@ -108,7 +109,7 @@
             </div>
         </div>
 
-        <div id="statContent" class="d-none">
+            <div id="statContent" class="d-none">
             <div class="clean-card d-flex align-items-center mb-block p-4">
                 <div class="profile-avatar" id="p-avatar">👤</div>
                 <div>
@@ -173,6 +174,8 @@
                         <tbody id="indiv-recent-list"></tbody>
                     </table>
                 </div>
+            </div>
+            </div>
             </div>
         </div>
     </div>
