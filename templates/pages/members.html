@@ -1,40 +1,61 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block content %}
-<div class="page-container members-page">
-  <div class="section-header-bar">
-    <div class="header-title-group">
-      <h2>크루 / 멤버 현황</h2>
+<section id="page-members" class="page-section active container">
+    {#- [리디자인] 시안대로 머리 오른쪽에 ACTIVE / ON AIR 두 칸.
+        현황 탭과 공지 탭이 같은 머리를 쓰게 되어 두 탭을 오갈 때 화면이 덜 튄다.
+        숫자는 page-members.js가 채운다(ACTIVE = 활동 멤버 수, ON AIR = 방송 중). #}
+    <div class="page-header page-header-with-stats">
+        <div class="page-header-main">
+            <h1 class="page-header-title">멤버</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식입니다.</p>
+        </div>
+        <div class="page-header-stats">
+            <div class="head-stat head-stat-ink">
+                <div class="head-stat-label">ACTIVE</div>
+                <div class="head-stat-value" id="member-count-active">-</div>
+            </div>
+            <div class="head-stat">
+                <div class="head-stat-label">ON AIR</div>
+                <div class="head-stat-value head-stat-live" id="member-count-live">-</div>
+            </div>
+        </div>
     </div>
-    <!-- 25번: 검은색 박스로 인원수 오른쪽 정렬 -->
-    <div class="header-badge-group">
-      <span class="badge-count-black" id="memberTotalCount">총 0명</span>
-      <span class="badge-live-red" id="memberLiveCount">0명 방송중</span>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs tab-scroll" role="tablist">
+        <div class="sub-tab active" id="tab-member-status" role="tab" tabindex="0" aria-selected="true" onclick="switchMemberView('status')">현황</div>
+        <div class="sub-tab" id="tab-member-news" role="tab" tabindex="0" aria-selected="false" onclick="switchMemberView('news')">공지</div>
     </div>
-  </div>
 
-  <div class="members-layout">
-    <!-- 21번: 스크롤 따라 움직이는 sticky 사이드바 -->
-    <aside class="member-notice-sidebar">
-      <div class="sidebar-block cut-box">
-        <h4 class="sidebar-title">멤버 공지</h4>
-        <!-- 20번: 오른쪽 리스트들 이어진 것들 개별 모서리 절삭 제거 -->
-        <ul class="member-notice-list" id="memberNoticeList">
-          <li class="notice-item">공지를 불러오는 중입니다...</li>
-        </ul>
-      </div>
-    </aside>
+    <div id="view-member-status">
+        <div id="members-groups"></div>
+    </div>
 
-    <!-- 멤버 카드 그리드 (31번: 라이브 표시 좌상단 이동) -->
-    <main class="members-main-content">
-      <div class="member-cards-grid" id="memberCardsGrid">
-        <!-- page-members.js 동적 렌더링 -->
-      </div>
-    </main>
-  </div>
-</div>
+    <div id="view-member-news" class="d-none">
+        {#- [리디자인] 개인 전적과 같은 선택 사이드바. core.js가 .avatar-selector-scroll을
+            런타임에 .avatar-bar로 감싼다(avatarBarTools). 920px 아래에서는 redesign.css가
+            '접히는 한 줄 선택 바'로 바꾼다. #}
+        <div class="selection-layout">
+            <div class="avatar-selector-scroll scroll-area">
+                <div class="avatar-selector-list" id="news-avatar-list"></div>
+            </div>
+            <div class="selection-content">
+                <div class="section-title" id="news-content-title" data-en="NOTICE">전체 공지</div>
+
+                <div id="news-feed-content" aria-live="polite">
+                    <div class="text-center text-muted py-4 fs-body">불러오는 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
-
+{% block modals %}
+{% include 'partials/profile_modal.html' %}
+{% endblock %}
 {% block scripts %}
-<script src="/assets/page-members.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset_url('purify.min.js') }}"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('soop.js') }}"></script>
+<script src="{{ asset_url('page-members.js') }}"></script>
 {% endblock %}

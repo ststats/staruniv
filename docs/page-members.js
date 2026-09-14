@@ -64,7 +64,7 @@ function renderMemberGroup(title, members) {
         tierIndex(a['티어']) - tierIndex(b['티어']) || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
 
     return `
-        <div class="section-title" data-en="${ROLE_EN[title] || 'ROSTER'}"><span class="section-title-label">${escapeHTML(title)}<span class="title-count-divider"></span><span class="text-secondary title-count">${sorted.length}명</span></span></div>
+        <div class="section-title" data-en="${ROLE_EN[title] || 'ROSTER'}"><span class="section-title-label">${escapeHTML(title)}</span><span class="title-count">${sorted.length}명</span></div>
         <div class="member-grid mb-block">${sorted.map(memberCardHtml).join('')}</div>`;
 }
 

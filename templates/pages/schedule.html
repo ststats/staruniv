@@ -1,38 +1,74 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block content %}
-<div class="page-container schedule-page">
-  <!-- 16번: 캘린더 상단 타이틀 '이달의 일정 / MONTHLY SCHEDULE' 추가 -->
-  <div class="calendar-header-title-wrap">
-    <div class="section-header-bar">
-      <div class="header-title-group">
-        <h2 class="title-ko">이달의 일정</h2>
-        <span class="title-en" style="font-size: 13px; color: var(--text-muted); margin-left: 8px;">MONTHLY SCHEDULE</span>
-      </div>
+<section id="page-schedule" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">일정</h1>
+        <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 일정입니다.</p>
     </div>
-  </div>
+    <hr class="page-header-divider">
+    <div class="cal-app-root">
+        <div class="cal-main-layout">
+            <!-- 모바일 분리용 사이드바 -->
+            <aside class="cal-sidebar">
+                {#- [리디자인] 시안에서 '오늘'은 잉크 카드, '선택한 날짜'는 흰 카드다.
+                    두 카드가 같은 흰 면이면 어느 쪽이 오늘인지 제목을 읽어야 알 수 있었다. #}
+                <div class="cal-today-card-wrapper">
+                    <div class="section-title" data-en="TODAY">오늘의 일정</div>
+                    <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
+                        <div class="cal-day-card-date" id="todayDateLabel"></div>
+                        <div class="cal-today-list scroll-area" id="todayList"></div>
+                    </div>
+                </div>
+                <div class="cal-selected-card-wrapper">
+                    <div class="section-title" id="selectedListTitle" data-en="SELECTED">선택한 날짜 일정</div>
+                    <div class="clean-card p-4 cal-day-card">
+                        <div class="cal-day-card-date" id="selectedDateLabel"></div>
+                        <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
+                    </div>
+                </div>
+            </aside>
 
-  <!-- 캘린더 컨트롤러 & 뷰 -->
-  <div class="calendar-wrapper cut-box">
-    <div class="calendar-nav-bar">
-      <button id="calPrevBtn" class="btn-cal-nav">&lt;</button>
-      <h3 id="calCurrentMonth">2026.09</h3>
-      <button id="calNextBtn" class="btn-cal-nav">&gt;</button>
-      <button id="calTodayBtn" class="btn-cal-today">오늘</button>
+            <section class="cal-calendar-area">
+                <div class="section-title cal-month-section-title" data-en="MONTHLY SCHEDULE">
+                    <span class="section-title-label">이달의 일정</span>
+                    <div class="cal-nav-group">
+                        <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                        <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    </div>
+                </div>
+                {#- [리디자인] 시안의 달력은 카드 위에 제목줄이 따로 있지 않고, 카드 맨 위가
+                    잉크 띠(연/월 + 좌우 이동)였다. 제목줄을 없애고 그 띠를 카드 안으로 넣는다. #}
+                <div class="clean-card cal-card p-0">
+                    <div class="cal-month-bar hatch">
+                        <div class="cal-month-id">
+                            <div class="cal-month-year" id="monthYear">&nbsp;</div>
+                            <div class="cal-month-name" id="monthName">&nbsp;</div>
+                        </div>
+                        <div class="cal-nav-group">
+                            <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                            <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        </div>
+                    </div>
+                    <!-- 가로 스크롤 허용 캘린더 구역 -->
+                    <div class="cal-calendar-inner scroll-area">
+                        <div class="cal-calendar-scroll-content">
+                            <div class="cal-weekdays">
+                                {#- 시안은 SUN~SAT 라틴 3글자다. 숫자 조판(Chakra Petch)과 한 가족으로 읽힌다. #}
+                                <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+                            </div>
+                            <div class="cal-days-grid" id="daysGrid"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
-
-    <!-- 18번(오늘 날짜 셀 배경 제거), 19번(연속 바) 렌더링 그리드 -->
-    <div class="calendar-grid-header">
-      <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
-    </div>
-    <div id="calendarGrid" class="calendar-grid">
-      <!-- calendar.js 동적 렌더링 -->
-    </div>
-  </div>
-</div>
+</section>
 {% endblock %}
-
 {% block scripts %}
-<script src="/assets/calendar.js"></script>
-<script src="/assets/page-schedule.js"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('calendar.js') }}"></script>
+<script src="{{ asset_url('page-schedule.js') }}"></script>
 {% endblock %}

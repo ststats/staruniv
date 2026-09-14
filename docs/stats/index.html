@@ -1,80 +1,140 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>스타대학 대시보드 - 스타유니브</title>
-  <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/redesign.css">
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방송통계 | 스타대학</title>
+    <meta name="description" content="캄몬스타즈 멤버들의 이번 달 방송 통계입니다.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="스타대학">
+    <meta property="og:title" content="방송통계 | 스타대학">
+    <meta property="og:description" content="캄몬스타즈 멤버들의 이번 달 방송 통계입니다.">
+    <link rel="canonical" href="https://ststats.github.io/staruniv/stats/">
+    <meta property="og:url" content="https://ststats.github.io/staruniv/stats/">
+    <meta property="og:image" content="https://ststats.github.io/staruniv/images/%EC%BA%84%EB%AA%AC%EC%8A%A4%ED%83%80%EC%A6%88.webp">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/webp" href="images/파비콘.webp">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="style.css?v=c389b6212b">
+    <link rel="stylesheet" href="redesign.css?v=502f5ce598">
+    <meta name="site-data-version" content="8ed9592a5a">
 </head>
-<body class="dark-theme">
-  <!-- 상단 네비게이션 헤더 -->
-  <header class="site-header">
-    <div class="nav-container">
-      <a href="/" class="brand-logo">
-        <span class="logo-txt-white">STAR</span><span class="logo-txt-blue">UNIV</span>
-      </a>
-      <nav class="main-nav">
-        <a href="/" class="nav-link">홈</a>
-        <a href="/members/" class="nav-link">멤버</a>
-        <a href="/schedule/" class="nav-link">일정</a>
-        <a href="/records/" class="nav-link">전적</a>
-        <a href="/tier/" class="nav-link">티어표</a>
-        <a href="/stats/" class="nav-link">통계</a>
-        <a href="/tools/" class="nav-link">도구</a>
-      </nav>
+<body><header class="top-navbar">
+    <div class="navbar-inner container">
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
+                aria-expanded="false" aria-controls="mainMenu" onclick="toggleMainMenu()">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
+            <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
+            <a class="nav-item" href="members/" data-page="members">멤버</a>
+            <a class="nav-item" href="records/" data-page="records">전적</a>
+            <a class="nav-item active" href="stats/" data-page="stats" aria-current="page">방송통계</a>
+            <a class="nav-item" href="tier/" data-page="tier">티어표</a>
+            <a class="nav-item" href="tools/" data-page="tools">도구</a>
+        </nav>
+        <div class="theme-toggle" role="group" aria-label="테마 선택">
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="setTheme('light')">☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="setTheme('dark')">◐</button>
+        </div>
     </div>
-  </header>
+</header>
 
-  <main class="site-main">
-    
-<div class="page-container stats-page">
-  <!-- 27번: 방송통계 요약 카드들 위에 '전체 요약' 타이틀 추가 -->
-  <div class="stats-summary-header">
-    <div class="section-header-bar">
-      <div class="header-title-group">
-        <h2 class="title-ko">전체 요약</h2>
-        <span class="title-en" style="font-size: 13px; color: var(--text-muted); margin-left: 8px;">OVERALL SUMMARY</span>
-      </div>
-    </div>
-  </div>
+<main>
 
-  <div class="stats-summary-cards-grid" id="statsSummaryGrid">
-    <div class="stat-card cut-box">
-      <span class="stat-label">총 경기수</span>
-      <span class="stat-value" id="statTotalMatches">-</span>
+<!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
+<section id="page-stats" class="page-section active container">
+    <div class="page-header page-header-with-stats">
+        <div class="page-header-main">
+            <h1 class="page-header-title">방송통계</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+        </div>
+        <div class="page-header-stats">
+            <div class="head-stat head-stat-wide">
+                <div class="head-stat-label">UPDATED</div>
+                <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
+            </div>
+        </div>
     </div>
-    <div class="stat-card cut-box">
-      <span class="stat-label">최다 승리 크루</span>
-      <span class="stat-value" id="statTopCrew">-</span>
+    <hr class="page-header-divider tight">
+    <div class="section-title" data-en="SUMMARY">전체 요약</div>
+    <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
+        <div class="sub-tab active" data-metric="balloons" role="tab" tabindex="0" aria-selected="true" onclick="setSynergyMetric('balloons')">별풍선</div>
+        <div class="sub-tab" data-metric="broadcast_seconds" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('broadcast_seconds')">방송시간</div>
+        <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
+        <div class="sub-tab" data-metric="sponsor" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('sponsor')">스폰전적</div>
     </div>
-    <div class="stat-card cut-box">
-      <span class="stat-label">승률 1위 플레이어</span>
-      <span class="stat-value" id="statTopPlayer">-</span>
+    <div class="row g-3 mb-block" id="synergy-summary">
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label" id="synergy-sum-label">TOTAL</div>
+            <div class="head-plate-value" id="synergy-sum-total">-</div>
+            <div class="head-plate-sub">이번 달 합계</div>
+        </div></div>
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label">TOP</div>
+            <div class="head-plate-value" id="synergy-sum-top">-</div>
+            <div class="head-plate-sub" id="synergy-sum-top-name">1위</div>
+        </div></div>
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label">MEMBERS</div>
+            <div class="head-plate-value" id="synergy-sum-count">-</div>
+            <div class="head-plate-sub">집계 인원</div>
+        </div></div>
     </div>
-  </div>
+    <div class="row gap-block mb-block">
+        <div class="col-md-6">
+            <div class="section-title" data-en="MALE">남자 멤버</div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive scroll-area">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-male">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="section-title" data-en="FEMALE">여자 멤버</div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive scroll-area">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-female">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <div class="stats-detail-section">
-    <div class="section-header-bar" style="margin-top: 24px;">
-      <h3>상세 전적 및 승률</h3>
-    </div>
-    <div class="stats-table-wrapper cut-box" id="statsTableContainer">
-      <!-- page-stats.js 동적 렌더링 -->
-    </div>
-  </div>
-</div>
+</section>
 
-  </main>
+</main>
 
-  <footer class="site-footer">
-    <div class="footer-container">
-      <p>&copy; 2026 StarUniv. 캄몬스타즈 및 스타크래프트 대학 대전 전적/일정 대시보드.</p>
-    </div>
-  </footer>
 
-  <script src="/core.js"></script>
-  
-<script src="/assets/page-stats.js"></script>
+
+
+<script src="core.js?v=1c731ef4ad"></script>
+<script src="page-stats.js?v=39d675a776"></script>
 
 </body>
 </html>
