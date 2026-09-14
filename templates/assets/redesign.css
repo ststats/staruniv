@@ -1921,3 +1921,170 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
     position:static !important;
     margin-left:auto !important;
 }
+
+
+/* ============================================================
+   PATCH — 공통 section-title 복구 / 서브탭 롤백 / 버튼·최근공지 노치
+   ============================================================ */
+/* 일정 제목은 별도 cal-month-section-title을 만들지 않고 공통 .section-title 그대로 사용한다. */
+.section-title.cal-month-section-title {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px 12px !important;
+    margin-bottom:var(--space-title-gap,16px) !important;
+    border-left:4px solid var(--color-primary) !important;
+    border-bottom:0 !important;
+    gap:0 !important;
+    font-family:inherit !important;
+    font-size:var(--fs-heading) !important;
+    font-weight:800 !important;
+    letter-spacing:normal !important;
+}
+/* 실제 마크업도 공통 .section-title이므로, 위 호환 규칙과 무관하게 기본 공통 규격을 그대로 따른다. */
+#page-schedule .cal-calendar-area > .section-title,
+#page-tier .tier-row > .section-title {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px 12px !important;
+    margin-bottom:var(--space-title-gap,16px) !important;
+    border-left:4px solid var(--color-primary) !important;
+    border-bottom:0 !important;
+    font-family:inherit !important;
+    font-size:var(--fs-heading) !important;
+    font-weight:800 !important;
+    letter-spacing:normal !important;
+    line-height:normal !important;
+}
+#page-schedule .cal-calendar-area > .section-title::before,
+#page-tier .tier-row > .section-title::before {
+    flex:0 0 100% !important;
+    order:-1 !important;
+    display:block !important;
+    margin:0 0 5px !important;
+    font-family:'Chakra Petch',sans-serif !important;
+    font-size:9px !important;
+    font-weight:600 !important;
+    line-height:1 !important;
+    letter-spacing:.16em !important;
+    color:var(--color-text-sub) !important;
+}
+#page-schedule .cal-calendar-area > .section-title .section-title-label,
+#page-tier .tier-row > .section-title .section-title-label {
+    font-family:inherit !important;
+    font-size:inherit !important;
+    font-weight:inherit !important;
+    line-height:inherit !important;
+}
+#page-schedule .cal-calendar-area > .section-title .cal-nav-group {
+    position:static !important;
+    margin-left:auto !important;
+}
+
+/* 서브탭은 이전 상태로 롤백: 노치/테두리를 추가하지 않는다. */
+.sub-tabs .sub-tab {
+    border:0 !important;
+    border-bottom:3px solid transparent !important;
+    border-radius:0 !important;
+    clip-path:none !important;
+    filter:none !important;
+}
+.sub-tabs .sub-tab.active {
+    border:0 !important;
+    border-bottom:3px solid var(--color-primary) !important;
+    filter:none !important;
+}
+
+/* '더 보기' / '이전 멤버'만 노치 버튼. border 자체를 clip하지 않고 가상 외곽선으로 그린다. */
+.news-load-more,
+#former-members-toggle-btn,
+.news-post-more-btn {
+    position:relative !important;
+    border:0 !important;
+    border-radius:0 !important;
+    clip-path:none !important;
+    filter:none !important;
+    background:transparent !important;
+}
+.news-load-more::before,
+#former-members-toggle-btn::before,
+.news-post-more-btn::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border:1px solid var(--color-border);
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.news-load-more:hover::before,
+#former-members-toggle-btn:hover::before,
+.news-post-more-btn:hover::before {
+    border-color:var(--color-border-strong);
+}
+
+/* 홈 최근 공지는 첫 카드만 노치. 카드 자체의 border를 자르지 않고 별도 외곽선을 사용한다. */
+.home-notice-list > .home-notice-card {
+    position:relative !important;
+    clip-path:none !important;
+    filter:none !important;
+}
+.home-notice-list > .home-notice-card:first-child {
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%) !important;
+}
+.home-notice-list > .home-notice-card:first-child::after {
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border:1px solid var(--color-border);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+}
+.home-notice-list > .home-notice-card + .home-notice-card {
+    border-top:1px solid var(--color-border) !important;
+}
+
+/* ============================================================
+   버튼 테두리 보강만 재조정
+   - 서브탭은 원래 스타일로 완전 복구
+   - '더 보기' / '이전 멤버'의 노치는 유지하고,
+     clip-path 때문에 border가 잘리는 문제는 drop-shadow 외곽선으로 보강
+   ============================================================ */
+.sub-tabs .sub-tab {
+    border:0 !important;
+    border-bottom:3px solid transparent !important;
+    border-radius:0 !important;
+    clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%) !important;
+    filter:none !important;
+}
+.sub-tabs .sub-tab.active {
+    border:0 !important;
+    border-bottom:3px solid var(--color-primary) !important;
+    filter:none !important;
+}
+
+.news-load-more,
+#former-members-toggle-btn {
+    border:0 !important;
+    border-radius:0 !important;
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%) !important;
+    filter:
+      drop-shadow(0 -1px 0 var(--color-border))
+      drop-shadow(1px 0 0 var(--color-border))
+      drop-shadow(0 1px 0 var(--color-border))
+      drop-shadow(-1px 0 0 var(--color-border)) !important;
+}
+.news-load-more:hover,
+#former-members-toggle-btn:hover {
+    filter:
+      drop-shadow(0 -1px 0 var(--color-border-strong))
+      drop-shadow(1px 0 0 var(--color-border-strong))
+      drop-shadow(0 1px 0 var(--color-border-strong))
+      drop-shadow(-1px 0 0 var(--color-border-strong)) !important;
+}

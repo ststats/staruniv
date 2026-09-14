@@ -1,0 +1,260 @@
+   추가 패치 — 버튼/공지 노치 외곽선, 일정 제목 규격, 색상 보정
+   ============================================================ */
+/* 테두리가 있는 노치 박스는 clip-path로 모양을 만들고 drop-shadow로 외곽선을 복원한다. */
+.sub-tabs .sub-tab,
+.news-load-more,
+.news-post-more-btn,
+#former-members-toggle-btn {
+    border-radius:0 !important;
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%) !important;
+    filter:drop-shadow(0 0 0 var(--color-border));
+}
+.sub-tabs .sub-tab.active {
+    filter:drop-shadow(0 0 0 var(--color-primary));
+}
+.news-load-more:hover,
+.news-post-more-btn:hover,
+#former-members-toggle-btn:hover {
+    filter:drop-shadow(0 0 0 var(--color-primary));
+}
+
+/* 멤버 현황/공지 탭도 동일한 노치 버튼 계열로 맞춘다. */
+.sub-tabs .sub-tab { position:relative; }
+
+/* 공지 카드는 모두 동일한 노치 외곽을 사용한다. */
+.home-notice-card,
+.news-post-card,
+#news-past-list .home-notice-card,
+#news-past-list .news-post-card {
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%) !important;
+    border-radius:0 !important;
+    filter:drop-shadow(0 0 0 var(--color-border));
+}
+#news-past-list {
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%) !important;
+    filter:drop-shadow(0 0 0 var(--color-border));
+}
+.home-notice-list > .home-notice-card + .home-notice-card,
+#news-past-list .home-notice-card + .home-notice-card {
+    border-top:1px solid var(--color-border);
+}
+
+/* '이달의 일정'은 다른 section-title과 글꼴/크기/높이를 완전히 동일하게 사용한다. */
+.section-title.cal-month-section-title .section-title-label {
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:14px !important;
+    font-weight:700 !important;
+    line-height:1 !important;
+    letter-spacing:.025em !important;
+}
+/* MONTHLY SCHEDULE 영문 레일은 제목과 지나치게 벌어지지 않게 한다. */
+.section-title.cal-month-section-title::before,
+.tier-row > .section-title[data-en]::before {
+    margin-bottom:3px !important;
+    line-height:1 !important;
+}
+.tier-row > .section-title[data-en] {
+    row-gap:0 !important;
+}
+
+/* 티어 제목의 영문 레일도 공통 section-title과 같은 간격/크기로 맞춘다. */
+.tier-row > .section-title[data-en]::before {
+    font-size:9px !important;
+    letter-spacing:.16em !important;
+}
+
+
+/* ============================================================
+   패치 — 공지 노치 / 일정·티어 제목 규격 / 휴방 색상
+   ============================================================ */
+/* 공지 카드는 실제 외곽선이 노치 윤곽을 따라 보이도록 1px 다방향 그림자를 사용한다. */
+.home-notice-list > .home-notice-card,
+#news-past-list .home-notice-card,
+#news-past-list .news-post-card {
+    border-radius:0 !important;
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%) !important;
+    filter:
+      drop-shadow(0 -1px 0 var(--color-border))
+      drop-shadow(0 1px 0 var(--color-border))
+      drop-shadow(-1px 0 0 var(--color-border))
+      drop-shadow(1px 0 0 var(--color-border)) !important;
+}
+/* 홈 최근 공지는 첫 카드의 노치만 보이고, 이어지는 카드의 접점은 기존 구분선으로 연결한다. */
+.home-notice-list > .home-notice-card + .home-notice-card {
+    filter:drop-shadow(0 1px 0 var(--color-border)) !important;
+}
+
+/* '이달의 일정'도 '오늘의 일정'과 완전히 같은 공통 section-title 구조를 사용한다.
+   영문 레일은 위, 제목은 바로 아래, 오른쪽 컨트롤은 제목 행 오른쪽에 둔다. */
+.section-title.cal-month-section-title {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px !important;
+    margin-bottom:16px !important;
+    border-left:0 !important;
+    border-bottom:2px solid var(--color-text-main) !important;
+    gap:0 !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    letter-spacing:.025em !important;
+}
+.section-title.cal-month-section-title::before {
+    flex:0 0 100% !important;
+    order:-1 !important;
+    display:block !important;
+    margin:0 0 5px 0 !important;
+    font-family:'Chakra Petch',sans-serif !important;
+    font-size:9px !important;
+    font-weight:600 !important;
+    line-height:1 !important;
+    letter-spacing:.16em !important;
+    color:var(--color-text-sub) !important;
+}
+.section-title.cal-month-section-title .section-title-label {
+    flex:0 0 auto !important;
+    order:1 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    font-family:inherit !important;
+    font-size:inherit !important;
+    font-weight:inherit !important;
+    line-height:1 !important;
+}
+.section-title.cal-month-section-title .cal-nav-group {
+    position:static !important;
+    flex:0 0 auto !important;
+    order:2 !important;
+    margin-left:auto !important;
+}
+
+/* 티어 제목 역시 일반 section-title과 동일한 레일/제목/구분선 규격으로 고정한다. */
+.tier-row > .section-title[data-en] {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px !important;
+    margin-bottom:16px !important;
+    border-left:0 !important;
+    border-bottom:2px solid var(--color-text-main) !important;
+    gap:0 !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    letter-spacing:.025em !important;
+}
+.tier-row > .section-title[data-en]::before {
+    flex:0 0 100% !important;
+    order:-1 !important;
+    display:block !important;
+    margin:0 0 5px 0 !important;
+    font-family:'Chakra Petch',sans-serif !important;
+    font-size:9px !important;
+    font-weight:600 !important;
+    line-height:1 !important;
+    letter-spacing:.16em !important;
+    color:var(--color-text-sub) !important;
+}
+
+/* 김윤환 휴방 띠도 새 일정 색상 체계의 쨍한 주황을 사용한다. */
+
+/* ============================================================
+   사용자 재보정 — 최근공지 / 섹션 타이틀 / 노치 버튼 / 휴방 색상
+   ============================================================ */
+/* 홈 최근 공지는 첫 카드의 우상단만 확실하게 노치. 연결된 카드는 직선으로 유지. */
+.home-notice-list > .home-notice-card {
+    margin:0 !important;
+    border-radius:0 !important;
+    background:var(--color-card) !important;
+    clip-path:none !important;
+    filter:none !important;
+}
+.home-notice-list > .home-notice-card:first-child {
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%) !important;
+    filter:
+      drop-shadow(0 -1px 0 var(--color-border))
+      drop-shadow(1px 0 0 var(--color-border))
+      drop-shadow(0 1px 0 var(--color-border))
+      drop-shadow(-1px 0 0 var(--color-border)) !important;
+}
+.home-notice-list > .home-notice-card + .home-notice-card {
+    border-top:1px solid var(--color-border) !important;
+}
+
+/* 멤버 현황/공지의 노치 버튼: 실제 border는 유지하고 잘린 외곽은 drop-shadow로 보강. */
+.sub-tabs .sub-tab,
+.news-load-more,
+#former-members-toggle-btn,
+.news-post-more-btn {
+    border:1px solid var(--color-border) !important;
+    border-radius:0 !important;
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%) !important;
+    filter:
+      drop-shadow(0 -1px 0 var(--color-border))
+      drop-shadow(1px 0 0 var(--color-border))
+      drop-shadow(0 1px 0 var(--color-border))
+      drop-shadow(-1px 0 0 var(--color-border)) !important;
+}
+.sub-tabs .sub-tab.active {
+    border-color:var(--color-primary) !important;
+    filter:
+      drop-shadow(0 -1px 0 var(--color-primary))
+      drop-shadow(1px 0 0 var(--color-primary))
+      drop-shadow(0 1px 0 var(--color-primary))
+      drop-shadow(-1px 0 0 var(--color-primary)) !important;
+}
+
+/* 일정/티어 제목은 일반 section-title과 완전히 같은 글자 크기·높이·밑줄 규격. */
+.section-title.cal-month-section-title,
+.tier-row > .section-title[data-en] {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px !important;
+    margin-bottom:var(--space-title-gap,16px) !important;
+    border-left:0 !important;
+    border-bottom:3px solid var(--color-text-main) !important;
+    gap:0 !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    letter-spacing:.025em !important;
+    line-height:1 !important;
+}
+.section-title.cal-month-section-title::before,
+.tier-row > .section-title[data-en]::before {
+    flex:0 0 100% !important;
+    order:-1 !important;
+    display:block !important;
+    margin:0 0 5px !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:9px !important;
+    font-weight:600 !important;
+    line-height:1 !important;
+    letter-spacing:.16em !important;
+    color:var(--color-text-sub) !important;
+}
+.section-title.cal-month-section-title .section-title-label,
+.tier-row > .section-title[data-en] .section-title-label {
+    display:inline-flex !important;
+    align-items:center !important;
+    flex:0 0 auto !important;
+    font-family:inherit !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+}
+.section-title.cal-month-section-title .cal-nav-group {
+    position:static !important;
+    margin-left:auto !important;
+}
