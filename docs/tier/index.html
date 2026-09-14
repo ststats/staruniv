@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=40e104d96f">
+    <link rel="stylesheet" href="redesign.css?v=0dbb0f3d6b">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -33,7 +33,10 @@
             <a class="nav-item active" href="tier/" data-page="tier" aria-current="page">티어표</a>
             <a class="nav-item" href="tools/" data-page="tools">도구</a>
         </nav>
-        <button class="theme-toggle" type="button" aria-label="다크 모드로 전환" aria-pressed="false" onclick="toggleTheme()"><span aria-hidden="true">◐</span></button>
+        <div class="theme-toggle" role="group" aria-label="테마 선택">
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="setTheme('light')">☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="setTheme('dark')">◐</button>
+        </div>
     </div>
 </header>
 
@@ -73,7 +76,7 @@
 
 
 
-<script src="core.js?v=53b0b72273"></script>
+<script src="core.js?v=ab477ab0a3"></script>
 <script src="page-tier.js?v=28cfa7bff7"></script>
 
 </body>

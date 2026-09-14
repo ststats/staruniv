@@ -87,16 +87,16 @@ function isVisible(el) {
 function applyTheme(theme) {
     const dark = theme === 'dark';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    const button = document.querySelector('.theme-toggle');
-    if (button) {
-        button.setAttribute('aria-pressed', dark ? 'true' : 'false');
-        button.setAttribute('aria-label', dark ? '라이트 모드로 전환' : '다크 모드로 전환');
-    }
+    document.querySelectorAll('[data-theme-choice]').forEach(button => {
+        const selected = button.dataset.themeChoice === (dark ? 'dark' : 'light');
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
 }
+function setTheme(theme) { localStorage.setItem('staruniv-theme', theme); applyTheme(theme); }
 function toggleTheme() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('staruniv-theme', next);
-    applyTheme(next);
+    setTheme(next);
 }
 try {
     applyTheme(localStorage.getItem('staruniv-theme') ||
@@ -317,10 +317,13 @@ async function cachedFetchJson(url, ttlMs) {
 // =====================================================================
 
 // 승/패/무 결과 뱃지 HTML - 팀/개인 최근전적 리스트 공용
+// [리디자인] WIN/LOSE/DRAW 세 글자를 W/L/D 한 글자로 줄였다. 이 뱃지가 종족 뱃지(20x20)와
+// 같은 가족이 되려면 폭이 비슷해야 하는데, 세 글자는 36px을 먹어서 늘 혼자 커 보였다.
+// 원래 글자는 title로 남겨둔다(마우스를 올리면 승/패/무가 뜬다).
 function resultBadgeHtml(resText) {
-    if (resText === '승') return '<span class="match-badge badge-win">WIN</span>';
-    if (resText === '무' || resText === '무승부') return '<span class="match-badge badge-draw">DRAW</span>';
-    return '<span class="match-badge badge-lose">LOSE</span>';
+    if (resText === '승') return '<span class="match-badge badge-win" title="승">W</span>';
+    if (resText === '무' || resText === '무승부') return '<span class="match-badge badge-draw" title="무">D</span>';
+    return '<span class="match-badge badge-lose" title="패">L</span>';
 }
 
 const SOOP_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -515,6 +518,22 @@ function avatarBarTools(list) {
     const scope = document.createElement('div');
     scope.className = 'bar-scope';
     tools.appendChild(scope);
+    // [리디자인] 모바일(<=920px)에서만 보이는 '현재 선택' 줄. 누르면 같은 목록이 아래로
+    // 펼쳐진다. 좁은 화면에서 40명을 가로로 밀게 하는 대신, 한 줄만 두고 필요할 때만
+    // 목록을 꺼내는 쪽이 본문을 덜 가린다. 데스크톱에서는 CSS가 숨긴다.
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = 'avatar-bar-pick';
+    pick.setAttribute('aria-expanded', 'false');
+    pick.innerHTML = '<span class="avatar-bar-pick-label">전체</span>'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" '
+        + 'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    pick.addEventListener('click', () => {
+        const closed = bar.classList.toggle('is-closed');
+        pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
+    });
+    bar.classList.add('is-closed');
+    bar.appendChild(pick);
     scroll.replaceWith(bar);   // 껍데기가 있던 자리에 바를 놓고
     bar.appendChild(tools);    // 그 안에 '전체' 칸과
     bar.appendChild(scroll);   // 원래 껍데기를 차례로 넣는다
@@ -529,6 +548,17 @@ function setActiveAvatarItem(listId, activeEl) {
     const scope = list && (list.closest('.avatar-bar') || list);
     if (scope) scope.querySelectorAll('.avatar-select-item').forEach(el => el.classList.remove('active'));
     if (activeEl) activeEl.classList.add('active');
+
+    // [리디자인] 모바일 선택 줄에 지금 고른 이름을 반영하고, 골랐으면 목록을 접는다.
+    const bar = scope && scope.closest ? scope.closest('.avatar-bar') : null;
+    if (!bar) return;
+    const pick = bar.querySelector('.avatar-bar-pick');
+    if (!pick) return;
+    const label = pick.querySelector('.avatar-bar-pick-label');
+    const name = activeEl && activeEl.querySelector('.avatar-select-name');
+    if (label) label.textContent = name ? name.textContent.trim() : '전체';
+    bar.classList.add('is-closed');
+    pick.setAttribute('aria-expanded', 'false');
 }
 
 

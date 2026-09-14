@@ -31,6 +31,16 @@ function goHomeCarousel(index) {
 }
 function moveHomeCarousel(direction) { goHomeCarousel(homeCarouselIndex + direction); }
 
+function renderHeroMatchPreview() {
+    const box = document.getElementById('home-carousel-preview');
+    if (!box) return;
+    const match = SiteData.matches[0];
+    if (!match) { box.innerHTML = '<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-loading">경기 기록이 없습니다.</div>'; return; }
+    const result = match['최종 결과'] || match['최근 결과'] || '-';
+    const resultClass = result === '승' ? 'win' : result === '패' ? 'lose' : 'draw';
+    box.innerHTML = `<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-teams"><b>캄몬스타즈</b><span class="home-preview-result ${resultClass}">${escapeHTML(result)}</span><b>${escapeHTML(match['상대팀'] || '-')}</b></div><div class="home-preview-meta"><span>${escapeHTML(match['형식'] || '-')}</span><span>${escapeHTML(match['세트 결과'] || '-')}</span><time>${escapeHTML(shortMatchDate(match['날짜']))}</time></div>`;
+}
+
 function liveCardHtml({ member: m, live }) {
     const { broad, broadStart } = live;
     const soopId = m['SOOP ID'];
@@ -110,6 +120,7 @@ async function renderLatestNotices() {
 }
 
 bootPage(() => {
+    renderHeroMatchPreview();
     safeInit('방송중 카드', renderLiveBroadcasts);
     safeInit('최근 공지', renderLatestNotices);
 });

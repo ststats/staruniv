@@ -87,16 +87,16 @@ function isVisible(el) {
 function applyTheme(theme) {
     const dark = theme === 'dark';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    const button = document.querySelector('.theme-toggle');
-    if (button) {
-        button.setAttribute('aria-pressed', dark ? 'true' : 'false');
-        button.setAttribute('aria-label', dark ? '라이트 모드로 전환' : '다크 모드로 전환');
-    }
+    document.querySelectorAll('[data-theme-choice]').forEach(button => {
+        const selected = button.dataset.themeChoice === (dark ? 'dark' : 'light');
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
 }
+function setTheme(theme) { localStorage.setItem('staruniv-theme', theme); applyTheme(theme); }
 function toggleTheme() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('staruniv-theme', next);
-    applyTheme(next);
+    setTheme(next);
 }
 try {
     applyTheme(localStorage.getItem('staruniv-theme') ||

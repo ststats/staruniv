@@ -28,8 +28,12 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    {#- 숫자와 라틴 라벨(표 머리글, 티어 개수 등)에만 쓰는 폰트. 한글 본문은 Pretendard 그대로다.
+        tabular-nums가 있어서 표의 자리수가 흔들리지 않는다. #}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+    {#- 리디자인 레이어. style.css '뒤에' 와야 덮어쓴다.
+        이 파일만 빼면 예전 모양으로 정확히 돌아간다. #}
     <link rel="stylesheet" href="{{ asset_url('redesign.css') }}">
     {#- 빌드마다 바뀌는 site_data.json 버전 - core.js가 이 값을 붙여 요청해서, 데이터가 바뀌었을 때만 새로 받는다 #}
     <meta name="site-data-version" content="{{ site_data_version }}">
@@ -55,7 +59,12 @@
             <a class="nav-item{% if nav.id == page_id %} active{% endif %}" href="{{ nav.href }}" data-page="{{ nav.id }}"{% if nav.hidden %} hidden{% endif %}{% if nav.id == page_id %} aria-current="page"{% endif %}>{{ nav.label }}</a>
             {%- endfor %}
         </nav>
-        <button class="theme-toggle" type="button" aria-label="다크 모드로 전환" aria-pressed="false" onclick="toggleTheme()"><span aria-hidden="true">◐</span></button>
+        {#- 다크모드 전환. 고른 테마는 localStorage에 남아 다음 방문에도 유지된다
+            (core.js의 applyTheme/setTheme). 첫 방문은 OS 설정을 따른다. #}
+        <div class="theme-toggle" role="group" aria-label="테마 선택">
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="setTheme('light')">☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="setTheme('dark')">◐</button>
+        </div>
     </div>
 </header>
 
