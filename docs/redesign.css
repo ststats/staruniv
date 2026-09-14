@@ -1,4 +1,19 @@
-/* V5 visual layer: loaded after the legacy stylesheet to preserve the existing data/UI hooks. */
+/* ============================================================
+   리디자인 레이어 — "방송 그래픽"
+   ============================================================
+   style.css 뒤에 얹는 층이다. 기존 클래스 이름을 그대로 쓰고 모양만 덮어쓴다.
+   그래서 마크업을 만드는 page-*.js를 건드릴 필요가 없고, 이 파일만 지우면
+   예전 모양으로 정확히 돌아간다.
+
+   [중요] 이 파일은 templates/assets/에 있어야 한다. 예전엔 docs/(빌드 산출물)에만
+   있어서 build_html.py를 한 번 돌리면 사라졌다. build_html.py의 copy_static_assets()가
+   templates/assets/ 안의 파일을 전부 docs/로 복사하므로, 여기 두면 빌드가 알아서 옮긴다.
+
+   [바뀐 것 3줄]
+     · 12px 라운드 -> 모서리를 깎은 면(노치). 카드/바/칩/뱃지가 같은 형태를 공유한다.
+     · 로고 블랙(#141821)을 두 번째 표면으로 승격. GNB/서브탭/히어로가 잉크 면이다.
+     · 종족 / 티어 / 승패 뱃지를 한 가족으로 - 높이 20px, 노치 5px, 같은 조판.
+   ============================================================ */
 :root { --color-bg:#f4f7fc;--color-card:#fff;--color-border:#dfe6f1;--color-text-main:#172033;--color-text-sub:#69758a;--color-text-strong:#101827;--color-text-dark:#172033;--color-primary:#2979ff;--color-primary-deep:#155ed9;--radius-card:0px;--shadow-card:none;--shadow-card-hover:0 10px 22px rgba(24,63,130,.13); }
 body { background:var(--color-bg); }
 .nc,.clean-card,.live-broadcast-card,.news-post-card,.tool-card,.member-card,.avatar-bar,.tier-bar,.tier-card,.stat-card-box { border-radius:0;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); }
@@ -25,7 +40,7 @@ html[data-theme='dark'] { --color-bg:#10141c;--color-card:#1a202b;--color-border
 .stat-card-box { padding:19px 14px 17px; }.stat-card-box .label { font-family:'Chakra Petch','Pretendard',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase; }.stat-card-box .donut { width:84px;height:84px; }.stat-card-box .donut::before { width:64px;height:64px; }.stat-card-box .wl { display:flex;height:20px;margin-top:12px;color:#fff;overflow:hidden;font-family:'Chakra Petch',sans-serif;font-size:11px; }.stat-card-box .wl .wl-win { display:inline-flex;align-items:center;justify-content:center;flex:1;background:#2979ff; }.stat-card-box .wl .wl-lose { display:inline-flex;align-items:center;justify-content:center;flex:1;background:#f03e3e; }
 .member-grid { grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:12px; }.member-card { min-height:176px;padding:16px 12px 13px;justify-content:flex-end;align-items:flex-start;text-align:left; }.member-card .member-avatar-img { width:54px;height:54px;border-radius:0;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%); }.member-card-name { margin-top:auto;font-size:15px; }.member-card-tags { justify-content:flex-start; }.member-card .tool-card-ext { top:10px;right:10px; }
 .cal-main-layout { display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px; }.cal-calendar-area { grid-column:1;grid-row:1; }.cal-sidebar { grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:26px; }.cal-calendar-area>.clean-card,.cal-sidebar .clean-card { clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); }.cal-weekdays { background:#141821;color:#fff; }.cal-weekdays>div { font-family:'Chakra Petch',sans-serif;font-size:11px;letter-spacing:.08em; }.cal-day { border-color:#e2e8f1!important; }.cal-day.today { box-shadow:inset 3px 0 0 #2979ff; }.cal-nav-group { background:#141821;padding:3px; }.cal-nav-btn { border-radius:0!important;background:#2b3442!important;color:#fff!important; }.cal-nav-badge { color:#fff!important;font-family:'Chakra Petch',sans-serif!important; }
-#page-stats .row.gap-block { gap:0; }.synergy-metric-label { font-family:'Chakra Petch',sans-serif;letter-spacing:.06em; }.synergy-rank { font-family:'Chakra Petch',sans-serif;font-weight:700; }.synergy-rank.top { background:#141821!important;color:#fff!important;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%); }.tier-bar { background:#141821;color:#fff;border:0;box-shadow:none; }.tier-bar-tools { border-color:#394556; }.bar-scope { background:#2b3442;border:0; }.tier-scope-btn { color:#9aa6ba; }.tier-scope-btn.on { background:#2979ff;color:#fff; }.tier-bar-item { color:#aab6c8; }.tier-bar-item:hover { background:#2b3442;color:#fff; }.tier-bar-item.active { background:#2979ff;color:#fff; }.tier-grid { grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px; }.tier-row>.section-title::before { content:'RANK';margin-right:9px;color:#8b97ab;font-size:10px;letter-spacing:.13em; }.tier-card-media { background:#141821; }.tier-card-body { border-top:2px solid #141821; }
+#page-stats .row.gap-block { gap:0; }.synergy-metric-label { font-family:'Chakra Petch',sans-serif;letter-spacing:.06em; }.synergy-rank { font-family:'Chakra Petch',sans-serif;font-weight:700; }.synergy-rank.top { background:#141821!important;color:#fff!important;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%); }.tier-bar { background:#141821;color:#fff;border:0;box-shadow:none; }.tier-bar-tools { border-color:#394556; }.bar-scope { background:#2b3442;border:0; }.tier-scope-btn { color:#9aa6ba; }.tier-scope-btn.on { background:#2979ff;color:#fff; }.tier-bar-item { color:#aab6c8; }.tier-bar-item:hover { background:#2b3442;color:#fff; }.tier-bar-item.active { background:#2979ff;color:#fff; }.tier-grid { grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px; }/* [삭제] 'RANK' 리터럴 라벨 - 같은 이유 */.tier-card-media { background:#141821; }.tier-card-body { border-top:2px solid #141821; }
 .mv-console { display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;padding:18px;background:#141821;border:0;box-shadow:none;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); }.mv-console-tiles { gap:9px; }.mv-tile { padding:14px;background:#2b3442;border:0;border-radius:0;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); }.mv-tile-icon,.mv-tile-label { color:#c5cfdf; }.mv-tile-label { font-size:11px;color:#fff; }.mv-run-btn { height:auto;margin:0;background:#2979ff;border-radius:0;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); }.mv-run-btn:disabled { background:#2b3442;color:#718098;opacity:1; }.mv-chip-box,.mv-order-row { border-radius:0;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); }.mv-chip { border-radius:0!important;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%); }.mv-order-item { border-radius:0!important; }.tool-grid { grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:12px; }.tool-card { align-items:flex-start;text-align:left;min-height:130px; }.tool-card-icon { border-radius:0!important; }
 html[data-theme='dark'] .cal-weekdays,html[data-theme='dark'] .tier-card-media { background:#0d1016; } html[data-theme='dark'] .cal-day { border-color:#2c3645!important; } html[data-theme='dark'] .mv-chip-box,html[data-theme='dark'] .mv-order-row { background:#1a202b; }
 @media (max-width:991.98px) { .cal-main-layout { grid-template-columns:1fr; }.cal-calendar-area,.cal-sidebar { grid-column:auto;grid-row:auto; }.cal-sidebar { display:grid;grid-template-columns:1fr 1fr; }.mv-console { grid-template-columns:1fr; }.mv-run-btn { min-height:58px; } }
@@ -34,7 +49,7 @@ html[data-theme='dark'] .cal-weekdays,html[data-theme='dark'] .tier-card-media {
 /* Final V5 component geometry: these rules intentionally override the legacy rounded UI. */
 .theme-toggle { display:inline-flex;align-items:center;width:auto;height:auto;margin-left:20px;padding:2px;background:#2b3442;border:0; }.theme-toggle button { display:grid;place-items:center;width:30px;height:24px;border:0;background:transparent;color:#8b97ab;font-size:13px;cursor:pointer;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%); }.theme-toggle button.active { background:#2979ff;color:#fff; }
 .sub-tabs { display:inline-flex;width:auto;height:auto;padding:3px;gap:2px;background:#141821;border:0;overflow:visible; }.sub-tab { height:34px;margin:0;padding:0 18px;border:0;background:transparent;color:#9aa6ba; }.sub-tab.active { background:#2979ff;color:#fff; }.sub-tab:hover { color:#fff;background:#1e2531; }.sub-tab.active:hover { background:#2979ff; }
-.page-header { display:flex;flex-direction:column;align-items:flex-start;margin-bottom:20px; }.page-header-title { order:1;margin:0;font-size:34px;font-weight:700;letter-spacing:-.04em; }.page-header-subtitle { order:2;margin:8px 0 0;font-size:12px; }.page-header::before { order:0; }.page-header-divider { display:none; }.section-title { margin-bottom:16px;padding-bottom:9px;border-bottom:2px solid #141821;font-size:18px;font-family:'Pretendard',sans-serif;letter-spacing:-.025em; }.section-title::before { content:'SECTION';display:block;margin-bottom:5px;color:#8c97a8;font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;letter-spacing:.16em; }.section-title-sm { font-size:14px; }
+.page-header { display:flex;flex-direction:column;align-items:flex-start;margin-bottom:20px; }.page-header-title { order:1;margin:0;font-size:34px;font-weight:700;letter-spacing:-.04em; }.page-header-subtitle { order:2;margin:8px 0 0;font-size:12px; }.page-header::before { order:0; }.page-header-divider { display:none; }.section-title { margin-bottom:16px;padding-bottom:9px;border-bottom:2px solid #141821;font-size:18px;font-family:'Pretendard',sans-serif;letter-spacing:-.025em; }/* [삭제] .section-title::before 'SECTION' 리터럴 라벨 - .section-title이 flex라 제목을 오른쪽으로 밀고, 모든 섹션이 같은 글자를 달았다. 섹션별 라틴 라벨은 마크업에 실제 문구가 필요하다. */.section-title-sm { font-size:14px; }
 .clean-card,.news-post-card,.live-broadcast-card,.member-card,.tool-card,.tier-card,.stat-card-box { background:#fff;border:0;box-shadow:none; }.clean-card:hover,.tool-card:hover,.member-card:hover,.tier-card:hover { box-shadow:0 9px 20px rgba(20,24,33,.1); }.btn-view-all { border-radius:0;color:#5b6575; }.btn-view-all:hover { background:#eef4ff;color:#1c5fe0; }
 .tag-badge.role-badge { clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%); }.filter-nav { gap:3px;margin-left:0;padding-left:0;border:0; }.filter-item { padding:5px 10px;background:#eef1f6; }.filter-item.active { background:#2979ff;color:#fff; }
 html[data-theme='dark'] .section-title { border-color:#edf2fb; } html[data-theme='dark'] .clean-card,html[data-theme='dark'] .news-post-card,html[data-theme='dark'] .live-broadcast-card,html[data-theme='dark'] .member-card,html[data-theme='dark'] .tool-card,html[data-theme='dark'] .tier-card,html[data-theme='dark'] .stat-card-box { background:#1a202b; }
@@ -42,3 +57,116 @@ html[data-theme='dark'] .section-title { border-color:#edf2fb; } html[data-theme
 
 .home-carousel-preview { position:absolute;z-index:2;right:48px;top:34px;width:360px;padding:19px 20px;background:#1e2531; }.home-preview-label { margin-bottom:14px;color:#718098;font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;letter-spacing:.16em; }.home-preview-teams { display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;font-size:17px; }.home-preview-teams b:last-child { text-align:right; }.home-preview-result { display:grid;place-items:center;width:28px;height:22px;background:#64748b;font-family:'Chakra Petch',sans-serif;font-size:11px; }.home-preview-result.win { background:#2979ff; }.home-preview-result.lose { background:#f03e3e; }.home-preview-meta { display:flex;gap:7px;margin-top:15px;padding-top:12px;border-top:1px solid #394556;color:#9aa6ba;font-family:'Chakra Petch',sans-serif;font-size:10px; }.home-preview-meta span { padding:3px 7px;background:#2b3442; }.home-preview-meta time { margin-left:auto;align-self:center;color:#718098; }.home-preview-loading { color:#9aa6ba;font-size:12px; }
 @media (max-width:1050px) { .home-carousel-preview { width:300px;right:28px; } }.home-carousel-slide { padding-right:440px; } @media (max-width:767.98px) { .home-carousel-slide { padding-right:24px; }.home-carousel-preview { display:none; } }
+
+
+/* ============================================================
+   [이식] 아래는 예전에 docs/style.css에 직접 써두었던 것들이다. 빌드 산출물에
+   손으로 넣은 규칙은 다음 빌드에 사라지므로 여기로 옮겼다.
+   ============================================================ */
+/* 숫자와 라틴 라벨만 Chakra Petch. 한글 본문은 Pretendard 그대로다.
+   tabular-nums 덕분에 표의 자리수가 흔들리지 않는다. */
+.match-badge, .tag-badge.race-badge, .live-badge, .tier-bar, .avatar-bar,
+.stat-table, .home-hero-kicker, .tier-bar-count, .tier-scope-num,
+.donut-text, .live-thumb-overlay, .mv-stepper-value, .mv-order-num {
+    font-family: 'Chakra Petch', 'Pretendard', sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   [확정 반영] 시안 검토에서 정해진 것들
+   ============================================================ */
+
+/* 서브탭 - 테두리 박스 대신 잉크 세그먼트.
+   페이지 구분선 + 탭 테두리 + 섹션 제목선이 세 겹으로 겹쳐 보이던 걸 한 겹으로 줄인다. */
+.sub-tabs {
+    display: inline-flex; align-items: stretch; gap: 2px;
+    width: -moz-fit-content; width: fit-content; max-width: 100%;
+    height: auto; padding: 3px; margin-bottom: 24px;
+    background: #141821; border: 0;
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+}
+.sub-tab {
+    height: 34px; margin: 0; padding: 0 18px;
+    justify-content: center; border: 0;
+    font-size: 13px; font-weight: 600; color: #9aa6ba;
+}
+.sub-tab:hover { color: #fff; }
+.sub-tab.active { background: var(--color-primary); border: 0; color: #fff; font-weight: 700; }
+
+/* 큰 타이틀 아래 굵은 선은 뺀다 - 바로 아래 오는 잉크 서브탭이 이미 경계다. */
+.page-header-divider, .page-header-divider.tight { display: none; }
+.page-header { margin-bottom: 18px; }
+
+/* 섹션 제목 - 한글 제목에 Chakra Petch를 걸면 글리프가 없어 Pretendard로 떨어지면서
+   letter-spacing만 남아 자간이 이상해진다. 한글은 Pretendard 그대로 두고 크기로 위계를 준다. */
+.section-title {
+    font-family: 'Pretendard', sans-serif;
+    font-size: 18px; font-weight: 700; letter-spacing: -0.025em;
+    border-bottom: 2px solid #141821; padding: 0 0 9px;
+    align-items: baseline;
+}
+.section-title-sm { font-family: 'Pretendard', sans-serif; border-bottom: 1px solid var(--color-border); }
+
+/* 뱃지 가족 - 티어 뱃지를 잉크로 올린다. 연회색이면 종족 뱃지(진한 종족색) 옆에서
+   같은 가족으로 안 읽혔다. 높이 20px / 노치 5px는 셋이 공유한다. */
+.tag-badge.tier-badge { background: #141821; border: 0; color: #fff; font-weight: 700; }
+.tag-badge.role-badge { font-family: 'Pretendard', sans-serif; font-weight: 700; }
+.badge-win { background-color: var(--color-primary); }
+
+/* LIVE - 26px은 종족·티어(20px)보다 커서 혼자 튀었다. 가족 높이에 맞춘다. */
+.live-badge {
+    top: 9px; left: 9px; height: 20px; padding: 0 9px;
+    font-size: 9px; letter-spacing: 0.12em; gap: 0;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+
+/* 방송중 카드 - 시청자수/경과시간이 썸네일 위로 올라가 카드가 짧아졌으니
+   한 줄에 4장이 들어가게 한다. */
+.live-broadcast-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.live-thumb-overlay { right: 9px; bottom: 9px; }
+.live-thumb-overlay span {
+    padding: 0 7px; height: 20px; display: inline-flex; align-items: center;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.live-card-title { margin-bottom: 0; font-weight: 400; color: var(--color-text-sub); }
+.live-card-who { margin-bottom: 7px; }
+
+/* 티어표 - 티어 안에서 종족별로 줄을 나누는 구조(.tier-race-block)는 이미 있다.
+   카드 본문 텍스트는 가운데로. */
+.tier-card-body { text-align: center; }
+.tier-card-nameline, .tier-card-team { justify-content: center; }
+
+/* 표 머리글을 잉크 면으로 - 연한 파랑 머리글은 본문 흰 카드와 붙어서 경계가 약했다. */
+.stat-table thead th {
+    background: #141821; border-bottom: 0; color: #9aa6ba;
+    font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.stat-table thead .stat-table-sticky-col { background: #141821; }
+
+/* ── 모바일 선택 바 (확정) ──────────────────────────────────
+   920px 아래에서 왼쪽 사이드바가 '접히는 한 줄 선택 바'가 된다. 선택된 항목만
+   한 줄로 보이고, 누르면 같은 목록이 아래로 펼쳐진다. 가로로 미는 동작은 없다.
+   (줄과 토글은 core.js의 avatarBarTools/setActiveAvatarItem이 만든다) */
+.avatar-bar-pick { display: none; }
+@media (max-width: 920px) {
+    .selection-layout > .avatar-bar { display: block; padding: 0; }
+    .selection-layout > .avatar-bar::before { display: none; }
+    .avatar-bar-pick {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        width: 100%; height: 46px; padding: 0 15px;
+        background: transparent; border: 0; cursor: pointer;
+        font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .avatar-bar-pick svg { width: 15px; height: 15px; color: #8b97ab; transition: transform 0.15s; flex: none; }
+    .selection-layout > .avatar-bar:not(.is-closed) .avatar-bar-pick svg { transform: rotate(180deg); }
+    .selection-layout > .avatar-bar.is-closed .avatar-bar-tools,
+    .selection-layout > .avatar-bar.is-closed .avatar-selector-scroll { display: none; }
+    .selection-layout > .avatar-bar .avatar-bar-tools { border-top: 1px solid #2b3442; }
+    .selection-layout > .avatar-bar .avatar-selector-scroll { max-height: 60vh; overflow-y: auto; }
+    .selection-layout > .avatar-bar .avatar-selector-list { flex-direction: column; align-items: stretch; height: auto; width: 100%; }
+    .selection-layout > .avatar-bar .avatar-select-item { width: 100%; height: 40px; padding: 0 13px; border-left: 3px solid transparent; border-bottom: 0; justify-content: flex-start; }
+    .selection-layout > .avatar-bar .avatar-select-item.active { border-left-color: #fff; background: var(--color-primary); }
+    .sub-tabs { width: 100%; }
+    .sub-tab { flex: 1 0 auto; padding: 0 14px; }
+    .live-broadcast-grid { grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); }
+}
