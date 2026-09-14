@@ -18,7 +18,7 @@
       "person": "두두",
       "desc": "생일",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1788410553136,
@@ -28,7 +28,7 @@
       "person": "윤환",
       "desc": "한중전",
       "detail": "",
-      "color": "#d1fae5"
+      "color": "#111318"
     },
     {
       "id": 1788410538904,
@@ -38,7 +38,7 @@
       "person": "낭니",
       "desc": "낭피엘",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1788411375531,
@@ -48,7 +48,7 @@
       "person": "캄몬",
       "desc": "",
       "detail": "",
-      "color": "#fef3c7"
+      "color": "#ff7a00"
     },
     {
       "id": 1788411859497,
@@ -58,7 +58,7 @@
       "person": "중만컵",
       "desc": "캄몬 vs 케이대",
       "detail": "",
-      "color": "#dbeafe"
+      "color": "#1677ff"
     },
     {
       "id": 1788534153554,
@@ -68,7 +68,7 @@
       "person": "캄몬",
       "desc": "재계약",
       "detail": "",
-      "color": "#dbeafe"
+      "color": "#1677ff"
     },
     {
       "id": 1788411895026,
@@ -78,7 +78,7 @@
       "person": "중만컵",
       "desc": "뉴캣슬 vs 수술대",
       "detail": "",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788411922758,
@@ -88,7 +88,7 @@
       "person": "중만컵",
       "desc": "DM vs 엠비대",
       "detail": "",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788411935742,
@@ -98,7 +98,7 @@
       "person": "윤환",
       "desc": "중만컵 해설",
       "detail": "",
-      "color": "#d1fae5"
+      "color": "#111318"
     },
     {
       "id": 1788411971561,
@@ -108,7 +108,7 @@
       "person": "ASL22",
       "desc": "16강 A조",
       "detail": "짭제 윤중 재욱 영진",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788839808275,
@@ -118,7 +118,7 @@
       "person": "암벽토먼",
       "desc": "할없사 낚시",
       "detail": "하랑 합류",
-      "color": "#dbeafe"
+      "color": "#1677ff"
     },
     {
       "id": 1788412030098,
@@ -128,7 +128,7 @@
       "person": "ASL22",
       "desc": "16강 B조",
       "detail": "상문 경모 제동 명운",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788839871844,
@@ -138,7 +138,7 @@
       "person": "조이",
       "desc": "단양 여행",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1788844188701,
@@ -148,7 +148,7 @@
       "person": "낭니먼진",
       "desc": "낭먼이 간다",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1788412051970,
@@ -158,7 +158,7 @@
       "person": "중만컵",
       "desc": "JSA vs 케이대",
       "detail": "4강 A조",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788412068202,
@@ -168,7 +168,7 @@
       "person": "중만컵",
       "desc": "뉴캣슬 vs DM",
       "detail": "4강 B조",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788412315390,
@@ -178,7 +178,7 @@
       "person": "ASL22",
       "desc": "16강 C조 민철",
       "detail": "재호 영재 민철 일장",
-      "color": "#f3e8ff"
+      "color": "#16c75b"
     },
     {
       "id": 1788412376276,
@@ -188,7 +188,7 @@
       "person": "ASL22",
       "desc": "16강 D조",
       "detail": "윤철 재현 영한 정우",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788412389986,
@@ -198,7 +198,7 @@
       "person": "중만컵",
       "desc": "케이대 vs 뉴캣슬",
       "detail": "결승",
-      "color": "#f1f5f9"
+      "color": "#6b7280"
     },
     {
       "id": 1788951874127,
@@ -208,7 +208,7 @@
       "person": "캄몬",
       "desc": "24시간",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1788972694118,
@@ -218,7 +218,7 @@
       "person": "민철",
       "desc": "코려대CK",
       "detail": "",
-      "color": "#f3e8ff"
+      "color": "#16c75b"
     },
     {
       "id": 1789013686147,
@@ -238,7 +238,7 @@
       "person": "햇살",
       "desc": "24시간",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1789025526568,
@@ -248,7 +248,7 @@
       "person": "하랑",
       "desc": "테라스 먹방",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1789025567961,
@@ -258,7 +258,7 @@
       "person": "타밍송이",
       "desc": "장판빵 멸망전",
       "detail": "윤환 사테 준오",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1789100083799,
@@ -268,7 +268,7 @@
       "person": "윤환",
       "desc": "클암CK",
       "detail": "",
-      "color": "#d1fae5"
+      "color": "#111318"
     },
     {
       "id": 1789186098219,
@@ -278,7 +278,7 @@
       "person": "낭니",
       "desc": "도낭CK",
       "detail": "",
-      "color": "#ffe4e6"
+      "color": "#ff2538"
     },
     {
       "id": 1789304358823,
@@ -288,7 +288,7 @@
       "person": "윤환",
       "desc": "랜피엘",
       "detail": "",
-      "color": "#d1fae5"
+      "color": "#111318"
     }
   ],
   "offAir": {
