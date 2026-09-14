@@ -11,13 +11,13 @@
             <!-- 모바일 분리용 사이드바 -->
             <aside class="cal-sidebar">
                 <div class="cal-today-card-wrapper">
-                    <div class="section-title">오늘의 일정</div>
+                    <div class="section-title" data-en="TODAY">오늘의 일정</div>
                     <div class="clean-card p-4">
                         <div class="cal-today-list scroll-area" id="todayList"></div>
                     </div>
                 </div>
                 <div class="cal-selected-card-wrapper">
-                    <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
+                    <div class="section-title" id="selectedListTitle" data-en="SELECTED">선택한 날짜 일정</div>
                     <div class="clean-card p-4">
                         <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
                     </div>
@@ -25,7 +25,7 @@
             </aside>
 
             <section class="cal-calendar-area">
-                <div class="section-title">
+                <div class="section-title" data-en="THIS MONTH">
                     이달의 일정
                     <div class="cal-nav-group">
                         <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>

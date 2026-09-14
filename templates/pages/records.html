@@ -15,7 +15,7 @@
 
     <!-- 1. 팀 뷰 -->
     <div id="view-team-stat">
-        <div class="section-title">전체 전적</div>
+        <div class="section-title" data-en="SUMMARY">전체 전적</div>
         <div class="row g-3 mb-block">
             {%- for fmt in ['대회', '대학', '미니', 'CK'] %}
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('{{ fmt }}')">
@@ -32,7 +32,7 @@
              내용만큼 늘어난다) 좁을 때 가로로만 스크롤된다. -->
         <div class="row gap-block mb-block">
             <div class="col-lg-6">
-                <div class="section-title">상대 전적</div>
+                <div class="section-title" data-en="HEAD TO HEAD">상대 전적</div>
                 <div class="clean-card p-0 overflow-hidden">
                     <div class="table-responsive scroll-area">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
@@ -64,7 +64,7 @@
             </div>
 
             <div class="col-lg-6">
-                <div class="section-title">
+                <div class="section-title" data-en="RECENT">
                     최근 전적
                     <button class="btn-view-all" onclick="openTeamMatchModal('전체')">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
                 </div>
@@ -91,7 +91,7 @@
                 <div class="avatar-selector-list" id="indiv-avatar-list"></div>
             </div>
             <div class="selection-content">
-        <div class="section-title" id="indiv-content-title">전체 전적</div>
+        <div class="section-title" id="indiv-content-title" data-en="PLAYER">전체 전적</div>
 
         <div id="indiv-summary-content">
             <div class="clean-card p-0 overflow-hidden">
@@ -114,13 +114,26 @@
         </div>
 
         <div id="statContent" class="d-none">
-            <div class="clean-card d-flex align-items-center mb-block p-4">
+            {#- [리디자인] 선수 머리 카드. 시안에서는 흰 카드가 아니라 잉크 면이고,
+                오른쪽에 합계가 붙는다. 합계는 대회 + 대학만 센다(미니·CK는 성격이 달라
+                한 숫자로 묶으면 의미가 흐려진다) - page-records.js의 selectPlayer가 채운다. #}
+            <div class="clean-card profile-head d-flex align-items-center mb-block p-4">
                 <div class="profile-avatar" id="p-avatar">👤</div>
-                <div>
+                <div class="profile-head-id">
                     <h3 class="fw-bold m-0 mb-2 profile-name" id="p-name">이름</h3>
                     <div class="d-flex gap-2">
                         <span class="tag-badge" id="p-tier">티어</span>
                         <span class="tag-badge" id="p-race">종족</span>
+                    </div>
+                </div>
+                <div class="profile-head-stats">
+                    <div class="profile-head-stat">
+                        <div class="profile-head-label">대회 + 대학</div>
+                        <div class="profile-head-value" id="p-total-wl">-</div>
+                    </div>
+                    <div class="profile-head-stat">
+                        <div class="profile-head-label">WIN RATE</div>
+                        <div class="profile-head-value profile-head-rate" id="p-total-rate">-</div>
                     </div>
                 </div>
             </div>
@@ -128,7 +141,7 @@
             <div class="row g-3 mb-block">
                 <div class="col-md-6">
                     <div class="clean-card h-100 p-3">
-                        <div class="section-title-sm">형식별 승률</div>
+                        <div class="section-title-sm" data-en="BY FORMAT">형식별 승률</div>
                         <div class="donut-wrap">
                             <div class="donut-box"><div class="donut" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label">대회</div><div class="donut-sub" id="dw-fmt-1">-</div></div>
                             <div class="donut-box"><div class="donut" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label">대학</div><div class="donut-sub" id="dw-fmt-2">-</div></div>
@@ -138,7 +151,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="clean-card h-100 p-3">
-                        <div class="section-title-sm">종족전 승률</div>
+                        <div class="section-title-sm" data-en="BY MATCHUP">종족전 승률</div>
                         <div class="donut-wrap">
                             <div class="donut-box"><div class="donut" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label text-primary">vs T</div><div class="donut-sub" id="dw-race-t">-</div></div>
                             <div class="donut-box"><div class="donut" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label donut-label-z">vs Z</div><div class="donut-sub" id="dw-race-z">-</div></div>
@@ -148,7 +161,7 @@
                 </div>
             </div>
 
-            <div class="section-title mt-4 section-title-filters">
+            <div class="section-title mt-4 section-title-filters" data-en="RECENT">
                 <div class="d-flex align-items-center mw-100 overflow-hidden">
                     <span class="filter-nav-label">최근 전적</span>
                     <div id="indiv-filters" class="filter-nav tab-scroll" role="tablist">
@@ -169,10 +182,12 @@
                             <tr>
                                 <th scope="col" class="text-center stat-table-sticky-col colw-16-66">상대</th>
                                 <th scope="col" class="text-center colw-16-66">상대 팀</th>
+                                {#- [리디자인] 맵을 결과·날짜 뒤로 옮겼다. 중요한 순서가
+                                    상대 > 상대팀 > 형식 > 승패이고, 날짜와 맵은 그 다음이다. #}
                                 <th scope="col" class="text-center colw-16-66">형식</th>
-                                <th scope="col" class="text-center colw-16-66">맵</th>
                                 <th scope="col" class="text-center colw-16-66">결과</th>
                                 <th scope="col" class="text-center colw-16-66">날짜</th>
+                                <th scope="col" class="text-center colw-16-66">맵</th>
                             </tr>
                         </thead>
                         <tbody id="indiv-recent-list"></tbody>

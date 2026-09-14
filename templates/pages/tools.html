@@ -15,7 +15,7 @@
 
     <!-- 1. 멀티뷰어 뷰 -->
     <div id="view-tools-multiviewer">
-        <div class="section-title">설정</div>
+        <div class="section-title" data-en="SETUP">설정</div>
         <div class="mv-console">
             <div class="mv-console-tiles">
                <div class="mv-tile">
@@ -44,7 +44,7 @@
             </button>
         </div>
 
-        <div class="section-title">멤버 선택</div>
+        <div class="section-title" data-en="MEMBERS">멤버 선택</div>
         <div class="mv-chip-box">
             <div class="mv-chip-row" id="mv-chip-row"></div>
             <div class="mv-quickadd">
@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        <div class="section-title">선택된 목록</div>
+        <div class="section-title" data-en="ORDER">선택된 목록</div>
         <div class="mv-order-row" id="mv-order-row"></div>
     </div>
 
@@ -65,7 +65,7 @@
         파일 안에 통째로 들어있다) 이 탭을 열지도 않은 사람까지 그걸 받게 된다. 그래서 src는
         비워두고 이 탭을 실제로 처음 열 때 page-tools.js(riderEnsureLoaded)가 채운다. #}
     <div id="view-tools-rider" class="d-none">
-        <div class="section-title">
+        <div class="section-title" data-en="GAME">
             캄몬라이더
             <span class="rider-actions">
                 <button type="button" class="btn-view-all" onclick="riderFullscreen()">전체화면 ⛶</button>
@@ -79,10 +79,10 @@
 
     <!-- 3. 외부도구 뷰 (도구/사이트로 구분) -->
     <div id="view-tools-external" class="d-none">
-        <div class="section-title">도구</div>
+        <div class="section-title" data-en="TOOLS">도구</div>
         <div class="tool-grid" id="tools-grid-extTools"></div>
 
-        <div class="section-title section-title-spaced">사이트</div>
+        <div class="section-title section-title-spaced" data-en="SITES">사이트</div>
         <div class="tool-grid" id="tools-grid-extSites"></div>
     </div>
 </section>

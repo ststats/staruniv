@@ -109,7 +109,17 @@ function calculateTeamSummaries() {
         const { w, l } = tStats[fmt];
         const rate = (w + l) > 0 ? (w / (w + l) * 100) : 0;
         const ringColor = rateColor(rate);
-        document.getElementById(`t-sum-${fmt}-w`).innerHTML = `<span class="wl-win">${w}</span>승 <span class="wl-lose">${l}</span>패`;
+        // [리디자인] 승패를 비율 바로 보여준다. 폭을 실제 비율로 주고 숫자를 바 안에 넣는다
+        // ('승'/'패' 글자를 바 밖에 두면 바 배경이 없어 흰 글자가 보이지 않는다).
+        // 읽어주는 프로그램과 마우스오버용으로 원래 문구는 title/aria-label에 남긴다.
+        const wlBox = document.getElementById(`t-sum-${fmt}-w`);
+        const wlTotal = w + l;
+        wlBox.setAttribute('title', `${w}승 ${l}패`);
+        wlBox.setAttribute('aria-label', `${w}승 ${l}패`);
+        wlBox.innerHTML = wlTotal === 0
+            ? '<span class="wl-none">기록 없음</span>'
+            : (w ? `<span class="wl-win" style="width:${(w / wlTotal * 100).toFixed(1)}%">${w}</span>` : '')
+            + (l ? `<span class="wl-lose" style="width:${(l / wlTotal * 100).toFixed(1)}%">${l}</span>` : '');
         const rateEl = document.getElementById(`t-sum-${fmt}-r`);
         rateEl.innerText = getRateText(w, l);
         rateEl.style.color = ringColor;
@@ -284,6 +294,20 @@ function selectPlayer(name) {
         updateDonut(`d-${suffix}`, `dt-${suffix}`, `dw-${suffix}`, parseStat(pStat[key]), color);
     });
 
+    // [리디자인] 머리 카드 오른쪽의 합계 - 대회 + 대학만 센다.
+    // 미니·CK까지 한 숫자로 묶으면 "이 선수가 대회에서 얼마나 하는지"가 미니 경기 수에
+    // 묻혀버린다(미니가 경기 수가 훨씬 많다).
+    const official = ['대회 전적', '대학 전적'].reduce((acc, key) => {
+        const st = parseStat(pStat[key]);
+        return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
+    }, { wins: 0, losses: 0 });
+    const officialTotal = official.wins + official.losses;
+    document.getElementById('p-total-wl').innerHTML = officialTotal
+        ? `${official.wins}<small>승</small> ${official.losses}<small>패</small>`
+        : '<small>기록 없음</small>';
+    document.getElementById('p-total-rate').innerText =
+        officialTotal ? (official.wins / officialTotal * 100).toFixed(1) + '%' : '-';
+
     renderIndivMatchesList('indiv-recent-list', RecordsState.indivFilter, 10);
     updateStatsHash();
 }
@@ -313,11 +337,41 @@ function renderIndivMatchesList(containerId, format, limit) {
                     ${teamCellInnerHtml(m['상대팀'])}
                 </td>
                 <td class="badge-cell"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td>${escapeHTML(m['맵']) || '-'}</td>
                 <td class="badge-cell">${resultBadgeHtml(m['결과'] || '')}</td>
                 <td>${escapeHTML(shortMatchDate(m['날짜']))}</td>
+                <td class="cell-muted">${escapeHTML(m['맵']) || '-'}</td>
             </tr>
             `).join('') : EMPTY_MATCH_ROW_HTML;
+}
+
+
+// [리디자인] 상대 전적 표의 셀은 build_html.py가 "3승 1패" 같은 문자열로 구워준다.
+// 25개 팀을 훑을 때 숫자를 하나하나 읽어야 우열이 보였다 - 시안대로 비율 바로 바꾼다.
+// 마크업을 서버에서 바꾸지 않고 여기서 올려 씌우는 이유: JS가 죽어도 원래 숫자가 그대로
+// 남아 정보가 사라지지 않는다(점진적 향상). 원래 문구는 title에 남긴다.
+function upgradeOpponentStatCells() {
+    const rows = document.querySelectorAll('#view-team-stat tbody tr.team-row-clickable');
+    rows.forEach(tr => {
+        // 0번째는 상대팀 이름(행 머리글), 마지막은 화살표 칸이라 건너뛴다.
+        const cells = Array.from(tr.querySelectorAll('td')).slice(1, 5);
+        cells.forEach(td => {
+            if (td.dataset.wlDone) return;
+            const stat = parseStat(td.textContent.trim());
+            td.dataset.wlDone = '1';
+            if (stat.text === '-') {
+                td.innerHTML = '<span class="wl-empty" aria-hidden="true">—</span>';
+                td.setAttribute('aria-label', '기록 없음');
+                return;
+            }
+            const total = stat.wins + stat.losses;
+            td.setAttribute('title', stat.text);
+            td.setAttribute('aria-label', stat.text);
+            td.innerHTML = '<span class="wl wl-cell">'
+                + (stat.wins ? `<span class="wl-win" style="width:${(stat.wins / total * 100).toFixed(1)}%">${stat.wins}</span>` : '')
+                + (stat.losses ? `<span class="wl-lose" style="width:${(stat.losses / total * 100).toFixed(1)}%">${stat.losses}</span>` : '')
+                + '</span>';
+        });
+    });
 }
 
 function openIndivMatchModal() {
@@ -329,6 +383,7 @@ function openIndivMatchModal() {
 
 bootPage(() => {
     safeInit('팀 요약 통계', calculateTeamSummaries);
+    safeInit('상대 전적 승패 바', upgradeOpponentStatCells);
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         const view = params.get('view') === 'solo' ? 'individual' : 'team';
         switchStatView(view);

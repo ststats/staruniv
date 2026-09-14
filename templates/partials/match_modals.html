@@ -33,10 +33,12 @@
                             <tr>
                                 <th scope="col" class="text-center stat-table-sticky-col colw-16-66">상대</th>
                                 <th scope="col" class="text-center colw-16-66">상대 팀</th>
+                                {#- [리디자인] 개인 전적 표와 같은 순서(맵을 맨 뒤로) - 같은
+                                    renderIndivMatchesList가 그리므로 머리글도 같이 옮겨야 한다. #}
                                 <th scope="col" class="text-center colw-16-66">형식</th>
-                                <th scope="col" class="text-center colw-16-66">맵</th>
                                 <th scope="col" class="text-center colw-16-66">결과</th>
                                 <th scope="col" class="text-center colw-16-66">날짜</th>
+                                <th scope="col" class="text-center colw-16-66">맵</th>
                             </tr>
                         </thead>
                         <tbody id="indiv-modal-list"></tbody>

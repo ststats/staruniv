@@ -247,7 +247,7 @@ function renderTierGroups() {
     document.getElementById('tier-root').innerHTML = TierState.sections.length
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
-                <div class="section-title">
+                <div class="section-title" data-en="${tierLatinLabel(sec.tier)}">
                     <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.total}명</span><span class="tier-live" data-tier-live></span></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
@@ -300,10 +300,23 @@ function renderTierBar() {
 
 // 티어 바 높이를 CSS 변수로 넘겨서, 바로가기로 이동했을 때 제목이 바 뒤에 가리지 않게 한다.
 // (아바타 바는 내용에 따라 높이가 달라져서 CSS에 숫자로 못 박아둔다.)
+// [리디자인] 티어 바가 왼쪽 사이드바로 서 있을 때는 본문을 가리지 않는다. 그때 바 높이
+// (사이드바라 500px이 넘는다)를 그대로 넘기면 scroll-margin-top이 터무니없이 커져서
+// 바로가기를 눌렀을 때 제목이 화면 밖으로 날아간다. 그래서 0을 넘긴다.
+function tierBarCoversContent() {
+    const bar = document.getElementById('tier-bar');
+    if (!bar) return false;
+    // 사이드바 틀 안에 있고 화면이 좁지 않으면 = 세로 사이드바 = 본문을 가리지 않는다
+    const inSidebar = !!bar.closest('.selection-layout');
+    const narrow = window.matchMedia('(max-width: 920px)').matches;
+    return !inSidebar || narrow;
+}
+
 function syncTierBarHeight() {
     const bar = document.getElementById('tier-bar');
     if (!bar) return;
-    document.documentElement.style.setProperty('--tier-bar-h', `${bar.offsetHeight}px`);
+    const h = tierBarCoversContent() ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty('--tier-bar-h', `${h}px`);
 }
 
 function onTierBarClick(event) {
@@ -390,10 +403,20 @@ function scrollTierBarItemIntoView(btn) {
     list.scrollTo({ left, behavior: 'smooth' });
 }
 
+// [리디자인] 티어 제목 위에 붙는 라틴 라벨. 이름 티어는 대응 영문을, 숫자 티어는 T0~T8로.
+const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE', '베이비': 'BABY' };
+function tierLatinLabel(tier) {
+    const key = String(tier || '').replace('티어', '').trim();
+    if (TIER_EN[key]) return TIER_EN[key];
+    return /^\d+$/.test(key) ? 'TIER ' + key : 'TIER';
+}
+
 function tierStickyOffset() {
     const nav = document.querySelector('.top-navbar');
     const bar = document.getElementById('tier-bar');
-    return (nav ? nav.offsetHeight : 64) + (bar ? bar.offsetHeight : 0);
+    // 사이드바로 서 있을 때는 바가 본문을 가리지 않으므로 높이를 더하지 않는다.
+    const barH = bar && tierBarCoversContent() ? bar.offsetHeight : 0;
+    return (nav ? nav.offsetHeight : 64) + barH;
 }
 
 // ---------------------------------------------------------------------------
