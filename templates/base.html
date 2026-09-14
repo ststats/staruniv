@@ -28,7 +28,9 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('redesign.css') }}">
     {#- 빌드마다 바뀌는 site_data.json 버전 - core.js가 이 값을 붙여 요청해서, 데이터가 바뀌었을 때만 새로 받는다 #}
     <meta name="site-data-version" content="{{ site_data_version }}">
 </head>
@@ -53,6 +55,7 @@
             <a class="nav-item{% if nav.id == page_id %} active{% endif %}" href="{{ nav.href }}" data-page="{{ nav.id }}"{% if nav.hidden %} hidden{% endif %}{% if nav.id == page_id %} aria-current="page"{% endif %}>{{ nav.label }}</a>
             {%- endfor %}
         </nav>
+        <button class="theme-toggle" type="button" aria-label="다크 모드로 전환" aria-pressed="false" onclick="toggleTheme()"><span aria-hidden="true">◐</span></button>
     </div>
 </header>
 

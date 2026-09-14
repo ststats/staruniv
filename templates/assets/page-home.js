@@ -33,6 +33,9 @@ function liveCardHtml({ member: m, live }) {
                 <div class="live-thumb-wrap">
                     <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad_no)}" alt="방송 화면" onerror="this.style.display='none';">
                     <span class="live-badge">LIVE</span>
+                    <div class="live-thumb-overlay">
+                        <span>${escapeHTML(viewerText)}</span><span>${escapeHTML(elapsedText)}</span>
+                    </div>
                 </div>
                 <div class="live-card-body">
                     <div class="live-card-title">${escapeHTML(broad.broad_title || '')}</div>
@@ -40,10 +43,6 @@ function liveCardHtml({ member: m, live }) {
                         <div class="live-card-who">
                             <span class="${avatarRingClass}">${avatarHtml(soopId, 'live-card-avatar')}</span>
                             <span class="live-card-name">${escapeHTML(m['이름'])}</span>
-                        </div>
-                        <div class="live-card-stats">
-                            <div class="live-card-viewers">${escapeHTML(viewerText)}</div>
-                            <div class="live-card-elapsed">${escapeHTML(elapsedText)}</div>
                         </div>
                     </div>
                 </div>

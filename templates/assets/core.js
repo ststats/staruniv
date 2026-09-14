@@ -82,6 +82,26 @@ function setVisible(el, visible) {
 function isVisible(el) {
     return !!el && !el.classList.contains('d-none');
 }
+
+// 사용자가 고른 테마는 다음 방문에도 유지한다. 시스템 설정은 첫 방문의 기본값으로만 쓴다.
+function applyTheme(theme) {
+    const dark = theme === 'dark';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    const button = document.querySelector('.theme-toggle');
+    if (button) {
+        button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        button.setAttribute('aria-label', dark ? '라이트 모드로 전환' : '다크 모드로 전환');
+    }
+}
+function toggleTheme() {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('staruniv-theme', next);
+    applyTheme(next);
+}
+try {
+    applyTheme(localStorage.getItem('staruniv-theme') ||
+        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+} catch (_) { applyTheme('light'); }
 // (전적 페이지의 아바타 바, 멤버 페이지의 이전 멤버 목록 양쪽에서 쓴다)
 // "이전 멤버" 접기/펼치기 공용: 대상 영역 표시 + 쉐브론 회전
 function toggleCollapsible(areaId, chevronId) {
