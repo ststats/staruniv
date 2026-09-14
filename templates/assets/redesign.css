@@ -1726,3 +1726,104 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
     letter-spacing:.16em !important;
 }
 
+
+/* ============================================================
+   패치 — 공지 노치 / 일정·티어 제목 규격 / 휴방 색상
+   ============================================================ */
+/* 공지 카드는 실제 외곽선이 노치 윤곽을 따라 보이도록 1px 다방향 그림자를 사용한다. */
+.home-notice-list > .home-notice-card,
+#news-past-list .home-notice-card,
+#news-past-list .news-post-card {
+    border-radius:0 !important;
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%) !important;
+    filter:
+      drop-shadow(0 -1px 0 var(--color-border))
+      drop-shadow(0 1px 0 var(--color-border))
+      drop-shadow(-1px 0 0 var(--color-border))
+      drop-shadow(1px 0 0 var(--color-border)) !important;
+}
+/* 홈 최근 공지는 첫 카드의 노치만 보이고, 이어지는 카드의 접점은 기존 구분선으로 연결한다. */
+.home-notice-list > .home-notice-card + .home-notice-card {
+    filter:drop-shadow(0 1px 0 var(--color-border)) !important;
+}
+
+/* '이달의 일정'도 '오늘의 일정'과 완전히 같은 공통 section-title 구조를 사용한다.
+   영문 레일은 위, 제목은 바로 아래, 오른쪽 컨트롤은 제목 행 오른쪽에 둔다. */
+.section-title.cal-month-section-title {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px !important;
+    margin-bottom:16px !important;
+    border-left:0 !important;
+    border-bottom:2px solid var(--color-text-main) !important;
+    gap:0 !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    letter-spacing:.025em !important;
+}
+.section-title.cal-month-section-title::before {
+    flex:0 0 100% !important;
+    order:-1 !important;
+    display:block !important;
+    margin:0 0 5px 0 !important;
+    font-family:'Chakra Petch',sans-serif !important;
+    font-size:9px !important;
+    font-weight:600 !important;
+    line-height:1 !important;
+    letter-spacing:.16em !important;
+    color:var(--color-text-sub) !important;
+}
+.section-title.cal-month-section-title .section-title-label {
+    flex:0 0 auto !important;
+    order:1 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    font-family:inherit !important;
+    font-size:inherit !important;
+    font-weight:inherit !important;
+    line-height:1 !important;
+}
+.section-title.cal-month-section-title .cal-nav-group {
+    position:static !important;
+    flex:0 0 auto !important;
+    order:2 !important;
+    margin-left:auto !important;
+}
+
+/* 티어 제목 역시 일반 section-title과 동일한 레일/제목/구분선 규격으로 고정한다. */
+.tier-row > .section-title[data-en] {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    min-height:32px !important;
+    height:auto !important;
+    padding:0 0 9px !important;
+    margin-bottom:16px !important;
+    border-left:0 !important;
+    border-bottom:2px solid var(--color-text-main) !important;
+    gap:0 !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    letter-spacing:.025em !important;
+}
+.tier-row > .section-title[data-en]::before {
+    flex:0 0 100% !important;
+    order:-1 !important;
+    display:block !important;
+    margin:0 0 5px 0 !important;
+    font-family:'Chakra Petch',sans-serif !important;
+    font-size:9px !important;
+    font-weight:600 !important;
+    line-height:1 !important;
+    letter-spacing:.16em !important;
+    color:var(--color-text-sub) !important;
+}
+
+/* 김윤환 휴방 띠도 새 일정 색상 체계의 쨍한 주황을 사용한다. */

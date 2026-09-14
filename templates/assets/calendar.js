@@ -39,7 +39,7 @@
     // 붙여준다 - 달력 칸 자체에만 표시되고, 연속으로 휴방이면 장기 일정 막대처럼 이어붙인다.
     const CAL_YOUNHWAN_NAME = '김윤환';
     const CAL_YOUNHWAN_SHORT = '윤환';
-    const CAL_YOUNHWAN_COLOR = '#fff3b0';
+    const CAL_YOUNHWAN_COLOR = '#ff7a00';
     const CAL_DEFAULT_EVENT_COLOR = '#eff6ff';
     const CAL_DEFAULT_LONGTERM_COLOR = '#ffedd5';
 
