@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container multiview-page" style="max-width: 1400px; margin: 24px auto 40px; padding: 0 20px;">
+  <div class="section-header-bar">
+    <div class="header-title-group">
+      <h2>SOOP 동시 시청 멀티뷰어</h2>
+      <span class="badge-count-black" style="font-size: 11px;">4분할 모드</span>
+    </div>
+    <div class="header-badge-group">
+      <a href="/tools/" class="btn-hero" style="padding: 5px 12px; font-size: 12px; background: var(--bg-surface); border: 1px solid var(--border-color);">설정 변경</a>
+    </div>
+  </div>
+
+  <div class="multiview-player-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; min-height: 600px;">
+    {% for p in site.players[:4] %}
+    <div class="mv-screen-card cut-box" style="background: #000; display: flex; flex-direction: column; position: relative; border-radius: 6px; overflow: hidden;">
+      <div style="background: rgba(18, 20, 24, 0.9); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; z-index: 5;">
+        <span style="font-size: 12px; font-weight: 700; color: #fff;">{{ p.name }} ({{ p.crew }})</span>
+        <span class="badge-live-red" style="font-size: 10px; padding: 1px 5px;">ON AIR</span>
+      </div>
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; position: relative; background: #0f1115;">
+        <img src="/images/{{ p.name }}.webp" alt="{{ p.name }}" onerror="this.src='/images/BGM.webp'" style="max-width: 100%; max-height: 240px; opacity: 0.7; object-fit: contain;">
+        <div style="position: absolute; text-align: center; color: #fff;">
+          <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600;">{{ p.name }} 방송 플레이어</p>
+          <span style="font-size: 11px; color: var(--text-muted);">SOOP 라이브 스트림 연결 대기 중</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/mv-shared.js"></script>
+<script src="/soop.js"></script>
+{% endblock %}
