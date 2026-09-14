@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=d21f8124e5">
+    <link rel="stylesheet" href="redesign.css?v=7d9c6125a3">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -43,9 +43,21 @@
 <main>
 
 <section id="page-members" class="page-section active container">
-    <div class="page-header">
-        <h1 class="page-header-title">멤버</h1>
-        <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식입니다.</p>
+    <div class="page-header page-header-with-stats">
+        <div class="page-header-main">
+            <h1 class="page-header-title">멤버</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식입니다.</p>
+        </div>
+        <div class="page-header-stats">
+            <div class="head-stat head-stat-ink">
+                <div class="head-stat-label">ACTIVE</div>
+                <div class="head-stat-value" id="member-count-active">-</div>
+            </div>
+            <div class="head-stat">
+                <div class="head-stat-label">ON AIR</div>
+                <div class="head-stat-value head-stat-live" id="member-count-live">-</div>
+            </div>
+        </div>
     </div>
     <hr class="page-header-divider tight">
     <div class="sub-tabs tab-scroll" role="tablist">
@@ -63,7 +75,7 @@
                 <div class="avatar-selector-list" id="news-avatar-list"></div>
             </div>
             <div class="selection-content">
-                <div class="section-title" id="news-content-title">전체 공지</div>
+                <div class="section-title" id="news-content-title" data-en="NOTICE">전체 공지</div>
 
                 <div id="news-feed-content" aria-live="polite">
                     <div class="text-center text-muted py-4 fs-body">불러오는 중...</div>
@@ -142,7 +154,7 @@
 <script src="purify.min.js?v=2bdf4e9eee"></script>
 <script src="core.js?v=0f47e87d73"></script>
 <script src="soop.js?v=68531e35cd"></script>
-<script src="page-members.js?v=65aecf0105"></script>
+<script src="page-members.js?v=8a06e17278"></script>
 
 </body>
 </html>

@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=d21f8124e5">
+    <link rel="stylesheet" href="redesign.css?v=7d9c6125a3">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -54,15 +54,19 @@
              onclick="switchTierView('analysis')">분석</div>
     </div>
 
-    <div id="view-tier-list"><nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
-            <div class="tier-bar-tools">
-                <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
-            </div>
-            <div class="tier-bar-list scroll-area" id="tier-bar-list"></div>
-        </nav>
+    <div id="view-tier-list"><div class="selection-layout">
+            <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
+                <div class="tier-bar-tools">
+                    <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
+                </div>
+                <div class="tier-bar-list scroll-area" id="tier-bar-list"></div>
+            </nav>
 
-        <div id="tier-root">
-            <div class="tier-empty">불러오는 중...</div>
+            <div class="selection-content">
+                <div id="tier-root">
+                    <div class="tier-empty">불러오는 중...</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -77,7 +81,7 @@
 
 
 <script src="core.js?v=0f47e87d73"></script>
-<script src="page-tier.js?v=28cfa7bff7"></script>
+<script src="page-tier.js?v=3577a360b4"></script>
 
 </body>
 </html>

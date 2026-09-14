@@ -37,7 +37,7 @@ html[data-theme='dark'] { --color-bg:#10141c;--color-card:#1a202b;--color-border
 
 /* Remaining artboards: schedules, analytics, tier ranking and utility console. */
 .top-navbar .logo { gap:11px; }.logo-sub { display:block;padding-left:10px;border-left:1px solid #394556;color:#718098;font-family:'Chakra Petch',sans-serif;font-size:8px;font-weight:600;letter-spacing:.12em;line-height:1.25; }
-.stat-card-box { padding:19px 14px 17px; }.stat-card-box .label { font-family:'Chakra Petch','Pretendard',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase; }.stat-card-box .donut { width:84px;height:84px; }.stat-card-box .donut::before { width:64px;height:64px; }.stat-card-box .wl { display:flex;height:20px;margin-top:12px;color:#fff;overflow:hidden;font-family:'Chakra Petch',sans-serif;font-size:11px; }.stat-card-box .wl .wl-win { display:inline-flex;align-items:center;justify-content:center;flex:1;background:#2979ff; }.stat-card-box .wl .wl-lose { display:inline-flex;align-items:center;justify-content:center;flex:1;background:#f03e3e; }
+.stat-card-box { padding:19px 14px 17px; }.stat-card-box .label { font-family:'Chakra Petch','Pretendard',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase; }.stat-card-box .donut { width:84px;height:84px; }.stat-card-box .donut::before { width:64px;height:64px; }/* [삭제] 승패 바의 옛 규칙 - .wl-win/.wl-lose에 flex:1을 줘서 실제 승패 비율과 무관하게 항상 반반이 됐다. 아래 '승패 비율 바'가 대체한다. */
 .member-grid { grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:12px; }.member-card { min-height:176px;padding:16px 12px 13px;justify-content:flex-end;align-items:flex-start;text-align:left; }.member-card .member-avatar-img { width:54px;height:54px;border-radius:0;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%); }.member-card-name { margin-top:auto;font-size:15px; }.member-card-tags { justify-content:flex-start; }.member-card .tool-card-ext { top:10px;right:10px; }
 .cal-main-layout { display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px; }.cal-calendar-area { grid-column:1;grid-row:1; }.cal-sidebar { grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:26px; }.cal-calendar-area>.clean-card,.cal-sidebar .clean-card { clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); }.cal-weekdays { background:#141821;color:#fff; }.cal-weekdays>div { font-family:'Chakra Petch',sans-serif;font-size:11px;letter-spacing:.08em; }.cal-day { border-color:#e2e8f1!important; }.cal-day.today { box-shadow:inset 3px 0 0 #2979ff; }.cal-nav-group { background:#141821;padding:3px; }.cal-nav-btn { border-radius:0!important;background:#2b3442!important;color:#fff!important; }.cal-nav-badge { color:#fff!important;font-family:'Chakra Petch',sans-serif!important; }
 #page-stats .row.gap-block { gap:0; }.synergy-metric-label { font-family:'Chakra Petch',sans-serif;letter-spacing:.06em; }.synergy-rank { font-family:'Chakra Petch',sans-serif;font-weight:700; }.synergy-rank.top { background:#141821!important;color:#fff!important;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%); }.tier-bar { background:#141821;color:#fff;border:0;box-shadow:none; }.tier-bar-tools { border-color:#394556; }.bar-scope { background:#2b3442;border:0; }.tier-scope-btn { color:#9aa6ba; }.tier-scope-btn.on { background:#2979ff;color:#fff; }.tier-bar-item { color:#aab6c8; }.tier-bar-item:hover { background:#2b3442;color:#fff; }.tier-bar-item.active { background:#2979ff;color:#fff; }.tier-grid { grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px; }/* [삭제] 'RANK' 리터럴 라벨 - 같은 이유 */.tier-card-media { background:#141821; }.tier-card-body { border-top:2px solid #141821; }
@@ -50,9 +50,9 @@ html[data-theme='dark'] .cal-weekdays,html[data-theme='dark'] .tier-card-media {
 .theme-toggle { display:inline-flex;align-items:center;width:auto;height:auto;margin-left:20px;padding:2px;background:#2b3442;border:0; }.theme-toggle button { display:grid;place-items:center;width:30px;height:24px;border:0;background:transparent;color:#8b97ab;font-size:13px;cursor:pointer;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%); }.theme-toggle button.active { background:#2979ff;color:#fff; }
 .sub-tabs { display:inline-flex;width:auto;height:auto;padding:3px;gap:2px;background:#141821;border:0;overflow:visible; }.sub-tab { height:34px;margin:0;padding:0 18px;border:0;background:transparent;color:#9aa6ba; }.sub-tab.active { background:#2979ff;color:#fff; }.sub-tab:hover { color:#fff;background:#1e2531; }.sub-tab.active:hover { background:#2979ff; }
 .page-header { display:flex;flex-direction:column;align-items:flex-start;margin-bottom:20px; }.page-header-title { order:1;margin:0;font-size:34px;font-weight:700;letter-spacing:-.04em; }.page-header-subtitle { order:2;margin:8px 0 0;font-size:12px; }.page-header::before { order:0; }.page-header-divider { display:none; }.section-title { margin-bottom:16px;padding-bottom:9px;border-bottom:2px solid #141821;font-size:18px;font-family:'Pretendard',sans-serif;letter-spacing:-.025em; }/* [삭제] .section-title::before 'SECTION' 리터럴 라벨 - .section-title이 flex라 제목을 오른쪽으로 밀고, 모든 섹션이 같은 글자를 달았다. 섹션별 라틴 라벨은 마크업에 실제 문구가 필요하다. */.section-title-sm { font-size:14px; }
-.clean-card,.news-post-card,.live-broadcast-card,.member-card,.tool-card,.tier-card,.stat-card-box { background:#fff;border:0;box-shadow:none; }.clean-card:hover,.tool-card:hover,.member-card:hover,.tier-card:hover { box-shadow:0 9px 20px rgba(20,24,33,.1); }.btn-view-all { border-radius:0;color:#5b6575; }.btn-view-all:hover { background:#eef4ff;color:#1c5fe0; }
+.clean-card,.news-post-card,.live-broadcast-card,.member-card,.tool-card,.tier-card,/* [삭제] .stat-card-box를 흰 카드로 두던 규칙 - 시안에서 이 카드는 잉크 면이다. */.clean-card:hover,.tool-card:hover,.member-card:hover,.tier-card:hover { box-shadow:0 9px 20px rgba(20,24,33,.1); }.btn-view-all { border-radius:0;color:#5b6575; }.btn-view-all:hover { background:#eef4ff;color:#1c5fe0; }
 .tag-badge.role-badge { clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%); }.filter-nav { gap:3px;margin-left:0;padding-left:0;border:0; }.filter-item { padding:5px 10px;background:#eef1f6; }.filter-item.active { background:#2979ff;color:#fff; }
-html[data-theme='dark'] .section-title { border-color:#edf2fb; } html[data-theme='dark'] .clean-card,html[data-theme='dark'] .news-post-card,html[data-theme='dark'] .live-broadcast-card,html[data-theme='dark'] .member-card,html[data-theme='dark'] .tool-card,html[data-theme='dark'] .tier-card,html[data-theme='dark'] .stat-card-box { background:#1a202b; }
+html[data-theme='dark'] .section-title { border-color:#edf2fb; } html[data-theme='dark'] .clean-card,html[data-theme='dark'] .news-post-card,html[data-theme='dark'] .live-broadcast-card,html[data-theme='dark'] .member-card,html[data-theme='dark'] .tool-card,html[data-theme='dark'] .tier-card,html[data-theme='dark'] /* [삭제] 다크모드용 별도 배경 - 이제 라이트/다크 모두 잉크 면이라 불필요 */
 @media (max-width:767.98px) { .theme-toggle { margin-left:8px; }.theme-toggle button { width:26px;height:22px; }.sub-tabs { display:flex;width:100%;overflow-x:auto; }.sub-tab { flex:1 0 auto;justify-content:center;padding:0 14px; }.page-header-title { font-size:27px; }.section-title { font-size:16px; } }
 
 .home-carousel-preview { position:absolute;z-index:2;right:48px;top:34px;width:360px;padding:19px 20px;background:#1e2531; }.home-preview-label { margin-bottom:14px;color:#718098;font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;letter-spacing:.16em; }.home-preview-teams { display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;font-size:17px; }.home-preview-teams b:last-child { text-align:right; }.home-preview-result { display:grid;place-items:center;width:28px;height:22px;background:#64748b;font-family:'Chakra Petch',sans-serif;font-size:11px; }.home-preview-result.win { background:#2979ff; }.home-preview-result.lose { background:#f03e3e; }.home-preview-meta { display:flex;gap:7px;margin-top:15px;padding-top:12px;border-top:1px solid #394556;color:#9aa6ba;font-family:'Chakra Petch',sans-serif;font-size:10px; }.home-preview-meta span { padding:3px 7px;background:#2b3442; }.home-preview-meta time { margin-left:auto;align-self:center;color:#718098; }.home-preview-loading { color:#9aa6ba;font-size:12px; }
@@ -170,3 +170,451 @@ html[data-theme='dark'] .section-title { border-color:#edf2fb; } html[data-theme
     .sub-tab { flex: 1 0 auto; padding: 0 14px; }
     .live-broadcast-grid { grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); }
 }
+
+
+/* ============================================================
+   검토 2차 수정
+   ============================================================ */
+
+/* ── 1. 프로필 사진은 동그라미
+   SOOP 프로필 이미지가 원형 규격이다. 각진 면으로 깎으면 원본 사진의 둥근 테두리가
+   사각 틀 안에 들어가 모서리에 빈 공간이 생긴다. 사람 얼굴만 동그라미로 두고,
+   나머지(카드 · 바 · 뱃지 · 칩)는 전부 깎은 면을 유지한다. */
+.live-card-avatar, .live-card-avatar-ring,
+.home-notice-avatar, .news-post-avatar,
+.avatar-select-img, .avatar-select-fallback,
+.member-card .member-avatar-img, .member-avatar-img,
+.tier-card-avatar, .mv-chip-avatar, .player-avatar-sm,
+.team-logo-fallback,
+.selection-layout > .avatar-bar .avatar-select-img,
+.selection-layout > .avatar-bar .avatar-select-fallback {
+    border-radius: 50%;
+    clip-path: none;
+}
+/* 링은 사진을 감싸는 테두리라 같이 동그라미로. 파란 테두리 한 겹만 남긴다. */
+.live-card-avatar-ring, .live-card-avatar-ring.live-card-avatar-ring--male {
+    padding: 2px; background: var(--color-primary);
+}
+.live-card-avatar { border: 2px solid var(--color-card); box-sizing: border-box; }
+
+/* ── 2. 멤버 현황 카드 - 길고 왼쪽으로 쏠려 있던 것을 짧고 가운데로
+   예전 레이어가 min-height 176px + justify-content:flex-end + text-align:left 로
+   아래·왼쪽 정렬을 해두었다. 그래서 카드가 세로로 길고 이름이 왼쪽 아래에 붙었다.
+   사진 - 이름 - 뱃지가 가운데로 쌓이는 원래 구성으로 되돌리고 높이는 내용에 맡긴다. */
+.member-card {
+    min-height: 0; aspect-ratio: auto;
+    padding: 18px 12px 15px;
+    justify-content: flex-start; align-items: center; text-align: center;
+}
+.member-card .member-avatar-img { width: 58px; height: 58px; margin-bottom: 12px; }
+.member-card-name { margin-top: 0; font-size: 14px; font-weight: 700; }
+.member-card-tags { justify-content: center; margin-top: 10px; }
+/* 우상단 화살표는 가운데 정렬 흐름 밖에 있어야 한다(absolute) - 원래도 그랬다. */
+.member-card .tool-card-ext { position: absolute; top: 10px; right: 12px; }
+
+/* ── 3. 전적 · 팀 : 승패 비율 바
+   page-records.js가 폭을 실제 비율로 넣어준다. 여기서는 바의 모양만 정한다.
+   flex:1을 주면 안 된다 - 그러면 인라인 폭을 무시하고 무조건 반반이 된다. */
+.stat-card-box .wl, .wl {
+    display: flex; height: 20px; margin-top: 12px; overflow: hidden;
+    font-family: var(--font-num); font-size: 11px; font-weight: 700;
+}
+/* [중요] style.css 899~900줄에 .wl-win{color:var(--color-win)} / .wl-lose{color:var(--color-lose)}가
+   있다. 원래는 "18승 10패"의 숫자만 색칠하는 규칙이었는데, 이제 그 숫자가 같은 색 바 위에
+   올라가므로 글자색을 흰색으로 되돌려야 보인다. 선택자를 같은 무게로 맞춰 뒤에서 이긴다.
+   폭은 page-records.js가 인라인 style로 넣으니 flex는 none이어야 한다(flex:1이면 반반이 된다). */
+.stat-card-box .wl .wl-win, .stat-card-box .wl .wl-lose,
+.wl .wl-win, .wl .wl-lose {
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: none; min-width: 0; color: #fff;
+}
+.stat-card-box .wl .wl-win, .wl .wl-win { background: var(--color-primary); }
+.stat-card-box .wl .wl-lose, .wl .wl-lose { background: var(--color-lose); }
+.wl .wl-none {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--color-bg-subtle); color: var(--color-text-faint);
+    font-family: 'Pretendard', sans-serif; font-weight: 600;
+}
+
+/* ── 4. 방송통계 : 순위 플레이트 + 비율 바
+   표를 그냥 숫자 3칸으로 두면 10명을 훑을 때 격차가 안 읽힌다.
+   1~3위만 각진 플레이트로 올리고(잉크 -> 딥블루 -> 블루 계단), 값 밑에 1위를 100%로
+   잡은 비율 바를 깐다. */
+.synergy-rank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    font-family: var(--font-num); font-size: 14px; font-weight: 700;
+    color: var(--color-line2, #c9d2e0);
+}
+.synergy-rank.top {
+    color: #fff;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+.synergy-rank.top.r1 { background: #141821; }
+.synergy-rank.top.r2 { background: var(--color-primary-deep); }
+.synergy-rank.top.r3 { background: var(--color-primary); }
+.synergy-value { line-height: 1.25; }
+.synergy-val-text { display: block; }
+.synergy-bar {
+    display: block; height: 6px; margin-top: 7px;
+    background: var(--color-bg-subtle);
+}
+.synergy-bar i { display: block; height: 100%; background: var(--color-primary); }
+tbody tr:first-child .synergy-bar i { background: #141821; }
+
+/* ── 5. 티어표 : 상단 가로 바 -> 왼쪽 세로 사이드바
+   15개 티어가 한눈에 들어오고 본문을 가리지 않는다. 개인 전적·멤버 공지의 선택
+   사이드바와 같은 틀을 쓴다(tier.html에서 .selection-layout으로 감쌌다). */
+.selection-layout > .tier-bar {
+    grid-column: 1; position: sticky; top: 84px;
+    display: block; margin: 0; padding: 0;
+    background: #141821; border: 0; box-shadow: none;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.selection-layout > .tier-bar::before {
+    content: '티어  ·  JUMP'; display: block;
+    padding: 14px 15px 11px; border-bottom: 1px solid #2b3442;
+    color: #fff; font-family: 'Chakra Petch', 'Pretendard', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: .06em;
+}
+.selection-layout > .tier-bar .tier-bar-tools {
+    display: block; min-height: 0; padding: 9px 10px;
+    border-right: 0; border-bottom: 1px solid #2b3442;
+}
+.selection-layout > .tier-bar .bar-scope {
+    display: flex; width: 100%; height: auto; padding: 2px;
+    background: #2b3442; clip-path: none;
+}
+.selection-layout > .tier-bar .tier-scope-btn { flex: 1; justify-content: center; padding: 0 8px; }
+.selection-layout > .tier-bar .tier-bar-list {
+    display: block; width: 100%; max-height: 520px; padding: 7px 0;
+    overflow-x: hidden; overflow-y: auto; white-space: normal;
+    scrollbar-gutter: auto;
+}
+.selection-layout > .tier-bar .tier-bar-item {
+    display: flex; width: 100%; height: 36px; padding: 0 14px;
+    justify-content: space-between; border-left: 3px solid transparent;
+    clip-path: none;
+}
+.selection-layout > .tier-bar .tier-bar-item:hover { background: #1e2531; }
+.selection-layout > .tier-bar .tier-bar-item.active {
+    border-left-color: #fff; background: var(--color-primary);
+}
+
+@media (max-width: 920px) {
+    /* 좁은 화면에서는 세로 목록이 화면을 다 먹으므로 다시 한 줄 가로 바로 눕힌다.
+       (개인 전적·공지의 선택 바처럼 접히게 만들 수도 있지만, 티어 바는 '지금 어느
+       티어를 보는지' 표시도 겸하므로 항상 보이는 쪽이 낫다.) */
+    .selection-layout > .tier-bar {
+        display: flex; align-items: center; gap: var(--bar-gap);
+        top: 60px; padding: var(--bar-pad-y) var(--bar-pad-x);
+    }
+    .selection-layout > .tier-bar::before { display: none; }
+    .selection-layout > .tier-bar .tier-bar-tools {
+        display: flex; flex: none; padding: 0 var(--bar-pad-x) 0 0;
+        border-bottom: 0; border-right: 1px solid #2b3442;
+    }
+    .selection-layout > .tier-bar .bar-scope { width: auto; }
+    .selection-layout > .tier-bar .tier-bar-list {
+        display: flex; align-items: center; gap: 4px;
+        flex: 1; min-width: 0; max-height: none; padding: 0;
+        overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+    }
+    .selection-layout > .tier-bar .tier-bar-item { width: auto; height: var(--bar-chip-h); border-left: 0; }
+    .selection-layout > .tier-bar .tier-bar-item.active { border-left: 0; }
+}
+
+
+/* ============================================================
+   잔재 정리 — 옛 디자인의 둥근 모서리를 전부 깎은 면으로
+   ============================================================
+   style.css에 남아 있던 border-radius를 하나씩 훑어서 처리했다.
+   [원형으로 남기는 것] 사람 프로필 사진, 도넛 차트, 토글 스위치의 손잡이.
+   그 외(카드 · 버튼 · 칩 · 뱃지 · 썸네일 · 로고 칸 · 점)는 전부 각지게.
+   ============================================================ */
+
+/* 섹션 제목 - 시안의 핵심이던 "제목 위 라틴 라벨"을 되살린다.
+   data-en 속성이 있는 제목만 라벨이 붙는다(템플릿과 page-*.js가 넣어준다).
+   .section-title은 flex(제목 | 오른쪽 버튼)라, 라벨을 flex-basis 100%로 줘서
+   줄바꿈으로 윗줄을 차지하게 한다. */
+.section-title { flex-wrap: wrap; }
+.section-title[data-en]::before, .section-title-sm[data-en]::before {
+    content: attr(data-en);
+    flex: 0 0 100%; order: -1;
+    margin-bottom: 5px;
+    color: var(--color-text-sub);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+}
+.section-title-sm { flex-wrap: wrap; }
+.section-title-sm[data-en]::before { font-size: 8px; margin-bottom: 4px; }
+
+/* 버튼 · 링크 */
+.btn-view-all { border-radius: 0; }
+.news-load-more {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+.btn, .btn-close, .form-control, .form-select { border-radius: 0 !important; }
+
+/* 필터 밑줄 · 홈 워드마크 밑줄 */
+.filter-item.active::after, .home-wordmark-title::after { border-radius: 0; }
+
+/* 팀 로고 칸 - 사람 얼굴이 아니라 팀 이니셜 상자다. 각지게 둔다. */
+.team-logo-icon { border-radius: 0; }
+.team-logo-fallback, .soop-logo-icon {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
+}
+
+/* 홈 공지 카드 · 썸네일 */
+.home-notice-card {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.home-notice-thumb {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+
+/* 사진 넘김 점 - 동그란 점 대신 각진 막대. 활성만 길어진다(시안 캐러셀과 같은 방식). */
+.photo-dot, .news-post-photos-dots span {
+    border-radius: 0 !important;
+    width: 6px; height: 6px;
+}
+.photo-dot.active, .news-post-photos-dots span.active {
+    width: 16px; height: 6px; border-radius: 0 !important;
+}
+
+/* 도구 - 멀티뷰어. 스위치 손잡이만 원형으로 남긴다(스위치는 원래 알약이 맞다). */
+.tool-card-icon {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+.mv-tile, .mv-run-btn {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+.mv-stepper, .mv-order-item button { border-radius: 0; }
+.mv-chip, .mv-order-item, .mv-quickadd {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+.mv-chip-check, .mv-quickadd-btn {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.mv-chip-live {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+
+/* 일정(캘린더) */
+.cal-cell-event { border-radius: 0; }
+.cal-offair-chip {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+.cal-nav-btn {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+/* 오늘 표시 - 동그라미 대신 각진 면 */
+.cal-day-cell.today .cal-day-number::after {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+
+/* 캄몬라이더 스테이지 · 모달 */
+.rider-stage {
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.modal-content {
+    border-radius: 0; border: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.modal-header, .modal-footer { border-radius: 0; }
+
+/* 프로필 모달의 아바타는 사람 얼굴이므로 원형 유지 */
+.profile-avatar { border-radius: 50%; clip-path: none; }
+
+
+/* ============================================================
+   전체 전적 카드 = 잉크 플레이트 (시안의 핵심 대비 축)
+   ============================================================
+   시안에서 이 4장(대회·대학·미니·CK)은 흰 카드가 아니라 검은 잉크 면이었다.
+   "심심하다"는 원인이 흰 카드 + 1px 테두리가 전부 같은 굵기였던 것이고, 그걸 깨는
+   장치가 바로 이 플레이트다. 흰 카드로 두면 리디자인의 무게중심이 사라진다.
+
+   배치도 시안을 따라간다 - 라벨은 윗줄, 도넛은 왼쪽, 승패 바는 그 오른쪽.
+   (예전엔 라벨 / 도넛 / 바가 세로로 쌓여 카드가 길었다)
+   ============================================================ */
+.stat-card-box {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'label label' 'donut wl';
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px 22px;
+    text-align: left;
+    background: var(--color-ink, #141821);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px);
+    border: 0;
+}
+.stat-card-box .label {
+    grid-area: label; margin: 0;
+    color: #fff; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+    font-family: 'Pretendard', sans-serif; text-transform: none;
+}
+.stat-card-box .donut {
+    grid-area: donut; width: 66px; height: 66px; margin: 0;
+    background: #2b3442;
+}
+.stat-card-box .donut::before { width: 48px; height: 48px; background: var(--color-ink, #141821); }
+.stat-card-box .donut-text { font-size: 14px; color: #fff; }
+.stat-card-box .wl { grid-area: wl; margin-top: 0; }
+.stat-card-box .wl .wl-none { background: #2b3442; color: #8b97ab; }
+.stat-card-box .stat-card-arrow { color: #4a566b; }
+.stat-card-box:hover { border: 0; }
+.stat-card-box:hover .stat-card-arrow { color: #7fb0ff; }
+
+@media (max-width: 767.98px) {
+    /* 좁은 화면에서는 도넛을 줄이고 한 칸으로 쌓는다 */
+    .stat-card-box {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 'label' 'donut' 'wl';
+        justify-items: center; gap: 12px; padding: 16px 14px 18px; text-align: center;
+    }
+    .stat-card-box .label { justify-self: start; }
+    .stat-card-box .wl { width: 100%; }
+}
+
+
+/* ============================================================
+   시안 대조 — 남아 있던 옛 디자인 마감
+   ============================================================ */
+
+/* 흰 카드의 1px 테두리를 없앤다.
+   시안의 카드는 테두리가 없다(배경 #f4f7fc 위의 흰 면 + 깎은 모서리로만 구분).
+   "모든 요소가 흰 카드 + 1px 테두리 + 12px 라운드로 굵기가 똑같다"가 심심했던
+   원인이었으므로, 라운드를 없앤 것과 같은 이유로 테두리도 없앤다.
+   구분이 필요한 곳(표 행, 리스트 항목)은 아래쪽 1px 선이 이미 하고 있다. */
+.clean-card, .live-broadcast-card, .news-post-card, .tool-card,
+.member-card, .tier-card, .home-notice-card, .mv-chip-box, .mv-chip-row, .mv-order-row {
+    border: 0;
+}
+/* hover 때 테두리로 알리던 것도 색 대비로 바꾼다(테두리가 없어졌으므로) */
+.live-broadcast-card:hover, .news-post-card:hover, .tool-card:hover,
+.member-card:hover, .tier-card:hover { border: 0; background: var(--color-primary-tint); }
+
+/* 상대 전적 표 - 셀 안의 승패 비율 바 (page-records.js가 넣는다) */
+.wl.wl-cell { height: 18px; margin: 0; font-size: 10px; }
+.wl-empty { color: var(--color-line2, #d3dbe8); font-size: 12px; }
+/* 바가 셀 안에서 좌우 여백 없이 꽉 차야 25개 팀의 폭이 같은 기준으로 읽힌다 */
+.stat-table tbody td:has(> .wl-cell) { padding-left: 8px; padding-right: 8px; }
+
+
+/* ============================================================
+   시안에 있었는데 실제 페이지엔 없던 것들
+   ============================================================ */
+
+/* ── 페이지 머리 오른쪽의 숫자 칸 (멤버 · ACTIVE / ON AIR)
+   시안에서 멤버 페이지 머리에는 오른쪽에 두 칸이 붙어 있었다. 하나는 잉크, 하나는 흰
+   면이라 "우리 규모 / 지금 켜져 있는 수"가 색으로 갈린다. */
+/* [주의] 위쪽 레이어가 .page-header에 flex-direction:column을 걸어두었다(라틴 라벨을
+   제목 위로 올리기 위해). 두 칸 레이아웃에서는 방향을 row로 되돌려야 한다 -
+   안 그러면 justify-content:space-between이 세로로 작동해서 제목이 오른쪽으로 쏠린다. */
+.page-header-with-stats {
+    display: flex; flex-direction: row;
+    align-items: flex-end; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+}
+/* 라틴 라벨은 제목 위에 있어야 하므로, 두 칸일 때는 왼쪽 칸이 라벨을 그린다. */
+.page-header-with-stats::before { display: none !important; }
+.page-header-with-stats .page-header-main {
+    display: flex; flex-direction: column; align-items: flex-start;
+    flex: 1 1 auto; min-width: 0;
+}
+#page-members .page-header-with-stats .page-header-main::before {
+    content: 'ROSTER'; display: block; order: 0; margin-bottom: 7px;
+    color: #7e8aa0; font-family: 'Chakra Petch', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: .16em;
+}
+.page-header-with-stats .page-header-title { order: 1; margin: 0; }
+.page-header-with-stats .page-header-subtitle { order: 2; margin: 8px 0 0; }
+.page-header-stats { display: flex; gap: 10px; flex: none; }
+.head-stat {
+    min-width: 78px; padding: 10px 16px 11px;
+    background: var(--color-card);
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+.head-stat-ink { background: var(--color-ink, #141821); }
+.head-stat-label {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .14em; color: var(--color-text-sub);
+}
+.head-stat-ink .head-stat-label { color: #66738a; }
+.head-stat-value {
+    font-family: var(--font-num); font-size: 22px; font-weight: 700; line-height: 1.15;
+    font-variant-numeric: tabular-nums; color: var(--color-text-main);
+}
+.head-stat-ink .head-stat-value { color: #fff; }
+.head-stat-live { color: var(--color-lose); }
+
+/* ── 개인 전적 : 선수 머리 카드를 잉크 면으로
+   시안에서 이 카드는 잉크 + 해치였고, 오른쪽에 대회·대학 합계와 승률이 붙었다. */
+.profile-head {
+    background: var(--color-ink, #141821) !important;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px) !important;
+    gap: 20px; flex-wrap: wrap;
+}
+.profile-head .profile-avatar { flex: none; }
+.profile-head-id { min-width: 0; }
+.profile-head .profile-name { color: #fff; font-size: 23px; letter-spacing: -0.03em; }
+.profile-head-stats { display: flex; gap: 24px; margin-left: auto; text-align: right; flex: none; }
+.profile-head-label {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .14em; color: #66738a; text-transform: uppercase;
+}
+.profile-head-value {
+    font-family: var(--font-num); font-size: 23px; font-weight: 700; line-height: 1.15;
+    color: #fff; font-variant-numeric: tabular-nums; margin-top: 4px;
+}
+.profile-head-value small { font-size: 12px; color: #66738a; font-family: 'Pretendard', sans-serif; }
+.profile-head-rate { color: #4d90ff; }
+
+/* ── 방송통계 : 표 위 잉크 요약 타일 3개 */
+.head-plate {
+    padding: 20px 22px 22px;
+    background: var(--color-ink, #141821);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px);
+    border: 0;
+}
+.head-plate-label {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .16em; color: #4d90ff; text-transform: uppercase;
+}
+.head-plate-value {
+    font-family: var(--font-num); font-size: 30px; font-weight: 700; line-height: 1.05;
+    letter-spacing: -0.02em; color: #fff; margin-top: 12px;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.head-plate-sub {
+    font-size: 11px; color: #66738a; margin-top: 9px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+    .page-header-with-stats { align-items: flex-start; }
+    .page-header-stats { width: 100%; }
+    .head-stat { flex: 1; min-width: 0; }
+    .profile-head-stats { margin-left: 0; width: 100%; text-align: left;
+        padding-top: 14px; border-top: 1px solid var(--color-ink-3, #2b3442); }
+    .head-plate { padding: 16px 16px 18px; }
+    .head-plate-value { font-size: 24px; }
+}
+
+/* 날짜·맵은 우선순위가 낮은 정보라 한 톤 죽인다 */
+.stat-table tbody td.cell-muted { color: var(--color-text-sub); }

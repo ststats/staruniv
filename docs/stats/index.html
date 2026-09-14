@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=d21f8124e5">
+    <link rel="stylesheet" href="redesign.css?v=7d9c6125a3">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -55,9 +55,26 @@
         <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
         <div class="sub-tab" data-metric="sponsor" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('sponsor')">스폰전적</div>
     </div>
+    <div class="row g-3 mb-block" id="synergy-summary">
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label" id="synergy-sum-label">TOTAL</div>
+            <div class="head-plate-value" id="synergy-sum-total">-</div>
+            <div class="head-plate-sub">이번 달 합계</div>
+        </div></div>
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label">TOP</div>
+            <div class="head-plate-value" id="synergy-sum-top">-</div>
+            <div class="head-plate-sub" id="synergy-sum-top-name">1위</div>
+        </div></div>
+        <div class="col-md-4"><div class="clean-card head-plate">
+            <div class="head-plate-label">MEMBERS</div>
+            <div class="head-plate-value" id="synergy-sum-count">-</div>
+            <div class="head-plate-sub">집계 인원</div>
+        </div></div>
+    </div>
     <div class="row gap-block mb-block">
         <div class="col-md-6">
-            <div class="section-title">남자 멤버</div>
+            <div class="section-title" data-en="MALE">남자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
                     <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
@@ -76,7 +93,7 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="section-title">여자 멤버</div>
+            <div class="section-title" data-en="FEMALE">여자 멤버</div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
                     <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
@@ -104,7 +121,7 @@
 
 
 <script src="core.js?v=0f47e87d73"></script>
-<script src="page-stats.js?v=b5ceb00981"></script>
+<script src="page-stats.js?v=cf82700642"></script>
 
 </body>
 </html>
