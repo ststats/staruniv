@@ -22,7 +22,12 @@
                 <span class="stat-card-arrow" aria-hidden="true">↗</span>
                 <div class="label">{{ fmt }}</div>
                 <div class="donut" id="t-sum-{{ fmt }}-donut"><span class="donut-text" id="t-sum-{{ fmt }}-r">0%</span></div>
-                <div class="wl" id="t-sum-{{ fmt }}-w">0승 0패</div>
+                {#- [리디자인] 시안에는 큰 승패 숫자와 비율 바가 둘 다 있었다.
+                    바만 두면 "몇 승 몇 패"가 바 안의 작은 숫자로만 남아 한눈에 안 읽힌다. #}
+                <div class="wl-block">
+                    <div class="wl-text" id="t-sum-{{ fmt }}-t">0<small>승</small> 0<small>패</small></div>
+                    <div class="wl" id="t-sum-{{ fmt }}-w"></div>
+                </div>
             </div></div>
             {%- endfor %}
         </div>

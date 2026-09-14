@@ -2,9 +2,19 @@
 {% block content %}
 <!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
 <section id="page-stats" class="page-section active container">
-    <div class="page-header">
-        <h1 class="page-header-title">방송통계</h1>
-        <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+    {#- [리디자인] 갱신 시각은 시안처럼 머리 오른쪽 칸으로 올린다.
+        예전엔 페이지 맨 아래 회색 한 줄이라 "옛 디자인의 잔재"처럼 떠 있었다. #}
+    <div class="page-header page-header-with-stats">
+        <div class="page-header-main">
+            <h1 class="page-header-title">방송통계</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+        </div>
+        <div class="page-header-stats">
+            <div class="head-stat head-stat-wide">
+                <div class="head-stat-label">UPDATED</div>
+                <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
+            </div>
+        </div>
     </div>
     <hr class="page-header-divider tight">
     <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
@@ -56,7 +66,7 @@
         </div>
         {%- endfor %}
     </div>
-    <div class="text-center text-muted section-trailer text-caption" id="synergy-updated"></div>
+
 </section>
 {% endblock %}
 {% block scripts %}

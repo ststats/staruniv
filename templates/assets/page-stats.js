@@ -44,7 +44,8 @@ function synergyMetricConfig(metric) {
 async function loadSynergyData() {
     try {
         await fetchSynergyData();
-        document.getElementById('synergy-updated').innerText = SynergyState.updatedAt ? `업데이트: ${SynergyState.updatedAt}` : '';
+        // [리디자인] 머리 오른쪽 UPDATED 칸에 들어간다 - 라벨이 이미 'UPDATED'라 접두어를 뺀다.
+        document.getElementById('synergy-updated').innerText = SynergyState.updatedAt || '-';
         renderSynergyTable();
     } catch (e) {
         console.error(e);

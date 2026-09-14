@@ -34,7 +34,8 @@ function switchMemberView(viewType, skipHashUpdate) {
 
 function memberCardHtml(m) {
     return `
-        <div class="member-card${isActiveMember(m) ? '' : ' former'}" role="button" tabindex="0" onclick="openMemberProfile('${jsAttr(m['이름'])}')">
+        <div class="member-card${isActiveMember(m) ? '' : ' former'}${memberRaceEdgeClass(m)}" data-member="${jsAttr(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0" onclick="openMemberProfile('${jsAttr(m['이름'])}')">
+            <span class="member-card-live live-badge" hidden>LIVE</span>
             <span class="tool-card-ext">↗</span>
             ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
             <div class="member-card-name">${escapeHTML(m['이름'])}</div>
@@ -43,6 +44,13 @@ function memberCardHtml(m) {
                 ${raceBadgeHtml(m['종족'])}
             </div>
         </div>`;
+}
+
+// [리디자인] 카드 왼쪽 3px 엣지에 종족 색을 쓴다. 40명을 훑을 때 종족 분포가
+// 색 띠로 먼저 들어온다 - 뱃지 글자(T/Z/P)를 하나하나 읽는 것보다 빠르다.
+function memberRaceEdgeClass(m) {
+    const letter = raceShortLabel(m['종족'] || '');
+    return ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
 }
 
 // [리디자인] 섹션 제목 위에 붙는 라틴 라벨. 직책 이름에 대응하는 영문을 여기서만 정한다.
@@ -74,9 +82,28 @@ function renderMemberHeadCounts(activeMembers) {
     if (!targets.length) { liveEl.innerText = '0'; return; }
     Promise.allSettled(targets.map(m => checkIsLiveRealtime(m['SOOP ID'])))
         .then(results => {
-            liveEl.innerText = results.filter(r => r.status === 'fulfilled' && r.value).length;
+            const liveIds = targets
+                .filter((m, i) => results[i].status === 'fulfilled' && results[i].value)
+                .map(m => String(m['SOOP ID']));
+            liveEl.innerText = liveIds.length;
+            markLiveMembers(liveIds);
         })
         .catch(() => { /* 실패하면 '-' 유지 */ });
+}
+
+// 방송 중인 멤버의 카드와 사이드바 줄에 표시를 켠다.
+// 조회가 느리거나 실패하면 아무 표시도 켜지지 않는다(카드는 그대로 보인다).
+function markLiveMembers(liveIds) {
+    const set = new Set(liveIds.map(String));
+    document.querySelectorAll('.member-card[data-soop-id]').forEach(card => {
+        const on = set.has(String(card.dataset.soopId));
+        card.classList.toggle('is-live', on);
+        const badge = card.querySelector('.member-card-live');
+        if (badge) badge.hidden = !on;
+    });
+    document.querySelectorAll('.avatar-select-live[data-soop-id]').forEach(dot => {
+        dot.hidden = !set.has(String(dot.dataset.soopId));
+    });
 }
 
 function renderMembersPage() {
@@ -222,9 +249,10 @@ const NewsState = {
 function renderNewsSidebar() {
     renderAvatarBar(
         'news-avatar-list',
-        avatarSelectAllItemHtml('news-side-btn-all', 'showNewsAll()'),
+        avatarSelectAllItemHtml('news-side-btn-all', 'showNewsAll()',
+            `${activeMembersWithSoopId().length}`),
         activeMembersWithSoopId()
-            .map(mem => avatarSelectItemHtml('news-side-player-', mem['이름'], mem['SOOP ID'], 'selectNewsPlayer'))
+            .map(mem => avatarSelectItemHtml('news-side-player-', mem['이름'], mem['SOOP ID'], 'selectNewsPlayer', mem))
             .join('')
     );
 }

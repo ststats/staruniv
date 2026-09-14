@@ -114,6 +114,12 @@ function calculateTeamSummaries() {
         // 읽어주는 프로그램과 마우스오버용으로 원래 문구는 title/aria-label에 남긴다.
         const wlBox = document.getElementById(`t-sum-${fmt}-w`);
         const wlTotal = w + l;
+        const wlText = document.getElementById(`t-sum-${fmt}-t`);
+        if (wlText) {
+            wlText.innerHTML = wlTotal === 0
+                ? '<small>기록 없음</small>'
+                : `${w}<small>승</small> ${l}<small>패</small>`;
+        }
         wlBox.setAttribute('title', `${w}승 ${l}패`);
         wlBox.setAttribute('aria-label', `${w}승 ${l}패`);
         wlBox.innerHTML = wlTotal === 0
@@ -218,7 +224,7 @@ function renderIndividualSidebar() {
     const html = [];
     const formerHtml = [];
     SiteData.members.forEach(m => {
-        const item = avatarSelectItemHtml('side-player-', m['이름'], m['SOOP ID'], 'selectPlayer');
+        const item = avatarSelectItemHtml('side-player-', m['이름'], m['SOOP ID'], 'selectPlayer', m);
         (isActiveMember(m) ? html : formerHtml).push(item);
     });
 
@@ -231,7 +237,7 @@ function renderIndividualSidebar() {
     html.push(`<span id="indiv-former-wrap" class="d-none">${formerHtml.join('')}</span>`);
 
     renderAvatarBar('indiv-avatar-list',
-        avatarSelectAllItemHtml('side-btn-summary', 'showIndivSummary()'),
+        avatarSelectAllItemHtml('side-btn-summary', 'showIndivSummary()', `${SiteData.members.filter(isActiveMember).length}`),
         html.join(''));
 }
 

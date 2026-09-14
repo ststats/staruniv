@@ -13,7 +13,10 @@
     </script>
 {% endblock %}
 {% block content %}
-<section id="page-home" class="page-section active container">
+{#- [리디자인] 히어로가 화면 끝까지 닿아야 해서 .container를 섹션에서 떼고 본문만 감싼다.
+    .container에는 max-width(1240px)가 걸려 있어서, 안에 두면 음수 마진으로도 그 바깥까지
+    나갈 수 없다(좌우에 100px씩 여백이 남는다). #}
+<section id="page-home" class="page-section active">
     {#- [리디자인] 가운데 워드마크 카드 하나였던 첫 화면을 넘기는 칸으로 바꿨다.
         한 장이 페이지 하나를 설명하고 바로가기를 갖는다. 오른쪽 칸은 최신 경기 결과인데,
         특정 날짜를 박지 않고 page-home.js의 renderHeroMatchPreview가 항상 제일 최근
@@ -45,6 +48,7 @@
         </aside>
         <div class="home-carousel-controls"><button type="button" onclick="moveHomeCarousel(-1)" aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" onclick="goHomeCarousel(0)"></button><button type="button" aria-label="2번 안내" onclick="goHomeCarousel(1)"></button><button type="button" aria-label="3번 안내" onclick="goHomeCarousel(2)"></button></div><button type="button" onclick="moveHomeCarousel(1)" aria-label="다음 안내">›</button></div>
     </section>
+    <div class="container">
     <div class="section-title" data-en="ON AIR">방송 중</div>
     <div class="clean-card p-4" id="home-live-broadcast" aria-live="polite">
         <div class="text-center text-muted py-4 fs-body">실시간 방송 상태 연동 준비중입니다.</div>
@@ -57,6 +61,7 @@
     <div class="home-notice-list" id="home-notice-list" aria-live="polite">
         <div class="clean-card text-center text-muted py-4 fs-body">불러오는 중...</div>
     </div>
+    </div>{#- /.container #}
 </section>
 {% endblock %}
 {% block scripts %}

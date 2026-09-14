@@ -41,6 +41,12 @@ function renderHeroMatchPreview() {
     box.innerHTML = `<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-teams"><b>캄몬스타즈</b><span class="home-preview-result ${resultClass}">${escapeHTML(result)}</span><b>${escapeHTML(match['상대팀'] || '-')}</b></div><div class="home-preview-meta"><span>${escapeHTML(match['형식'] || '-')}</span><span>${escapeHTML(match['세트 결과'] || '-')}</span><time>${escapeHTML(shortMatchDate(match['날짜']))}</time></div>`;
 }
 
+// [리디자인] 방송중 카드도 멤버 카드와 같은 규칙 - 왼쪽 3px 엣지에 종족 색.
+function liveRaceEdgeClass(m) {
+    const letter = raceShortLabel(m['종족'] || '');
+    return ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
+}
+
 function liveCardHtml({ member: m, live }) {
     const { broad, broadStart } = live;
     const soopId = m['SOOP ID'];
@@ -50,7 +56,7 @@ function liveCardHtml({ member: m, live }) {
     const avatarRingClass = m['성별'] === '남자' ? 'live-card-avatar-ring live-card-avatar-ring--male' : 'live-card-avatar-ring';
 
     return `
-            <a class="live-broadcast-card" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
+            <a class="live-broadcast-card${liveRaceEdgeClass(m)}" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
                 <div class="live-thumb-wrap">
                     <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad_no)}" alt="방송 화면" onerror="this.style.display='none';">
                     <span class="live-badge">LIVE</span>

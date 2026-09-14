@@ -25,20 +25,26 @@
             </aside>
 
             <section class="cal-calendar-area">
-                <div class="section-title" data-en="THIS MONTH">
-                    이달의 일정
-                    <div class="cal-nav-group">
-                        <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                        <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
-                        <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                {#- [리디자인] 시안의 달력은 카드 위에 제목줄이 따로 있지 않고, 카드 맨 위가
+                    잉크 띠(연/월 + 좌우 이동)였다. 제목줄을 없애고 그 띠를 카드 안으로 넣는다. #}
+                <div class="clean-card cal-card p-0">
+                    <div class="cal-month-bar hatch">
+                        <div class="cal-month-id">
+                            <div class="cal-month-year" id="monthYear">&nbsp;</div>
+                            <div class="cal-month-name" id="monthName">&nbsp;</div>
+                        </div>
+                        <div class="cal-nav-group">
+                            <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                            <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        </div>
                     </div>
-                </div>
-                <div class="clean-card p-3">
                     <!-- 가로 스크롤 허용 캘린더 구역 -->
                     <div class="cal-calendar-inner scroll-area">
                         <div class="cal-calendar-scroll-content">
                             <div class="cal-weekdays">
-                                <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                                {#- 시안은 SUN~SAT 라틴 3글자다. 숫자 조판(Chakra Petch)과 한 가족으로 읽힌다. #}
+                                <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
                             </div>
                             <div class="cal-days-grid" id="daysGrid"></div>
                         </div>
