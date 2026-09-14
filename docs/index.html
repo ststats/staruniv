@@ -30,12 +30,16 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=2fbfa5d11b">
+    <link rel="stylesheet" href="redesign.css?v=aa6f6c528b">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
     <div class="navbar-inner container">
         <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
+                aria-expanded="false" aria-controls="mainMenu" onclick="toggleMainMenu()">
+            <span></span><span></span><span></span>
+        </button>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
             <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
             <a class="nav-item" href="members/" data-page="members">멤버</a>
@@ -61,30 +65,32 @@
                 <h1><span>스타</span>대학</h1>
                 <p>캄몬스타즈의 방송, 일정, 전적을 한곳에서 확인하세요.</p>
                 <div class="home-hero-links"><a href="schedule/">오늘 일정 <span aria-hidden="true">↗</span></a><a href="records/">전적 보기 <span aria-hidden="true">↗</span></a></div>
+                <aside class="home-carousel-preview nc" data-preview="0" aria-live="polite">
+                    <div class="home-preview-label">LATEST MATCH</div>
+                    <div class="home-preview-loading">최근 경기를 불러오는 중...</div>
+                </aside>
             </article>
             <article class="home-carousel-slide">
                 <div class="home-hero-kicker">RECORDS · TEAM &amp; PLAYER</div>
                 <h1>전적<i>아카이브</i></h1>
                 <p>대회 · 대학 · 미니 · CK의 팀 전적과 개인별 기록을 세트 단위로 정리합니다.</p>
                 <div class="home-hero-links"><a href="records/">전적 탐색 <span aria-hidden="true">↗</span></a></div>
+                <aside class="home-carousel-preview nc" data-preview="1"></aside>
             </article>
             <article class="home-carousel-slide">
                 <div class="home-hero-kicker">LIVE · ROSTER · RANKING</div>
                 <h1>멤버<i>현황</i></h1>
                 <p>방송 중인 멤버, 최신 공지와 스타크래프트 티어표를 빠르게 확인하세요.</p>
                 <div class="home-hero-links"><a href="members/">멤버 보기 <span aria-hidden="true">↗</span></a><a href="tier/">티어표 <span aria-hidden="true">↗</span></a></div>
+                <aside class="home-carousel-preview nc" data-preview="2"></aside>
             </article>
         </div>
-        <aside class="home-carousel-preview nc" id="home-carousel-preview" aria-live="polite">
-            <div class="home-preview-label">LATEST MATCH</div>
-            <div class="home-preview-loading">최근 경기를 불러오는 중...</div>
-        </aside>
         <div class="home-carousel-controls"><button type="button" onclick="moveHomeCarousel(-1)" aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" onclick="goHomeCarousel(0)"></button><button type="button" aria-label="2번 안내" onclick="goHomeCarousel(1)"></button><button type="button" aria-label="3번 안내" onclick="goHomeCarousel(2)"></button></div><button type="button" onclick="moveHomeCarousel(1)" aria-label="다음 안내">›</button></div>
     </section>
     <div class="container">
     <div class="section-title" data-en="ON AIR">방송 중</div>
-    <div class="clean-card p-4" id="home-live-broadcast" aria-live="polite">
-        <div class="text-center text-muted py-4 fs-body">실시간 방송 상태 연동 준비중입니다.</div>
+    <div id="home-live-broadcast" aria-live="polite">
+        <div class="clean-card text-center text-muted py-4 fs-body">실시간 방송 상태 연동 준비중입니다.</div>
     </div>
 
     <div class="section-title mt-4" data-en="NOTICE">
@@ -102,9 +108,9 @@
 
 
 
-<script src="core.js?v=38fca05527"></script>
+<script src="core.js?v=1c731ef4ad"></script>
 <script src="soop.js?v=68531e35cd"></script>
-<script src="page-home.js?v=8dc9fc9bb9"></script>
+<script src="page-home.js?v=823c9a9979"></script>
 
 </body>
 </html>

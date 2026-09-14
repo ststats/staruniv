@@ -19,12 +19,16 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=2fbfa5d11b">
+    <link rel="stylesheet" href="redesign.css?v=aa6f6c528b">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
     <div class="navbar-inner container">
         <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
+                aria-expanded="false" aria-controls="mainMenu" onclick="toggleMainMenu()">
+            <span></span><span></span><span></span>
+        </button>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
             <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
             <a class="nav-item" href="members/" data-page="members">멤버</a>
@@ -80,8 +84,8 @@
 
 
 
-<script src="core.js?v=38fca05527"></script>
-<script src="page-tier.js?v=e3eed1e7c4"></script>
+<script src="core.js?v=1c731ef4ad"></script>
+<script src="page-tier.js?v=60fac252fd"></script>
 
 </body>
 </html>

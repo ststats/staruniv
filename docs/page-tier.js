@@ -247,15 +247,9 @@ function renderTierGroups() {
     document.getElementById('tier-root').innerHTML = TierState.sections.length
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
-                <div class="tier-plate hatch ${tierPlateClass(sec.tier)}">
-                    <div class="tier-plate-id">
-                        <div class="tier-plate-name">${escapeHTML(tierDisplayName(sec.tier))}</div>
-                        <div class="tier-plate-code">${tierLatinLabel(sec.tier)} TIER</div>
-                    </div>
-                    <div class="tier-plate-meta">
-                        <span class="tier-plate-total">${sec.total}명</span>
-                        <span class="tier-live" data-tier-live></span>
-                    </div>
+                <div class="section-title" data-en="${tierLatinLabel(sec.tier)} TIER">
+                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.total}명</span></span>
+                    <span class="tier-live" data-tier-live></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')
@@ -263,9 +257,11 @@ function renderTierGroups() {
 
     observeTierThumbs();
     renderTierBar();
+    ensureTierPick();
     updateTierRowLiveCounts();
     restoreTierAnchor(anchor);
     highlightTierBar();  // 칩을 새로 만들었으니 지금 보고 있는 티어를 바로 강조해준다
+    syncTierPickLabel();
 }
 
 function observeTierThumbs() {
@@ -317,6 +313,45 @@ function tierBarCoversContent() {
     const inSidebar = !!bar.closest('.selection-layout');
     const narrow = window.matchMedia('(max-width: 920px)').matches;
     return !inSidebar || narrow;
+}
+
+// [리디자인] 모바일에서 티어 바도 아바타 사이드바와 같은 '접히는 한 줄 선택 바'가 되게 한다.
+// 가로로 눕히면 티어 15개를 계속 밀어야 하고, 세로로 펼쳐두면 화면을 다 먹는다.
+// 줄과 토글을 여기서 한 번만 만들고, 선택이 바뀌면 라벨을 갱신하며 접는다.
+function ensureTierPick() {
+    const bar = document.getElementById('tier-bar');
+    if (!bar || bar.querySelector('.tier-bar-pick')) return;
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = 'tier-bar-pick';
+    pick.setAttribute('aria-expanded', 'false');
+    pick.innerHTML = '<span class="tier-bar-pick-label">티어 바로가기</span>'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" '
+        + 'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    pick.addEventListener('click', () => {
+        const closed = bar.classList.toggle('is-closed');
+        pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
+    });
+    bar.classList.add('is-closed');
+    bar.insertBefore(pick, bar.firstChild);
+}
+
+// 눌린 티어 칩의 이름을 모바일 선택 줄에 반영하고 목록을 접는다.
+function syncTierPickLabel() {
+    const bar = document.getElementById('tier-bar');
+    if (!bar) return;
+    const pick = bar.querySelector('.tier-bar-pick');
+    if (!pick) return;
+    const active = bar.querySelector('.tier-bar-item.active');
+    const label = pick.querySelector('.tier-bar-pick-label');
+    // 칩 안의 이름과 인원수 사이에 공백이 없어서 '갓12'처럼 붙어 나온다 - 따로 읽어서 띄운다.
+    if (!label) return;
+    if (!active) { label.textContent = '티어 바로가기'; return; }
+    const count = active.querySelector('.tier-bar-count');
+    const name = active.cloneNode(true);
+    const dropCount = name.querySelector('.tier-bar-count');
+    if (dropCount) dropCount.remove();
+    label.textContent = name.textContent.trim() + (count ? ` · ${count.textContent.trim()}명` : '');
 }
 
 function syncTierBarHeight() {
@@ -383,6 +418,7 @@ function highlightTierBar() {
         if (on) activeBtn = btn;
     });
     if (activeBtn) scrollTierBarItemIntoView(activeBtn);
+    syncTierPickLabel();   // 모바일 선택 줄의 라벨도 같이 따라간다
 }
 
 // 티어가 많으면 바가 좌우로 스크롤되는데, 강조된 항목이 화면 밖이면 의미가 없다.
@@ -630,6 +666,9 @@ function applyLiveToCards(setChanged) {
 // ---------------------------------------------------------------------------
 bootPage(async () => {
     const root = document.getElementById('tier-root');
+    // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
+    // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
+    ensureTierPick();
 
     let payload;
     try {
