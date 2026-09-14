@@ -1434,3 +1434,108 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 @media (max-width:767.98px) {
     .home-carousel h1 span, .home-carousel h1 i { display:block; }
 }
+
+
+/* ============================================================
+   사용자 지정 10개 항목 패치 — 기존 노치 테마를 유지한 채 보정
+   ============================================================ */
+
+/* 2. 홈 방송중 카드: 시청자수는 우측 상단, 방송시간은 우측 하단 */
+.live-thumb-overlay {
+    position:absolute !important;
+    inset:0 !important;
+    display:block !important;
+    pointer-events:none;
+}
+.live-thumb-overlay span {
+    position:absolute !important;
+    right:9px !important;
+    margin:0 !important;
+    padding:3px 5px !important;
+}
+.live-thumb-overlay span:first-child { top:9px !important; bottom:auto !important; }
+.live-thumb-overlay span:last-child { bottom:8px !important; top:auto !important; }
+
+/* 3. 최근 공지는 맨 위 카드만 노치, 이어지는 카드에는 노치를 만들지 않는다. */
+.home-notice-list > .home-notice-card { clip-path:none; }
+.home-notice-list > .home-notice-card:first-child {
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+}
+
+/* 4. 노치 버튼의 테두리도 노치 윤곽을 따라가게 한다.
+   일반 border는 clip-path에서 잘리므로, 같은 노치 모양의 가상 요소에 테두리를 그린다. */
+.home-carousel .home-hero-links a {
+    position:relative;
+    border:0 !important;
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.home-carousel .home-hero-links a::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border:1px solid rgba(255,255,255,.28);
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.home-carousel .home-hero-links a:hover::before { border-color:var(--color-primary); }
+
+/* 6. 일정 제목: MONTHLY SCHEDULE은 '이달의 일정' 위에 작게 표시.
+   오른쪽 월 이동 컨트롤은 같은 제목 영역 안에서 세로 중앙에 둔다. */
+.section-title.cal-month-section-title {
+    position:relative !important;
+    display:block !important;
+    min-height:0 !important;
+    height:auto !important;
+    padding:0 0 9px !important;
+    margin-bottom:16px !important;
+    border-bottom:2px solid var(--color-text-main) !important;
+}
+.section-title.cal-month-section-title::before {
+    content:attr(data-en) !important;
+    display:block !important;
+    margin:0 0 4px 0 !important;
+    color:var(--color-text-sub) !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif !important;
+    font-size:9px !important;
+    line-height:1 !important;
+    font-weight:600 !important;
+    letter-spacing:.16em !important;
+    text-transform:uppercase !important;
+}
+.section-title.cal-month-section-title .section-title-label {
+    display:block !important;
+    order:initial !important;
+    font-family:'Pretendard',sans-serif;
+    font-size:14px;
+    line-height:1.25;
+}
+.section-title.cal-month-section-title .cal-nav-group {
+    position:absolute !important;
+    right:0 !important;
+    bottom:9px !important;
+    margin:0 !important;
+}
+
+/* 8. 티어별 '방송중 N명' 뱃지는 빨간색으로 통일 */
+.tier-row > .section-title .tier-live:not(:empty) {
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+    min-height:20px;
+    padding:0 8px;
+    margin-left:0;
+    background:#e54848 !important;
+    color:#fff !important;
+    font-family:'Chakra Petch','Pretendard',sans-serif;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.02em;
+    clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,0 100%);
+}
+
+/* 9. 티어 사이드바의 '전체 / 방송중' 선택 박스도 노치 외곽을 유지 */
+.selection-layout > .tier-bar .bar-scope {
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%) !important;
+}
+
+/* 5. 어드민은 본 페이지의 redesign.css를 함께 사용하므로 일정표도 동일한 노치/색상 규칙을 공유한다. */
