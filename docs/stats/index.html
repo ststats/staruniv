@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=7d9c6125a3">
+    <link rel="stylesheet" href="redesign.css?v=9facd68748">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -44,9 +44,17 @@
 
 <!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
 <section id="page-stats" class="page-section active container">
-    <div class="page-header">
-        <h1 class="page-header-title">방송통계</h1>
-        <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+    <div class="page-header page-header-with-stats">
+        <div class="page-header-main">
+            <h1 class="page-header-title">방송통계</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+        </div>
+        <div class="page-header-stats">
+            <div class="head-stat head-stat-wide">
+                <div class="head-stat-label">UPDATED</div>
+                <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
+            </div>
+        </div>
     </div>
     <hr class="page-header-divider tight">
     <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
@@ -112,7 +120,7 @@
             </div>
         </div>
     </div>
-    <div class="text-center text-muted section-trailer text-caption" id="synergy-updated"></div>
+
 </section>
 
 </main>
@@ -120,8 +128,8 @@
 
 
 
-<script src="core.js?v=0f47e87d73"></script>
-<script src="page-stats.js?v=cf82700642"></script>
+<script src="core.js?v=38fca05527"></script>
+<script src="page-stats.js?v=39d675a776"></script>
 
 </body>
 </html>

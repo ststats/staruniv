@@ -19,7 +19,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=7d9c6125a3">
+    <link rel="stylesheet" href="redesign.css?v=9facd68748">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -63,25 +63,37 @@
                 <span class="stat-card-arrow" aria-hidden="true">↗</span>
                 <div class="label">대회</div>
                 <div class="donut" id="t-sum-대회-donut"><span class="donut-text" id="t-sum-대회-r">0%</span></div>
-                <div class="wl" id="t-sum-대회-w">0승 0패</div>
+                <div class="wl-block">
+                    <div class="wl-text" id="t-sum-대회-t">0<small>승</small> 0<small>패</small></div>
+                    <div class="wl" id="t-sum-대회-w"></div>
+                </div>
             </div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('대학')">
                 <span class="stat-card-arrow" aria-hidden="true">↗</span>
                 <div class="label">대학</div>
                 <div class="donut" id="t-sum-대학-donut"><span class="donut-text" id="t-sum-대학-r">0%</span></div>
-                <div class="wl" id="t-sum-대학-w">0승 0패</div>
+                <div class="wl-block">
+                    <div class="wl-text" id="t-sum-대학-t">0<small>승</small> 0<small>패</small></div>
+                    <div class="wl" id="t-sum-대학-w"></div>
+                </div>
             </div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('미니')">
                 <span class="stat-card-arrow" aria-hidden="true">↗</span>
                 <div class="label">미니</div>
                 <div class="donut" id="t-sum-미니-donut"><span class="donut-text" id="t-sum-미니-r">0%</span></div>
-                <div class="wl" id="t-sum-미니-w">0승 0패</div>
+                <div class="wl-block">
+                    <div class="wl-text" id="t-sum-미니-t">0<small>승</small> 0<small>패</small></div>
+                    <div class="wl" id="t-sum-미니-w"></div>
+                </div>
             </div></div>
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('CK')">
                 <span class="stat-card-arrow" aria-hidden="true">↗</span>
                 <div class="label">CK</div>
                 <div class="donut" id="t-sum-CK-donut"><span class="donut-text" id="t-sum-CK-r">0%</span></div>
-                <div class="wl" id="t-sum-CK-w">0승 0패</div>
+                <div class="wl-block">
+                    <div class="wl-text" id="t-sum-CK-t">0<small>승</small> 0<small>패</small></div>
+                    <div class="wl" id="t-sum-CK-w"></div>
+                </div>
             </div></div>
         </div>
 
@@ -705,8 +717,8 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="core.js?v=0f47e87d73"></script>
-<script src="page-records.js?v=a096227da5"></script>
+<script src="core.js?v=38fca05527"></script>
+<script src="page-records.js?v=4a22befc57"></script>
 
 </body>
 </html>

@@ -248,7 +248,16 @@
         const titleEl = document.getElementById('monthTitle');
         const daysGrid = document.getElementById('daysGrid');
         if (!titleEl || !daysGrid) return;
-        titleEl.innerText = `${year}년 ${month + 1}월`;
+        titleEl.innerText = `${year}. ${String(month + 1).padStart(2, '0')}`;
+        // [리디자인] 카드 맨 위 잉크 띠의 연도 + 영문 월 이름. 시안 구조.
+        const YEAR_EL = document.getElementById('monthYear');
+        const NAME_EL = document.getElementById('monthName');
+        if (YEAR_EL) YEAR_EL.innerText = year;
+        if (NAME_EL) {
+            const MONTH_EN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+            NAME_EL.innerText = MONTH_EN[month];
+        }
 
         const firstDayIndex = new Date(year, month, 1).getDay();
         const lastDay = new Date(year, month + 1, 0).getDate();

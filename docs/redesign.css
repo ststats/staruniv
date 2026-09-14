@@ -618,3 +618,300 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
 
 /* 날짜·맵은 우선순위가 낮은 정보라 한 톤 죽인다 */
 .stat-table tbody td.cell-muted { color: var(--color-text-sub); }
+
+
+/* ============================================================
+   시안 대조 3차 — 지적 10개
+   ============================================================ */
+
+/* ── 1. 종족 색 왼쪽 엣지 (멤버 카드 · 방송중 카드 · 사이드바 줄)
+   시안에서 카드 왼쪽 3px에 종족 색이 깔려 있었다. 40명을 훑을 때 종족 분포가
+   색 띠로 먼저 들어오는 장치라, 이게 빠지면 카드가 전부 같은 흰 덩어리로 보인다. */
+.edge-T { border-left: 3px solid var(--color-race-t) !important; }
+.edge-Z { border-left: 3px solid var(--color-race-z) !important; }
+.edge-P { border-left: 3px solid var(--color-race-p) !important; }
+
+/* 멤버 카드 - 시안 규격: 카드 패딩 18/14/14, 아바타 56px, 이름 14px, 뱃지 줄 gap 6 */
+.member-card {
+    position: relative; padding: 18px 14px 14px;
+    min-height: 0; aspect-ratio: auto;
+    justify-content: flex-start; align-items: center; text-align: center;
+}
+.member-card .member-avatar-img { width: 56px; height: 56px; margin: 0 auto 12px; }
+.member-card-name { margin-top: 0; font-size: 14px; font-weight: 700; }
+.member-card-tags { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; }
+.member-card .tool-card-ext { position: absolute; top: 10px; right: 12px; }
+/* 방송 중인 멤버 - 시안은 아바타를 파랗게 채웠는데 실제로는 프로필 사진이 들어가므로
+   테두리와 오른쪽 위 LIVE 배지로 알린다. */
+/* [주의] .live-badge에 left:10px가 있어서 right만 주면 좌우로 늘어난다 - left를 풀어준다.
+   그리고 클래스가 display:inline-flex를 갖고 있으면 [hidden] 속성이 안 먹는다(작성자
+   스타일이 UA 스타일을 이긴다). 그래서 [hidden]을 명시적으로 숨긴다. */
+.member-card-live { position: absolute; top: 9px; right: 9px; left: auto;
+    height: 18px; padding: 0 6px; font-size: 8px; z-index: 1; }
+.live-badge[hidden], .avatar-select-live[hidden], .member-card-live[hidden] { display: none !important; }
+.member-card.is-live { background: var(--color-primary-tint); }
+.member-card.is-live .member-avatar-img { box-shadow: 0 0 0 2px var(--color-primary); }
+.member-card.is-live .tool-card-ext { display: none; }
+
+/* .container의 좌우 패딩을 변수로 노출한다 - 히어로가 정확히 그만큼 밖으로 나가야
+   화면 끝에 딱 맞는다. style.css의 .container 패딩 값(32 / 40 / 24)과 같이 맞춰둔다. */
+:root { --container-pad: 32px; }
+@media (min-width: 1200px) { :root { --container-pad: 40px; } }
+@media (max-width: 767.98px) { :root { --container-pad: 24px; } }
+
+/* ── 2. 홈 배너를 꽉 채운다
+   시안의 캐러셀은 .container 밖의 전체 폭이었다. 컨테이너 안에 넣으면 좌우 40px + 최대폭
+   1240px에 갇혀서 "가운데 띠"처럼 보인다. 음수 마진으로 컨테이너를 벗어나게 한다. */
+/* 히어로는 home.html에서 .container 밖으로 빼두었다 - 여기서는 위 여백만 걷어낸다. */
+.home-carousel { margin: calc(-1 * var(--space-page-top)) 0 30px; }
+/* 슬라이드 안쪽은 다시 컨테이너 폭에 맞춘다(글이 화면 끝에 붙지 않게).
+   align-content:center로 줄을 가운데로 모아야 시안처럼 꽉 찬 느낌이 난다 - 기본값
+   stretch면 네 줄이 340px에 고르게 퍼져서 사이가 텅 비어 보인다. */
+/* [주의] 슬라이드에 max-width를 주면 안 된다 - 슬라이드는 flex:0 0 100%로 트랙 폭을
+   차지해야 하고, max-width를 걸면 그만큼 좁아져서 다음 장이 오른쪽에 비어져 보인다.
+   그래서 폭은 100%로 두고 좌우 패딩으로 내용을 컨테이너 폭에 맞춘다. */
+.home-carousel-slide {
+    min-height: 330px;
+    padding-top: 48px; padding-bottom: 60px;
+    padding-left: max(var(--container-pad), calc((100% - 1320px) / 2 + var(--container-pad)));
+    padding-right: max(var(--container-pad), calc((100% - 1320px) / 2 + var(--container-pad)));
+    align-content: center;
+    grid-auto-rows: min-content;
+    row-gap: 0;
+}
+.home-carousel-slide > * { position: relative; z-index: 1; }
+/* 왼쪽 글 / 오른쪽 최신 경기 두 칸. 시안과 같은 1fr 420px. */
+.home-carousel-slide {
+    display: grid; grid-template-columns: minmax(0, 1fr) 420px;
+    column-gap: 48px; align-items: center;
+}
+.home-carousel-slide > .home-hero-kicker,
+.home-carousel-slide > h1,
+.home-carousel-slide > p,
+.home-carousel-slide > .home-hero-links { grid-column: 1; }
+.home-carousel h1 { font-size: clamp(42px, 4.4vw, 56px); letter-spacing: -.045em; }
+.home-carousel p { max-width: 520px; line-height: 1.7; }
+/* 최신 경기 칸은 슬라이드 안이 아니라 캐러셀 기준으로 붙어 있어서 첫 장에만 보인다 */
+/* 최신 경기 칸은 캐러셀 전체 기준으로 붙는다(슬라이드마다 반복되지 않는다).
+   left를 계산해서 슬라이드 오른쪽 칸과 같은 자리에 놓는다. */
+.home-carousel-preview {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    right: max(var(--container-pad), calc((100% - 1320px) / 2 + var(--container-pad)));
+    width: 420px; z-index: 2;
+    padding: 20px; background: var(--color-ink-2, #1e2531);
+}
+.home-preview-label {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .14em; color: #66738a; margin-bottom: 14px;
+}
+.home-preview-teams { display: flex; align-items: center; gap: 14px; }
+.home-preview-teams b { font-size: 18px; font-weight: 700; color: #fff; flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-preview-teams b:last-of-type { text-align: right; }
+.home-preview-result {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 20px; font-family: var(--font-num); font-size: 11px; font-weight: 700; color: #fff;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+.home-preview-result.win { background: var(--color-primary); }
+.home-preview-result.lose { background: var(--color-lose); }
+.home-preview-result.draw { background: var(--color-draw); }
+.home-preview-meta {
+    display: flex; align-items: center; gap: 7px; margin-top: 14px;
+    padding-top: 13px; border-top: 1px solid var(--color-ink-3, #2b3442);
+    font-size: 11px; color: #9aa6ba;
+}
+.home-preview-meta span {
+    display: inline-flex; align-items: center; height: 20px; padding: 0 9px;
+    background: var(--color-ink-3, #2b3442);
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.home-preview-meta time { margin-left: auto; font-family: var(--font-num); font-size: 10px; color: #5b6575; }
+.home-preview-loading { font-size: 12px; color: #66738a; }
+.home-carousel-controls { right: auto; left: 0; width: 100%; justify-content: center; gap: 20px; bottom: 22px; }
+
+@media (max-width: 1100px) {
+    .home-carousel-slide { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .home-carousel-preview { position: static; width: auto; transform: none; margin-top: 24px; grid-column: 1; }
+}
+@media (max-width: 767.98px) {
+    .home-carousel-slide { min-height: 0; padding-top: 34px; padding-bottom: 56px; }
+    .home-carousel h1 { font-size: 34px; }
+}
+
+/* ── 4. 전적 · 팀 요약 카드 : 승패 텍스트 + 도넛 색
+   도넛 링/트랙 색은 updateDonut이 var(--color-win)/var(--color-lose)/var(--color-donut-track)로
+   넣는다. 잉크 면 위에서는 원래 값(#0066ff / #f03e3e / #eee)이 탁해 보이므로, 이 카드
+   안에서만 변수를 밝은 쪽으로 다시 정의한다 - JS를 고치지 않고 색만 바뀐다. */
+.stat-card-box {
+    --color-win: #4d90ff;
+    --color-lose: #ff8080;
+    --color-donut-track: #2b3442;
+}
+.wl-block { grid-area: wl; min-width: 0; }
+.wl-text {
+    font-family: var(--font-num); font-size: 26px; font-weight: 700; line-height: 1;
+    color: #fff; font-variant-numeric: tabular-nums;
+}
+.wl-text small { font-size: 13px; color: #66738a; font-family: 'Pretendard', sans-serif; }
+.wl-block .wl { margin-top: 9px; }
+
+/* ── 5·6. 선택 사이드바 : '전체' 줄과 항목 구성
+   '전체'는 시안에서 알약 박스가 아니라 목록과 구분선으로 나뉜 한 줄이었다.
+   사이드바 모드에서는 .bar-scope의 박스를 지운다(모바일 가로 바에서는 박스가 필요하다). */
+.selection-layout > .avatar-bar .bar-scope {
+    display: block; width: 100%; height: auto; padding: 0;
+    background: none; border: 0; clip-path: none;
+}
+.selection-layout > .avatar-bar .avatar-select-all {
+    display: flex; width: 100%; height: 42px; padding: 0 15px;
+    justify-content: space-between; align-items: center;
+    background: transparent; border-left: 3px solid transparent;
+}
+.selection-layout > .avatar-bar .avatar-select-all.active { background: var(--color-primary); border-left-color: #fff; }
+/* 항목 한 줄 = [종족뱃지][이름][방송점][티어] */
+.avatar-select-item { gap: 9px; }
+.avatar-select-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.avatar-select-live {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--color-lose); flex: none;
+}
+.avatar-select-tier {
+    font-family: var(--font-num); font-size: 10px; font-weight: 700; color: #5b6575; flex: none;
+}
+.avatar-select-item.active .avatar-select-tier { color: rgba(255,255,255,.75); }
+.selection-layout > .avatar-bar .avatar-select-item { border-left: 3px solid transparent; }
+.selection-layout > .avatar-bar .avatar-select-item.edge-T { border-left-color: var(--color-race-t); }
+.selection-layout > .avatar-bar .avatar-select-item.edge-Z { border-left-color: var(--color-race-z); }
+.selection-layout > .avatar-bar .avatar-select-item.edge-P { border-left-color: var(--color-race-p); }
+.selection-layout > .avatar-bar .avatar-select-item.active { border-left-color: #fff !important; }
+
+/* ── 7. 개인 최근 전적 필터 : 제목 옆 인라인에서 잉크 세그먼트로
+   제목 바로 옆에 회색 글자가 다섯 개 붙어 있어서 제목과 필터가 한 덩어리로 뭉쳐 보였다.
+   시안처럼 오른쪽에 작은 세그먼트로 떼어낸다. */
+.section-title-filters > .d-flex { flex-wrap: wrap; gap: 0 12px; }
+.section-title-filters .filter-nav-label { font-size: 18px; font-weight: 700; letter-spacing: -.025em; }
+.section-title-filters .filter-nav {
+    height: auto; margin-left: 0; padding: 3px; gap: 2px;
+    border-left: 0; background: #eef1f6;
+}
+.section-title-filters .filter-item {
+    height: 26px; padding: 0 12px; display: inline-flex; align-items: center;
+    font-size: 11px; font-weight: 700; color: var(--color-text-sub);
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.section-title-filters .filter-item.active { background: var(--color-ink, #141821); color: #fff; }
+.section-title-filters .filter-item.active::after { display: none; }
+
+/* ── 8. 방송통계 UPDATED 칸 */
+.head-stat-wide { min-width: 150px; }
+.head-stat-time { font-size: 14px; font-weight: 600; letter-spacing: 0; }
+
+/* ── 9. 티어 사이드바 : 전체 / 방송중 전환 색과 정렬
+   잉크 사이드바 안에서 .bar-scope가 검은 트랙 + 어두운 글자라 꺼진 쪽이 안 보였다.
+   트랙을 한 단 밝게 하고 두 버튼을 같은 폭으로 나눈다. */
+.selection-layout > .tier-bar .bar-scope {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+    width: 100%; padding: 2px; background: #0e1218; clip-path: none;
+}
+.selection-layout > .tier-bar .tier-scope-btn {
+    width: 100%; height: 30px; padding: 0 6px; gap: 5px;
+    justify-content: center; color: #b3bdcd; font-size: 12px; white-space: nowrap;
+}
+.selection-layout > .tier-bar .tier-scope-btn:hover { background: #2b3442; color: #fff; }
+.selection-layout > .tier-bar .tier-scope-btn.on { background: var(--color-primary); color: #fff; }
+.selection-layout > .tier-bar .tier-scope-all .tier-scope-num { color: #7fb0ff; }
+.selection-layout > .tier-bar .tier-scope-live .tier-scope-num { color: #ff8080; }
+.selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num { color: #fff; }
+
+/* ── 10. 티어 제목 플레이트 (색 계단)
+   갓(잉크) -> 킹(딥블루) -> 잭(블루) -> 그 아래는 한 톤 유지. 스크롤하면 색이 밝아진다. */
+.tier-plate {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 13px 18px; margin-bottom: 14px;
+    background: var(--color-ink, #141821);
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.tier-plate-id { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.tier-plate-name { font-size: 19px; font-weight: 700; color: #fff; letter-spacing: -.02em; }
+.tier-plate-code {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .14em; color: rgba(255,255,255,.55); white-space: nowrap;
+}
+.tier-plate-meta { display: flex; align-items: center; gap: 14px; flex: none; }
+.tier-plate-total {
+    font-family: var(--font-num); font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);
+}
+.tier-plate .tier-live { color: #fff; }
+.tier-plate .tier-live:not(:empty) {
+    display: inline-flex; align-items: center; height: 20px; padding: 0 9px;
+    background: rgba(240,62,62,.9); font-family: var(--font-num);
+    font-size: 9px; font-weight: 700; letter-spacing: .1em;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.tier-plate .tier-live-sep { display: none; }
+.tier-plate-p1 { background: #141821; }
+.tier-plate-p2 { background: #1c5fe0; }
+.tier-plate-p3 { background: #2979ff; }
+.tier-plate-p4 { background: #2b3442; }
+.tier-plate-p5 { background: #37455c; }
+.tier-plate-p6 { background: #4a566b; }
+.tier-plate-pn { background: #1e2531; }
+/* 티어 줄 사이 간격 */
+.tier-row + .tier-row { margin-top: 30px; }
+
+
+/* ── 3. 일정(달력) — 시안 구조로
+   시안의 달력은 카드 맨 위가 잉크 띠(연도 + 영문 월 + 좌우 이동)이고, 그 아래 요일 줄이
+   한 단 어두운 면, 그 아래가 흰 칸이다. 예전엔 카드 위에 별도 제목줄이 있고 요일 줄이
+   흰 배경 + 굵은 회색 글자라 표와 구분이 약했다. */
+.cal-card { overflow: hidden; }
+.cal-month-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 16px 20px; background: var(--color-ink, #141821);
+}
+.cal-month-id { min-width: 0; }
+.cal-month-year {
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .16em; color: #66738a;
+}
+.cal-month-name {
+    font-family: var(--font-num); font-size: 23px; font-weight: 700; line-height: 1.1;
+    color: #fff; letter-spacing: -.01em;
+}
+.cal-month-bar .cal-nav-group { gap: 6px; flex: none; }
+.cal-month-bar .cal-nav-btn {
+    width: 32px; height: 32px; background: var(--color-ink-3, #2b3442); color: #fff;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+.cal-month-bar .cal-nav-btn:hover { background: var(--color-primary); color: #fff; }
+.cal-month-bar .cal-nav-badge {
+    font-family: var(--font-num); font-size: 13px; font-weight: 600; color: #fff; min-width: 74px;
+}
+/* 요일 줄 - 한 단 어두운 면에 라틴 3글자. 일요일 빨강 / 토요일 파랑. */
+.cal-weekdays {
+    background: var(--color-ink-2, #1e2531); border-bottom: 0; padding: 9px 0;
+    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .14em; color: #8b97ab;
+}
+.cal-weekdays div:first-child { color: #ff8080; }
+.cal-weekdays div:last-child { color: #7fb0ff; }
+/* 날짜 칸 */
+.cal-days-grid { border-left: 1px solid var(--color-border); }
+.cal-day-cell { min-height: 98px; padding: 7px 8px; }
+.cal-day-cell.today { background: var(--color-primary-tint); }
+.cal-day-number { font-family: var(--font-num); font-weight: 600; }
+.cal-day-cell.today .cal-day-number::after {
+    width: 24px; height: 20px; box-shadow: none;
+}
+/* 일정 칩 - 각진 면 + 왼쪽 색 엣지 */
+.cal-cell-event {
+    padding: 3px 6px; box-shadow: none; border-left: 3px solid var(--color-primary);
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.cal-event-time { font-family: var(--font-num); font-size: 10px; color: var(--color-text-sub); }
+/* 사이드바(오늘 / 선택한 날짜) 카드 안쪽 여백을 달력과 맞춘다 */
+.cal-sidebar .clean-card { padding: 18px 20px; }
+@media (max-width: 767.98px) {
+    .cal-month-bar { padding: 13px 15px; }
+    .cal-month-name { font-size: 19px; }
+}

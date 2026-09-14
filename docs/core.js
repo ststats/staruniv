@@ -472,18 +472,31 @@ function daysBetween(startStr, endStr) {
 }
 
 // 아바타 선택 바(개인 전적/멤버 공지 상단)의 항목 한 칸 - 두 화면이 같은 마크업을 쓴다.
-function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn) {
-    return `<div class="avatar-select-item" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0" onclick="${onclickFn}('${jsAttr(name)}')">
-                            ${avatarHtml(soopId, 'avatar-select-img')}
+// [리디자인] 선택 사이드바의 한 줄 구성은 시안대로 [종족 뱃지][이름][방송 표시][티어]다.
+// 프로필 사진을 쓰지 않는 이유: 40명을 세로로 훑을 때 필요한 건 "누가 무슨 종족 몇 티어인지"이고,
+// 24px 사진은 그 정보를 주지 못하면서 줄 높이만 먹는다. 종족은 왼쪽 엣지 색으로도 한 번 더 읽힌다.
+// member는 SiteData의 멤버 객체(없으면 이름만 그린다).
+function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member) {
+    const m = member || {};
+    const race = m['종족'] || '';
+    const letter = raceShortLabel(race);
+    const edgeClass = ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
+    const tierText = tierLabel(m['티어'] || '').replace('티어', '');
+    return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0" onclick="${onclickFn}('${jsAttr(name)}')">
+                            ${race ? raceBadgeHtml(race) : ''}
                             <span class="avatar-select-name">${escapeHTML(name)}</span>
+                            <span class="avatar-select-live" data-soop-id="${escapeHTML(soopId || '')}" hidden></span>
+                            <span class="avatar-select-tier">${escapeHTML(tierText)}</span>
                         </div>`;
 }
 
 // 아바타 선택 바 맨 앞의 "전체" 항목
-function avatarSelectAllItemHtml(id, onclickJs) {
+// [리디자인] '전체' 줄. 시안에서는 사진 없이 "전체 · 인원수" 한 줄이고, 목록과 구분선으로만
+// 나뉜다. 로고 이미지를 쓰면 아래 멤버 줄(종족 뱃지)과 왼쪽 기준선이 어긋난다.
+function avatarSelectAllItemHtml(id, onclickJs, countText) {
     return `<div class="avatar-select-item avatar-select-all active" id="${id}" role="button" tabindex="0" onclick="${onclickJs}">
-                            <img src="images/캄몬스타즈.webp" alt="전체" class="avatar-select-img" onerror="this.outerHTML='&lt;div class=&quot;avatar-select-fallback&quot;&gt;전체&lt;/div&gt;';">
                             <span class="avatar-select-name">전체</span>
+                            <span class="avatar-select-tier">${escapeHTML(countText || '')}</span>
                        </div>`;
 }
 
