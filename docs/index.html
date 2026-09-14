@@ -30,12 +30,12 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=25bb267151">
+    <link rel="stylesheet" href="redesign.css?v=40e104d96f">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
     <div class="navbar-inner container">
-        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-black">스타</span><span class="logo-accent">대학</span></a>
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
             <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
             <a class="nav-item" href="members/" data-page="members">멤버</a>
@@ -51,15 +51,29 @@
 <main>
 
 <section id="page-home" class="page-section active container">
-    <div class="home-hero nc">
-        <div class="home-hero-kicker">CAMMON STARS · STAR UNIVERSITY</div>
-        <h1><span>스타</span>대학</h1>
-        <p>캄몬스타즈의 방송, 일정, 전적을 한곳에서 확인하세요.</p>
-        <div class="home-hero-links">
-            <a href="schedule/">일정 보기 <span aria-hidden="true">↗</span></a>
-            <a href="records/">전적 보기 <span aria-hidden="true">↗</span></a>
+    <section class="home-carousel nc" aria-label="스타대학 안내" aria-roledescription="carousel">
+        <div class="home-carousel-track" id="home-carousel-track">
+            <article class="home-carousel-slide">
+                <div class="home-hero-kicker">CAMMON STARS · STAR UNIVERSITY</div>
+                <h1><span>스타</span>대학</h1>
+                <p>캄몬스타즈의 방송, 일정, 전적을 한곳에서 확인하세요.</p>
+                <div class="home-hero-links"><a href="schedule/">오늘 일정 <span aria-hidden="true">↗</span></a><a href="records/">전적 보기 <span aria-hidden="true">↗</span></a></div>
+            </article>
+            <article class="home-carousel-slide">
+                <div class="home-hero-kicker">RECORDS · TEAM &amp; PLAYER</div>
+                <h1>전적<i>아카이브</i></h1>
+                <p>대회 · 대학 · 미니 · CK의 팀 전적과 개인별 기록을 세트 단위로 정리합니다.</p>
+                <div class="home-hero-links"><a href="records/">전적 탐색 <span aria-hidden="true">↗</span></a></div>
+            </article>
+            <article class="home-carousel-slide">
+                <div class="home-hero-kicker">LIVE · ROSTER · RANKING</div>
+                <h1>멤버<i>현황</i></h1>
+                <p>방송 중인 멤버, 최신 공지와 스타크래프트 티어표를 빠르게 확인하세요.</p>
+                <div class="home-hero-links"><a href="members/">멤버 보기 <span aria-hidden="true">↗</span></a><a href="tier/">티어표 <span aria-hidden="true">↗</span></a></div>
+            </article>
         </div>
-    </div>
+        <div class="home-carousel-controls"><button type="button" onclick="moveHomeCarousel(-1)" aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" onclick="goHomeCarousel(0)"></button><button type="button" aria-label="2번 안내" onclick="goHomeCarousel(1)"></button><button type="button" aria-label="3번 안내" onclick="goHomeCarousel(2)"></button></div><button type="button" onclick="moveHomeCarousel(1)" aria-label="다음 안내">›</button></div>
+    </section>
     <div class="section-title">방송 중</div>
     <div class="clean-card p-4" id="home-live-broadcast" aria-live="polite">
         <div class="text-center text-muted py-4 fs-body">실시간 방송 상태 연동 준비중입니다.</div>
@@ -81,7 +95,7 @@
 
 <script src="core.js?v=53b0b72273"></script>
 <script src="soop.js?v=68531e35cd"></script>
-<script src="page-home.js?v=02e9d0b89c"></script>
+<script src="page-home.js?v=f892ce9ce9"></script>
 
 </body>
 </html>

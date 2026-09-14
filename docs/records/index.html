@@ -19,12 +19,12 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="style.css?v=c389b6212b">
-    <link rel="stylesheet" href="redesign.css?v=25bb267151">
+    <link rel="stylesheet" href="redesign.css?v=40e104d96f">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
     <div class="navbar-inner container">
-        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-black">스타</span><span class="logo-accent">대학</span></a>
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
             <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
             <a class="nav-item" href="members/" data-page="members">멤버</a>
@@ -530,13 +530,14 @@
 
     <!-- 2. 개인 뷰 -->
     <div id="view-indiv-stat" class="d-none">
-        <div class="avatar-selector-scroll scroll-area">
-            <div class="avatar-selector-list" id="indiv-avatar-list"></div>
-        </div>
+        <div class="selection-layout">
+            <div class="avatar-selector-scroll scroll-area">
+                <div class="avatar-selector-list" id="indiv-avatar-list"></div>
+            </div>
+            <div class="selection-content">
+            <div class="section-title" id="indiv-content-title">전체 전적</div>
 
-        <div class="section-title" id="indiv-content-title">전체 전적</div>
-
-        <div id="indiv-summary-content">
+            <div id="indiv-summary-content">
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
                     <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
@@ -556,7 +557,7 @@
             </div>
         </div>
 
-        <div id="statContent" class="d-none">
+            <div id="statContent" class="d-none">
             <div class="clean-card d-flex align-items-center mb-block p-4">
                 <div class="profile-avatar" id="p-avatar">👤</div>
                 <div>
@@ -621,6 +622,8 @@
                         <tbody id="indiv-recent-list"></tbody>
                     </table>
                 </div>
+            </div>
+            </div>
             </div>
         </div>
     </div>

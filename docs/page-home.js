@@ -20,6 +20,17 @@ function formatLiveElapsed(broadStart) {
     return (eh > 0 ? `${eh}시간 ${em}분` : `${em}분`) + ' 방송 중';
 }
 
+let homeCarouselIndex = 0;
+function goHomeCarousel(index) {
+    const track = document.getElementById('home-carousel-track');
+    const dots = document.querySelectorAll('#home-carousel-dots button');
+    if (!track || !dots.length) return;
+    homeCarouselIndex = (index + dots.length) % dots.length;
+    track.style.transform = `translateX(-${homeCarouselIndex * 100}%)`;
+    dots.forEach((dot, i) => dot.classList.toggle('active', i === homeCarouselIndex));
+}
+function moveHomeCarousel(direction) { goHomeCarousel(homeCarouselIndex + direction); }
+
 function liveCardHtml({ member: m, live }) {
     const { broad, broadStart } = live;
     const soopId = m['SOOP ID'];
