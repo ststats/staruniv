@@ -1259,3 +1259,110 @@ tbody tr:first-child .synergy-bar i { background: #141821; }
     /* 미리보기 칸이 한 칸으로 내려올 때는 격자 열 지정을 풀어준다 */
     .home-carousel-preview { grid-column: 1; margin-top: 22px; }
 }
+
+
+/* ============================================================
+   2026-09 UI polish — 스타유니브 요청사항 1~34
+   ============================================================ */
+:root {
+    --color-primary: #1f6ff0;
+    --color-primary-deep: #1459c7;
+}
+
+/* 히어로: 짧고 단정하게, 사이트 본문과 같은 좌우 열에 맞춘다. */
+.home-carousel-slide {
+    min-height: 224px;
+    padding: 38px 48px 52px;
+}
+.home-carousel h1 { margin: 7px 0 10px; }
+.home-carousel h1 .hero-star { color: #fff; display: inline; }
+.home-carousel h1 .hero-univ { color: #4d90ff; display: inline; }
+.home-carousel-preview { min-height: 0; }
+.home-preview-label { color: #75a8ff; }
+.home-preview-loading { color: #9aa6ba; }
+
+/* 잘린 테두리의 물리적 clipping을 없애고 모서리 효과는 배경으로만 처리한다.
+   테두리가 있는 박스는 이제 테두리 픽셀이 사라지지 않는다. */
+.clean-card, .news-post-card, .tool-card, .member-card, .tier-card,
+.mv-chip-box, .mv-order-row, .admin-tool-row {
+    clip-path: none;
+    border-radius: 0;
+}
+/* 깎인 면이 필요한 무테 박스는 유지한다. */
+.nc, .live-broadcast-card, .avatar-bar, .tier-bar, .home-carousel, .mv-console, .mv-tile,
+.home-hero-links a, .home-carousel-controls > button, .tier-scope-btn, .tier-bar-item {
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+/* 방송중 카드의 방송시간은 모바일에서 LIVE와 겹치지 않도록 우측 하단. */
+.live-thumb-overlay { top: auto; bottom: 9px; right: 9px; }
+.live-thumb-overlay span:last-child { background: rgba(10,14,23,.78); color: #fff; }
+
+/* 홈 공지 첫 모서리의 빈 면/덧칠 문제 제거. */
+.home-notice-list { overflow: hidden; border: 1px solid var(--color-border); }
+.home-notice-list > .home-notice-card:first-child { clip-path: none; }
+
+/* 일정 제목 */
+.calendar-page-title {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin: 0 0 10px; padding-bottom: 9px;
+    border-bottom: 3px solid var(--color-text-main);
+}
+.calendar-page-title span { font-size: 18px; font-weight: 800; letter-spacing: -.03em; }
+.calendar-page-title small { font-family: 'Chakra Petch', sans-serif; color: var(--color-text-sub); font-size: 9px; letter-spacing: .15em; }
+
+/* 오늘 날짜: 셀 배경은 파랑, 일정 내용 자체에는 별도의 파란 박스를 씌우지 않는다. */
+.cal-day-cell.today { background: var(--color-primary-tint); }
+.cal-day-cell.today .cal-cell-event { background: var(--color-ink, #141821) !important; }
+.cal-day-cell.today .cal-day-number::after { background: var(--color-primary); }
+
+/* 일정 색상은 관리자에서 고른 실제 색을 왼쪽 엣지에 반영. */
+.cal-cell-event { border-left-color: var(--ev-color, var(--color-primary)) !important; }
+.cal-longterm-bar { border-left-color: var(--ev-color, var(--color-primary)) !important; }
+
+/* 멤버/티어 제목의 인원 badge를 오른쪽 정렬. */
+.page-header-stats .head-stat { border: 1px solid var(--color-border); }
+.page-header-stats .head-stat-ink { border-color: #141821; }
+.page-header-stats { margin-left: auto; }
+
+/* 티어 카드 종족 왼쪽 엣지. JS가 붙이는 edge-T/Z/P 클래스를 공통 규칙으로 사용. */
+.tier-card.edge-T { border-left: 4px solid #4d90ff !important; }
+.tier-card.edge-Z { border-left: 4px solid #52c878 !important; }
+.tier-card.edge-P { border-left: 4px solid #c58cff !important; }
+.tier-card-body { border-top: 0 !important; }
+
+/* 도구 카드: 이미지/텍스트 모두 중앙정렬. */
+#view-tools-external .tool-card,
+#view-tools-external .tool-card-icon,
+#view-tools-external .tool-card-name { align-items: center; text-align: center; justify-content: center; }
+#view-tools-external .tool-card { align-items: center; }
+
+/* 멀티뷰어 설정은 3개 타일과 실행 버튼이 균일하게 정렬되도록. */
+.mv-console { grid-template-columns: minmax(0,1fr) 180px; align-items: stretch; }
+.mv-console-tiles { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: stretch; }
+.mv-tile { min-width: 0; }
+
+/* 사이드바: 데스크톱은 스크롤을 따라가고 모바일에서는 상단 네비 아래에 고정. */
+.selection-layout > .avatar-bar,
+.selection-layout > .tier-bar { position: sticky; top: 84px; z-index: 20; align-self: start; }
+@media (max-width: 920px) {
+    .selection-layout > .avatar-bar,
+    .selection-layout > .tier-bar { position: sticky; top: 68px; z-index: 30; }
+    .selection-layout > .tier-bar { top: 68px; }
+    .selection-layout > .avatar-bar .avatar-selector-scroll,
+    .selection-layout > .tier-bar .tier-bar-list { max-height: 50vh; }
+}
+
+/* 모바일 히어로는 여백을 더 줄인다. */
+@media (max-width: 767.98px) {
+    .home-carousel-slide { min-height: 205px; padding: 28px 20px 54px; }
+    .home-carousel h1 { font-size: 40px; }
+    .home-carousel-preview { padding: 14px; }
+    .calendar-page-title { margin-top: 2px; }
+    .mv-console { grid-template-columns: 1fr; }
+    .mv-console-tiles { grid-template-columns: 1fr; }
+    .live-card-body { padding: 9px 11px 10px; }
+}
+
+/* 32. 시안 대비 흐린 파란색 보정 */
+.home-carousel h1 .hero-univ, .logo-accent, .home-hero-kicker { color: #4d90ff; }

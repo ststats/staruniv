@@ -42,10 +42,10 @@ const HOME_PREVIEWS = [
 // 미리보기 칸은 장 안에 하나씩 들어 있다(data-preview="0|1|2"). 그래서 트랙이 밀릴 때
 // 글과 같이 따라 움직인다 - 예전엔 캐러셀 기준 절대배치라 칸만 제자리에 남아 있었다.
 // 넘길 때마다 다시 그리지 않고 처음에 전부 채운다.
-function renderHomePreviewPanes() {
-    document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(box => {
+async function renderHomePreviewPanes() {
+    document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(async box => {
         const index = Number(box.dataset.preview);
-        if (index === 0) { renderHeroMatchPreview(box); return; }
+        if (index === 0) { await renderHeroMatchPreview(box); return; }
         const cfg = HOME_PREVIEWS[index];
         if (!cfg) { box.innerHTML = ''; return; }
         let rows = [];
@@ -97,16 +97,23 @@ function moveHomeCarousel(direction) {
     if (homeCarouselTimer) startHomeCarouselAuto();   // 누른 직후 바로 또 넘어가지 않게 다시 센다
 }
 
-function renderHeroMatchPreview(target) {
+async function renderHeroMatchPreview(target) {
     const box = target || document.querySelector('.home-carousel-preview[data-preview="0"]');
     if (!box) return;
-    const match = SiteData.matches[0];
-    if (!match) { box.innerHTML = '<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-loading">경기 기록이 없습니다.</div>'; return; }
-    const result = match['최종 결과'] || match['최근 결과'] || '-';
-    const resultClass = result === '승' ? 'win' : result === '패' ? 'lose' : 'draw';
-    box.innerHTML = `<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-teams"><b>캄몬스타즈</b><span class="home-preview-result ${resultClass}">${escapeHTML(result)}</span><b>${escapeHTML(match['상대팀'] || '-')}</b></div><div class="home-preview-meta"><span>${escapeHTML(match['형식'] || '-')}</span><span>${escapeHTML(match['세트 결과'] || '-')}</span><time>${escapeHTML(shortMatchDate(match['날짜']))}</time></div>`;
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    try {
+        const res = await fetch('data/calendar.json', { cache: 'no-cache' });
+        const data = res.ok ? await res.json() : { events: [] };
+        const events = Array.isArray(data.events) ? data.events : [];
+        const todays = events.filter(e => String(e.startDate || '') <= today && String(e.endDate || e.startDate || '') >= today)
+            .sort((a,b) => String(a.time||'').localeCompare(String(b.time||'')));
+        box.innerHTML = `<div class="home-preview-label">TODAY · SCHEDULE</div>` +
+            (todays.length ? todays.slice(0,4).map(e => `<div class="home-preview-row"><span>${escapeHTML(e.time || '일정')}</span><b>${escapeHTML([e.person,e.desc].filter(Boolean).join(' · ') || '일정')}</b></div>`).join('') : '<div class="home-preview-loading">오늘 예정된 일정이 없습니다.</div>');
+    } catch (e) {
+        box.innerHTML = '<div class="home-preview-label">TODAY · SCHEDULE</div><div class="home-preview-loading">일정을 불러오지 못했습니다.</div>';
+    }
 }
-
 // [리디자인] 방송중 카드도 멤버 카드와 같은 규칙 - 왼쪽 3px 엣지에 종족 색.
 function liveRaceEdgeClass(m) {
     const letter = raceShortLabel(m['종족'] || '');
