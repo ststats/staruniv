@@ -33,7 +33,7 @@ const TierState = {
     members: [],       // 표시 대상 전체
     byId: {},          // soopId(소문자) -> member
     live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
-    liveOnly: true,    // 최초 진입은 방송 중 보기
+    liveOnly: false,   // 방송 중인 사람만 보기
     sections: [],      // [{ tier, id, count, total }] - 티어 바로가기 바가 쓴다
     activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
     visibleThumbs: new Set(),
@@ -158,10 +158,8 @@ function tierCardTitle(member, live) {
 function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
-    const raceLetter = raceShortLabel(member.race || '');
-    const raceEdgeClass = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
     return `
-    <a class="tier-card${raceEdgeClass}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
+    <a class="tier-card${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
        href="https://ch.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
        title="${escapeHTML(tierCardTitle(member, live))}">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>

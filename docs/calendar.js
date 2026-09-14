@@ -88,8 +88,7 @@
         bleedRight: roundRight ? '0' : '-8px',
         padLeft: roundLeft ? '4px' : '12px',
         padRight: roundRight ? '4px' : '12px',
-        // 장기 일정은 칸과 칸 사이가 자연스럽게 이어지는 직선형 띠다.
-        radius: '0',
+        radius: `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`,
     });
 
     // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
