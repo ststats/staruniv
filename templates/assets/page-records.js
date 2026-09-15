@@ -65,6 +65,7 @@ function switchStatView(viewType) {
     if (viewType === 'individual') {
         renderIndividualSidebar();
         showIndivSummary();
+        safeInit('사이드바 방송 상태', refreshSidebarLiveIndicators);
     }
     updateStatsHash();
 }

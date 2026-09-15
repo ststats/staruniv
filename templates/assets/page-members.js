@@ -10,6 +10,7 @@ const ROLE_ORDER_BASE = ['감독', '코치', '선수'];
 // 현황 탭에서 먼저 완료된 방송 상태 조회 결과를 공지 탭 사이드바가
 // 나중에 렌더링될 때도 재사용한다.
 let MEMBER_LIVE_IDS = [];
+const MEMBER_LIVE_DATA = new Map();
 
 function updateMembersHash() {
     const params = {};
@@ -38,12 +39,16 @@ function switchMemberView(viewType, skipHashUpdate) {
 function memberCardHtml(m) {
     return `
         <div class="member-card${isActiveMember(m) ? '' : ' former'}${memberRaceEdgeClass(m)}" data-member="${jsAttr(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0" onclick="openMemberProfile('${jsAttr(m['이름'])}')">
-            <span class="member-card-live live-badge" hidden>LIVE</span>
-            ${avatarHtml(m['SOOP ID'], 'member-avatar-img')}
-            <div class="member-card-name">${escapeHTML(m['이름'])}</div>
-            <div class="member-card-tags">
-                ${tierBadgeHtml(m['티어'])}
-                ${raceBadgeHtml(m['종족'])}
+            <div class="member-card-media tier-card-media">
+                <img class="member-live-thumb" data-member-live-thumb="${escapeHTML(m['SOOP ID'] || '')}" alt="" hidden>
+                <div class="member-profile-media">${avatarHtml(m['SOOP ID'], 'member-avatar-img')}</div>
+            </div>
+            <div class="member-card-body tier-card-body">
+                <div class="member-card-name">${escapeHTML(m['이름'])}</div>
+                <div class="member-card-tags">
+                    ${tierBadgeHtml(m['티어'])}
+                    ${raceBadgeHtml(m['종족'])}
+                </div>
             </div>
         </div>`;
 }
@@ -88,6 +93,11 @@ function renderMemberHeadCounts(activeMembers) {
                 .filter((m, i) => results[i].status === 'fulfilled' && results[i].value)
                 .map(m => String(m['SOOP ID']));
             MEMBER_LIVE_IDS = liveIds;
+            MEMBER_LIVE_DATA.clear();
+            targets.forEach((m, i) => {
+                const result = results[i];
+                if (result.status === 'fulfilled' && result.value && result.value.broad) MEMBER_LIVE_DATA.set(String(m['SOOP ID']), result.value);
+            });
             liveEl.innerText = liveIds.length;
             markLiveMembers(liveIds);
         })
@@ -101,8 +111,14 @@ function markLiveMembers(liveIds) {
     document.querySelectorAll('.member-card[data-soop-id]').forEach(card => {
         const on = set.has(String(card.dataset.soopId));
         card.classList.toggle('is-live', on);
-        const badge = card.querySelector('.member-card-live');
-        if (badge) badge.hidden = !on;
+        const thumb = card.querySelector('.member-live-thumb');
+        const broad = MEMBER_LIVE_DATA.get(String(card.dataset.soopId));
+        if (thumb) {
+            thumb.hidden = !on;
+            if (on && broad && broad.broad && broad.broad.broad_no) thumb.src = `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad.broad_no)}`;
+        }
+        const profile = card.querySelector('.member-profile-media');
+        if (profile) profile.hidden = on;
     });
     document.querySelectorAll('.avatar-select-live[data-soop-id]').forEach(dot => {
         dot.hidden = !set.has(String(dot.dataset.soopId));
