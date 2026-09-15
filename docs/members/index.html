@@ -18,7 +18,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
-    <link rel="stylesheet" href="style.css?v=eafc4b83b9">
+    <link rel="stylesheet" href="style.css?v=8c0c4b24df">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -50,10 +50,6 @@
         <div class="page-header-main">
             <h1 class="page-header-title">멤버</h1>
             <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식입니다.</p>
-            <div class="sub-tabs tab-scroll" role="tablist">
-                <div class="sub-tab active" id="tab-member-status" role="tab" tabindex="0" aria-selected="true" onclick="switchMemberView('status')">현황</div>
-                <div class="sub-tab" id="tab-member-news" role="tab" tabindex="0" aria-selected="false" onclick="switchMemberView('news')">공지</div>
-            </div>
         </div>
         <div class="page-header-stats">
             <div class="head-stat head-stat-ink">
@@ -64,6 +60,10 @@
                 <div class="head-stat-label">ON AIR</div>
                 <div class="head-stat-value head-stat-live" id="member-count-live">-</div>
             </div>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-member-status" role="tab" tabindex="0" aria-selected="true" onclick="switchMemberView('status')">현황</div>
+            <div class="sub-tab" id="tab-member-news" role="tab" tabindex="0" aria-selected="false" onclick="switchMemberView('news')">공지</div>
         </div>
     </div>
     <hr class="page-header-divider tight">

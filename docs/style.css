@@ -3459,16 +3459,14 @@ body {
 }
 
 /* 페이지 타이틀 히어로 하단에 서브탭을 걸쳐 하나의 내비게이션 영역으로 보이게 한다. */
-#page-schedule > .sub-tabs,
-#page-members > .sub-tabs,
-#page-records > .sub-tabs,
-#page-stats > .sub-tabs,
-#page-tier > .sub-tabs,
-#page-tools > .sub-tabs {
-    position: relative;
+.page-header > .sub-tabs,
+.page-header-main > .sub-tabs {
+    position: absolute;
     z-index: 2;
-    margin-top: -70px;
-    margin-bottom: 30px;
+    left: max(32px, calc((100vw - 1240px) / 2 + 40px));
+    bottom: 24px;
+    margin-top: 0;
+    margin-bottom: 0;
     background: transparent;
 }
 
@@ -3476,7 +3474,7 @@ body {
     height: 40px;
     padding: 0 15px;
     margin: 0;
-    border: 1px solid rgba(255,255,255,.22) !important;
+    border: 0 !important;
     color: #c5cfdf;
     font-size: 13px;
     font-weight: 600;
@@ -6906,7 +6904,7 @@ tbody tr:first-child .synergy-bar i {
 #page-schedule .cal-selected-card-wrapper .cal-day-card-date { border-bottom-color: var(--color-border); }
 #page-schedule .cal-card-time, #page-schedule .cal-card-person, #page-schedule .cal-card-desc { font-size: 13px; line-height: 1.35; }
 #page-schedule .cal-card-time { font-weight: 700; }
-.page-header-with-stats { display: block; padding-right: max(32px, calc((100vw - 1240px) / 2 + 40px)); }
+.page-header-with-stats { display: flex; flex-direction: column; padding-right: max(32px, calc((100vw - 1240px) / 2 + 40px)); }
 .page-header-with-stats .page-header-main { display: flex; flex-direction: column; align-items: flex-start; }
 .page-header-with-stats .page-header-main::before { margin-bottom: 7px; }
 .page-header-with-stats .page-header-title { align-self: auto; }
@@ -6932,8 +6930,10 @@ tbody tr:first-child .synergy-bar i {
 .mv-stepper, .mv-toggle-switch { align-self: center; }
 .mv-pick-layout { align-items: start; }
 @media (max-width: 767.98px) {
-    .page-header-with-stats { display: block; padding-right: 24px; }
+    .page-header-with-stats { display: flex; flex-direction: column; padding-right: 24px; }
     .page-header-with-stats .page-header-stats { top: 24px; right: 24px; }
+    .page-header > .sub-tabs,
+    .page-header-main > .sub-tabs { left: 24px; bottom: 18px; }
     .page-header-with-stats .head-stat { height: auto; min-height: 38px; padding: 5px 7px; }
     .page-header-with-stats .head-stat-label { font-size: 7px; margin-bottom: 3px; }
     .page-header-with-stats .page-header-subtitle { font-size: 12px; }
