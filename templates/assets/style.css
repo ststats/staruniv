@@ -6839,13 +6839,15 @@ tbody tr:first-child .synergy-bar i {
 #page-schedule .cal-selected-card-wrapper .cal-card-detail,
 #page-schedule .cal-selected-card-wrapper .cal-no-schedule { color: var(--color-text-sub); }
 #page-schedule .cal-selected-card-wrapper .cal-selected-card + .cal-selected-card { border-top-color: var(--color-bg-subtle); }
-#page-schedule .cal-selected-list.is-empty {
+#page-schedule .cal-selected-list.is-empty,
+#page-schedule .cal-today-list.is-empty {
     min-height: 104px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-#page-schedule .cal-selected-list.is-empty .cal-no-schedule {
+#page-schedule .cal-selected-list.is-empty .cal-no-schedule,
+#page-schedule .cal-today-list.is-empty .cal-no-schedule {
     width: 100%;
     text-align: center;
 }
