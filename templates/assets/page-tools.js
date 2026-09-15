@@ -194,9 +194,13 @@ function mvRenderOrderRow() {
     if (!row) return;
     const { order, focus } = MvState;
     const focusEntryId = mvFocusEntryId(order, MvState.focusId);
+    const count = document.getElementById('mv-order-count');
+    if (count) count.textContent = `${order.length}명`;
+    const help = document.getElementById('mv-order-help');
+    if (help) help.textContent = focus ? '메인 방송을 선택하고 화살표로 순서를 바꿔보세요.' : '목록 순서대로 배치됩니다. 화살표로 순서를 바꿔보세요.';
     row.innerHTML = order.length
-        ? order.map((entry, idx) => mvOrderItemHtml(entry, idx, order, focus, focusEntryId)).join('')
-        : `<span class="mv-order-empty">위에서 멤버를 선택하거나 숲 아이디를 직접 추가해보세요.</span>`;
+        ? order.map((entry, idx) => mvOrderItemHtml(entry, idx, order, focus, focusEntryId, true)).join('')
+        : `<div class="mv-order-empty"><span class="mv-order-empty-mark" aria-hidden="true">＋</span><strong>선택된 방송이 없습니다</strong><span>멤버를 선택하거나 숲 아이디를 추가해주세요.</span></div>`;
 }
 
 function mvUpdateActionbar() {

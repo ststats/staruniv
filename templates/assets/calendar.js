@@ -220,7 +220,8 @@
         if (calPublicHolidays[dateStr]) classes.push('holiday');
         const isWeekStart = dayOfWeek === 0, isWeekEnd = dayOfWeek === 6;
 
-        let html = `<span class="cal-day-number">${dayNum}</span>`;
+        const todayAttr = dateStr === todayStr ? ` aria-current="date" aria-label="오늘, ${dateStr}"` : '';
+        let html = `<span class="cal-day-number"${todayAttr}>${dayNum}</span>`;
         // '김윤환' 휴방 표시는 가장 상단(다른 일정보다 위)에 붙인다.
         if (calIsYounhwanOffAir(dateStr)) html += calGetYounhwanBarHTML(dateStr, isWeekStart, isWeekEnd);
         // 기간 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는 막대로, 하루짜리 일정은 그 아래 카드로.
