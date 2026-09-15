@@ -26,7 +26,7 @@ let homeCarouselIndex = 0;
 // 붙어 있어서, 2·3번째 장(전적 / 멤버 안내)에서도 같은 경기 결과가 떠 있었다.
 // 장별 내용은 SiteData에서 뽑고, 못 뽑으면 그 칸을 비운다.
 const HOME_PREVIEWS = [
-    null,  // 1장은 최근 경기(renderHeroMatchPreview)가 채운다
+    { label: 'TODAY SCHEDULE', rows: () => [] },
     { label: 'RECORDS', rows: () => [
         ['상대 팀', `${new Set((SiteData.matches || []).map(m => m['상대팀'])).size}팀`],
         ['누적 경기', `${(SiteData.matches || []).length}경기`],
@@ -39,13 +39,34 @@ const HOME_PREVIEWS = [
     } },
 ];
 
+async function renderTodaySchedulePreview(box) {
+    if (!box) return;
+    box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중...</div>';
+    try {
+        const res = await fetch('data/calendar.json', { cache: 'no-cache' });
+        const data = res.ok ? await res.json() : {};
+        const events = Array.isArray(data.events) ? data.events : [];
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayEvents = events.filter(ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate));
+        todayEvents.sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+        box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div>' +
+            (todayEvents.length
+                ? todayEvents.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><em>${escapeHTML(ev.desc || '')}</em></div>`).join('')
+                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다.</div>');
+    } catch (e) {
+        box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다.</div>';
+    }
+}
+
+
 // 미리보기 칸은 장 안에 하나씩 들어 있다(data-preview="0|1|2"). 그래서 트랙이 밀릴 때
 // 글과 같이 따라 움직인다 - 예전엔 캐러셀 기준 절대배치라 칸만 제자리에 남아 있었다.
 // 넘길 때마다 다시 그리지 않고 처음에 전부 채운다.
 function renderHomePreviewPanes() {
     document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(box => {
         const index = Number(box.dataset.preview);
-        if (index === 0) { renderHeroMatchPreview(box); return; }
+        if (index === 0) { renderTodaySchedulePreview(box); return; }
         const cfg = HOME_PREVIEWS[index];
         if (!cfg) { box.innerHTML = ''; return; }
         let rows = [];

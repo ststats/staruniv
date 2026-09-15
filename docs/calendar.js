@@ -39,7 +39,7 @@
     // 붙여준다 - 달력 칸 자체에만 표시되고, 연속으로 휴방이면 장기 일정 막대처럼 이어붙인다.
     const CAL_YOUNHWAN_NAME = '김윤환';
     const CAL_YOUNHWAN_SHORT = '윤환';
-    const CAL_YOUNHWAN_COLOR = '#fff3b0';
+    const CAL_YOUNHWAN_COLOR = '#f5b800';
     const CAL_DEFAULT_EVENT_COLOR = '#eff6ff';
     const CAL_DEFAULT_LONGTERM_COLOR = '#ffedd5';
 
@@ -88,7 +88,7 @@
         bleedRight: roundRight ? '0' : '-8px',
         padLeft: roundLeft ? '4px' : '12px',
         padRight: roundRight ? '4px' : '12px',
-        radius: `${roundLeft ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundRight ? '6px' : '0'} ${roundLeft ? '6px' : '0'}`,
+        radius: '0',
     });
 
     // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.

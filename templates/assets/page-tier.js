@@ -33,7 +33,7 @@ const TierState = {
     members: [],       // 표시 대상 전체
     byId: {},          // soopId(소문자) -> member
     live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
-    liveOnly: false,   // 방송 중인 사람만 보기
+    liveOnly: true,    // 방송 중인 사람만 보기 (첫 진입 기본값)
     sections: [],      // [{ tier, id, count, total }] - 티어 바로가기 바가 쓴다
     activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
     visibleThumbs: new Set(),
@@ -158,8 +158,10 @@ function tierCardTitle(member, live) {
 function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
+    const raceLetter = raceShortLabel(member.race || '');
+    const raceEdge = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
     return `
-    <a class="tier-card${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
+    <a class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
        href="https://ch.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
        title="${escapeHTML(tierCardTitle(member, live))}">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
@@ -248,7 +250,7 @@ function renderTierGroups() {
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title" data-en="${tierLatinLabel(sec.tier)} TIER">
-                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}<span class="title-count-divider"></span><span class="text-secondary title-count">${sec.total}명</span></span>
+                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span><span class="title-count">${sec.total}명</span>
                     <span class="tier-live" data-tier-live></span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
@@ -448,15 +450,6 @@ function scrollTierBarItemIntoView(btn) {
 
 // [리디자인] 티어 제목 위에 붙는 라틴 라벨. 이름 티어는 대응 영문을, 숫자 티어는 T0~T8로.
 const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE', '베이비': 'BABY' };
-// [리디자인] 티어 제목 플레이트의 색 단계. 시안에서 갓(잉크) -> 킹(딥블루) -> 잭(블루)로
-// 계단을 이뤘고, 그 아래 숫자 티어는 같은 톤을 유지한다. 스크롤하면 색이 점점 밝아져서
-// 지금 어느 구간인지 제목을 읽지 않고도 알 수 있다.
-const TIER_PLATE = { '갓': 'p1', '킹': 'p2', '잭': 'p3', '조커': 'p4', '스페이드': 'p5', '베이비': 'p6' };
-function tierPlateClass(tier) {
-    const key = String(tier || '').replace('티어', '').trim();
-    return 'tier-plate-' + (TIER_PLATE[key] || 'pn');
-}
-
 function tierLatinLabel(tier) {
     const key = String(tier || '').replace('티어', '').trim();
     if (TIER_EN[key]) return TIER_EN[key];
