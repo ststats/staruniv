@@ -17,7 +17,7 @@ function formatLiveElapsed(broadStart) {
     const elapsedSec = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 1000));
     const eh = Math.floor(elapsedSec / 3600);
     const em = Math.floor((elapsedSec % 3600) / 60);
-    return (eh > 0 ? `${eh}시간 ${em}분` : `${em}분`) + ' 방송 중';
+    return eh > 0 ? `${eh}시간 ${em}분` : `${em}분`;
 }
 
 let homeCarouselIndex = 0;
@@ -52,7 +52,7 @@ async function renderTodaySchedulePreview(box) {
         todayEvents.sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
         box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div>' +
             (todayEvents.length
-                ? todayEvents.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><em>${escapeHTML(ev.desc || '')}</em></div>`).join('')
+                ? todayEvents.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><span class="home-preview-description">${escapeHTML(ev.desc || '')}</span></div>`).join('')
                 : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다.</div>');
     } catch (e) {
         box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다.</div>';
