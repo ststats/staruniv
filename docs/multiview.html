@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>멀티뷰어 - 스타대학</title>
+<link rel="stylesheet" href="style.css">
+<style>
+    /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
+    html[data-theme="dark"] {
+        --color-bg: #14161b;
+        --color-card: #1d2027;
+        --color-border: #2b2f38;
+        --color-border-strong: #3a3f4a;
+        --color-text-main: #e7e9ec;
+        --color-text-sub: #9aa1ac;
+        --color-primary: #5b93ff;
+        --color-primary-tint: #1c2740;
+        --color-bg-subtle: #22262e;
+    }
+    html[data-theme="dark"] body { background: var(--color-bg); color: var(--color-text-main); }
+
+    /* 기본 화면은 그리드만 꽉 차게 보이는 게 목적이라, 여백/타이틀 같은 크롬은
+       전부 없애고 오른쪽 위 ⚙️ 버튼 하나만 항상 떠 있게 한다. 설정은 그 버튼을
+       눌렀을 때만 오른쪽에서 슬라이드로 펼쳐지는 패널로 보여준다. */
+    /* style.css의 리셋이 모달 화면 밀림을 막으려고 html에 overflow-y: scroll !important +
+       scrollbar-gutter: stable을 걸어둔다. 이 페이지는 스크롤이 아예 없는 전체화면 그리드라
+       그 규칙이 살아 있으면 "움직이지도 않는 빈 스크롤바"가 오른쪽에 계속 남는다.
+       !important를 !important로 덮고, gutter도 auto로 되돌린다(overflow:hidden이어도
+       stable이면 스크롤바 폭만큼 빈 띠를 그대로 잡아두기 때문). */
+    html, body { height: 100%; margin: 0; overflow: hidden !important; }
+    html { scrollbar-gutter: auto !important; }
+    body { font-family: 'Pretendard', sans-serif; background: var(--color-bg, #f4f7fc); color: var(--color-text-main, #222); }
+
+    /* ===== 설정 열기 버튼 (항상 떠 있음) - 화면 우상단 ===== */
+    /* 우상단에 두면 맨 위 오른쪽 칸의 헤더 버튼(새로고침)과 겹친다. 그래서
+       ① 버튼을 헤더 높이(약 36px) 안에 쏙 들어가는 28px로 줄여 영상은 가리지 않고,
+       ② 실제로 그 자리에 오는 칸 하나(.mv-cell-corner, mvMarkCornerCell이 레이아웃을
+       보고 매번 계산)만 헤더 오른쪽 여백을 넓혀 버튼들을 왼쪽으로 비켜 준다.
+       설정 패널이 열리면 같은 자리에서 닫기(×) 버튼 역할을 한다. */
+    .mv-fab { position: fixed; top: 6px; right: 12px; z-index: 100; width: 28px; height: 28px; padding: 0; border-radius: 50%; border: none; background: var(--color-primary); opacity: 0.85; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(41,121,255,0.35); transition: opacity 0.15s, transform 0.1s, background 0.15s; }
+    .mv-fab svg { width: 16px; height: 16px; }
+    .mv-fab .mv-fab-close { display: none; }
+    .mv-fab:hover { opacity: 1; transform: scale(1.06); }
+    .mv-fab.on { background: var(--color-primary-deep, var(--color-primary)); opacity: 1; }
+    .mv-fab.on .mv-fab-gear { display: none; }
+    .mv-fab.on .mv-fab-close { display: block; }
+    /* 패널 제목 줄 오른쪽이 닫기 버튼 자리라 제목이 길어져도 겹치지 않게 비워둔다 */
+    .mv-settings-top { padding-right: 40px; min-height: 28px; display: flex; align-items: center; }
+
+    /* ===== 설정 패널: 오른쪽에서 접혔다 펴지는 서랍 형태 ===== */
+    .mv-settings-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: 340px; max-width: 88vw; background: rgba(255,255,255,0.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid var(--color-border); box-shadow: -4px 0 16px rgba(0,0,0,0.15); overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease; }
+    html[data-theme="dark"] .mv-settings-panel { background: rgba(29,32,39,0.82); }
+    .mv-settings-panel.open { transform: translateX(0); }
+    .mv-settings-inner { padding: 16px; }
+    .mv-settings-top { margin-bottom: 20px; }
+    .mv-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
+    .mv-title-main { color: var(--color-text-main); }
+
+/* ===== 설정 패널(사이드바) 안에서는 PC 화면이라도 항상 바둑판(모바일) 레이아웃 유지 ===== */
+    .mv-settings-panel .mv-console { 
+        flex-direction: column !important; 
+        align-items: stretch !important; 
+        padding: 14px !important; 
+    }
+    .mv-settings-panel .mv-console-tiles { 
+        display: grid !important; 
+        grid-template-columns: repeat(3, 1fr) !important; 
+    }
+    .mv-settings-panel .mv-tile { 
+        flex-direction: column !important; 
+        align-items: center !important; 
+        gap: 7px !important; 
+        padding: 10px 6px 12px !important; 
+    }
+
+    /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
+    .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
+    .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: var(--fs-body); }
+    .mv-order-item.custom { border-style: dashed; }
+    .mv-order-num { font-weight: 800; color: var(--color-text-sub); flex-shrink: 0; }
+    .mv-order-name { font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-main); }
+    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
+    .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
+    .mv-order-item.selectable { cursor: pointer; }
+    .mv-order-item.focus-target { border-color: var(--color-primary); background: var(--color-primary-tint); }
+
+    /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 정확히 맞춘다. 모바일은 100vh가
+       주소창 때문에 실제 보이는 영역보다 크게 잡히는 문제가 있어 100dvh(동적
+       뷰포트 높이)를 우선 쓴다. */
+    /* [변경] 카드(테두리·모서리·여백) 없이 영상만 화면을 꽉 채운다. 칸 사이 간격도 0이라
+       영상끼리 그대로 맞닿는다(구분선을 넣고 싶으면 gap: 1px + 그리드 배경색). */
+    #mv-grid-area { height: 100vh; height: 100dvh; padding: 0; box-sizing: border-box; }
+    .mv-grid { display: grid; gap: 0; height: 100%; }
+    .mv-cell { position: relative; background: #0b0c10; overflow: hidden; min-height: 0; container: mv-cell / inline-size; }
+    /* 이름/버튼은 자리를 차지하지 않고 영상 위에 옅게 떠 있는다. 위쪽 어두운 그라데이션을
+       깔아 밝은 장면에서도 흰 글씨가 읽히게 하고, 칸에 마우스를 올리면 또렷해진다.
+       헤더 자체는 pointer-events:none이라 이름 위를 눌러도 영상(재생/일시정지)에 그대로 전달되고,
+       버튼만 다시 클릭을 받는다. */
+    .mv-cell-header { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; font-size: var(--fs-body); font-weight: 800; color: #fff; opacity: 0.55; background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0)); text-shadow: 0 1px 3px rgba(0,0,0,0.7); pointer-events: none; transition: opacity 0.15s, padding-right 0.15s, padding-top 0.15s; }
+    .mv-cell-header .mv-cell-actions { pointer-events: auto; }
+    .mv-cell:hover .mv-cell-header, .mv-cell-header:focus-within { opacity: 1; }
+    .mv-cell-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* 우상단 설정 버튼 아래에 오는 칸만 버튼 묶음을 왼쪽으로 비켜준다 */
+    .mv-cell-corner .mv-cell-header { padding-right: 46px; }
+    /* 그 칸이 너무 좁으면(휴대폰 세로 화면에 4열 등, 폭 115px 미만) 이름+버튼+설정 버튼 자리가 한 줄에
+       안 들어가므로, 그 칸만 헤더 내용을 설정 버튼 아래로 내린다. */
+    .mv-cell-corner.mv-cell-corner-compact .mv-cell-header { padding-top: 38px; padding-right: 12px; }
+    /* 칸이 아주 좁으면(휴대폰 세로 화면에 4열 등, 폭 100px 미만) 이름이 버튼에 밀려 한두 글자만 보이게 되므로,
+       이름을 한 줄 전부 쓰게 하고 버튼은 그 아래 오른쪽으로 내린다. (컨테이너 쿼리 미지원
+       브라우저에서는 무시되고 한 줄 배치가 그대로 유지된다) */
+    @container mv-cell (max-width: 99.98px) {
+        .mv-cell-header { flex-wrap: wrap; row-gap: 2px; }
+        .mv-cell-name { flex: 1 0 100%; }
+        .mv-cell-actions { margin-left: auto; }
+    }
+
+    /* 칸 헤더 버튼(새로고침): 글자 기호(⟳) 대신 SVG 아이콘 + 둥근 사각 버튼.
+       영상 위에 얹히므로 흰색 아이콘 + 반투명 검정 배경으로 어떤 장면에서도 보이게 한다.
+       새로고침 중엔 아이콘이 돈다. */
+    .mv-cell-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+    .mv-cell-btn { width: 24px; height: 24px; padding: 0; border: none; border-radius: 6px; background: rgba(0,0,0,0.35); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
+    .mv-cell-btn svg { width: 15px; height: 15px; display: block; }
+    .mv-cell-btn:hover { background: rgba(255,255,255,0.28); color: #fff; }
+    .mv-cell-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    @keyframes mvSpin { to { transform: rotate(360deg); } }
+    .mv-cell-refresh.is-loading { color: #fff; pointer-events: none; }
+    .mv-cell-refresh.is-loading svg { animation: mvSpin 0.8s linear infinite; }
+    .mv-cell-body { position: absolute; inset: 0; background: #0b0c10; }
+    .mv-cell-video-wrap { position: relative; width: 100%; height: 100%; }
+    .mv-cell-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+    /* 전체화면 보정: .mv-cell에 container(=contain) 가 걸려 있어서, 브라우저에 따라 전체화면으로
+       올라간 iframe이 화면이 아니라 '칸'을 기준으로 크기를 잡는 경우가 있다(그러면 영상이 화면을
+       다 못 채우고 옆/아래가 남거나 스크롤이 생긴다). 전체화면일 때만 화면 기준으로 못박는다. */
+    .mv-cell-video-wrap iframe:fullscreen,
+    .mv-cell-video-wrap iframe:-webkit-full-screen {
+        position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none;
+    }
+
+    /* 포커스 모드: 균일한 그리드 안에서 메인 하나만 2×2칸을 차지(grid-column/row
+       span)하고, 나머지는 CSS Grid의 기본 자동배치가 비어있는 칸에 알아서
+       순서대로 채워준다 - 남는 칸 좌표를 직접 계산할 필요가 없다. */
+    .mv-cell-main { grid-column: span 2; grid-row: span 2; }
+
+    .mv-empty { text-align: center; color: var(--color-text-sub); font-size: var(--fs-body); padding: 30vh 0; }
+</style>
+</head>
+<body>
+
+<button type="button" class="mv-fab" id="mv-fab" onclick="mvToggleSettingsPanel()" title="설정 열기/닫기" aria-label="설정 열기" aria-expanded="false" aria-controls="mv-settings-panel">
+    <svg class="mv-fab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <svg class="mv-fab-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+</button>
+
+<div class="mv-settings-panel" id="mv-settings-panel">
+    <div class="mv-settings-inner">
+        <div class="mv-settings-top">
+            <div class="mv-title"><span class="mv-title-main">멀티</span><span class="logo-accent">뷰어</span></div>
+        </div>
+
+        <div class="section-title">설정</div>
+        <div class="mv-console">
+            <div class="mv-console-tiles">
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+                    <div class="mv-tile-label">그리드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" onclick="mvToggleFocusMode()"></button>
+                </div>
+                <div class="mv-tile disabled" id="mv-col-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
+                    <div class="mv-tile-label">열 개수</div>
+                    <div class="mv-stepper">
+                        <button type="button" onclick="mvChangeCols(-1)">−</button>
+                        <span class="mv-stepper-value" id="mv-cols-value">2</span>
+                        <button type="button" onclick="mvChangeCols(1)">+</button>
+                    </div>
+                </div>
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                    <div class="mv-tile-label">다크 모드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" onclick="mvToggleTheme()"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">선택된 목록</div>
+        <div class="mv-order-row" id="mv-order-row"></div>
+
+        <div class="section-title">멤버 선택</div>
+        <div class="mv-chip-box">
+            <div class="mv-chip-row" id="mv-chip-row"></div>
+            <div class="mv-quickadd">
+                <input type="text" id="mv-add-input" placeholder="숲아이디 직접 입력" maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault(); mvAddCustom();}">
+                <button type="button" class="mv-quickadd-btn" title="추가" onclick="mvAddCustom()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mv-grid-area"></div>
+
+<script src="mv-shared.js"></script>
+<script>
+    // escapeHTML/jsStrEscape는 이 페이지 전용 범용 유틸이라 여기서 정의한다.
+    // mv-shared.js(선택 목록 관련 순수 로직)가 내부적으로 이 두 함수를
+    // 그대로 호출하므로 반드시 이 파일에도 있어야 한다.
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>'"]/g, tag => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[tag]));
+    }
+    function jsStrEscape(str) { return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+    // ===== 상태 =====
+    // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
+    // 선택 목록에 관한 순수 로직(mvFocusEntryId/mvOrderItemHtml/mvResolveCustomInput)은
+    // app.js(도구 탭)와 동일하게 필요해서 mv-shared.js로 공유한다.
+    let mvOrder = [];
+    let mvCols = 2;
+    let mvFocus = true;
+    let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
+    let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
+    let mvLiveMap = {};    // soopId -> 방송중 여부
+    // (음소거 기능은 제거했다 - 음소거 후 해제해도 SOOP 플레이어의 소리가 돌아오지 않는 문제가 있었다.
+    //  잠깐 배포됐던 버전이 저장해둔 음소거 목록이 남아 있으면 지운다.)
+    try { localStorage.removeItem('mv-muted'); } catch (e) { /* 무시 */ }
+
+    function mvSaveState() {
+        try {
+            localStorage.setItem('mv-order', JSON.stringify(mvOrder));
+            localStorage.setItem('mv-cols', String(mvCols));
+            localStorage.setItem('mv-focus', mvFocus ? '1' : '0');
+            localStorage.setItem('mv-focus-id', mvFocusId || '');
+        } catch (e) { /* localStorage 접근 불가한 환경이면 그냥 무시 */ }
+    }
+
+    function mvInit() {
+        const params = new URLSearchParams(location.search);
+        let list = null;
+        if (params.has('list')) {
+            try { list = JSON.parse(params.get('list')); } catch (e) { list = null; }
+        }
+        if (Array.isArray(list) && list.length > 0) {
+            mvOrder = list
+                .filter(e => e && typeof e.id === 'string' && /^[a-z0-9_-]+$/i.test(e.id))
+                .map(e => ({ soopId: e.id.toLowerCase(), name: e.name || e.id, isMember: !!e.isMember }))
+                .filter((e, i, arr) => arr.findIndex(x => x.soopId === e.soopId) === i); // 같은 방송 중복 제거
+            mvCols = Math.min(4, Math.max(1, parseInt(params.get('cols'), 10) || 2));
+            mvFocus = params.get('focus') === '1';
+            mvFocusId = params.get('focusId') || null;
+            // 도구 탭에서 명시적으로 넘긴 다크모드 설정이 있으면 그걸 우선한다
+            // (없으면 아래에서 마지막으로 써둔 localStorage 값을 그대로 쓴다).
+            if (params.get('theme') === 'dark' || params.get('theme') === 'light') {
+                mvApplyTheme(params.get('theme'));
+            }
+        } else {
+            // URL에 아무것도 없으면(직접 이 페이지를 열었거나 새로고침한 경우) 마지막으로
+            // 저장해둔 상태를 이어서 보여준다.
+            try {
+                mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]')
+                    .filter((e, i, arr) => e && typeof e.soopId === 'string' && arr.findIndex(x => x && x.soopId === e.soopId) === i);
+                mvCols = Math.min(4, Math.max(1, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
+                mvFocus = localStorage.getItem('mv-focus') !== null ? localStorage.getItem('mv-focus') === '1' : true;
+                mvFocusId = localStorage.getItem('mv-focus-id') || null;
+            } catch (e) { mvOrder = []; mvCols = 2; mvFocus = true; mvFocusId = null; }
+        }
+        mvApplyModeButtons();
+    }
+
+    // ===== 다크모드 (도구 탭과 같은 버튼형 스위치) =====
+    function mvApplyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const btn = document.getElementById('mv-theme-toggle');
+        if (btn) btn.classList.toggle('on', theme === 'dark');
+        localStorage.setItem('mv-theme', theme);
+    }
+    function mvToggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        mvApplyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    // ===== 설정 패널 여닫기 =====
+    function mvApplySettingsPanel(open) {
+        document.getElementById('mv-settings-panel').classList.toggle('open', open);
+        const fab = document.getElementById('mv-fab');
+        fab.classList.toggle('on', open);
+        fab.setAttribute('aria-expanded', String(open));
+        fab.setAttribute('aria-label', open ? '설정 닫기' : '설정 열기');
+    }
+    function mvToggleSettingsPanel() {
+        const isOpen = document.getElementById('mv-settings-panel').classList.contains('open');
+        mvApplySettingsPanel(!isOpen);
+    }
+
+    // ===== 열 개수 =====
+    function mvChangeCols(delta) {
+        mvCols = Math.min(4, Math.max(1, mvCols + delta));
+        document.getElementById('mv-cols-value').innerText = mvCols;
+        mvApplyGridColumns();
+        mvSaveState();
+    }
+    function mvApplyGridColumns() {
+        mvRelayoutGridDims();
+    }
+
+    // 포커스 모드: 메인이 2×2칸을 차지하는 균일 그리드. 컨테이너의 가로세로
+    // 비율에 맞춰 칸이 너무 눌리거나 늘어나지 않게 열/행 개수를 정하고,
+    // 실제 배치(빈 칸 채우기)는 CSS Grid 자동배치에 맡긴다.
+    function mvComputeFocusGridDims(totalW, totalH, restCount) {
+        const units = 4 + restCount; // 메인이 4칸(2x2) + 나머지는 한 칸씩
+        const aspect = totalW / (totalH || 1);
+        const cols = Math.max(2, Math.round(Math.sqrt(units * aspect)));
+        const rows = Math.max(2, Math.ceil(units / cols));
+        return { cols, rows };
+    }
+
+    function mvApplyModeButtons() {
+        const toggle = document.getElementById('mv-mode-toggle');
+        if (toggle) toggle.classList.toggle('on', !mvFocus);
+    }
+    function mvSetFocusMode(isFocus) {
+        if (isFocus === mvFocus) return;
+        mvFocus = isFocus;
+        mvApplyModeButtons();
+        mvApplyColsGroupVisibility();
+        mvRenderOrderRow();
+        mvRenderGrid();
+        mvSaveState();
+    }
+    // 포커스/그리드 pill에 붙은 새로고침 버튼: 누를 때마다 현재 모드의 반대로 전환한다.
+    function mvToggleFocusMode() {
+        mvSetFocusMode(!mvFocus);
+    }
+    function mvApplyColsGroupVisibility() {
+        // 포커스 모드에서는 열 개수가 화면 크기·인원 수 기준 자동 계산
+        // (mvComputeFocusGridDims)으로 정해지고 이 스테퍼 값은 아예 안 쓰이므로,
+        // 요소를 아예 숨기지 않고 흐릿하게 비활성화만 한다(보였다 안 보였다
+        // 하면 레이아웃이 덜컹거려서 오히려 지저분해 보인다).
+        document.getElementById('mv-col-tile').classList.toggle('disabled', mvFocus);
+    }
+
+    // ===== 멤버 선택 칩 (도구 탭과 동일 - site_data.json에서 직접 불러온다) =====
+    function mvAvatarHtml(soopId) {
+        const id = String(soopId || '').trim().toLowerCase();
+        if (!id || !/^[a-z0-9_-]+$/.test(id)) return `<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>`;
+        const url = `https://profile.img.sooplive.co.kr/LOGO/${id.substring(0, 2)}/${id}/${id}.jpg`;
+        return `<img src="${url}" class="mv-chip-avatar" loading="lazy" onerror="this.outerHTML='<span class=\\'mv-chip-avatar d-flex align-items-center justify-content-center\\'>👤</span>';">`;
+    }
+    function mvChipHtml(m) {
+        const soopId = m['SOOP ID'];
+        const selected = mvOrder.some(e => e.soopId === soopId);
+        const isLive = !!mvLiveMap[soopId];
+        return `
+        <div class="mv-chip${selected ? ' selected' : ''}" onclick="mvToggleMemberChip('${jsStrEscape(soopId)}', '${jsStrEscape(m['이름'])}')">
+            ${mvAvatarHtml(soopId)}
+            ${isLive ? '<span class="mv-chip-live">LIVE</span>' : ''}
+            <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
+            <span class="mv-chip-check">✓</span>
+        </div>`;
+    }
+    function mvRenderMemberChips() {
+        const container = document.getElementById('mv-chip-row');
+        if (!container) return;
+        container.innerHTML = mvMembers.length
+            ? mvMembers.map(mvChipHtml).join('')
+            : '<div style="font-size:var(--fs-body); color:var(--color-text-sub);">멤버 목록을 불러오지 못했습니다.</div>';
+    }
+    function mvToggleMemberChip(soopId, name) {
+        const idx = mvOrder.findIndex(e => e.soopId === soopId);
+        if (idx !== -1) { mvRemove(idx); return; }
+        mvOrder.push({ soopId, name, isMember: true });
+        mvAfterOrderChange();
+    }
+    async function mvLoadMembers() {
+        try {
+            const res = await fetch('data/site_data.json', { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                mvMembers = (data.members || []).filter(m => {
+                    const active = !m['퇴단일'] || String(m['퇴단일']).trim() === '';
+                    const soopId = m['SOOP ID'];
+                    return active && soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
+                });
+            }
+        } catch (e) { mvMembers = []; }
+        mvRenderMemberChips();
+        mvCheckLiveMembers();
+    }
+    // 홈 화면 방송중 체크와 같은 방식(bjapi.afreecatv.com 직접 fetch, CORS 허용됨)으로
+    // 멤버 목록 로드 후 딱 한 번만 라이브 여부를 확인해 LIVE 뱃지를 덧입힌다.
+    async function mvCheckLiveMembers() {
+        if (mvMembers.length === 0) return;
+        const settled = await Promise.allSettled(mvMembers.map(m => {
+            const soopId = m['SOOP ID'];
+            return fetch(`https://bjapi.afreecatv.com/api/${soopId}/station`)
+                .then(r => r.json())
+                .then(d => ({ soopId, live: !!(d && d.broad) }))
+                .catch(() => ({ soopId, live: false }));
+        }));
+        mvLiveMap = {};
+        settled.forEach(r => { if (r.status === 'fulfilled') mvLiveMap[r.value.soopId] = r.value.live; });
+        mvRenderMemberChips();
+    }
+
+    // ===== 순서 목록 =====
+    function mvRenderOrderRow() {
+        const row = document.getElementById('mv-order-row');
+        const focusEntryId = mvFocusEntryId(mvOrder, mvFocusId);
+        row.innerHTML = mvOrder.length
+            ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId)).join('')
+            : '<span style="font-size:var(--fs-body); color:var(--color-text-sub);">위에서 멤버를 선택하거나 이름/숲 아이디를 입력해 추가해보세요.</span>';
+    }
+
+    // [수정] 예전엔 칸의 DOM 위치를 맞바꾸거나(replaceWith) 그리드를 통째로 다시 그려서
+    // 자리를 바꿨는데, 브라우저는 iframe을 DOM에서 떼었다 붙이면 그 안의 페이지를 새로 불러온다.
+    // 그래서 "재생 중인 영상이 안 끊긴다"는 의도와 달리 메인 변경·메인 삭제 때마다 여러 방송이
+    // 다시 로드됐다(측정: 메인 변경 시 2개, 메인 삭제 시 남은 전부). 이제 칸 요소는 한 번 만들면
+    // 절대 옮기지 않고, 화면상 위치는 CSS Grid의 order 값으로만 바꾼다(mvRenderGrid 참고) -
+    // 추가/삭제되는 칸 자신 말고는 어떤 iframe도 다시 로드되지 않는다.
+    function mvAfterOrderChange() {
+        mvRenderGrid();
+        mvRenderMemberChips();
+        mvRenderOrderRow();
+        mvSaveState();
+    }
+
+    function mvSetFocusTarget(soopId) {
+        if (soopId === mvFocusEntryId(mvOrder, mvFocusId)) return; // 이미 메인인 사람을 다시 누른 경우
+        mvFocusId = soopId;
+        if (mvFocus) mvRenderGrid();
+        mvRenderOrderRow();
+        mvSaveState();
+    }
+
+    function mvMove(idx, dir) {
+        const target = idx + dir;
+        if (target < 0 || target >= mvOrder.length) return;
+        [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
+        mvRenderGrid();
+        mvRenderOrderRow();
+        mvSaveState();
+    }
+
+    function mvRemove(idx) {
+        const removed = mvOrder[idx];
+        if (!removed) return;
+        mvOrder.splice(idx, 1);
+        // 메인으로 지정했던 사람을 지우면 기본값(목록 1번)이 새 메인이 된다.
+        if (mvFocusId === removed.soopId) mvFocusId = null;
+        mvAfterOrderChange();
+    }
+
+    // 인원 수·화면 비율에 맞춰 그리드 열/행 개수만 다시 계산한다 - 칸 내용(iframe)은 손대지 않는다.
+    function mvRelayoutGridDims() {
+        const grid = document.getElementById('mv-grid');
+        if (!grid) return;
+        const count = grid.children.length;
+        if (count === 0) return;
+        let cols, rows;
+        if (mvFocus && count > 1) {
+            const area = document.getElementById('mv-grid-area');
+            ({ cols, rows } = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, count - 1));
+        } else {
+            // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에 휑하게 남지 않게 하고,
+            // 행 개수를 못박아 세로도 뷰포트 안에 딱 맞게 나눈다. (포커스 모드에 혼자면 1×1 = 화면 전체)
+            cols = mvFocus ? 1 : Math.max(1, Math.min(mvCols, count));
+            rows = Math.max(1, Math.ceil(count / cols));
+        }
+        const colsValue = `repeat(${cols}, 1fr)`, rowsValue = `repeat(${rows}, 1fr)`;
+        if (grid.style.gridTemplateColumns !== colsValue) grid.style.gridTemplateColumns = colsValue;
+        if (grid.style.gridTemplateRows !== rowsValue) grid.style.gridTemplateRows = rowsValue;
+    }
+
+    function mvAddCustom() {
+        const input = document.getElementById('mv-add-input');
+        const result = mvResolveCustomInput(input.value, mvOrder, mvMembers);
+        if (!result) return;
+        if (result.error) { alert(result.error); return; }
+        mvOrder.push(result.entry);
+        mvAfterOrderChange();
+        input.value = '';
+    }
+
+    // ===== 그리드: 실시간 영상은 SOOP의 공식 라이브 임베드 엔드포인트
+    // (play.sooplive.com/{아이디}/embed)를 iframe으로 그대로 삽입한다. 채팅은
+    // 요청대로 껐고(showChat=false), 자동재생을 켜뒀다(autoPlay=true).
+    // 화질을 1080p 등으로 강제 요청하면 SOOP이 "고화질 스트리머"라는 PC 전용
+    // 로컬 프로그램에 연결을 시도하는데, 이게 iframe 안에서는 막혀서 재생이
+    // 안 됐다 - 화질 파라미터를 아예 안 넘기고 기본(자동) 화질로 열면 그
+    // 로컬 프로그램을 거치지 않고 정상 재생됨을 실제 테스트로 확인함.
+    function mvEmbedUrl(soopId) {
+        const params = new URLSearchParams({ showChat: 'false', autoPlay: 'true' });
+        return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
+    }
+
+    const MV_ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>';
+
+    // 칸 하나의 영상만 다시 불러온다(다른 칸의 재생에는 영향 없음). 예전엔 src를 about:blank로
+    // 비웠다가 다시 넣었는데, 그러면 load 이벤트가 두 번 와서 "로딩 끝" 시점을 알 수 없었다.
+    // 새 iframe으로 통째로 바꾸면 로드가 딱 한 번이라, 그 load 이벤트로 로딩 표시를 끈다.
+    const MV_SPIN_MIN_MS = 500, MV_SPIN_MAX_MS = 10000;
+
+    // iframe에 넘기는 권한. local-network-access/loopback-network는 SOOP 플레이어가 PC의
+    // '고화질 스트리머' 로컬 프로그램에 접속할 때 쓰는 권한으로, 실제 방송 재생에 영향이 없는지
+    // 확인되지 않아 원래대로 유지한다(보안상으로는 빼는 편이 좋으니, 실제 방송으로 재생이
+    // 문제없음을 확인한 뒤 이 두 항목만 지우면 된다).
+    const MV_IFRAME_ALLOW = 'autoplay; encrypted-media; fullscreen; local-network-access; loopback-network';
+    function mvReloadCell(cell) {
+        const oldFrame = cell && cell.querySelector('iframe');
+        if (!oldFrame) return;
+        const soopId = cell.dataset.soopId;
+        const btn = cell.querySelector('.mv-cell-refresh');
+        const startedAt = Date.now();
+        const stopSpin = () => {
+            const wait = Math.max(0, MV_SPIN_MIN_MS - (Date.now() - startedAt));
+            setTimeout(() => btn && btn.classList.remove('is-loading'), wait);
+        };
+        if (btn) btn.classList.add('is-loading');
+
+        const frame = oldFrame.cloneNode(false);
+        frame.removeAttribute('loading'); // 지금 화면에 보이는 칸이니 지연 로딩할 이유가 없다
+        frame.addEventListener('load', stopSpin, { once: true });
+        setTimeout(stopSpin, MV_SPIN_MAX_MS); // 응답이 없어도 버튼이 영원히 돌지 않게
+        frame.src = mvEmbedUrl(soopId);
+        oldFrame.replaceWith(frame);
+    }
+    function mvRefreshCell(btn) {
+        mvReloadCell(btn.closest('.mv-cell'));
+    }
+
+    // scrolling="no": SOOP 임베드 페이지가 자기 쪽에서 띄우는 스크롤바를 없앤다. 남의 문서라
+    // CSS(::-webkit-scrollbar 등)로는 못 건드리지만, 이 속성은 iframe을 넣는 우리 쪽 설정이라
+    // 크로스 오리진에도 그대로 먹는다. 명세상 deprecated지만 모든 브라우저가 지원하고,
+    // 영상 플레이어라 안에서 스크롤할 일도 없으니 잃는 게 없다.
+    function mvCellHtml(entry, isMain) {
+        return `
+        <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${escapeHTML(entry.soopId)}">
+            <div class="mv-cell-header">
+                <span class="mv-cell-name">${escapeHTML(entry.name)}</span>
+                <div class="mv-cell-actions">
+                    <button type="button" class="mv-cell-btn mv-cell-refresh" title="새로고침" aria-label="새로고침" onclick="mvRefreshCell(this)">${MV_ICON_REFRESH}</button>
+                </div>
+            </div>
+            <div class="mv-cell-body">
+                <div class="mv-cell-video-wrap">
+                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" scrolling="no" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"></iframe>
+                </div>
+            </div>
+        </div>`;
+    }
+    // 화면에 보여줄 순서: 포커스 모드면 메인이 맨 앞(2×2), 나머지는 목록 순서 그대로.
+    function mvDisplaySequence() {
+        if (!mvFocus) return mvOrder.slice();
+        const focusId = mvFocusEntryId(mvOrder, mvFocusId);
+        const main = mvOrder.find(e => e.soopId === focusId);
+        return main ? [main, ...mvOrder.filter(e => e !== main)] : mvOrder.slice();
+    }
+
+    // 현재 상태(mvOrder/mvFocus/mvFocusId)에 맞게 그리드를 "동기화"한다. 몇 번을 불러도 같은 결과가
+    // 나오는 멱등 함수이고, 이미 있는 칸은 절대 새로 만들거나 옮기지 않는다:
+    //   - 목록에서 빠진 방송의 칸만 지우고, 새로 들어온 방송의 칸만 끝에 붙인다.
+    //   - 화면상 순서는 style.order, 메인(2×2) 표시는 mv-cell-main 클래스로만 바꾼다.
+    // (예전의 칸 맞바꾸기/부분 삭제/부분 추가/렌더 인덱스 변환 함수 4개가 이 하나로 합쳐졌다.)
+    function mvRenderGrid() {
+        const area = document.getElementById('mv-grid-area');
+        if (mvOrder.length === 0) {
+            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 오른쪽 위 설정 버튼을 눌러 멤버를 선택하거나 아이디를 추가해보세요.</div>';
+            return;
+        }
+        let grid = document.getElementById('mv-grid');
+        if (!grid) {
+            area.innerHTML = '<div class="mv-grid" id="mv-grid"></div>';
+            grid = document.getElementById('mv-grid');
+        }
+
+        const cellsById = new Map(Array.from(grid.children).map(cell => [cell.dataset.soopId, cell]));
+        const wanted = new Set(mvOrder.map(e => e.soopId));
+        cellsById.forEach((cell, soopId) => {
+            if (!wanted.has(soopId)) { cell.remove(); cellsById.delete(soopId); }
+        });
+
+        const sequence = mvDisplaySequence();
+        const showMainSpan = mvFocus && sequence.length > 1;
+        sequence.forEach((entry, i) => {
+            let cell = cellsById.get(entry.soopId);
+            if (!cell) {
+                grid.insertAdjacentHTML('beforeend', mvCellHtml(entry, false));
+                cell = grid.lastElementChild;
+            }
+            if (cell.style.order !== String(i)) cell.style.order = String(i);
+            cell.classList.toggle('mv-cell-main', showMainSpan && i === 0);
+        });
+        mvRelayoutGridDims();
+    }
+
+    // 창 크기가 바뀌면 포커스 모드의 열/행 개수(화면 비율 기준)만 다시 계산한다.
+    // [수정] 예전엔 여기서 mvRenderGrid로 그리드를 통째로 다시 그려서, 리사이즈 이벤트가 올
+    // 때마다 모든 iframe이 새로 만들어졌다 = 모든 방송이 처음부터 다시 로드됐다. 모바일은
+    // 키보드가 열리고 닫힐 때, 화면을 돌릴 때, 주소창이 움직일 때마다 resize가 오기 때문에
+    // "소리가 끊겼다 다시 나오거나, 어떤 방송은 소리가 켜지고 어떤 건 꺼지는" 증상의 주원인이었다
+    // (다시 로드된 플레이어는 사용자 터치 없이 자동재생되므로 브라우저가 음소거로 시작시키기도 한다).
+    // 칸 크기만 CSS로 바뀌면 되므로 칸 내용(iframe)은 건드리지 않는다. 일반 그리드는 열 개수가
+    // 화면 크기와 무관(인원 수 기준)해서 원래 다시 그릴 필요 자체가 없었다.
+    let mvResizeScheduled = false;
+    window.addEventListener('resize', () => {
+        if (mvResizeScheduled) return;
+        mvResizeScheduled = true;
+        requestAnimationFrame(() => {
+            mvResizeScheduled = false;
+            mvRelayoutGridDims();
+            mvMarkCornerCell();
+        });
+    });
+
+    // 화면 우상단(설정 버튼 자리)에 오는 칸을 찾아 표시한다. 칸 배치는 CSS Grid 자동배치라
+    // 코드상 순서로는 알 수 없어서, 실제 렌더링된 위치(가장 위 줄에서 가장 오른쪽)로 판단한다.
+    function mvMarkCornerCell() {
+        const cells = Array.from(document.querySelectorAll('#mv-grid-area .mv-cell'));
+        let corner = null, best = null;
+        cells.forEach(cell => {
+            const r = cell.getBoundingClientRect();
+            if (!best || r.top < best.top - 1 || (Math.abs(r.top - best.top) <= 1 && r.right > best.right)) {
+                best = r; corner = cell;
+            }
+        });
+        const MV_CORNER_MIN_WIDTH = 115; // 이름(최소)+새로고침 버튼+설정 버튼 자리가 한 줄에 들어가는 폭
+        cells.forEach(cell => {
+            cell.classList.toggle('mv-cell-corner', cell === corner);
+            cell.classList.toggle('mv-cell-corner-compact', cell === corner && best.width < MV_CORNER_MIN_WIDTH);
+        });
+    }
+    // 칸이 추가/삭제/자리바꿈되거나 그리드 열·행이 바뀌면(style) 우상단 칸을 다시 계산한다.
+    // (한 번에 여러 변경이 와도 프레임당 한 번만 계산; 우리가 바꾸는 class는 관찰 대상이 아니라 무한 반복 없음)
+    let mvCornerScheduled = false;
+    new MutationObserver(() => {
+        if (mvCornerScheduled) return;
+        mvCornerScheduled = true;
+        requestAnimationFrame(() => { mvCornerScheduled = false; mvMarkCornerCell(); });
+    }).observe(document.getElementById('mv-grid-area'), { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+
+    // ===== 초기화 =====
+    mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
+    mvInit();
+    document.getElementById('mv-cols-value').innerText = mvCols;
+    mvApplyColsGroupVisibility();
+    mvRenderOrderRow();
+    mvRenderGrid();
+    mvLoadMembers();
+</script>
+</body>
+</html>

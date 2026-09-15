@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>티어표 | 스타대학</title>
+    <meta name="description" content="스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="스타대학">
+    <meta property="og:title" content="티어표 | 스타대학">
+    <meta property="og:description" content="스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다.">
+    <link rel="canonical" href="https://ststats.github.io/staruniv/tier/">
+    <meta property="og:url" content="https://ststats.github.io/staruniv/tier/">
+    <meta property="og:image" content="https://ststats.github.io/staruniv/images/%EC%BA%84%EB%AA%AC%EC%8A%A4%ED%83%80%EC%A6%88.webp">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/webp" href="images/파비콘.webp">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="style.css?v=932f21b523">
+    <meta name="site-data-version" content="8ed9592a5a">
+</head>
+<body><header class="top-navbar">
+    <div class="navbar-inner container">
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
+                aria-expanded="false" aria-controls="mainMenu" onclick="toggleMainMenu()">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
+            <a class="nav-item" href="schedule/" data-page="schedule">일정</a>
+            <a class="nav-item" href="members/" data-page="members">멤버</a>
+            <a class="nav-item" href="records/" data-page="records">전적</a>
+            <a class="nav-item" href="stats/" data-page="stats">방송통계</a>
+            <a class="nav-item active" href="tier/" data-page="tier" aria-current="page">티어표</a>
+            <a class="nav-item" href="tools/" data-page="tools">도구</a>
+        </nav>
+        <div class="theme-toggle" role="group" aria-label="테마 선택">
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="setTheme('light')">☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="setTheme('dark')">◐</button>
+        </div>
+    </div>
+</header>
+
+<main>
+
+<section id="page-tier" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">티어표</h1><p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
+            <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
+    </div>
+    <hr class="page-header-divider tight"><div class="sub-tabs tab-scroll" role="tablist">
+        <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true"
+             onclick="switchTierView('list')">티어표</div>
+        <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false"
+             onclick="switchTierView('analysis')">분석</div>
+    </div>
+
+    <div id="view-tier-list"><div class="selection-layout">
+            <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
+                <div class="tier-bar-tools">
+                    <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
+                </div>
+                <div class="tier-bar-list scroll-area" id="tier-bar-list"></div>
+            </nav>
+
+            <div class="selection-content">
+                <div id="tier-root">
+                    <div class="tier-empty">불러오는 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-tier-analysis" class="d-none">
+        <div class="tier-empty">준비 중입니다.</div>
+    </div>
+</section>
+
+</main>
+
+
+
+
+<script src="core.js?v=1c731ef4ad"></script>
+<script src="page-tier.js?v=9612aa9353"></script>
+
+</body>
+</html>
