@@ -1,0 +1,346 @@
+{
+  "events": [
+    {
+      "id": 1788410176657,
+      "startDate": "2026-09-03",
+      "endDate": "2026-09-03",
+      "time": "19:00",
+      "person": "중만컵",
+      "desc": "흑카 vs JSA",
+      "detail": "",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788410523229,
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-01",
+      "time": "",
+      "person": "두두",
+      "desc": "생일",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1788410553136,
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-01",
+      "time": "20:00",
+      "person": "윤환",
+      "desc": "한중전",
+      "detail": "",
+      "color": "#d1fae5"
+    },
+    {
+      "id": 1788410538904,
+      "startDate": "2026-09-02",
+      "endDate": "2026-09-02",
+      "time": "16:00",
+      "person": "낭니",
+      "desc": "낭피엘",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1788411375531,
+      "startDate": "2026-09-02",
+      "endDate": "2026-09-03",
+      "time": "비방연습",
+      "person": "캄몬",
+      "desc": "",
+      "detail": "",
+      "color": "#fef3c7"
+    },
+    {
+      "id": 1788411859497,
+      "startDate": "2026-09-04",
+      "endDate": "2026-09-04",
+      "time": "19:00",
+      "person": "중만컵",
+      "desc": "캄몬 vs 케이대",
+      "detail": "",
+      "color": "#dbeafe"
+    },
+    {
+      "id": 1788534153554,
+      "startDate": "2026-09-04",
+      "endDate": "2026-09-04",
+      "time": "21:30",
+      "person": "캄몬",
+      "desc": "재계약",
+      "detail": "",
+      "color": "#dbeafe"
+    },
+    {
+      "id": 1788411895026,
+      "startDate": "2026-09-05",
+      "endDate": "2026-09-05",
+      "time": "19:00",
+      "person": "중만컵",
+      "desc": "뉴캣슬 vs 수술대",
+      "detail": "",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788411922758,
+      "startDate": "2026-09-06",
+      "endDate": "2026-09-06",
+      "time": "19:00",
+      "person": "중만컵",
+      "desc": "DM vs 엠비대",
+      "detail": "",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788411935742,
+      "startDate": "2026-09-06",
+      "endDate": "2026-09-06",
+      "time": "19:00",
+      "person": "윤환",
+      "desc": "중만컵 해설",
+      "detail": "",
+      "color": "#d1fae5"
+    },
+    {
+      "id": 1788411971561,
+      "startDate": "2026-09-07",
+      "endDate": "2026-09-07",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "16강 A조",
+      "detail": "짭제 윤중 재욱 영진",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788839808275,
+      "startDate": "2026-09-07",
+      "endDate": "2026-09-07",
+      "time": "30:00",
+      "person": "암벽토먼",
+      "desc": "할없사 낚시",
+      "detail": "하랑 합류",
+      "color": "#dbeafe"
+    },
+    {
+      "id": 1788412030098,
+      "startDate": "2026-09-08",
+      "endDate": "2026-09-08",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "16강 B조",
+      "detail": "상문 경모 제동 명운",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788839871844,
+      "startDate": "2026-09-08",
+      "endDate": "2026-09-08",
+      "time": "14:00",
+      "person": "조이",
+      "desc": "단양 여행",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1788844188701,
+      "startDate": "2026-09-08",
+      "endDate": "2026-09-08",
+      "time": "16:00",
+      "person": "낭니먼진",
+      "desc": "낭먼이 간다",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1788412051970,
+      "startDate": "2026-09-12",
+      "endDate": "2026-09-12",
+      "time": "19:00",
+      "person": "중만컵",
+      "desc": "JSA vs 케이대",
+      "detail": "4강 A조",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788412068202,
+      "startDate": "2026-09-13",
+      "endDate": "2026-09-13",
+      "time": "19:00",
+      "person": "중만컵",
+      "desc": "뉴캣슬 vs DM",
+      "detail": "4강 B조",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788412315390,
+      "startDate": "2026-09-14",
+      "endDate": "2026-09-14",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "16강 C조 민철",
+      "detail": "재호 영재 민철 일장",
+      "color": "#f3e8ff"
+    },
+    {
+      "id": 1788412376276,
+      "startDate": "2026-09-15",
+      "endDate": "2026-09-15",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "16강 D조",
+      "detail": "윤철 재현 영한 정우",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788412389986,
+      "startDate": "2026-09-19",
+      "endDate": "2026-09-19",
+      "time": "미정",
+      "person": "중만컵",
+      "desc": "케이대 vs 뉴캣슬",
+      "detail": "결승",
+      "color": "#f1f5f9"
+    },
+    {
+      "id": 1788951874127,
+      "startDate": "2026-09-20",
+      "endDate": "2026-09-21",
+      "time": "",
+      "person": "캄몬",
+      "desc": "24시간",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1788972694118,
+      "startDate": "2026-09-09",
+      "endDate": "2026-09-09",
+      "time": "20:00",
+      "person": "민철",
+      "desc": "코려대CK",
+      "detail": "",
+      "color": "#f3e8ff"
+    },
+    {
+      "id": 1789013686147,
+      "startDate": "2026-10-03",
+      "endDate": "2026-10-03",
+      "time": "시간미정",
+      "person": "캄몬",
+      "desc": "팬미팅",
+      "detail": "",
+      "color": "#dbeafe"
+    },
+    {
+      "id": 1789025508217,
+      "startDate": "2026-09-10",
+      "endDate": "2026-09-10",
+      "time": "16:00",
+      "person": "햇살",
+      "desc": "24시간",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1789025526568,
+      "startDate": "2026-09-10",
+      "endDate": "2026-09-10",
+      "time": "19:00",
+      "person": "하랑",
+      "desc": "테라스 먹방",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1789025567961,
+      "startDate": "2026-09-12",
+      "endDate": "2026-09-12",
+      "time": "23:00",
+      "person": "타밍송이",
+      "desc": "장판빵 멸망전",
+      "detail": "윤환 사테 준오",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1789100083799,
+      "startDate": "2026-09-11",
+      "endDate": "2026-09-11",
+      "time": "20:00",
+      "person": "윤환",
+      "desc": "클암CK",
+      "detail": "",
+      "color": "#d1fae5"
+    },
+    {
+      "id": 1789186098219,
+      "startDate": "2026-09-12",
+      "endDate": "2026-09-12",
+      "time": "16:00",
+      "person": "낭니",
+      "desc": "도낭CK",
+      "detail": "",
+      "color": "#ffe4e6"
+    },
+    {
+      "id": 1789304358823,
+      "startDate": "2026-09-13",
+      "endDate": "2026-09-13",
+      "time": "22:00",
+      "person": "윤환",
+      "desc": "랜피엘",
+      "detail": "",
+      "color": "#d1fae5"
+    }
+  ],
+  "offAir": {
+    "2026-09-10": [
+      "brainzerg7",
+      "freshtomato",
+      "rnaqpdrjf",
+      "dlaguswl501",
+      "vldpfm2",
+      "sksmsskdsl10"
+    ],
+    "2026-09-09": [
+      "brainzerg7",
+      "rnaqpdrjf",
+      "wjswlgns09",
+      "thelddl",
+      "fpahsdltu1",
+      "seemin88"
+    ],
+    "2026-09-11": [
+      "freshtomato",
+      "rnaqpdrjf",
+      "dlaguswl501",
+      "2meonjin"
+    ],
+    "2026-09-12": [
+      "freshtomato",
+      "rnaqpdrjf",
+      "dlaguswl501",
+      "wjswlgns09",
+      "thelddl"
+    ],
+    "2026-09-13": [
+      "freshtomato",
+      "rnaqpdrjf",
+      "dlaguswl501"
+    ],
+    "2026-09-14": [
+      "freshtomato",
+      "rnaqpdrjf",
+      "dlaguswl501"
+    ],
+    "2026-09-15": [
+      "freshtomato",
+      "dlaguswl501"
+    ],
+    "2026-09-16": [
+      "freshtomato",
+      "dlaguswl501"
+    ],
+    "2026-09-17": [
+      "dlaguswl501"
+    ]
+  }
+}

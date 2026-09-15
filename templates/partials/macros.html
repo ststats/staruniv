@@ -1,0 +1,14 @@
+{#- 여러 페이지/부분 템플릿이 함께 쓰는 매크로 -#}
+{#- 경기 목록 표 머리글(최근 전적 카드 / 팀 전적 모달 공용 6열: 상대·형식·세트·결과·날짜·화살표) #}
+{%- macro match_table_head() %}
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="text-center stat-table-sticky-col colw-18-8">상대</th>
+                                    <th scope="col" class="text-center colw-18-8">형식</th>
+                                    <th scope="col" class="text-center colw-18-8">세트</th>
+                                    <th scope="col" class="text-center colw-18-8">결과</th>
+                                    <th scope="col" class="text-center colw-18-8">날짜</th>
+                                    <th scope="col" class="colw-6" aria-label="상세"></th>
+                                </tr>
+                            </thead>
+{%- endmacro %}
