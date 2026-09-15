@@ -266,6 +266,17 @@ function findPlayerStats(name) {
     return SiteData.playersStats.find(x => x['이름'] === name) || {};
 }
 
+// 선택 사이드바가 탭 전환 시 늦게 만들어져도 LIVE 표시를 채운다.
+async function refreshSidebarLiveIndicators() {
+    if (typeof checkIsLiveRealtime !== 'function') return;
+    const dots = Array.from(document.querySelectorAll('.avatar-select-live[data-soop-id]'));
+    if (!dots.length) return;
+    const ids = [...new Set(dots.map(dot => dot.dataset.soopId).filter(Boolean))];
+    const results = await Promise.allSettled(ids.map(id => checkIsLiveRealtime(id)));
+    const live = new Set(ids.filter((id, i) => results[i].status === 'fulfilled' && results[i].value));
+    dots.forEach(dot => { dot.hidden = !live.has(dot.dataset.soopId); });
+}
+
 // =====================================================================
 // 3. API 캐시 (SOOP 게시판/방송 상태 등)
 // =====================================================================

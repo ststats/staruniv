@@ -884,13 +884,14 @@ html[data-theme="dark"] .home-notice-card:hover {
 }
 
 .btn-view-all {
-    background: transparent;
+    background: #141821;
     border: none;
     font-size: 12px;
     font-weight: 700;
-    color: var(--color-text-muted);
+    color: #c5cfdf;
     padding: 4px 8px;
-    border-radius: 6px;
+    border-radius: 0;
+    clip-path: polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
     cursor: pointer;
     transition: 0.15s;
 }
@@ -952,6 +953,9 @@ html[data-theme="dark"] .home-notice-card:hover {
     position: relative;
     text-align: center;
     padding: 22px 16px 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     cursor: pointer;
     transition: box-shadow 0.15s, transform 0.15s;
 }
@@ -972,7 +976,12 @@ html[data-theme="dark"] .home-notice-card:hover {
     font-size: var(--fs-subheading);
     color: var(--color-text-muted);
     font-weight: 800;
-    margin-top: 14px;
+    margin-top: auto;
+    min-height: 1.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
 }
 
 .stat-card-box .donut {
@@ -1560,13 +1569,13 @@ html[data-theme="dark"] .home-notice-card:hover {
     align-items: center;
     gap: 5px;
     min-height: 40px;
-    background: var(--color-primary-tint);
+    background: #141821;
     border: 0;
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     font-size: var(--fs-body);
     font-weight: 700;
-    color: var(--color-primary);
+    color: #c5cfdf;
     padding: 8px 18px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -3381,6 +3390,11 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    width: 100%;
+    padding: 22px 24px 20px;
+    background: var(--color-ink, #141821);
+    color: #fff;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
 }
 
 .page-header-title {
@@ -3390,6 +3404,7 @@ body {
     order: 1;
     margin: 0;
     font-weight: 700;
+    color: #fff;
 }
 
 .page-header-divider {
@@ -4580,6 +4595,7 @@ html[data-theme="dark"] .mv-chip-box, html[data-theme="dark"] .mv-order-row {
     order: 2;
     margin: 8px 0 0;
     font-size: 12px;
+    color: #9aa6ba;
 }
 
 .page-header::before {
@@ -5522,6 +5538,18 @@ tbody tr:first-child .synergy-bar i {
 .member-card.is-live .member-avatar-img {
     box-shadow: 0 0 0 2px var(--color-primary);
 }
+
+.member-card-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #141821; }
+.member-card-media .member-profile-media, .member-card-media .member-live-thumb { width: 100%; height: 100%; object-fit: cover; }
+.member-card-media .member-profile-media { display: grid; place-items: center; background: #141821; }
+.member-card-media .member-profile-media .member-avatar-img { width: 76px; height: 76px; border-radius: 50%; }
+.member-card-media .member-live-thumb[hidden], .member-card-media .member-profile-media[hidden] { display: none; }
+.member-card-name { margin-top: 8px; }
+.member-card { display: block; overflow: hidden; padding: 0 0 12px; text-align: center; background: var(--color-card); }
+.member-card-media { aspect-ratio: 16 / 9; }
+.member-card-body { padding: 10px 12px 0; }
+.member-card-body .member-card-name { margin: 0; }
+.member-card-body .member-card-tags { margin: 6px 0 0; }
 
 .member-card.is-live .tool-card-ext {
     display: none;
