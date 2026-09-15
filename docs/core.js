@@ -274,7 +274,9 @@ async function refreshSidebarLiveIndicators() {
     const ids = [...new Set(dots.map(dot => dot.dataset.soopId).filter(Boolean))];
     const results = await Promise.allSettled(ids.map(id => checkIsLiveRealtime(id)));
     const live = new Set(ids.filter((id, i) => results[i].status === 'fulfilled' && results[i].value));
-    dots.forEach(dot => { dot.hidden = !live.has(dot.dataset.soopId); });
+    document.querySelectorAll('.avatar-select-live[data-soop-id]').forEach(dot => {
+        dot.hidden = !live.has(dot.dataset.soopId);
+    });
 }
 
 // =====================================================================
