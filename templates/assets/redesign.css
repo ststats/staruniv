@@ -3453,6 +3453,22 @@ tbody tr:first-child .synergy-bar i {
     padding: 12px 0 0;
     gap: 0;
 }
+#page-schedule .cal-selected-card-wrapper > .cal-day-card {
+    color: var(--color-text-main);
+    background: var(--color-card);
+    background-image: none;
+}
+#page-schedule .cal-selected-card-wrapper .cal-day-card-date { color: var(--color-text-sub); }
+#page-schedule .cal-selected-card-wrapper .cal-card-time,
+#page-schedule .cal-selected-card-wrapper .cal-card-person,
+#page-schedule .cal-selected-card-wrapper .cal-card-desc { color: var(--color-text-main); }
+#page-schedule .cal-selected-card-wrapper .cal-card-detail,
+#page-schedule .cal-selected-card-wrapper .cal-no-schedule { color: var(--color-text-sub); }
+#page-schedule .cal-selected-card-wrapper .cal-selected-card + .cal-selected-card { border-top-color: var(--color-bg-subtle); }
+#page-schedule .cal-selected-card-wrapper .cal-offair-section { border-top-color: var(--color-bg-subtle); }
+#page-schedule .cal-selected-card-wrapper .cal-offair-label { color: var(--color-text-sub); }
+#page-schedule .cal-selected-card-wrapper .cal-offair-chip { background: var(--color-bg-subtle); }
+#page-schedule .cal-selected-card-wrapper .cal-offair-name { color: var(--color-text-main); }
 #page-schedule .cal-card-main {
     align-items: flex-start;
     gap: 13px;
@@ -3481,26 +3497,25 @@ tbody tr:first-child .synergy-bar i {
     clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
 }
 
-/* Header stats: same visual scale as the page title row, without becoming a separate row. */
+/* Header stats: one compact scale for ACTIVE / ON AIR / UPDATED. */
 .page-header-with-stats .page-header-stats {
     top: 18px;
     gap: 7px;
 }
 .page-header-with-stats .head-stat {
-    min-width: 96px;
+    min-width: 0;
     height: 40px;
     padding: 4px 9px;
+    box-sizing: border-box;
 }
 .page-header-with-stats .head-stat-label {
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1.05;
+    letter-spacing: .14em;
 }
-.page-header-with-stats .head-stat-value {
-    font-size: 22px;
-    line-height: 1;
-}
+.page-header-with-stats .head-stat-value,
 .page-header-with-stats .head-stat-time {
-    font-size: 12px;
+    font-size: 18px;
     line-height: 1;
 }
 @media (max-width: 767.98px) {
@@ -3513,11 +3528,11 @@ tbody tr:first-child .synergy-bar i {
         gap: 4px;
     }
     .page-header-with-stats .head-stat {
-        min-width: 96px;
+        min-width: 0;
         height: 38px;
         padding: 4px 8px;
     }
     .page-header-with-stats .head-stat-label { font-size: 8px; }
-    .page-header-with-stats .head-stat-value { font-size: 20px; }
-    .page-header-with-stats .head-stat-time { font-size: 11px; }
+    .page-header-with-stats .head-stat-value,
+    .page-header-with-stats .head-stat-time { font-size: 17px; }
 }
