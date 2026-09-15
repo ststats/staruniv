@@ -51,10 +51,25 @@ function mvFocusEntryId(order, focusId) {
 // focus-target 클래스가 붙는다. 위/아래/빼기 버튼이 부르는 mvMove(idx, dir)와 mvRemove(idx),
 // 행 클릭이 부르는 mvSetFocusTarget(soopId)는 페이지마다 구현이 다르므로(그리드 DOM을 직접
 // 조작하는지 여부) 여기서 정의하지 않고 각 페이지가 같은 이름으로 반드시 정의해야 한다.
-function mvOrderItemHtml(entry, idx, order, focus, focusEntryId) {
+function mvOrderItemHtml(entry, idx, order, focus, focusEntryId, detailed = false) {
     const isFocusTarget = focus && focusEntryId === entry.soopId;
     const rowClick = focus ? ` onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')"` : '';
     const isFirst = idx === 0, isLast = idx === order.length - 1;
+    // 도구 페이지에서는 순번·방송 정보·조작을 분리한 행을 쓴다.
+    // 실제 재생 창은 공간이 좁으므로 기존 간결한 목록을 유지한다.
+    if (detailed) {
+        const name = mvSharedEscapeHTML(entry.name);
+        return `<div class="mv-order-detail${isFocusTarget ? ' focus-target' : ''}">
+            <span class="mv-order-position">${String(idx + 1).padStart(2, '0')}</span>
+            <div class="mv-order-identity"><strong>${name}</strong><span>${mvSharedEscapeHTML(entry.soopId)}${entry.isMember ? '' : ' · 직접 추가'}</span></div>
+            ${focus ? `<button type="button" class="mv-order-focus" aria-pressed="${isFocusTarget}" aria-label="${name} 메인 방송으로 선택" onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')">${isFocusTarget ? '메인' : '메인으로'}</button>` : ''}
+            <div class="mv-order-actions">
+                <button type="button" aria-label="${name} 위로 이동" onclick="mvMove(${idx}, -1)" ${isFirst ? 'disabled' : ''}>↑</button>
+                <button type="button" aria-label="${name} 아래로 이동" onclick="mvMove(${idx}, 1)" ${isLast ? 'disabled' : ''}>↓</button>
+                <button type="button" class="mv-order-remove" aria-label="${name} 목록에서 제거" onclick="mvRemove(${idx})">×</button>
+            </div>
+        </div>`;
+    }
     return `
     <div class="mv-order-item${entry.isMember ? '' : ' custom'}${isFocusTarget ? ' focus-target' : ''}${focus ? ' selectable' : ''}"${rowClick}>
         <span class="mv-order-num">${idx + 1}.</span>
