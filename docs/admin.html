@@ -26,6 +26,14 @@
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
+<script>
+    try {
+        const theme = localStorage.getItem('staruniv-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.bsTheme = theme;
+    } catch (_) {}
+</script>
 <!-- html2canvas: 저장 시 "오늘의 일정"+"이달의 일정" 캡처용 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -82,26 +90,10 @@ body {
     gap: 8px;
     flex-wrap: wrap;
 }
-.admin-header-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 7px 12px;
-}
-.admin-header-row::before {
-    grid-column: 1;
-    grid-row: 1;
-    margin: 0;
-}
-.admin-header-row .page-header-title {
-    grid-column: 1;
-    grid-row: 2;
-    margin-bottom: 0;
-    order: 0;
-}
-.admin-header-row > button {
+.admin-header-action {
     grid-column: 2;
     grid-row: 2;
+    align-self: center;
 }
 .admin-token-bar input {
     min-width: 0;
@@ -109,7 +101,9 @@ body {
     height: 40px;
     padding: 0 12px;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 0;
+    background: var(--color-card);
+    color: var(--color-text-main);
     font-size: var(--fs-body);
     font-family: inherit;
 }
@@ -137,7 +131,7 @@ body {
     cursor: not-allowed;
 }
 .btn-solid-dark {
-    background: var(--color-text-main);
+    background: #141821;
     color: #fff;
 }
 .btn-solid-primary {
@@ -162,11 +156,11 @@ body {
     padding: 0 12px;
     height: 42px;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 0;
     font-size: var(--fs-body);
     font-family: inherit;
     box-sizing: border-box;
-    background: #fff;
+    background: var(--color-card);
     color: var(--color-text-main);
 }
 .admin-form-row select {
@@ -194,7 +188,8 @@ body {
     width: 100%;
     padding: 12px;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     background: var(--color-primary);
     color: #fff;
     font-weight: 700;
@@ -209,7 +204,7 @@ body {
 .admin-form-title {
     font-size: var(--fs-subheading);
     font-weight: 800;
-    color: #222;
+    color: var(--color-text-main);
     margin-bottom: 10px;
 }
 .cal-card-actions {
@@ -279,7 +274,7 @@ body {
 .admin-tool-name {
     font-weight: 800;
     font-size: var(--fs-body);
-    color: #222;
+    color: var(--color-text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -388,7 +383,6 @@ body {
 @media (max-width: 767.98px) {
     .admin-nav-toggle {
         display: flex;
-        margin-left: auto;
     }
 }
 </style>
@@ -398,7 +392,7 @@ body {
 <!-- GNB - 사이트 본편(index.html)과 완전히 동일한 상단바 마크업/클래스 -->
 <div class="top-navbar">
     <div class="navbar-inner container">
-        <div class="logo"><span class="logo-black">스타</span><span class="logo-accent">대학</span><span class="tag-badge tier-badge admin-badge" style="margin-left:8px;" title="어드민" aria-label="어드민"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span></div>
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
         <button type="button" class="nav-drawer-btn admin-nav-toggle" aria-label="관리 메뉴 열기" aria-expanded="false" aria-controls="mainMenu" onclick="toggleAdminMenu(this)"><span></span><span></span><span></span></button>
         <div class="nav-menu" id="mainMenu">
             <a class="nav-item active" data-page="home" onclick="switchPage('home')">홈</a>
@@ -412,12 +406,15 @@ body {
 </div>
 
 <!-- 아래 각 탭은 준비만 해둔 빈 페이지 - 나중에 탭별로 관리 기능을 채워 넣으면 됨 -->
-<div id="page-home" class="page-section active container">
+<div id="page-admin-home" class="page-section active">
     <div class="page-header admin-header-row">
-        <h1 class="page-header-title">홈 관리</h1>
-        <button id="saveNavBtn" class="btn-solid btn-solid-primary" onclick="saveNavToGithub()">저장</button>
+        <div class="page-header-main" data-label="ADMIN · HOME">
+            <h1 class="page-header-title">홈 관리</h1>
+            <p class="page-header-subtitle">GitHub 연동과 사이트 메뉴 노출을 관리합니다.</p>
+            <button id="saveNavBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveNavToGithub()">저장</button>
+        </div>
     </div>
-    <hr class="page-header-divider">
+    <div class="container">
 
     <div class="section-title">GitHub 연동</div>
     <div class="clean-card p-4 mb-4">
@@ -437,18 +434,21 @@ body {
         <div id="navToggleList" class="admin-nav-list"></div>
         <div class="text-secondary mt-2" style="font-size:11px;">
             끈 메뉴는 사이트 상단바에서 사라집니다. 페이지 자체는 그대로 남아 있어 주소로는 계속 열 수 있고,
-            그 페이지를 보고 있는 동안에는 길을 잃지 않도록 메뉴가 예외적으로 표시됩니다.
             저장하면 방문자에게 바로 반영되고, 다음 배포 때 HTML에도 함께 반영됩니다.
         </div>
     </div>
+    </div>
 </div>
 
-<div id="page-schedule" class="page-section container">
+<div id="page-schedule" class="page-section">
     <div class="page-header admin-header-row">
-        <h1 class="page-header-title">일정 관리</h1>
-        <button id="saveAllBtn" class="btn-solid btn-solid-primary" onclick="saveAllToGithub()">저장</button>
+        <div class="page-header-main" data-label="ADMIN · SCHEDULE">
+            <h1 class="page-header-title">일정 관리</h1>
+            <p class="page-header-subtitle">일정과 휴방을 편집한 뒤 저장해주세요.</p>
+            <button id="saveAllBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveAllToGithub()">저장</button>
+        </div>
     </div>
-    <hr class="page-header-divider">
+    <div class="container">
 
     <div class="admin-layout">
         <!-- 왼쪽: 사이트 캘린더 페이지랑 완전히 동일한 구조/클래스 -->
@@ -552,38 +552,45 @@ body {
             </div>
         </aside>
     </div>
-</div>
-
-<div id="page-members" class="page-section container">
-    <div class="page-header">
-        <h1 class="page-header-title">멤버 관리</h1>
     </div>
-    <hr class="page-header-divider">
-    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
 </div>
 
-<div id="page-records" class="page-section container">
+<div id="page-members" class="page-section">
     <div class="page-header">
-        <h1 class="page-header-title">전적 관리</h1>
+        <div class="page-header-main" data-label="ADMIN · ROSTER"><h1 class="page-header-title">멤버 관리</h1><p class="page-header-subtitle">이 페이지의 편집 기능은 아직 제공하지 않습니다.</p></div>
     </div>
-    <hr class="page-header-divider">
+    <div class="container">
     <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+    </div>
 </div>
 
-<div id="page-stats" class="page-section container">
+<div id="page-records" class="page-section">
     <div class="page-header">
-        <h1 class="page-header-title">방송통계 관리</h1>
+        <div class="page-header-main" data-label="ADMIN · RECORDS"><h1 class="page-header-title">전적 관리</h1><p class="page-header-subtitle">이 페이지의 편집 기능은 아직 제공하지 않습니다.</p></div>
     </div>
-    <hr class="page-header-divider">
+    <div class="container">
     <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+    </div>
 </div>
 
-<div id="page-tools" class="page-section container">
+<div id="page-stats" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · ANALYTICS"><h1 class="page-header-title">방송통계 관리</h1><p class="page-header-subtitle">이 페이지의 편집 기능은 아직 제공하지 않습니다.</p></div>
+    </div>
+    <div class="container">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+    </div>
+</div>
+
+<div id="page-tools" class="page-section">
     <div class="page-header admin-header-row">
-        <h1 class="page-header-title">도구 관리</h1>
-        <button id="saveToolsBtn" class="btn-solid btn-solid-primary" onclick="saveToolsToGithub()">저장</button>
+        <div class="page-header-main" data-label="ADMIN · TOOLS">
+            <h1 class="page-header-title">도구 관리</h1>
+            <p class="page-header-subtitle">외부 도구와 사이트의 링크 및 순서를 관리합니다.</p>
+            <button id="saveToolsBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveToolsToGithub()">저장</button>
+        </div>
     </div>
-    <hr class="page-header-divider">
+    <div class="container">
 
     <div class="section-title">외부 도구</div>
     <div class="clean-card p-4 mb-4">
@@ -606,6 +613,7 @@ body {
         <button id="toolSubmit-extSites" class="admin-submit-btn" onclick="addTool('extSites')">추가하기</button>
         <button id="toolCancel-extSites" class="admin-submit-btn" style="display:none;" onclick="cancelToolEdit('extSites')">수정 취소</button>
     </div>
+    </div>
 </div>
 
 <!-- 사이트가 실제로 쓰는 캘린더 렌더링 로직을 그대로 가져다 쓴다 (복사본 아님) -->
@@ -618,7 +626,7 @@ body {
     function switchPage(pageId) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('#mainMenu .nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('page-' + pageId).classList.add('active');
+        document.getElementById(pageId === 'home' ? 'page-admin-home' : 'page-' + pageId).classList.add('active');
         const targetNav = document.querySelector(`#mainMenu .nav-item[data-page="${pageId}"]`);
         if (targetNav) targetNav.classList.add('active');
         const bar = document.querySelector('.top-navbar');
@@ -638,6 +646,11 @@ body {
     const REPO_OWNER = 'ststats';
     const REPO_NAME = 'staruniv';
     const DATA_FILE_PATH = 'docs/data/calendar.json';
+    async function checkedGithubJson(response) {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(`GitHub 요청 실패 (HTTP ${response.status}): ${data.message || '권한과 저장소 상태를 확인해주세요.'}`);
+        return data;
+    }
 
     const escapeHTML = calEscapeHTML; // calendar.js가 이미 이스케이프 함수를 갖고 있어 그대로 재사용
 
@@ -690,14 +703,12 @@ body {
         },
     };
 
-    const saveTokenLocally = () => {
+    const saveTokenLocally = async () => {
         const token = document.getElementById('githubToken').value.trim();
         if (!token) return alert('토큰을 입력해주세요.');
         adminTokenStore.set(token);
-        alert('연동되었습니다. 이 탭을 닫으면 토큰은 자동으로 지워집니다.');
-        loadDataFromGithub();
-        loadToolsFromGithub();
-        loadNavFromGithub();
+        const loaded = await Promise.all([loadDataFromGithub(), loadToolsFromGithub(), loadNavFromGithub()]);
+        if (loaded.every(Boolean)) alert('연동 및 데이터 불러오기가 완료되었습니다. 토큰은 이 탭에만 보관됩니다.');
     };
 
     const clearGithubToken = () => {
@@ -706,25 +717,28 @@ body {
         alert('연동이 해제되었습니다. 이 브라우저에 저장된 토큰을 모두 지웠습니다.');
     };
 
+    let calendarLoaded = false;
     const loadDataFromGithub = async () => {
         const token = document.getElementById('githubToken').value;
-        if (!token) return;
+        calendarLoaded = false;
         try {
-            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_FILE_PATH}`, {
-                headers: { Authorization: `token ${token}` }
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_FILE_PATH}` : 'data/calendar.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
             });
             if (res.ok) {
                 const data = await res.json();
-                const decoded = decodeURIComponent(escape(atob(data.content)));
-                const parsed = JSON.parse(decoded);
+                const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
                 calEvents = calMigrateData(parsed);
                 calOffAir = parsed.offAir || {};
-                calRenderCalendar();
-            } else if (res.status === 404) {
-                calRenderCalendar();
-            }
+            } else throw new Error(`일정 불러오기 실패 (HTTP ${res.status})`);
+            calendarLoaded = true;
+            calRenderCalendar();
+            renderOffAirCheckboxList();
+            return true;
         } catch (e) {
             console.error(e);
+            alert(e.message + '\n현재 화면의 데이터로 저장하지 않습니다. 연동을 확인해주세요.');
+            return false;
         }
     };
 
@@ -733,6 +747,7 @@ body {
     const saveAllToGithub = async () => {
         const token = document.getElementById('githubToken').value;
         if (!token) return alert('GitHub 토큰을 먼저 입력하고 연동해주세요!');
+        if (!calendarLoaded) return alert('일정을 불러오지 못했습니다. 먼저 연동을 다시 확인해주세요.');
 
         const saveBtn = document.getElementById('saveAllBtn');
         saveBtn.innerText = '저장중...';
@@ -858,22 +873,22 @@ body {
             const defaultBranch = (await repoRes.json()).default_branch || 'main';
 
             const refRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { headers });
-            const latestCommitSha = (await refRes.json()).object.sha;
+            const latestCommitSha = (await checkedGithubJson(refRes)).object.sha;
 
             const jsonBlobRes = await fetch(`${repoUrl}/git/blobs`, {
                 method: 'POST', headers,
                 body: JSON.stringify({ content: jsonContent, encoding: 'utf-8' })
             });
-            const jsonBlobSha = (await jsonBlobRes.json()).sha;
+            const jsonBlobSha = (await checkedGithubJson(jsonBlobRes)).sha;
 
             const imgBlobRes = await fetch(`${repoUrl}/git/blobs`, {
                 method: 'POST', headers,
                 body: JSON.stringify({ content: base64Image, encoding: 'base64' })
             });
-            const imgBlobSha = (await imgBlobRes.json()).sha;
+            const imgBlobSha = (await checkedGithubJson(imgBlobRes)).sha;
 
             const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
-            const baseTreeSha = (await commitRes.json()).tree.sha;
+            const baseTreeSha = (await checkedGithubJson(commitRes)).tree.sha;
 
             const treeRes = await fetch(`${repoUrl}/git/trees`, {
                 method: 'POST', headers,
@@ -885,13 +900,13 @@ body {
                     ]
                 })
             });
-            const newTreeSha = (await treeRes.json()).sha;
+            const newTreeSha = (await checkedGithubJson(treeRes)).sha;
 
             const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
                 method: 'POST', headers,
                 body: JSON.stringify({ message: '✅ 캘린더 데이터 + 이미지 업데이트', tree: newTreeSha, parents: [latestCommitSha] })
             });
-            const newCommitSha = (await newCommitRes.json()).sha;
+            const newCommitSha = (await checkedGithubJson(newCommitRes)).sha;
 
             const updateRefRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, {
                 method: 'PATCH', headers,
@@ -1139,14 +1154,14 @@ body {
 
     const loadNavFromGithub = async () => {
         const token = adminTokenStore.get();
-        if (!token) { navLoaded = false; renderNavAdmin(); return; }
+        navLoaded = false;
         try {
-            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${NAV_FILE_PATH}`, {
-                headers: { Authorization: `token ${token}` }
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${NAV_FILE_PATH}` : 'data/nav.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
             });
             if (res.ok) {
                 const data = await res.json();
-                const parsed = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
                 navHidden = new Set((Array.isArray(parsed.hidden) ? parsed.hidden : []).map(String));
                 navLoaded = true;
             } else if (res.status === 404) {
@@ -1162,6 +1177,7 @@ body {
             alert(e.message);
         }
         renderNavAdmin();
+        return navLoaded;
     };
 
     const saveNavToGithub = async () => {
@@ -1291,15 +1307,14 @@ body {
 
     const loadToolsFromGithub = async () => {
         const token = adminTokenStore.get();
-        if (!token) { toolsLoaded = false; renderToolsAdmin(); return; }
+        toolsLoaded = false;
         try {
-            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TOOLS_FILE_PATH}`, {
-                headers: { Authorization: `token ${token}` }
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TOOLS_FILE_PATH}` : 'data/tools.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
             });
             if (res.ok) {
                 const data = await res.json();
-                const decoded = decodeURIComponent(escape(atob(data.content)));
-                toolsData = JSON.parse(decoded);
+                toolsData = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
                 toolsLoaded = true;
             } else {
                 toolsLoaded = false;
@@ -1310,6 +1325,7 @@ body {
             alert(e.message);
         }
         renderToolsAdmin();
+        return toolsLoaded;
     };
 
     const saveToolsToGithub = async () => {
@@ -1351,7 +1367,7 @@ body {
     };
 
     const init = async () => {
-        await Promise.all([loadPublicHolidays(), loadMembersData(), calLoadPublicData()]);
+        await Promise.all([loadPublicHolidays(), loadMembersData()]);
 
         const today = new Date();
         const todayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
@@ -1361,10 +1377,8 @@ body {
         const savedToken = adminTokenStore.get();
         if (savedToken) {
             document.getElementById('githubToken').value = savedToken;
-            await loadDataFromGithub();
-        } else {
-            calRenderCalendar();
         }
+        await loadDataFromGithub();
         // calOffAir(휴방 데이터)가 이제 막 로드됐을 수 있으니, 위 calSelectDate 때
         // 그렸던(비어있었을 수 있는) 체크박스 상태를 실제 데이터로 다시 맞춘다.
         renderOffAirCheckboxList();

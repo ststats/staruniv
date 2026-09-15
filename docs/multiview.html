@@ -6,17 +6,6 @@
 <title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="style.css">
 <style>
-html[data-theme="dark"] {
-    --color-bg: #14161b;
-    --color-card: #1d2027;
-    --color-border: #2b2f38;
-    --color-border-strong: #3a3f4a;
-    --color-text-main: #e7e9ec;
-    --color-text-sub: #9aa1ac;
-    --color-primary: #5b93ff;
-    --color-primary-tint: #1c2740;
-    --color-bg-subtle: #22262e;
-}
 html[data-theme="dark"] body {
     background: var(--color-bg);
     color: var(--color-text-main);
@@ -43,7 +32,8 @@ body {
     width: 28px;
     height: 28px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
     border: none;
     background: var(--color-primary);
     opacity: 0.85;
@@ -407,44 +397,6 @@ html[data-theme="dark"] .mv-settings-panel {
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
-.mv-settings-panel .mv-order-row {
-    border: 0;
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
-    background: var(--color-card);
-    padding: 10px;
-}
-.mv-settings-panel .mv-order-detail {
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    padding: 7px 8px;
-    background: var(--color-bg);
-    border-left: 3px solid transparent;
-    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
-}
-.mv-settings-panel .mv-order-identity {
-    min-width: 0;
-    overflow: hidden;
-}
-.mv-settings-panel .mv-order-identity strong {
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.mv-settings-panel .mv-order-focus {
-    min-height: 26px;
-    padding: 0 5px;
-    font-size: 9px;
-}
-.mv-settings-panel .mv-order-actions button {
-    width: 24px;
-    height: 26px;
-    font-size: 12px;
-}
 @media (max-width: 420px) {
     .mv-settings-panel {
         width: 100vw;
@@ -727,7 +679,7 @@ html[data-theme="dark"] .mv-settings-panel {
         const focusEntryId = mvFocusEntryId(mvOrder, mvFocusId);
         row.innerHTML = mvOrder.length
             ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId, true)).join('')
-            : '<span style="font-size:var(--fs-body); color:var(--color-text-sub);">위에서 멤버를 선택하거나 이름/숲 아이디를 입력해 추가해보세요.</span>';
+            : '<div class="mv-order-empty"><strong>선택된 방송이 없습니다.</strong></div>';
     }
 
     // [수정] 예전엔 칸의 DOM 위치를 맞바꾸거나(replaceWith) 그리드를 통째로 다시 그려서
@@ -883,7 +835,7 @@ html[data-theme="dark"] .mv-settings-panel {
     function mvRenderGrid() {
         const area = document.getElementById('mv-grid-area');
         if (mvOrder.length === 0) {
-            area.innerHTML = '<div class="mv-empty">추가된 방송이 없습니다. 오른쪽 위 설정 버튼을 눌러 멤버를 선택하거나 아이디를 추가해보세요.</div>';
+            area.innerHTML = '<div class="mv-empty">선택된 방송이 없습니다.</div>';
             return;
         }
         let grid = document.getElementById('mv-grid');
