@@ -28,7 +28,7 @@
       "person": "윤환",
       "desc": "한중전",
       "detail": "",
-      "color": "#16c75b"
+      "color": "#111318"
     },
     {
       "id": 1788410538904,
@@ -98,7 +98,7 @@
       "person": "윤환",
       "desc": "중만컵 해설",
       "detail": "",
-      "color": "#16c75b"
+      "color": "#111318"
     },
     {
       "id": 1788411971561,
@@ -258,7 +258,7 @@
       "person": "타밍송이",
       "desc": "장판빵 멸망전",
       "detail": "윤환 사테 준오",
-      "color": "#ff2538"
+      "color": "#1677ff"
     },
     {
       "id": 1789100083799,
@@ -268,7 +268,7 @@
       "person": "윤환",
       "desc": "클암CK",
       "detail": "",
-      "color": "#16c75b"
+      "color": "#111318"
     },
     {
       "id": 1789186098219,
@@ -288,7 +288,17 @@
       "person": "윤환",
       "desc": "랜피엘",
       "detail": "",
-      "color": "#16c75b"
+      "color": "#111318"
+    },
+    {
+      "id": 1789486342994,
+      "startDate": "2026-09-14",
+      "endDate": "2026-09-14",
+      "time": "03:30",
+      "person": "왜냐맨",
+      "desc": "블리즈컨",
+      "detail": "",
+      "color": "#a855f7"
     }
   ],
   "offAir": {
@@ -333,14 +343,56 @@
     ],
     "2026-09-15": [
       "freshtomato",
-      "dlaguswl501"
+      "dlaguswl501",
+      "rnaqpdrjf"
     ],
     "2026-09-16": [
       "freshtomato",
-      "dlaguswl501"
+      "dlaguswl501",
+      "brainzerg7"
     ],
     "2026-09-17": [
-      "dlaguswl501"
+      "dlaguswl501",
+      "brainzerg7"
+    ],
+    "2026-09-18": [
+      "brainzerg7"
+    ],
+    "2026-09-19": [
+      "brainzerg7"
+    ],
+    "2026-09-20": [
+      "brainzerg7"
+    ],
+    "2026-09-21": [
+      "brainzerg7"
+    ],
+    "2026-09-22": [
+      "brainzerg7"
+    ],
+    "2026-09-23": [
+      "brainzerg7"
+    ],
+    "2026-09-24": [
+      "brainzerg7"
+    ],
+    "2026-09-25": [
+      "brainzerg7"
+    ],
+    "2026-09-26": [
+      "brainzerg7"
+    ],
+    "2026-09-27": [
+      "brainzerg7"
+    ],
+    "2026-09-28": [
+      "brainzerg7"
+    ],
+    "2026-09-29": [
+      "brainzerg7"
+    ],
+    "2026-09-30": [
+      "brainzerg7"
     ]
   }
 }
