@@ -894,7 +894,7 @@ html[data-theme="dark"] .home-notice-card:hover {
     border: 0;
     font-size: 11px;
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-text-main);
     padding: 0;
     border-radius: 0;
     clip-path: none;
@@ -908,8 +908,8 @@ html[data-theme="dark"] .home-notice-card:hover {
 
 .btn-view-all:hover {
     background: transparent;
-    color: var(--color-primary-deep);
-    text-decoration: underline;
+    color: var(--color-text-main);
+    text-decoration: none;
 }
 
 .filter-nav-label {
@@ -1453,7 +1453,7 @@ html[data-theme="dark"] .home-notice-card:hover {
     border: none;
     font-size: var(--fs-body);
     font-weight: 400;
-    color: var(--color-primary);
+    color: var(--color-text-main);
     padding: 0 16px 12px 16px;
     margin-top: -8px;
     cursor: pointer;
@@ -1586,7 +1586,7 @@ html[data-theme="dark"] .home-notice-card:hover {
     clip-path: none;
     font-size: var(--fs-body);
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-text-main);
     padding: 0;
     height: auto;
     cursor: pointer;
@@ -1595,8 +1595,8 @@ html[data-theme="dark"] .home-notice-card:hover {
 
 .news-load-more:hover {
     background: transparent;
-    color: var(--color-primary-deep);
-    text-decoration: underline;
+    color: var(--color-text-main);
+    text-decoration: none;
 }
 
 #former-members-section {
@@ -4663,13 +4663,13 @@ html[data-theme="dark"] .mv-chip-box, html[data-theme="dark"] .mv-order-row {
 
 .btn-view-all {
     border-radius: 0;
-    color: var(--color-primary);
+    color: var(--color-text-main);
 }
 
 .btn-view-all:hover {
     background: transparent;
-    color: var(--color-primary-deep);
-    text-decoration: underline;
+    color: var(--color-text-main);
+    text-decoration: none;
 }
 
 .tag-badge.role-badge {
@@ -6926,7 +6926,7 @@ tbody tr:first-child .synergy-bar i {
 #page-schedule .cal-selected-card-wrapper .cal-day-card-date { border-bottom-color: var(--color-border); }
 #page-schedule .cal-card-time, #page-schedule .cal-card-person, #page-schedule .cal-card-desc { font-size: 13px; line-height: 1.35; }
 #page-schedule .cal-card-time { font-weight: 700; }
-.page-header-with-stats { display: flex; flex-direction: column; padding-right: max(32px, calc((100vw - 1240px) / 2 + 40px)); }
+.page-header-with-stats { display: flex; flex-direction: column; gap: 0; padding-right: max(32px, calc((100vw - 1240px) / 2 + 40px)); }
 .page-header-with-stats .page-header-main { display: flex; flex-direction: column; align-items: flex-start; }
 .page-header-with-stats .page-header-main::before { margin-bottom: 7px; }
 .page-header-with-stats .page-header-title { align-self: auto; }
@@ -6952,7 +6952,7 @@ tbody tr:first-child .synergy-bar i {
 .mv-stepper, .mv-toggle-switch { align-self: center; }
 .mv-pick-layout { align-items: start; }
 @media (max-width: 767.98px) {
-    .page-header-with-stats { display: flex; flex-direction: column; padding-right: 24px; }
+    .page-header-with-stats { display: flex; flex-direction: column; gap: 0; padding-right: 24px; }
     .page-header-with-stats .page-header-stats { top: 24px; right: 24px; }
     .page-header > .sub-tabs,
     .page-header-main > .sub-tabs {
