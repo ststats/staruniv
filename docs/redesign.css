@@ -253,11 +253,7 @@ body {
     z-index: 1;
     flex: 0 0 100%;
     min-height: 330px;
-    padding: 46px 48px 64px;
-    padding-right: max(var(--container-pad),calc((100% - 1240px)/2 + var(--container-pad)));
-    padding-top: 48px;
-    padding-bottom: 60px;
-    padding-left: max(var(--container-pad),calc((100% - 1240px)/2 + var(--container-pad)));
+    padding: 48px max(32px,calc((100vw - 1240px)/2 + 40px)) 60px;
     align-content: center;
     grid-auto-rows: min-content;
     row-gap: 0;
@@ -869,7 +865,7 @@ body {
 }
 
 .cal-calendar-area {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
     width: auto;
     max-width: none !important;
@@ -878,7 +874,7 @@ body {
 }
 
 .cal-sidebar {
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 1;
     display: flex;
     flex-direction: column;
@@ -1462,10 +1458,6 @@ html[data-theme="dark"] .section-title {
 }
 
 @media (max-width:767.98px) {
-    .home-carousel-slide {
-        padding-right: 24px;
-    }
-
     .home-carousel-preview {
         display: none;
     }
@@ -2294,20 +2286,6 @@ tbody tr:first-child .synergy-bar i {
     background: var(--color-draw);
 }
 
-@media (max-width: 1100px) {
-    .home-carousel-slide {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0;
-    }
-
-    .home-carousel-preview {
-        position: static;
-        width: auto;
-        transform: none;
-        margin-top: 24px;
-        grid-column: 1;
-    }
-}
 
 @media (max-width: 767.98px) {
     .home-carousel-slide {
@@ -2797,40 +2775,6 @@ tbody tr:first-child .synergy-bar i {
     border-left-width: 3px;
 }
 
-.cal-selected-card, .cal-today-card {
-    padding: 12px 0 0;
-    gap: 0;
-}
-
-.cal-card-main {
-    align-items: flex-start;
-    gap: 13px;
-}
-
-.cal-card-time {
-    font-family: var(--font-num);
-    font-size: 15px;
-    font-weight: 700;
-    flex: none;
-    color: var(--color-text-main);
-}
-
-.cal-card-person {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.cal-card-desc {
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.cal-selected-card + .cal-selected-card, .cal-today-card + .cal-today-card {
-    margin-top: 0;
-    padding-top: 12px;
-    border-top: 1px solid var(--color-border);
-}
-
 .cal-offair-section {
     margin-top: 14px;
     padding-top: 13px;
@@ -3088,12 +3032,6 @@ tbody tr:first-child .synergy-bar i {
     }
 }
 
-@media (max-width: 1100px) {
-    .home-carousel-preview {
-        grid-column: 1;
-        margin-top: 22px;
-    }
-}
 
 @media (min-width:1200px) {
     :root {
@@ -3248,20 +3186,7 @@ tbody tr:first-child .synergy-bar i {
     margin-right: auto;
 }
 
-@media (max-width:1050px) {
-    .home-carousel-preview {
-        width: 300px;
-        right: 28px;
-    }
-}
 
-@media (max-width:1100px) {
-    .home-carousel-slide>.home-carousel-preview {
-        grid-column: 1;
-        grid-row: auto;
-        margin-top: 22px;
-    }
-}
 
 @media (max-width:767.98px) {
     .home-carousel-preview {
@@ -3473,5 +3398,18 @@ tbody tr:first-child .synergy-bar i {
     .section-title.section-title-filters>.d-flex {
         flex: 1 1 auto;
         min-width: 0;
+    }
+}
+
+
+/* Hero preview uses the same horizontal rails as .container. */
+.home-carousel-slide {
+    padding-left: max(32px,calc((100vw - 1240px)/2 + 40px));
+    padding-right: max(32px,calc((100vw - 1240px)/2 + 40px));
+}
+@media (max-width:767.98px) {
+    .home-carousel-slide {
+        padding-left: 24px;
+        padding-right: 24px;
     }
 }
