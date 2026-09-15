@@ -30,108 +30,367 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
-    /* 어드민 전용 요소(토큰 바 / 추가·수정 폼 / 좌우 레이아웃)만 여기서 스타일링.
-       캘린더 자체 스타일(요일/날짜칸/카드 등)은 전부 style.css 걸 그대로 씁니다. */
-    body { margin: 0; }
-    /* 상단바 "어드민" 뱃지를 텍스트 대신 톱니바퀴 아이콘 하나로 줄여서 모바일에서
-       로고 옆이 잘리지 않게 한다 (사이트의 race-badge와 동일하게 정사각형 아이콘 뱃지). */
-    .tag-badge.admin-badge { width: 18px; padding: 0; }
-
-    /* 사이트의 실제 일정 페이지(.cal-main-layout/.cal-sidebar/.cal-calendar-area)와
-       완전히 같은 폭 로직을 쓴다: 캘린더는 고정 폭(804px)을 최대한 지키고, 사이드바가
-       화면이 좁아질 때 먼저 유연하게 줄어든다(flex-shrink:50). 반응형 전환 기준점도
-       사이트와 동일하게 888px로 - 이론상 경계는 868px(=804+패딩64)이지만, <html>의
-       scrollbar-gutter:stable로 예약된 스크롤바 폭만큼 실제 가용폭이 더 좁아질 수
-       있어서 20px 여유를 더했다. 그 위 구간은 세로배치가 아니라 사이드바가 먼저
-       최소폭까지 줄고 캘린더가 내부 스크롤되는 걸 유지한다.
-       좌우 배치도 사이드바 왼쪽/캘린더 오른쪽으로 맞춘다. */
-    .admin-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
-    .admin-main { flex: 1 1 700px; min-width: 0; width: auto; order: 0; }
-    .admin-main .cal-main-layout { display: block; width: 100%; min-width: 0; }
-    .admin-main .cal-calendar-area { min-width: 0; }
-    .admin-side { min-width: 0; flex: 0 0 300px; display: flex; flex-direction: column; gap: 20px; order: 1; }
-    @media (max-width: 888px) {
-        .admin-layout { flex-direction: column; }
-        .admin-side, .admin-main { width: 100%; flex: none; }
+body {
+    margin: 0;
+}
+.tag-badge.admin-badge {
+    width: 18px;
+    padding: 0;
+}
+.admin-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+    min-width: 0;
+}
+.admin-main {
+    flex: 1 1 700px;
+    min-width: 0;
+    width: auto;
+    order: 0;
+}
+.admin-main .cal-main-layout {
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.admin-main .cal-calendar-area {
+    min-width: 0;
+}
+.admin-side {
+    min-width: 0;
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    order: 1;
+}
+@media (max-width: 888px) {
+    .admin-layout {
+        flex-direction: column;
     }
-
-    .admin-token-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-    .admin-token-bar input { flex: 1 1 160px; min-width: 0; }
-    /* 큰 타이틀(h1) 오른쪽에 저장 버튼을 나란히 두는 헤더 줄 - 일정/도구 탭에서 공용으로 씀 */
-    .admin-header-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px 12px; }
-    .admin-header-row::before { grid-column: 1; grid-row: 1; margin: 0; }
-    .admin-header-row .page-header-title { grid-column: 1; grid-row: 2; margin-bottom: 0; order: 0; }
-    .admin-header-row > button { grid-column: 2; grid-row: 2; }
-    .admin-token-bar input {
-        flex: 1; height: 40px; padding: 0 12px; border: 1px solid var(--color-border);
-        border-radius: 8px; font-size: var(--fs-body); font-family: inherit;
+    .admin-side,
+    .admin-main {
+        width: 100%;
+        flex: none;
     }
-    .admin-token-bar input:focus { outline: none; border-color: var(--color-primary); }
-    .btn-solid { height: 40px; padding: 0 16px; border: none; border-radius: 0; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); font-size: var(--fs-body); font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
-    .btn-solid:hover { opacity: 0.85; }
-    .btn-solid:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-solid-dark { background: var(--color-text-main); color: #fff; }
-    .btn-solid-primary { background: var(--color-primary); color: #fff; }
-    .btn-solid-light { background: var(--color-bg-subtle); color: var(--color-text-main); }
+}
 
-    .admin-form-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .admin-form-row input, .admin-form-row select, .admin-form-row textarea {
-        min-width: 0;
-        width: 100%; padding: 0 12px; height: 42px; border: 1px solid var(--color-border);
-        border-radius: 8px; font-size: var(--fs-body); font-family: inherit; box-sizing: border-box;
-        background: #fff; color: var(--color-text-main);
+.admin-token-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.admin-header-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px 12px;
+}
+.admin-header-row::before {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+}
+.admin-header-row .page-header-title {
+    grid-column: 1;
+    grid-row: 2;
+    margin-bottom: 0;
+    order: 0;
+}
+.admin-header-row > button {
+    grid-column: 2;
+    grid-row: 2;
+}
+.admin-token-bar input {
+    min-width: 0;
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: var(--fs-body);
+    font-family: inherit;
+}
+.admin-token-bar input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.btn-solid {
+    height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+.btn-solid:hover {
+    opacity: 0.85;
+}
+.btn-solid:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-solid-dark {
+    background: var(--color-text-main);
+    color: #fff;
+}
+.btn-solid-primary {
+    background: var(--color-primary);
+    color: #fff;
+}
+.btn-solid-light {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-main);
+}
+
+.admin-form-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.admin-form-row input,
+.admin-form-row select,
+.admin-form-row textarea {
+    min-width: 0;
+    width: 100%;
+    padding: 0 12px;
+    height: 42px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: var(--fs-body);
+    font-family: inherit;
+    box-sizing: border-box;
+    background: #fff;
+    color: var(--color-text-main);
+}
+.admin-form-row select {
+    flex: 1 1 50%;
+    width: auto;
+    min-width: 0;
+}
+.admin-form-row textarea {
+    flex: 1 1 50%;
+    padding: 10px 12px;
+    resize: none;
+    overflow: hidden;
+    line-height: 1.2;
+    height: 42px;
+    min-width: 0;
+}
+.admin-form-row input:focus,
+.admin-form-row textarea:focus,
+.admin-form-row select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-tint);
+}
+.admin-submit-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: var(--fs-body);
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s;
+}
+.admin-submit-btn:hover {
+    background: #1c63e0;
+}
+.admin-form-title {
+    font-size: var(--fs-subheading);
+    font-weight: 800;
+    color: #222;
+    margin-bottom: 10px;
+}
+.cal-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.cal-card-actions button {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.cal-card-actions .edit-btn {
+    color: var(--color-primary);
+}
+.cal-card-actions .edit-btn:hover {
+    text-decoration: underline;
+}
+.cal-card-actions .delete-btn {
+    color: var(--color-lose);
+}
+.cal-card-actions .delete-btn:hover {
+    text-decoration: underline;
+}
+
+.admin-tool-row .edit-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+}
+.admin-tool-row .edit-btn:hover {
+    text-decoration: underline;
+}
+.admin-tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.admin-tool-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+.admin-tool-row img {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.admin-tool-info {
+    min-width: 0;
+    flex: 1;
+}
+.admin-tool-name {
+    font-weight: 800;
+    font-size: var(--fs-body);
+    color: #222;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.admin-tool-url {
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.admin-tool-detail {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+.admin-tool-row .delete-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-lose);
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+}
+.admin-tool-row .delete-btn:hover {
+    text-decoration: underline;
+}
+.admin-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.admin-nav-row {
+    cursor: pointer;
+    margin: 0;
+}
+.admin-nav-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+.admin-nav-state {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-text-faint);
+    flex-shrink: 0;
+}
+.admin-nav-row.is-on .admin-nav-state {
+    color: var(--color-primary);
+}
+.admin-nav-row.is-off {
+    opacity: 0.55;
+}
+.admin-offair-block {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-bg-subtle);
+}
+.admin-offair-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.admin-offair-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.admin-offair-item:hover {
+    background: var(--color-bg-subtle);
+}
+.admin-offair-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+.admin-offair-item img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-bg-subtle);
+    flex-shrink: 0;
+}
+.admin-offair-item span {
+    font-size: var(--fs-body);
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+@media (max-width: 767.98px) {
+    .admin-nav-toggle {
+        display: flex;
+        margin-left: auto;
     }
-    .admin-form-row select { flex: 1 1 50%; width: auto; min-width: 0; }
-    .admin-form-row textarea { flex: 1 1 50%; padding: 10px 12px; resize: none; overflow: hidden; line-height: 1.2; height: 42px; min-width: 0; }
-    .admin-form-row input:focus, .admin-form-row textarea:focus, .admin-form-row select:focus {
-        outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-tint);
-    }
-    .admin-submit-btn {
-        width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--color-primary);
-        color: #fff; font-weight: 700; font-size: var(--fs-body); cursor: pointer; margin-top: 4px; transition: background 0.15s;
-    }
-    .admin-submit-btn:hover { background: #1c63e0; }
-    .admin-form-title { font-size: var(--fs-subheading); font-weight: 800; color: #222; margin-bottom: 10px; }
-
-    /* calendar.js가 만드는 카드 안에 끼워넣는 [수정]/[삭제] 버튼 (calCardExtra 훅으로 삽입) */
-    .cal-card-actions { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
-    .cal-card-actions button { background: none; border: none; font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 4px; }
-    .cal-card-actions .edit-btn { color: var(--color-primary); }
-    .cal-card-actions .edit-btn:hover { text-decoration: underline; }
-    .cal-card-actions .delete-btn { color: var(--color-lose); }
-    .cal-card-actions .delete-btn:hover { text-decoration: underline; }
-
-    .admin-tool-row .edit-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--color-primary); cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
-    .admin-tool-row .edit-btn:hover { text-decoration: underline; }
-
-    /* 도구 관리 탭 / 장기 일정 목록: 항목을 행으로 나열 + 오른쪽에 수정/삭제 버튼 */
-    .admin-tool-list { display: flex; flex-direction: column; gap: 8px; }
-    .admin-tool-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; }
-    .admin-tool-row img { width: 24px; height: 24px; border-radius: 4px; object-fit: contain; flex-shrink: 0; }
-    .admin-tool-info { min-width: 0; flex: 1; }
-    .admin-tool-name { font-weight: 800; font-size: var(--fs-body); color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .admin-tool-url { font-size: 11px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .admin-tool-detail { font-size: 12px; font-weight: 500; color: var(--color-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-    .admin-tool-row .delete-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--color-lose); cursor: pointer; padding: 4px 6px; flex-shrink: 0; }
-    .admin-tool-row .delete-btn:hover { text-decoration: underline; }
-
-    /* 상단바 메뉴 표시/숨김 - 도구 관리의 행(.admin-tool-row)을 그대로 쓰고 체크박스만 얹는다 */
-    .admin-nav-list { display: flex; flex-direction: column; gap: 8px; }
-    .admin-nav-row { cursor: pointer; margin: 0; }
-    .admin-nav-row input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--color-primary); cursor: pointer; }
-    .admin-nav-state { font-size: 11px; font-weight: 800; color: var(--color-text-faint); flex-shrink: 0; }
-    .admin-nav-row.is-on .admin-nav-state { color: var(--color-primary); }
-    .admin-nav-row.is-off { opacity: 0.55; }
-
-    /* 휴방 멤버 선택 - 일정 추가 폼 하단, 스크롤 가능한 체크박스 목록 */
-    .admin-offair-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-bg-subtle); }
-    .admin-offair-list { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; }
-    .admin-offair-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
-    .admin-offair-item:hover { background: var(--color-bg-subtle); }
-    .admin-offair-item input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--color-primary); cursor: pointer; }
-    .admin-offair-item img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: var(--color-bg-subtle); flex-shrink: 0; }
-    .admin-offair-item span { font-size: var(--fs-body); font-weight: 600; color: var(--color-text-main); }
-    @media (max-width: 767.98px) { .admin-nav-toggle { display: flex; margin-left: auto; } }
+}
 </style>
 </head>
 <body>
