@@ -2,11 +2,13 @@
 {% block content %}
 <section id="page-tier" class="page-section active container">
     <div class="page-header">
-        <h1 class="page-header-title">티어표</h1>
-        {#- 명단 출처를 밝혀둔다. 이 표는 우리가 매기는 게 아니라 시너지가 매일 정리해
-            공개하는 것을 그대로 읽어온다. -#}
-        <p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
-            <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
+        <div class="page-header-main">
+            <h1 class="page-header-title">티어표</h1>
+            {#- 명단 출처를 밝혀둔다. 이 표는 우리가 매기는 게 아니라 시너지가 매일 정리해
+                공개하는 것을 그대로 읽어온다. -#}
+            <p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
+                <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
+        </div>
         <div class="sub-tabs tab-scroll" role="tablist">
             <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true" onclick="switchTierView('list')">티어표</div>
             <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>

@@ -329,6 +329,7 @@
         const container = document.getElementById(containerId);
         if (!container) return;
         const items = calEventsForDate(dateStr);
+        container.classList.toggle('is-empty', items.length === 0);
         const eventsHtml = items.length
             ? items.map(item => calEventCardHtml(item, dateStr, type)).join('')
             : `<div class="cal-no-schedule">${emptyText}</div>`;
@@ -355,7 +356,10 @@
     const calRenderSelectedDateSchedules = () => {
         if (!calSelectedDateStr) {
             const container = document.getElementById('selectedDateList');
-            if (container) container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`;
+            if (container) {
+                container.classList.add('is-empty');
+                container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`;
+            }
             return;
         }
         calSetDayLabel('selectedDateLabel', calSelectedDateStr);

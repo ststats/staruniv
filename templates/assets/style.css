@@ -3427,6 +3427,13 @@ body {
 
 .page-header > * { position: relative; z-index: 1; }
 
+.page-header-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+}
+
 .page-header-title {
     font-size: clamp(42px, 4.4vw, 56px);
     letter-spacing: -.04em;
@@ -3964,7 +3971,7 @@ body {
     margin-top: 0;
 }
 
-#page-members .page-header::before, #page-records .page-header::before, #page-schedule .page-header::before, #page-stats .page-header::before, #page-tier .page-header::before, #page-tools .page-header::before {
+#page-members .page-header-main::before, #page-records .page-header-main::before, #page-schedule .page-header-main::before, #page-stats .page-header-main::before, #page-tier .page-header-main::before, #page-tools .page-header-main::before {
     display: block;
     margin-bottom: 7px;
     color: #75a8ff;
@@ -3974,27 +3981,27 @@ body {
     letter-spacing: .16em;
 }
 
-#page-schedule .page-header::before {
+#page-schedule .page-header-main::before {
     content: "SCHEDULE";
 }
 
-#page-members .page-header::before {
+#page-members .page-header-main::before {
     content: "ROSTER";
 }
 
-#page-records .page-header::before {
+#page-records .page-header-main::before {
     content: "RECORDS";
 }
 
-#page-stats .page-header::before {
+#page-stats .page-header-main::before {
     content: "BROADCAST ANALYTICS";
 }
 
-#page-tier .page-header::before {
+#page-tier .page-header-main::before {
     content: "STARCRAFT RANKING";
 }
 
-#page-tools .page-header::before {
+#page-tools .page-header-main::before {
     content: "UTILITY CONSOLE";
 }
 
@@ -6832,6 +6839,16 @@ tbody tr:first-child .synergy-bar i {
 #page-schedule .cal-selected-card-wrapper .cal-card-detail,
 #page-schedule .cal-selected-card-wrapper .cal-no-schedule { color: var(--color-text-sub); }
 #page-schedule .cal-selected-card-wrapper .cal-selected-card + .cal-selected-card { border-top-color: var(--color-bg-subtle); }
+#page-schedule .cal-selected-list.is-empty {
+    min-height: 104px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#page-schedule .cal-selected-list.is-empty .cal-no-schedule {
+    width: 100%;
+    text-align: center;
+}
 #page-schedule .cal-selected-card-wrapper .cal-offair-section { border-top-color: var(--color-bg-subtle); }
 #page-schedule .cal-selected-card-wrapper .cal-offair-label { color: var(--color-text-sub); }
 #page-schedule .cal-selected-card-wrapper .cal-offair-chip { background: var(--color-bg-subtle); }
