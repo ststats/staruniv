@@ -3399,7 +3399,8 @@ body {
 }
 
 .page-header {
-    margin: -34px calc(50% - 50vw) 30px;
+    /* 홈 히어로와 같은 하단 여백: 히어로 30px + 본문 상단 24px */
+    margin: -34px calc(50% - 50vw) calc(30px + var(--space-page-top));
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -3458,14 +3459,16 @@ body {
     clip-path: polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
 }
 
-/* 페이지 타이틀 히어로 하단에 서브탭을 걸쳐 하나의 내비게이션 영역으로 보이게 한다. */
+/* 서브탭은 제목·설명 아래의 정상 흐름에 둔다. absolute로 걸치면
+   히어로 높이가 짧을 때 영어 라벨/제목과 겹친다. */
 .page-header > .sub-tabs,
 .page-header-main > .sub-tabs {
-    position: absolute;
-    z-index: 2;
-    left: max(32px, calc((100vw - 1240px) / 2 + 40px));
-    bottom: 24px;
-    margin-top: 0;
+    position: relative;
+    z-index: 1;
+    left: auto;
+    bottom: auto;
+    align-self: flex-start;
+    margin-top: 22px;
     margin-bottom: 0;
     background: transparent;
 }
@@ -6190,6 +6193,7 @@ tbody tr:first-child .synergy-bar i {
 }
 
 #page-home > .container {
+    /* 홈 히어로와 다음 콘텐츠 사이의 기준 여백 */
     padding-top: var(--space-page-top);
 }
 
@@ -6933,7 +6937,12 @@ tbody tr:first-child .synergy-bar i {
     .page-header-with-stats { display: flex; flex-direction: column; padding-right: 24px; }
     .page-header-with-stats .page-header-stats { top: 24px; right: 24px; }
     .page-header > .sub-tabs,
-    .page-header-main > .sub-tabs { left: 24px; bottom: 18px; }
+    .page-header-main > .sub-tabs {
+        left: auto;
+        bottom: auto;
+        align-self: flex-start;
+        margin-top: 18px;
+    }
     .page-header-with-stats .head-stat { height: auto; min-height: 38px; padding: 5px 7px; }
     .page-header-with-stats .head-stat-label { font-size: 7px; margin-bottom: 3px; }
     .page-header-with-stats .page-header-subtitle { font-size: 12px; }
