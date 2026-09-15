@@ -61,7 +61,7 @@ function mvOrderItemHtml(entry, idx, order, focus, focusEntryId, detailed = fals
         const name = mvSharedEscapeHTML(entry.name);
         return `<div class="mv-order-detail${isFocusTarget ? ' focus-target' : ''}">
             <span class="mv-order-position">${String(idx + 1).padStart(2, '0')}</span>
-            <div class="mv-order-identity"><strong>${name}</strong><span>${mvSharedEscapeHTML(entry.soopId)}${entry.isMember ? '' : ' · 직접 추가'}</span></div>
+            <div class="mv-order-identity"><strong>${name}</strong></div>
             ${focus ? `<button type="button" class="mv-order-focus" aria-pressed="${isFocusTarget}" aria-label="${name} 메인 방송으로 선택" onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')">${isFocusTarget ? '메인' : '메인으로'}</button>` : ''}
             <div class="mv-order-actions">
                 <button type="button" aria-label="${name} 위로 이동" onclick="mvMove(${idx}, -1)" ${isFirst ? 'disabled' : ''}>↑</button>
