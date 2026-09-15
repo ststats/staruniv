@@ -2955,7 +2955,15 @@ html[data-theme="dark"] .home-notice-card:hover {
 .rider-actions {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 14px;
+}
+
+.rider-actions .btn-view-all {
+    gap: 4px;
+}
+
+.rider-actions .ext-arrow {
+    margin-left: 0;
 }
 
 a.btn-view-all {
