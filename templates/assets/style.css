@@ -4590,13 +4590,29 @@ html[data-theme="dark"] .mv-chip-box, html[data-theme="dark"] .mv-order-row {
         min-height: 158px;
     }
 
+    .cal-main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
     .cal-sidebar {
-        grid-template-columns: 1fr;
-        gap: 18px;
+        display: contents;
+    }
+
+    .cal-today-card-wrapper {
+        order: 1;
+        width: 100%;
     }
 
     .cal-calendar-area {
-        order: 0;
+        order: 2;
+        width: 100%;
+    }
+
+    .cal-selected-card-wrapper {
+        order: 3;
+        width: 100%;
     }
 
     .tier-grid {
