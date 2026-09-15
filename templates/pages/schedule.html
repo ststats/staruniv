@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
-<section id="page-schedule" class="page-section active container">
+<section id="page-schedule" class="page-section active">
     <div class="page-header">
-        <div class="page-header-main">
+        <div class="page-header-main" data-label="SCHEDULE">
             <h1 class="page-header-title">일정</h1>
             <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 일정입니다.</p>
         </div>
     </div>
-    <hr class="page-header-divider">
+    <div class="container">
     <div class="cal-app-root">
         <div class="cal-main-layout">
             <!-- 모바일 분리용 사이드바 -->
@@ -59,6 +59,7 @@
                 </div>
             </section>
         </div>
+    </div>
     </div>
 </section>
 {% endblock %}

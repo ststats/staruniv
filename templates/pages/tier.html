@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
-<section id="page-tier" class="page-section active container">
+<section id="page-tier" class="page-section active">
     <div class="page-header">
-        <div class="page-header-main">
+        <div class="page-header-main" data-label="STARCRAFT RANKING">
             <h1 class="page-header-title">티어표</h1>
             {#- 명단 출처를 밝혀둔다. 이 표는 우리가 매기는 게 아니라 시너지가 매일 정리해
                 공개하는 것을 그대로 읽어온다. -#}
@@ -14,7 +14,7 @@
             <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>
         </div>
     </div>
-    <hr class="page-header-divider tight">
+    <div class="container">
 
     {#- 소분류: 티어표 / 분석. 멤버 페이지의 현황/공지 탭과 같은 모양(.sub-tabs)을 쓴다. -#}
     <div id="view-tier-list">
@@ -48,6 +48,7 @@
 
     <div id="view-tier-analysis" class="d-none">
         <div class="tier-empty">준비 중입니다.</div>
+    </div>
     </div>
 </section>
 {% endblock %}

@@ -32,6 +32,7 @@ function switchMemberView(viewType, skipHashUpdate) {
             // 숨겨져 있던 동안 그려졌거나 창 크기가 바뀌었으면 레이아웃(PC/모바일)을 다시 맞춘다.
             refreshNewsLayoutIfNeeded();
         }
+        safeInit('사이드바 방송 상태', refreshSidebarLiveIndicators);
     }
     if (!skipHashUpdate) updateMembersHash();
 }
@@ -574,7 +575,7 @@ const NEWS_ALLOWED_TAGS = [
 
 const NEWS_ALLOWED_ATTR = ['href', 'target', 'title', 'style', 'align', 'color', 'size', 'face', 'colspan', 'rowspan', 'dir', 'lang'];
 
-const NEWS_STRIPPED_STYLE_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'inset', 'z-index', 'transform'];
+const NEWS_STRIPPED_STYLE_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'inset', 'z-index', 'transform', 'color', 'background', 'background-color', '-webkit-text-fill-color'];
 
 // DOMPurify를 쓸 수 없을 때: 문단/줄바꿈만 살린 순수 텍스트(.news-post-body가 pre-wrap이라 줄바꿈이 보인다)
 function newsPlainTextFragment(html) {
@@ -600,6 +601,11 @@ function sanitizeNewsFragment(html) {
     });
     // 사진(figure)은 카드 하단 갤러리(post.photos)가 따로 보여주므로 본문에서는 캡션까지 통째로 뺀다.
     frag.querySelectorAll('figure').forEach(el => el.remove());
+    // 외부 에디터의 고정 글자/배경색은 사이트 테마를 따르게 한다.
+    frag.querySelectorAll('[color], [bgcolor]').forEach(el => {
+        el.removeAttribute('color');
+        el.removeAttribute('bgcolor');
+    });
     frag.querySelectorAll('[style]').forEach(el => {
         NEWS_STRIPPED_STYLE_PROPS.forEach(prop => el.style.removeProperty(prop));
         if (!el.getAttribute('style').trim()) el.removeAttribute('style');

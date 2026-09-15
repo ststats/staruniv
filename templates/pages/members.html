@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
-<section id="page-members" class="page-section active container">
+<section id="page-members" class="page-section active">
     {#- [리디자인] 시안대로 머리 오른쪽에 ACTIVE / ON AIR 두 칸.
         현황 탭과 공지 탭이 같은 머리를 쓰게 되어 두 탭을 오갈 때 화면이 덜 튄다.
         숫자는 page-members.js가 채운다(ACTIVE = 활동 멤버 수, ON AIR = 방송 중). #}
     <div class="page-header page-header-with-stats">
-        <div class="page-header-main">
+        <div class="page-header-main" data-label="ROSTER">
             <h1 class="page-header-title">멤버</h1>
             <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식입니다.</p>
-        </div>
-        <div class="page-header-stats">
-            <div class="head-stat head-stat-ink">
-                <div class="head-stat-label">ACTIVE</div>
-                <div class="head-stat-value" id="member-count-active">-</div>
-            </div>
-            <div class="head-stat">
-                <div class="head-stat-label">ON AIR</div>
-                <div class="head-stat-value head-stat-live" id="member-count-live">-</div>
+            <div class="page-header-stats">
+                <div class="head-stat head-stat-ink">
+                    <div class="head-stat-label">ACTIVE</div>
+                    <div class="head-stat-value" id="member-count-active">-</div>
+                </div>
+                <div class="head-stat">
+                    <div class="head-stat-label">ON AIR</div>
+                    <div class="head-stat-value head-stat-live" id="member-count-live">-</div>
+                </div>
             </div>
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
@@ -24,7 +24,7 @@
             <div class="sub-tab" id="tab-member-news" role="tab" tabindex="0" aria-selected="false" onclick="switchMemberView('news')">공지</div>
         </div>
     </div>
-    <hr class="page-header-divider tight">
+    <div class="container">
     <div id="view-member-status">
         <div id="members-groups"></div>
     </div>
@@ -45,6 +45,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </section>
 {% endblock %}

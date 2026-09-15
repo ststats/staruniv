@@ -108,6 +108,7 @@ window.addEventListener('resize', () => { if (window.innerWidth > 767.98) toggle
 function applyTheme(theme) {
     const dark = theme === 'dark';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.documentElement.dataset.bsTheme = dark ? 'dark' : 'light';
     document.querySelectorAll('[data-theme-choice]').forEach(button => {
         const selected = button.dataset.themeChoice === (dark ? 'dark' : 'light');
         button.classList.toggle('active', selected);
@@ -272,11 +273,23 @@ async function refreshSidebarLiveIndicators() {
     const dots = Array.from(document.querySelectorAll('.avatar-select-live[data-soop-id]'));
     if (!dots.length) return;
     const ids = [...new Set(dots.map(dot => dot.dataset.soopId).filter(Boolean))];
-    const results = await Promise.allSettled(ids.map(id => checkIsLiveRealtime(id)));
-    const live = new Set(ids.filter((id, i) => results[i].status === 'fulfilled' && results[i].value));
-    document.querySelectorAll('.avatar-select-live[data-soop-id]').forEach(dot => {
-        dot.hidden = !live.has(dot.dataset.soopId);
-    });
+    const update = (id, live) => {
+        document.querySelectorAll('.avatar-select-live[data-soop-id]').forEach(dot => {
+            if (dot.dataset.soopId === id) dot.hidden = !live;
+        });
+    };
+    // 티어표와 같은 일괄 조회를 사용한다. 개별 SOOP 요청 하나가 지연되어도
+    // 전체 사이드바가 Promise.all 종료를 기다리며 빈 상태로 남지 않는다.
+    try {
+        const res = await fetch(`https://synergy.ststats.workers.dev/?ids=${encodeURIComponent(ids.join(','))}`, { signal: AbortSignal.timeout(6000) });
+        if (!res.ok) throw new Error(`Live status: ${res.status}`);
+        const data = await res.json();
+        if (!data || typeof data.live !== 'object' || data.live === null) throw new Error('Invalid live status');
+        const live = new Set(Object.entries(data.live).filter(([, info]) => info && info.broad_no).map(([id]) => id.toLowerCase()));
+        ids.forEach(id => update(id, live.has(id.toLowerCase())));
+    } catch (_) {
+        await Promise.allSettled(ids.map(async id => update(id, Boolean(await checkIsLiveRealtime(id)))));
+    }
 }
 
 // =====================================================================
@@ -763,24 +776,22 @@ const PageState = {
 // 실패하면(파일 없음/깨짐/오프라인) 아무것도 건드리지 않는다 - 메뉴가 사라지는 쪽보다
 // HTML에 이미 박혀 있는 상태를 그대로 두는 쪽이 안전한 실패다.
 async function applyNavVisibility() {
-    let hidden;
     try {
-        const res = await fetch('data/nav.json', { cache: 'no-cache' });
+        const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data && data.hidden)) return;
-        hidden = new Set(data.hidden.map(String));
-    } catch (e) {
-        return;   // 조용히 포기 - 빌드가 넣어둔 상태가 이미 정답에 가깝다
+        const hidden = new Set(data.hidden.map(String));
+        document.querySelectorAll('.top-navbar .nav-item[data-page]').forEach(el => {
+            el.hidden = hidden.has(el.dataset.page);
+        });
+        const menu = document.getElementById('mainMenu');
+        if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
+    } catch (_) {
+        // 실패하면 빌드에 저장된 메뉴 상태를 유지한다.
+    } finally {
+        delete document.documentElement.dataset.navPending;
     }
-    document.querySelectorAll('.top-navbar .nav-item[data-page]').forEach(el => {
-        // 지금 보고 있는 페이지의 메뉴는 숨기지 않는다 - 여기까지 왔는데 어디 있는지
-        // 알려주는 표시만 사라지면 길을 잃는다(주소로 직접 들어온 경우도 마찬가지).
-        el.hidden = hidden.has(el.dataset.page) && !el.classList.contains('active');
-    });
-    // 메뉴 개수가 바뀌면 넘침 여부도 바뀌므로 끝 흐림을 다시 잰다.
-    const menu = document.getElementById('mainMenu');
-    if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
 }
 
 // 페이지 시작: 사이트 데이터(멤버/경기 등)를 먼저 불러온 뒤 페이지별 초기화를 실행한다.

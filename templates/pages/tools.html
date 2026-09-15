@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <!-- 도구 페이지 -->
-<section id="page-tools" class="page-section active container">
+<section id="page-tools" class="page-section active">
     <div class="page-header">
-        <div class="page-header-main">
+        <div class="page-header-main" data-label="UTILITY CONSOLE">
             <h1 class="page-header-title">도구</h1>
             <p class="page-header-subtitle">자주 쓰는 도구 모음입니다.</p>
         </div>
@@ -13,7 +13,7 @@
             <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('external')">외부도구</div>
         </div>
     </div>
-    <hr class="page-header-divider tight">
+    <div class="container">
     <!-- 1. 멀티뷰어 뷰 -->
     <div id="view-tools-multiviewer">
         <div class="section-title" data-en="SETUP">설정</div>
@@ -61,7 +61,6 @@
         </div>
         <div>
         <div class="section-title" data-en="ORDER">선택된 목록 <span class="title-count" id="mv-order-count">0명</span></div>
-        <p class="mv-order-help" id="mv-order-help"></p>
         <div class="mv-order-row" id="mv-order-row" aria-label="선택된 방송 목록"></div>
         </div>
         </div>
@@ -94,6 +93,7 @@
 
         <div class="section-title section-title-spaced" data-en="SITES">사이트</div>
         <div class="tool-grid" id="tools-grid-extSites"></div>
+    </div>
     </div>
 </section>
 {% endblock %}

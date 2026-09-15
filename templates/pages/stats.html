@@ -1,13 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
 <!-- 시너지표: ststats(외부) 데이터에서 우리 로스터만 뽑아 방송 활동 랭킹 표시 -->
-<section id="page-stats" class="page-section active container">
+<section id="page-stats" class="page-section active">
     {#- [리디자인] 갱신 시각은 시안처럼 머리 오른쪽 칸으로 올린다.
         예전엔 페이지 맨 아래 회색 한 줄이라 "옛 디자인의 잔재"처럼 떠 있었다. #}
     <div class="page-header page-header-with-stats">
-        <div class="page-header-main">
+        <div class="page-header-main" data-label="BROADCAST ANALYTICS">
             <h1 class="page-header-title">방송통계</h1>
             <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다.</p>
+            <div class="page-header-stats">
+                <div class="head-stat head-stat-wide">
+                    <div class="head-stat-label">UPDATED</div>
+                    <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
+                </div>
+            </div>
         </div>
         <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
             <div class="sub-tab active" data-metric="balloons" role="tab" tabindex="0" aria-selected="true" onclick="setSynergyMetric('balloons')">별풍선</div>
@@ -15,14 +21,8 @@
             <div class="sub-tab" data-metric="cumulative_viewers" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('cumulative_viewers')">누적시청자</div>
             <div class="sub-tab" data-metric="sponsor" role="tab" tabindex="0" aria-selected="false" onclick="setSynergyMetric('sponsor')">스폰전적</div>
         </div>
-        <div class="page-header-stats">
-            <div class="head-stat head-stat-wide">
-                <div class="head-stat-label">UPDATED</div>
-                <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
-            </div>
-        </div>
     </div>
-    <hr class="page-header-divider tight">
+    <div class="container">
     <div class="section-title" data-en="SUMMARY">전체 요약</div>
     {#- [리디자인] 시안대로 표 위에 잉크 요약 타일 3개. 지금 고른 지표의 합계 / 1위 /
         집계 인원을 보여준다. 숫자는 page-stats.js가 표를 그릴 때 같이 채운다.
@@ -68,6 +68,7 @@
         {%- endfor %}
     </div>
 
+    </div>
 </section>
 {% endblock %}
 {% block scripts %}
