@@ -890,21 +890,26 @@ html[data-theme="dark"] .home-notice-card:hover {
 }
 
 .btn-view-all {
-    background: #141821;
-    border: none;
-    font-size: 12px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.22);
+    font-size: 11px;
     font-weight: 700;
-    color: #c5cfdf;
-    padding: 4px 8px;
+    color: #fff;
+    padding: 0 10px;
     border-radius: 0;
-    clip-path: polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
+    clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     cursor: pointer;
     transition: 0.15s;
 }
 
 .btn-view-all:hover {
-    background: var(--color-bg-subtle);
-    color: var(--color-text-dark);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
 }
 
 .filter-nav-label {
@@ -1575,20 +1580,22 @@ html[data-theme="dark"] .home-notice-card:hover {
     align-items: center;
     gap: 5px;
     min-height: 40px;
-    background: #141821;
-    border: 0;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.22);
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     font-size: var(--fs-body);
     font-weight: 700;
-    color: #c5cfdf;
-    padding: 8px 18px;
+    color: #fff;
+    padding: 0 12px;
+    height: 36px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
 
 .news-load-more:hover {
     background: var(--color-primary);
+    border-color: var(--color-primary);
     color: #fff;
 }
 
@@ -3405,7 +3412,7 @@ body {
     background: var(--color-ink, #141821);
     color: #fff;
     border-bottom: 4px solid var(--color-primary);
-    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+    clip-path: none;
 }
 
 .page-header::after {
@@ -3565,6 +3572,7 @@ body {
     background: #141821;
     border-bottom: 4px solid var(--color-primary);
     margin: 0 0 30px;
+    clip-path: none;
 }
 
 .home-carousel::after {
@@ -3943,7 +3951,7 @@ body {
 #page-members .page-header::before, #page-records .page-header::before, #page-schedule .page-header::before, #page-stats .page-header::before, #page-tier .page-header::before, #page-tools .page-header::before {
     display: block;
     margin-bottom: 7px;
-    color: #7e8aa0;
+    color: #75a8ff;
     font-family: "Chakra Petch",sans-serif;
     font-size: 10px;
     font-weight: 700;
@@ -4636,8 +4644,9 @@ html[data-theme="dark"] .mv-chip-box, html[data-theme="dark"] .mv-order-row {
 }
 
 .btn-view-all:hover {
-    background: #eef4ff;
-    color: #1c5fe0;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
 }
 
 .tag-badge.role-badge {
@@ -5964,7 +5973,7 @@ tbody tr:first-child .synergy-bar i {
     display: block;
     order: 0;
     margin-bottom: 7px;
-    color: #7e8aa0;
+    color: #75a8ff;
     font-family: "Chakra Petch", sans-serif;
     font-size: 10px;
     font-weight: 700;
@@ -6095,7 +6104,7 @@ tbody tr:first-child .synergy-bar i {
 .cal-event-person, .cal-event-time {
     font-size: 9px;
     font-weight: 600;
-    color: rgba(255,255,255,.72);
+    color: #fff;
     font-family: var(--font-num);
 }
 
@@ -6852,7 +6861,7 @@ tbody tr:first-child .synergy-bar i {
 }
 @media (max-width: 767.98px) {
     .page-header-with-stats {
-        padding-right: 206px;
+        padding-right: 24px;
         flex-wrap: nowrap;
     }
     .page-header-with-stats .page-header-stats {
@@ -6883,7 +6892,7 @@ tbody tr:first-child .synergy-bar i {
 #page-schedule .cal-selected-card-wrapper .cal-day-card-date { border-bottom-color: var(--color-border); }
 #page-schedule .cal-card-time, #page-schedule .cal-card-person, #page-schedule .cal-card-desc { font-size: 13px; line-height: 1.35; }
 #page-schedule .cal-card-time { font-weight: 700; }
-.page-header-with-stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 0; column-gap: 16px; padding-right: 0; align-items: start; }
+.page-header-with-stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 0; column-gap: 16px; padding-right: max(32px, calc((100vw - 1240px) / 2 + 40px)); align-items: start; }
 .page-header-with-stats .page-header-main { display: contents; }
 .page-header-with-stats .page-header-main::before { grid-column: 1; grid-row: 1; margin-bottom: 7px; }
 .page-header-with-stats .page-header-title { grid-column: 1; grid-row: 2; align-self: center; }
