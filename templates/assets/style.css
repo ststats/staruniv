@@ -3465,6 +3465,7 @@ body {
 .page-header-main > .sub-tabs {
     position: relative;
     z-index: 1;
+    order: 3;
     left: auto;
     bottom: auto;
     align-self: flex-start;
