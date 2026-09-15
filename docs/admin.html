@@ -46,26 +46,28 @@
        최소폭까지 줄고 캘린더가 내부 스크롤되는 걸 유지한다.
        좌우 배치도 사이드바 왼쪽/캘린더 오른쪽으로 맞춘다. */
     .admin-layout { display: flex; gap: 24px; align-items: flex-start; width: 100%; min-width: 0; }
-    .admin-main { flex: 0 1 804px; min-width: 0; width: auto; order: 2; }
-    .admin-main .cal-main-layout { width: 100%; min-width: 0; }
+    .admin-main { flex: 1 1 700px; min-width: 0; width: auto; order: 0; }
+    .admin-main .cal-main-layout { display: block; width: 100%; min-width: 0; }
     .admin-main .cal-calendar-area { min-width: 0; }
-    .admin-side { min-width: 280px; flex-grow: 1; flex-shrink: 50; flex-basis: 360px; display: flex; flex-direction: column; gap: 20px; order: 1; }
+    .admin-side { min-width: 0; flex: 0 0 300px; display: flex; flex-direction: column; gap: 20px; order: 1; }
     @media (max-width: 888px) {
         .admin-layout { flex-direction: column; }
-        .admin-side { width: 100%; }
+        .admin-side, .admin-main { width: 100%; flex: none; }
     }
 
     .admin-token-bar { display: flex; gap: 8px; flex-wrap: wrap; }
     .admin-token-bar input { flex: 1 1 160px; min-width: 0; }
     /* 큰 타이틀(h1) 오른쪽에 저장 버튼을 나란히 두는 헤더 줄 - 일정/도구 탭에서 공용으로 씀 */
-    .admin-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .admin-header-row .page-header-title { margin-bottom: 0; }
+    .admin-header-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px 12px; }
+    .admin-header-row::before { grid-column: 1; grid-row: 1; margin: 0; }
+    .admin-header-row .page-header-title { grid-column: 1; grid-row: 2; margin-bottom: 0; order: 0; }
+    .admin-header-row > button { grid-column: 2; grid-row: 2; }
     .admin-token-bar input {
         flex: 1; height: 40px; padding: 0 12px; border: 1px solid var(--color-border);
         border-radius: 8px; font-size: var(--fs-body); font-family: inherit;
     }
     .admin-token-bar input:focus { outline: none; border-color: var(--color-primary); }
-    .btn-solid { height: 40px; padding: 0 16px; border: none; border-radius: 8px; font-size: var(--fs-body); font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+    .btn-solid { height: 40px; padding: 0 16px; border: none; border-radius: 0; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); font-size: var(--fs-body); font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
     .btn-solid:hover { opacity: 0.85; }
     .btn-solid:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-solid-dark { background: var(--color-text-main); color: #fff; }
@@ -74,6 +76,7 @@
 
     .admin-form-row { display: flex; gap: 8px; margin-bottom: 8px; }
     .admin-form-row input, .admin-form-row select, .admin-form-row textarea {
+        min-width: 0;
         width: 100%; padding: 0 12px; height: 42px; border: 1px solid var(--color-border);
         border-radius: 8px; font-size: var(--fs-body); font-family: inherit; box-sizing: border-box;
         background: #fff; color: var(--color-text-main);
@@ -192,16 +195,27 @@
         <!-- 왼쪽: 사이트 캘린더 페이지랑 완전히 동일한 구조/클래스 -->
         <div class="admin-main">
             <div class="cal-app-root">
-                <div class="cal-main-layout" style="flex-direction: column;">
+                <div class="cal-main-layout">
                     <section class="cal-calendar-area" id="captureMonth" style="width: 100%;">
                         <div class="section-title" data-en="MONTHLY SCHEDULE">
                             <span class="section-title-label">이달의 일정</span>
                         </div>
-                        <div class="clean-card p-3">
+                        <div class="clean-card cal-card p-0">
+                    <div class="cal-month-bar hatch">
+                        <div class="cal-month-id">
+                            <div class="cal-month-year" id="monthYear">&nbsp;</div>
+                            <div class="cal-month-name" id="monthName">&nbsp;</div>
+                        </div>
+                        <div class="cal-nav-group">
+                            <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                            <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        </div>
+                    </div>
                             <div class="cal-calendar-inner scroll-area">
                                 <div class="cal-calendar-scroll-content">
                                     <div class="cal-weekdays">
-                                        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                                        <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
                                     </div>
                                     <div class="cal-days-grid" id="daysGrid"></div>
                                 </div>
@@ -214,16 +228,18 @@
 
         <!-- 오른쪽: 오늘의 일정 / 선택한 날짜 + 일정 편집 폼 (전부 어드민 전용) -->
         <aside class="admin-side">
-            <div id="captureToday">
-                <div class="section-title">오늘의 일정</div>
-                <div class="clean-card p-4">
+            <div id="captureToday" class="cal-today-card-wrapper">
+                <div class="section-title" data-en="TODAY">오늘의 일정</div>
+                <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
+                    <div class="cal-day-card-date" id="todayDateLabel"></div>
                     <div class="cal-today-list scroll-area" id="todayList"></div>
                 </div>
             </div>
 
-            <div>
-                <div class="section-title" id="selectedListTitle">선택한 날짜 일정</div>
-                <div class="clean-card p-4">
+            <div class="cal-selected-card-wrapper">
+                <div class="section-title" id="selectedListTitle" data-en="SELECTED">선택한 날짜 일정</div>
+                <div class="clean-card p-4 cal-day-card">
+                    <div class="cal-day-card-date" id="selectedDateLabel"></div>
                     <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
                 </div>
             </div>
@@ -1075,7 +1091,7 @@
     };
 
     const init = async () => {
-        await Promise.all([loadPublicHolidays(), loadMembersData()]);
+        await Promise.all([loadPublicHolidays(), loadMembersData(), calLoadPublicData()]);
 
         const today = new Date();
         const todayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
