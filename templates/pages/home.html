@@ -1,75 +1,89 @@
-{% extends 'base.html' %}
-{% block head_scripts %}
-    <script>
-        // 예전 SPA 시절 GitHub Pages 404 우회가 만들던 주소(/?/records&view=solo)로 들어오면
-        // 새 실제 페이지 주소(records/?view=solo)로 옮겨준다. (옛 링크 호환용 - 새로 생기지는 않는다)
-        (function (l) {
-            if (l.search[1] !== '/') return;
-            var decoded = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&'); }).join('?');
-            var path = decoded.slice(1), q = path.indexOf('?');
-            var page = (q === -1 ? path : path.slice(0, q)).replace(/\/+$/, '');
-            l.replace(l.pathname + (page ? page + '/' : '') + (q === -1 ? '' : path.slice(q)) + l.hash);
-        }(window.location));
-    </script>
-{% endblock %}
+{% extends "base.html" %}
+
 {% block content %}
-{#- [리디자인] 히어로가 화면 끝까지 닿아야 해서 .container를 섹션에서 떼고 본문만 감싼다.
-    .container에는 max-width(1240px)가 걸려 있어서, 안에 두면 음수 마진으로도 그 바깥까지
-    나갈 수 없다(좌우에 100px씩 여백이 남는다). #}
-<section id="page-home" class="page-section active">
-    {#- [리디자인] 가운데 워드마크 카드 하나였던 첫 화면을 넘기는 칸으로 바꿨다.
-        한 장이 페이지 하나를 설명하고 바로가기를 갖는다. 오른쪽 칸은 최신 경기 결과인데,
-        특정 날짜를 박지 않고 page-home.js의 renderHeroMatchPreview가 항상 제일 최근
-        경기를 넣는다. 넘기기/점은 goHomeCarousel/moveHomeCarousel이 담당한다. #}
-    <section class="home-carousel nc" aria-label="스타대학 안내" aria-roledescription="carousel">
-        <div class="home-carousel-track" id="home-carousel-track">
-            <article class="home-carousel-slide">
-                <div class="home-hero-kicker">CALMMON STARZ · STAR UNIVERSITY</div>
-                <h1><span>스타</span><i>대학</i></h1>
-                <p>캄몬스타즈의 현황, 일정, 전적을 한곳에서 확인하세요.</p>
-                <div class="home-hero-links"><a href="schedule/">일정 보기 <span aria-hidden="true">↗</span></a></div>
-                <aside class="home-carousel-preview nc" data-preview="0" aria-live="polite">
-                    <div class="home-preview-label">LATEST MATCH</div>
-                    <div class="home-preview-loading">최근 경기를 불러오는 중...</div>
-                </aside>
-            </article>
-            <article class="home-carousel-slide">
-                <div class="home-hero-kicker">RECORDS · TEAM &amp; PLAYER</div>
-                <h1>전적<i>아카이브</i></h1>
-                <p>캄몬스타즈의 팀 전적과 개인별 기록을 세트 단위로 정리합니다.</p>
-                <div class="home-hero-links"><a href="records/">전적 보기 <span aria-hidden="true">↗</span></a></div>
-                <aside class="home-carousel-preview nc" data-preview="1"></aside>
-            </article>
-            <article class="home-carousel-slide">
-                <div class="home-hero-kicker">LIVE · ROSTER · RANKING</div>
-                <h1>멤버<i>현황</i></h1>
-                <p>방송 중인 멤버와 최신 공지를 확인하세요.</p>
-                <div class="home-hero-links"><a href="members/">멤버 보기 <span aria-hidden="true">↗</span></a></div>
-                <aside class="home-carousel-preview nc" data-preview="2"></aside>
-            </article>
-        </div>
-        <div class="home-carousel-controls"><button type="button" onclick="moveHomeCarousel(-1)" aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" onclick="goHomeCarousel(0)"></button><button type="button" aria-label="2번 안내" onclick="goHomeCarousel(1)"></button><button type="button" aria-label="3번 안내" onclick="goHomeCarousel(2)"></button></div><button type="button" onclick="moveHomeCarousel(1)" aria-label="다음 안내">›</button></div>
-    </section>
-    <div class="container">
-    <div class="section-title" data-en="ON AIR">방송 중</div>
-    {#- [리디자인] 카드들을 감싸던 흰 박스를 없앴다. 카드가 이미 흰 면이라 박스 안에
-        카드를 또 넣으면 흰 면이 두 겹이 되고 좌우로 16px씩 더 들여쓰인다. #}
-    <div id="home-live-broadcast" aria-live="polite">
-        <div class="clean-card text-center text-muted py-4 fs-body">실시간 방송 상태 연동 준비중입니다.</div>
+<!-- 히어로 섹션 (1~8, 10, 11, 12, 33, 34번 적용) -->
+<section class="hero-section">
+  <div class="hero-container">
+    <div class="hero-header">
+      <!-- 1, 2번: '캄몬스타즈의', '현황, 일정, 전적' -->
+      <span class="hero-badge">캄몬스타즈의 현황, 일정, 전적</span>
+      
+      <!-- 34번: '스타' 흰색, '대학' 파란색 줄바꿈 -->
+      <h1 class="hero-title">
+        <span class="title-white">스타</span><br><span class="title-blue">대학</span>
+      </h1>
+      
+      <!-- 6번: '방송 중인 멤버와 최신 공지를 확인하세요.' (티어표 내용 삭제) -->
+      <p class="hero-desc">방송 중인 멤버와 최신 공지를 확인하세요.</p>
     </div>
 
-    <div class="section-title mt-4" data-en="NOTICE">
-        최근 공지
-        <a class="btn-view-all" href="members/?view=news">전체 보기<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></a>
+    <!-- 11번: 탭 및 카드 정렬 통일 -->
+    <div class="hero-grid">
+      <!-- 10번: 스타대학 칸 - 최신전적이 아닌 오늘의 일정 표시 -->
+      <div class="hero-card cut-box">
+        <div class="card-header">
+          <h3>스타대학 오늘의 일정</h3>
+        </div>
+        <div class="card-body">
+          <ul id="heroTodayScheduleList" class="hero-schedule-list">
+            <li class="empty-msg">오늘 예정된 일정을 불러오는 중입니다...</li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <!-- 5번: '일정 보기' -->
+          <a href="/schedule/" class="btn-hero">일정 보기</a>
+        </div>
+      </div>
+
+      <!-- 최근 경기 결과 카드 (3번: 전적보기 박스 삭제 대신 매치 요약 유지, 4번: '전적 보기') -->
+      <div class="hero-card cut-box">
+        <div class="card-header">
+          <h3>최근 경기 결과</h3>
+        </div>
+        <div class="card-body" id="heroRecentMatches">
+          <p class="loading-text">최근 경기 결과를 불러오는 중입니다...</p>
+        </div>
+        <div class="card-footer">
+          <!-- 4번: '전적 보기' -->
+          <a href="/records/" class="btn-hero">전적 보기</a>
+        </div>
+      </div>
+
+      <!-- 7, 8번: 티어표 요약 박스 및 ranking 항목은 완전히 삭제됨 -->
     </div>
-    <div class="home-notice-list" id="home-notice-list" aria-live="polite">
-        <div class="clean-card text-center text-muted py-4 fs-body">불러오는 중...</div>
+  </div>
+</section>
+
+<!-- 방송 중인 멤버 섹션 (13, 14번 적용) -->
+<section class="home-live-section section-container">
+  <div class="section-header-bar">
+    <div class="header-title-group">
+      <h2>방송 중인 멤버</h2>
     </div>
-    </div>{#- /.container #}
+    <div class="header-badge-group">
+      <span class="badge-live-red" id="homeLiveCount">0명 방송중</span>
+    </div>
+  </div>
+  <div class="stream-grid" id="homeStreamGrid">
+    <!-- JS(page-home.js)에서 13번(시간 우하단), 14번(상하여백 축소) 구조로 동적 렌더링 -->
+  </div>
+</section>
+
+<!-- 최근 공지 섹션 (15번 모서리 중복 채움 방지 적용) -->
+<section class="home-notice-section section-container">
+  <div class="section-header-bar">
+    <div class="header-title-group">
+      <h2>최근 공지사항</h2>
+    </div>
+  </div>
+  <div class="notice-list-container cut-box">
+    <ul class="notice-list" id="homeNoticeList">
+      <li class="notice-item">공지사항을 불러오는 중입니다...</li>
+    </ul>
+  </div>
 </section>
 {% endblock %}
+
 {% block scripts %}
-<script src="{{ asset_url('core.js') }}"></script>
-<script src="{{ asset_url('soop.js') }}"></script>
-<script src="{{ asset_url('page-home.js') }}"></script>
+<script src="/assets/page-home.js"></script>
 {% endblock %}
