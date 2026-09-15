@@ -368,23 +368,23 @@ function onTierBarClick(event) {
     if (!btn) return;
     const target = document.getElementById(btn.dataset.target);
     if (!target) return;
-    // 얼마나 위로 띄울지는 CSS의 scroll-margin-top이 정한다(상단 메뉴 + 티어 바 높이).
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 펼친 목록 높이가 스크롤 여백으로 들어가지 않도록 먼저 접는다.
+    const bar = document.getElementById('tier-bar');
+    bar.classList.add('is-closed');
+    bar.querySelector('.tier-bar-pick')?.setAttribute('aria-expanded', 'false');
+    syncTierBarHeight();
+    window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - tierStickyOffset() - 12, behavior: 'instant' });
+    highlightTierBar();
 }
 
-// 지금 보고 있는 티어로 판정하는 가로선을, 바 바로 밑이 아니라 "바 아래 남은 화면"의
-// 이만큼 내려온 곳에 둔다. 예전엔 바 바로 밑(+8px)이라, 다음 티어의 제목이 바에 겨우
-// 걸치기만 해도 - 화면의 90%는 아직 윗 티어인데 - 아랫 티어로 넘어가지 않고 반대로
-// 윗 티어가 화면에서 거의 사라질 때까지 계속 강조됐다. 0.35면 화면의 3분의 1 이상을
-// 차지한 티어가 강조된다.
-const TIER_HIGHLIGHT_RATIO = 0.35;
+// 선택한 제목이 놓이는 고정 바 바로 아래를 활성 티어 판정선으로 사용한다.
 
 // 지금 화면을 차지하고 있는 티어 섹션의 id.
 function currentTierSectionId() {
     if (TierState.sections.length === 0) return null;
     const offset = tierStickyOffset();
     const viewport = window.innerHeight || document.documentElement.clientHeight;
-    const line = offset + Math.max(72, (viewport - offset) * TIER_HIGHLIGHT_RATIO);
+    const line = offset + 16;
 
     let currentId = TierState.sections[0].id;
     for (const sec of TierState.sections) {

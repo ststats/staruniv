@@ -14,11 +14,16 @@
     <meta property="og:url" content="https://ststats.github.io/staruniv/tier/">
     <meta property="og:image" content="https://ststats.github.io/staruniv/images/%EC%BA%84%EB%AA%AC%EC%8A%A4%ED%83%80%EC%A6%88.webp">
     <meta name="twitter:card" content="summary">
+    <script>
+        document.documentElement.dataset.navPending = '';
+        window.setTimeout(() => delete document.documentElement.dataset.navPending, 4000);
+    </script>
+    <style>html[data-nav-pending] #mainMenu { visibility: hidden; }</style>
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
-    <link rel="stylesheet" href="style.css?v=0ef9ff32a0">
+    <link rel="stylesheet" href="style.css?v=1275a42ddd">
     <meta name="site-data-version" content="8ed9592a5a">
 </head>
 <body><header class="top-navbar">
@@ -45,9 +50,9 @@
 
 <main>
 
-<section id="page-tier" class="page-section active container">
+<section id="page-tier" class="page-section active">
     <div class="page-header">
-        <div class="page-header-main">
+        <div class="page-header-main" data-label="STARCRAFT RANKING">
             <h1 class="page-header-title">티어표</h1><p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
                 <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
         </div>
@@ -56,7 +61,7 @@
             <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>
         </div>
     </div>
-    <hr class="page-header-divider tight"><div id="view-tier-list"><div class="selection-layout">
+    <div class="container"><div id="view-tier-list"><div class="selection-layout">
             <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
                 <div class="tier-bar-tools">
                     <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
@@ -75,6 +80,7 @@
     <div id="view-tier-analysis" class="d-none">
         <div class="tier-empty">준비 중입니다.</div>
     </div>
+    </div>
 </section>
 
 </main>
@@ -82,8 +88,8 @@
 
 
 
-<script src="core.js?v=db86cf6fc9"></script>
-<script src="page-tier.js?v=9612aa9353"></script>
+<script src="core.js?v=99f0907f42"></script>
+<script src="page-tier.js?v=c88288b985"></script>
 
 </body>
 </html>

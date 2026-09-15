@@ -39,7 +39,7 @@
     // 붙여준다 - 달력 칸 자체에만 표시되고, 연속으로 휴방이면 장기 일정 막대처럼 이어붙인다.
     const CAL_YOUNHWAN_NAME = '김윤환';
     const CAL_YOUNHWAN_SHORT = '윤환';
-    const CAL_YOUNHWAN_COLOR = '#9aa6ba';
+    const CAL_YOUNHWAN_COLOR = '#111318';
     const CAL_DEFAULT_EVENT_COLOR = '#eff6ff';
     const CAL_DEFAULT_LONGTERM_COLOR = '#ffedd5';
 
@@ -96,6 +96,9 @@
     // 잉크 면 + 흰 글자라, 색은 --ev-color로만 넘기고 CSS가 왼쪽 3px 엣지에 쓴다.
     // (색이 구분 정보를 갖고 있어서 버리지 않고 엣지로 옮겼다)
     const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
+        const rgb = /^#[0-9a-f]{6}$/i.test(color || '') ? [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16) / 255) : [0, 0, 0];
+        const luminance = rgb.map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+        const textColor = luminance > .179 ? '#111318' : '#fff';
         const timeHtml = timeText ? `<span class="cal-event-time">${calEscapeHTML(timeText)}</span>` : '';
         const personHtml = personText ? `<span class="cal-event-person">${calEscapeHTML(personText)}</span>` : '';
         const descHtml = descText ? `<div class="cal-event-desc">${calEscapeHTML(descText)}</div>` : '';
@@ -103,7 +106,7 @@
             ? `margin-left:${bar.bleedLeft}; margin-right:${bar.bleedRight}; padding-left:${bar.padLeft}; padding-right:${bar.padRight}; border-radius:${bar.radius}; `
             : '';
         return `
-            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}--ev-color: ${color};">
+            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}--ev-color: ${color}; --ev-text: ${textColor};">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>

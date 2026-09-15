@@ -45,7 +45,7 @@ async function loadSynergyData() {
     try {
         await fetchSynergyData();
         // [리디자인] 머리 오른쪽 UPDATED 칸에 들어간다 - 라벨이 이미 'UPDATED'라 접두어를 뺀다.
-        document.getElementById('synergy-updated').innerText = SynergyState.updatedAt || '-';
+        document.getElementById('synergy-updated').innerText = (SynergyState.updatedAt || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || '-';
         renderSynergyTable();
     } catch (e) {
         console.error(e);

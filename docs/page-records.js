@@ -148,7 +148,7 @@ function teamSetDetailsHtml(m) {
         let resBadge = '<span class="text-danger fw-bold">패</span>';
         if (isWin) resBadge = '<span class="text-primary fw-bold">승</span>';
         if (isDraw) resBadge = '<span class="text-secondary fw-bold">무</span>';
-        const winnerCls = 'fw-bold text-primary', otherCls = 'text-dark';
+        const winnerCls = 'fw-bold text-primary', otherCls = 'text-body';
 
         return `
                     <tr class="stat-row">
