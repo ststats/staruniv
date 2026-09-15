@@ -156,6 +156,11 @@
     .mv-settings-panel .mv-tile-icon, .mv-settings-panel .mv-tile-label { margin: 0; }
     .mv-settings-panel .mv-run-btn { width: 100%; min-height: 48px; margin-top: 8px; border-radius: 0; clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); }
     .mv-settings-panel .mv-order-row { border: 0; border-radius: 0; clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%); background: var(--color-card); padding: 10px; }
+    .mv-settings-panel .mv-order-detail { display:grid; grid-template-columns:24px minmax(0,1fr) auto auto; align-items:center; gap:6px; min-width:0; padding:7px 8px; background:var(--color-bg); border-left:3px solid transparent; clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%); }
+    .mv-settings-panel .mv-order-identity { min-width:0; overflow:hidden; }
+    .mv-settings-panel .mv-order-identity strong { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mv-settings-panel .mv-order-focus { min-height:26px; padding:0 5px; font-size:9px; }
+    .mv-settings-panel .mv-order-actions button { width:24px; height:26px; font-size:12px; }
     @media (max-width: 420px) {
         .mv-settings-panel { width: 100vw; }
         .mv-settings-inner { padding: 16px; }
