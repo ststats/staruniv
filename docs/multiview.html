@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="redesign.css">
 <style>
     /* ===== 다크모드: 사이트 CSS 변수를 이 페이지 안에서만 덮어쓴다 ===== */
     html[data-theme="dark"] {
@@ -49,76 +48,44 @@
     /* 패널 제목 줄 오른쪽이 닫기 버튼 자리라 제목이 길어져도 겹치지 않게 비워둔다 */
     .mv-settings-top { padding-right: 40px; min-height: 28px; display: flex; align-items: center; }
 
-    /* ===== 설정 패널: 사이트 리디자인과 동일한 컴포넌트 체계 ===== */
-    .mv-settings-panel {
-        width: 340px; max-width: 88vw;
-        background: var(--color-card, #fff);
-        border-left: 1px solid var(--color-border, #dfe4ec);
-        box-shadow: -8px 0 24px rgba(20,24,33,.12);
-        backdrop-filter: none; -webkit-backdrop-filter: none;
-    }
-    html[data-theme="dark"] .mv-settings-panel { background: #141821; }
-    .mv-settings-inner { padding: 18px; }
-    .mv-settings-top { margin-bottom: 18px; padding-right: 40px; min-height: 28px; }
-    .mv-title { font-size: 20px; font-weight: 800; letter-spacing: -.5px; margin: 0; }
+    /* ===== 설정 패널: 오른쪽에서 접혔다 펴지는 서랍 형태 ===== */
+    .mv-settings-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: 340px; max-width: 88vw; background: rgba(255,255,255,0.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid var(--color-border); box-shadow: -4px 0 16px rgba(0,0,0,0.15); overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease; }
+    html[data-theme="dark"] .mv-settings-panel { background: rgba(29,32,39,0.82); }
+    .mv-settings-panel.open { transform: translateX(0); }
+    .mv-settings-inner { padding: 16px; }
+    .mv-settings-top { margin-bottom: 20px; }
+    .mv-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
+    .mv-title-main { color: var(--color-text-main); }
 
-    .mv-settings-panel .section-title { margin-bottom: 12px; }
-    .mv-settings-panel .mv-console {
-        display: block; padding: 14px; margin-bottom: 18px;
-        background: #141821; border: 0; border-radius: 0; box-shadow: none;
-        clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+/* ===== 설정 패널(사이드바) 안에서는 PC 화면이라도 항상 바둑판(모바일) 레이아웃 유지 ===== */
+    .mv-settings-panel .mv-console { 
+        flex-direction: column !important; 
+        align-items: stretch !important; 
+        padding: 14px !important; 
     }
-    .mv-settings-panel .mv-console-tiles {
-        display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px;
+    .mv-settings-panel .mv-console-tiles { 
+        display: grid !important; 
+        grid-template-columns: repeat(3, 1fr) !important; 
     }
-    .mv-settings-panel .mv-tile {
-        min-width: 0; min-height: 94px; padding: 12px 7px;
-        background: #2b3442; border: 0; border-radius: 0;
-        clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
-        display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 7px;
+    .mv-settings-panel .mv-tile { 
+        flex-direction: column !important; 
+        align-items: center !important; 
+        gap: 7px !important; 
+        padding: 10px 6px 12px !important; 
     }
-    .mv-settings-panel .mv-tile-icon { width: 19px; height: 19px; color: #c5cfdf; }
-    .mv-settings-panel .mv-tile-label { font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap; }
-    .mv-settings-panel .mv-stepper { border: 0; border-radius: 0; background: #0e1218; }
-    .mv-settings-panel .mv-stepper button, .mv-settings-panel .mv-stepper-value { background: #0e1218; color: #fff; border-color: #2b3442; }
-    .mv-settings-panel .mv-toggle-switch { width: 34px; height: 19px; background: #0e1218; }
-    .mv-settings-panel .mv-toggle-switch::before { background: #66738a; }
-    .mv-settings-panel .mv-toggle-switch.on { background: var(--color-primary); }
-    .mv-settings-panel .mv-toggle-switch.on::before { background: #fff; }
 
-    .mv-settings-panel .mv-order-row,
-    .mv-settings-panel .mv-chip-box {
-        margin-bottom: 18px; padding: 14px; background: var(--color-card, #fff);
-        border: 0; border-radius: 0; box-shadow: none;
-        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
-    }
-    html[data-theme="dark"] .mv-settings-panel .mv-order-row,
-    html[data-theme="dark"] .mv-settings-panel .mv-chip-box { background: #1a202b; }
-    .mv-settings-panel .mv-order-row { display: flex; flex-direction: column; gap: 6px; min-height: 42px; }
-    .mv-settings-panel .mv-order-item {
-        height: 32px; padding: 0 9px; gap: 4px; background: #eef1f6; border: 0; border-radius: 0;
-        clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-        display: flex; align-items: center;
-    }
-    html[data-theme="dark"] .mv-settings-panel .mv-order-item { background: #2b3442; }
-    .mv-settings-panel .mv-chip-box .mv-chip-row { padding: 0; margin: 0 0 10px; background: transparent; border: 0; box-shadow: none; }
-    .mv-settings-panel .mv-chip {
-        height: 32px; padding: 0 10px 0 5px; gap: 7px; background: #eef1f6; border: 0; border-radius: 0;
-        clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    }
-    html[data-theme="dark"] .mv-settings-panel .mv-chip { background: #2b3442; }
-    .mv-settings-panel .mv-quickadd { border: 0; border-radius: 0; background: #eef1f6; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
-    html[data-theme="dark"] .mv-settings-panel .mv-quickadd { background: #2b3442; }
-    .mv-settings-panel .mv-quickadd-btn { border-radius: 0; clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%); }
-
-    /* 모바일: 설정 패널의 내부 폭만 줄이고, 설정 3칸 배열은 유지 */
-    @media (max-width: 767.98px) {
-        .mv-settings-panel { width: min(340px, 88vw); }
-        .mv-settings-inner { padding: 14px; }
-        .mv-settings-panel .mv-console-tiles { gap: 6px; }
-        .mv-settings-panel .mv-tile { min-height: 88px; padding: 10px 5px; }
-        .mv-settings-panel .mv-tile-label { font-size: 9px; }
-    }
+    /* 선택된 목록은 서랍 안에서 세로로 순서대로 나열한다. */
+    .mv-order-row { display: flex; flex-direction: column; gap: 6px; }
+    .mv-order-item { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg, #fff); font-size: var(--fs-body); }
+    .mv-order-item.custom { border-style: dashed; }
+    .mv-order-num { font-weight: 800; color: var(--color-text-sub); flex-shrink: 0; }
+    .mv-order-name { font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-main); }
+    .mv-order-item button { width: 20px; height: 20px; border: none; background: transparent; color: var(--color-text-sub); cursor: pointer; border-radius: 4px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mv-order-item button:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-text-main); }
+    .mv-order-item button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .mv-order-item .mv-order-remove:hover:not(:disabled) { color: #f03e3e; }
+    .mv-order-item.selectable { cursor: pointer; }
+    .mv-order-item.focus-target { border-color: var(--color-primary); background: var(--color-primary-tint); }
 
     /* ===== 그리드: 스크롤 없이 화면(뷰포트) 안에 정확히 맞춘다. 모바일은 100vh가
        주소창 때문에 실제 보이는 영역보다 크게 잡히는 문제가 있어 100dvh(동적

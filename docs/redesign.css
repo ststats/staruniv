@@ -1088,85 +1088,59 @@ body {
     text-align: center;
 }
 
-/* 멀티뷰어 설정칸: 세 설정을 같은 행으로 정렬하고 실행 버튼은 오른쪽 고정 */
 .mv-console {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 210px;
+    grid-template-columns: minmax(0,1fr) 210px;
     gap: 18px;
     padding: 20px;
     background: #141821;
     border: 0;
     box-shadow: none;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
     align-items: stretch;
 }
 
 .mv-console-tiles {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 9px;
-    min-width: 0;
 }
 
 .mv-tile {
-    min-width: 0;
-    min-height: 76px;
     padding: 15px 14px 13px;
     background: #2b3442;
     border: 0;
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-    display: flex;
+    clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     gap: 9px;
 }
 
-.mv-tile-icon, .mv-tile-label { color: #c5cfdf; }
-.mv-tile-label { font-size: 11px; color: #fff; margin-right: 0; white-space: nowrap; }
+.mv-tile-icon, .mv-tile-label {
+    color: #c5cfdf;
+}
+
+.mv-tile-label {
+    font-size: 11px;
+    color: #fff;
+    margin-right: 0;
+}
 
 .mv-run-btn {
-    min-width: 0;
     height: 100%;
     margin: 0;
     background: #2979ff;
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-    display: flex;
+    clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     gap: 7px;
     padding: 18px 14px;
 }
 
-.mv-run-btn:disabled { background: #2b3442; color: #718098; opacity: 1; }
-
-@media (max-width: 699px) {
-    .mv-console {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        padding: 14px;
-    }
-
-    .mv-console-tiles {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    .mv-tile {
-        min-height: 78px;
-        padding: 11px 7px;
-    }
-
-    .mv-run-btn {
-        width: 100%;
-        min-height: 52px;
-        height: auto;
-        padding: 12px 14px;
-        flex-direction: row;
-    }
+.mv-run-btn:disabled {
+    background: #2b3442;
+    color: #718098;
+    opacity: 1;
 }
 
 .mv-chip-box, .mv-order-row {
