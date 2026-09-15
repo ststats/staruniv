@@ -6838,7 +6838,7 @@ tbody tr:first-child .synergy-bar i {
 .page-header-with-stats .page-header-subtitle { grid-column: 1 / -1; grid-row: 3; margin-top: 4px; }
 #page-members .page-header-with-stats .page-header-subtitle,
 #page-stats .page-header-with-stats .page-header-subtitle { margin-top: 0; }
-#page-tools .mv-tile { justify-items: center; text-align: center; }
+#page-tools .mv-tile { grid-template-columns: 1fr; grid-template-rows: 20px 18px 30px; justify-items: center; align-content: center; gap: 4px; text-align: center; }
 .page-header-with-stats .page-header-stats { position: static; grid-column: 2; grid-row: 2; margin: 0 !important; align-self: center; }
 .page-header-with-stats .head-stat { text-align: right; }
 .page-header-with-stats .head-stat-label { margin-bottom: 4px; letter-spacing: .18em; }
