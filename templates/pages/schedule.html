@@ -10,18 +10,16 @@
         <div class="cal-main-layout">
             <!-- 모바일 분리용 사이드바 -->
             <aside class="cal-sidebar">
-                {#- [리디자인] 시안에서 '오늘'은 잉크 카드, '선택한 날짜'는 흰 카드다.
-                    두 카드가 같은 흰 면이면 어느 쪽이 오늘인지 제목을 읽어야 알 수 있었다. #}
                 <div class="cal-today-card-wrapper">
                     <div class="section-title" data-en="TODAY">오늘의 일정</div>
-                    <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
+                    <div class="clean-card p-4">
                         <div class="cal-day-card-date" id="todayDateLabel"></div>
                         <div class="cal-today-list scroll-area" id="todayList"></div>
                     </div>
                 </div>
                 <div class="cal-selected-card-wrapper">
                     <div class="section-title" id="selectedListTitle" data-en="SELECTED">선택한 날짜 일정</div>
-                    <div class="clean-card p-4 cal-day-card">
+                    <div class="clean-card p-4">
                         <div class="cal-day-card-date" id="selectedDateLabel"></div>
                         <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
                     </div>
