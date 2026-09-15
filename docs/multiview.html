@@ -145,6 +145,23 @@
     .mv-cell-main { grid-column: span 2; grid-row: span 2; }
 
     .mv-empty { text-align: center; color: var(--color-text-sub); font-size: var(--fs-body); padding: 30vh 0; }
+    /* 본페이지 도구 설정과 같은 노치·정렬 규칙 */
+    .mv-settings-panel { width: 520px; max-width: 100vw; background: var(--color-bg, #f4f7fc); border-left: 0; box-shadow: -8px 0 24px rgba(20,24,33,.16); }
+    html[data-theme="dark"] .mv-settings-panel { background: var(--color-bg, #14161b); }
+    .mv-settings-inner { width: 100%; box-sizing: border-box; padding: 20px; }
+    .mv-settings-panel .section-title { border-left: 0; border-bottom: 2px solid var(--color-text-main); background: transparent; color: var(--color-text-main); padding-left: 0; }
+    .mv-settings-panel .mv-console { display: block; width: 100%; box-sizing: border-box; grid-template-columns: 1fr !important; background: #141821; border: 0; border-radius: 0; clip-path: polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%); padding: 12px; }
+    .mv-settings-panel .mv-console-tiles { display: grid !important; width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 7px; }
+    .mv-settings-panel .mv-tile { min-width: 0; min-height: 102px; border: 0; border-radius: 0; clip-path: polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%); background: #2b3442; display: grid; grid-template-columns: minmax(0,1fr); grid-template-rows: 20px 18px 30px; justify-items: center; align-content: center; gap: 7px; padding: 10px 4px; }
+    .mv-settings-panel .mv-tile-icon, .mv-settings-panel .mv-tile-label { margin: 0; }
+    .mv-settings-panel .mv-run-btn { width: 100%; min-height: 48px; margin-top: 8px; border-radius: 0; clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); }
+    .mv-settings-panel .mv-order-row { border: 0; border-radius: 0; clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%); background: var(--color-card); padding: 10px; }
+    @media (max-width: 420px) {
+        .mv-settings-panel { width: 100vw; }
+        .mv-settings-inner { padding: 16px; }
+        .mv-settings-panel .mv-console-tiles { gap: 5px; }
+        .mv-settings-panel .mv-tile { min-height: 94px; font-size: 11px; }
+    }
 </style>
 </head>
 <body>
