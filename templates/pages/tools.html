@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- 도구 페이지 -->
+<section id="page-tools" class="page-section active container">
+    <div class="page-header">
+        <h1 class="page-header-title">도구</h1>
+        <p class="page-header-subtitle">자주 쓰는 도구 모음입니다.</p>
+    </div>
+    <hr class="page-header-divider tight">
+    <div class="sub-tabs tab-scroll" role="tablist">
+        <div class="sub-tab active" id="tab-tools-multiviewer" role="tab" tabindex="0" aria-selected="true" onclick="switchToolsView('multiviewer')">멀티뷰어</div>
+        <div class="sub-tab" id="tab-tools-rider" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('rider')">캄몬라이더</div>
+        <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('external')">외부도구</div>
+    </div>
+
+    <!-- 1. 멀티뷰어 뷰 -->
+    <div id="view-tools-multiviewer">
+        <div class="section-title" data-en="SETUP">설정</div>
+        <div class="mv-console">
+            <div class="mv-console-tiles">
+               <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+                    <div class="mv-tile-label">그리드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" aria-label="그리드 모드" aria-pressed="false" onclick="mvToggleFocusMode()"></button>
+                </div>
+                <div class="mv-tile disabled" id="mv-col-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
+                    <div class="mv-tile-label">열 개수</div>
+                    <div class="mv-stepper">
+                        <button type="button" aria-label="열 줄이기" onclick="mvChangeCols(-1)">−</button>
+                        <span class="mv-stepper-value" id="mv-cols-value" aria-live="polite">2</span>
+                        <button type="button" aria-label="열 늘리기" onclick="mvChangeCols(1)">+</button>
+                    </div>
+                </div>
+                <div class="mv-tile">
+                    <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                    <div class="mv-tile-label">다크 모드</div>
+                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" aria-label="다크 모드" aria-pressed="false" onclick="mvToggleDarkSetting()"></button>
+                </div>
+            </div>
+            <button type="button" class="mv-run-btn" id="mv-open-btn" onclick="openMultiviewer()" disabled>
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                멀티뷰어 실행
+            </button>
+        </div>
+
+        {#- [리디자인] 시안에서는 멤버 선택과 선택된 목록이 나란히 두 칸이었다.
+            세로로 쌓으면 "고른다 → 순서를 본다"가 한 화면에 안 들어와서 계속 스크롤해야 한다. #}
+        <div class="g2 mv-pick-layout">
+        <div>
+        <div class="section-title" data-en="MEMBERS">멤버 선택</div>
+        <div class="mv-chip-box">
+            <div class="mv-chip-row" id="mv-chip-row"></div>
+            <div class="mv-quickadd">
+                <input type="text" id="mv-custom-id" placeholder="숲아이디 직접 입력" aria-label="숲아이디 직접 입력" maxlength="20" onkeydown="if(event.key==='Enter')mvAddCustom()">
+                <button type="button" class="mv-quickadd-btn" title="추가" aria-label="추가" onclick="mvAddCustom()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+        </div>
+
+        </div>
+        <div>
+        <div class="section-title" data-en="ORDER">선택된 목록</div>
+        <div class="mv-order-row" id="mv-order-row"></div>
+        </div>
+        </div>
+    </div>
+
+    {#- 2. 캄몬라이더 뷰
+        자체 제작 레이싱 게임(docs/calmmon-rider.html)을 그대로 끼워 넣는다. 게임은 스타일/스크립트/
+        스프라이트 이미지까지 전부 들어있는 완전한 단독 페이지라, 사이트 CSS와 섞이지 않게 iframe으로
+        띄우는 게 제일 안전하다(게임을 새 버전으로 갈아끼울 때도 그 파일만 덮어쓰면 끝).
+        iframe의 src를 여기 미리 박아두지 않는 이유: 게임 파일 하나가 4MB에 가까워서(스프라이트가
+        파일 안에 통째로 들어있다) 이 탭을 열지도 않은 사람까지 그걸 받게 된다. 그래서 src는
+        비워두고 이 탭을 실제로 처음 열 때 page-tools.js(riderEnsureLoaded)가 채운다. #}
+    <div id="view-tools-rider" class="d-none">
+        <div class="section-title" data-en="GAME">
+            캄몬라이더
+            <span class="rider-actions">
+                <button type="button" class="btn-view-all" onclick="riderFullscreen()">전체화면 ⛶</button>
+                <button type="button" class="btn-view-all" onclick="riderOpenWindow()">새 창으로 열기<span class="ext-arrow" aria-hidden="true">↗</span></button>
+            </span>
+        </div>
+        <div class="rider-stage" id="rider-stage">
+            <iframe id="rider-frame" title="캄몬라이더" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <!-- 3. 외부도구 뷰 (도구/사이트로 구분) -->
+    <div id="view-tools-external" class="d-none">
+        <div class="section-title" data-en="TOOLS">도구</div>
+        <div class="tool-grid" id="tools-grid-extTools"></div>
+
+        <div class="section-title section-title-spaced" data-en="SITES">사이트</div>
+        <div class="tool-grid" id="tools-grid-extSites"></div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('mv-shared.js') }}"></script>
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('soop.js') }}"></script>
+<script src="{{ asset_url('page-tools.js') }}"></script>
+{% endblock %}
