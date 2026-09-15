@@ -7,17 +7,14 @@
             공개하는 것을 그대로 읽어온다. -#}
         <p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
             <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true" onclick="switchTierView('list')">티어표</div>
+            <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>
+        </div>
     </div>
     <hr class="page-header-divider tight">
 
     {#- 소분류: 티어표 / 분석. 멤버 페이지의 현황/공지 탭과 같은 모양(.sub-tabs)을 쓴다. -#}
-    <div class="sub-tabs tab-scroll" role="tablist">
-        <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true"
-             onclick="switchTierView('list')">티어표</div>
-        <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false"
-             onclick="switchTierView('analysis')">분석</div>
-    </div>
-
     <div id="view-tier-list">
         {#- 티어 바로가기 + 보기 전환(전체/방송중)을 한 줄에 모은 바.
             상단 메뉴 바로 아래에 붙어서 같이 따라다닌다.
