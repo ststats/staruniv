@@ -7,6 +7,9 @@
 const MEMBER_TABS = { status: ['tab-member-status', 'view-member-status'], news: ['tab-member-news', 'view-member-news'] };
 
 const ROLE_ORDER_BASE = ['감독', '코치', '선수'];
+// 현황 탭에서 먼저 완료된 방송 상태 조회 결과를 공지 탭 사이드바가
+// 나중에 렌더링될 때도 재사용한다.
+let MEMBER_LIVE_IDS = [];
 
 function updateMembersHash() {
     const params = {};
@@ -84,6 +87,7 @@ function renderMemberHeadCounts(activeMembers) {
             const liveIds = targets
                 .filter((m, i) => results[i].status === 'fulfilled' && results[i].value)
                 .map(m => String(m['SOOP ID']));
+            MEMBER_LIVE_IDS = liveIds;
             liveEl.innerText = liveIds.length;
             markLiveMembers(liveIds);
         })
@@ -254,6 +258,8 @@ function renderNewsSidebar() {
             .map(mem => avatarSelectItemHtml('news-side-player-', mem['이름'], mem['SOOP ID'], 'selectNewsPlayer', mem))
             .join('')
     );
+    // 방송 상태 조회가 사이드바 생성보다 먼저 끝난 경우에도 LIVE 표시를 복원한다.
+    if (MEMBER_LIVE_IDS.length) markLiveMembers(MEMBER_LIVE_IDS);
 }
 
 // 아직 다음 페이지가 남아있는 멤버가 한 명이라도 있는지
