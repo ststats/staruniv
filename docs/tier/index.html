@@ -49,15 +49,12 @@
     <div class="page-header">
         <h1 class="page-header-title">티어표</h1><p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
             <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표 ↗</a></p>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true" onclick="switchTierView('list')">티어표</div>
+            <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>
+        </div>
     </div>
-    <hr class="page-header-divider tight"><div class="sub-tabs tab-scroll" role="tablist">
-        <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true"
-             onclick="switchTierView('list')">티어표</div>
-        <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false"
-             onclick="switchTierView('analysis')">분석</div>
-    </div>
-
-    <div id="view-tier-list"><div class="selection-layout">
+    <hr class="page-header-divider tight"><div id="view-tier-list"><div class="selection-layout">
             <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
                 <div class="tier-bar-tools">
                     <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
