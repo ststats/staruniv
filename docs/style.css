@@ -2955,7 +2955,15 @@ html[data-theme="dark"] .home-notice-card:hover {
 .rider-actions {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 14px;
+}
+
+.rider-actions .btn-view-all {
+    gap: 4px;
+}
+
+.rider-actions .ext-arrow {
+    margin-left: 0;
 }
 
 a.btn-view-all {
@@ -4582,13 +4590,29 @@ html[data-theme="dark"] .mv-chip-box, html[data-theme="dark"] .mv-order-row {
         min-height: 158px;
     }
 
+    .cal-main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
     .cal-sidebar {
-        grid-template-columns: 1fr;
-        gap: 18px;
+        display: contents;
+    }
+
+    .cal-today-card-wrapper {
+        order: 1;
+        width: 100%;
     }
 
     .cal-calendar-area {
-        order: 0;
+        order: 2;
+        width: 100%;
+    }
+
+    .cal-selected-card-wrapper {
+        order: 3;
+        width: 100%;
     }
 
     .tier-grid {
@@ -6839,13 +6863,15 @@ tbody tr:first-child .synergy-bar i {
 #page-schedule .cal-selected-card-wrapper .cal-card-detail,
 #page-schedule .cal-selected-card-wrapper .cal-no-schedule { color: var(--color-text-sub); }
 #page-schedule .cal-selected-card-wrapper .cal-selected-card + .cal-selected-card { border-top-color: var(--color-bg-subtle); }
-#page-schedule .cal-selected-list.is-empty {
+#page-schedule .cal-selected-list.is-empty,
+#page-schedule .cal-today-list.is-empty {
     min-height: 104px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-#page-schedule .cal-selected-list.is-empty .cal-no-schedule {
+#page-schedule .cal-selected-list.is-empty .cal-no-schedule,
+#page-schedule .cal-today-list.is-empty .cal-no-schedule {
     width: 100%;
     text-align: center;
 }
