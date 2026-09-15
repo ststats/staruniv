@@ -3413,3 +3413,111 @@ tbody tr:first-child .synergy-bar i {
         padding-right: 24px;
     }
 }
+
+/* === Schedule day panels: restore the earlier ink-card treatment === */
+#page-schedule .cal-day-card {
+    padding: 20px !important;
+}
+#page-schedule .cal-day-card-date {
+    display: block;
+    text-align: right;
+    margin-bottom: 8px;
+    font-family: var(--font-num);
+    font-size: 11px;
+    font-weight: 600;
+    color: #66738a;
+}
+#page-schedule .cal-day-card-today {
+    border: 0;
+    color: #fff;
+    background: var(--color-ink, #141821);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px);
+}
+#page-schedule .cal-day-card-today .cal-card-time,
+#page-schedule .cal-day-card-today .cal-card-person,
+#page-schedule .cal-day-card-today .cal-card-desc {
+    color: #fff;
+}
+#page-schedule .cal-day-card-today .cal-card-detail { color: #8b97ab; }
+#page-schedule .cal-day-card-today .cal-no-schedule { color: #66738a; }
+#page-schedule .cal-day-card-today .cal-today-card + .cal-today-card,
+#page-schedule .cal-day-card-today .cal-selected-card + .cal-selected-card {
+    border-top-color: #2b3442;
+}
+#page-schedule .cal-day-card-today .cal-offair-section { border-top-color: #2b3442; }
+#page-schedule .cal-day-card-today .cal-offair-label { color: #66738a; }
+#page-schedule .cal-day-card-today .cal-offair-chip { background: #2b3442; }
+#page-schedule .cal-day-card-today .cal-offair-name { color: #c3ccdb; }
+#page-schedule .cal-today-card,
+#page-schedule .cal-selected-card {
+    padding: 12px 0 0;
+    gap: 0;
+}
+#page-schedule .cal-card-main {
+    align-items: flex-start;
+    gap: 13px;
+}
+#page-schedule .cal-card-time {
+    font-family: var(--font-num);
+    font-size: 15px;
+    font-weight: 700;
+    flex: none;
+}
+#page-schedule .cal-card-person { font-size: 13px; font-weight: 700; }
+#page-schedule .cal-card-desc { font-size: 13px; font-weight: 500; }
+#page-schedule .cal-today-card + .cal-today-card,
+#page-schedule .cal-selected-card + .cal-selected-card {
+    margin-top: 0;
+    padding-top: 12px;
+    border-top: 1px solid #2b3442;
+}
+
+/* Today marker: notched square instead of circle. */
+.cal-day-cell.today .cal-day-number::after {
+    width: 22px;
+    height: 22px;
+    border-radius: 0;
+    background: var(--color-primary);
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+
+/* Header stats: same visual scale as the page title row, without becoming a separate row. */
+.page-header-with-stats .page-header-stats {
+    top: 18px;
+    gap: 7px;
+}
+.page-header-with-stats .head-stat {
+    min-width: 96px;
+    height: 40px;
+    padding: 4px 9px;
+}
+.page-header-with-stats .head-stat-label {
+    font-size: 9px;
+    line-height: 1.05;
+}
+.page-header-with-stats .head-stat-value {
+    font-size: 22px;
+    line-height: 1;
+}
+.page-header-with-stats .head-stat-time {
+    font-size: 12px;
+    line-height: 1;
+}
+@media (max-width: 767.98px) {
+    .page-header-with-stats {
+        padding-right: 206px;
+        flex-wrap: nowrap;
+    }
+    .page-header-with-stats .page-header-stats {
+        top: 16px;
+        gap: 4px;
+    }
+    .page-header-with-stats .head-stat {
+        min-width: 96px;
+        height: 38px;
+        padding: 4px 8px;
+    }
+    .page-header-with-stats .head-stat-label { font-size: 8px; }
+    .page-header-with-stats .head-stat-value { font-size: 20px; }
+    .page-header-with-stats .head-stat-time { font-size: 11px; }
+}

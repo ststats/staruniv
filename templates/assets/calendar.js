@@ -135,9 +135,6 @@
         }
     };
 
-    // "YYYY-MM-DD" -> "YY-MM-DD" ("선택한 날짜 일정" 타이틀에 짧게 표시할 때 사용)
-    const calFormatShortDate = (dateStr) => dateStr ? dateStr.slice(2) : '';
-
     // 일정 배열을 시간순으로 정렬. 시간이 없는 일정은 항상 최상단(등록 순서 유지).
     const calSortByTime = (items) => {
         return items.slice().sort((a, b) => {
@@ -301,9 +298,7 @@
 
     const calSelectDate = (dateStr) => {
         calSelectedDateStr = dateStr;
-        // "선택한 날짜 일정" 섹션 제목을 클릭한 날짜에 맞춰 바꾼다 (예: [26-09-09] 일정)
-        const titleEl = document.getElementById('selectedListTitle');
-        if (titleEl) titleEl.innerText = `[${calFormatShortDate(dateStr)}] 일정`;
+        // 선택한 날짜 제목은 고정하고, 선택일 자체는 카드 안의 날짜 라벨로만 표시한다.
         calRenderSelectedDateSchedules();
         if (typeof window.calOnDateSelect === 'function') window.calOnDateSelect(dateStr);
     };
