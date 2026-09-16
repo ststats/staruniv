@@ -162,7 +162,7 @@ function tierCardHtml(member, live) {
     const raceEdge = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
     return `
     <a class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
-       href="https://ch.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
+       href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
        title="${escapeHTML(tierCardTitle(member, live))}">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
         <div class="tier-card-body">
@@ -629,6 +629,7 @@ function applyLiveToCards(setChanged) {
     document.querySelectorAll('#tier-root .tier-card').forEach(card => {
         const key = card.dataset.tierId;
         const live = TierState.live[key];
+        card.href = `https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(key)}`;
         const wasLive = card.classList.contains('is-live');
         const media = card.querySelector('.tier-card-media');
         if (!media) return;

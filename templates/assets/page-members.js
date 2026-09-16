@@ -204,8 +204,8 @@ function openMemberProfile(name) {
     ];
     document.getElementById('mp-info-body').innerHTML = rows.map(([label, val]) => `
             <tr>
-                <td class="text-secondary profile-info-label">${label}</td>
-                <td class="fw-bold text-dark profile-info-value">${val}</td>
+                <td class="profile-info-label">${label}</td>
+                <td class="fw-bold profile-info-value">${val}</td>
             </tr>`).join('');
 
     renderMemberActivitySummary(m);
