@@ -443,10 +443,20 @@ function capturePastListScroll() {
 // 리스트에서 글을 클릭했을 때 - 그 글을 왼쪽 "최신 글" 자리로 올린다(배열 순서/날짜는 그대로,
 // 어떤 글을 큰 카드로 그릴지만 바꿔서 다시 그린다 - 오른쪽 리스트는 항상 날짜순 유지).
 function setNewsFeatured(key) {
+    const mobile = isNewsMobileLayout();
     const restoreScroll = capturePastListScroll();
     NewsState.featuredKey = key;
     renderNewsLayout(document.getElementById('news-feed-content'));
     restoreScroll();
+    if (mobile) requestAnimationFrame(() => {
+        const card = document.querySelector('#news-feed-content .featured-post');
+        if (!card) return;
+        const nav = document.querySelector('.top-navbar');
+        const bar = document.querySelector('#view-member-news .avatar-bar');
+        const barHeight = bar && getComputedStyle(bar).position === 'sticky' ? bar.getBoundingClientRect().height : 0;
+        const top = window.scrollY + card.getBoundingClientRect().top - (nav?.getBoundingClientRect().height || 0) - barHeight - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+    });
 }
 
 // 고정 픽셀 기준 대신, CSS에서 두 컬럼에 준 min-width(.featured-post 300px + .past-posts
