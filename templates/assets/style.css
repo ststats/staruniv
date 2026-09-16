@@ -16,6 +16,13 @@
     --color-ink: #0b1220;
     --color-scrollbar-thumb: #c5d6f7;
     --color-bg-subtle: #eef3fa;
+    --color-head-bg: #edf2fa;
+    --head-hatch: rgba(31, 111, 255, 0.16);
+    --head-pattern: repeating-linear-gradient(
+        135deg,
+        var(--head-hatch) 0 1px,
+        transparent 1px 6px
+    );
     --color-border-strong: #cdd6e3;
     --color-logo-black: #0b1220;
     --color-text-strong: #050a14;
@@ -636,6 +643,8 @@ html[data-theme="dark"] {
     --color-card-hover: #121a28;
     --color-border: #1d2129;
     --color-bg-subtle: #171b23;
+    --color-head-bg: #12151b;
+    --head-hatch: rgba(91, 155, 255, 0.14);
     --color-border-strong: #353b46;
     --color-border-hover: #2d5fc0;
     --color-text-main: #eef2f8;
@@ -5764,7 +5773,7 @@ tbody tr:first-child .synergy-bar i {
 }
 
 .mv-chip.selected {
-    background: var(--color-ink, #141821);
+    background: var(--color-primary);
     border: 0;
 }
 
@@ -5775,7 +5784,7 @@ tbody tr:first-child .synergy-bar i {
 }
 
 .mv-chip.selected .mv-chip-avatar {
-    background: var(--color-primary);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .mv-chip-name {
@@ -5793,7 +5802,13 @@ tbody tr:first-child .synergy-bar i {
     width: 12px;
     height: 12px;
     background: none;
-    color: #4d90ff;
+    color: #fff;
+}
+
+/* 선택된 칩은 이미 파랑이라 호버 때 옅은 파랑으로 바뀌지 않게 한 단계 진하게만 */
+.mv-chip.selected:hover,
+html[data-theme="dark"] .mv-chip.selected:hover {
+    background: var(--color-primary-deep);
 }
 
 .mv-order-row {
@@ -6345,9 +6360,6 @@ tbody tr:first-child .synergy-bar i {
     color: var(--color-text-main);
     background: var(--color-card);
     background-image: none;
-}
-#page-schedule .cal-today-card-wrapper .cal-day-card-date {
-    color: var(--color-text-sub);
 }
 #page-schedule .cal-today-card-wrapper .cal-card-time,
 #page-schedule .cal-today-card-wrapper .cal-card-person,
@@ -7069,9 +7081,12 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     background-color: var(--color-card-hover);
 }
 
+/* 표 머리글·캘린더 요일칸: 흰 컨텐츠 안에서 묻히지 않게 사선 무늬를 깐다. */
 .stat-table thead th {
-    background-color: var(--color-bg-subtle) !important;
-    background-image: none !important;
+    background-color: var(--color-head-bg) !important;
+    background-image: var(--head-pattern) !important;
+    /* 칸마다 무늬가 새로 시작해 이음매가 끊기지 않도록 화면 기준으로 고정 */
+    background-attachment: fixed;
     color: var(--color-text-sub) !important;
 }
 
@@ -7107,10 +7122,10 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 }
 
 .cal-weekdays {
-    background: var(--color-bg-subtle);
-    background-image: none;
+    background-color: var(--color-head-bg);
+    background-image: var(--head-pattern);
     color: var(--color-text-sub);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 0;
 }
 
 .cal-weekdays > div {
@@ -7260,7 +7275,20 @@ html[data-theme="dark"] .cal-cell-event:hover {
     background-image: var(--panel-pattern);
 }
 
-#page-schedule .cal-day-card-date {
+/* 오늘/선택한 날짜 카드는 무늬만 다르고 글자색은 같게 */
+#page-schedule .cal-sidebar .cal-card-person,
+#page-schedule .cal-sidebar .cal-card-desc,
+#page-schedule .cal-sidebar .cal-offair-label {
+    color: var(--color-text-main);
+}
+
+#page-schedule .cal-sidebar .cal-card-detail,
+#page-schedule .cal-sidebar .cal-no-schedule,
+#page-schedule .cal-sidebar .cal-offair-name {
+    color: var(--color-text-sub);
+}
+
+#page-schedule .cal-sidebar .cal-day-card-date {
     color: var(--color-primary);
     font-weight: 700;
     letter-spacing: 0.04em;
