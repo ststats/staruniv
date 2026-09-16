@@ -29,13 +29,14 @@
     --color-modal-body-bg: #fcfcfc;
     --calendar-outside-bg: #edf2f8;
     --calendar-outside-text: #7c8ba1;
-    --panel-bg: #eef3fa;
+    --panel-bg: #ffffff;
+    --panel-bg-alt: #eef3fa;
     --panel-control: #dfe7f2;
     --panel-text: #172033;
     --panel-muted: #596a82;
     --panel-line: #c8d4e4;
     --panel-accent: #155ed9;
-    --panel-hatch: rgba(23, 32, 51, 0.045);
+    --panel-hatch: #e4eaf1;
     --panel-pattern: repeating-linear-gradient(
         135deg,
         var(--panel-hatch) 0 1px,
@@ -124,7 +125,7 @@ a {
     top: 0;
     z-index: 100;
 
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
 }
 
 .top-navbar .navbar-inner {
@@ -305,12 +306,12 @@ a {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.46;
+    opacity: 1;
     background-image:
         linear-gradient(
             135deg,
             transparent 48%,
-            rgba(41, 121, 255, 0.28) 48% 49%,
+            rgba(41, 121, 255, 0.13) 48% 49%,
             transparent 49%
         ),
         repeating-linear-gradient(
@@ -402,7 +403,6 @@ a {
         padding: 34px 24px 56px;
 
         background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
     }
     .page-header-title {
         font-size: 34px;
@@ -627,12 +627,13 @@ html[data-theme="dark"] {
     --calendar-outside-bg: #121923;
     --calendar-outside-text: #8190a6;
     --panel-bg: #141821;
+    --panel-bg-alt: #141821;
     --panel-control: #2b3442;
     --panel-text: #edf2fb;
     --panel-muted: #b9c5d8;
     --panel-line: #394556;
     --panel-accent: #75a8ff;
-    --panel-hatch: rgba(255, 255, 255, 0.045);
+    --panel-hatch: #1f222b;
     --color-matchup-z: #c179e5;
     color-scheme: dark;
     --color-text-body: #dce4f0;
@@ -666,7 +667,7 @@ html[data-theme="dark"] .section-title-sm {
 }
 
 html[data-theme="dark"] .stat-table thead th {
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     color: var(--panel-text);
     border-color: #4877c5;
 }
@@ -2925,7 +2926,7 @@ a.home-notice-card:hover {
     align-items: center;
     justify-content: center;
 
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     background-image: var(--panel-pattern);
 }
 
@@ -3270,7 +3271,7 @@ body {
 }
 
 .stat-table thead th {
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     background-image: var(--panel-pattern);
     border-bottom: 0;
     color: var(--panel-muted);
@@ -3299,7 +3300,6 @@ body {
     clip-path: none;
 
     background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .home-carousel::after {
@@ -3307,12 +3307,12 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.46;
+    opacity: 1;
     background-image:
         linear-gradient(
             135deg,
             transparent 48%,
-            rgba(41, 121, 255, 0.28) 48% 49%,
+            rgba(41, 121, 255, 0.13) 48% 49%,
             transparent 49%
         ),
         repeating-linear-gradient(
@@ -3936,7 +3936,7 @@ body {
 }
 
 .cal-weekdays {
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     background-image: var(--panel-pattern);
     color: var(--panel-muted);
     border-bottom: 0;
@@ -4559,7 +4559,7 @@ html[data-theme="dark"] .section-title {
 }
 
 .stat-table thead .stat-table-sticky-col {
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     background-image: var(--panel-pattern);
 }
 
@@ -5294,7 +5294,7 @@ tbody tr:first-child .synergy-bar i {
     position: relative;
     overflow: hidden;
 
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     background-image: var(--panel-pattern);
 }
 .member-card-media .member-profile-media,
@@ -5330,7 +5330,7 @@ tbody tr:first-child .synergy-bar i {
 .member-card-media {
     aspect-ratio: 16 / 9;
 
-    background-color: var(--panel-bg);
+    background-color: var(--panel-bg-alt);
     background-image: var(--panel-pattern);
 }
 .member-card-body {
@@ -5945,7 +5945,7 @@ tbody tr:first-child .synergy-bar i {
         padding: 6px 0 8px;
         height: auto;
         flex-direction: column;
-        background: var(--panel-bg);
+        background: var(--panel-bg-alt);
         border-bottom: 3px solid var(--color-primary);
         z-index: 120;
     }
@@ -6790,4 +6790,30 @@ tbody tr:first-child .synergy-bar i {
         width: 32px;
         height: 40px;
     }
+}
+
+
+/* [표 머리글] 사선이 <th> 셀마다 각각 걸려 있어서 셀 원점에서 매번 다시 그려졌다.
+   그래서 열 경계마다 사선이 어긋나 머리글이 조각난 것처럼 보였다.
+   사선을 thead 한 덩어리에 깔고 셀 배경은 비워서 머리글 전체를 하나로 잇는다.
+   (border-collapse: collapse 에서 행 그룹 배경은 셀보다 먼저 칠해지므로 그대로 비쳐 보인다.
+    셀 배경을 명시적으로 비우는 건 부트스트랩이 셀마다 --bs-table-bg 를 걸기 때문이다.) */
+.stat-table thead,
+html[data-theme="dark"] .stat-table thead {
+    background-color: var(--panel-bg-alt);
+    background-image: var(--panel-pattern);
+}
+
+.stat-table thead th,
+html[data-theme="dark"] .stat-table thead th {
+    background-color: transparent;
+    background-image: none;
+}
+
+/* 첫 열 머리글은 가로 스크롤 때 고정(sticky)되므로 뒤가 비치면 안 된다 - 자기 배경을 갖는다.
+   스크롤 전에는 thead 와 원점이 같아 사선이 그대로 이어진다. */
+.stat-table thead .stat-table-sticky-col,
+html[data-theme="dark"] .stat-table thead .stat-table-sticky-col {
+    background-color: var(--panel-bg-alt);
+    background-image: var(--panel-pattern);
 }
