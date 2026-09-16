@@ -3863,7 +3863,7 @@ body {
 .stat-card-box .donut::before {
     width: 48px;
     height: 48px;
-    background: var(--panel-bg);
+    background: var(--color-card);
 }
 
 .member-grid {
@@ -4037,7 +4037,7 @@ body {
 }
 
 .cal-nav-group {
-    background: var(--panel-bg);
+    background: var(--color-card);
     padding: 3px;
 }
 
@@ -4089,7 +4089,7 @@ body {
 }
 
 .tier-bar-tools {
-    border-color: #394556;
+    border-color: var(--panel-line);
 }
 
 .bar-scope {
@@ -4804,7 +4804,7 @@ tbody tr:first-child .synergy-bar i {
     width: 100%;
     height: auto;
     padding: 2px;
-    background: var(--panel-bg);
+    background: var(--color-card);
     clip-path: none;
     grid-template-columns: 1fr 1fr;
     gap: 2px;
@@ -5699,12 +5699,12 @@ tbody tr:first-child .synergy-bar i {
 }
 
 .mv-stepper {
-    background: var(--panel-bg);
+    background: var(--color-card);
     border: 0;
 }
 
 .mv-stepper button {
-    background: var(--panel-bg);
+    background: var(--color-card);
     color: var(--panel-muted);
 }
 
@@ -5715,17 +5715,17 @@ tbody tr:first-child .synergy-bar i {
 
 .mv-stepper button:disabled {
     color: #4a566b;
-    background: var(--panel-bg);
+    background: var(--color-card);
 }
 
 .mv-stepper-value {
-    background: var(--panel-bg);
+    background: var(--color-card);
     color: var(--panel-text);
     border-color: var(--panel-line);
 }
 
 .mv-toggle-switch {
-    background: var(--panel-bg);
+    background: var(--color-card);
 }
 
 .mv-toggle-switch::before {
@@ -6808,4 +6808,36 @@ tbody tr:first-child .synergy-bar i {
 .selection-layout > .tier-bar {
     background-color: var(--color-card);
     background-image: none;
+}
+
+
+/* [사이드바 '전체' 줄] 옛 가로 바 시절 잔재 정리.
+   1) .avatar-bar-tools 의 border-right + padding-right 는 가로 바에서 '전체'와 멤버 목록을
+      나누던 구분선이다. 세로 사이드바에서는 '전체' 줄 오른쪽에 세로선으로 남고, 줄 폭이
+      멤버 줄보다 11px 좁아져 오른쪽이 잘린 것처럼 보였다.
+      이걸 지우는 규칙이 이미 있었지만(.selection-layout > .avatar-bar-tools) tools 는
+      .avatar-bar 의 자식이라 자식 선택자(>)가 맞지 않아 한 번도 적용되지 않았다.
+   2) box-shadow 는 '전체'가 회색 바 위의 흰 알약이던 시절의 그림자다. 파란 줄 밑에
+      회색 번짐(rgb(241,241,241))으로 남아 테두리처럼 보였다.
+   3) 좌측 여백을 멤버 줄과 같은 13px 로 맞춰 글자 기준선을 통일한다.
+   border-right 만 지운다 - 모바일 접힘 상태에서 쓰는 border-top 은 살려둬야 한다. */
+.selection-layout > .avatar-bar .avatar-bar-tools {
+    padding-right: 0;
+    border-right: 0;
+}
+
+.selection-layout > .avatar-bar .avatar-select-all {
+    padding: 0 13px;
+    box-shadow: none;
+}
+
+
+/* [티어 사이드바] 티어 칩이 사이드바 좌우 끝까지 붙어 있어서, 위의 '전체 / 방송중'
+   컨트롤(.tier-bar-tools 의 padding 으로 10px 들어가 있다)과 왼쪽 기준선이 어긋났다.
+   멤버 공지·개인 전적 사이드바는 바 자체에 padding: 7px 10px 이 있어 '전체' 줄과 멤버 줄이
+   같이 들여쓰기 되는데, 티어 바만 padding: 0 이라 목록이 혼자 끝까지 나갔다.
+   세로 여백(데스크톱 7px / 모바일 6px)은 각 구간 값을 그대로 두고 좌우만 맞춘다. */
+.selection-layout > .tier-bar .tier-bar-list {
+    padding-left: 10px;
+    padding-right: 10px;
 }
