@@ -6,7 +6,7 @@
 <title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="style.css?v=bc7f01df64">
+<link rel="stylesheet" href="style.css?v=770a703362">
 <style>
 html[data-theme="dark"] body {
     background: var(--color-bg);
@@ -361,7 +361,8 @@ html[data-theme="dark"] .mv-settings-panel {
     width: 100%;
     box-sizing: border-box;
     grid-template-columns: 1fr !important;
-    background: #141821;
+    background-color: var(--panel-bg);
+    background-image: var(--panel-pattern);
     border: 0;
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
@@ -379,7 +380,7 @@ html[data-theme="dark"] .mv-settings-panel {
     border: 0;
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
-    background: #2b3442;
+    background: var(--panel-control);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 20px 18px 30px;
