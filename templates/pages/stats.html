@@ -23,7 +23,7 @@
         </div>
     </div>
     <div class="container">
-    <div class="section-title" data-en="SUMMARY">전체 요약</div>
+    <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 요약</span></div>
     {#- [리디자인] 시안대로 표 위에 잉크 요약 타일 3개. 지금 고른 지표의 합계 / 1위 /
         집계 인원을 보여준다. 숫자는 page-stats.js가 표를 그릴 때 같이 채운다.
         (합계는 남녀 표를 합친 값이다 - 표는 나눠 보지만 크루 전체 규모는 하나로 읽는 게 맞다) #}
@@ -47,7 +47,7 @@
     <div class="row gap-block mb-block">
         {%- for gender_key, gender_label in [('male', '남자 멤버'), ('female', '여자 멤버')] %}
         <div class="col-md-6">
-            <div class="section-title" data-en="{{ gender_key|upper }}">{{ gender_label }}</div>
+            <div class="section-title" data-en="{{ gender_key|upper }}"><span class="section-title-label">{{ gender_label }}</span></div>
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
                     <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">

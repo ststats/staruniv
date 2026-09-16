@@ -1,20 +1,21 @@
 :root {
     /* ── 라이트: 흰 바탕 + 파랑 포인트 ───────────────────────────── */
     --color-bg: #ffffff;
-    --color-card: #ffffff;
-    --color-border: #e3e8f0;
+    --color-card: #f3f7fe;
+    --color-card-hover: #e9f0fd;
+    --color-border: #dfe6f1;
     --color-text-main: #0b1220;
     --color-text-sub: #5d687a;
     --color-primary: #1f6fff;
     --color-primary-deep: #0b55e0;
-    --color-primary-tint: #eef4ff;
-    --color-primary-tint-strong: #dde9ff;
+    --color-primary-tint: #e5eeff;
+    --color-primary-tint-strong: #d5e3ff;
     --color-win: #1f6fff;
     --color-lose: #f03e3e;
     --color-draw: #868e96;
     --color-ink: #0b1220;
     --color-scrollbar-thumb: #c5d6f7;
-    --color-bg-subtle: #f4f7fb;
+    --color-bg-subtle: #e8eef8;
     --color-border-strong: #cdd6e3;
     --color-logo-black: #0b1220;
     --color-text-strong: #050a14;
@@ -29,10 +30,10 @@
     --color-placeholder-bg: #eef2f8;
     --color-donut-track: #e6ecf5;
     --color-modal-body-bg: #ffffff;
-    --calendar-outside-bg: #f8fafd;
+    --calendar-outside-bg: #ebf0f8;
     --calendar-outside-text: #aab3c1;
     --panel-bg: #f7faff;
-    --panel-control: #eaf1ff;
+    --panel-control: #e3ebfa;
     --panel-text: #0b1220;
     --panel-muted: #56627a;
     --panel-line: #dde5f0;
@@ -631,9 +632,10 @@ html[data-theme="dark"] {
     /* ── 다크: 검정 바탕 + 파랑 포인트 ─────────────────────────── */
     color-scheme: dark;
     --color-bg: #050608;
-    --color-card: #0d0f13;
+    --color-card: #0e1116;
+    --color-card-hover: #121a28;
     --color-border: #1d2129;
-    --color-bg-subtle: #15181e;
+    --color-bg-subtle: #171b23;
     --color-border-strong: #353b46;
     --color-border-hover: #2d5fc0;
     --color-text-main: #eef2f8;
@@ -6893,7 +6895,6 @@ body {
 
 .theme-toggle {
     background: var(--color-bg-subtle);
-    box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .theme-toggle button {
@@ -6953,9 +6954,8 @@ body {
 
 /* 머리 안 탭: 비활성은 테두리 칩, 활성은 파랑 */
 .sub-tab {
-    background: var(--color-card);
+    background: var(--panel-control);
     color: var(--color-text-sub);
-    box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .sub-tab:hover {
@@ -6968,35 +6968,82 @@ body {
 }
 
 .page-header-stats .head-stat {
-    background: var(--color-card);
-    box-shadow: inset 0 0 0 1px var(--color-border);
+    background: var(--panel-control);
 }
 
 .home-carousel-preview {
-    background: var(--color-card);
-    box-shadow: inset 0 0 0 1px var(--color-border);
+    background: var(--panel-control);
 }
 
 /* ── 섹션 제목: 검은 굵은 줄 → 얇은 선 + 짧은 파란 포인트 ── */
+/* 파란 포인트 줄은 제목 글자(.section-title-label) 폭만큼 깐다.
+   제목 아래 여백(9px) + 회색 선(1px)만큼 내려서 회색 선 위에 겹친다. */
 .section-title,
 html[data-theme="dark"] .section-title {
     border-bottom: 1px solid var(--color-border);
-    background-image: linear-gradient(var(--color-primary), var(--color-primary));
-    background-repeat: no-repeat;
-    background-size: 36px 2px;
-    background-position: left bottom;
+}
+
+/* 제목 글자 칸은 줄 높이만큼 늘여(stretch) 바닥을 회색 선에 붙이고, 글자는 그 안에서
+   가운데 정렬한다. 옆의 배지·버튼·필터도 줄 가운데에 두면 높이가 달라도 중심선이 맞는다. */
+.section-title .section-title-label {
+    position: relative;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+}
+
+.section-title > :not(.section-title-label) {
+    align-self: center;
+}
+
+.section-title .section-title-label::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -10px;
+    height: 2px;
+    background: var(--color-primary);
+    pointer-events: none;
 }
 
 .section-title[data-en]::before {
     color: var(--color-primary);
 }
 
-.section-title .title-count {
-    background: var(--color-primary-tint-strong);
-    color: var(--color-primary) !important;
+/* 제목 옆 숫자 배지: 방송중(빨강 바탕 + 흰 글씨)과 같은 규칙으로 파랑 바탕 + 흰 글씨.
+   글꼴·크기도 두 배지를 똑같이 맞춘다. */
+.section-title .title-count,
+.tier-row > .section-title .tier-live:not(:empty) {
+    min-height: 20px;
+    padding: 0 8px;
+    font-family: "Chakra Petch", "Pretendard", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff !important;
 }
 
-/* ── 카드: 경계선 한 줄, 호버 때 파랑 ── */
+.section-title .title-count {
+    background: var(--color-primary);
+}
+
+.tier-row > .section-title .tier-live:not(:empty) {
+    background: var(--color-lose) !important;
+}
+
+/* 배지 규칙 통일: 채운 바탕 + 흰 글씨.
+   일반 태그(대회·CK 등 경기 형식)·티어·인원 수는 파랑, 방송중은 빨강,
+   종족·직책은 각자 고유색(바탕만 다르고 흰 글씨는 같다). */
+.tag-badge:not(.race-badge):not(.role-badge),
+html[data-theme="dark"] .tag-badge:not(.race-badge):not(.role-badge),
+.tag-badge.tier-badge,
+html[data-theme="dark"] .tag-badge.tier-badge {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+/* ── 카드: 선 없이 면으로 구분 (잘린 모서리와 충돌하지 않음) ──
+   흰(검) 페이지 위에 파랑기 도는 면을 깔고, 호버 때 한 단계 더 파랗게. */
 .clean-card,
 .live-broadcast-card,
 .member-card,
@@ -7007,62 +7054,19 @@ html[data-theme="dark"] .section-title {
 .avatar-bar,
 .tier-bar {
     background-color: var(--color-card);
-    box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .mv-console,
 .mv-chip-box,
 .mv-order-row {
     background-color: var(--color-card);
-    box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .clean-card:hover,
 .member-card:hover,
 .tool-card:hover,
-.stat-card-box:hover,
 .live-broadcast-card:hover {
-    box-shadow: inset 0 0 0 1px var(--color-border-hover);
-}
-
-/* 잘린 모서리(노치)에도 테두리가 이어지도록 대각선 한 줄을 그린다.
-   clip-path 때문에 inset 그림자가 대각선 구간에서 끊기기 때문. */
-.clean-card,
-.live-broadcast-card,
-.member-card,
-.news-post-card,
-.stat-card-box,
-.tier-card,
-.tool-card {
-    position: relative;
-}
-
-.clean-card::after,
-.live-broadcast-card::after,
-.member-card::after,
-.news-post-card::after,
-.stat-card-box::after,
-.tier-card::after,
-.tool-card::after {
-    content: "";
-    position: absolute;
-    z-index: 3;
-    top: 0;
-    right: calc(var(--notch-md) - var(--notch-md) * 1.41421);
-    width: calc(var(--notch-md) * 1.41421);
-    height: 1px;
-    background: var(--color-border);
-    transform: translateY(0.7px) rotate(45deg);
-    transform-origin: 0 50%;
-    pointer-events: none;
-}
-
-.clean-card:hover::after,
-.member-card:hover::after,
-.tool-card:hover::after,
-.stat-card-box:hover::after,
-.live-broadcast-card:hover::after {
-    background: var(--color-border-hover);
+    background-color: var(--color-card-hover);
 }
 
 .stat-table thead th {
@@ -7075,9 +7079,6 @@ html[data-theme="dark"] .section-title {
    [캘린더] 가독성 정리
    ═══════════════════════════════════════════════════════════════════ */
 
-.cal-card {
-    box-shadow: inset 0 0 0 1px var(--color-border);
-}
 
 .cal-month-bar {
     border-bottom: 1px solid var(--color-border);
@@ -7098,7 +7099,6 @@ html[data-theme="dark"] .section-title {
 .cal-month-bar .cal-nav-btn {
     background: var(--color-bg-subtle) !important;
     color: var(--color-text-main) !important;
-    box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .cal-month-bar .cal-nav-btn:hover {
@@ -7128,7 +7128,7 @@ html[data-theme="dark"] .section-title {
 
 .cal-day-cell {
     min-height: 120px;
-    padding: 6px 6px 8px;
+    padding: 6px 8px 8px;
     gap: 3px;
 }
 
@@ -7172,7 +7172,7 @@ html[data-theme="dark"] .section-title {
 .cal-cell-event,
 .cal-longterm-bar {
     --ev-accent: color-mix(in srgb, var(--ev-color) 78%, var(--color-text-main));
-    background: color-mix(in srgb, var(--ev-color) 13%, var(--color-card)) !important;
+    background: color-mix(in srgb, var(--ev-accent) 14%, var(--color-card)) !important;
     box-shadow: inset 3px 0 0 var(--ev-accent);
     color: var(--color-text-main);
     padding: 4px 6px 4px 9px;
@@ -7184,16 +7184,16 @@ html[data-theme="dark"] .section-title {
 }
 
 .cal-cell-event:hover {
-    background: color-mix(in srgb, var(--ev-color) 22%, var(--color-card)) !important;
+    background: color-mix(in srgb, var(--ev-accent) 24%, var(--color-card)) !important;
 }
 
 html[data-theme="dark"] .cal-cell-event,
 html[data-theme="dark"] .cal-longterm-bar {
-    background: color-mix(in srgb, var(--ev-color) 22%, var(--color-card)) !important;
+    background: color-mix(in srgb, var(--ev-accent) 22%, var(--color-card)) !important;
 }
 
 html[data-theme="dark"] .cal-cell-event:hover {
-    background: color-mix(in srgb, var(--ev-color) 32%, var(--color-card)) !important;
+    background: color-mix(in srgb, var(--ev-accent) 32%, var(--color-card)) !important;
 }
 
 .cal-cell-top {
@@ -7233,26 +7233,27 @@ html[data-theme="dark"] .cal-cell-event:hover {
     overflow-wrap: anywhere;
 }
 
-/* 여러 날 이어지는 막대: 칩보다 진하게 채워서 구분 */
+/* 여러 날 이어지는 막대: 하루짜리 칩과 같은 옅은 색.
+   칸 여백(8px) 밖으로 번져 옆 칸 막대와 붙으므로(calendar.js calBarEdgeStyle),
+   왼쪽 색 막대·잘린 모서리는 막대의 실제 시작/끝 칸에만 둔다.
+   position: relative 로 옆 칸 배경보다 위에 그려 이음매가 가려지지 않게 한다. */
 .cal-longterm-bar {
-    background: var(--ev-accent) !important;
+    position: relative;
+    z-index: 1;
     box-shadow: none;
 }
 
-html[data-theme="dark"] .cal-longterm-bar {
-    background: color-mix(in srgb, var(--ev-color) 70%, #000) !important;
+.cal-longterm-bar.is-cont-right {
+    clip-path: none !important;
 }
 
-.cal-longterm-bar .cal-event-time,
-.cal-longterm-bar .cal-event-person,
-.cal-longterm-bar .cal-event-desc {
-    color: #fff;
+.cal-longterm-bar:not(.is-cont-left) {
+    box-shadow: inset 3px 0 0 var(--ev-accent);
 }
+
+
 
 /* ── 오늘의 일정 = 깨끗한 카드 / 선택한 날짜 일정 = 사선 패널 ── */
-#page-schedule .cal-sidebar .cal-day-card {
-    box-shadow: inset 0 0 0 1px var(--color-border);
-}
 
 #page-schedule .cal-selected-card-wrapper > .cal-day-card {
     background-color: var(--panel-bg);
@@ -7269,6 +7270,96 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: var(--color-primary) !important;
 }
 
-#page-schedule .cal-offair-chip {
-    box-shadow: inset 0 0 0 1px var(--color-border);
+
+/* 카드 바깥 테두리가 없으므로 달력 격자의 왼쪽 바깥선도 뺀다(오른쪽과 대칭) */
+.cal-days-grid {
+    border-left: 0;
+}
+
+/* 이어지는 막대의 중간 칸은 글자를 숨겨 한 줄로 이어진 막대처럼 보이게 한다.
+   (주가 바뀌는 칸은 is-cont-left 가 붙지 않아 제목이 다시 보인다) 높이는 유지. */
+.cal-longterm-bar.is-cont-left .cal-cell-top,
+.cal-longterm-bar.is-cont-left .cal-event-desc {
+    visibility: hidden;
+}
+
+
+/* ── 전적 '최근 전적' 필터: 제목 줄 높이(28px)에 맞춘 세그먼트 컨트롤 ── */
+.record-recent-header {
+    align-items: stretch;
+}
+
+.record-recent-header .filter-nav,
+.record-recent-header .btn-view-all {
+    align-self: center;
+}
+
+.record-recent-header .filter-nav {
+    box-sizing: border-box;
+    height: 28px;
+    padding: 3px;
+    gap: 2px;
+    align-items: stretch;
+    background: var(--color-bg-subtle);
+}
+
+.record-recent-header .filter-item {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 36px;
+    height: auto;
+    padding: 0 9px;
+    font-family: "Pretendard", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-sub);
+}
+
+.record-recent-header .filter-item:hover:not(.active) {
+    background: var(--color-card);
+    color: var(--color-primary);
+}
+
+.record-recent-header .filter-item.active {
+    font-weight: 700;
+}
+
+@media (max-width: 600px) {
+    .record-recent-header .filter-nav {
+        height: 26px;
+        padding: 2px;
+        gap: 1px;
+    }
+
+    .record-recent-header .filter-item {
+        flex-basis: auto;
+        width: auto;
+        min-width: 28px;
+        height: auto;
+        padding: 0 6px;
+        font-size: 11px;
+    }
+}
+
+/* ── 오른쪽 위 화살표: 글꼴마다 모양이 달라지던 '↗' 글자 대신 한 가지 SVG 아이콘 ── */
+.i-arrow {
+    display: inline-block;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    font-size: 0;
+    line-height: 0;
+    vertical-align: 0;
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 1.25h6.25v6.25M8.5 1.5 1.25 8.75' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 1.25h6.25v6.25M8.5 1.5 1.25 8.75' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.stat-card-arrow.i-arrow,
+.stat-table .ext-arrow.i-arrow,
+.tool-card-ext.i-arrow,
+.ext-arrow.i-arrow {
+    width: 10px;
+    height: 10px;
+    font-size: 0;
 }
