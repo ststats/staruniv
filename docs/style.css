@@ -17,7 +17,14 @@
     --color-tier-badge: #1b2a4a;
     --color-scrollbar-thumb: #c5d6f7;
     --color-bg-subtle: #eef3fa;
-    --color-head-bg: #d6e4fb;
+    /* 머리 띠(표 머리글·요일 줄·프로필 카드 사진 영역) 공용: 옅은 파랑 + 흰 사선 */
+    --color-head-bg: #dce7fb;
+    --head-hatch: rgba(255, 255, 255, 0.55);
+    --head-pattern: repeating-linear-gradient(
+        135deg,
+        var(--head-hatch) 0 1px,
+        transparent 1px 7px
+    );
     --color-head-text: #2c58ad;
     --color-head-sun: #e0484d;
     --color-head-sat: #1f6fff;
@@ -643,6 +650,7 @@ html[data-theme="dark"] {
     --color-border: #1d2129;
     --color-bg-subtle: #171b23;
     --color-head-bg: #111a2b;
+    --head-hatch: rgba(143, 178, 240, 0.08);
     --color-head-text: #8fb2f0;
     --color-head-sun: #ff7b7b;
     --color-head-sat: #6ea4ff;
@@ -7090,11 +7098,13 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     background-color: var(--color-card-hover);
 }
 
-/* 표 머리글·캘린더 요일칸: 사이트 톤(흰/파)에 맞춘 옅은 파랑 띠 + 파란 글씨.
-   면은 부드럽게 두고, 글자색(파랑)과 굵기로 머리글임을 드러낸다. */
+/* 표 머리글·캘린더 요일칸·프로필 카드 사진 영역: 같은 '머리 띠' (옅은 파랑 + 흰 사선).
+   흰 카드 안에서 구분되고, 사이트의 사선 모티프는 유지한다. 글자는 파랑. */
 .stat-table thead th {
     background-color: var(--color-head-bg) !important;
-    background-image: none !important;
+    background-image: var(--head-pattern) !important;
+    /* 칸마다 무늬가 새로 시작해 이음매가 끊기지 않도록 화면 기준으로 고정 */
+    background-attachment: fixed;
     color: var(--color-head-text) !important;
     border: 0 !important;
     font-weight: 700;
@@ -7134,7 +7144,7 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 
 .cal-weekdays {
     background-color: var(--color-head-bg);
-    background-image: none;
+    background-image: var(--head-pattern);
     color: var(--color-head-text);
     border-bottom: 0;
 }
@@ -7431,4 +7441,10 @@ html[data-theme="dark"] .cal-cell-event:hover {
     min-width: 40px;
     padding: 0;
     justify-content: center;
+}
+
+.member-card-media,
+.tier-card-media {
+    background-color: var(--color-head-bg) !important;
+    background-image: var(--head-pattern) !important;
 }
