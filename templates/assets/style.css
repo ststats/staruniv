@@ -7436,13 +7436,17 @@ html[data-theme="dark"] .cal-longterm-bar {
     }
 }
 
-/* 경기 형식 배지(대회·대학·미니·CK): 글자 수와 관계없이 같은 크기 */
+/* 경기 형식 배지(대회·대학·미니·CK): 글자 수와 관계없이 같은 크기.
+   옆 결과(W/L, 30×20) 배지보다 튀지 않게 한 단계 작게: 34×18, 10px. */
 .badge-cell .tag-badge {
     box-sizing: border-box;
-    width: 40px;
-    min-width: 40px;
+    width: 34px;
+    min-width: 34px;
+    height: 18px;
     padding: 0;
     justify-content: center;
+    font-size: 10px;
+    vertical-align: middle;
 }
 
 .member-card-media,
