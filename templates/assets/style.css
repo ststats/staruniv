@@ -14,15 +14,14 @@
     --color-lose: #f03e3e;
     --color-draw: #868e96;
     --color-ink: #0b1220;
+    --color-tier-badge: #1b2a4a;
     --color-scrollbar-thumb: #c5d6f7;
     --color-bg-subtle: #eef3fa;
-    --color-head-bg: #edf2fa;
-    --head-hatch: rgba(31, 111, 255, 0.16);
-    --head-pattern: repeating-linear-gradient(
-        135deg,
-        var(--head-hatch) 0 1px,
-        transparent 1px 6px
-    );
+    --color-head-bg: #d6e4fb;
+    --color-head-text: #2c58ad;
+    --color-head-sun: #e0484d;
+    --color-head-sat: #1f6fff;
+    --color-badge-format: #98a3b4;
     --color-border-strong: #cdd6e3;
     --color-logo-black: #0b1220;
     --color-text-strong: #050a14;
@@ -643,8 +642,11 @@ html[data-theme="dark"] {
     --color-card-hover: #121a28;
     --color-border: #1d2129;
     --color-bg-subtle: #171b23;
-    --color-head-bg: #12151b;
-    --head-hatch: rgba(91, 155, 255, 0.14);
+    --color-head-bg: #111a2b;
+    --color-head-text: #8fb2f0;
+    --color-head-sun: #ff7b7b;
+    --color-head-sat: #6ea4ff;
+    --color-badge-format: #4b5362;
     --color-border-strong: #353b46;
     --color-border-hover: #2d5fc0;
     --color-text-main: #eef2f8;
@@ -663,6 +665,7 @@ html[data-theme="dark"] {
     --color-primary-tint-strong: #132a52;
     --color-win: #3b82ff;
     --color-ink: #1a3a7c;
+    --color-tier-badge: #3a4867;
     --color-logo-black: #eef2f8;
     --color-scrollbar-thumb: #2a3140;
     --color-modal-body-bg: #0d0f13;
@@ -7044,13 +7047,19 @@ html[data-theme="dark"] .section-title {
 }
 
 /* 배지 규칙 통일: 채운 바탕 + 흰 글씨.
-   일반 태그(대회·CK 등 경기 형식)·티어·인원 수는 파랑, 방송중은 빨강,
+   경기 형식(대회·CK 등)은 옅은 회색, 티어는 짙은 남색, 인원 수는 파랑, 방송중은 빨강,
    종족·직책은 각자 고유색(바탕만 다르고 흰 글씨는 같다). */
-.tag-badge:not(.race-badge):not(.role-badge),
-html[data-theme="dark"] .tag-badge:not(.race-badge):not(.role-badge),
+/* 경기 형식 배지(대회·대학·미니·CK): 옅은 회색 + 흰 글씨. 결과(W/L) 배지와 겹치지 않게. */
+.tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge),
+html[data-theme="dark"] .tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge) {
+    background: var(--color-badge-format);
+    color: #fff;
+}
+
+/* 티어 배지는 짙은 남색: 파랑은 테란 종족 배지와 겹쳐 보인다 */
 .tag-badge.tier-badge,
 html[data-theme="dark"] .tag-badge.tier-badge {
-    background: var(--color-primary);
+    background: var(--color-tier-badge);
     color: #fff;
 }
 
@@ -7081,13 +7090,15 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     background-color: var(--color-card-hover);
 }
 
-/* 표 머리글·캘린더 요일칸: 흰 컨텐츠 안에서 묻히지 않게 사선 무늬를 깐다. */
+/* 표 머리글·캘린더 요일칸: 사이트 톤(흰/파)에 맞춘 옅은 파랑 띠 + 파란 글씨.
+   면은 부드럽게 두고, 글자색(파랑)과 굵기로 머리글임을 드러낸다. */
 .stat-table thead th {
     background-color: var(--color-head-bg) !important;
-    background-image: var(--head-pattern) !important;
-    /* 칸마다 무늬가 새로 시작해 이음매가 끊기지 않도록 화면 기준으로 고정 */
-    background-attachment: fixed;
-    color: var(--color-text-sub) !important;
+    background-image: none !important;
+    color: var(--color-head-text) !important;
+    border: 0 !important;
+    font-weight: 700;
+    letter-spacing: 0.08em;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -7123,8 +7134,8 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 
 .cal-weekdays {
     background-color: var(--color-head-bg);
-    background-image: var(--head-pattern);
-    color: var(--color-text-sub);
+    background-image: none;
+    color: var(--color-head-text);
     border-bottom: 0;
 }
 
@@ -7134,11 +7145,11 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 }
 
 .cal-weekdays div:first-child {
-    color: var(--color-lose);
+    color: var(--color-head-sun);
 }
 
 .cal-weekdays div:last-child {
-    color: var(--color-primary);
+    color: var(--color-head-sat);
 }
 
 .cal-day-cell {
@@ -7411,4 +7422,13 @@ html[data-theme="dark"] .cal-cell-event:hover {
         font-size: 11px;
         gap: 5px;
     }
+}
+
+/* 경기 형식 배지(대회·대학·미니·CK): 글자 수와 관계없이 같은 크기 */
+.badge-cell .tag-badge {
+    box-sizing: border-box;
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    justify-content: center;
 }
