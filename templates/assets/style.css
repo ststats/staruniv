@@ -4499,7 +4499,7 @@ html[data-theme="dark"] .section-title {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    color: var(--panel-text);
+    color: #fff;
     clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
 }
 
@@ -4741,7 +4741,7 @@ html[data-theme="dark"] .section-title {
     justify-content: center;
     flex: none;
     min-width: 0;
-    color: var(--panel-text);
+    color: #fff;
 }
 
 .stat-card-box .wl .wl-win,
