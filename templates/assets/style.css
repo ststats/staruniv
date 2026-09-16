@@ -28,7 +28,7 @@
     --color-head-text: #2c58ad;
     --color-head-sun: #e0484d;
     --color-head-sat: #1f6fff;
-    --color-badge-format: #98a3b4;
+    --color-badge-format: #5a9ea6;
     --color-border-strong: #cdd6e3;
     --color-logo-black: #0b1220;
     --color-text-strong: #050a14;
@@ -654,7 +654,7 @@ html[data-theme="dark"] {
     --color-head-text: #8fb2f0;
     --color-head-sun: #ff7b7b;
     --color-head-sat: #6ea4ff;
-    --color-badge-format: #4b5362;
+    --color-badge-format: #336a71;
     --color-border-strong: #353b46;
     --color-border-hover: #2d5fc0;
     --color-text-main: #eef2f8;
@@ -7055,9 +7055,9 @@ html[data-theme="dark"] .section-title {
 }
 
 /* 배지 규칙 통일: 채운 바탕 + 흰 글씨.
-   경기 형식(대회·CK 등)은 옅은 회색, 티어는 짙은 남색, 인원 수는 파랑, 방송중은 빨강,
+   경기 형식(대회·CK 등)은 청록, 티어는 짙은 남색, 인원 수는 파랑, 방송중은 빨강,
    종족·직책은 각자 고유색(바탕만 다르고 흰 글씨는 같다). */
-/* 경기 형식 배지(대회·대학·미니·CK): 옅은 회색 + 흰 글씨. 결과(W/L) 배지와 겹치지 않게. */
+/* 경기 형식 배지(대회·대학·미니·CK): 차분한 청록 + 흰 글씨. 결과(W/L) 배지와 겹치지 않게. */
 .tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge),
 html[data-theme="dark"] .tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge) {
     background: var(--color-badge-format);
@@ -7203,13 +7203,19 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 
 /* 일정 칩: 진한 색 덩어리 + 작은 흰 글씨(오른쪽 정렬) →
    옅게 깐 일정 색 + 왼쪽 색 막대 + 본문색 글씨(왼쪽 정렬) */
+/* 섞은 색은 calendar.js(calEventColorVars)가 라이트(-l)/다크(-d)용 #hex로 넘겨준다.
+   color-mix()는 관리자 저장용 캡처(html2canvas)가 해석하지 못해 쓰지 않는다. */
 .cal-cell-event,
 .cal-longterm-bar {
-    --ev-accent: color-mix(in srgb, var(--ev-color) 78%, var(--color-text-main));
-    background: color-mix(in srgb, var(--ev-accent) 14%, var(--color-card)) !important;
-    box-shadow: inset 3px 0 0 var(--ev-accent);
+    --ev-accent: var(--ev-accent-l);
+    --ev-bg: var(--ev-bg-l);
+    --ev-hover: var(--ev-hover-l);
+    background: var(--ev-bg) !important;
+    /* 왼쪽 색 막대는 border로: html2canvas가 inset box-shadow를 칩 전체 채우기로 그려버린다 */
+    box-shadow: none;
+    border-left: 3px solid var(--ev-accent) !important;
     color: var(--color-text-main);
-    padding: 4px 6px 4px 9px;
+    padding: 4px 6px 4px 6px;
     margin-bottom: 0;
     gap: 1px;
     clip-path: none;
@@ -7218,16 +7224,14 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 }
 
 .cal-cell-event:hover {
-    background: color-mix(in srgb, var(--ev-accent) 24%, var(--color-card)) !important;
+    background: var(--ev-hover) !important;
 }
 
 html[data-theme="dark"] .cal-cell-event,
 html[data-theme="dark"] .cal-longterm-bar {
-    background: color-mix(in srgb, var(--ev-accent) 22%, var(--color-card)) !important;
-}
-
-html[data-theme="dark"] .cal-cell-event:hover {
-    background: color-mix(in srgb, var(--ev-accent) 32%, var(--color-card)) !important;
+    --ev-accent: var(--ev-accent-d);
+    --ev-bg: var(--ev-bg-d);
+    --ev-hover: var(--ev-hover-d);
 }
 
 .cal-cell-top {
@@ -7281,8 +7285,8 @@ html[data-theme="dark"] .cal-cell-event:hover {
     clip-path: none !important;
 }
 
-.cal-longterm-bar:not(.is-cont-left) {
-    box-shadow: inset 3px 0 0 var(--ev-accent);
+.cal-longterm-bar.is-cont-left {
+    border-left: 0 !important;
 }
 
 

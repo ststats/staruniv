@@ -70,15 +70,56 @@
         contRight: !roundRight,
         bleedLeft: roundLeft ? '0' : '-8px',
         bleedRight: roundRight ? '0' : '-9px',
-        // 하루짜리 일정 칩(style.css: 왼쪽 9px, 오른쪽 6px)과 글자 위치를 맞춘다.
-        // 번지는 쪽은 번진 만큼(왼쪽 8px, 오른쪽 9px) 더 들여서 칸 기준 위치를 유지.
-        padLeft: roundLeft ? '9px' : '17px',
+        // 하루짜리 일정 칩(style.css: 왼쪽 색 막대 3px + 여백 6px, 오른쪽 6px)과 글자 위치를 맞춘다.
+        // 이어지는 쪽은 색 막대가 없고 번진 만큼(왼쪽 8px, 오른쪽 9px) 더 들인다: 3+6+8 = 17px.
+        padLeft: roundLeft ? '6px' : '17px',
         padRight: roundRight ? '6px' : '15px',
         radius: '0',
     });
 
+    // 일정 색 → 칩에 쓰는 색(강조색·옅은 바탕·호버 바탕)을 라이트/다크용으로 미리 계산한다.
+    // CSS color-mix()로 섞으면 관리자 페이지 저장 때 쓰는 html2canvas가 그 색을 해석하지 못해
+    // "unsupported color function" 오류로 저장이 막히므로, 섞은 결과를 #rrggbb로 넘긴다.
+    // 섞는 기준색은 style.css 토큰과 같다: 라이트 글자 #0b1220 / 카드 #ffffff, 다크 글자 #eef2f8 / 카드 #0e1116.
+    const CAL_EV_THEME = {
+        l: { text: [11, 18, 32], card: [255, 255, 255], bg: 0.14, hover: 0.24 },
+        d: { text: [238, 242, 248], card: [14, 17, 22], bg: 0.22, hover: 0.32 },
+    };
+    const calColorCache = new Map();
+    const calToRgb = (color) => {
+        if (calColorCache.has(color)) return calColorCache.get(color);
+        let rgb = null;
+        const hex = /^#([0-9a-f]{3,8})$/i.exec(color);
+        if (hex) {
+            let h = hex[1];
+            if (h.length <= 4) h = h.split('').map(ch => ch + ch).join('');
+            rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+        } else {
+            // rgb()/hsl()/색 이름은 브라우저에게 정규화를 맡긴다.
+            const ctx = document.createElement('canvas').getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillStyle = color;
+            const m = /^#([0-9a-f]{6})$/i.exec(ctx.fillStyle) || null;
+            const r = /rgba?\(([^)]+)\)/.exec(ctx.fillStyle);
+            if (m) rgb = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+            else if (r) rgb = r[1].split(',').slice(0, 3).map(v => Math.round(parseFloat(v)));
+        }
+        rgb = rgb || [22, 199, 91];
+        calColorCache.set(color, rgb);
+        return rgb;
+    };
+    const calMix = (a, b, t) => '#' + a.map((v, i) => Math.round(v * t + b[i] * (1 - t)).toString(16).padStart(2, '0')).join('');
+    const calEventColorVars = (color) => {
+        const base = calToRgb(color);
+        return Object.entries(CAL_EV_THEME).map(([k, th]) => {
+            const accentHex = calMix(base, th.text, 0.78);
+            const accent = calToRgb(accentHex);
+            return `--ev-accent-${k}:${accentHex};--ev-bg-${k}:${calMix(accent, th.card, th.bg)};--ev-hover-${k}:${calMix(accent, th.card, th.hover)};`;
+        }).join('');
+    };
+
     // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
-    // 일정 색은 CSS 변수로 전달하고, 시간·타이틀·내용은 흰색으로 통일한다.
+    // 일정 색은 CSS 변수로 전달한다(calEventColorVars).
     const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
         const timeHtml = timeText ? `<span class="cal-event-time">${calEscapeHTML(timeText)}</span>` : '';
         const personHtml = personText ? `<span class="cal-event-person">${calEscapeHTML(personText)}</span>` : '';
@@ -87,7 +128,7 @@
             ? `margin-left:${bar.bleedLeft}; margin-right:${bar.bleedRight}; padding-left:${bar.padLeft}; padding-right:${bar.padRight}; border-radius:${bar.radius}; `
             : '';
         return `
-            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}--ev-color: ${color};">
+            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}--ev-color: ${color};${calEventColorVars(color)}">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>
