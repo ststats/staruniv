@@ -6,7 +6,7 @@
     //   함수: calEscapeHTML, calGetFormatDate, calTodayStr, calMigrateData, loadPublicHolidays,
     //         calLoadPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
     //         calRenderTodaySchedules, calRenderSelectedDateSchedules
-    //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra, calOffAirMemberName
+    //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
     // admin.html은 이 파일의 let 변수들을 전역 이름으로 직접 대입하므로(calEvents = ...),
     // 상태 객체로 감싸지 않고 전역 let 바인딩을 그대로 유지한다.
     //
@@ -35,11 +35,6 @@
     let calOffAir = {};
     const calOffAirForDate = (dateStr) => (calOffAir && Array.isArray(calOffAir[dateStr])) ? calOffAir[dateStr] : [];
 
-    // '김윤환'이 휴방으로 등록된 날은 달력 칸 맨 위(다른 일정보다 위)에 검은 "휴방" 표시를
-    // 붙여준다 - 달력 칸 자체에만 표시되고, 연속으로 휴방이면 장기 일정 막대처럼 이어붙인다.
-    const CAL_YOUNHWAN_NAME = '김윤환';
-    const CAL_YOUNHWAN_SHORT = '윤환';
-    const CAL_YOUNHWAN_COLOR = '#111318';
     const CAL_DEFAULT_EVENT_COLOR = '#eff6ff';
     const CAL_DEFAULT_LONGTERM_COLOR = '#ffedd5';
 
@@ -58,12 +53,6 @@
     // 오늘 날짜(로컬 기준) "YYYY-MM-DD"
     const calTodayStr = () => calDateToStr(new Date());
 
-    const calShiftDate = (dateStr, delta) => {
-        const d = new Date(dateStr + 'T00:00:00');
-        d.setDate(d.getDate() + delta);
-        return calDateToStr(d);
-    };
-
     // 일정 색상은 style 속성에 들어가므로, 색상 형식(#hex / rgb()·hsl() / 영문 색 이름)만 허용한다.
     // 어드민의 <input type="color">는 항상 #rrggbb라 정상 데이터는 그대로 통과한다.
     const CAL_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|(rgb|hsl)a?\([\w\s.,%\/]+\)|[a-zA-Z]+)$/;
@@ -72,14 +61,7 @@
         return c && CAL_COLOR_PATTERN.test(c) ? c : fallback;
     };
 
-    // calendar.js는 멤버 정보를 모르고 soopId만 다루므로, soopId -> 이름 변환은 app.js/admin이
-    // 걸어둔 훅(window.calOffAirMemberName)에 맡긴다. 훅이 없는 페이지에서는 false.
-    const calIsYounhwanOffAir = (dateStr) => {
-        if (typeof window.calOffAirMemberName !== 'function') return false;
-        return calOffAirForDate(dateStr).some(soopId => window.calOffAirMemberName(soopId) === CAL_YOUNHWAN_NAME);
-    };
-
-    // 이어붙는 막대(장기 일정/김윤환 휴방)의 좌우 모서리 스타일. 옆 칸과 이어지는 쪽은 각지게 하고
+    // 이어붙는 막대(장기 일정)의 좌우 모서리 스타일. 옆 칸과 이어지는 쪽은 각지게 하고
     // 칸 경계 밖으로 살짝 튀어나가게(bleed) 해서 끊김 없이 이어진 것처럼 보이게 하고, 끊기는 쪽은
     // 둥글게 마감한다. bleed(-8px)만큼 padding을 8px 더 줘서(4px+8px=12px) 텍스트는 항상
     // "칸 경계에서 4px" 위치를 유지한다 - 하루짜리 일정 카드(패딩 4px)와도 정렬이 맞는다.
@@ -106,17 +88,6 @@
                 ${descHtml}
             </div>
         `;
-    };
-
-    // 장기 일정 막대와 같은 이어붙이기 방식이지만, 진짜 시작/종료일 대신
-    // "어제/내일도 김윤환 휴방인가"로 연결 여부를 판단한다.
-    const calGetYounhwanBarHTML = (dateStr, isWeekStart, isWeekEnd) => {
-        const connectsLeft = !isWeekStart && calIsYounhwanOffAir(calShiftDate(dateStr, -1));
-        const connectsRight = !isWeekEnd && calIsYounhwanOffAir(calShiftDate(dateStr, 1));
-        return calCellEventHtml({
-            timeText: '휴방', personText: CAL_YOUNHWAN_SHORT, descText: '',
-            color: CAL_YOUNHWAN_COLOR, bar: calBarEdgeStyle(!connectsLeft, !connectsRight),
-        });
     };
 
     // 공휴일 목록은 해마다 바뀌므로 별도 JSON(holidays.json)에서 fetch해온다.
@@ -211,7 +182,7 @@
         bar: calBarEdgeStyle(dateStr === ev.startDate || isWeekStart, dateStr === ev.endDate || isWeekEnd),
     });
 
-    // 이번 달 칸 하나(날짜 숫자 + 김윤환 휴방 띠 + 장기 일정 막대 + 하루짜리 일정 카드)
+    // 이번 달 칸 하나(날짜 숫자 + 장기 일정 막대 + 하루짜리 일정 카드)
     const calDayCellHtml = (dateStr, dayNum, dayOfWeek, todayStr, monthEvents) => {
         const classes = ['cal-day-cell'];
         if (dateStr === todayStr) classes.push('today');
@@ -220,8 +191,6 @@
 
         const todayAttr = dateStr === todayStr ? ` aria-current="date" aria-label="오늘, ${dateStr}"` : '';
         let html = `<span class="cal-day-number"${todayAttr}>${dayNum}</span>`;
-        // '김윤환' 휴방 표시는 가장 상단(다른 일정보다 위)에 붙인다.
-        if (calIsYounhwanOffAir(dateStr)) html += calGetYounhwanBarHTML(dateStr, isWeekStart, isWeekEnd);
         // 기간 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는 막대로, 하루짜리 일정은 그 아래 카드로.
         const dayEvents = calEventsForDate(dateStr, monthEvents);
         dayEvents.filter(calIsMultiDay).forEach(ev => { html += calGetLongTermBarHTML(ev, dateStr, isWeekStart, isWeekEnd); });
