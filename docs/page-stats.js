@@ -71,11 +71,8 @@ function setSynergyMetric(metric) {
     PageState.update(urlValue !== 'balloons' ? { view: urlValue } : {});
 }
 
-// [리디자인] 순위를 그냥 숫자로 두면 10명을 훑을 때 위아래 격차가 안 읽힌다.
-// 1~3위는 각진 플레이트로 올리고(1위 잉크 / 2위 딥블루 / 3위 블루), 값에는 1위를
-// 100%로 잡은 비율 바를 깔아서 숫자를 비교하지 않아도 격차가 보이게 한다.
-// topValue는 renderSynergyTable이 정렬된 첫 행에서 구해 넘긴다.
-function synergyRowHtml(m, idx, topValue) {
+// 순위·이름·값만 담백하게 보여준다(1~3위 색 플레이트와 비율 막대는 조잡해 보여 뺐다).
+function synergyRowHtml(m, idx) {
     const ours = m.ourMember;
     const name = ours['이름'] || m.nickname;
     // 알 수 없는 지표면(직접 호출된 경우) 예전처럼 스폰전적 형식으로 표시
@@ -83,18 +80,10 @@ function synergyRowHtml(m, idx, topValue) {
     const displayVal = config.format(m);
 
     const rank = idx + 1;
-    const rankClass = rank <= 3 ? ` top r${rank}` : '';
-
-    // 비율 바 - 스폰전적처럼 정렬 기준이 따로 있는 지표도 sortValue로 같이 처리된다.
-    const readValue = config.sortValue ? config.sortValue : (row => row[SynergyState.metric] || 0);
-    const value = Number(readValue(m)) || 0;
-    const top = Number(topValue) || 0;
-    // 0%면 바가 아예 안 보여서 "값이 없다"와 "아주 작다"가 구분되지 않는다 - 최소 2%는 남긴다.
-    const pct = top > 0 && value > 0 ? Math.max(2, Math.round(value / top * 100)) : 0;
 
     return `
         <tr>
-            <td class="text-center colw-20 text-nowrap"><span class="synergy-rank${rankClass}">${rank}</span></td>
+            <td class="text-center colw-20 text-nowrap"><span class="synergy-rank">${rank}</span></td>
             <td class="text-center colw-40">
                 <span class="d-flex align-items-center justify-content-center gap-2 min-w-0">
                     ${avatarHtml(ours['SOOP ID'], 'player-avatar-sm')}
@@ -103,7 +92,6 @@ function synergyRowHtml(m, idx, topValue) {
             </td>
             <td class="text-center fw-bold colw-40 text-nowrap synergy-value">
                 <span class="synergy-val-text">${escapeHTML(displayVal)}</span>
-                <span class="synergy-bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
             </td>
         </tr>`;
 }
@@ -158,12 +146,8 @@ function renderSynergyTable() {
     const noData = emptyRowHtml(3, '표시할 멤버가 없습니다.');
     [['synergy-tbody-male', '남자'], ['synergy-tbody-female', '여자']].forEach(([tbodyId, gender]) => {
         const rows = sortSynergyRows(active.filter(m => m.ourMember['성별'] === gender));
-        // 비율 바의 기준값 = 이 표 1위의 값. 남녀 표가 따로라 각 표의 1위를 기준으로 잡는다.
-        const config = synergyMetricConfig(SynergyState.metric) || SYNERGY_METRICS.sponsor;
-        const readValue = config.sortValue ? config.sortValue : (row => row[SynergyState.metric] || 0);
-        const topValue = rows.length ? Number(readValue(rows[0])) || 0 : 0;
         document.getElementById(tbodyId).innerHTML = rows.length
-            ? rows.map((m, i) => synergyRowHtml(m, i, topValue)).join('')
+            ? rows.map((m, i) => synergyRowHtml(m, i)).join('')
             : noData;
     });
 }

@@ -4113,11 +4113,6 @@ body {
     color: var(--color-text-sub);
 }
 
-.synergy-rank.top {
-    color: #fff;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
-
 .tier-bar {
     color: var(--panel-text);
     border: 0;
@@ -4765,41 +4760,12 @@ html[data-theme="dark"] .section-title {
     font-weight: 600;
 }
 
-.synergy-rank.top.r1 {
-    background: #174b9b;
-}
-
-.synergy-rank.top.r2 {
-    background: var(--color-primary-deep);
-}
-
-.synergy-rank.top.r3 {
-    background: var(--color-primary);
-}
-
 .synergy-value {
     line-height: 1.25;
 }
 
 .synergy-val-text {
     display: block;
-}
-
-.synergy-bar {
-    display: block;
-    height: 6px;
-    margin-top: 7px;
-    background: var(--color-bg-subtle);
-}
-
-.synergy-bar i {
-    display: block;
-    height: 100%;
-    background: var(--color-primary);
-}
-
-tbody tr:first-child .synergy-bar i {
-    background: var(--panel-accent);
 }
 
 .selection-layout > .tier-bar {
@@ -7436,8 +7402,15 @@ html[data-theme="dark"] .cal-longterm-bar {
     }
 }
 
-/* 경기 형식 배지(대회·대학·미니·CK): 글자 수와 관계없이 같은 크기.
-   옆 결과(W/L, 30×20) 배지보다 튀지 않게 한 단계 작게: 34×18, 10px. */
+/* 표 안 배지 크기 통일: 경기 형식(대회·대학·미니·CK)과 결과(W/L/D) 모두 34×18, 10px. */
+.match-badge {
+    box-sizing: border-box;
+    width: 34px;
+    height: 18px;
+    font-size: 10px;
+    vertical-align: middle;
+}
+
 .badge-cell .tag-badge {
     box-sizing: border-box;
     width: 34px;
