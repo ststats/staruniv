@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1985a21341">
+<link rel="stylesheet" href="style.css?v=ce9f8e7a5a">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
 <script>
     try {
@@ -416,7 +416,7 @@ body {
     </div>
     <div class="container">
 
-    <div class="section-title">GitHub 연동</div>
+    <div class="section-title"><span class="section-title-label">GitHub 연동</span></div>
     <div class="clean-card p-4 mb-4">
         <div class="admin-token-bar">
             <input type="password" id="githubToken" placeholder="GitHub 토큰 입력">
@@ -429,7 +429,7 @@ body {
         </div>
     </div>
 
-    <div class="section-title">상단바 메뉴</div>
+    <div class="section-title"><span class="section-title-label">상단바 메뉴</span></div>
     <div class="clean-card p-4">
         <div id="navToggleList" class="admin-nav-list"></div>
         <div class="text-secondary mt-2" style="font-size:11px;">
@@ -488,7 +488,7 @@ body {
         <!-- 오른쪽: 오늘의 일정 / 선택한 날짜 + 일정 편집 폼 (전부 어드민 전용) -->
         <aside class="admin-side">
             <div id="captureToday" class="cal-today-card-wrapper">
-                <div class="section-title" data-en="TODAY">오늘의 일정</div>
+                <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
                 <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
                     <div class="cal-day-card-date" id="todayDateLabel"></div>
                     <div class="cal-today-list scroll-area" id="todayList"></div>
@@ -496,7 +496,7 @@ body {
             </div>
 
             <div class="cal-selected-card-wrapper">
-                <div class="section-title" id="selectedListTitle" data-en="SELECTED">선택한 날짜 일정</div>
+                <div class="section-title" id="selectedListTitle" data-en="SELECTED"><span class="section-title-label">선택한 날짜 일정</span></div>
                 <div class="clean-card p-4 cal-day-card">
                     <div class="cal-day-card-date" id="selectedDateLabel"></div>
                     <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
@@ -504,7 +504,7 @@ body {
             </div>
 
             <div>
-                <div class="section-title" id="formTitle">[날짜선택] 일정 추가</div>
+                <div class="section-title"><span class="section-title-label" id="formTitle">[날짜선택] 일정 추가</span></div>
                 <div class="clean-card p-4">
                     <input type="hidden" id="editEventId" value="">
                     <div class="admin-form-row">
@@ -577,7 +577,7 @@ body {
     <div class="page-header">
         <div class="page-header-main" data-label="ADMIN · TIER"><h1 class="page-header-title">티어표</h1><p class="page-header-subtitle">티어표는 외부 데이터에서 자동으로 갱신됩니다.</p></div>
     </div>
-    <div class="container"><a class="btn-view-all" href="tier/">티어표 보기 <span aria-hidden="true">↗</span></a></div>
+    <div class="container"><a class="btn-view-all" href="tier/">티어표 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
 </div>
 
 <div id="page-stats" class="page-section">
@@ -599,7 +599,7 @@ body {
     </div>
     <div class="container">
 
-    <div class="section-title">외부 도구</div>
+    <div class="section-title"><span class="section-title-label">외부 도구</span></div>
     <div class="clean-card p-4 mb-4">
         <div id="tools-list-extTools" class="admin-tool-list"></div>
         <div class="admin-form-row" style="margin-top:12px;">
@@ -610,7 +610,7 @@ body {
         <button id="toolCancel-extTools" class="admin-submit-btn" style="display:none;" onclick="cancelToolEdit('extTools')">수정 취소</button>
     </div>
 
-    <div class="section-title">외부 사이트</div>
+    <div class="section-title"><span class="section-title-label">외부 사이트</span></div>
     <div class="clean-card p-4">
         <div id="tools-list-extSites" class="admin-tool-list"></div>
         <div class="admin-form-row" style="margin-top:12px;">
@@ -624,7 +624,7 @@ body {
 </div>
 
 <!-- 사이트가 실제로 쓰는 캘린더 렌더링 로직을 그대로 가져다 쓴다 (복사본 아님) -->
-<script src="calendar.js?v=ee44956ead"></script>
+<script src="calendar.js?v=f7449ec932"></script>
 
 <script>
     // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
