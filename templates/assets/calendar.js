@@ -186,6 +186,7 @@
     const calDayCellHtml = (dateStr, dayNum, dayOfWeek, todayStr, monthEvents) => {
         const classes = ['cal-day-cell'];
         if (dateStr === todayStr) classes.push('today');
+        if (dateStr === calSelectedDateStr) classes.push('selected');
         if (calPublicHolidays[dateStr]) classes.push('holiday');
         const isWeekStart = dayOfWeek === 0, isWeekEnd = dayOfWeek === 6;
 
@@ -266,6 +267,9 @@
 
     const calSelectDate = (dateStr) => {
         calSelectedDateStr = dateStr;
+        // 달력에서 선택한 칸 표시만 갈아끼운다(달력 전체를 다시 그리지 않음).
+        document.querySelectorAll('.cal-day-cell.selected').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll(`.cal-day-cell[data-date="${dateStr}"]`).forEach(el => el.classList.add('selected'));
         // 선택한 날짜 제목은 고정하고, 선택일 자체는 카드 안의 날짜 라벨로만 표시한다.
         calRenderSelectedDateSchedules();
         if (typeof window.calOnDateSelect === 'function') window.calOnDateSelect(dateStr);
