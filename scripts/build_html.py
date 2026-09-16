@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 from urllib.parse import quote
@@ -45,11 +46,11 @@ PAGES = [
     ('schedule', '일정', '일정', '캄몬스타즈 멤버들의 이번 달 일정입니다.'),
     ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다.'),
     ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.'),
-    ('stats', '방송통계', '방송통계', '캄몬스타즈 멤버들의 이번 달 방송 통계입니다.'),
     # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다. 명단은 시너지가
     # 매일 만들어 공개하는 것을 page-tier.js가 그대로 읽고(우리 db.json과 무관),
     # 방송 중 여부는 시너지 워커에서 받아온다. 그래서 이 빌드 스크립트가 넘겨줄 데이터는 없다.
     ('tier', '티어표', '티어표', '스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다.'),
+    ('stats', '방송통계', '방송통계', '캄몬스타즈 멤버들의 이번 달 방송 통계입니다.'),
     ('tools', '도구', '도구', '자주 쓰는 도구 모음입니다.'),
 ]
 SITE_NAME = '스타대학'
@@ -229,7 +230,8 @@ def main():
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     env.filters['team_logo_src'] = team_logo_src
-    env.globals['asset_url'] = make_asset_url(static_asset_versions())
+    versions = static_asset_versions()
+    env.globals['asset_url'] = make_asset_url(versions)
     common = {'crew_stats': stats_data['crew_stats'], 'site_data_version': content_version(site_data_text)}
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
@@ -248,6 +250,18 @@ def main():
     print(f"✅ site_data.json 저장 완료 ({os.path.getsize(site_data_path) / 1024:.1f} KB)")
 
     copy_static_assets()
+    # 독립 관리자/멀티뷰어도 일반 페이지와 같은 자산 버전을 사용한다.
+    # 오래 캐시된 CSS/캘린더 스크립트가 새 HTML과 섞이지 않도록 한다.
+    for filename in ('admin.html', 'multiview.html'):
+        standalone = os.path.join(OUT_DIR, filename)
+        if not os.path.isfile(standalone):
+            continue
+        with open(standalone, encoding='utf-8') as f:
+            html = f.read()
+        for asset, version in versions.items():
+            html = re.sub(r'((?:src|href)=")' + re.escape(asset) + r'(?:\?v=[a-f0-9]+)?"',
+                          lambda match: f'{match.group(1)}{asset}?v={version}"', html)
+        write_text_atomic(standalone, html)
     print("✅ 성공적으로 화이트&블루 통합 웹페이지가 구워졌습니다!")
 
 

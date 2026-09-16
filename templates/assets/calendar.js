@@ -35,7 +35,7 @@
     let calOffAir = {};
     const calOffAirForDate = (dateStr) => (calOffAir && Array.isArray(calOffAir[dateStr])) ? calOffAir[dateStr] : [];
 
-    // '김윤환'이 휴방으로 등록된 날은 달력 칸 맨 위(다른 일정보다 위)에 노란 "휴방" 표시를
+    // '김윤환'이 휴방으로 등록된 날은 달력 칸 맨 위(다른 일정보다 위)에 검은 "휴방" 표시를
     // 붙여준다 - 달력 칸 자체에만 표시되고, 연속으로 휴방이면 장기 일정 막대처럼 이어붙인다.
     const CAL_YOUNHWAN_NAME = '김윤환';
     const CAL_YOUNHWAN_SHORT = '윤환';
@@ -92,13 +92,8 @@
     });
 
     // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
-    // [리디자인] 예전엔 일정별 파스텔색을 배경(background-color)에 바로 넣었다. 시안의 칩은
-    // 잉크 면 + 흰 글자라, 색은 --ev-color로만 넘기고 CSS가 왼쪽 3px 엣지에 쓴다.
-    // (색이 구분 정보를 갖고 있어서 버리지 않고 엣지로 옮겼다)
+    // 일정 색은 CSS 변수로 전달하고, 시간·타이틀·내용은 흰색으로 통일한다.
     const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
-        const rgb = /^#[0-9a-f]{6}$/i.test(color || '') ? [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16) / 255) : [0, 0, 0];
-        const luminance = rgb.map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
-        const textColor = luminance > .179 ? '#111318' : '#fff';
         const timeHtml = timeText ? `<span class="cal-event-time">${calEscapeHTML(timeText)}</span>` : '';
         const personHtml = personText ? `<span class="cal-event-person">${calEscapeHTML(personText)}</span>` : '';
         const descHtml = descText ? `<div class="cal-event-desc">${calEscapeHTML(descText)}</div>` : '';
@@ -106,7 +101,7 @@
             ? `margin-left:${bar.bleedLeft}; margin-right:${bar.bleedRight}; padding-left:${bar.padLeft}; padding-right:${bar.padRight}; border-radius:${bar.radius}; `
             : '';
         return `
-            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}--ev-color: ${color}; --ev-text: ${textColor};">
+            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}--ev-color: ${color};">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>

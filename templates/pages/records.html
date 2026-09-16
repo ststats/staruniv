@@ -167,11 +167,8 @@
                 </div>
             </div>
 
-            <div class="section-title mt-4" data-en="RECENT">
-                최근 전적
-                <button class="btn-view-all" onclick="openIndivMatchModal()">전체 보기 <span aria-hidden="true">↗</span></button>
-            </div>
-            <div class="record-filters-row">
+            <div class="section-title record-recent-header mt-4" data-en="RECENT">
+                <span class="record-recent-title">최근 전적</span>
                     <div id="indiv-filters" class="filter-nav tab-scroll" role="tablist">
                         <div class="filter-item active" role="tab" tabindex="0" onclick="setIndivFilter('전체')">전체</div>
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대회')">대회</div>
@@ -179,6 +176,7 @@
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('미니')">미니</div>
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('CK')">CK</div>
                     </div>
+                <button class="btn-view-all" onclick="openIndivMatchModal()">전체 보기 <span aria-hidden="true">↗</span></button>
             </div>
 
             <div class="clean-card p-0 overflow-hidden">
