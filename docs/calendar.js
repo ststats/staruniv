@@ -63,13 +63,17 @@
 
     // 이어붙는 막대(장기 일정)의 좌우 모서리 스타일. 옆 칸과 이어지는 쪽은 각지게 하고
     // 칸 경계 밖으로 살짝 튀어나가게(bleed) 해서 끊김 없이 이어진 것처럼 보이게 하고, 끊기는 쪽은
-    // 둥글게 마감한다. bleed(-8px)만큼 padding을 8px 더 줘서(4px+8px=12px) 텍스트는 항상
-    // "칸 경계에서 4px" 위치를 유지한다 - 하루짜리 일정 카드(패딩 4px)와도 정렬이 맞는다.
+    // 모서리를 마감한다. 번진 만큼 padding을 더 줘서 글자는 항상 하루짜리 일정 칩과 같은 자리에 온다.
+    // 오른쪽으로 이어질 때는 칸 경계선(1px)까지 덮어야 옆 칸 막대와 틈 없이 붙는다(-9px).
     const calBarEdgeStyle = (roundLeft, roundRight) => ({
+        contLeft: !roundLeft,
+        contRight: !roundRight,
         bleedLeft: roundLeft ? '0' : '-8px',
-        bleedRight: roundRight ? '0' : '-8px',
-        padLeft: roundLeft ? '4px' : '12px',
-        padRight: roundRight ? '4px' : '12px',
+        bleedRight: roundRight ? '0' : '-9px',
+        // 하루짜리 일정 칩(style.css: 왼쪽 9px, 오른쪽 6px)과 글자 위치를 맞춘다.
+        // 번지는 쪽은 번진 만큼(왼쪽 8px, 오른쪽 9px) 더 들여서 칸 기준 위치를 유지.
+        padLeft: roundLeft ? '9px' : '17px',
+        padRight: roundRight ? '6px' : '15px',
         radius: '0',
     });
 
@@ -83,7 +87,7 @@
             ? `margin-left:${bar.bleedLeft}; margin-right:${bar.bleedRight}; padding-left:${bar.padLeft}; padding-right:${bar.padRight}; border-radius:${bar.radius}; `
             : '';
         return `
-            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}" style="${barStyle}--ev-color: ${color};">
+            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}--ev-color: ${color};">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>

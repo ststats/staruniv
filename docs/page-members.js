@@ -748,7 +748,7 @@ function renderFeaturedPostHtml(item) {
             <div class="news-post-link-row">
                 ${newsPostStatsHtml(post)}
                 <a class="news-post-link" href="${postUrl}" target="_blank" rel="noopener">
-                    원글 보기 <span class="ext-arrow">↗</span>
+                    원글 보기 <span class="ext-arrow i-arrow" aria-hidden="true"></span>
                 </a>
             </div>
         </div>`;
