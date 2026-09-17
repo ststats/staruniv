@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6b8554be9b">
+<link rel="stylesheet" href="style.css?v=e3c395bd63">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
 <script>
     try {
@@ -60,6 +60,9 @@ body {
 }
 .admin-main .cal-calendar-area {
     min-width: 0;
+}
+.admin-main > .cal-today-card-wrapper {
+    margin-bottom: var(--space-block-gap);
 }
 .admin-side {
     min-width: 0;
@@ -451,8 +454,16 @@ body {
     <div class="container">
 
     <div class="admin-layout">
-        <!-- 왼쪽: 사이트 캘린더 페이지랑 완전히 동일한 구조/클래스 -->
-        <div class="admin-main">
+        <!-- 왼쪽: 오늘의 일정 + 이달의 일정 (저장 때 이미지로 캡처하는 두 칸). 화면 폭과 상관없이
+             항상 이 순서로 위아래에 둔다 - 캡처 이미지와 같은 모양이라 편집하면서 결과를 바로 본다 -->
+        <div class="admin-main" id="captureArea">
+            <div id="captureToday" class="cal-today-card-wrapper">
+                <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
+                <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
+                    <div class="cal-day-card-date" id="todayDateLabel"></div>
+                    <div class="cal-today-list scroll-area" id="todayList"></div>
+                </div>
+            </div>
             <div class="cal-app-root">
                 <div class="cal-main-layout">
                     <section class="cal-calendar-area" id="captureMonth" style="width: 100%;">
@@ -485,16 +496,8 @@ body {
             </div>
         </div>
 
-        <!-- 오른쪽: 오늘의 일정 / 선택한 날짜 + 일정 편집 폼 (전부 어드민 전용) -->
+        <!-- 오른쪽: 선택한 날짜 일정 + 일정 편집 폼 (전부 어드민 전용) -->
         <aside class="admin-side">
-            <div id="captureToday" class="cal-today-card-wrapper">
-                <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
-                <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
-                    <div class="cal-day-card-date" id="todayDateLabel"></div>
-                    <div class="cal-today-list scroll-area" id="todayList"></div>
-                </div>
-            </div>
-
             <div class="cal-selected-card-wrapper">
                 <div class="section-title" id="selectedListTitle" data-en="SELECTED"><span class="section-title-label">선택한 날짜 일정</span></div>
                 <div class="clean-card p-4 cal-day-card">
@@ -772,19 +775,17 @@ body {
         Object.assign(wrapper.style, {
             position: 'absolute', left: '-10000px', top: '0',
             width: '836px', padding: '16px', boxSizing: 'border-box',
-            display: 'flex', flexDirection: 'column', gap: '20px',
             background, color: getComputedStyle(document.body).color,
         });
-        for (const id of ['captureToday', 'captureMonth']) {
-            const clone = document.getElementById(id).cloneNode(true);
-            clone.removeAttribute('id');
-            clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-            Object.assign(clone.style, { width: '804px', maxWidth: 'none', minWidth: '0', flex: 'none' });
-            clone.querySelectorAll('.cal-calendar-inner').forEach(el => { el.style.overflow = 'visible'; });
-            // 캡처 중 이미지 로딩 실패가 저장 전체를 오래 막지 않게 한다.
-            clone.querySelectorAll('img').forEach(img => { img.loading = 'eager'; });
-            wrapper.appendChild(clone);
-        }
+        // 오늘의 일정과 이달의 일정이 왼쪽 열(#captureArea)에 위아래로 붙어 있어서 열 하나만 복제한다.
+        const clone = document.getElementById('captureArea').cloneNode(true);
+        clone.removeAttribute('id');
+        clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        Object.assign(clone.style, { width: '804px', maxWidth: 'none', minWidth: '0', flex: 'none' });
+        clone.querySelectorAll('.cal-calendar-inner').forEach(el => { el.style.overflow = 'visible'; });
+        // 캡처 중 이미지 로딩 실패가 저장 전체를 오래 막지 않게 한다.
+        clone.querySelectorAll('img').forEach(img => { img.loading = 'eager'; });
+        wrapper.appendChild(clone);
         document.body.appendChild(wrapper);
         try {
             await new Promise(resolve => requestAnimationFrame(resolve));

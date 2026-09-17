@@ -136,31 +136,32 @@ function renderMembersPage() {
 
     let html = roleOrder.map(role => renderMemberGroup(role, activeMembers.filter(m => (m['직책'] || '기타') === role))).join('');
 
+    // 이전 멤버는 다른 직책 그룹과 같은 제목(인원 배지 포함)을 먼저 보여주고, 카드 목록만 접어 둔다.
     if (formerMembers.length > 0) {
+        const sortedFormer = [...formerMembers].sort((a, b) =>
+            tierIndex(a['티어']) - tierIndex(b['티어']) || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
         html += `
-            <div class="text-center section-trailer">
-                <button class="news-load-more" id="former-members-toggle-btn" onclick="toggleFormerMembersSection()">이전 멤버 ${chevronDownSvg(9, ' id="former-members-toggle-chevron" class="chevron-rotatable"')}</button>
+            <div class="section-title" data-en="FORMER">
+                <span class="section-title-label">이전 멤버</span>
+                <span class="title-count">${sortedFormer.length}명</span>
+                <button type="button" class="btn-view-all former-members-toggle" id="former-members-toggle-btn"
+                    aria-expanded="false" aria-controls="former-members-section" onclick="toggleFormerMembersSection()">
+                    <span id="former-members-toggle-text">보기</span>${chevronDownSvg(9, ' id="former-members-toggle-chevron" class="chevron-rotatable"')}
+                </button>
             </div>
             <div id="former-members-section" class="d-none">
-                ${renderMemberGroup('이전 멤버', formerMembers)}
+                <div class="member-grid mb-block">${sortedFormer.map(memberCardHtml).join('')}</div>
             </div>`;
     }
 
     document.getElementById('members-groups').innerHTML = html || '<div class="text-center text-muted py-5">등록된 멤버가 없습니다.</div>';
-    // '이전 멤버' 더보기 버튼이 있을 땐 그 버튼이 화면상 마지막 요소라, 다른 탭처럼
-    // 큰 하단 여백(--space-page-bottom)까지 얹으면 버튼 밑만 유난히 휑해 보인다.
-    // 버튼이 없을 때(이전 멤버가 아예 없는 경우)는 원래대로 큰 여백을 쓴다.
-    const viewStatus = document.getElementById('view-member-status');
-    if (viewStatus) viewStatus.classList.toggle('has-trailer', formerMembers.length > 0);
 }
 
 function toggleFormerMembersSection() {
-    // 펼쳐지면 화면 마지막 요소가 버튼이 아니라 이전 멤버 카드 목록이 되므로,
-    // 버튼용 축소 여백(has-trailer) 대신 다른 탭과 같은 표준 하단 여백을 쓴다.
-    // 다시 접으면 버튼이 마지막 요소로 돌아오니 has-trailer를 되살린다.
     const nowOpen = toggleCollapsible('former-members-section', 'former-members-toggle-chevron');
-    const viewStatus = document.getElementById('view-member-status');
-    if (viewStatus) viewStatus.classList.toggle('has-trailer', !nowOpen);
+    document.getElementById('former-members-toggle-btn')?.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+    const label = document.getElementById('former-members-toggle-text');
+    if (label) label.textContent = nowOpen ? '접기' : '보기';
 }
 
 let _profileMember = null; // 지금 프로필 팝업에 떠 있는 멤버(방송 활동 데이터가 늦게 오면 다시 채우기용)
@@ -486,31 +487,6 @@ function refreshNewsLayoutIfNeeded() {
 
 window.addEventListener('resize', rafThrottle(refreshNewsLayoutIfNeeded));
 
-// 오늘/어제/이번 주/이번 달/이전 - 리스트를 메신저처럼 구간으로 나눠 스캔하기 쉽게 한다.
-function newsDateGroupLabel(dateStr) {
-    const d = parseSoopDate(dateStr);
-    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const today = new Date();
-    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const diffDays = Math.round((todayDay - day) / 86400000);
-    if (diffDays <= 0) return '오늘';
-    if (diffDays === 1) return '어제';
-    if (diffDays <= 7) return '이번 주';
-    if (diffDays <= 30) return '이번 달';
-    return '이전';
-}
-
-// 이미 날짜순으로 정렬된 items를 렌더링하면서, 그룹 라벨이 바뀌는 지점마다 구분 라벨을 끼운다.
-function renderNewsItemsWithDateGroups(items, renderItemFn) {
-    let lastGroup = null;
-    return items.map(item => {
-        const group = newsDateGroupLabel(item.post.regDate);
-        const groupHtml = group !== lastGroup ? `<div class="news-date-group-label">${group}</div>` : '';
-        lastGroup = group;
-        return groupHtml + renderItemFn(item);
-    }).join('');
-}
-
 function featuredPostWrapHtml(item) {
     return `<div class="featured-post" data-news-key="${escapeHTML(newsItemKey(item))}">${renderFeaturedPostHtml(item)}</div>`;
 }
@@ -518,9 +494,9 @@ function featuredPostWrapHtml(item) {
 // 모바일: 날짜순 단일 리스트에서 선택된 글만 그 자리에서 큰 카드로 확대한다
 // (큰 글을 맨 위에 고정하면 리스트에서 누를 때마다 위로 스크롤해야 보이기 때문).
 function newsMobileLayoutHtml(sorted, loadMoreHtml) {
-    return renderNewsItemsWithDateGroups(sorted, item => (newsItemKey(item) === NewsState.featuredKey
+    return sorted.map(item => (newsItemKey(item) === NewsState.featuredKey
         ? featuredPostWrapHtml(item)
-        : renderPastNoticeHtml(item))) + loadMoreHtml;
+        : renderPastNoticeHtml(item))).join('') + loadMoreHtml;
 }
 
 // PC: 왼쪽 큰 카드(선택된 글) + 오른쪽 날짜순 "지난 글" 리스트
@@ -528,7 +504,7 @@ function newsDesktopLayoutHtml(sorted, loadMoreHtml) {
     const featuredItem = sorted.find(it => newsItemKey(it) === NewsState.featuredKey);
     const restItems = sorted.filter(it => newsItemKey(it) !== NewsState.featuredKey);
     const pastListHtml = restItems.length
-        ? renderNewsItemsWithDateGroups(restItems, renderPastNoticeHtml)
+        ? restItems.map(renderPastNoticeHtml).join('')
         : emptyStateHtml('지난 글이 없습니다.');
     return `
                 ${featuredPostWrapHtml(featuredItem)}
@@ -538,17 +514,13 @@ function newsDesktopLayoutHtml(sorted, loadMoreHtml) {
                 </div>`;
 }
 
-const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">더 보기 ${chevronDownSvg(9)}</button></div>`;
+const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">지난 공지 더 불러오기 ${chevronDownSvg(9)}</button></div>`;
 
 // "전체 공지"/"멤버별 공지" 공용 렌더러.
 function renderNewsLayout(content) {
-    // '더 보기' 버튼이 화면 마지막 요소일 땐 다른 탭처럼 큰 하단 여백을 더 얹지 않는다
-    // (renderMembersPage의 '이전 멤버'와 같은 이유). 버튼이 없으면 원래 여백을 쓴다.
-    const viewNews = document.getElementById('view-member-news');
     if (NewsState.items.length === 0) {
         content.classList.remove('news-feed-mobile');
         content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');
-        if (viewNews) viewNews.classList.remove('has-trailer');
         return;
     }
 
@@ -557,7 +529,6 @@ function renderNewsLayout(content) {
         NewsState.featuredKey = newsItemKey(sorted[0]); // 기본값: 가장 최신 글
     }
     const loadMoreHtml = NewsState.hasMore ? NEWS_LOAD_MORE_HTML : '';
-    if (viewNews) viewNews.classList.toggle('has-trailer', NewsState.hasMore);
 
     const mobile = isNewsMobileLayout();
     content.classList.toggle('news-feed-mobile', mobile);
@@ -637,7 +608,7 @@ function sanitizeNewsHtml(html) {
     return box.innerHTML;
 }
 
-// 렌더링 직후 "더보기"가 필요한지 판단한다: 1) 실제로 3줄 안에 다 안 들어가거나
+// 렌더링 직후 "더 보기"가 필요한지 판단한다: 1) 실제로 3줄 안에 다 안 들어가거나
 // 2) 목록 API가 이미 "..."으로 잘라서 내려준 미리보기인 경우.
 function checkNewsClampButtons(container) {
     container.querySelectorAll('.news-post-body-clamp:not([data-clamp-checked])').forEach(body => {
@@ -651,7 +622,7 @@ function checkNewsClampButtons(container) {
     });
 }
 
-// "더보기" 클릭 - 이미 목록 API에서 받아 기억해둔 전체 본문(HTML)을 바로 꽂는다.
+// "더 보기" 클릭 - 이미 목록 API에서 받아 기억해둔 전체 본문(HTML)을 바로 꽂는다.
 function expandNewsPost(btn, titleNo) {
     const body = btn.previousElementSibling;
     const fullHtml = NewsState.fullContent[String(titleNo)];
@@ -743,7 +714,7 @@ function renderFeaturedPostHtml(item) {
                 </div>
             </div>
             ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
-            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsAttr(post.titleNo)}')">더보기 ${chevronDownSvg(9)}</button>` : ''}
+            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsAttr(post.titleNo)}')">더 보기 ${chevronDownSvg(9)}</button>` : ''}
             ${newsPhotosHtml(asArray(post.photos))}
             <div class="news-post-link-row">
                 ${newsPostStatsHtml(post)}
