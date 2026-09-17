@@ -1,5 +1,6 @@
 /**
- * 일정 페이지: 월간 캘린더 + 오늘/선택한 날짜 일정. (core.js → calendar.js → 이 파일)
+ * 일정 페이지: 월간 캘린더 + 오늘/선택한 날짜 일정, 연혁 탭. (core.js → calendar.js → history.js → 이 파일)
+ * URL: /schedule/ (일정), /schedule/?view=history (연혁)
  * 캘린더 자체 로직은 관리자 페이지와 공용인 calendar.js에 있고, 여기서는 멤버 정보가 필요한
  * 훅(휴방 멤버 칩)만 채운다.
  */
@@ -18,9 +19,34 @@ window.calOffAirExtra = (dateStr, type) => {
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
 };
 
+const SCHEDULE_TABS = { calendar: ['tab-calendar', 'view-calendar'], history: ['tab-history', 'view-history'] };
+let historyRendered = false;
+
+function switchScheduleView(view) {
+    const key = view === 'history' ? 'history' : 'calendar';
+    activateTabView(SCHEDULE_TABS, key);
+    if (key === 'history' && !historyRendered) {
+        historyRendered = true;
+        safeInit('연혁', renderHistory);
+    }
+    PageState.update(key === 'history' ? { view: 'history' } : {});
+}
+
+async function renderHistory() {
+    const root = document.getElementById('history-root');
+    if (!root) return;
+    const data = await histLoadData();
+    const items = histMergeItems(data, SiteData.members, false);
+    histRegisterItems(items);
+    root.innerHTML = histTimelineHtml(items, { members: SiteData.members, avatarUrl: getProfileImgUrl });
+}
+
 bootPage(() => {
     safeInit('일정표', () => {
         calSelectedDateStr = calTodayStr();
         return calLoadPublicData();
     });
+    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
+        switchScheduleView(params.get('view'));
+    }));
 });

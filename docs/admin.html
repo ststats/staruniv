@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=e3c395bd63">
+<link rel="stylesheet" href="style.css?v=41c729b02c">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
 <script>
     try {
@@ -383,6 +383,74 @@ body {
         display: flex;
     }
 }
+
+/* ----- 연혁 편집 ----- */
+.admin-hist-list .hist-admin-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--color-border);
+}
+.admin-hist-list .hist-admin-bar .edit-btn,
+.admin-hist-list .hist-admin-bar .delete-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 4px;
+    cursor: pointer;
+}
+.admin-hist-list .hist-admin-bar .edit-btn { color: var(--color-primary); margin-left: auto; }
+.admin-hist-list .hist-admin-bar .delete-btn { color: var(--color-lose); }
+.hist-auto {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+    background: var(--color-bg-subtle);
+}
+.hist-auto.is-hidden { color: var(--color-lose); }
+.hist-item.is-editing .hist-card { box-shadow: inset 0 0 0 2px var(--color-primary); }
+.admin-hist-form .admin-form-row textarea { height: 84px; overflow: auto; flex: 1 1 100%; }
+.admin-hist-form .admin-form-row input[type="file"] { padding: 9px 12px; }
+.admin-hist-note { margin: -2px 0 10px; font-size: 11px; color: var(--color-text-sub); line-height: 1.5; }
+.admin-hist-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; min-height: 0; }
+.admin-hist-preview {
+    position: relative;
+    margin: 0 0 10px;
+    aspect-ratio: 16 / 9;
+    background: var(--color-bg-subtle);
+    overflow: hidden;
+}
+.admin-hist-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.admin-hist-preview span {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+}
+.admin-hist-preview button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: 0;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+}
+.admin-cancel-btn { background: var(--color-text-faint); }
+.admin-cancel-btn:hover { background: var(--color-text-sub); }
 </style>
 </head>
 <body>
@@ -447,13 +515,18 @@ body {
     <div class="page-header">
         <div class="page-header-main" data-label="ADMIN · SCHEDULE">
             <h1 class="page-header-title">일정 관리</h1>
-            <p class="page-header-subtitle">일정과 휴방을 편집한 뒤 저장해주세요.</p>
+            <p class="page-header-subtitle">일정·휴방과 연혁을 편집한 뒤 저장해주세요.</p>
             <button id="saveAllBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveAllToGithub()">저장</button>
+            <button id="saveHistoryBtn" class="btn-solid btn-solid-primary admin-header-action" style="display:none;" onclick="saveHistoryToGithub()">연혁 저장</button>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="admin-tab-calendar" role="tab" tabindex="0" aria-selected="true" onclick="switchAdminScheduleView('calendar')">일정</div>
+            <div class="sub-tab" id="admin-tab-history" role="tab" tabindex="0" aria-selected="false" onclick="switchAdminScheduleView('history')">연혁</div>
         </div>
     </div>
     <div class="container">
 
-    <div class="admin-layout">
+    <div class="admin-layout" id="admin-view-calendar">
         <!-- 왼쪽: 오늘의 일정 + 이달의 일정 (저장 때 이미지로 캡처하는 두 칸). 화면 폭과 상관없이
              항상 이 순서로 위아래에 둔다 - 캡처 이미지와 같은 모양이라 편집하면서 결과를 바로 본다 -->
         <div class="admin-main" id="captureArea">
@@ -555,6 +628,45 @@ body {
             </div>
         </aside>
     </div>
+
+    <!-- 연혁: 왼쪽은 사이트와 같은 타임라인(수정/숨기기 버튼 포함), 오른쪽은 편집 폼 -->
+    <div class="admin-layout" id="admin-view-history" style="display:none;">
+        <div class="admin-main">
+            <div id="adminHistoryList" class="admin-hist-list"><div class="hist-empty">불러오는 중...</div></div>
+        </div>
+        <aside class="admin-side">
+            <div>
+                <div class="section-title"><span class="section-title-label" id="histFormTitle">연혁 추가</span></div>
+                <div class="clean-card p-4 admin-hist-form">
+                    <p class="admin-hist-note" id="histFormNote">입단·퇴단은 멤버 시트에서 자동으로 들어옵니다. 여기서는 창단·대회·방송 같은 나머지를 추가하거나, 자동 항목에 설명·사진·영상을 덧붙일 수 있습니다.</p>
+                    <div class="admin-form-row">
+                        <input type="date" id="histDate">
+                        <select id="histType">
+                            <option value="founding">창단</option>
+                            <option value="match">대회</option>
+                            <option value="broadcast">방송</option>
+                            <option value="event" selected>이벤트</option>
+                            <option value="join">입단</option>
+                            <option value="leave">퇴단</option>
+                        </select>
+                    </div>
+                    <div class="admin-form-row"><input type="text" id="histTitle" placeholder="제목 (예: 대학대전 우승)" maxlength="60"></div>
+                    <div class="admin-form-row"><textarea id="histDesc" placeholder="설명 (선택, 줄바꿈 가능)" maxlength="400"></textarea></div>
+                    <div class="admin-form-row">
+                        <input type="text" id="histMembers" list="histMemberNames" placeholder="멤버 이름 (쉼표로 구분, 예: 토마토, 임조이)" oninput="renderHistMemberChips()">
+                        <datalist id="histMemberNames"></datalist>
+                    </div>
+                    <div class="admin-hist-chips" id="histMemberChips"></div>
+                    <div class="admin-form-row"><input type="url" id="histYoutube" placeholder="유튜브 링크 (선택)" oninput="renderHistPreview()"></div>
+                    <div class="admin-form-row"><input type="file" id="histImage" accept="image/jpeg,image/png,image/webp" onchange="onHistImagePicked(this)"></div>
+                    <p class="admin-hist-note">사진이 없으면 유튜브 썸네일이 대신 들어갑니다. 사진은 가로 1280px로 줄여 저장합니다.</p>
+                    <div class="admin-hist-preview" id="histPreview" style="display:none;"></div>
+                    <button class="admin-submit-btn" id="histSubmitBtn" onclick="applyHistoryForm()">반영하기</button>
+                    <button class="admin-submit-btn admin-cancel-btn" id="histCancelBtn" style="display:none;" onclick="resetHistoryForm()">수정 취소</button>
+                </div>
+            </div>
+        </aside>
+    </div>
     </div>
 </div>
 
@@ -628,6 +740,7 @@ body {
 
 <!-- 사이트가 실제로 쓰는 캘린더 렌더링 로직을 그대로 가져다 쓴다 (복사본 아님) -->
 <script src="calendar.js?v=b8ae2f4fb6"></script>
+<script src="history.js?v=f0258cd123"></script>
 
 <script>
     // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
@@ -728,7 +841,7 @@ body {
         const token = document.getElementById('githubToken').value.trim();
         if (!token) return alert('토큰을 입력해주세요.');
         adminTokenStore.set(token);
-        const loaded = await Promise.all([loadDataFromGithub(), loadToolsFromGithub(), loadNavFromGithub()]);
+        const loaded = await Promise.all([loadDataFromGithub(), loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub()]);
         if (loaded.every(Boolean)) alert('연동 및 데이터 불러오기가 완료되었습니다. 토큰은 이 탭에만 보관됩니다.');
     };
 
@@ -1306,6 +1419,265 @@ body {
         }
     };
 
+    // ===== 연혁 (docs/data/history.json + docs/data/history/*.jpg) =====
+    // 목록 그리기·자동 항목 만들기는 사이트와 같은 history.js를 쓴다.
+    const HISTORY_FILE_PATH = 'docs/data/history.json';
+    let historyData = { items: [], overrides: {} };
+    let historyLoaded = false;
+    let histEditingId = null;        // 수정 중인 항목 id (자동 항목이면 auto-...)
+    let histPendingImage = null;     // 이번 폼에서 고른 사진 { path, base64, dataUrl }
+    let histFormImage = '';          // 폼에 걸린 사진 경로(기존 값)
+    const histPendingUploads = {};   // 저장 때 같이 올릴 사진 { 'docs/data/history/x.jpg': base64 }
+
+    function switchAdminScheduleView(view) {
+        const history = view === 'history';
+        document.getElementById('admin-view-calendar').style.display = history ? 'none' : '';
+        document.getElementById('admin-view-history').style.display = history ? '' : 'none';
+        document.getElementById('saveAllBtn').style.display = history ? 'none' : '';
+        document.getElementById('saveHistoryBtn').style.display = history ? '' : 'none';
+        [['admin-tab-calendar', !history], ['admin-tab-history', history]].forEach(([id, on]) => {
+            const tab = document.getElementById(id);
+            tab.classList.toggle('active', on);
+            tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        if (history) renderHistoryAdmin();
+    }
+
+    const loadHistoryFromGithub = async () => {
+        const token = adminTokenStore.get();
+        historyLoaded = false;
+        try {
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${HISTORY_FILE_PATH}` : 'data/history.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+            });
+            if (res.status === 404) {
+                historyData = { items: [], overrides: {} };   // 처음 저장하는 경우
+            } else if (res.ok) {
+                const data = await res.json();
+                historyData = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+            } else throw new Error(`연혁 불러오기 실패 (HTTP ${res.status})`);
+            historyData.items = Array.isArray(historyData.items) ? historyData.items : [];
+            historyData.overrides = historyData.overrides || {};
+            historyLoaded = true;
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderHistoryAdmin();
+        return historyLoaded;
+    };
+
+    // 저장 전에 올린 사진은 아직 저장소에 없으니 미리보기는 메모리의 dataURL로 보여준다.
+    function histPreviewItems() {
+        const items = histMergeItems(historyData, dbMembers, true);
+        return items.map(it => {
+            const pending = it.image && histPendingUploads['docs/' + it.image];
+            return pending ? { ...it, _dataUrl: 'data:image/jpeg;base64,' + pending } : it;
+        });
+    }
+
+    function renderHistoryAdmin() {
+        const list = document.getElementById('adminHistoryList');
+        if (!list) return;
+        const items = histPreviewItems();
+        histRegisterItems(items);
+        list.innerHTML = histTimelineHtml(items, { members: dbMembers, avatarUrl: getProfileImgUrl, admin: true });
+        // 아직 올리지 않은 사진은 경로 대신 메모리 사진으로 바꿔 끼운다
+        items.filter(it => it._dataUrl).forEach(it => {
+            const img = list.querySelector(`[data-hist-id="${CSS.escape(it.id)}"] .hist-media img`);
+            if (img) img.src = it._dataUrl;
+        });
+        if (histEditingId) list.querySelector(`[data-hist-id="${CSS.escape(histEditingId)}"]`)?.classList.add('is-editing');
+        const names = document.getElementById('histMemberNames');
+        if (names && !names.children.length) names.innerHTML = dbMembers.map(m => `<option value="${escapeHTML(m['이름'])}">`).join('');
+    }
+
+    function histFormMembers() {
+        return document.getElementById('histMembers').value.split(',').map(x => x.trim()).filter(Boolean);
+    }
+
+    function renderHistMemberChips() {
+        const box = document.getElementById('histMemberChips');
+        box.innerHTML = histFormMembers().map(n => histMemberChipHtml(n, dbMembers, getProfileImgUrl)).join('');
+    }
+
+    function renderHistPreview() {
+        const box = document.getElementById('histPreview');
+        const yt = histYoutubeId(document.getElementById('histYoutube').value);
+        let src = '', label = '';
+        if (histPendingImage) { src = histPendingImage.dataUrl; label = '새 사진'; }
+        else if (histSafeImage(histFormImage)) {
+            const pending = histPendingUploads['docs/' + histFormImage];
+            src = pending ? 'data:image/jpeg;base64,' + pending : histFormImage; label = '사진';
+        } else if (yt) { src = `https://i.ytimg.com/vi/${yt}/hqdefault.jpg`; label = '유튜브 썸네일'; }
+        box.style.display = src ? '' : 'none';
+        box.innerHTML = src ? `<img src="${escapeHTML(src)}" alt=""><span>${label}</span>${label !== '유튜브 썸네일' ? '<button type="button" onclick="removeHistImage()">사진 빼기</button>' : ''}` : '';
+    }
+
+    function removeHistImage() {
+        histPendingImage = null;
+        histFormImage = '';
+        document.getElementById('histImage').value = '';
+        renderHistPreview();
+    }
+
+    // 사진은 가로 1280px 이하 JPEG로 줄인다(휴대폰 원본 사진은 수 MB라 저장소와 페이지가 무거워진다).
+    function onHistImagePicked(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(1, 1280 / img.width);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                histPendingImage = { dataUrl, base64: dataUrl.split(',')[1] };
+                renderHistPreview();
+            };
+            img.onerror = () => alert('사진을 읽지 못했습니다. JPG/PNG/WEBP 파일인지 확인해주세요.');
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function resetHistoryForm() {
+        histEditingId = null;
+        histPendingImage = null;
+        histFormImage = '';
+        ['histDate', 'histTitle', 'histDesc', 'histMembers', 'histYoutube', 'histImage'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('histType').value = 'event';
+        ['histDate', 'histType', 'histMembers'].forEach(id => { document.getElementById(id).disabled = false; });
+        document.getElementById('histFormTitle').innerText = '연혁 추가';
+        document.getElementById('histSubmitBtn').innerText = '반영하기';
+        document.getElementById('histCancelBtn').style.display = 'none';
+        renderHistMemberChips();
+        renderHistPreview();
+        renderHistoryAdmin();
+    }
+
+    function histAdminEdit(id) {
+        const item = histMergeItems(historyData, dbMembers, true).find(it => it.id === id);
+        if (!item) return;
+        resetHistoryForm();
+        histEditingId = id;
+        document.getElementById('histDate').value = item.date;
+        document.getElementById('histType').value = item.type;
+        document.getElementById('histTitle').value = item.auto ? ((historyData.overrides[id] || {}).title || '') : (item.title || '');
+        document.getElementById('histTitle').placeholder = item.auto ? `제목 (비우면 "${item.title}")` : '제목 (예: 대학대전 우승)';
+        document.getElementById('histDesc').value = item.desc || '';
+        document.getElementById('histMembers').value = (item.members || []).join(', ');
+        document.getElementById('histYoutube').value = item.youtube || '';
+        histFormImage = item.image || '';
+        // 자동 항목의 날짜·종류·멤버는 멤버 시트가 정한다
+        ['histDate', 'histType', 'histMembers'].forEach(f => { document.getElementById(f).disabled = !!item.auto; });
+        document.getElementById('histFormTitle').innerText = item.auto ? '자동 항목 꾸미기' : '연혁 수정';
+        document.getElementById('histSubmitBtn').innerText = '수정 반영하기';
+        document.getElementById('histCancelBtn').style.display = '';
+        renderHistMemberChips();
+        renderHistPreview();
+        renderHistoryAdmin();
+        document.getElementById('histTitle').focus();
+    }
+
+    function histAdminRemove(id) {
+        if (id.startsWith('auto-')) {
+            const o = historyData.overrides[id] || {};
+            o.hidden = !o.hidden;
+            historyData.overrides[id] = o;
+        } else {
+            if (!confirm('이 연혁을 삭제할까요? (저장해야 반영됩니다)')) return;
+            historyData.items = historyData.items.filter(it => it.id !== id);
+            if (histEditingId === id) { resetHistoryForm(); return; }
+        }
+        renderHistoryAdmin();
+    }
+
+    function applyHistoryForm() {
+        const date = document.getElementById('histDate').value;
+        const type = document.getElementById('histType').value;
+        const title = document.getElementById('histTitle').value.trim();
+        const desc = document.getElementById('histDesc').value.trim();
+        const youtube = document.getElementById('histYoutube').value.trim();
+        const isAuto = !!(histEditingId && histEditingId.startsWith('auto-'));
+        if (!isAuto && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return alert('날짜를 선택해주세요.');
+        if (!isAuto && !title) return alert('제목을 입력해주세요.');
+        if (youtube && !histYoutubeId(youtube)) return alert('유튜브 링크 형식이 아닙니다. (youtube.com/watch?v=... 또는 youtu.be/...)');
+
+        const id = histEditingId || `h-${Date.now().toString(36)}`;
+        let image = histFormImage;
+        if (histPendingImage) {
+            image = `data/history/${id}-${Date.now().toString(36)}.jpg`;
+            histPendingUploads['docs/' + image] = histPendingImage.base64;
+        }
+        if (isAuto) {
+            const prev = historyData.overrides[id] || {};
+            historyData.overrides[id] = { ...(prev.hidden ? { hidden: true } : {}), title, desc, youtube, image };
+        } else {
+            const item = { id, date, type, title, desc, members: histFormMembers(), youtube, image };
+            const idx = historyData.items.findIndex(it => it.id === id);
+            if (idx >= 0) historyData.items[idx] = item; else historyData.items.push(item);
+        }
+        resetHistoryForm();
+    }
+
+    const saveHistoryToGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 메뉴에서 연동할 수 있습니다)');
+        if (!historyLoaded) return alert('연혁을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+        const btn = document.getElementById('saveHistoryBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            // 쓰이지 않게 된(삭제·교체된) 새 사진은 올리지 않는다
+            const used = new Set([
+                ...historyData.items.map(it => it.image),
+                ...Object.values(historyData.overrides).map(o => o.image),
+            ].filter(Boolean).map(p => 'docs/' + p));
+            const uploads = Object.entries(histPendingUploads).filter(([path]) => used.has(path));
+
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+            const repoRes = await fetch(repoUrl, { headers });
+            if (!repoRes.ok) throw new Error('저장소 정보를 불러올 수 없습니다.');
+            const defaultBranch = (await repoRes.json()).default_branch || 'main';
+            const refRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { headers });
+            const latestCommitSha = (await checkedGithubJson(refRes)).object.sha;
+            const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
+            const baseTreeSha = (await checkedGithubJson(commitRes)).tree.sha;
+
+            // 사진과 history.json을 커밋 하나로 올린다 - 중간에 실패해도 사진만 올라가고 목록은 옛날인 상태가 남지 않는다
+            const blob = async (content, encoding) => (await checkedGithubJson(await fetch(`${repoUrl}/git/blobs`, {
+                method: 'POST', headers, body: JSON.stringify({ content, encoding })
+            }))).sha;
+            const tree = [{ path: HISTORY_FILE_PATH, mode: '100644', type: 'blob', sha: await blob(JSON.stringify(historyData, null, 2), 'utf-8') }];
+            for (const [path, base64] of uploads) tree.push({ path, mode: '100644', type: 'blob', sha: await blob(base64, 'base64') });
+
+            const treeRes = await fetch(`${repoUrl}/git/trees`, { method: 'POST', headers, body: JSON.stringify({ base_tree: baseTreeSha, tree }) });
+            const newTreeSha = (await checkedGithubJson(treeRes)).sha;
+            const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ message: `📜 연혁 업데이트${uploads.length ? ` (사진 ${uploads.length}장)` : ''}`, tree: newTreeSha, parents: [latestCommitSha] })
+            });
+            const newCommitSha = (await checkedGithubJson(newCommitRes)).sha;
+            const updateRefRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { method: 'PATCH', headers, body: JSON.stringify({ sha: newCommitSha }) });
+            if (!updateRefRes.ok) throw new Error('브랜치 업데이트 실패');
+
+            uploads.forEach(([path]) => { delete histPendingUploads[path]; });
+            alert('✅ 연혁이 저장되었습니다!');
+            renderHistoryAdmin();
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '연혁 저장';
+            btn.disabled = false;
+        }
+    };
+
     const init = async () => {
         await Promise.all([loadPublicHolidays(), loadMembersData()]);
 
@@ -1323,7 +1695,7 @@ body {
         // 그렸던(비어있었을 수 있는) 체크박스 상태를 실제 데이터로 다시 맞춘다.
         renderOffAirCheckboxList();
         renderNavAdmin();
-        await Promise.all([loadToolsFromGithub(), loadNavFromGithub()]);
+        await Promise.all([loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub()]);
     };
 
     init();

@@ -1,7 +1,6 @@
 /**
- * docs/admin.html을 헤드리스 브라우저로 열어서 "오늘의 일정" 카드(#captureToday)를
- * 캘린더 그리드(#captureMonth) 바로 위로 옮겨 붙인 뒤, 그 둘을 하나로 묶어
- * docs/data/calendar.png 한 장으로 캡처해 저장한다.
+ * docs/admin.html을 헤드리스 브라우저로 열어서 왼쪽 열(#captureArea: "오늘의 일정" 위,
+ * "이달의 일정" 아래)을 docs/data/calendar.png 한 장으로 캡처해 저장한다.
  *
  * 매일 자동 실행되는 이유: "오늘" 표시, 요일 배치, 오늘의 일정 목록 등은
  * 날짜가 바뀌면 데이터가 그대로여도 이미지가 달라져야 하므로, 관리자가
@@ -88,63 +87,14 @@ function waitForServer(url, timeoutMs) {
         // admin.html의 init()이 GitHub에서 일정 데이터를 불러와 렌더링을 끝낼 시간을 준다.
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        // "오늘의 일정"(#captureToday)을 원래 있던 사이드바(.admin-side)에서 빼내
-        // 캘린더 그리드(#captureMonth) 바로 위에 붙이고, 둘을 감싸는 wrapper 하나를
-        // 만들어 그 wrapper를 통째로 캡처한다 - 그러면 이미지 한 장 안에 "오늘의
-        // 일정"이 위, "이달의 일정"이 아래로 세로로 이어져 찍힌다. 사이드바에 남는
-        // 나머지 카드들(선택한 날짜/편집 폼 등, 전부 어드민 전용)은 통째로 숨긴다.
+        // admin.html의 왼쪽 열(#captureArea)에 "오늘의 일정"이 위, "이달의 일정"이 아래로 이미 붙어 있다.
+        // 오른쪽 열(선택한 날짜/편집 폼, 어드민 전용)과 상단바만 숨기고 왼쪽 열 폭을 캘린더 폭에 맞춰 통째로 찍는다.
+        // (예전엔 오늘의 일정이 오른쪽 사이드바에 있어서 여기서 옮겨 붙이는 감싸기 요소를 만들었다)
         await page.evaluate((w) => {
-            const monthEl = document.getElementById('captureMonth');
-            const todayEl = document.getElementById('captureToday');
-            const sideEl = document.querySelector('.admin-side');
-            const mainEl = document.querySelector('.admin-main');
-
-            if (sideEl) sideEl.style.display = 'none';
-
-            // 뷰포트를 넉넉히 키워도 혹시 모를 스크롤 상황(콘텐츠가 유난히 길어지는
-            // 경우 등)에 대비해, sticky 상단바 자체를 캡처 도중엔 아예 숨겨서
-            // 겹침 가능성을 원천 차단한다.
-            const navEl = document.querySelector('.top-navbar');
-            if (navEl) navEl.style.display = 'none';
-
-            const wrapper = document.createElement('div');
-            wrapper.id = 'captureCombined';
-            wrapper.style.background = '#f4f7fc';
-            wrapper.style.display = 'flex';
-            wrapper.style.flexDirection = 'column';
-            wrapper.style.gap = '16px';
-            wrapper.style.width = w + 'px';
-            wrapper.style.boxSizing = 'border-box';
-
-            // wrapper를 캘린더가 있던 자리에 끼워넣은 뒤, 오늘의 일정 → 캘린더
-            // 순서로 그 안에 옮겨 담는다 (todayEl이 sideEl 밑에 숨어있던 상태라도
-            // appendChild가 문서 트리에서 그대로 꺼내와 옮겨준다).
-            monthEl.parentNode.insertBefore(wrapper, monthEl);
-            wrapper.appendChild(todayEl);
-            wrapper.appendChild(monthEl);
-
-            // .admin-main은 style.css상 flex:0 1 804px라 기본적으로 안 커지지만,
-            // 혹시 모를 상황(스타일 로딩 순서 등)에 대비해 여기서도 폭을 못박아
-            // 이중으로 안전장치를 둔다.
-            if (mainEl) {
-                mainEl.style.flex = `0 0 ${w}px`;
-                mainEl.style.width = w + 'px';
-            }
-            // cal-calendar-area 클래스 자체도 style.css상 flex:0 1 804px라서, 혹시
-            // admin-main 고정만으로 충분하지 않은 경우를 대비해 이 요소 자체의
-            // flex도 함께 못박아 이중으로 안전장치를 둔다.
-            monthEl.style.flex = `0 0 ${w}px`;
-            monthEl.style.width = w + 'px';
-            monthEl.style.maxWidth = 'none';
-            // (예전엔 여기에 monthEl.style.padding='16px'를 추가해서 캡처
-            // 이미지에 여백을 주려 했는데, border-box라 이 패딩이 안쪽 카드가
-            // 쓸 수 있는 공간을 그만큼 깎아먹어서 - 안쪽 .clean-card는 804px가
-            // 그대로 필요한데 772px밖에 못 받아 - 매번 계산이 안 맞았다. 안쪽
-            // .clean-card 자체에 이미 자기 패딩(p-3, 16px)이 있어서 여백은
-            // 이미 충분하므로, 바깥에 패딩을 더 얹지 않는다.)
-            monthEl.style.boxSizing = 'border-box';
-            monthEl.style.background = '#f4f7fc';
-            monthEl.querySelectorAll('.cal-calendar-inner').forEach(el => {
+            document.querySelectorAll('.admin-side, .top-navbar').forEach(el => { el.style.display = 'none'; });
+            const area = document.getElementById('captureArea');
+            Object.assign(area.style, { flex: `0 0 ${w}px`, width: w + 'px', maxWidth: 'none', background: '#f4f7fc', boxSizing: 'border-box' });
+            area.querySelectorAll('.cal-calendar-inner').forEach(el => {
                 el.scrollLeft = 0;
                 el.style.overflowX = 'visible';
             });
@@ -156,8 +106,8 @@ function waitForServer(url, timeoutMs) {
         // 클리핑 좌표 계산이 어긋날 여지가 있으므로, 안전하게 맨 위로 고정해둔다.
         await page.evaluate(() => window.scrollTo(0, 0));
 
-        const target = await page.$('#captureCombined');
-        if (!target) throw new Error('#captureCombined 요소를 찾을 수 없습니다.');
+        const target = await page.$('#captureArea');
+        if (!target) throw new Error('#captureArea 요소를 찾을 수 없습니다.');
 
         await target.screenshot({ path: path.resolve(__dirname, 'docs/data/calendar.png') });
         console.log('✅ docs/data/calendar.png 캡처 완료 (오늘의 일정 + 이달의 일정 통합)');

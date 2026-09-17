@@ -196,7 +196,6 @@ html[data-theme="dark"] {
     --title-eyebrow: #c9cdd4;          /* 영문 라벨은 파랑으로 바꾸지 않고 밝은 회색 유지 */
     --synergy-rank-color: #6ea2ff;
     --sidebar-title: #6ea2ff;
-    --head-line-th: #3b82ff;
     --navy-on-text: #e9ecf1;
     --navy-on-muted: #9aa0ab;
     --navy-accent: #3d82ff;
@@ -2573,6 +2572,246 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 
 
+/* 연혁 탭 (history.js) ---------------------------------------------------------
+   왼쪽 세로선 위에 종류별 색 점, 오른쪽에 카드. 카드 오른쪽에는 사진이나 유튜브 썸네일(누르면 크게/재생). */
+.hist-year { margin-top: var(--space-block-gap); }
+.hist-year:first-child { margin-top: 0; }
+.hist-list {
+    position: relative;
+    margin: 0 0 var(--space-block-gap);
+    padding: 0 0 0 26px;
+    list-style: none;
+}
+.hist-list::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 6px;
+    width: 2px;
+    background: var(--color-border-strong);
+}
+.hist-item {
+    --hist-color: var(--color-primary);
+    position: relative;
+    margin-bottom: 12px;
+}
+.hist-card {
+    display: flex;
+    gap: 18px;
+    align-items: stretch;
+    padding: 16px 18px;
+    background: var(--color-card);
+    clip-path: var(--cut-14);
+}
+.hist-item::before {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: -25px;
+    width: 12px;
+    height: 12px;
+    background: var(--hist-color);
+    box-shadow: 0 0 0 3px var(--color-bg);
+    clip-path: var(--cut-4);
+}
+.hist-item.hist-type-founding { --hist-color: var(--navy-deco-fill); }
+.hist-item.hist-type-join { --hist-color: var(--color-primary); }
+.hist-item.hist-type-leave { --hist-color: var(--color-text-faint); }
+.hist-item.hist-type-match { --hist-color: var(--color-lose); }
+.hist-item.hist-type-broadcast { --hist-color: var(--color-race-z); }
+.hist-item.hist-type-event { --hist-color: var(--color-badge-format); }
+.hist-item.is-hidden { opacity: 0.5; }
+.hist-main {
+    flex: 1;
+    min-width: 0;
+}
+.hist-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.hist-date {
+    font-family: "Chakra Petch", "Pretendard", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-main);
+}
+.hist-date small {
+    margin-left: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-sub);
+}
+.hist-type {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--hist-color);
+    clip-path: var(--cut-4);
+}
+.hist-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--color-text-strong);
+    word-break: keep-all;
+}
+.hist-desc {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-sub);
+    white-space: pre-wrap;
+    word-break: keep-all;
+}
+.hist-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.hist-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 9px 0 3px;
+    background: var(--color-bg-subtle);
+    clip-path: var(--cut-6);
+    font-size: 12px;
+}
+.hist-chip-ava {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-placeholder-bg);
+    font-size: 11px;
+}
+.hist-chip-name { font-weight: 700; color: var(--color-text-main); }
+.hist-chip-role { font-size: 10px; color: var(--color-text-sub); }
+.hist-chip.is-unknown { padding-left: 9px; }
+.hist-chip.is-unknown .hist-chip-ava { display: none; }
+.hist-media {
+    position: relative;
+    flex: 0 0 216px;
+    align-self: center;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: var(--navy);
+    clip-path: var(--cut-8);
+    cursor: pointer;
+}
+.hist-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+}
+.hist-media:hover img { transform: scale(1.04); }
+.hist-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.72);
+    clip-path: var(--cut-6);
+    transform: translate(-50%, -50%);
+}
+.hist-play::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent #fff;
+    transform: translate(-35%, -50%);
+}
+.hist-media:hover .hist-play { background: #ff0033; }
+.hist-empty {
+    padding: 40px 0;
+    text-align: center;
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+}
+
+/* 사진 크게 보기 · 유튜브 재생 팝업 */
+.hist-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(5, 8, 14, 0.82);
+}
+.hist-lightbox-inner {
+    width: min(960px, 100%);
+    background: #0b0e14;
+    clip-path: var(--cut-14);
+}
+.hist-lightbox-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #eef2f8;
+}
+.hist-lightbox-close {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    clip-path: var(--cut-5);
+}
+.hist-lightbox-close:hover { background: var(--color-primary); }
+.hist-lightbox-video { aspect-ratio: 16 / 9; }
+.hist-lightbox-video iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+.hist-lightbox-img {
+    display: block;
+    width: 100%;
+    max-height: calc(100vh - 120px);
+    object-fit: contain;
+    background: #000;
+}
+
+@media (max-width: 767.98px) {
+    .hist-list { padding-left: 20px; }
+    .hist-list::before { left: 4px; }
+    .hist-card {
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+    }
+    .hist-item::before { left: -21px; top: 20px; width: 10px; height: 10px; }
+    .hist-media { flex: none; width: 100%; align-self: stretch; }
+    .hist-lightbox { padding: 12px; }
+}
+
+
+
 /* =============================================================================
    8. 멤버 · 공지 · 프로필 모달
    ============================================================================= */
@@ -2925,7 +3164,30 @@ html[data-theme="dark"] .cal-longterm-bar {
     --bs-table-color: var(--color-text-main);
 }
 
-#news-past-list { clip-path: var(--cut-12); }
+/* 지난 공지 목록 박스: 스크롤바가 생겨도 박스 폭과 잘린 모서리가 아래 '더 불러오기' 박스와 같게 보이도록
+   목록 자체에 카드 바탕을 깔고(스크롤바 자리까지 흰색), 스크롤바는 잘린 모서리 아래에서 시작한다. */
+#news-past-list {
+    background: var(--color-card);
+    clip-path: var(--cut-12);
+}
+/* 크롬·엣지·사파리: 표준 scrollbar-width/color를 풀어야 아래 ::-webkit-scrollbar 규칙(위아래 화살표 없음,
+   잘린 모서리만큼 내려서 시작)이 먹는다. 파이어폭스는 원래대로 얇은 표준 스크롤바를 쓴다. */
+@supports selector(::-webkit-scrollbar) {
+    #news-past-list {
+        scrollbar-width: auto;
+        scrollbar-color: auto;
+    }
+    #news-past-list::-webkit-scrollbar,
+    #news-past-list::-webkit-scrollbar-track { background: transparent; }
+    #news-past-list::-webkit-scrollbar-track { margin-top: 12px; }
+    #news-past-list:hover::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb-hover); }
+    #news-past-list::-webkit-scrollbar-button { display: none; }
+    #news-past-list::-webkit-scrollbar-thumb {
+        background-color: var(--scroll-thumb);
+        background-clip: padding-box;
+        border-radius: 999px;
+    }
+}
 
 @media (max-width: 767.98px) {
     .member-card { min-height: 158px; }
@@ -3584,12 +3846,16 @@ html[data-theme="dark"] .mv-order-row {
 .tool-card-icon {
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 52px;                /* 멤버 카드 프로필 사진과 같은 크기의 원 */
+    height: 52px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
 }
 .tool-card-icon img {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
 }
 .tool-card-ext {
@@ -4242,7 +4508,6 @@ html[data-theme="dark"] .mv-order-row {
     letter-spacing: 0;
     background-image: var(--navy-pattern);
     background-attachment: fixed;
-    box-shadow: inset 0 calc(-1 * var(--head-line-w)) 0 var(--head-line-th, transparent);
 }
 
 .cal-weekdays {

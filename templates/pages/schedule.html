@@ -4,10 +4,15 @@
     <div class="page-header">
         <div class="page-header-main" data-label="SCHEDULE">
             <h1 class="page-header-title">일정</h1>
-            <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 일정입니다.</p>
+            <p class="page-header-subtitle">캄몬스타즈의 다가올 일정과 지나간 일정입니다.</p>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-calendar" role="tab" tabindex="0" aria-selected="true" onclick="switchScheduleView('calendar')">일정</div>
+            <div class="sub-tab" id="tab-history" role="tab" tabindex="0" aria-selected="false" onclick="switchScheduleView('history')">연혁</div>
         </div>
     </div>
     <div class="container">
+    <div id="view-calendar">
     <div class="cal-app-root">
         <div class="cal-main-layout">
             <!-- 모바일 분리용 사이드바 -->
@@ -61,10 +66,17 @@
         </div>
     </div>
     </div>
+
+    {#- 연혁: 최신이 위. 멤버 시트의 입단/퇴단은 자동으로 들어오고, 창단·대회 같은 나머지는 어드민에서 추가한다(history.js). #}
+    <div id="view-history" class="d-none">
+        <div id="history-root" aria-live="polite"><div class="hist-empty">불러오는 중...</div></div>
+    </div>
+    </div>
 </section>
 {% endblock %}
 {% block scripts %}
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('calendar.js') }}"></script>
+<script src="{{ asset_url('history.js') }}"></script>
 <script src="{{ asset_url('page-schedule.js') }}"></script>
 {% endblock %}
