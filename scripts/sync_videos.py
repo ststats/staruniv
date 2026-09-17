@@ -51,9 +51,25 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def encode_url(url):
+    """주소에 한글이 들어간 채널(youtube.com/@한글핸들 등)도 요청할 수 있게 퍼센트 인코딩한다.
+    urllib은 요청 줄(request line)을 ascii로 보내기 때문에, 그냥 넘기면 UnicodeEncodeError가 난다.
+    이미 %xx로 인코딩된 주소를 두 번 인코딩하지 않도록 %는 안전 문자로 둔다."""
+    parts = urllib.parse.urlsplit(str(url))
+    host = parts.hostname or ''
+    try:
+        host = host.encode('idna').decode('ascii')       # 한글 도메인
+    except Exception:
+        host = host.encode('ascii', 'ignore').decode('ascii')
+    netloc = f'{host}:{parts.port}' if parts.port else host
+    path = urllib.parse.quote(parts.path, safe="/%@:+$,;=~!*'()-._")
+    query = urllib.parse.quote(parts.query, safe="%=&?/:@+$,;~!*'()-._")
+    return urllib.parse.urlunsplit((parts.scheme, netloc, path, query, ''))
+
+
 def http_get(url, allow_redirect=True, timeout=20):
     """(상태 코드, 본문 문자열)을 돌려준다. 네트워크 오류면 (0, '')."""
-    req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept-Language': 'ko-KR,ko;q=0.9'})
+    req = urllib.request.Request(encode_url(url), headers={'User-Agent': UA, 'Accept-Language': 'ko-KR,ko;q=0.9'})
     opener = urllib.request.build_opener() if allow_redirect else urllib.request.build_opener(NoRedirect)
     try:
         with opener.open(req, timeout=timeout) as res:
@@ -182,21 +198,28 @@ def main():
         url = str(ch.get('url', '')).strip()
         if not url:
             continue
-        info = resolve_channel(url, known_channels.get(url))
-        if not info.get('id'):
-            continue
-        feed_title, entries = fetch_feed(info['id'])
-        info = {**info, 'name': str(ch.get('name', '')).strip() or feed_title or info.get('title', '')}
-        if feed_title:
-            info['title'] = feed_title
-        channels[url] = info
-        print(f'📺 {info["name"]}: 피드 {len(entries)}개')
-        for entry in entries:
-            prev = videos.get(entry['id'], {})
-            short = entry['short'] if entry['short'] is not None else prev.get('short')
-            if short is None:
-                short = is_short(entry['id'])
-            videos[entry['id']] = {**prev, **entry, 'short': bool(short), 'channel': url}
+        # 채널 하나가 잘못돼도(주소 오타·삭제된 채널 등) 나머지 채널은 계속 받는다.
+        try:
+            info = resolve_channel(url, known_channels.get(url))
+            if not info.get('id'):
+                continue
+            feed_title, entries = fetch_feed(info['id'])
+            info = {**info, 'name': str(ch.get('name', '')).strip() or feed_title or info.get('title', '')}
+            if feed_title:
+                info['title'] = feed_title
+            channels[url] = info
+            print(f'📺 {info["name"]}: 피드 {len(entries)}개')
+            for entry in entries:
+                prev = videos.get(entry['id'], {})
+                short = entry['short'] if entry['short'] is not None else prev.get('short')
+                if short is None:
+                    short = is_short(entry['id'])
+                videos[entry['id']] = {**prev, **entry, 'short': bool(short), 'channel': url}
+        except Exception as e:
+            print(f'  ⚠️ {url} 은(는) 건너뜁니다: {type(e).__name__}: {e}')
+            # 지난번에 받아둔 정보가 있으면 그대로 살려 둔다(이 채널 영상이 목록에서 사라지지 않게)
+            if known_channels.get(url):
+                channels[url] = known_channels[url]
 
     # 등록에서 빠진 채널의 영상은 버린다
     kept = [v for v in videos.values() if v.get('channel') in channels]
