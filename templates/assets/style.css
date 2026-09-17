@@ -1,5 +1,5 @@
 :root {
-    /* ── 라이트: 옅은 청회색 바탕 + 흰 컨텐츠 + 파랑 포인트 (사선 무늬 없음) ── */
+    /* ── 라이트: 옅은 청회색 바탕 + 흰 컨텐츠 + 파랑 포인트. 네이비 띠·박스와 사선은 아래 [네이비/검정 포인트] ── */
     --color-bg: #eef2f8;
     --color-card: #ffffff;
     --color-card-hover: #f6f9ff;
@@ -14,23 +14,13 @@
     --color-lose: #f03e3e;
     --color-draw: #868e96;
     --color-ink: #0b1220;
-    --color-tier-badge: #5b6b85;
-    --color-scrollbar-thumb: #c5d6f7;
     --color-bg-subtle: #f1f5fb;
-    /* 머리 띠(표 머리글·요일 줄·프로필 카드 사진 영역) 공용: 옅은 파랑 단색 */
-    --color-head-bg: #e7effd;
-    --head-pattern: none;
-    --color-head-text: #2f5fb8;
-    --color-head-sun: #e0484d;
-    --color-head-sat: #1f6fff;
     --color-badge-format: #5a9ea6;
     --color-border-strong: #cdd6e3;
-    --color-logo-black: #0b1220;
     --color-text-strong: #050a14;
     --color-text-dark: #0b1220;
     --color-text-body: #1f2937;
     --color-text-soft: #4b5565;
-    --color-text-table-head: #5d687a;
     --color-text-muted: #7a8596;
     --color-text-faint: #9aa4b3;
     --color-icon-faint: #c6cedb;
@@ -45,10 +35,10 @@
     --panel-text: #0b1220;
     --panel-muted: #56627a;
     --panel-line: #e1e7f0;
-    --panel-accent: var(--kammon); /* 로고 '대학' 등: 캄몬스타즈 로고 파랑 */
+    --panel-accent: var(--kammon);
+    /* 로고 '대학' 등: 캄몬스타즈 로고 파랑 */
     --panel-pattern: none;
     --nav-bg: rgba(255, 255, 255, 0.9);
-    --hero-glow: rgba(31, 111, 255, 0.10);
     --color-race-t: #1976d2;
     --color-race-z: #7b1fa2;
     --color-race-p: #f57f17;
@@ -69,7 +59,6 @@
     --scroll-thumb: var(--color-border-strong);
     --scroll-thumb-hover: var(--color-primary);
     --navbar-h: 64px;
-    --tabbar-h: 44px;
     --bar-scope-h: 34px;
     --bar-scope-btn-h: 28px;
     --bar-chip-h: 30px;
@@ -81,9 +70,31 @@
     --day-list-h: 360px;
     --tier-navbar-h: var(--navbar-h);
     --tier-bar-h: calc(var(--bar-chip-h) + var(--bar-pad-y) * 2 + 2px);
-    --container-pad: 32px;
     --notch-sm: 7px;
     --notch-md: 14px;
+    --select-on-light: var(--navy);
+    /* 캄몬스타즈 로고 파랑 */
+    --kammon: #055df3;
+    --navy: #14264a;
+    /* 장식: 선·글자용(deco)과 채움용(deco-fill) */
+    --navy-deco: #1c3563;
+    --navy-deco-fill: #1c3563;
+    --navy-on-text: #e6ecf7;
+    --navy-on-muted: #b3c2de;
+    /* 네이비/검정 면 위 강조 글자 */
+    /* 네이비 위 강조 글자: 대비 4.5 이상이 되도록 #3d82ff보다 한 단계 밝게 (대비 5.1) */
+    --navy-accent: #5a95ff;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ffb0b0;
+    --color-head-sat: #5a95ff;
+    --color-tier-badge: #1c3563;
+    /* 네이비 박스 공용 은은한 사선 */
+    --navy-pattern: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.045) 0 1px,
+    transparent 1px 8px
+    );
 }
 
 html {
@@ -98,6 +109,7 @@ body {
     font-family: "Pretendard", sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text-main);
+    background: var(--color-bg);
 }
 
 body.modal-open {
@@ -126,12 +138,17 @@ a {
     cursor: pointer;
 }
 
+/* ── 상단 내비: 굵은 파란 줄 대신 얇은 경계선 + 반투명 블러 ── */
 .top-navbar {
     position: sticky;
     top: 0;
     z-index: 100;
-
-    background-color: var(--panel-bg);
+    height: 68px;
+    border: 0;
+    background-color: var(--nav-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .top-navbar .navbar-inner {
@@ -147,6 +164,10 @@ a {
     display: flex;
     align-items: center;
     flex-shrink: 0;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 22px;
+    letter-spacing: -0.08em;
+    gap: 11px;
 }
 
 .nav-menu {
@@ -165,6 +186,10 @@ a {
     flex-shrink: 0;
     transition: color 0.15s;
     text-decoration: none;
+    height: 68px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--color-text-sub);
 }
 
 .nav-menu .nav-item[hidden] {
@@ -175,14 +200,6 @@ a {
     margin-right: 0;
 }
 
-.nav-menu .nav-item:hover {
-    color: var(--color-text-strong);
-}
-
-.nav-menu .nav-item.active {
-    color: var(--color-text-strong);
-}
-
 .nav-menu .nav-item.active::after {
     content: "";
     position: absolute;
@@ -190,6 +207,7 @@ a {
     left: 0;
     right: 0;
     background-color: var(--color-primary);
+    height: 2px;
 }
 
 .modal-body,
@@ -253,9 +271,9 @@ a {
 
 .tab-scroll.is-fade-end {
     --fade-mask: linear-gradient(
-        to right,
-        #000 calc(100% - 28px),
-        transparent 100%
+    to right,
+    #000 calc(100% - 28px),
+    transparent 100%
     );
 }
 
@@ -265,29 +283,63 @@ a {
 
 .tab-scroll.is-fade-start.is-fade-end {
     --fade-mask: linear-gradient(
-        to right,
-        transparent 0,
-        #000 28px,
-        #000 calc(100% - 28px),
-        transparent 100%
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
     );
 }
 
 .sub-tabs {
-    border-bottom: 1px solid var(--color-border);
+    gap: 8px;
+    height: auto;
+    border: 0;
+    margin-bottom: 24px;
+    display: inline-flex;
+    width: fit-content;
+    padding: 0;
+    background: transparent;
+    overflow: visible;
+    align-items: stretch;
+    max-width: 100%;
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
 }
 
+/* 머리 안 탭: 비활성은 반투명 칩, 활성은 아래 [선택 표시 통일]의 흰 바탕 + 네이비 글씨 */
 .sub-tab {
     display: flex;
     align-items: center;
     cursor: pointer;
-    margin-bottom: -1px;
-    border-bottom: 3px solid transparent;
     flex-shrink: 0;
+    height: 40px;
+    padding: 0 15px;
+    margin: 0;
+    border: 0 !important;
+    font-size: 13px;
+    font-weight: 600;
+    justify-content: center;
+    border-radius: 0 !important;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    background: var(--panel-control);
+    color: var(--color-text-sub);
 }
 
 .sub-tab.active {
     border-bottom: 3px solid var(--color-primary);
+    background: var(--color-primary) !important;
+    border-color: var(--color-primary);
+    color: #fff !important;
+    border: 1px solid var(--color-primary) !important;
+    font-weight: 700;
+    clip-path: polygon(
+    0 0,
+    calc(100% - var(--notch-sm)) 0,
+    100% var(--notch-sm),
+    100% 100%,
+    0 100%
+    ) !important;
+    box-shadow: none;
 }
 
 /* Shared page hero: same typography and insets as the home hero. */
@@ -302,11 +354,8 @@ a {
     overflow: hidden;
     padding: 48px max(32px, calc((100vw - 1240px) / 2 + 40px)) 60px;
     background: var(--panel-bg);
-    color: var(--panel-text);
-    border-bottom: 3px solid var(--color-primary);
     clip-path: none;
 }
-
 
 .page-header > * {
     position: relative;
@@ -327,7 +376,6 @@ a {
     grid-column: 1 / -1;
     grid-row: 1;
     margin-bottom: 8px;
-    color: var(--panel-accent);
     font-family: var(--font-num);
     font-size: 11px;
     font-weight: 700;
@@ -335,6 +383,7 @@ a {
     letter-spacing: 0.16em;
 }
 
+/* ── 페이지 머리 / 홈 캐러셀: 바탕(네이비 띠)과 글자색은 아래 [네이비/검정 포인트]에서 정한다 ── */
 .page-header-title {
     grid-column: 1;
     grid-row: 2;
@@ -342,8 +391,8 @@ a {
     font-size: clamp(42px, 4.4vw, 56px);
     line-height: 1;
     font-weight: 800;
-    color: var(--panel-text);
     letter-spacing: -0.045em;
+    color: var(--color-text-strong);
 }
 
 .page-header-subtitle {
@@ -369,6 +418,7 @@ a {
     min-width: 56px;
     padding: 6px 9px;
     height: auto;
+    background: var(--panel-control);
 }
 
 .page-header-stats .head-stat-label {
@@ -385,26 +435,23 @@ a {
 }
 
 @media (max-width: 767.98px) {
-    .page-header {
-        margin-top: -22px;
-        padding: 34px 24px 56px;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
-    }
     .page-header-title {
         font-size: 34px;
     }
+
     .page-header-subtitle {
         font-size: 13px;
     }
+
     .page-header-stats {
         gap: 4px;
     }
+
     .page-header-stats .head-stat {
         min-width: 44px;
         padding: 3px 7px;
     }
+
     .page-header-stats .head-stat-label {
         font-size: 7px;
     }
@@ -412,6 +459,8 @@ a {
 
 .page-header-divider {
     border: none;
+    border-bottom: 3px solid var(--color-text-main);
+    margin: 16px 0 18px;
 }
 
 .page-header-divider.tight {
@@ -450,6 +499,7 @@ a {
 .container {
     padding-left: 32px !important;
     padding-right: 32px !important;
+    max-width: 1240px !important;
 }
 
 @media (min-width: 1200px) {
@@ -465,7 +515,6 @@ a {
     }
 
     .nav-menu .nav-item {
-        font-size: var(--fs-subheading);
         margin-right: 20px;
     }
 }
@@ -474,7 +523,18 @@ a {
     color: var(--color-text-main);
     display: flex;
     justify-content: space-between;
-    padding-left: 12px;
+    height: auto;
+    min-height: 32px;
+    padding: 0 0 9px;
+    border-left: 0;
+    font-family: "Pretendard", sans-serif;
+    font-size: 18px;
+    letter-spacing: -0.025em;
+    margin-bottom: 16px;
+    padding-bottom: 9px;
+    font-weight: 700;
+    align-items: baseline;
+    flex-wrap: wrap;
 }
 
 .section-title-sm {
@@ -485,6 +545,10 @@ a {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    font-family: "Pretendard", sans-serif;
+    font-size: 14px;
+    flex-wrap: wrap;
 }
 
 .clean-card,
@@ -511,41 +575,61 @@ a {
     vertical-align: middle;
     background: var(--color-primary-tint);
     color: var(--color-primary-deep);
+    height: 20px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 0;
+    font-size: 11px;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
 }
 
 .tag-badge.race-badge {
     padding: 0;
     color: #fff;
     border: none;
+    width: 20px;
+    height: 20px;
 }
 
 .match-badge {
-    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    vertical-align: middle;
     font-weight: 800;
     line-height: 1;
     color: #fff;
 }
 
+/* 표 머리글·캘린더 요일칸·프로필 카드 사진 영역: 같은 '머리 띠' (옅은 파랑 단색).
+   흰 카드 안에서 구분되게 하고, 글자는 파랑. */
 .stat-table thead th {
-    font-weight: 800;
     padding-top: 8px;
     padding-bottom: 8px;
+    font-family: "Chakra Petch", "Pretendard", sans-serif;
+    text-transform: uppercase;
+    background-color: var(--color-head-bg) !important;
+    color: var(--color-head-text) !important;
+    border: 0 !important;
+    /* 머리글 글자 크기를 본문 칸(13px)과 맞춘다 (원래 10px + 넓은 자간) */
+    font-size: 13px !important;
+    font-weight: 700;
+    letter-spacing: 0;
 }
 
 .stat-table tbody td {
     vertical-align: middle;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .live-broadcast-grid {
     display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
 
 .live-broadcast-card:hover {
     box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
 }
 
 .live-thumb-wrap::after {
@@ -556,27 +640,39 @@ a {
     bottom: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0));
     pointer-events: none;
+    height: 58%;
+    display: none;
 }
 
 .live-card-title {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 400;
+    color: var(--color-text-sub);
+    margin: 0;
+    grid-area: title;
+    align-self: start;
+    font-size: 11px;
+    line-height: 1.35;
 }
 
 .live-card-avatar-ring {
-    border-radius: 50%;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: none !important;
 }
 
 .live-card-avatar {
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-bg-subtle);
     flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--color-card);
+    box-sizing: border-box;
 }
 
 .home-notice-card {
@@ -587,13 +683,17 @@ a {
     background: var(--color-card);
     border-bottom: 1px solid var(--color-border);
     transition: background 0.15s;
+    border-radius: 0;
+    padding: 13px 14px;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 }
 
 .home-notice-avatar {
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-bg-subtle);
     flex-shrink: 0;
+    width: 36px;
+    height: 36px;
 }
 
 .avatar-bar,
@@ -606,23 +706,16 @@ a {
     margin-bottom: var(--space-block-gap);
     padding: var(--bar-pad-y) var(--bar-pad-x);
     background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
 }
 
 html[data-theme="dark"] {
-    /* ── 다크: 검정 바탕 + 한 단계 밝은 컨텐츠 + 파랑 포인트 (사선 무늬 없음) ── */
+    /* ── 다크: 검정 바탕 + 한 단계 밝은 컨텐츠 + 파랑 포인트. 검정 띠·박스와 사선은 아래 [네이비/검정 포인트] ── */
     color-scheme: dark;
     --color-bg: #07090d;
     --color-card: #10131a;
     --color-card-hover: #151b27;
     --color-border: #1f2531;
     --color-bg-subtle: #171c26;
-    --color-head-bg: #141c2c;
-    --color-head-text: #8fb2f0;
-    --color-head-sun: #ff7b7b;
-    --color-head-sat: #6ea4ff;
     --color-badge-format: #336a71;
     --color-border-strong: #353b46;
     --color-border-hover: #2d5fc0;
@@ -632,7 +725,6 @@ html[data-theme="dark"] {
     --color-text-sub: #8f98a6;
     --color-text-body: #dbe0e8;
     --color-text-soft: #b1b8c4;
-    --color-text-table-head: #c0c7d2;
     --color-text-muted: #98a0ad;
     --color-text-faint: #767f8c;
     --color-icon-faint: #3a404b;
@@ -642,9 +734,6 @@ html[data-theme="dark"] {
     --color-primary-tint-strong: #16294d;
     --color-win: #3b82ff;
     --color-ink: #1a3a7c;
-    --color-tier-badge: #465570;
-    --color-logo-black: #eef2f8;
-    --color-scrollbar-thumb: #2a3140;
     --color-modal-body-bg: #10131a;
     --color-placeholder-bg: #1a1e25;
     --color-donut-track: #1d2129;
@@ -655,15 +744,29 @@ html[data-theme="dark"] {
     --panel-text: #eef2f8;
     --panel-muted: #a0a8b5;
     --panel-line: #242b38;
-    --panel-accent: var(--kammon); /* 로고 '대학' 등: 캄몬스타즈 로고 파랑 */
+    --panel-accent: var(--kammon);
+    /* 로고 '대학' 등: 캄몬스타즈 로고 파랑 */
     --nav-bg: rgba(7, 9, 13, 0.88);
-    --hero-glow: rgba(59, 130, 255, 0.16);
     --bs-body-bg: #07090d;
     --bs-body-color: #eef2f8;
     --bs-body-color-rgb: 238, 242, 248;
     --bs-secondary-color: #98a0ad;
     --bs-secondary-color-rgb: 152, 160, 173;
     --bs-border-color: #1f2531;
+    --select-on-light: #3b82ff;
+    /* 다크: 네이비 대신 검정 계열 */
+    --navy: #17191f;
+    --navy-deco: #c9cdd4;
+    --navy-deco-fill: #2f333c;
+    --navy-on-text: #e9ecf1;
+    --navy-on-muted: #9aa0ab;
+    /* 다크도 강조 글자는 라이트와 같은 밝은 파랑 */
+    --navy-accent: #3d82ff;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ff9a9a;
+    --color-head-sat: #3d82ff;
+    --color-tier-badge: #2a2d35;
 }
 
 html[data-theme="dark"] .page-header-divider,
@@ -689,11 +792,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover td {
     background: var(--color-primary-tint);
 }
 
-html[data-theme="dark"] .tag-badge.tier-badge {
-    background: var(--color-primary-tint-strong);
-    color: #dce8ff;
-}
-
 html[data-theme="dark"] .home-notice-card:hover {
     background: var(--color-bg-subtle);
 }
@@ -714,43 +812,6 @@ html[data-theme="dark"] .stat-card-arrow {
     color: var(--color-text-sub);
 }
 
-@media (max-width: 767.98px) {
-    .nav-menu .nav-item,
-    .top-navbar {
-        height: 60px;
-    }
-
-    .top-navbar .logo {
-        font-size: 19px;
-    }
-
-    .theme-toggle {
-        margin-left: 12px;
-    }
-
-    .page-section {
-        padding-top: 22px;
-    }
-
-    .container {
-        padding-left: 18px !important;
-        padding-right: 18px !important;
-    }
-
-    .sub-tab {
-        padding: 0 13px;
-    }
-
-    .avatar-bar,
-    .tier-bar {
-        top: 60px;
-    }
-
-    .live-broadcast-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 .section-title-label {
     display: inline-flex;
     align-items: center;
@@ -764,7 +825,6 @@ html[data-theme="dark"] .stat-card-arrow {
 .tool-card {
     background: var(--color-card);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
 }
 
 .avatar-bar,
@@ -780,8 +840,8 @@ html[data-theme="dark"] .stat-card-arrow {
     text-decoration: none;
     color: inherit;
     transition:
-        box-shadow 0.15s,
-        transform 0.15s;
+    box-shadow 0.15s,
+    transform 0.15s;
 }
 
 .news-post-card {
@@ -789,8 +849,8 @@ html[data-theme="dark"] .stat-card-arrow {
     margin-bottom: 16px;
     overflow: hidden;
     transition:
-        box-shadow 0.15s,
-        transform 0.15s;
+    box-shadow 0.15s,
+    transform 0.15s;
 }
 
 .tool-card {
@@ -803,37 +863,53 @@ html[data-theme="dark"] .stat-card-arrow {
     color: inherit;
     position: relative;
     transition:
-        box-shadow 0.15s,
-        transform 0.15s,
-        border-color 0.15s;
+    box-shadow 0.15s,
+    transform 0.15s,
+    border-color 0.15s;
+    align-items: flex-start;
+    text-align: left;
+    min-height: 130px;
 }
 
 .member-card {
     cursor: pointer;
     transition: 0.15s;
     flex-direction: column;
+    min-height: 0;
+    justify-content: flex-start;
+    align-items: center;
+    aspect-ratio: auto;
+    position: relative;
+    display: block;
+    overflow: hidden;
+    padding: 0 0 12px;
+    text-align: center;
+    background: var(--color-card);
+    padding-bottom: 13px;
 }
 
 .btn-view-all {
     background: transparent;
     border: 0;
-    font-size: 11px;
-    font-weight: 700;
     padding: 0;
     clip-path: none;
     height: auto;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
     cursor: pointer;
     transition: 0.15s;
+    border-radius: 0;
+    color: var(--color-text-main);
 }
 
 .filter-nav {
     display: flex;
     height: var(--filterbar-h);
-    border-left: 2px solid var(--color-border);
     align-items: center;
+    gap: 3px;
+    margin-left: 0;
+    padding-left: 0;
+    border: 0;
 }
 
 .filter-item {
@@ -844,6 +920,8 @@ html[data-theme="dark"] .stat-card-arrow {
     position: relative;
     transition: color 0.15s;
     flex-shrink: 0;
+    padding: 5px 10px;
+    background: var(--color-card);
 }
 
 .filter-item:hover {
@@ -865,45 +943,38 @@ html[data-theme="dark"] .stat-card-arrow {
     border-radius: 2px;
 }
 
-.stat-card-box {
-    position: relative;
-    height: 100%;
-    flex-direction: column;
-    cursor: pointer;
-    transition:
-        box-shadow 0.15s,
-        transform 0.15s;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-}
-
 .stat-card-box:hover {
     box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
+    border: 0;
 }
 
 .stat-card-box .label {
-    margin-bottom: 14px;
-}
-
-.stat-card-box .wl {
-    font-size: var(--fs-subheading);
-    color: var(--color-text-muted);
-    font-weight: 800;
-    min-height: 1.4em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: normal;
+    font-family: "Pretendard", sans-serif;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    grid-area: label;
+    margin: 0;
+    color: var(--panel-text);
+    font-weight: 700;
 }
 
 .stat-card-box .donut {
-    margin-bottom: 4px;
+    width: 66px;
+    height: 66px;
+    grid-area: donut;
+    margin: 0;
+    background: var(--panel-control);
+    --color-win: #4d90ff;
+    --color-lose: #ff8080;
+    --color-donut-track: var(--panel-line);
 }
 
 .stat-card-box .donut-text {
     font-weight: 800;
+    font-size: 14px;
+    color: var(--panel-text);
 }
 
 .stat-card-arrow {
@@ -928,13 +999,13 @@ html[data-theme="dark"] .stat-card-arrow {
     vertical-align: middle;
     margin-right: 4px;
     flex-shrink: 0;
+    border-radius: 0;
 }
 
 .team-logo-fallback {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
     background: var(--color-bg-subtle);
     color: var(--color-text-muted);
     font-weight: 800;
@@ -976,6 +1047,9 @@ html[data-theme="dark"] .stat-card-arrow {
 .tag-badge.role-badge {
     color: #fff;
     border: none;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    font-family: "Pretendard", sans-serif;
+    font-weight: 700;
 }
 
 .badge-lose {
@@ -1005,21 +1079,23 @@ html[data-theme="dark"] .stat-card-arrow {
     transition: transform 0.25s ease;
 }
 
-.live-card-avatar-ring.live-card-avatar-ring--male {
-    background: linear-gradient(45deg, #2979ff, #4facfe, #00c6ff);
-}
-
 .live-card-name {
     color: var(--color-text-dark);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    grid-area: name;
+    align-self: end;
+    font-weight: 700;
+    font-size: 13px;
 }
 
 .home-notice-list {
     display: flex;
     flex-direction: column;
     gap: 0;
+    overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 }
 
 .home-notice-card:hover {
@@ -1119,6 +1195,8 @@ html[data-theme="dark"] .stat-card-arrow {
     object-fit: cover;
     background: var(--color-bg-subtle);
     flex-shrink: 0;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
 }
 
 @keyframes newsFeaturedFadeIn {
@@ -1228,8 +1306,8 @@ html[data-theme="dark"] .stat-card-arrow {
     opacity: 0;
     pointer-events: none;
     transition:
-        opacity 0.15s,
-        background 0.15s;
+    opacity 0.15s,
+    background 0.15s;
     z-index: 2;
 }
 
@@ -1277,7 +1355,6 @@ html[data-theme="dark"] .stat-card-arrow {
 .news-post-avatar {
     width: 36px;
     height: 36px;
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-bg-subtle);
     border: 1px solid var(--color-border);
@@ -1394,20 +1471,15 @@ html[data-theme="dark"] .stat-card-arrow {
 }
 
 .photo-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
     background: rgba(255, 255, 255, 0.55);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     transition:
-        width 0.2s,
-        border-radius 0.2s,
-        background 0.2s;
+    width 0.2s,
+    border-radius 0.2s,
+    background 0.2s;
 }
 
 .photo-dot.active {
-    width: 16px;
-    border-radius: 3px;
     background: rgba(255, 255, 255, 0.95);
 }
 
@@ -1482,8 +1554,8 @@ html[data-theme="dark"] .stat-card-arrow {
     height: auto;
     cursor: pointer;
     transition:
-        background 0.15s,
-        color 0.15s;
+    background 0.15s,
+    color 0.15s;
 }
 
 .news-load-more:hover {
@@ -1507,10 +1579,11 @@ html[data-theme="dark"] .stat-card-arrow {
 
 .tool-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    gap: 12px;
 }
 
 .tool-card:hover {
-    box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
     border-color: var(--color-border-hover);
 }
@@ -1526,6 +1599,8 @@ html[data-theme="dark"] .stat-card-arrow {
     font-weight: 800;
     font-size: var(--fs-heading);
     overflow: hidden;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
 }
 
 .tool-card-icon img {
@@ -1563,6 +1638,9 @@ html[data-theme="dark"] .stat-card-arrow {
 
 .modal-content {
     overflow: hidden;
+    border-radius: 0;
+    border: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 }
 
 .modal-header {
@@ -1618,8 +1696,9 @@ html[data-theme="dark"] .stat-card-arrow {
     padding: 0 12px 0 3px;
     border-radius: 999px;
     transition:
-        background 0.15s,
-        color 0.15s;
+    background 0.15s,
+    color 0.15s;
+    gap: 9px;
 }
 
 .avatar-select-item:hover {
@@ -1633,7 +1712,6 @@ html[data-theme="dark"] .stat-card-arrow {
 .avatar-select-fallback {
     width: 24px;
     height: 24px;
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-bg-subtle);
     box-sizing: border-box;
@@ -1650,6 +1728,10 @@ html[data-theme="dark"] .stat-card-arrow {
     font-weight: 700;
     color: var(--color-text-sub);
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .avatar-select-item.active .avatar-select-name {
@@ -1673,8 +1755,8 @@ html[data-theme="dark"] .stat-card-arrow {
     padding: 0 12px 0 2px;
     background: transparent;
     transition:
-        background 0.15s,
-        box-shadow 0.15s;
+    background 0.15s,
+    box-shadow 0.15s;
 }
 
 .avatar-bar-tools .avatar-select-all .avatar-select-fallback {
@@ -1698,7 +1780,6 @@ html[data-theme="dark"] .stat-card-arrow {
 @media (max-width: 767.98px) {
     .avatar-select-item {
         padding: 0 10px 0 3px;
-        gap: 5px;
     }
 
     .avatar-select-fallback {
@@ -1714,7 +1795,6 @@ html[data-theme="dark"] .stat-card-arrow {
 .player-avatar-sm {
     width: 18px;
     height: 18px;
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-placeholder-bg);
     flex-shrink: 0;
@@ -1731,6 +1811,8 @@ html[data-theme="dark"] .stat-card-arrow {
     margin-right: 20px;
     overflow: hidden;
     flex-shrink: 0;
+    border-radius: 50%;
+    clip-path: none;
 }
 
 .profile-avatar img {
@@ -1741,10 +1823,11 @@ html[data-theme="dark"] .stat-card-arrow {
 
 .member-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 14px;
 }
 
 .member-card:hover {
-    box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
     border-color: var(--color-border-hover);
 }
@@ -1762,7 +1845,6 @@ html[data-theme="dark"] .stat-card-arrow {
     max-width: 72px;
     min-width: 40px;
     aspect-ratio: 1 / 1;
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-bg-subtle);
     display: flex;
@@ -1777,23 +1859,44 @@ html[data-theme="dark"] .stat-card-arrow {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 8px;
+    margin-bottom: 3px;
 }
 
 .member-card-tags {
     flex-wrap: wrap;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
 }
 
 .mv-console {
     flex-direction: column;
     border-radius: var(--radius-card);
     margin-bottom: 20px;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 210px;
+    gap: 18px;
+    padding: 20px;
+    border: 0;
+    box-shadow: none;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    align-items: stretch;
 }
 
 .mv-tile {
     display: flex;
+    padding: 15px 14px 13px;
+    background: var(--panel-control);
+    border: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 9px;
 }
 
 .mv-tile.disabled {
@@ -1802,20 +1905,10 @@ html[data-theme="dark"] .stat-card-arrow {
 }
 
 .mv-tile-icon {
-    color: var(--color-primary);
     flex-shrink: 0;
-}
-
-.mv-tile-label {
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.mv-stepper {
-    display: flex;
-    align-items: center;
-    border-radius: 8px;
-    overflow: hidden;
+    width: 20px;
+    height: 20px;
+    align-self: center;
 }
 
 .mv-stepper button {
@@ -1827,10 +1920,6 @@ html[data-theme="dark"] .stat-card-arrow {
     cursor: pointer;
 }
 
-.mv-stepper button:disabled {
-    cursor: not-allowed;
-}
-
 .mv-stepper-value {
     width: 22px;
     text-align: center;
@@ -1839,6 +1928,9 @@ html[data-theme="dark"] .stat-card-arrow {
     border-left: 1px solid var(--color-border-strong);
     border-right: 1px solid var(--color-border-strong);
     line-height: 22px;
+    background: var(--color-card);
+    color: var(--panel-text);
+    border-color: var(--panel-line);
 }
 
 .mv-toggle-switch {
@@ -1851,6 +1943,7 @@ html[data-theme="dark"] .stat-card-arrow {
     flex-shrink: 0;
     border: none;
     padding: 0;
+    background: var(--color-card);
 }
 
 .mv-toggle-switch::before {
@@ -1863,10 +1956,12 @@ html[data-theme="dark"] .stat-card-arrow {
     border-radius: 50%;
     transition: transform 0.15s;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    background: var(--color-border-strong);
 }
 
 .mv-toggle-switch.on::before {
     transform: translateX(15px);
+    background: #fff;
 }
 
 .mv-run-btn {
@@ -1881,8 +1976,8 @@ html[data-theme="dark"] .stat-card-arrow {
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(41, 121, 255, 0.32);
     transition:
-        filter 0.1s,
-        transform 0.1s;
+    filter 0.1s,
+    transform 0.1s;
 }
 
 .mv-run-btn:hover:not(:disabled) {
@@ -1896,40 +1991,22 @@ html[data-theme="dark"] .stat-card-arrow {
 .mv-run-btn:disabled {
     box-shadow: none;
     cursor: not-allowed;
+    background: var(--panel-control);
+    color: var(--panel-muted);
+    opacity: 1;
 }
 
 @media (min-width: 700px) {
     .mv-console {
         flex-direction: row;
-        align-items: center;
-        padding: 12px 16px;
-        gap: 18px;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
     }
 
     .mv-console-tiles {
-        display: flex;
         flex: 0 0 auto;
-        gap: 10px;
-    }
-
-    .mv-tile {
-        flex-direction: row;
-        align-items: center;
-        gap: 9px;
-        padding: 9px 14px;
-        border-radius: 9px;
-    }
-
-    .mv-tile-label {
-        font-size: 11px;
     }
 
     .mv-run-btn {
         width: auto;
-        padding: 10px 22px;
         margin-left: auto;
         box-shadow: 0 2px 8px rgba(41, 121, 255, 0.25);
     }
@@ -1937,11 +2014,8 @@ html[data-theme="dark"] .stat-card-arrow {
 
 .mv-chip-box {
     background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     padding: 14px 18px;
-    margin-bottom: 20px;
 }
 
 .mv-chip-box .mv-chip-row {
@@ -1958,7 +2032,6 @@ html[data-theme="dark"] .stat-card-arrow {
     gap: 8px;
     padding: 14px 18px;
     background: var(--color-card);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     margin-bottom: 20px;
@@ -1970,45 +2043,64 @@ html[data-theme="dark"] .stat-card-arrow {
     cursor: pointer;
     transition: 0.12s;
     user-select: none;
+    border-radius: 0 !important;
+    height: 34px;
+    padding: 0 13px 0 5px;
+    gap: 8px;
+    background: var(--color-bg-subtle);
+    border: 0;
 }
 
 .mv-chip:hover {
     border-color: var(--color-border-hover);
+    background: var(--color-primary-tint);
 }
 
 .mv-chip.selected {
-    border-color: var(--color-primary);
+    border: 0;
 }
 
 .mv-chip-avatar {
-    border-radius: 50%;
     flex-shrink: 0;
     object-fit: cover;
+    width: 24px;
+    height: 24px;
+    background: var(--color-bg-subtle);
 }
 
 .mv-chip-check {
     display: none;
-    border-radius: 50%;
     font-size: 10px;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    background: none;
+    color: #fff;
 }
 
 .mv-chip.selected .mv-chip-check {
     display: flex;
 }
 
+/* ── 멀티뷰어 멤버 칩: LIVE 글자 배지 → 이름 옆 빨간 점 ── */
 .mv-chip-live {
-    display: inline-flex;
     align-items: center;
-    background: var(--color-lose);
     color: #fff;
-    font-size: 10px;
     font-weight: 800;
-    padding: 2px 6px;
     line-height: 1;
     letter-spacing: 0.2px;
+    display: inline-block;
+    flex: none;
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border-radius: 50%;
+    clip-path: none;
+    background: var(--color-lose);
+    box-shadow: 0 0 0 2px rgba(240, 62, 62, 0.22);
+    font-size: 0;
 }
 
 .mv-quickadd {
@@ -2016,7 +2108,6 @@ html[data-theme="dark"] .stat-card-arrow {
     align-items: center;
     background: var(--color-bg);
     border: 0;
-    border-radius: 999px;
     padding: 4px 4px 4px 14px;
     gap: 8px;
 }
@@ -2049,7 +2140,6 @@ html[data-theme="dark"] .stat-card-arrow {
     height: 28px;
     box-sizing: border-box;
     padding: 0;
-    border-radius: 50%;
     border: none;
     background: var(--color-primary);
     color: #fff;
@@ -2074,11 +2164,9 @@ html[data-theme="dark"] .stat-card-arrow {
     flex-wrap: wrap;
     gap: 8px;
     background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
-    margin-bottom: 20px;
     min-height: 20px;
+    padding: 14px 18px;
 }
 
 .mv-order-item {
@@ -2086,6 +2174,11 @@ html[data-theme="dark"] .stat-card-arrow {
     align-items: center;
     gap: 2px;
     font-size: var(--fs-body);
+    border-radius: 0 !important;
+    height: 32px;
+    padding: 0 8px 0 11px;
+    background: var(--color-bg-subtle);
+    border: 0;
 }
 
 .mv-order-item.custom {
@@ -2110,7 +2203,6 @@ html[data-theme="dark"] .stat-card-arrow {
     background: transparent;
     color: var(--color-text-faint);
     cursor: pointer;
-    border-radius: 4px;
     font-size: var(--fs-body);
     display: flex;
     align-items: center;
@@ -2120,11 +2212,6 @@ html[data-theme="dark"] .stat-card-arrow {
 .mv-order-item button:hover:not(:disabled) {
     background: var(--color-bg-subtle);
     color: var(--color-text-body);
-}
-
-.mv-order-item button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
 }
 
 .mv-order-item .mv-order-remove:hover:not(:disabled) {
@@ -2137,11 +2224,17 @@ html[data-theme="dark"] .stat-card-arrow {
 
 .mv-order-item.focus-target {
     border-color: var(--color-primary);
+    background: var(--color-primary-tint);
 }
 
 .mv-order-empty {
     font-size: var(--fs-body);
     color: var(--color-text-sub);
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 24px 12px;
+    text-align: center;
 }
 
 .donut-wrap {
@@ -2213,10 +2306,6 @@ html[data-theme="dark"] .stat-card-arrow {
     color: var(--color-text-dark);
 }
 
-.stat-table thead .stat-table-sticky-col {
-    z-index: 3;
-}
-
 .stat-table tbody tr:hover .stat-table-sticky-col {
     background: var(--color-primary-tint);
 }
@@ -2242,6 +2331,9 @@ html[data-theme="dark"] .stat-card-arrow {
     align-items: flex-start;
     width: 100%;
     min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 26px;
 }
 
 .cal-sidebar {
@@ -2250,6 +2342,11 @@ html[data-theme="dark"] .stat-card-arrow {
     flex-shrink: 50;
     flex-basis: 360px;
     order: 1;
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
 }
 
 .cal-calendar-area {
@@ -2259,6 +2356,12 @@ html[data-theme="dark"] .stat-card-arrow {
     flex-shrink: 1;
     overflow: hidden;
     order: 2;
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    max-width: none !important;
+    min-width: 0;
+    flex-grow: 1;
 }
 
 .cal-calendar-area > .section-title {
@@ -2277,11 +2380,6 @@ html[data-theme="dark"] .stat-card-arrow {
 @media (max-width: 888px) {
     .cal-main-layout {
         flex-direction: column;
-        gap: 20px;
-    }
-
-    .cal-sidebar {
-        display: contents;
     }
 
     .cal-today-card-wrapper {
@@ -2291,7 +2389,6 @@ html[data-theme="dark"] .stat-card-arrow {
 
     .cal-calendar-area {
         order: 2;
-        width: 100%;
     }
 
     .cal-selected-card-wrapper {
@@ -2304,6 +2401,8 @@ html[data-theme="dark"] .stat-card-arrow {
     display: flex;
     align-items: center;
     gap: 4px;
+    background: var(--color-card);
+    padding: 3px;
 }
 
 .cal-nav-btn {
@@ -2315,6 +2414,10 @@ html[data-theme="dark"] .stat-card-arrow {
     justify-content: center;
     cursor: pointer;
     transition: 0.15s;
+    border-radius: 0;
+    background: var(--panel-control) !important;
+    color: var(--panel-text) !important;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
 }
 
 .cal-nav-btn:hover {
@@ -2327,6 +2430,8 @@ html[data-theme="dark"] .stat-card-arrow {
     font-weight: 800;
     min-width: 78px;
     text-align: center;
+    color: var(--panel-text) !important;
+    font-family: "Chakra Petch", sans-serif !important;
 }
 
 .cal-calendar-inner {
@@ -2337,10 +2442,16 @@ html[data-theme="dark"] .stat-card-arrow {
 }
 
 .cal-weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 110px);
     text-align: center;
     margin-bottom: 0;
+    padding: 9px 0;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    background-color: var(--color-head-bg);
+    color: var(--color-head-text);
+    border-bottom: 0;
 }
 
 .cal-cell-event {
@@ -2350,29 +2461,24 @@ html[data-theme="dark"] .stat-card-arrow {
 
 .cal-cell-top {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     white-space: nowrap;
-}
-
-.cal-event-time {
-    font-weight: 500;
-}
-
-.cal-event-person {
-    font-size: var(--fs-body);
-    color: var(--color-text-main);
-    margin-left: auto;
-    text-align: right;
+    justify-content: flex-start;
+    gap: 5px;
+    line-height: 1.3;
+    overflow: hidden;
 }
 
 .cal-event-desc {
     white-space: pre-wrap;
-    word-break: break-all;
-}
-
-.cal-longterm-bar {
-    box-shadow: none;
+    margin-left: 0;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-main);
+    text-align: left !important;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
 }
 
 .cal-selected-list,
@@ -2445,11 +2551,21 @@ html[data-theme="dark"] .stat-card-arrow {
     display: flex;
     align-items: flex-start;
     gap: 8px;
+    margin-top: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
 }
 
 .cal-offair-label {
     white-space: nowrap;
     flex-shrink: 0;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--color-text-sub);
+    text-transform: uppercase;
+    padding-top: 0;
 }
 
 .cal-offair-chips {
@@ -2464,6 +2580,10 @@ html[data-theme="dark"] .stat-card-arrow {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    padding: 4px 9px 4px 4px;
+    background: var(--color-bg-subtle);
 }
 
 .cal-offair-avatar {
@@ -2471,12 +2591,15 @@ html[data-theme="dark"] .stat-card-arrow {
     object-fit: cover;
     background: var(--color-border);
     flex-shrink: 0;
+    width: 18px;
+    height: 18px;
 }
 
 .cal-offair-name {
     font-weight: 700;
     color: var(--color-text-main);
     white-space: nowrap;
+    font-size: 11px;
 }
 
 .fs-body {
@@ -2620,7 +2743,6 @@ html[data-theme="dark"] .stat-card-arrow {
 .soop-logo-icon {
     width: 20px;
     height: 20px;
-    border-radius: 4px;
     object-fit: contain;
 }
 
@@ -2689,9 +2811,11 @@ html[data-theme="dark"] .stat-card-arrow {
     box-shadow: var(--shadow-card);
     overflow: hidden;
     height: min(
-        860px,
-        max(420px, calc(100dvh - 64px - var(--space-page-bottom)))
+    860px,
+    max(420px, calc(100dvh - 64px - var(--space-page-bottom)))
     );
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 }
 
 .rider-stage iframe {
@@ -2713,10 +2837,6 @@ html[data-theme="dark"] .stat-card-arrow {
     display: flex;
     align-items: center;
     gap: 14px;
-}
-
-.rider-actions .btn-view-all {
-    gap: 4px;
 }
 
 .rider-actions .ext-arrow {
@@ -2765,16 +2885,6 @@ a.home-notice-card:hover {
     border-right: 1px solid var(--color-border);
 }
 
-.bar-scope {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    height: var(--bar-scope-h);
-    padding: 2px;
-    border-radius: 999px;
-    box-sizing: border-box;
-}
-
 .avatar-selector-scroll,
 .tier-bar-list {
     --scroll-gutter: 6px;
@@ -2790,11 +2900,6 @@ a.home-notice-card:hover {
         --bar-pad-y: 6px;
         --bar-pad-x: 8px;
         --bar-gap: 8px;
-    }
-
-    .avatar-bar,
-    .tier-bar {
-        margin-bottom: var(--space-title-gap);
     }
 }
 
@@ -2818,24 +2923,19 @@ a.home-notice-card:hover {
     font-family: inherit;
     height: var(--bar-chip-h);
     padding: 0 12px;
-    border-radius: 999px;
     cursor: pointer;
     font-size: var(--fs-body);
     font-weight: 700;
     transition:
-        background 0.15s,
-        color 0.15s;
-}
-
-.tier-bar-item.active {
-    font-weight: 800;
+    background 0.15s,
+    color 0.15s;
+    color: var(--panel-muted);
 }
 
 .tier-bar-count {
     font-size: 10px;
     font-weight: 700;
     color: var(--color-text-faint);
-    font-variant-numeric: tabular-nums;
 }
 
 .tier-bar.is-live-only .tier-bar-item.active .tier-bar-count {
@@ -2853,27 +2953,21 @@ a.home-notice-card:hover {
     cursor: pointer;
     height: var(--bar-scope-btn-h);
     padding: 0 12px;
-    border-radius: 999px;
     white-space: nowrap;
     font-size: var(--fs-body);
     font-weight: 700;
     transition:
-        background 0.15s,
-        color 0.15s,
-        box-shadow 0.15s;
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
 }
 
 .tier-scope-btn:hover {
     color: var(--color-text-strong);
 }
 
-.tier-scope-btn.on {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
 .tier-scope-num {
     font-weight: 800;
-    font-variant-numeric: tabular-nums;
 }
 
 .tier-scope-all .tier-scope-num {
@@ -2895,6 +2989,8 @@ a.home-notice-card:hover {
 
 .tier-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: 12px;
 }
 
 .tier-card {
@@ -2903,19 +2999,15 @@ a.home-notice-card:hover {
     color: inherit;
     text-decoration: none;
     background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
     transition:
-        box-shadow 0.15s,
-        transform 0.15s,
-        border-color 0.15s,
-        filter 0.15s,
-        opacity 0.15s;
+    box-shadow 0.15s,
+    transform 0.15s,
+    border-color 0.15s,
+    filter 0.15s,
+    opacity 0.15s;
 }
 
 .tier-card:hover {
-    box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
     border-color: var(--color-border-hover);
 }
@@ -2927,9 +3019,6 @@ a.home-notice-card:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .tier-card-thumb {
@@ -2948,7 +3037,6 @@ a.home-notice-card:hover {
 .tier-card-avatar {
     width: 52px;
     height: 52px;
-    border-radius: 50%;
     object-fit: cover;
     background: var(--color-bg-subtle);
     display: flex;
@@ -2969,12 +3057,13 @@ a.home-notice-card:hover {
 
 .tier-card-body {
     padding: 10px 12px 12px;
+    border-top: 0 !important;
+    text-align: center;
 }
 
 .tier-card-nameline {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 5px;
     min-width: 0;
 }
@@ -3000,7 +3089,6 @@ a.home-notice-card:hover {
 .tier-card-team {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 4px;
     margin-top: 5px;
     min-width: 0;
@@ -3041,11 +3129,6 @@ a.home-notice-card:hover {
         margin-top: 12px;
     }
 
-    .tier-grid {
-        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-        gap: 10px;
-    }
-
     .tier-card-avatar {
         width: 40px;
         height: 40px;
@@ -3066,10 +3149,6 @@ a.home-notice-card:hover {
     }
 }
 
-body {
-    background: var(--color-bg);
-}
-
 .avatar-bar,
 .clean-card,
 .live-broadcast-card,
@@ -3082,27 +3161,30 @@ body {
 .tool-card {
     border-radius: 0;
     clip-path: polygon(
-        0 0,
-        calc(100% - var(--notch-md)) 0,
-        100% var(--notch-md),
-        100% 100%,
-        0 100%
+    0 0,
+    calc(100% - var(--notch-md)) 0,
+    100% var(--notch-md),
+    100% 100%,
+    0 100%
     );
 }
 
-.top-navbar {
-    height: 68px;
-
+.stat-card-box {
+    position: relative;
+    height: 100%;
+    flex-direction: column;
+    cursor: pointer;
+    transition:
+    box-shadow 0.15s,
+    transform 0.15s;
+    padding: 20px 22px 22px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "label label" "donut wl";
+    align-items: center;
+    gap: 16px;
+    text-align: left;
     border: 0;
-    border-bottom: 3px solid var(--color-primary);
-
-}
-
-.top-navbar .logo {
-    font-family: "Chakra Petch", sans-serif;
-    font-size: 22px;
-    letter-spacing: -0.08em;
-    gap: 11px;
 }
 
 .logo-black {
@@ -3113,29 +3195,11 @@ body {
     color: var(--panel-accent);
 }
 
-.nav-menu .nav-item {
-    height: 68px;
-    color: var(--panel-muted);
-    font-size: 13px;
-    letter-spacing: 0.02em;
-}
-
-.nav-menu .nav-item.active,
-.nav-menu .nav-item:hover {
-    color: var(--panel-text);
-}
-
-.nav-menu .nav-item.active::after {
-    height: 3px;
-    background: var(--color-primary);
-}
-
 .theme-toggle {
     width: auto;
     height: auto;
     margin-left: 20px;
     border: 0;
-    background: var(--panel-control);
     color: var(--panel-muted);
     cursor: pointer;
     font-size: 17px;
@@ -3145,6 +3209,7 @@ body {
     padding: 2px;
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    background: var(--color-bg-subtle);
 }
 
 .theme-toggle:hover {
@@ -3155,30 +3220,6 @@ body {
     padding-top: 34px;
 }
 
-.container {
-    max-width: 1240px !important;
-}
-
-.page-header-divider {
-    border-bottom: 3px solid var(--color-text-main);
-    margin: 16px 0 18px;
-    display: none;
-}
-
-.sub-tabs {
-    gap: 8px;
-    height: auto;
-    border: 0;
-    margin-bottom: 24px;
-    display: inline-flex;
-    width: fit-content;
-    padding: 0;
-    background: transparent;
-    overflow: visible;
-    align-items: stretch;
-    max-width: 100%;
-    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
-}
 .page-header > .sub-tabs,
 .page-header-main > .sub-tabs {
     position: relative;
@@ -3192,98 +3233,9 @@ body {
     background: transparent;
 }
 
-.sub-tab {
-    height: 40px;
-    padding: 0 15px;
-    margin: 0;
-    border: 0 !important;
-    color: var(--panel-muted);
-    font-size: 13px;
-    font-weight: 600;
-    background: var(--panel-control);
-    justify-content: center;
-    border-radius: 0 !important;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-}
-
-.sub-tab.active {
-    background: var(--color-primary) !important;
-    border-color: var(--color-primary);
-    color: #fff !important;
-    border: 1px solid var(--color-primary) !important;
-    font-weight: 700;
-    clip-path: polygon(
-        0 0,
-        calc(100% - var(--notch-sm)) 0,
-        100% var(--notch-sm),
-        100% 100%,
-        0 100%
-    ) !important;
-}
-
-.section-title {
-    height: auto;
-    min-height: 32px;
-    padding: 0 0 9px;
-    border-left: 0;
-    border-bottom: 2px solid var(--color-text-strong);
-    font-family: "Pretendard", sans-serif;
-    font-size: 18px;
-    letter-spacing: -0.025em;
-    margin-bottom: 16px;
-    padding-bottom: 9px;
-    font-weight: 700;
-    align-items: baseline;
-    flex-wrap: wrap;
-}
-
-.section-title-sm {
-    border-bottom: 1px solid var(--color-border);
-    font-family: "Pretendard", sans-serif;
-    font-size: 14px;
-    flex-wrap: wrap;
-}
-
-.tag-badge {
-    height: 20px;
-    padding: 0 8px;
-    border: 0;
-    border-radius: 0;
-    font-size: 11px;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
-
-.tag-badge.race-badge {
-    width: 20px;
-    height: 20px;
-}
-
 .tag-badge.tier-badge {
-    background: var(--color-ink);
     border: 0;
-    color: #fff;
     font-weight: 700;
-}
-
-.match-badge {
-    width: 30px;
-    height: 20px;
-    font-size: 11px;
-}
-
-.stat-table thead th {
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-    border-bottom: 0;
-    color: var(--panel-muted);
-    font-family: "Chakra Petch", "Pretendard", sans-serif;
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.stat-table tbody td {
-    border-bottom: 1px solid var(--color-border);
 }
 
 .stat-table tbody tr:hover td {
@@ -3293,16 +3245,9 @@ body {
 .home-carousel {
     position: relative;
     overflow: hidden;
-    margin-bottom: 28px;
-    color: var(--panel-text);
-
-    border-bottom: 3px solid var(--color-primary);
     margin: 0 0 30px;
     clip-path: none;
-
-    background-color: var(--panel-bg);
 }
-
 
 .home-carousel-track {
     display: flex;
@@ -3341,14 +3286,13 @@ body {
 
 .home-carousel h1 i,
 .home-carousel h1 span {
-    color: var(--panel-accent);
     font-style: normal;
 }
 
 .home-carousel h1 i {
     display: block;
-    color: var(--panel-accent);
     font-style: normal;
+    color: var(--navy-accent);
 }
 
 .home-carousel p {
@@ -3367,8 +3311,6 @@ body {
 
 .home-hero-links a {
     padding: 0 15px;
-    color: var(--panel-text);
-    background: var(--panel-control);
     border: 1px solid rgba(255, 255, 255, 0.22);
     font-size: 12px;
     font-weight: 700;
@@ -3382,6 +3324,12 @@ body {
 .home-hero-links a:hover {
     background: var(--color-primary);
     border-color: var(--color-primary);
+}
+
+.stat-table thead .stat-table-sticky-col {
+    z-index: 3;
+    background-color: var(--panel-bg);
+    background-image: var(--panel-pattern);
 }
 
 .home-carousel-controls {
@@ -3398,13 +3346,7 @@ body {
 }
 
 .home-carousel-controls > button {
-    width: 28px;
-    height: 28px;
     border: 0;
-    background: var(--panel-control);
-    color: var(--panel-text);
-    font-size: 21px;
-    line-height: 1;
     cursor: pointer;
 }
 
@@ -3420,45 +3362,20 @@ body {
     padding: 0;
     border: 0;
     border-radius: 0;
-    background: var(--color-border-strong);
     cursor: pointer;
     transition:
-        width 0.2s,
-        background 0.2s;
-}
-
-.home-carousel-dots button.active {
-    width: 22px;
-    border-radius: 0;
-    background: var(--color-primary);
-}
-
-.live-broadcast-grid {
-    gap: 12px;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-}
-
-.live-broadcast-card:hover {
-    transform: translateY(-3px);
-}
-
-.live-thumb-wrap::after {
-    height: 58%;
-    display: none;
+    width 0.2s,
+    background 0.2s;
 }
 
 .live-thumb-overlay {
     position: absolute !important;
     z-index: 2;
-    right: 9px;
-    bottom: auto;
     display: block !important;
     gap: 4px;
     color: #fff;
-    font-family: "Chakra Petch", sans-serif;
     font-size: 10px;
     font-weight: 600;
-    top: 9px;
     inset: 0 !important;
     pointer-events: none;
 }
@@ -3483,47 +3400,8 @@ body {
     grid-template-areas: "avatar name" "avatar title";
     align-items: center;
     column-gap: 10px;
-}
-
-.live-card-title {
-    margin-bottom: 0;
-    font-weight: 400;
-    color: var(--color-text-sub);
-    margin: 0;
-    grid-area: title;
-    align-self: start;
-}
-
-.home-notice-avatar,
-.live-card-avatar,
-.live-card-avatar-ring {
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-}
-
-.live-card-avatar-ring {
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    background: none !important;
-}
-
-.live-card-avatar {
-    width: 34px;
-    height: 34px;
-    border: 2px solid var(--color-card);
-    box-sizing: border-box;
-}
-
-.home-notice-card {
-    border-radius: 0;
-    padding: 13px 14px;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
-
-.home-notice-avatar {
-    width: 36px;
-    height: 36px;
+    padding: 10px 12px 11px;
+    row-gap: 1px;
 }
 
 .avatar-bar,
@@ -3532,16 +3410,33 @@ body {
     border-color: var(--color-border);
 }
 
+@media (max-width: 767.98px) {
+    .avatar-bar,
+    .tier-bar {
+        margin-bottom: var(--space-title-gap);
+        top: 60px;
+    }
+}
+
 .bar-scope,
 .tier-bar-item,
 .tier-scope-btn {
     border-radius: 0;
 }
 
+.bar-scope {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: var(--bar-scope-h);
+    padding: 2px;
+    box-sizing: border-box;
+    background: var(--panel-control);
+    border: 0;
+}
+
 .tier-bar-item.active,
 .tier-scope-btn.on {
-    background: var(--color-primary);
-    color: #fff;
     box-shadow: none;
 }
 
@@ -3562,13 +3457,8 @@ body {
     top: 84px;
     display: block;
     margin: 0;
-
-    color: var(--panel-text);
     border: 0;
     clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .selection-layout > .avatar-bar::before {
@@ -3590,32 +3480,12 @@ body {
     display: block;
 }
 
-.selection-layout > .avatar-bar .bar-scope {
-    display: block;
-    height: auto;
-    padding: 0;
-    background: none;
-    border: 0;
-}
-
 .selection-layout > .avatar-bar .avatar-select-all {
-    height: 42px;
-    padding: 0 15px;
     border-bottom: 1px solid var(--panel-line);
-    background: transparent;
-    justify-content: flex-start;
-}
-
-.selection-layout > .avatar-bar .avatar-select-all.active {
-    background: var(--color-primary);
 }
 
 .selection-layout > .avatar-bar .avatar-select-all .avatar-select-name {
     color: var(--panel-muted);
-}
-
-.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-name {
-    color: #fff;
 }
 
 .selection-layout > .avatar-bar .avatar-selector-scroll {
@@ -3639,8 +3509,6 @@ body {
     width: 100%;
     height: 38px;
     padding: 0 13px;
-    border-left: 3px solid transparent;
-    border-radius: 0;
     background: transparent;
     justify-content: flex-start;
 }
@@ -3649,25 +3517,14 @@ body {
     background: var(--panel-control);
 }
 
-.selection-layout > .avatar-bar .avatar-select-item.active {
-    border-left-color: #fff;
-    background: var(--color-primary);
-}
-
 .selection-layout > .avatar-bar .avatar-select-name {
     color: var(--panel-muted);
     font-size: 12px;
 }
 
-.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name {
-    color: #fff;
-}
-
 .selection-layout > .avatar-bar .avatar-select-fallback {
     width: 22px;
     height: 22px;
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
 }
 
 .selection-content {
@@ -3688,17 +3545,11 @@ body {
         position: sticky;
         top: 60px;
         z-index: 90;
-        display: flex;
         align-items: stretch;
         overflow: hidden;
         max-width: 100%;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
-    }
-
-    .selection-layout > .avatar-bar::before {
-        display: none;
+        display: block;
+        padding: 0;
     }
 
     .selection-layout > .avatar-bar-tools {
@@ -3707,13 +3558,7 @@ body {
         border-right: 1px solid var(--panel-line);
     }
 
-    .selection-layout > .avatar-bar .bar-scope {
-        display: flex;
-    }
-
     .selection-layout > .avatar-bar .avatar-select-all {
-        height: auto;
-        padding: 0 13px;
         border: 0;
     }
 
@@ -3721,26 +3566,18 @@ body {
         display: block;
         flex: 1;
         min-width: 0;
-        max-height: none;
         overflow-x: auto;
-        overflow-y: hidden;
+        max-height: 60vh;
+        overflow-y: auto;
     }
 
     .selection-layout > .avatar-bar .avatar-selector-list {
         display: flex;
-        flex-direction: row;
-        align-items: stretch;
-        width: max-content;
-        height: 44px;
         padding: 0;
-    }
-
-    .selection-layout > .avatar-bar .avatar-select-item {
-        width: auto;
-        height: 44px;
-        padding: 0 12px;
-        border-left: 0;
-        border-bottom: 3px solid transparent;
+        flex-direction: column;
+        align-items: stretch;
+        height: auto;
+        width: 100%;
     }
 
     .selection-layout > .avatar-bar .avatar-select-item.active {
@@ -3761,6 +3598,7 @@ body {
 
     .top-navbar .logo {
         font-size: 19px;
+        margin-right: 0;
     }
 
     .page-section {
@@ -3774,6 +3612,9 @@ body {
 
     .home-carousel-slide {
         padding: 32px 24px 60px;
+        min-height: 0;
+        padding-top: 34px;
+        padding-bottom: 56px;
     }
 
     .home-carousel p {
@@ -3782,11 +3623,6 @@ body {
 
     .sub-tab {
         padding: 0 13px;
-    }
-
-    .avatar-bar,
-    .tier-bar {
-        top: 60px;
     }
 
     .live-broadcast-grid {
@@ -3806,110 +3642,23 @@ body {
     line-height: 1.25;
 }
 
-.stat-card-box {
-    padding: 20px 22px 22px;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "label label" "donut wl";
-    align-items: center;
-    gap: 16px;
-    text-align: left;
-
-    border: 0;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-}
-
-.stat-card-box .label {
-    font-family: "Pretendard", sans-serif;
-    font-size: 15px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    grid-area: label;
-    margin: 0;
-    color: var(--panel-text);
-    font-weight: 700;
-}
-
-.stat-card-box .donut {
-    width: 66px;
-    height: 66px;
-    grid-area: donut;
-    margin: 0;
-    background: var(--panel-control);
-    --color-win: #4d90ff;
-    --color-lose: #ff8080;
-    --color-donut-track: var(--panel-line);
-}
-
 .stat-card-box .donut::before {
     width: 48px;
     height: 48px;
     background: var(--color-card);
 }
 
-.member-grid {
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-    gap: 14px;
-}
-
-.member-card {
-    min-height: 0;
-    justify-content: flex-start;
-    align-items: center;
-    aspect-ratio: auto;
-    position: relative;
-}
-
 .member-card .member-avatar-img {
     width: 56px;
     height: 56px;
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
-    margin-bottom: 12px;
     margin: 0 auto 12px;
-}
-
-.member-card-name {
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.member-card-tags {
-    justify-content: center;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 
 .member-card .tool-card-ext {
     top: 10px;
     right: 12px;
     position: absolute;
-}
-
-.cal-main-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 26px;
-}
-
-.cal-calendar-area {
-    grid-column: 1;
-    grid-row: 1;
-    width: auto;
-    max-width: none !important;
-    min-width: 0;
-    flex-grow: 1;
-}
-
-.cal-sidebar {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 26px;
+    display: none;
 }
 
 .cal-calendar-area > .clean-card,
@@ -3917,22 +3666,11 @@ body {
     clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 }
 
-.cal-weekdays {
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-    color: var(--panel-muted);
-    border-bottom: 0;
-    padding: 9px 0;
-    font-family: "Chakra Petch", sans-serif;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-}
-
 .cal-weekdays > div {
     font-family: "Chakra Petch", sans-serif;
-    font-size: 11px;
     letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 700;
 }
 
 .cal-calendar-scroll-content {
@@ -3947,35 +3685,22 @@ body {
     width: 100%;
 }
 
-.cal-days-grid {
-    border-left: 1px solid var(--color-border);
-}
-
 .cal-day-cell {
     background: var(--color-card, #fff);
-    min-height: 110px;
     display: flex;
     flex-direction: column;
-    padding: 8px;
     cursor: pointer;
     border-right: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     transition: background 0.15s;
     box-sizing: border-box;
-}
-
-.cal-day-cell:hover {
-    background: var(--color-primary-tint);
+    min-height: 120px;
+    padding: 6px 8px 8px;
+    gap: 3px;
 }
 
 .cal-day-cell.other-month {
-    background: var(--calendar-outside-bg);
     cursor: default;
-}
-
-.cal-day-cell.other-month .cal-day-number {
-    color: var(--calendar-outside-text);
-    font-weight: 500;
 }
 
 .cal-day-cell:nth-child(7n) {
@@ -3992,48 +3717,38 @@ body {
     justify-content: center;
     align-self: flex-start;
     flex: none;
-    width: 24px;
-    height: 24px;
-    margin-bottom: 6px;
     line-height: 1;
     font-family: var(--font-num);
     font-variant-numeric: tabular-nums;
-    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--color-text-main);
+    width: 26px;
+    height: 26px;
+    margin-bottom: 2px;
+    font-size: 13px;
 }
 
 .cal-day-cell:nth-child(7n + 1) .cal-day-number {
     color: var(--color-lose);
 }
+
 .cal-day-cell:nth-child(7n) .cal-day-number {
     color: var(--color-primary);
 }
+
 .cal-day-cell.holiday .cal-day-number {
     color: var(--color-lose);
 }
+
+.cal-day-cell.other-month .cal-day-number {
+    font-weight: 500;
+    color: var(--calendar-outside-text);
+}
+
 .cal-day-cell.today .cal-day-number {
-    color: #fff;
-    background: var(--color-primary);
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-}
-
-.cal-nav-group {
-    background: var(--color-card);
-    padding: 3px;
-}
-
-.cal-nav-btn {
-    border-radius: 0;
-    background: var(--panel-control) !important;
-    color: var(--panel-text) !important;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
-
-.cal-nav-badge {
-    color: var(--panel-text) !important;
-    font-family: "Chakra Petch", sans-serif !important;
+    color: #fff;
 }
 
 #page-stats .row.gap-block {
@@ -4061,18 +3776,10 @@ body {
     color: var(--panel-text);
     border: 0;
     box-shadow: none;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .tier-bar-tools {
     border-color: var(--panel-line);
-}
-
-.bar-scope {
-    background: var(--panel-control);
-    border: 0;
 }
 
 .tier-scope-btn {
@@ -4085,64 +3792,23 @@ body {
     color: #fff;
 }
 
-.tier-bar-item {
-    color: var(--panel-muted);
-}
-
 .tier-bar-item:hover {
     background: var(--color-primary-tint-strong);
     color: var(--color-primary);
 }
 
 .tier-bar-item.active {
+    font-weight: 800;
     background: var(--color-primary);
     color: #fff;
 }
 
-.tier-grid {
-    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
-    gap: 12px;
-}
-
-.tier-card-media {
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-}
-
-.tier-card-body {
-    border-top: 0 !important;
-    text-align: center;
-}
-
-.mv-console {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 210px;
-    gap: 18px;
-    padding: 20px;
-
-    border: 0;
-    box-shadow: none;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-    align-items: stretch;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-}
-
 .mv-console-tiles {
     gap: 9px;
-}
-
-.mv-tile {
-    padding: 15px 14px 13px;
-    background: var(--panel-control);
-    border: 0;
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 9px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    min-width: 0;
 }
 
 .mv-tile-icon,
@@ -4151,6 +3817,8 @@ body {
 }
 
 .mv-tile-label {
+    font-weight: 700;
+    white-space: nowrap;
     font-size: 11px;
     color: var(--panel-text);
     margin-right: 0;
@@ -4160,17 +3828,9 @@ body {
     height: 100%;
     margin: 0;
     background: var(--color-primary);
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     flex-direction: column;
     gap: 7px;
     padding: 18px 14px;
-}
-
-.mv-run-btn:disabled {
-    background: var(--panel-control);
-    color: var(--panel-muted);
-    opacity: 1;
 }
 
 .mv-chip-box,
@@ -4178,40 +3838,6 @@ body {
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
     margin-bottom: 0;
-}
-
-.mv-chip {
-    border-radius: 0 !important;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    height: 34px;
-    padding: 0 13px 0 5px;
-    gap: 8px;
-    background: var(--color-bg-subtle);
-    border: 0;
-}
-
-.mv-order-item {
-    border-radius: 0 !important;
-    height: 32px;
-    padding: 0 8px 0 11px;
-    background: var(--color-bg-subtle);
-    border: 0;
-}
-
-.tool-grid {
-    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
-    gap: 12px;
-}
-
-.tool-card {
-    align-items: flex-start;
-    text-align: left;
-    min-height: 130px;
-}
-
-.tool-card-icon {
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
 }
 
 html[data-theme="dark"] .mv-chip-box,
@@ -4237,9 +3863,6 @@ html[data-theme="dark"] .mv-order-row {
 
     .mv-console {
         grid-template-columns: 1fr;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
     }
 
     .mv-run-btn {
@@ -4293,19 +3916,10 @@ html[data-theme="dark"] .mv-order-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .mv-console-tiles {
-        grid-template-columns: 1fr;
-    }
-
     .mv-tile {
         flex-direction: row;
         justify-content: space-between;
         padding: 13px 15px;
-    }
-
-    .mv-tile-icon {
-        width: 20px;
-        height: 20px;
     }
 
     .mv-tile-label {
@@ -4320,20 +3934,9 @@ html[data-theme="dark"] .mv-order-row {
     height: 24px;
     border: 0;
     background: transparent;
-    color: var(--panel-muted);
     font-size: 13px;
     cursor: pointer;
     clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-}
-
-.theme-toggle button.active {
-    background: var(--color-primary);
-    color: #fff;
-}
-
-.sub-tab:hover {
-    color: var(--color-primary);
-    background: var(--color-primary-tint-strong);
 }
 
 .sub-tab.active:hover {
@@ -4353,42 +3956,10 @@ html[data-theme="dark"] .mv-order-row {
     box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
 }
 
-.btn-view-all {
-    border-radius: 0;
-    color: var(--color-text-main);
-}
-
 .btn-view-all:hover {
     background: transparent;
     color: var(--color-text-main);
     text-decoration: none;
-}
-
-.tag-badge.role-badge {
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-    font-family: "Pretendard", sans-serif;
-    font-weight: 700;
-}
-
-.filter-nav {
-    gap: 3px;
-    margin-left: 0;
-    padding-left: 0;
-    border: 0;
-}
-
-.filter-item {
-    padding: 5px 10px;
-    background: var(--color-card);
-}
-
-.filter-item.active {
-    background: var(--color-primary);
-    color: #fff;
-}
-
-html[data-theme="dark"] .section-title {
-    border-color: var(--color-border-strong);
 }
 
 .home-carousel-preview {
@@ -4401,8 +3972,8 @@ html[data-theme="dark"] .section-title {
     width: min(100%, 360px);
     margin: 0;
     padding: 19px 20px;
-    background: var(--panel-control);
     transform: none;
+    background: var(--panel-control);
 }
 
 .home-preview-label {
@@ -4535,24 +4106,11 @@ html[data-theme="dark"] .section-title {
     justify-content: center;
 }
 
-.stat-table thead .stat-table-sticky-col {
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-}
-
 .avatar-bar-pick {
     display: none;
 }
 
 @media (max-width: 920px) {
-    .selection-layout > .avatar-bar {
-        display: block;
-        padding: 0;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
-    }
-
     .selection-layout > .avatar-bar::before {
         display: none;
     }
@@ -4595,30 +4153,12 @@ html[data-theme="dark"] .section-title {
         border-top: 1px solid var(--panel-line);
     }
 
-    .selection-layout > .avatar-bar .avatar-selector-scroll {
-        max-height: 60vh;
-        overflow-y: auto;
-    }
-
-    .selection-layout > .avatar-bar .avatar-selector-list {
-        flex-direction: column;
-        align-items: stretch;
-        height: auto;
-        width: 100%;
-    }
-
     .selection-layout > .avatar-bar .avatar-select-item {
         width: 100%;
         height: 40px;
         padding: 0 13px;
-        border-left: 3px solid transparent;
         border-bottom: 0;
         justify-content: flex-start;
-    }
-
-    .selection-layout > .avatar-bar .avatar-select-item.active {
-        border-left-color: #fff;
-        background: var(--color-primary);
     }
 
     .sub-tabs {
@@ -4671,6 +4211,16 @@ html[data-theme="dark"] .section-title {
     font-weight: 700;
 }
 
+.stat-card-box .wl {
+    color: var(--color-text-muted);
+    min-height: 1.4em;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+    grid-area: wl;
+    margin-top: 0;
+}
+
 .stat-card-box .wl .wl-lose,
 .stat-card-box .wl .wl-win,
 .wl .wl-lose,
@@ -4719,13 +4269,9 @@ html[data-theme="dark"] .section-title {
     display: block;
     margin: 0;
     padding: 0;
-
     border: 0;
     box-shadow: none;
     clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .selection-layout > .tier-bar::before {
@@ -4754,7 +4300,6 @@ html[data-theme="dark"] .section-title {
     height: auto;
     padding: 2px;
     background: var(--color-card);
-    clip-path: none;
     grid-template-columns: 1fr 1fr;
     gap: 2px;
 }
@@ -4791,7 +4336,6 @@ html[data-theme="dark"] .section-title {
     padding: 0 14px;
     justify-content: space-between;
     border-left: 3px solid transparent;
-    clip-path: none;
 }
 
 .selection-layout > .tier-bar .tier-bar-item:hover {
@@ -4800,20 +4344,26 @@ html[data-theme="dark"] .section-title {
 
 .selection-layout > .tier-bar .tier-bar-item.active {
     border-left-color: #fff;
-    background: var(--color-primary);
 }
 
 @media (max-width: 920px) {
     .selection-layout > .tier-bar {
         align-items: center;
         gap: var(--bar-gap);
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
+        display: block;
+        padding: 0;
+        position: sticky;
+        top: 60px;
+        z-index: 90;
     }
 
     .selection-layout > .tier-bar .tier-bar-tools {
         flex: none;
+        display: block;
+        padding: 9px 10px;
+        border-right: 0;
+        border-top: 1px solid var(--panel-line);
+        border-bottom: 0;
     }
 
     .selection-layout > .tier-bar .tier-bar-list {
@@ -4821,10 +4371,18 @@ html[data-theme="dark"] .section-title {
         gap: 4px;
         flex: 1;
         min-width: 0;
+        display: block;
+        width: 100%;
+        max-height: 55vh;
+        padding: 6px 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        white-space: normal;
     }
 
     .selection-layout > .tier-bar .tier-bar-item.active {
         border-left: 0;
+        border-left-color: #fff;
     }
 }
 
@@ -4854,19 +4412,10 @@ html[data-theme="dark"] .section-title {
     border-radius: 0 !important;
 }
 
-.team-logo-icon {
-    border-radius: 0;
-}
-
 .soop-logo-icon,
 .team-logo-fallback {
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
-}
-
-.home-notice-thumb {
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
 }
 
 .news-post-photos-dots span,
@@ -4894,6 +4443,14 @@ html[data-theme="dark"] .section-title {
     border-radius: 0;
 }
 
+.mv-stepper {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background: var(--color-card);
+    border: 0;
+}
+
 .mv-chip,
 .mv-order-item,
 .mv-quickadd {
@@ -4907,59 +4464,9 @@ html[data-theme="dark"] .section-title {
     clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
 }
 
-.mv-chip-live {
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-}
-
-.cal-cell-event {
-    border-radius: 0;
-    padding: 3px 6px;
-    box-shadow: none;
-    border-left: 0;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-    background: var(--color-ink, #141821) !important;
-    margin-bottom: 4px;
-    gap: 1px;
-    color: #fff;
-}
-
-.cal-offair-chip {
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    padding: 4px 9px 4px 4px;
-    background: var(--color-bg-subtle);
-}
-
-.rider-stage {
-    border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
-
-.modal-content {
-    border-radius: 0;
-    border: 0;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
-
 .modal-footer,
 .modal-header {
     border-radius: 0;
-}
-
-.profile-avatar {
-    border-radius: 50%;
-    clip-path: none;
-}
-
-.stat-card-box .donut-text {
-    font-size: 14px;
-    color: var(--panel-text);
-}
-
-.stat-card-box .wl {
-    grid-area: wl;
-    margin-top: 0;
 }
 
 .stat-card-box .wl .wl-none {
@@ -4971,14 +4478,6 @@ html[data-theme="dark"] .section-title {
     color: var(--panel-muted);
 }
 
-.stat-card-box:hover {
-    border: 0;
-}
-
-.stat-card-box:hover .stat-card-arrow {
-    color: #7fb0ff;
-}
-
 @media (max-width: 767.98px) {
     .stat-card-box {
         grid-template-columns: minmax(0, 1fr);
@@ -4987,9 +4486,6 @@ html[data-theme="dark"] .section-title {
         gap: 12px;
         padding: 16px 14px 18px;
         text-align: center;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
     }
 
     .stat-card-box .label {
@@ -5083,9 +4579,6 @@ html[data-theme="dark"] .section-title {
 .profile-head {
     gap: 20px;
     flex-wrap: wrap;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .profile-head .profile-avatar {
@@ -5141,11 +4634,7 @@ html[data-theme="dark"] .section-title {
 
 .head-plate {
     padding: 20px 22px 22px;
-
     border: 0;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .head-plate-label {
@@ -5153,8 +4642,8 @@ html[data-theme="dark"] .section-title {
     font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.16em;
-    color: var(--panel-accent);
     text-transform: uppercase;
+    color: var(--navy-on-muted);
 }
 
 .head-plate-value {
@@ -5163,12 +4652,12 @@ html[data-theme="dark"] .section-title {
     font-weight: 700;
     line-height: 1.05;
     letter-spacing: -0.02em;
-    color: var(--panel-text);
     margin-top: 12px;
     font-variant-numeric: tabular-nums;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #fff;
 }
 
 .head-plate-sub {
@@ -5196,9 +4685,6 @@ html[data-theme="dark"] .section-title {
 
     .head-plate {
         padding: 16px 16px 18px;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
     }
 
     .head-plate-value {
@@ -5241,70 +4727,47 @@ html[data-theme="dark"] .section-title {
 .member-card-media {
     position: relative;
     overflow: hidden;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
+    aspect-ratio: 16 / 9;
 }
+
 .member-card-media .member-profile-media,
 .member-card-media .member-live-thumb {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
+
 .member-card-media .member-profile-media {
     display: grid;
     place-items: center;
     background: transparent;
 }
+
 .member-card-media .member-profile-media .member-avatar-img {
     width: 52px;
     height: 52px;
     border-radius: 50%;
 }
+
 .member-card-media .member-live-thumb[hidden],
 .member-card-media .member-profile-media[hidden] {
     display: none;
 }
-.member-card-name {
-    margin-top: 8px;
-}
-.member-card {
-    display: block;
-    overflow: hidden;
-    padding: 0 0 12px;
-    text-align: center;
-    background: var(--color-card);
-}
-.member-card-media {
-    aspect-ratio: 16 / 9;
 
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
-}
 .member-card-body {
     padding: 10px 12px 0;
 }
+
 .member-card-body .member-card-name {
     margin: 0;
 }
+
 .member-card-body .member-card-tags {
     margin: 6px 0 0;
 }
 
 .member-card.is-live .tool-card-ext {
     display: none;
-}
-
-@media (min-width: 1200px) {
-    :root {
-        --container-pad: 40px;
-    }
-}
-
-@media (max-width: 767.98px) {
-    :root {
-        --container-pad: 24px;
-    }
 }
 
 .home-carousel-slide > * {
@@ -5339,12 +4802,6 @@ html[data-theme="dark"] .section-title {
 }
 
 @media (max-width: 767.98px) {
-    .home-carousel-slide {
-        min-height: 0;
-        padding-top: 34px;
-        padding-bottom: 56px;
-    }
-
     .home-carousel h1 {
         font-size: 34px;
     }
@@ -5388,27 +4845,16 @@ html[data-theme="dark"] .section-title {
     display: flex;
     width: 100%;
     height: 42px;
-    padding: 0 15px;
     justify-content: space-between;
     align-items: center;
     background: transparent;
     border-left: 3px solid transparent;
+    padding: 0 13px;
+    box-shadow: none;
 }
 
 .selection-layout > .avatar-bar .avatar-select-all.active {
-    background: var(--color-primary);
     border-left-color: #fff;
-}
-
-.avatar-select-item {
-    gap: 9px;
-}
-
-.avatar-select-name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .avatar-select-live {
@@ -5467,11 +4913,6 @@ html[data-theme="dark"] .section-title {
     color: var(--color-primary);
 }
 
-.selection-layout > .tier-bar .tier-scope-btn.on {
-    background: var(--color-primary);
-    color: #fff;
-}
-
 .selection-layout > .tier-bar .tier-scope-all .tier-scope-num {
     color: var(--panel-accent);
 }
@@ -5480,27 +4921,12 @@ html[data-theme="dark"] .section-title {
     color: var(--color-lose);
 }
 
-.selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
-    color: #fff;
-}
-
 .tier-row + .tier-row {
     margin-top: 30px;
 }
 
 .cal-card {
     overflow: hidden;
-}
-
-.cal-month-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 16px 20px;
-
-    background-color: var(--panel-bg);
-    background-image: var(--panel-pattern);
 }
 
 .cal-month-id {
@@ -5512,7 +4938,7 @@ html[data-theme="dark"] .section-title {
     font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.16em;
-    color: var(--panel-muted);
+    color: var(--color-primary);
 }
 
 .cal-month-name {
@@ -5520,47 +4946,30 @@ html[data-theme="dark"] .section-title {
     font-size: 23px;
     font-weight: 700;
     line-height: 1.1;
-    color: var(--panel-text);
     letter-spacing: -0.01em;
+    color: var(--color-text-strong);
 }
 
 .cal-month-bar .cal-nav-group {
     gap: 6px;
     flex: none;
+    background: transparent;
 }
 
 .cal-month-bar .cal-nav-btn {
     width: 32px;
     height: 32px;
-    background: var(--panel-control);
-    color: var(--panel-text);
     clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
-
-.cal-month-bar .cal-nav-btn:hover {
-    background: var(--color-primary);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
 }
 
 .cal-month-bar .cal-nav-badge {
     font-family: var(--font-num);
     font-weight: 600;
-    color: var(--panel-text);
     min-width: 74px;
-}
-
-.cal-weekdays div:first-child {
-    color: #ff8080;
-}
-
-.cal-weekdays div:last-child {
-    color: #7fb0ff;
-}
-
-.cal-event-time {
-    font-family: var(--font-num);
-    font-size: 10px;
-    color: var(--color-text-sub);
+    font-size: 15px;
+    color: #fff !important;
 }
 
 .cal-sidebar .clean-card {
@@ -5568,13 +4977,6 @@ html[data-theme="dark"] .section-title {
 }
 
 @media (max-width: 767.98px) {
-    .cal-month-bar {
-        padding: 13px 15px;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
-    }
-
     .cal-month-name {
         font-size: 19px;
     }
@@ -5647,11 +5049,6 @@ html[data-theme="dark"] .section-title {
     min-width: 0;
 }
 
-.mv-stepper {
-    background: var(--color-card);
-    border: 0;
-}
-
 .mv-stepper button {
     background: var(--color-card);
     color: var(--panel-muted);
@@ -5663,45 +5060,28 @@ html[data-theme="dark"] .section-title {
 }
 
 .mv-stepper button:disabled {
+    cursor: not-allowed;
     color: var(--color-text-faint);
     background: var(--color-card);
 }
 
-.mv-stepper-value {
-    background: var(--color-card);
-    color: var(--panel-text);
-    border-color: var(--panel-line);
+.mv-order-item button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }
 
-.mv-toggle-switch {
-    background: var(--color-card);
+.home-carousel-dots button.active {
+    width: 22px;
+    border-radius: 0;
+    background: #fff;
 }
 
-.mv-toggle-switch::before {
-    background: var(--color-border-strong);
+html[data-theme="dark"] .section-title {
+    border-color: var(--color-border-strong);
 }
 
 .mv-toggle-switch.on {
     background: var(--color-primary);
-}
-
-.mv-toggle-switch.on::before {
-    background: #fff;
-}
-
-.mv-chip:hover {
-    background: var(--color-primary-tint);
-}
-
-.mv-chip.selected {
-    background: var(--color-primary);
-    border: 0;
-}
-
-.mv-chip-avatar {
-    width: 24px;
-    height: 24px;
-    background: var(--color-bg-subtle);
 }
 
 .mv-chip.selected .mv-chip-avatar {
@@ -5719,83 +5099,6 @@ html[data-theme="dark"] .section-title {
     font-weight: 700;
 }
 
-.mv-chip-check {
-    width: 12px;
-    height: 12px;
-    background: none;
-    color: #fff;
-}
-
-/* 선택된 칩은 이미 파랑이라 호버 때 옅은 파랑으로 바뀌지 않게 한 단계 진하게만 */
-.mv-chip.selected:hover,
-html[data-theme="dark"] .mv-chip.selected:hover {
-    background: var(--color-primary-deep);
-}
-
-.mv-order-row {
-    padding: 14px 18px;
-}
-
-.mv-order-item.focus-target {
-    background: var(--color-primary-tint);
-    box-shadow: inset 3px 0 0 var(--color-primary);
-}
-
-.cal-cell-top {
-    line-height: 1.35;
-    gap: 5px;
-}
-
-.cal-event-person,
-.cal-event-time {
-    font-size: 9px;
-    font-weight: 600;
-    color: #fff;
-    font-family: var(--font-num);
-}
-
-.cal-event-person {
-    font-weight: 700;
-}
-
-.cal-event-desc {
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1.3;
-    color: #fff;
-    text-align: right !important;
-    margin-left: 0;
-}
-
-.cal-longterm-bar {
-    border-left-width: 0;
-}
-
-.cal-offair-section {
-    margin-top: 0;
-    padding-top: 12px;
-    border-top: 1px solid var(--color-border);
-}
-
-.cal-offair-label {
-    font-family: "Chakra Petch", sans-serif;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    color: var(--color-text-sub);
-    text-transform: uppercase;
-    padding-top: 0;
-}
-
-.cal-offair-avatar {
-    width: 18px;
-    height: 18px;
-}
-
-.cal-offair-name {
-    font-size: 11px;
-}
-
 .g2 {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -5807,11 +5110,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
         grid-template-columns: minmax(0, 1fr);
         gap: 18px;
     }
-}
-
-.mv-tile-icon {
-    width: 20px;
-    height: 20px;
 }
 
 .mv-run-btn svg {
@@ -5830,12 +5128,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .live-card-body > .live-card-avatar-ring {
     grid-area: avatar;
     align-self: center;
-}
-
-.live-card-name {
-    grid-area: name;
-    align-self: end;
-    font-weight: 700;
 }
 
 .top-navbar .nav-menu {
@@ -5877,10 +5169,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 }
 
 @media (max-width: 767.98px) {
-    .nav-drawer-btn {
-        display: flex;
-    }
-
     .top-navbar {
         position: sticky;
     }
@@ -5932,10 +5220,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     .top-navbar .theme-toggle {
         margin-left: auto;
     }
-
-    .top-navbar .logo {
-        margin-right: 0;
-    }
 }
 
 .tier-bar-pick {
@@ -5943,17 +5227,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 }
 
 @media (max-width: 920px) {
-    .selection-layout > .tier-bar {
-        display: block;
-        padding: 0;
-        position: sticky;
-        top: 60px;
-        z-index: 90;
-
-        background-color: var(--panel-bg);
-        background-image: var(--panel-pattern);
-    }
-
     .selection-layout > .tier-bar::before {
         display: none;
     }
@@ -5992,28 +5265,10 @@ html[data-theme="dark"] .mv-chip.selected:hover {
         display: none;
     }
 
-    .selection-layout > .tier-bar .tier-bar-tools {
-        display: block;
-        padding: 9px 10px;
-        border-right: 0;
-        border-top: 1px solid var(--panel-line);
-        border-bottom: 0;
-    }
-
     .selection-layout > .tier-bar .bar-scope {
         display: grid;
         grid-template-columns: 1fr 1fr;
         width: 100%;
-    }
-
-    .selection-layout > .tier-bar .tier-bar-list {
-        display: block;
-        width: 100%;
-        max-height: 55vh;
-        padding: 6px 0;
-        overflow-x: hidden;
-        overflow-y: auto;
-        white-space: normal;
     }
 
     .selection-layout > .tier-bar .tier-bar-item {
@@ -6023,30 +5278,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
         padding: 0 14px;
         justify-content: space-between;
         border-left: 3px solid transparent;
-        clip-path: polygon(
-            0 0,
-            calc(100% - var(--notch-sm)) 0,
-            100% var(--notch-sm),
-            100% 100%,
-            0 100%
-        ) !important;
-    }
-
-    .selection-layout > .tier-bar .tier-bar-item.active {
-        border-left-color: #fff;
-        background: var(--color-primary);
-    }
-}
-
-@media (min-width: 1200px) {
-    :root {
-        --container-pad: 40px;
-    }
-}
-
-@media (max-width: 767.98px) {
-    :root {
-        --container-pad: 24px;
     }
 }
 
@@ -6056,11 +5287,11 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .selection-layout > .tier-bar .tier-scope-btn {
     border-radius: 0 !important;
     clip-path: polygon(
-        0 0,
-        calc(100% - var(--notch-sm)) 0,
-        100% var(--notch-sm),
-        100% 100%,
-        0 100%
+    0 0,
+    calc(100% - var(--notch-sm)) 0,
+    100% var(--notch-sm),
+    100% 100%,
+    0 100%
     ) !important;
 }
 
@@ -6068,22 +5299,13 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .selection-layout > .avatar-bar .avatar-select-item.active,
 .selection-layout > .tier-bar .tier-bar-item.active,
 .selection-layout > .tier-bar .tier-scope-btn.on {
-    background: var(--color-primary) !important;
-    color: #fff !important;
     clip-path: polygon(
-        0 0,
-        calc(100% - var(--notch-sm)) 0,
-        100% var(--notch-sm),
-        100% 100%,
-        0 100%
+    0 0,
+    calc(100% - var(--notch-sm)) 0,
+    100% var(--notch-sm),
+    100% 100%,
+    0 100%
     ) !important;
-}
-
-.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-name,
-.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
-.selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
-.selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
-    color: #fff !important;
 }
 
 .selection-layout > .tier-bar .bar-scope {
@@ -6093,32 +5315,58 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .home-carousel .home-hero-links a {
     border-radius: 0 !important;
     clip-path: polygon(
-        0 0,
-        calc(100% - 8px) 0,
-        100% 8px,
-        100% 100%,
-        0 100%
+    0 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% 100%,
+    0 100%
     ) !important;
+    border: 0;
+    box-shadow: none;
 }
 
+/* 일정 칩: 진한 색 덩어리 + 작은 흰 글씨(오른쪽 정렬) →
+   옅게 깐 일정 색 + 왼쪽 색 막대 + 본문색 글씨(왼쪽 정렬) */
+/* 섞은 색은 calendar.js(calEventColorVars)가 라이트(-l)/다크(-d)용 #hex로 넘겨준다.
+   color-mix()는 관리자 저장용 캡처(html2canvas)가 해석하지 못해 쓰지 않는다. */
 .cal-cell-event,
 .cal-longterm-bar {
-    background: var(--ev-color, var(--color-ink, #141821)) !important;
-    color: #fff;
-    border-left: 0;
-    border-radius: 0 !important;
     clip-path: polygon(
-        0 0,
-        calc(100% - 5px) 0,
-        100% 5px,
-        100% 100%,
-        0 100%
+    0 0,
+    calc(100% - 5px) 0,
+    100% 5px,
+    100% 100%,
+    0 100%
     ) !important;
+    --ev-accent: var(--ev-accent-l);
+    --ev-bg: var(--ev-bg-l);
+    --ev-hover: var(--ev-hover-l);
+    background: var(--ev-bg) !important;
+    /* 왼쪽 색 막대는 border로: html2canvas가 inset box-shadow를 칩 전체 채우기로 그려버린다 */
+    box-shadow: none;
+    border-left: 3px solid var(--ev-accent) !important;
+    color: var(--color-text-main);
+    padding: 4px 6px 4px 6px;
+    margin-bottom: 0;
+    gap: 1px;
+    clip-path: none;
+    border-radius: 0 !important;
+    text-align: left;
+}
+
+/* 여러 날 이어지는 막대: 하루짜리 칩과 같은 옅은 색.
+   칸 여백(8px) 밖으로 번져 옆 칸 막대와 붙으므로(calendar.js calBarEdgeStyle),
+   왼쪽 색 막대·잘린 모서리는 막대의 실제 시작/끝 칸에만 둔다.
+   position: relative 로 옆 칸 배경보다 위에 그려 이음매가 가려지지 않게 한다. */
+.cal-longterm-bar {
+    border-left-width: 0;
+    position: relative;
+    z-index: 1;
+    box-shadow: none;
 }
 
 .home-carousel h1 span {
     display: block;
-    color: var(--panel-text);
 }
 
 .live-thumb-overlay span:first-child {
@@ -6143,20 +5391,20 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     }
 }
 
+/* 제목 옆 숫자 배지: 채운 바탕 + 흰 글씨 */
 .section-title .title-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    min-height: 20px;
     margin-left: auto;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    min-height: 20px;
     padding: 0 8px;
-    background: var(--color-ink);
-    color: #fff !important;
     font-family: "Chakra Petch", "Pretendard", sans-serif;
     font-size: 10px;
     font-weight: 700;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    color: #fff !important;
 }
 
 .tier-card.edge-T {
@@ -6189,53 +5437,62 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     .home-carousel h1 span {
         display: inline;
     }
-
-    .home-carousel-slide {
-        min-height: 0;
-    }
 }
+
 .home-carousel-slide {
     padding-left: max(32px, calc((100vw - 1240px) / 2 + 40px));
     padding-right: max(32px, calc((100vw - 1240px) / 2 + 40px));
 }
+
 @media (max-width: 767.98px) {
     .home-carousel-slide {
         padding-left: 24px;
         padding-right: 24px;
     }
 }
+
 #page-schedule .cal-day-card {
     padding: 20px 20px 0 !important;
 }
+
 #page-schedule .cal-day-card-date {
     display: block;
     font-family: var(--font-num);
     font-size: 11px;
     font-weight: 600;
     color: var(--panel-muted);
+    padding-bottom: 10px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--panel-line);
+    text-align: left;
 }
+
 #page-schedule .cal-day-card-today {
     border: 0;
     color: var(--panel-text);
-
     background-color: var(--panel-bg);
     background-image: var(--panel-pattern);
 }
+
 #page-schedule .cal-day-card-today .cal-card-time,
 #page-schedule .cal-day-card-today .cal-card-person,
 #page-schedule .cal-day-card-today .cal-card-desc {
     color: var(--panel-text);
 }
+
 #page-schedule .cal-day-card-today .cal-card-detail {
     color: var(--panel-muted);
 }
+
 #page-schedule .cal-day-card-today .cal-no-schedule {
     color: var(--panel-muted);
 }
+
 #page-schedule .cal-day-card-today .cal-today-card + .cal-today-card,
 #page-schedule .cal-day-card-today .cal-selected-card + .cal-selected-card {
     border-top-color: var(--panel-line);
 }
+
 #page-schedule .cal-day-card-today .cal-offair-section {
     border-top-color: var(--panel-line);
 }
@@ -6243,44 +5500,49 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 #page-schedule .cal-offair-section {
     padding: 12px 0;
 }
+
 #page-schedule .cal-day-card-today .cal-offair-label {
     color: var(--panel-text);
 }
+
 #page-schedule .cal-day-card-today .cal-offair-chip {
     background: var(--panel-control);
 }
+
 #page-schedule .cal-day-card-today .cal-offair-name {
     color: var(--panel-muted);
 }
+
 #page-schedule .cal-today-card,
 #page-schedule .cal-selected-card {
     padding: 12px 0;
     gap: 0;
 }
+
 #page-schedule .cal-today-card-wrapper > .cal-day-card {
-    color: var(--color-text-main);
     background: var(--color-card);
-    background-image: none;
 }
+
 #page-schedule .cal-today-card-wrapper .cal-card-time,
 #page-schedule .cal-today-card-wrapper .cal-card-person,
 #page-schedule .cal-today-card-wrapper .cal-card-desc {
     color: var(--color-text-main);
 }
+
 #page-schedule .cal-today-card-wrapper .cal-card-detail,
 #page-schedule .cal-today-card-wrapper .cal-no-schedule {
     color: var(--color-text-sub);
 }
-#page-schedule
-    .cal-today-card-wrapper
-    .cal-today-card
-    + .cal-today-card {
+
+#page-schedule .cal-today-card-wrapper .cal-today-card + .cal-today-card {
     border-top-color: var(--color-border);
 }
+
 #page-schedule .cal-selected-list.is-empty,
 #page-schedule .cal-today-list.is-empty {
     min-height: 104px;
 }
+
 #page-schedule .cal-selected-list.is-empty .cal-no-schedule,
 #page-schedule .cal-today-list.is-empty .cal-no-schedule {
     width: 100%;
@@ -6291,56 +5553,45 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     padding: 12px 0;
     text-align: center;
 }
+
 #page-schedule .cal-today-card-wrapper .cal-offair-section {
     border-top-color: var(--color-bg-subtle);
 }
+
 #page-schedule .cal-today-card-wrapper .cal-offair-label {
     color: var(--color-text-main);
 }
-#page-schedule .cal-today-card-wrapper .cal-offair-chip {
-    background: var(--color-bg-subtle);
-}
+
 #page-schedule .cal-today-card-wrapper .cal-offair-name {
     color: var(--color-text-main);
 }
+
 #page-schedule .cal-card-main {
     align-items: flex-start;
     gap: 13px;
 }
+
 #page-schedule .cal-card-time {
     font-family: var(--font-num);
-    font-size: 15px;
     flex: none;
+    color: var(--color-primary) !important;
 }
+
 #page-schedule .cal-card-person {
-    font-size: 13px;
     font-weight: 700;
 }
+
 #page-schedule .cal-card-desc {
-    font-size: 13px;
     font-weight: 500;
 }
+
 #page-schedule .cal-today-card + .cal-today-card,
 #page-schedule .cal-selected-card + .cal-selected-card {
     margin-top: 0;
     padding-top: 12px;
     border-top: 1px solid var(--panel-line);
 }
-.live-card-body {
-    padding: 10px 12px 11px;
-    row-gap: 1px;
-}
-.live-card-title {
-    font-size: 11px;
-    line-height: 1.35;
-}
-.live-card-name {
-    font-size: 13px;
-}
-.home-notice-list {
-    overflow: hidden;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
+
 #news-past-list .home-notice-card,
 #news-feed-content .home-notice-card,
 .home-notice-list .home-notice-card {
@@ -6352,42 +5603,30 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 #news-past-list > .home-notice-card:first-child {
     clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
 }
+
 .selection-content #news-feed-content {
     overflow: visible;
 }
+
 @media (max-width: 767.98px) {
     .selection-content #news-feed-content.news-feed-mobile .home-notice-card {
         clip-path: polygon(
-            0 0,
-            calc(100% - 12px) 0,
-            100% 12px,
-            100% 100%,
-            0 100%
+        0 0,
+        calc(100% - 12px) 0,
+        100% 12px,
+        100% 100%,
+        0 100%
         );
     }
 }
-.home-carousel .home-hero-links a {
-    border: 0;
-    box-shadow: none;
-}
-.cal-month-bar .cal-nav-badge {
-    font-size: 15px;
-}
-#page-schedule .cal-day-card-date {
-    padding-bottom: 10px;
-    margin-bottom: 0;
-    border-bottom: 1px solid var(--panel-line);
-    text-align: left;
-}
-#page-schedule .cal-today-card-wrapper .cal-day-card-date {
-    border-bottom-color: var(--color-border);
-}
+
 #page-schedule .cal-card-time,
 #page-schedule .cal-card-person,
 #page-schedule .cal-card-desc {
     font-size: 13px;
     line-height: 1.35;
 }
+
 #page-schedule .cal-card-time {
     font-weight: 700;
 }
@@ -6396,39 +5635,29 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     font-size: 13px;
     line-height: 1.35;
     font-weight: 700;
-
     display: flex;
     align-items: center;
     min-height: 26px;
 }
-.member-card {
-    padding-bottom: 13px;
-}
-.member-card-name {
-    margin-bottom: 3px;
-}
-.member-card-tags {
-    margin-top: 3px;
-}
-.member-card .tool-card-ext {
-    display: none;
-}
+
 .match-badge {
     border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    /* 표 안 배지 크기 통일: 경기 형식(대회·대학·미니·CK)과 결과(W/L/D) 모두 34×18, 10px. */
+    box-sizing: border-box;
+    width: 34px;
+    height: 18px;
+    font-size: 10px;
+    vertical-align: middle;
 }
+
 #page-tools .mv-console {
     grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
     align-items: stretch;
     gap: 9px;
     padding: 16px;
 }
-.mv-console-tiles {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: stretch;
-    min-width: 0;
-}
+
 #page-tools .mv-tile {
     min-width: 0;
     min-height: 72px;
@@ -6441,6 +5670,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     padding: 8px;
     text-align: center;
 }
+
 #page-tools .mv-run-btn {
     min-height: 58px;
     min-width: 0;
@@ -6448,19 +5678,20 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     justify-content: center;
     padding: 10px 8px;
 }
+
 .mv-tile-label {
     margin: 0;
 }
-.mv-tile-icon {
-    align-self: center;
-}
+
 .mv-stepper,
 .mv-toggle-switch {
     align-self: center;
 }
+
 .mv-pick-layout {
     align-items: start;
 }
+
 @media (max-width: 767.98px) {
     .page-header > .sub-tabs,
     .page-header-main > .sub-tabs {
@@ -6469,17 +5700,21 @@ html[data-theme="dark"] .mv-chip.selected:hover {
         align-self: flex-start;
         margin-top: 18px;
     }
+
     .cal-month-bar .cal-nav-badge {
         font-size: 14px;
     }
+
     #page-tools .mv-console {
         grid-template-columns: minmax(0, 1fr);
         padding: 12px;
     }
+
     #page-tools .mv-console-tiles {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 6px;
     }
+
     #page-tools .mv-tile {
         min-height: 110px;
         grid-template-columns: minmax(0, 1fr);
@@ -6488,66 +5723,55 @@ html[data-theme="dark"] .mv-chip.selected:hover {
         gap: 7px;
         padding: 10px 4px;
     }
+
     #page-tools .mv-run-btn {
         min-height: 48px;
     }
+
     .mv-tile-label {
         margin: 0;
     }
 }
+
 .record-recent-header {
     display: grid;
     grid-template-columns: max-content minmax(0, max-content) minmax(
-            max-content,
-            1fr
-        );
-    align-items: center;
+    max-content,
+    1fr
+    );
     justify-content: normal;
     gap: 5px 12px;
     min-width: 0;
+    align-items: stretch;
 }
+
 .record-recent-header[data-en]::before {
     grid-column: 1 / -1;
     margin-bottom: 0;
 }
+
 .record-recent-title {
     white-space: nowrap;
 }
-.record-recent-header .filter-nav {
-    width: fit-content;
-    min-width: 0;
-    max-width: 100%;
-    height: auto;
-    margin: 0;
-    padding: 3px;
-    border: 0;
-    gap: 1px;
-    background: var(--panel-control);
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
+
 .record-recent-header .filter-item {
     display: grid;
     place-items: center;
-    flex: 0 0 30px;
-    width: 30px;
-    height: 22px;
     box-sizing: border-box;
-    padding: 0;
-    font-size: 11px;
     line-height: 1;
     background: transparent;
-    color: var(--panel-text);
     clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
-}
-.record-recent-header .filter-item.active {
-    background: var(--color-primary);
-    color: #fff;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 36px;
+    height: auto;
+    padding: 0 9px;
+    font-family: "Pretendard", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-sub);
 }
 
-.record-recent-header .filter-item:hover:not(.active) {
-    background: var(--color-card);
-    color: var(--color-text-main);
-}
 .record-recent-header .filter-item.active::after {
     display: none;
 }
@@ -6556,24 +5780,17 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     flex: none;
     margin-left: auto;
 }
+
 @media (max-width: 600px) {
     .record-recent-header {
         column-gap: 10px;
     }
+
     .record-recent-title {
         font-size: 18px;
     }
-    .record-recent-header .filter-item {
-        flex-basis: 24px;
-        width: 24px;
-        height: 20px;
-        font-size: 10px;
-    }
-    .record-recent-header .btn-view-all {
-        font-size: 10px;
-        gap: 4px;
-    }
 }
+
 .mv-order-row:has(.mv-order-detail),
 .mv-order-row:has(.mv-order-empty) {
     display: grid;
@@ -6583,6 +5800,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     background: var(--color-card);
     grid-auto-flow: row;
 }
+
 .mv-order-detail {
     grid-column: 1 / -1;
     width: 100%;
@@ -6597,25 +5815,25 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     border-left: 3px solid transparent;
     clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
 }
+
 .mv-order-detail.focus-target {
     background: var(--color-primary-tint);
-    border-left-color: var(--color-primary);
 }
+
 .mv-order-position {
     font-family: var(--font-num);
     font-size: 13px;
     font-weight: 700;
     color: var(--color-text-sub);
 }
-.mv-order-detail.focus-target .mv-order-position {
-    color: var(--color-primary);
-}
+
 .mv-order-identity {
     display: flex;
     align-items: center;
     overflow: hidden;
     min-width: 0;
 }
+
 .mv-order-identity strong {
     font-size: 13px;
     color: var(--color-text-main);
@@ -6623,6 +5841,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 .mv-order-focus {
     grid-column: 3;
     padding: 0 5px;
@@ -6635,15 +5854,13 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     white-space: nowrap;
     cursor: pointer;
 }
-.mv-order-focus[aria-pressed="true"] {
-    background: var(--color-primary);
-    color: #fff;
-}
+
 .mv-order-actions {
     grid-column: 4;
     display: flex;
     gap: 4px;
 }
+
 .mv-order-actions button {
     display: grid;
     place-items: center;
@@ -6656,78 +5873,83 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     font-size: 12px;
     cursor: pointer;
 }
+
 .mv-order-actions button:hover:not(:disabled),
 .mv-order-focus:hover {
     background: var(--color-primary-tint-strong);
     color: var(--color-primary);
 }
+
 .mv-order-focus[aria-pressed="true"]:hover {
     background: var(--color-primary-deep);
     color: #fff;
 }
+
 .mv-order-actions .mv-order-remove:hover {
     background: var(--color-card);
     color: var(--color-lose);
 }
+
 .mv-order-actions button:disabled {
     opacity: 0.3;
     cursor: not-allowed;
 }
-.mv-order-empty {
-    display: grid;
-    justify-items: center;
-    gap: 8px;
-    padding: 24px 12px;
-    text-align: center;
-}
+
 .mv-order-empty strong {
     color: var(--color-text-main);
     font-size: 13px;
     font-weight: 400;
 }
+
 @media (max-width: 600px) {
     .mv-order-detail {
         grid-template-columns: 22px minmax(0, 1fr) auto auto;
         gap: 6px;
         padding: 8px 7px;
     }
+
     .mv-order-focus {
         min-height: 32px;
         padding: 0 6px;
         font-size: 10px;
     }
+
     .mv-order-actions {
         grid-column: 4;
         gap: 2px;
     }
+
     .mv-order-actions button {
         width: 28px;
         height: 32px;
         font-size: 15px;
     }
 }
+
 @media (pointer: coarse) {
     .news-load-more {
         min-height: 0;
     }
+
     .mv-order-focus {
         min-height: 36px;
     }
+
     .mv-order-detail {
         padding-top: 5px;
         padding-bottom: 5px;
     }
+
     .mv-order-actions button {
         width: 32px;
         height: 40px;
     }
 }
 
-
-/* [면 정리] 아래 면들은 사선을 걷고 흰 카드로 둔다.
+/* [면 정리] 아래 면들의 기본 무늬를 없앤다.
    (전체 요약 카드 · 개인 전적 프로필 카드 · 방송통계 요약 카드 ·
     선택 사이드바(멤버 공지 / 개인 전적 / 티어표) · 캘린더 월 표시칸 · 멀티뷰어 설정칸)
-   캘린더 요일칸과 표 머리글, 카드 사진칸은 그대로 둔다 - 여기 목록에 없다.
+   이 중 네이비 박스로 쓰는 면은 아래 [네이비/검정 포인트]에서 --navy-pattern 사선을 다시 입힌다.
    한 군데에 모아둔 이유: 같은 결정이 미디어쿼리까지 18개 규칙에 흩어져 있어서,
    개별 규칙을 고치면 어느 하나를 빠뜨리기 쉽다. */
 .stat-card-box,
@@ -6738,10 +5960,27 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .tier-bar,
 .selection-layout > .avatar-bar,
 .selection-layout > .tier-bar {
-    background-color: var(--color-card);
     background-image: none;
 }
 
+/* ── 남색 띠: 달력 월 표시줄 + 요일 줄 ── */
+.cal-month-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 20px;
+    background-color: var(--navy) !important;
+    background-image: var(--navy-pattern) !important;
+    background-attachment: fixed;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 767.98px) {
+    .cal-month-bar {
+        padding: 13px 15px;
+    }
+}
 
 /* [사이드바 '전체' 줄] 옛 가로 바 시절 잔재 정리.
    1) .avatar-bar-tools 의 border-right + padding-right 는 가로 바에서 '전체'와 멤버 목록을
@@ -6757,12 +5996,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     padding-right: 0;
     border-right: 0;
 }
-
-.selection-layout > .avatar-bar .avatar-select-all {
-    padding: 0 13px;
-    box-shadow: none;
-}
-
 
 /* [티어 사이드바] 티어 칩이 사이드바 좌우 끝까지 붙어 있어서, 위의 '전체 / 방송중'
    컨트롤(.tier-bar-tools 의 padding 으로 10px 들어가 있다)과 왼쪽 기준선이 어긋났다.
@@ -6781,95 +6014,18 @@ html[data-theme="dark"] .mv-chip.selected:hover {
    처리를 정리한다. 기존 규칙보다 뒤에 두어 한 곳에서 덮어쓴다.
    ═══════════════════════════════════════════════════════════════════ */
 
-body {
-    background: var(--color-bg);
-}
-
-/* ── 상단 내비: 굵은 파란 줄 대신 얇은 경계선 + 반투명 블러 ── */
-.top-navbar {
-    background-color: var(--nav-bg);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
-    backdrop-filter: saturate(180%) blur(12px);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.nav-menu .nav-item {
-    color: var(--color-text-sub);
-}
-
 .nav-menu .nav-item.active,
 .nav-menu .nav-item:hover {
     color: var(--color-text-strong);
-}
-
-.nav-menu .nav-item.active::after {
-    height: 2px;
-}
-
-.theme-toggle {
-    background: var(--color-bg-subtle);
 }
 
 .theme-toggle button {
     color: var(--color-text-sub);
 }
 
-.theme-toggle button.active {
-    background: var(--color-primary);
-    color: #fff;
-}
-
-/* ── 페이지 머리 / 홈 캐러셀: 흰(검) 바탕 + 오른쪽 위 옅은 파란 빛 ── */
-.page-header,
-.home-carousel {
-    background-color: var(--panel-bg);
-    background-image:
-        radial-gradient(
-            ellipse 60% 90% at 88% 0%,
-            var(--hero-glow),
-            transparent 70%
-        ),
-        linear-gradient(to bottom, transparent 60%, var(--color-bg));
-    border-bottom: 2px solid var(--color-primary);
-}
-
-
-@media (max-width: 767.98px) {
-    .page-header {
-        background-color: var(--panel-bg);
-        background-image: radial-gradient(
-            ellipse 90% 70% at 100% 0%,
-            var(--hero-glow),
-            transparent 70%
-        );
-    }
-}
-
-.page-header-title {
-    color: var(--color-text-strong);
-}
-
-/* 머리 안 탭: 비활성은 테두리 칩, 활성은 파랑 */
-.sub-tab {
-    background: var(--panel-control);
-    color: var(--color-text-sub);
-}
-
 .sub-tab:hover {
     background: var(--color-primary-tint);
     color: var(--color-primary);
-}
-
-.sub-tab.active {
-    box-shadow: none;
-}
-
-.page-header-stats .head-stat {
-    background: var(--panel-control);
-}
-
-.home-carousel-preview {
-    background: var(--panel-control);
 }
 
 /* ── 섹션 제목: 검은 굵은 줄 → 얇은 선 + 짧은 파란 포인트 ── */
@@ -6900,26 +6056,7 @@ html[data-theme="dark"] .section-title {
     right: 0;
     bottom: -10px;
     height: 2px;
-    background: var(--color-primary);
     pointer-events: none;
-}
-
-.section-title[data-en]::before {
-    color: var(--color-primary);
-}
-
-/* 제목 옆 숫자 배지: 채운 바탕 + 흰 글씨 */
-.section-title .title-count {
-    min-height: 20px;
-    padding: 0 8px;
-    font-family: "Chakra Petch", "Pretendard", sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: #fff !important;
-}
-
-.section-title .title-count {
-    background: var(--color-primary);
 }
 
 /* 배지 규칙 통일: 채운 바탕 + 흰 글씨.
@@ -6966,61 +6103,10 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     background-color: var(--color-card-hover);
 }
 
-/* 표 머리글·캘린더 요일칸·프로필 카드 사진 영역: 같은 '머리 띠' (옅은 파랑 단색).
-   흰 카드 안에서 구분되게 하고, 글자는 파랑. */
-.stat-table thead th {
-    background-color: var(--color-head-bg) !important;
-    background-image: none !important;
-    color: var(--color-head-text) !important;
-    border: 0 !important;
-    /* 머리글 글자 크기를 본문 칸(13px)과 맞춘다 (원래 10px + 넓은 자간) */
-    font-size: 13px !important;
-    font-weight: 700;
-    letter-spacing: 0;
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    [캘린더] 가독성 정리
    ═══════════════════════════════════════════════════════════════════ */
-
-
-.cal-month-bar {
-    border-bottom: 1px solid var(--color-border);
-}
-
-.cal-month-name {
-    color: var(--color-text-strong);
-}
-
-.cal-month-year {
-    color: var(--color-primary);
-}
-
-.cal-month-bar .cal-nav-group {
-    background: transparent;
-}
-
-.cal-month-bar .cal-nav-btn {
-    background: var(--color-bg-subtle) !important;
-    color: var(--color-text-main) !important;
-}
-
-.cal-month-bar .cal-nav-btn:hover {
-    background: var(--color-primary) !important;
-    color: #fff !important;
-}
-
-.cal-weekdays {
-    background-color: var(--color-head-bg);
-    background-image: var(--head-pattern);
-    color: var(--color-head-text);
-    border-bottom: 0;
-}
-
-.cal-weekdays > div {
-    font-size: 11px;
-    font-weight: 700;
-}
 
 .cal-weekdays div:first-child {
     color: var(--color-head-sun);
@@ -7028,12 +6114,6 @@ html[data-theme="dark"] .tag-badge.tier-badge {
 
 .cal-weekdays div:last-child {
     color: var(--color-head-sat);
-}
-
-.cal-day-cell {
-    min-height: 120px;
-    padding: 6px 8px 8px;
-    gap: 3px;
 }
 
 .cal-day-cell:hover {
@@ -7045,50 +6125,12 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     background: var(--calendar-outside-bg);
 }
 
-.cal-day-cell.other-month .cal-day-number {
-    color: var(--calendar-outside-text);
-}
-
-.cal-day-number {
-    width: 26px;
-    height: 26px;
-    margin-bottom: 2px;
-    font-size: 13px;
-}
-
 /* 오늘: 날짜 숫자만 파란 사각 */
-
-.cal-day-cell.today .cal-day-number {
-    background: var(--color-primary);
-    color: #fff;
-}
 
 /* 선택한 날짜: 테두리 없이 칸 바탕만 옅게 */
 .cal-day-cell.selected,
 .cal-day-cell.selected:hover {
     background: var(--color-primary-tint);
-}
-
-/* 일정 칩: 진한 색 덩어리 + 작은 흰 글씨(오른쪽 정렬) →
-   옅게 깐 일정 색 + 왼쪽 색 막대 + 본문색 글씨(왼쪽 정렬) */
-/* 섞은 색은 calendar.js(calEventColorVars)가 라이트(-l)/다크(-d)용 #hex로 넘겨준다.
-   color-mix()는 관리자 저장용 캡처(html2canvas)가 해석하지 못해 쓰지 않는다. */
-.cal-cell-event,
-.cal-longterm-bar {
-    --ev-accent: var(--ev-accent-l);
-    --ev-bg: var(--ev-bg-l);
-    --ev-hover: var(--ev-hover-l);
-    background: var(--ev-bg) !important;
-    /* 왼쪽 색 막대는 border로: html2canvas가 inset box-shadow를 칩 전체 채우기로 그려버린다 */
-    box-shadow: none;
-    border-left: 3px solid var(--ev-accent) !important;
-    color: var(--color-text-main);
-    padding: 4px 6px 4px 6px;
-    margin-bottom: 0;
-    gap: 1px;
-    clip-path: none;
-    border-radius: 0 !important;
-    text-align: left;
 }
 
 .cal-cell-event:hover {
@@ -7100,13 +6142,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     --ev-accent: var(--ev-accent-d);
     --ev-bg: var(--ev-bg-d);
     --ev-hover: var(--ev-hover-d);
-}
-
-.cal-cell-top {
-    justify-content: flex-start;
-    gap: 5px;
-    line-height: 1.3;
-    overflow: hidden;
 }
 
 .cal-event-time {
@@ -7129,26 +6164,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: var(--color-text-sub);
 }
 
-.cal-event-desc {
-    font-size: 11.5px;
-    font-weight: 600;
-    line-height: 1.3;
-    color: var(--color-text-main);
-    text-align: left !important;
-    word-break: keep-all;
-    overflow-wrap: anywhere;
-}
-
-/* 여러 날 이어지는 막대: 하루짜리 칩과 같은 옅은 색.
-   칸 여백(8px) 밖으로 번져 옆 칸 막대와 붙으므로(calendar.js calBarEdgeStyle),
-   왼쪽 색 막대·잘린 모서리는 막대의 실제 시작/끝 칸에만 둔다.
-   position: relative 로 옆 칸 배경보다 위에 그려 이음매가 가려지지 않게 한다. */
-.cal-longterm-bar {
-    position: relative;
-    z-index: 1;
-    box-shadow: none;
-}
-
 .cal-longterm-bar.is-cont-right {
     clip-path: none !important;
 }
@@ -7157,16 +6172,14 @@ html[data-theme="dark"] .cal-longterm-bar {
     border-left: 0 !important;
 }
 
-
-
-/* ── 오늘의 일정 = 깨끗한 카드 / 선택한 날짜 일정 = 사선 패널 ── */
+/* ── 오늘의 일정 = 네이비 박스(아래 [네이비/검정 포인트]) / 선택한 날짜 일정 = 흰 패널(사선 없음) ── */
 
 #page-schedule .cal-selected-card-wrapper > .cal-day-card {
     background-color: var(--panel-bg);
     background-image: var(--panel-pattern);
 }
 
-/* 오늘/선택한 날짜 카드는 무늬만 다르고 글자색은 같게 */
+/* 오늘/선택한 날짜 카드는 같은 글자색 토큰을 쓴다. 네이비 박스 안에서는 토큰이 흰 계열로 바뀐다 */
 #page-schedule .cal-sidebar .cal-card-person,
 #page-schedule .cal-sidebar .cal-card-desc,
 #page-schedule .cal-sidebar .cal-offair-label {
@@ -7185,11 +6198,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     letter-spacing: 0.04em;
 }
 
-#page-schedule .cal-card-time {
-    color: var(--color-primary) !important;
-}
-
-
 /* 카드 바깥 테두리가 없으므로 달력 격자의 왼쪽 바깥선도 뺀다(오른쪽과 대칭) */
 .cal-days-grid {
     border-left: 0;
@@ -7202,11 +6210,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     visibility: hidden;
 }
 
-
 /* ── 전적 '최근 전적' 필터: 제목 줄 높이(28px)에 맞춘 세그먼트 컨트롤 ── */
-.record-recent-header {
-    align-items: stretch;
-}
 
 .record-recent-header .filter-nav,
 .record-recent-header .btn-view-all {
@@ -7214,24 +6218,18 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 
 .record-recent-header .filter-nav {
+    width: fit-content;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    border: 0;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
     box-sizing: border-box;
     height: 28px;
     padding: 3px;
     gap: 2px;
     align-items: stretch;
     background: var(--color-bg-subtle);
-}
-
-.record-recent-header .filter-item {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 36px;
-    height: auto;
-    padding: 0 9px;
-    font-family: "Pretendard", sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-sub);
 }
 
 .record-recent-header .filter-item:hover:not(.active) {
@@ -7304,15 +6302,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     }
 }
 
-/* 표 안 배지 크기 통일: 경기 형식(대회·대학·미니·CK)과 결과(W/L/D) 모두 34×18, 10px. */
-.match-badge {
-    box-sizing: border-box;
-    width: 34px;
-    height: 18px;
-    font-size: 10px;
-    vertical-align: middle;
-}
-
 .badge-cell .tag-badge {
     box-sizing: border-box;
     width: 34px;
@@ -7325,11 +6314,10 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 
 
-
 /* ═══════════════════════════════════════════════════════════════════
-   [사선 제거] 사이트 전체에서 사선·격자 무늬를 쓰지 않는다.
-   무늬 토큰(--panel-pattern, --head-pattern)은 none 으로 두었고,
-   머리 영역의 사선·격자 장식(::after)은 규칙째 지웠다. 머리 영역은 옅은 파란 빛만 남긴다.
+   [사선 규칙] 흰·회색 면에는 사선·격자 무늬를 쓰지 않는다(--panel-pattern: none).
+   사선은 네이비/검정 면(페이지 머리 · 표 머리글 · 달력 월/요일 줄 · 네이비 박스)에만
+   --navy-pattern 으로 입힌다. 자세한 목록은 바로 아래 섹션.
    ═══════════════════════════════════════════════════════════════════ */
 
 
@@ -7343,46 +6331,6 @@ html[data-theme="dark"] .cal-longterm-bar {
    - 강조 글자(히어로 라벨·박스 안 강조)·토요일: 라이트(네이비 위) #5a95ff, 다크(검정 위) #3d82ff. 로고는 둘 다 캄몬 파랑
    데이터 색(승 파랑 / 패 빨강 / 형식 청록)은 그대로 둔다.
    ═══════════════════════════════════════════════════════════════════ */
-:root {
-    /* 캄몬스타즈 로고 파랑 */
-    --kammon: #055df3;
-    --navy: #14264a;
-    /* 장식: 선·글자용(deco)과 채움용(deco-fill) */
-    --navy-deco: #1c3563;
-    --navy-deco-fill: #1c3563;
-    --navy-on-text: #e6ecf7;
-    --navy-on-muted: #b3c2de;
-    /* 네이비/검정 면 위 강조 글자 */
-    /* 네이비 위 강조 글자: 대비 4.5 이상이 되도록 #3d82ff보다 한 단계 밝게 (대비 5.1) */
-    --navy-accent: #5a95ff;
-    --color-head-bg: var(--navy);
-    --color-head-text: var(--navy-on-text);
-    --color-head-sun: #ffb0b0;
-    --color-head-sat: #5a95ff;
-    --color-tier-badge: #1c3563;
-    /* 네이비 박스 공용 은은한 사선 */
-    --navy-pattern: repeating-linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.045) 0 1px,
-        transparent 1px 8px
-    );
-}
-
-html[data-theme="dark"] {
-    /* 다크: 네이비 대신 검정 계열 */
-    --navy: #17191f;
-    --navy-deco: #c9cdd4;
-    --navy-deco-fill: #2f333c;
-    --navy-on-text: #e9ecf1;
-    --navy-on-muted: #9aa0ab;
-    /* 다크도 강조 글자는 라이트와 같은 밝은 파랑 */
-    --navy-accent: #3d82ff;
-    --color-head-bg: var(--navy);
-    --color-head-text: var(--navy-on-text);
-    --color-head-sun: #ff9a9a;
-    --color-head-sat: #3d82ff;
-    --color-tier-badge: #2a2d35;
-}
 
 /* ── 남색 띠: 페이지 머리 ── */
 .page-header,
@@ -7406,6 +6354,8 @@ html[data-theme="dark"] {
 
 @media (max-width: 767.98px) {
     .page-header {
+        margin-top: -22px;
+        padding: 34px 24px 56px;
         background-image: var(--navy-pattern);
     }
 }
@@ -7431,10 +6381,6 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     color: #fff;
 }
 
-.home-carousel h1 i {
-    color: var(--navy-accent);
-}
-
 /* 네이비 띠 위 영문 라벨(페이지 머리 SCHEDULE 등 · 홈 히어로 키커): 흰 글씨 */
 .page-header-main::before,
 .home-carousel .home-hero-kicker {
@@ -7451,19 +6397,7 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     background: rgba(255, 255, 255, 0.3);
 }
 
-.home-carousel-dots button.active {
-    background: #fff;
-}
-
 /* ── 남색 띠: 표 머리글 (색은 --color-head-* 토큰) ── */
-
-/* ── 남색 띠: 달력 월 표시줄 + 요일 줄 ── */
-.cal-month-bar {
-    background-color: var(--navy) !important;
-    background-image: var(--navy-pattern) !important;
-    background-attachment: fixed;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 
 .cal-month-bar .cal-month-name {
     color: #fff;
@@ -7471,15 +6405,6 @@ html[data-theme="dark"] .page-header .sub-tab.active {
 
 .cal-month-bar .cal-month-year {
     color: var(--navy-on-muted);
-}
-
-.cal-month-bar .cal-nav-badge {
-    color: #fff !important;
-}
-
-.cal-month-bar .cal-nav-btn {
-    background: rgba(255, 255, 255, 0.12) !important;
-    color: #fff !important;
 }
 
 .cal-month-bar .cal-nav-btn:hover {
@@ -7523,14 +6448,6 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     background-image: var(--navy-pattern) !important;
 }
 
-.head-plate-label {
-    color: var(--navy-on-muted);
-}
-
-.head-plate-value {
-    color: #fff;
-}
-
 .stat-card-box:hover .stat-card-arrow {
     color: #fff;
 }
@@ -7571,8 +6488,6 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     background-attachment: fixed;
 }
 
-
-
 /* 개인 전적 승률 카드(네이비) 안 도넛 이름·전적 글자 */
 #statContent .clean-card:has(.donut-wrap) .donut-label:not([class*="donut-label-"]) {
     color: #fff;
@@ -7582,19 +6497,13 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     color: var(--navy-on-muted);
 }
 
+
 /* ═══════════════════════════════════════════════════════════════════
    [선택 표시 통일] "선택 = 바탕의 반대색"
    - 네이비 면 위(히어로 탭 · 사이드바 · 달력 이동 버튼): 흰 바탕 + 네이비 글씨
    - 흰 면 위(최근 전적 필터 · 테마 버튼 · 멀티뷰어 멤버 칩): 네이비 바탕 + 흰 글씨
      (다크 모드는 네이비가 바탕에 묻히므로 파랑)
    ═══════════════════════════════════════════════════════════════════ */
-:root {
-    --select-on-light: var(--navy);
-}
-
-html[data-theme="dark"] {
-    --select-on-light: #3b82ff;
-}
 
 /* 네이비 면 위: 사이드바 선택 줄 */
 .selection-layout > .avatar-bar .avatar-select-item.active,
@@ -7654,6 +6563,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 
 /* ── 사이드바(멤버 공지 · 개인 전적 · 티어표)를 오른쪽으로 ──
    모바일(920px 이하)은 원래대로 위쪽 접이식 바를 쓴다. */
+
 @media (min-width: 921px) {
     .selection-layout {
         grid-template-columns: minmax(0, 1fr) 224px;
@@ -7675,6 +6585,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
    사이드바는 상단바(68px) + 여백 16px = 84px 아래에 붙어 따라온다. 원래 목록 높이가
    520px 고정이라 낮은 화면에서는 아래가 잘리고 높은 화면에서는 공간이 남았다.
    화면 높이 − 84px − 아래 여백 16px − 사이드바 머리(제목·'전체' 줄) 높이만큼만 목록을 쓴다. */
+
 @media (min-width: 921px) {
     .selection-layout > .avatar-bar .avatar-selector-scroll {
         max-height: calc(100vh - 84px - 16px - 100px);
@@ -7683,21 +6594,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     .selection-layout > .tier-bar .tier-bar-list {
         max-height: calc(100vh - 84px - 16px - 54px);
     }
-}
-
-
-/* ── 멀티뷰어 멤버 칩: LIVE 글자 배지 → 이름 옆 빨간 점 ── */
-.mv-chip-live {
-    display: inline-block;
-    flex: none;
-    width: 7px;
-    height: 7px;
-    padding: 0;
-    border-radius: 50%;
-    clip-path: none;
-    background: var(--color-lose);
-    box-shadow: 0 0 0 2px rgba(240, 62, 62, 0.22);
-    font-size: 0;
 }
 
 .mv-chip.selected .mv-chip-live {

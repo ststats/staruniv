@@ -136,9 +136,10 @@ def page_context(page_id, title, description, hidden_nav_ids=frozenset()):
     }
 
 
-def write_text_atomic(path, text):
+def write_text_atomic(path, text, newline=None):
+    # newline=''이면 text의 줄바꿈(CRLF/LF)을 손대지 않고 그대로 쓴다.
     tmp_path = path + '.tmp'
-    with open(tmp_path, 'w', encoding='utf-8') as f:
+    with open(tmp_path, 'w', encoding='utf-8', newline=newline) as f:
         f.write(text)
     os.replace(tmp_path, path)
 
@@ -256,12 +257,14 @@ def main():
         standalone = os.path.join(OUT_DIR, filename)
         if not os.path.isfile(standalone):
             continue
-        with open(standalone, encoding='utf-8') as f:
+        # 손으로 관리하는 파일이라 원래 줄바꿈 형식(CRLF)을 지킨다. 기본 모드로 읽고 쓰면
+        # CRLF가 LF로 바뀌어, 캐시 해시 한 줄만 바뀌어도 파일 전체가 바뀐 것으로 커밋된다.
+        with open(standalone, encoding='utf-8', newline='') as f:
             html = f.read()
         for asset, version in versions.items():
             html = re.sub(r'((?:src|href)=")' + re.escape(asset) + r'(?:\?v=[a-f0-9]+)?"',
                           lambda match: f'{match.group(1)}{asset}?v={version}"', html)
-        write_text_atomic(standalone, html)
+        write_text_atomic(standalone, html, newline='')
     print("✅ 성공적으로 화이트&블루 통합 웹페이지가 구워졌습니다!")
 
 

@@ -682,6 +682,22 @@ bootPage(async () => {
     renderTierGroups();
     highlightTierBar();
 
+    // 방송 여부 새로고침. 다른 탭을 보고 있을 때는 멈추고(요청 낭비 방지),
+    // 돌아오면 그동안 바뀌었을 수 있으니 바로 한 번 받은 뒤 다시 센다.
+    let tierLiveTimer = null;
+    const startTierLive = () => {
+        if (tierLiveTimer) return;
+        tierLiveTimer = setInterval(refreshTierLive, TIER_LIVE_REFRESH_MS);
+    };
+    const stopTierLive = () => {
+        if (tierLiveTimer) { clearInterval(tierLiveTimer); tierLiveTimer = null; }
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { stopTierLive(); return; }
+        refreshTierLive();
+        startTierLive();
+    });
+
     refreshTierLive();
-    setInterval(refreshTierLive, TIER_LIVE_REFRESH_MS);
+    if (!document.hidden) startTierLive();
 });
