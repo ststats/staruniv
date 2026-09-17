@@ -4,7 +4,7 @@ name: Update Videos
 # API 키가 필요 없고, 데이터 갱신(Update Stats) 워크플로와는 따로 돈다 - 영상만 바뀌어도 시트·빌드를 다시 돌리지 않는다.
 on:
   schedule:
-    - cron: '* */* * * *'   # 3시간마다 (UTC 기준, 정각 혼잡을 피해 17분)
+    - cron: '17 */3 * * *'   # 3시간마다 (UTC 기준, 정각 혼잡을 피해 17분)
   push:
     paths:
       - 'docs/data/video_channels.json'   # 어드민에서 채널·추천 영상을 저장하면 바로 한 번 돈다
