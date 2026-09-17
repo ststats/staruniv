@@ -310,11 +310,19 @@ function toolCardHtml(tool) {
         try { normalizedUrl = decodeURIComponent(url); } catch (e) { /* 잘못된 인코딩이면 원본 사용 */ }
         iconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(normalizedUrl)}`;
     }
+    // 멤버 프로필 카드와 같은 틀: 위는 네이비 면(아이콘), 아래는 이름 + 주소 한 줄.
+    let host = '';
+    try { host = new URL(safeHttpUrl(url)).hostname.replace(/^www\./, ''); } catch (e) { /* 주소가 없거나 잘못되면 비워 둔다 */ }
     return `
         <a class="tool-card"${safeHttpUrl(url) ? ` href="${escapeHTML(safeHttpUrl(url))}"` : ''} target="_blank" rel="noopener">
-            <span class="tool-card-ext i-arrow" aria-hidden="true"></span>
-            <div class="tool-card-icon"><img loading="lazy" src="${iconUrl}" alt="" onerror="this.style.display='none';"></div>
-            <div class="tool-card-name">${escapeHTML(tool.name)}</div>
+            <div class="tool-card-media">
+                <span class="tool-card-ext i-arrow" aria-hidden="true"></span>
+                <div class="tool-card-icon"><img loading="lazy" src="${iconUrl}" alt="" onerror="this.style.display='none';"></div>
+            </div>
+            <div class="tool-card-body">
+                <div class="tool-card-name">${escapeHTML(tool.name)}</div>
+                ${host ? `<div class="tool-card-host">${escapeHTML(host)}</div>` : ''}
+            </div>
         </a>`;
 }
 

@@ -24,10 +24,11 @@ const SYNERGY_METRICS = {
         formatValue: v => formatCount(v, '명'),
     },
     sponsor: {
-        label: '스폰전적', url: 'sponsor',
+        label: '스폰판수', url: 'sponsor',
         format: m => formatSponsorRecord(m.sponsor_wins, m.sponsor_losses),
-        // 표시는 승패/승률이지만, 정렬은 판수(승+패)가 많은 순 - 승수 기준이 아니다.
+        // 표시는 승패/승률이지만, 정렬과 합계는 판수(승+패) 기준이다 - 승수 기준이 아니다.
         sortValue: m => (m.sponsor_wins || 0) + (m.sponsor_losses || 0),
+        formatValue: v => formatCount(v, '판'),
     },
 };
 
@@ -75,7 +76,7 @@ function setSynergyMetric(metric) {
 function synergyRowHtml(m, idx) {
     const ours = m.ourMember;
     const name = ours['이름'] || m.nickname;
-    // 알 수 없는 지표면(직접 호출된 경우) 예전처럼 스폰전적 형식으로 표시
+    // 알 수 없는 지표면(직접 호출된 경우) 스폰판수 형식(승패·승률)으로 표시
     const config = synergyMetricConfig(SynergyState.metric) || SYNERGY_METRICS.sponsor;
     const displayVal = config.format(m);
 
@@ -105,7 +106,7 @@ function sortSynergyRows(rows) {
 
 // [리디자인] 표 위 요약 타일 3개(합계 / 1위 / 집계 인원)를 채운다.
 // 지표마다 단위가 달라서(개, 시간, 명, 전적) config.format을 그대로 쓴다.
-// 스폰전적처럼 합계가 의미 없는 지표는 합계 칸을 비우고 라벨만 바꾼다.
+// 합계는 정렬 기준값(readValue)을 더한다 - 스폰판수는 승+패 판수의 합이다.
 function renderSynergySummary(rows) {
     const box = document.getElementById('synergy-summary');
     if (!box) return;
@@ -123,19 +124,14 @@ function renderSynergySummary(rows) {
         return;
     }
 
-    // 합계 - 숫자 지표만. 스폰전적은 '12승 4패' 같은 문자열이라 더할 수 없다.
-    const summable = SynergyState.metric !== 'sponsor';
-    if (summable) {
-        const total = rows.reduce((acc, m) => acc + (Number(readValue(m)) || 0), 0);
-        // 합계도 각 행과 같은 서식으로 보여준다(시간이면 '421시간' 처럼).
-        setText('synergy-sum-total', config.formatValue ? config.formatValue(total) : total.toLocaleString('ko-KR'));
-    } else {
-        setText('synergy-sum-total', '—');
-    }
+    const total = rows.reduce((acc, m) => acc + (Number(readValue(m)) || 0), 0);
+    // 합계도 각 행과 같은 서식으로 보여준다(시간이면 '421시간', 스폰판수면 '128판' 처럼).
+    setText('synergy-sum-total', config.formatValue ? config.formatValue(total) : total.toLocaleString('ko-KR'));
 
+    // 1위 칸은 이름을 크게, 값을 작게 쓴다(모든 지표 공통).
     const top = rows[0];
-    setText('synergy-sum-top', config.format(top));
-    setText('synergy-sum-top-name', (top.ourMember['이름'] || top.nickname || '1위'));
+    setText('synergy-sum-top', top.ourMember['이름'] || top.nickname || '-');
+    setText('synergy-sum-top-name', config.format(top));
 }
 
 function renderSynergyTable() {
