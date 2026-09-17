@@ -11,6 +11,7 @@
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
             <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true" onclick="switchTierView('list')">티어표</div>
+            <div class="sub-tab" id="tab-tier-h2h" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('h2h')">상대전적</div>
             <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>
         </div>
     </div>
@@ -46,6 +47,22 @@
         </div>
     </div>
 
+    {#- 상대전적: 두 선수를 고르면 맞대결 전적과 경기 목록을 보여준다.
+        데이터는 docs/data/h2h/(scripts/build_h2h.py가 eloboard 아카이브를 선수별로 잘라 둔 것)를
+        이 탭을 처음 열 때 읽는다 - 티어표만 보러 온 사람이 받지 않도록. #}
+    <div id="view-tier-h2h" class="d-none">
+        <div class="h2h-topbar">
+            <div class="filter-nav h2h-period tab-scroll" id="h2h-period" role="group" aria-label="기간 선택"></div>
+            <span class="h2h-updated" id="h2h-updated"></span>
+        </div>
+        <div class="h2h-pick" id="h2h-pick">
+            <div class="h2h-slot" id="h2h-slot-0"></div>
+            <div class="h2h-vs" aria-hidden="true">VS</div>
+            <div class="h2h-slot" id="h2h-slot-1"></div>
+        </div>
+        <div id="h2h-result"><div class="h2h-empty">불러오는 중...</div></div>
+    </div>
+
     <div id="view-tier-analysis" class="d-none">
         <div class="tier-empty">준비 중입니다.</div>
     </div>
@@ -55,4 +72,5 @@
 {% block scripts %}
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('page-tier.js') }}"></script>
+<script src="{{ asset_url('page-h2h.js') }}"></script>
 {% endblock %}

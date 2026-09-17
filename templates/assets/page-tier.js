@@ -44,16 +44,17 @@ const TierState = {
 // ---------------------------------------------------------------------------
 // 소분류 탭
 // ---------------------------------------------------------------------------
+const TIER_TABS = {
+    list: ['tab-tier-list', 'view-tier-list'],
+    h2h: ['tab-tier-h2h', 'view-tier-h2h'],
+    analysis: ['tab-tier-analysis', 'view-tier-analysis'],
+};
+
 function switchTierView(view) {
-    const isList = view === 'list';
-    document.getElementById('view-tier-list').classList.toggle('d-none', !isList);
-    document.getElementById('view-tier-analysis').classList.toggle('d-none', isList);
-    [['tab-tier-list', isList], ['tab-tier-analysis', !isList]].forEach(([id, on]) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.classList.toggle('active', on);
-        el.setAttribute('aria-selected', String(on));
-    });
+    const key = TIER_TABS[view] ? view : 'list';
+    activateTabView(TIER_TABS, key);
+    PageState.update(key === 'list' ? {} : { view: key });
+    if (key === 'h2h') safeInit('상대전적', h2hEnter);   // page-h2h.js (처음 열 때만 데이터를 읽는다)
 }
 
 // ---------------------------------------------------------------------------
@@ -707,4 +708,10 @@ bootPage(async () => {
 
     refreshTierLive();
     if (!document.hidden) startTierLive();
+
+    // 주소로 들어온 탭(?view=h2h&p1=..&p2=..)을 되살린다. 상대전적은 자기 몫의 주소를
+    // page-h2h.js가 직접 챙긴다(선수 두 명까지 주소에 담아야 링크 공유가 된다).
+    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
+        switchTierView(params.get('view'));
+    }));
 });
