@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=c0341b4ba8">
+<link rel="stylesheet" href="style.css?v=db96ba7cda">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
 <script>
     try {
@@ -757,11 +757,16 @@ body {
 
     <div class="section-title"><span class="section-title-label">보자 (추천 영상)</span><span class="title-count" id="videoPickCount"></span></div>
     <div class="clean-card p-4">
-        <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다.</p>
+        <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다.
+            분류를 적으면 사이트에서 같은 분류끼리 묶이고 그 이름으로 제목줄이 생깁니다(비우면 제목줄 없이 맨 위에).</p>
         <div id="videoPickList" class="admin-tool-list"></div>
         <div class="admin-form-row" style="margin-top:12px;">
             <input type="url" id="videoPickUrl" placeholder="유튜브 링크 (영상 · 쇼츠)">
             <input type="text" id="videoPickTitle" placeholder="제목 (선택)" maxlength="80">
+        </div>
+        <div class="admin-form-row">
+            <input type="text" id="videoPickGroup" list="videoPickGroups" placeholder="분류 (선택, 예: 명경기 모음)" maxlength="30">
+            <datalist id="videoPickGroups"></datalist>
         </div>
         <div class="admin-form-row"><textarea id="videoPickNote" placeholder="한 줄 설명 (선택, 예: 역대급 역전승)" maxlength="200"></textarea></div>
         <button id="videoPickSubmit" class="admin-submit-btn" onclick="applyVideoPickForm()">추가하기</button>
@@ -1867,7 +1872,7 @@ body {
             const id = videoIdFromUrl(p.url);
             const synced = (videoSynced.picks || []).find(x => x.id === id);
             const title = p.title || (synced && synced.oembedTitle) || '';
-            const sub = [p.addedAt, synced && synced.author, p.note].filter(Boolean).join(' · ');
+            const sub = [p.group && `📂 ${p.group}`, p.addedAt, synced && synced.author, p.note].filter(Boolean).join(' · ');
             return `
                 <div class="admin-tool-row admin-video-row">
                     ${videoMoveButtons('pick', i, picks.length)}
@@ -1886,6 +1891,11 @@ body {
         renderVideoHideSearch();
         document.getElementById('videoChannelCount').textContent = channels.length ? `${channels.length}개` : '';
         document.getElementById('videoPickCount').textContent = picks.length ? `${picks.length}개` : '';
+        const groupList = document.getElementById('videoPickGroups');
+        if (groupList) {
+            const names = [...new Set(picks.map(p => (p.group || '').trim()).filter(Boolean))];
+            groupList.innerHTML = names.map(n => `<option value="${escapeHTML(n)}">`).join('');
+        }
     }
 
     // ----- 영상 숨기기 -----
@@ -2005,7 +2015,7 @@ body {
 
     function resetVideoPickForm() {
         videoEditingPick = -1;
-        ['videoPickUrl', 'videoPickTitle', 'videoPickNote'].forEach(id => { document.getElementById(id).value = ''; });
+        ['videoPickUrl', 'videoPickTitle', 'videoPickGroup', 'videoPickNote'].forEach(id => { document.getElementById(id).value = ''; });
         document.getElementById('videoPickSubmit').innerText = '추가하기';
         document.getElementById('videoPickCancel').style.display = 'none';
     }
@@ -2016,6 +2026,7 @@ body {
         videoEditingPick = idx;
         document.getElementById('videoPickUrl').value = p.url || '';
         document.getElementById('videoPickTitle').value = p.title || '';
+        document.getElementById('videoPickGroup').value = p.group || '';
         document.getElementById('videoPickNote').value = p.note || '';
         document.getElementById('videoPickSubmit').innerText = '수정 반영하기';
         document.getElementById('videoPickCancel').style.display = '';
@@ -2029,13 +2040,21 @@ body {
         const dup = videoConfig.picks.findIndex(p => videoIdFromUrl(p.url) === id);
         if (dup >= 0 && dup !== videoEditingPick) return alert('이미 추가된 영상입니다.');
         const title = document.getElementById('videoPickTitle').value.trim();
+        const group = document.getElementById('videoPickGroup').value.trim();
         const note = document.getElementById('videoPickNote').value.trim();
         const prev = videoEditingPick >= 0 ? videoConfig.picks[videoEditingPick] : null;
         const t = new Date();
         const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
-        const item = { url: `https://www.youtube.com/watch?v=${id}`, title, note, addedAt: (prev && prev.addedAt) || today };
-        if (prev) videoConfig.picks[videoEditingPick] = item;
-        else videoConfig.picks.unshift(item);   // 새로 고른 영상이 맨 위
+        const item = { url: `https://www.youtube.com/watch?v=${id}`, title, group, note, addedAt: (prev && prev.addedAt) || today };
+        if (prev) {
+            videoConfig.picks[videoEditingPick] = item;
+        } else if (group) {
+            // 같은 분류가 이미 있으면 그 묶음 끝에 붙인다(사이트에서 흩어지지 않게)
+            const last = videoConfig.picks.map(p => (p.group || '').trim()).lastIndexOf(group);
+            videoConfig.picks.splice(last >= 0 ? last + 1 : videoConfig.picks.length, 0, item);
+        } else {
+            videoConfig.picks.unshift(item);   // 분류 없는 영상은 맨 위
+        }
         resetVideoPickForm();
         renderVideoAdmin();
     };

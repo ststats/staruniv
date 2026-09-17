@@ -38,8 +38,9 @@
 
     {#- 2. 보자: 어드민이 골라 올린 영상. 한 줄 설명(note)을 같이 보여준다. #}
     <div id="view-video-pick" class="d-none">
-        <div class="section-title" data-en="CURATED"><span class="section-title-label">보자</span><span class="title-count" id="video-pick-count"></span></div>
-        <div class="video-grid video-pick-grid" id="video-pick-grid"></div>
+        {#- 탭 이름이 이미 '보자'라 큰 제목을 따로 두지 않는다. 분류(group)가 붙은 영상은 묶음마다
+            제목줄이 생기므로, 여기는 그리드가 아니라 그 묶음들을 감싸는 칸이다. #}
+        <div id="video-pick-grid"></div>
     </div>
     </div>
 </section>

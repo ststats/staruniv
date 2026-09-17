@@ -3750,7 +3750,10 @@ body.media-lightbox-open { overflow: hidden; }
     align-items: center;
     margin-bottom: 26px;
 }
+/* VS는 '선수 1/2' 라벨이 아니라 카드 높이의 한가운데에 와야 한다.
+   라벨 높이만큼(16px + 아래 여백 6px) 내려준다. */
 .h2h-vs {
+    margin-top: 22px;
     font-family: "Chakra Petch", sans-serif;
     font-size: 16px;
     font-weight: 700;
@@ -3759,6 +3762,8 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-slot-inner { position: relative; }
 .h2h-slot-label {
     display: block;
+    height: 16px;
+    line-height: 16px;
     margin-bottom: 6px;
     font-family: "Chakra Petch", "Pretendard", sans-serif;
     font-size: 10px;
@@ -4064,7 +4069,10 @@ body.media-lightbox-open { overflow: hidden; }
         grid-template-columns: minmax(0, 1fr);
         gap: 8px;
     }
-    .h2h-vs { justify-self: center; }
+    .h2h-vs {
+        justify-self: center;
+        margin-top: 0;
+    }
     .h2h-score {
         grid-template-columns: minmax(0, 1fr);
         gap: 6px;
@@ -4346,6 +4354,11 @@ body.media-lightbox-open { overflow: hidden; }
     font-size: 12px;
     color: var(--color-text-sub);
 }
+
+/* 보자: 분류 제목줄과 그 아래 묶음 */
+.video-pick-title { margin-top: 26px; }
+.video-pick-title:first-child { margin-top: 0; }
+.video-pick-grid + .video-pick-title { margin-top: 30px; }
 
 .video-empty {
     grid-column: 1 / -1;

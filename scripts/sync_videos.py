@@ -2,7 +2,8 @@
 
 [입력] docs/data/video_channels.json (어드민 '영상 관리'에서 편집)
     { "channels": [ { "url": "https://www.youtube.com/@handle", "name": "표시 이름(선택)" } ],
-      "picks":    [ { "url": "https://youtu.be/...", "title": "(선택)", "note": "한 줄 설명", "addedAt": "YYYY-MM-DD" } ],
+      "picks":    [ { "url": "https://youtu.be/...", "title": "(선택)", "note": "한 줄 설명",
+                      "group": "분류 제목(선택)", "addedAt": "YYYY-MM-DD" } ],
       "hidden":   [ "영상id" ] }        # 사이트에서 감출 영상 (지우지 않고 표시만 한다)
 
 [출력] docs/data/videos.json
@@ -389,6 +390,8 @@ def main():
             'id': vid,
             'title': str(p.get('title', '')).strip() or prev.get('oembedTitle', ''),
             'note': str(p.get('note', '')).strip(),
+            # 분류 제목. 같은 값끼리 사이트에서 한 묶음으로 묶여 제목줄이 생긴다.
+            'group': str(p.get('group', '')).strip(),
             'addedAt': str(p.get('addedAt', '')).strip(),
             'thumb': f'https://i.ytimg.com/vi/{vid}/hqdefault.jpg',
         })

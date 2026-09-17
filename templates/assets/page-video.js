@@ -195,12 +195,29 @@ function videoShowMore() {
 }
 
 // ----- 보자 -----
+// 분류(group)가 적힌 영상은 같은 분류끼리 묶여 제목줄이 하나 생긴다. 분류가 없으면 제목줄 없이
+// 맨 위에 그냥 놓인다(예전과 같은 모습). 순서는 어드민에서 정한 목록 순서를 그대로 따른다.
 function renderPicks() {
     const picks = VideoState.data.picks || [];
-    document.getElementById('video-pick-count').textContent = picks.length ? `${picks.length}개` : '';
-    document.getElementById('video-pick-grid').innerHTML = picks.length
-        ? picks.map(v => videoCardHtml(v, { pick: true })).join('')
-        : videoEmptyHtml('추천 영상이 아직 없습니다.');
+    const box = document.getElementById('video-pick-grid');
+    if (!picks.length) {
+        box.innerHTML = videoEmptyHtml('추천 영상이 아직 없습니다.');
+        return;
+    }
+    const groups = [];                       // [[분류 이름, [영상...]], ...] - 처음 나온 순서대로
+    picks.forEach(v => {
+        const key = String(v.group || '').trim();
+        const last = groups[groups.length - 1];
+        if (last && last[0] === key) last[1].push(v);
+        else groups.push([key, [v]]);
+    });
+    box.innerHTML = groups.map(([name, list], i) => {
+        // 맨 위 묶음만 제목 없이 둘 수 있다. 분류 뒤에 오는 무분류는 앞 묶음에 딸려 보이므로 '기타'를 붙인다.
+        const label = name || (i ? '기타' : '');
+        return `
+        ${label ? `<div class="section-title${i ? ' section-title-spaced' : ''} video-pick-title"><span class="section-title-label">${escapeHTML(label)}</span><span class="title-count">${list.length}개</span></div>` : ''}
+        <div class="video-grid video-pick-grid">${list.map(v => videoCardHtml(v, { pick: true })).join('')}</div>`;
+    }).join('');
 }
 
 // ----- 탭 · 주소 -----
