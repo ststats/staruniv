@@ -106,6 +106,7 @@
     --cut-7: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
     --cut-8: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     --cut-9: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+    --cut-10: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
     --cut-12: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
     --cut-14: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 
@@ -333,11 +334,7 @@ a {
 .modal-dialog.modal-w-550 { max-width: 550px; }
 .modal-dialog.modal-w-600 { max-width: 600px; }
 
-.btn,
-.form-control,
-.form-select {
-    border-radius: 0 !important;
-}
+.btn { border-radius: 0 !important; }
 
 .btn-close { border-radius: 0; }
 
@@ -3740,7 +3737,9 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .h2h-updated {
     margin-left: auto;
+    align-self: center;
     font-size: 11px;
+    font-weight: 500;
     color: var(--color-text-faint);
 }
 /* 두 선수 칸 + 가운데 VS */
@@ -3778,9 +3777,10 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-main);
 }
 .h2h-input::placeholder { color: var(--color-text-faint); }
+/* 외곽선을 쓰면 노치(clip-path)에 잘려 모서리에서 끊겨 보인다 - 바탕색으로 표시한다 */
 .h2h-input:focus {
-    outline: 2px solid var(--color-primary);
-    outline-offset: -2px;
+    outline: none;
+    background: var(--color-bg-subtle);
 }
 /* 검색 추천: 이름이 맞으면 먼저, 대학이 맞으면 그 소속 선수들이 뒤따른다 */
 .h2h-suggest {
@@ -4060,16 +4060,6 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 @media (max-width: 767.98px) {
-    /* 좁은 화면에서는 기준일을 아랫줄로 내린다(기간 버튼과 겹치지 않게) */
-    .h2h-topbar {
-        flex-wrap: wrap;
-        row-gap: 6px;
-    }
-    .h2h-updated {
-        width: 100%;
-        margin-left: 0;
-        text-align: right;
-    }
     .h2h-pick {
         grid-template-columns: minmax(0, 1fr);
         gap: 8px;
@@ -5047,7 +5037,6 @@ html[data-theme="dark"] .mv-order-row {
 }
 .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
 .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-tier,
-.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-count,
 .selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
 .selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
     color: var(--navy);

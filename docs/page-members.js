@@ -601,13 +601,6 @@ function sanitizeNewsFragment(html) {
     return frag;
 }
 
-// 문자열이 필요한 곳(테스트 등)을 위한 호환용. 화면에 넣을 때는 sanitizeNewsFragment를 쓴다.
-function sanitizeNewsHtml(html) {
-    const box = document.createElement('div');
-    box.appendChild(sanitizeNewsFragment(html));
-    return box.innerHTML;
-}
-
 // 렌더링 직후 "더 보기"가 필요한지 판단한다: 1) 실제로 3줄 안에 다 안 들어가거나
 // 2) 목록 API가 이미 "..."으로 잘라서 내려준 미리보기인 경우.
 function checkNewsClampButtons(container) {

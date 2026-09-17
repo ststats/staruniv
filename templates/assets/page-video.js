@@ -2,7 +2,7 @@
  * 영상 페이지: 팬튜브(등록 채널 최신 영상) + 보자(어드민 추천). (core.js → media-lightbox.js → 이 파일)
  * URL: /video/ (팬튜브), /video/?view=pick (보자), 채널 필터는 ?ch=<채널 번호>
  *
- * 데이터는 data/videos.json 하나다. scripts/sync_videos.py가 GitHub Actions에서 몇 시간마다
+ * 데이터는 data/videos.json 하나다. scripts/sync_videos.py가 GitHub Actions에서 3시간마다
  * 유튜브 RSS(API 키 없음)를 읽어 쌓는다. 형식은 그 파일 머리 주석 참고.
  * RSS에는 영상 길이가 없어서 카드에 길이는 표시하지 않는다.
  */

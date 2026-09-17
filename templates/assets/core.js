@@ -116,10 +116,6 @@ function applyTheme(theme) {
     });
 }
 function setTheme(theme) { localStorage.setItem('staruniv-theme', theme); applyTheme(theme); }
-function toggleTheme() {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-}
 try {
     applyTheme(localStorage.getItem('staruniv-theme') ||
         (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));

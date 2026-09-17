@@ -126,6 +126,10 @@ def main():
         linked[pid] = {'tm': m['team'], 's': m['id'], **({'t': m['tier']} if m['tier'] not in (None, '') else {})}
 
     # 티어표 선수의 경기만 선수별로 모은다. 행: [경기id, 날짜, 승자, 패자, 맵, 대회]
+    # 명단을 못 받았는데도 그냥 진행하면 eloboard 전체 선수(수천 명)로 파일을 만들어
+    # 저장소에 수천 개 파일을 쏟아붓는다. 그럴 바엔 이번 실행을 멈추고 기존 파일을 남긴다.
+    if not linked and not args.offline:
+        sys.exit('❌ 티어표 명단과 이어붙인 선수가 없습니다. 기존 파일을 그대로 두고 멈춥니다.')
     target = set(linked) if linked else set(players)
     per = {pid: [] for pid in target}
     names_used = set()

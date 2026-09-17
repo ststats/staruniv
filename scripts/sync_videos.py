@@ -18,7 +18,7 @@
 [쇼츠 구분] RSS 링크가 /shorts/ 이면 쇼츠. 아니면 https://www.youtube.com/shorts/<id> 를 리다이렉트 없이
 요청해서 200이면 쇼츠, 303(일반 영상 주소로 넘김)이면 일반 영상으로 본다. 영상마다 처음 한 번만 확인한다.
 
-GitHub Actions(.github/workflows/videos.yml)가 몇 시간마다 실행한다. 로컬에서도 python scripts/sync_videos.py
+GitHub Actions(.github/workflows/update.yml)가 3시간마다 실행한다. 로컬에서도 python scripts/sync_videos.py
 """
 
 import datetime as dt
