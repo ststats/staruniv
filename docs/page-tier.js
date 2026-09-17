@@ -36,6 +36,7 @@ const TierState = {
     liveOnly: true,    // 방송 중인 사람만 보기 (첫 진입 기본값)
     sections: [],      // [{ tier, id, count }] - 티어 제목·바로가기 바가 쓴다
     activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
+    jump: null,        // 바로가기로 이동한 직후 { id, y } - 사용자가 스크롤하기 전까지 그 티어를 강조한다
     visibleThumbs: new Set(),
     thumbObserver: null,
 };
@@ -352,17 +353,23 @@ function onTierBarClick(event) {
     bar.querySelector('.tier-bar-pick')?.setAttribute('aria-expanded', 'false');
     syncTierBarHeight();
     window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - tierStickyOffset() - 12, behavior: 'instant' });
+    TierState.jump = { id: target.id, y: window.scrollY };
     highlightTierBar();
 }
 
-// 선택한 제목이 놓이는 고정 바 바로 아래를 활성 티어 판정선으로 사용한다.
-
 // 지금 화면을 차지하고 있는 티어 섹션의 id.
+// 판정선은 고정 바 아래 보이는 영역의 위에서 35% 지점이다. 예전엔 고정 바 바로 아래(16px)라
+// 다음 티어 제목이 화면 맨 위에 닿아야 바뀌어서, 이미 화면 대부분이 다음 티어인데도 이전
+// 티어가 강조돼 있었다.
 function currentTierSectionId() {
     if (TierState.sections.length === 0) return null;
     const offset = tierStickyOffset();
     const viewport = window.innerHeight || document.documentElement.clientHeight;
-    const line = offset + 16;
+    // 바로가기로 막 이동했다면(그 뒤로 스크롤하지 않았다면) 누른 티어를 그대로 강조한다.
+    // 짧은 티어는 제목을 맨 위에 올려도 다음 티어가 판정선 위로 올라와서 다른 칩이 켜지기 때문이다.
+    if (TierState.jump && Math.abs(window.scrollY - TierState.jump.y) < 2) return TierState.jump.id;
+    TierState.jump = null;
+    const line = offset + (viewport - offset) * 0.35;
 
     let currentId = TierState.sections[0].id;
     for (const sec of TierState.sections) {
