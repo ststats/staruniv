@@ -7663,3 +7663,22 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .mv-order-item.focus-target .mv-order-position {
     color: var(--select-on-light);
 }
+
+/* ── 사이드바(멤버 공지 · 개인 전적 · 티어표)를 오른쪽으로 ──
+   모바일(920px 이하)은 원래대로 위쪽 접이식 바를 쓴다. */
+@media (min-width: 921px) {
+    .selection-layout {
+        grid-template-columns: minmax(0, 1fr) 224px;
+    }
+
+    .selection-layout > .avatar-bar,
+    .selection-layout > .tier-bar {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .selection-layout > :not(.avatar-bar):not(.tier-bar) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+}
