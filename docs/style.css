@@ -7696,3 +7696,9 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .mv-chip.selected .mv-chip-live {
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
+
+/* 로고 '대학': 다크 모드는 검은 바탕에서 같은 캄몬 파랑이 어둡게 보이는 대비 효과를
+   보정하려고 한 단계 밝힌다. (라이트는 원래 #055df3) */
+html[data-theme="dark"] .logo-accent {
+    color: #3d82ff;
+}
