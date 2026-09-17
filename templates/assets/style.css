@@ -7356,11 +7356,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     vertical-align: middle;
 }
 
-.member-card-media,
-.tier-card-media {
-    background-color: var(--color-head-bg) !important;
-    background-image: var(--head-pattern) !important;
-}
 
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -7368,3 +7363,303 @@ html[data-theme="dark"] .cal-longterm-bar {
    무늬 토큰(--panel-pattern, --head-pattern)은 none 으로 두었고,
    머리 영역의 사선·격자 장식(::after)은 규칙째 지웠다. 머리 영역은 옅은 파란 빛만 남긴다.
    ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   [네이비 포인트] 짙은 남색 띠 + 연한 파랑 면
+   - 남색 띠(흰 글씨): 페이지 머리(히어로) · 표 머리글 · 달력 월 표시줄 + 요일 줄
+   - 네이비 박스: 전적 요약 카드 · 방송통계 요약 카드 · 개인 전적 프로필 ·
+                  멤버/티어 카드 프로필 영역 · 오늘의 일정 박스
+   - 네이비 면에는 은은한 사선(--navy-pattern)
+   - 작은 장식(섹션 밑줄·영문 라벨·인원 수·오늘 날짜): 라이트는 남색, 다크는 파랑
+   데이터 색(승 파랑 / 패 빨강 / 형식 청록)은 그대로 둔다.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+    --navy: #14264a;
+    --navy-deco: #1c3563;
+    --navy-on-text: #e6ecf7;
+    --navy-on-muted: #b3c2de;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ffb0b0;
+    --color-head-sat: #a9c6ff;
+    --color-tier-badge: #1c3563;
+    /* 네이비 박스 공용 은은한 사선 */
+    --navy-pattern: repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.045) 0 1px,
+        transparent 1px 8px
+    );
+}
+
+html[data-theme="dark"] {
+    --navy: #15223d;
+    --navy-deco: #3b82ff;
+    --navy-on-text: #dbe5f5;
+    --navy-on-muted: #9fb0cf;
+    --color-head-sun: #ff9a9a;
+    --color-head-sat: #8fb8ff;
+    --color-tier-badge: #2c426e;
+}
+
+/* ── 남색 띠: 페이지 머리 ── */
+.page-header,
+.home-carousel {
+    --panel-bg: var(--navy);
+    --panel-text: #fff;
+    --panel-muted: var(--navy-on-muted);
+    --panel-accent: #a9c6ff;
+    --panel-control: rgba(255, 255, 255, 0.12);
+    --panel-line: rgba(255, 255, 255, 0.18);
+    --color-text-strong: #fff;
+    --color-text-main: #fff;
+    --color-text-sub: var(--navy-on-muted);
+    --color-card: rgba(255, 255, 255, 0.08);
+    --color-primary-tint: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    border-bottom: 0;
+}
+
+@media (max-width: 767.98px) {
+    .page-header {
+        background-image: var(--navy-pattern);
+    }
+}
+
+.page-header .sub-tab.active,
+.home-carousel .sub-tab.active {
+    background: #fff !important;
+    color: var(--navy) !important;
+    border-color: #fff !important;
+}
+
+html[data-theme="dark"] .page-header .sub-tab.active {
+    color: #15223d !important;
+}
+
+.page-header .sub-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.home-carousel h1,
+.home-carousel h1 span {
+    color: #fff;
+}
+
+.home-carousel h1 i {
+    color: #a9c6ff;
+}
+
+.home-hero-links a,
+.home-carousel .home-hero-links a {
+    background: #fff;
+    color: var(--navy);
+}
+
+.home-carousel-dots button {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.home-carousel-dots button.active {
+    background: #fff;
+}
+
+/* ── 남색 띠: 표 머리글 (색은 --color-head-* 토큰) ── */
+
+/* ── 남색 띠: 달력 월 표시줄 + 요일 줄 ── */
+.cal-month-bar {
+    background-color: var(--navy) !important;
+    background-image: var(--navy-pattern) !important;
+    background-attachment: fixed;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cal-month-bar .cal-month-name {
+    color: #fff;
+}
+
+.cal-month-bar .cal-month-year {
+    color: var(--navy-on-muted);
+}
+
+.cal-month-bar .cal-nav-badge {
+    color: #fff !important;
+}
+
+.cal-month-bar .cal-nav-btn {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+.cal-month-bar .cal-nav-btn:hover {
+    background: #fff !important;
+    color: var(--navy) !important;
+}
+
+/* ── 네이비 박스: 요약 카드 · 방송통계 요약 · 개인 전적 프로필 · 프로필 영역 · 오늘의 일정 ──
+   박스 안 글자·도넛·칩은 네이비 위용 토큰으로 바꿔 흰 글씨 계열로 맞춘다. */
+.stat-card-box,
+.head-plate,
+.profile-head,
+#statContent .clean-card:has(.donut-wrap),
+.selection-layout > .avatar-bar,
+.selection-layout > .tier-bar,
+#page-schedule .cal-today-card-wrapper > .cal-day-card {
+    --panel-bg: var(--navy);
+    --panel-text: #fff;
+    --panel-muted: var(--navy-on-muted);
+    --panel-accent: #a9c6ff;
+    --panel-control: rgba(255, 255, 255, 0.12);
+    --panel-line: rgba(255, 255, 255, 0.16);
+    --color-card: var(--navy);
+    --color-text-strong: #fff;
+    --color-text-main: #fff;
+    --color-text-dark: #fff;
+    --color-text-sub: var(--navy-on-muted);
+    --color-text-muted: var(--navy-on-muted);
+    --color-border: rgba(255, 255, 255, 0.14);
+    --color-bg-subtle: rgba(255, 255, 255, 0.12);
+    --color-donut-track: rgba(255, 255, 255, 0.16);
+    --color-matchup-z: #c179e5;
+    color: #fff;
+    background-color: var(--navy) !important;
+    background-image: var(--navy-pattern) !important;
+}
+
+.member-card-media,
+.tier-card-media {
+    background-color: var(--navy) !important;
+    background-image: var(--navy-pattern) !important;
+}
+
+.head-plate-label {
+    color: var(--navy-on-muted);
+}
+
+.head-plate-value {
+    color: #fff;
+}
+
+.stat-card-box:hover .stat-card-arrow {
+    color: #fff;
+}
+
+#page-schedule .cal-today-card-wrapper .cal-day-card-date {
+    color: #a9c6ff !important;
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+#page-schedule .cal-today-card-wrapper .cal-card-time {
+    color: #a9c6ff !important;
+}
+
+#page-schedule .cal-today-card-wrapper .cal-offair-chip {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── 작은 장식 ── */
+.section-title .section-title-label::after,
+.nav-menu .nav-item.active::after,
+.cal-day-cell.today .cal-day-number {
+    background: var(--navy-deco) !important;
+}
+
+.section-title .title-count {
+    background: var(--navy-deco) !important;
+}
+
+.section-title[data-en]::before,
+#page-schedule .cal-selected-card-wrapper .cal-day-card-date {
+    color: var(--navy-deco) !important;
+}
+
+/* 표 머리글·요일 줄도 네이비 박스와 같은 사선. 칸마다 무늬가 끊기지 않게 화면 기준 고정 */
+.stat-table thead th,
+.cal-weekdays {
+    background-image: var(--navy-pattern) !important;
+    background-attachment: fixed;
+}
+
+
+
+/* 개인 전적 승률 카드(네이비) 안 도넛 이름·전적 글자 */
+#statContent .clean-card:has(.donut-wrap) .donut-label:not([class*="donut-label-"]) {
+    color: #fff;
+}
+
+#statContent .clean-card:has(.donut-wrap) .donut-sub {
+    color: var(--navy-on-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   [선택 표시 통일] "선택 = 바탕의 반대색"
+   - 네이비 면 위(히어로 탭 · 사이드바 · 달력 이동 버튼): 흰 바탕 + 네이비 글씨
+   - 흰 면 위(최근 전적 필터 · 테마 버튼 · 멀티뷰어 멤버 칩): 네이비 바탕 + 흰 글씨
+     (다크 모드는 네이비가 바탕에 묻히므로 파랑)
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+    --select-on-light: var(--navy);
+}
+
+html[data-theme="dark"] {
+    --select-on-light: #3b82ff;
+}
+
+/* 네이비 면 위: 사이드바 선택 줄 */
+.selection-layout > .avatar-bar .avatar-select-item.active,
+.selection-layout > .avatar-bar .avatar-select-all.active,
+.selection-layout > .tier-bar .tier-bar-item.active,
+.selection-layout > .tier-bar .tier-scope-btn.on {
+    background: #fff !important;
+    color: var(--navy) !important;
+}
+
+.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
+.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-name,
+.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-tier,
+.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-count,
+.selection-layout > .tier-bar .tier-bar-item.active,
+.selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
+.selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
+    color: var(--navy) !important;
+}
+
+html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
+html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-name,
+html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-tier,
+html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-count,
+html[data-theme="dark"] .selection-layout > .tier-bar .tier-bar-item.active,
+html[data-theme="dark"] .selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
+html[data-theme="dark"] .selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
+    color: #15223d !important;
+}
+
+/* 흰 면 위 */
+.record-recent-header .filter-item.active,
+.filter-item.active,
+.theme-toggle button.active,
+.mv-chip.selected,
+.mv-order-focus[aria-pressed="true"] {
+    background: var(--select-on-light) !important;
+    color: #fff !important;
+}
+
+.mv-chip.selected:hover,
+html[data-theme="dark"] .mv-chip.selected:hover {
+    background: var(--select-on-light) !important;
+    filter: brightness(1.15);
+}
+
+.mv-order-item.focus-target,
+.mv-order-detail.focus-target {
+    box-shadow: inset 3px 0 0 var(--select-on-light);
+    border-left-color: var(--select-on-light);
+}
+
+.mv-order-detail.focus-target .mv-order-position,
+.mv-order-item.focus-target .mv-order-position {
+    color: var(--select-on-light);
+}
