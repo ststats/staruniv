@@ -7435,6 +7435,12 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     color: var(--navy-accent);
 }
 
+/* 네이비 띠 위 영문 라벨(페이지 머리 SCHEDULE 등 · 홈 히어로 키커): 흰 글씨 */
+.page-header-main::before,
+.home-carousel .home-hero-kicker {
+    color: #fff;
+}
+
 .home-hero-links a,
 .home-carousel .home-hero-links a {
     background: #fff;
@@ -7530,7 +7536,7 @@ html[data-theme="dark"] .page-header .sub-tab.active {
 }
 
 #page-schedule .cal-today-card-wrapper .cal-day-card-date {
-    color: var(--navy-accent) !important;
+    color: #fff !important;
     border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
