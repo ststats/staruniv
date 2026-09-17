@@ -80,10 +80,10 @@
     // 일정 색 → 칩에 쓰는 색(강조색·옅은 바탕·호버 바탕)을 라이트/다크용으로 미리 계산한다.
     // CSS color-mix()로 섞으면 관리자 페이지 저장 때 쓰는 html2canvas가 그 색을 해석하지 못해
     // "unsupported color function" 오류로 저장이 막히므로, 섞은 결과를 #rrggbb로 넘긴다.
-    // 섞는 기준색은 style.css 토큰과 같다: 라이트 글자 #0b1220 / 카드 #ffffff, 다크 글자 #eef2f8 / 카드 #0e1116.
+    // 섞는 기준색은 style.css 토큰과 같다: 라이트 글자 #0b1220 / 카드 #ffffff, 다크 글자 #eef2f8 / 카드 #10131a.
     const CAL_EV_THEME = {
         l: { text: [11, 18, 32], card: [255, 255, 255], bg: 0.14, hover: 0.24 },
-        d: { text: [238, 242, 248], card: [14, 17, 22], bg: 0.22, hover: 0.32 },
+        d: { text: [238, 242, 248], card: [16, 19, 26], bg: 0.22, hover: 0.32 },
     };
     const calColorCache = new Map();
     const calToRgb = (color) => {

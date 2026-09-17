@@ -1,31 +1,26 @@
 :root {
-    /* ── 라이트: 파랑기 도는 바탕 + 흰 컨텐츠 + 파랑 포인트 ───────── */
-    --color-bg: #eaf1fb;
+    /* ── 라이트: 옅은 청회색 바탕 + 흰 컨텐츠 + 파랑 포인트 (사선 무늬 없음) ── */
+    --color-bg: #eef2f8;
     --color-card: #ffffff;
-    --color-card-hover: #f5f9ff;
-    --color-border: #d6e0ee;
+    --color-card-hover: #f6f9ff;
+    --color-border: #dde4ee;
     --color-text-main: #0b1220;
     --color-text-sub: #5d687a;
     --color-primary: #1f6fff;
     --color-primary-deep: #0b55e0;
-    --color-primary-tint: #e5eeff;
-    --color-primary-tint-strong: #d5e3ff;
+    --color-primary-tint: #eaf1ff;
+    --color-primary-tint-strong: #d9e6ff;
     --color-win: #1f6fff;
     --color-lose: #f03e3e;
     --color-draw: #868e96;
     --color-ink: #0b1220;
-    --color-tier-badge: #1b2a4a;
+    --color-tier-badge: #5b6b85;
     --color-scrollbar-thumb: #c5d6f7;
-    --color-bg-subtle: #eef3fa;
-    /* 머리 띠(표 머리글·요일 줄·프로필 카드 사진 영역) 공용: 옅은 파랑 + 흰 사선 */
-    --color-head-bg: #dce7fb;
-    --head-hatch: rgba(255, 255, 255, 0.55);
-    --head-pattern: repeating-linear-gradient(
-        135deg,
-        var(--head-hatch) 0 1px,
-        transparent 1px 7px
-    );
-    --color-head-text: #2c58ad;
+    --color-bg-subtle: #f1f5fb;
+    /* 머리 띠(표 머리글·요일 줄·프로필 카드 사진 영역) 공용: 옅은 파랑 단색 */
+    --color-head-bg: #e7effd;
+    --head-pattern: none;
+    --color-head-text: #2f5fb8;
     --color-head-sun: #e0484d;
     --color-head-sat: #1f6fff;
     --color-badge-format: #5a9ea6;
@@ -39,26 +34,21 @@
     --color-text-muted: #7a8596;
     --color-text-faint: #9aa4b3;
     --color-icon-faint: #c6cedb;
-    --color-border-hover: #a9c6ff;
+    --color-border-hover: #b3cdfb;
     --color-placeholder-bg: #e9eff8;
     --color-donut-track: #e6ecf5;
     --color-modal-body-bg: #ffffff;
-    --calendar-outside-bg: #f2f6fc;
+    --calendar-outside-bg: #f6f8fb;
     --calendar-outside-text: #aab3c1;
     --panel-bg: #ffffff;
-    --panel-control: #e8effb;
+    --panel-control: #edf2fb;
     --panel-text: #0b1220;
     --panel-muted: #56627a;
-    --panel-line: #dde5f0;
+    --panel-line: #e1e7f0;
     --panel-accent: #1f6fff;
-    --panel-hatch: rgba(31, 111, 255, 0.07);
-    --panel-pattern: repeating-linear-gradient(
-        135deg,
-        var(--panel-hatch) 0 1px,
-        transparent 1px 7px
-    );
+    --panel-pattern: none;
     --nav-bg: rgba(255, 255, 255, 0.9);
-    --hero-glow: rgba(31, 111, 255, 0.13);
+    --hero-glow: rgba(31, 111, 255, 0.10);
     --color-race-t: #1976d2;
     --color-race-z: #7b1fa2;
     --color-matchup-z: var(--color-race-z);
@@ -318,25 +308,6 @@ a {
     clip-path: none;
 }
 
-.page-header::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.46;
-    background-image:
-        linear-gradient(
-            135deg,
-            transparent 48%,
-            rgba(41, 121, 255, 0.28) 48% 49%,
-            transparent 49%
-        ),
-        repeating-linear-gradient(
-            135deg,
-            var(--panel-hatch) 0 1px,
-            transparent 1px 8px
-        );
-}
 
 .page-header > * {
     position: relative;
@@ -642,15 +613,14 @@ a {
 }
 
 html[data-theme="dark"] {
-    /* ── 다크: 검정 바탕 + 파랑 포인트 ─────────────────────────── */
+    /* ── 다크: 검정 바탕 + 한 단계 밝은 컨텐츠 + 파랑 포인트 (사선 무늬 없음) ── */
     color-scheme: dark;
-    --color-bg: #050608;
-    --color-card: #0e1116;
-    --color-card-hover: #121a28;
-    --color-border: #1d2129;
-    --color-bg-subtle: #171b23;
-    --color-head-bg: #111a2b;
-    --head-hatch: rgba(143, 178, 240, 0.08);
+    --color-bg: #07090d;
+    --color-card: #10131a;
+    --color-card-hover: #151b27;
+    --color-border: #1f2531;
+    --color-bg-subtle: #171c26;
+    --color-head-bg: #141c2c;
     --color-head-text: #8fb2f0;
     --color-head-sun: #ff7b7b;
     --color-head-sat: #6ea4ff;
@@ -669,34 +639,33 @@ html[data-theme="dark"] {
     --color-icon-faint: #3a404b;
     --color-primary: #3b82ff;
     --color-primary-deep: #2a6cf0;
-    --color-primary-tint: #0c1a33;
-    --color-primary-tint-strong: #132a52;
+    --color-primary-tint: #0f1d36;
+    --color-primary-tint-strong: #16294d;
     --color-win: #3b82ff;
     --color-ink: #1a3a7c;
-    --color-tier-badge: #3a4867;
+    --color-tier-badge: #465570;
     --color-logo-black: #eef2f8;
     --color-scrollbar-thumb: #2a3140;
-    --color-modal-body-bg: #0d0f13;
+    --color-modal-body-bg: #10131a;
     --color-placeholder-bg: #1a1e25;
     --color-donut-track: #1d2129;
-    --calendar-outside-bg: #08090b;
+    --calendar-outside-bg: #0b0d12;
     --calendar-outside-text: #555d69;
-    --panel-bg: #090a0d;
-    --panel-control: #161a22;
+    --panel-bg: #0b0e14;
+    --panel-control: #1a202c;
     --panel-text: #eef2f8;
     --panel-muted: #a0a8b5;
-    --panel-line: #232833;
+    --panel-line: #242b38;
     --panel-accent: #5b9bff;
-    --panel-hatch: rgba(91, 155, 255, 0.06);
-    --nav-bg: rgba(5, 6, 8, 0.88);
-    --hero-glow: rgba(59, 130, 255, 0.2);
+    --nav-bg: rgba(7, 9, 13, 0.88);
+    --hero-glow: rgba(59, 130, 255, 0.16);
     --color-matchup-z: #c179e5;
-    --bs-body-bg: #050608;
+    --bs-body-bg: #07090d;
     --bs-body-color: #eef2f8;
     --bs-body-color-rgb: 238, 242, 248;
     --bs-secondary-color: #98a0ad;
     --bs-secondary-color-rgb: 152, 160, 173;
-    --bs-border-color: #1d2129;
+    --bs-border-color: #1f2531;
 }
 
 html[data-theme="dark"] .page-header-divider,
@@ -3340,25 +3309,6 @@ body {
     background-color: var(--panel-bg);
 }
 
-.home-carousel::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.46;
-    background-image:
-        linear-gradient(
-            135deg,
-            transparent 48%,
-            rgba(41, 121, 255, 0.28) 48% 49%,
-            transparent 49%
-        ),
-        repeating-linear-gradient(
-            135deg,
-            var(--panel-hatch) 0 1px,
-            transparent 1px 8px
-        );
-}
 
 .home-carousel-track {
     display: flex;
@@ -6895,7 +6845,7 @@ body {
     color: #fff;
 }
 
-/* ── 페이지 머리 / 홈 캐러셀: 회색 사선 대신 흰(검) 바탕 + 파란 빛 + 옅은 격자 ── */
+/* ── 페이지 머리 / 홈 캐러셀: 흰(검) 바탕 + 오른쪽 위 옅은 파란 빛 ── */
 .page-header,
 .home-carousel {
     background-color: var(--panel-bg);
@@ -6909,22 +6859,6 @@ body {
     border-bottom: 2px solid var(--color-primary);
 }
 
-.page-header::after,
-.home-carousel::after {
-    opacity: 1;
-    background-image:
-        linear-gradient(
-            135deg,
-            transparent 47.6%,
-            var(--panel-hatch) 47.6% 49.4%,
-            transparent 49.4%
-        ),
-        linear-gradient(var(--panel-hatch) 1px, transparent 1px),
-        linear-gradient(90deg, var(--panel-hatch) 1px, transparent 1px);
-    background-size: 100% 100%, 32px 32px, 32px 32px;
-    -webkit-mask-image: linear-gradient(to left, #000 10%, transparent 75%);
-    mask-image: linear-gradient(to left, #000 10%, transparent 75%);
-}
 
 @media (max-width: 767.98px) {
     .page-header {
@@ -7064,17 +6998,17 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     background-color: var(--color-card-hover);
 }
 
-/* 표 머리글·캘린더 요일칸·프로필 카드 사진 영역: 같은 '머리 띠' (옅은 파랑 + 흰 사선).
-   흰 카드 안에서 구분되고, 사이트의 사선 모티프는 유지한다. 글자는 파랑. */
+/* 표 머리글·캘린더 요일칸·프로필 카드 사진 영역: 같은 '머리 띠' (옅은 파랑 단색).
+   흰 카드 안에서 구분되게 하고, 글자는 파랑. */
 .stat-table thead th {
     background-color: var(--color-head-bg) !important;
-    background-image: var(--head-pattern) !important;
-    /* 칸마다 무늬가 새로 시작해 이음매가 끊기지 않도록 화면 기준으로 고정 */
-    background-attachment: fixed;
+    background-image: none !important;
     color: var(--color-head-text) !important;
     border: 0 !important;
+    /* 머리글 글자 크기를 본문 칸(13px)과 맞춘다 (원래 10px + 넓은 자간) */
+    font-size: 13px !important;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -7427,3 +7361,10 @@ html[data-theme="dark"] .cal-longterm-bar {
     background-color: var(--color-head-bg) !important;
     background-image: var(--head-pattern) !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   [사선 제거] 사이트 전체에서 사선·격자 무늬를 쓰지 않는다.
+   무늬 토큰(--panel-pattern, --head-pattern)은 none 으로 두었고,
+   머리 영역의 사선·격자 장식(::after)은 규칙째 지웠다. 머리 영역은 옅은 파란 빛만 남긴다.
+   ═══════════════════════════════════════════════════════════════════ */
