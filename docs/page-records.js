@@ -272,7 +272,7 @@ const INDIV_DONUTS = [
     ['fmt-2', '대학 전적', 'byRate'],
     ['fmt-3', '미니 전적', 'byRate'],
     ['race-t', '테란전 전적', 'var(--color-race-t)'],
-    ['race-z', '저그전 전적', 'var(--color-matchup-z)'],
+    ['race-z', '저그전 전적', 'var(--color-race-z)'],
     ['race-p', '프로토스전 전적', 'var(--color-race-p)'],
 ];
 

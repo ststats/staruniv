@@ -45,13 +45,12 @@
     --panel-text: #0b1220;
     --panel-muted: #56627a;
     --panel-line: #e1e7f0;
-    --panel-accent: #1f6fff;
+    --panel-accent: var(--kammon); /* 로고 '대학' 등: 캄몬스타즈 로고 파랑 */
     --panel-pattern: none;
     --nav-bg: rgba(255, 255, 255, 0.9);
     --hero-glow: rgba(31, 111, 255, 0.10);
     --color-race-t: #1976d2;
     --color-race-z: #7b1fa2;
-    --color-matchup-z: var(--color-race-z);
     --color-race-p: #f57f17;
     --fs-hero: 28px;
     --fs-heading: 16px;
@@ -656,10 +655,9 @@ html[data-theme="dark"] {
     --panel-text: #eef2f8;
     --panel-muted: #a0a8b5;
     --panel-line: #242b38;
-    --panel-accent: #5b9bff;
+    --panel-accent: var(--kammon); /* 로고 '대학' 등: 캄몬스타즈 로고 파랑 */
     --nav-bg: rgba(7, 9, 13, 0.88);
     --hero-glow: rgba(59, 130, 255, 0.16);
-    --color-matchup-z: #c179e5;
     --bs-body-bg: #07090d;
     --bs-body-color: #eef2f8;
     --bs-body-color-rgb: 238, 242, 248;
@@ -2602,8 +2600,17 @@ html[data-theme="dark"] .stat-card-arrow {
     letter-spacing: -1px;
 }
 
+/* 종족색은 라이트/다크·바탕과 상관없이 고정 (--color-race-t/z/p) */
+.donut-label-t {
+    color: var(--color-race-t);
+}
+
 .donut-label-z {
-    color: var(--color-matchup-z);
+    color: var(--color-race-z);
+}
+
+.donut-label-p {
+    color: var(--color-race-p);
 }
 
 .stat-table td.synergy-value {
@@ -7327,19 +7334,26 @@ html[data-theme="dark"] .cal-longterm-bar {
 
 
 /* ═══════════════════════════════════════════════════════════════════
-   [네이비 포인트] 짙은 남색 띠 + 연한 파랑 면
+   [네이비/검정 포인트] 라이트 = 네이비 띠·박스, 다크 = 검정 띠·박스
    - 남색 띠(흰 글씨): 페이지 머리(히어로) · 표 머리글 · 달력 월 표시줄 + 요일 줄
    - 네이비 박스: 전적 요약 카드 · 방송통계 요약 카드 · 개인 전적 프로필 ·
                   멤버/티어 카드 프로필 영역 · 오늘의 일정 박스
    - 네이비 면에는 은은한 사선(--navy-pattern)
-   - 작은 장식(섹션 밑줄·영문 라벨·인원 수·오늘 날짜): 라이트는 남색, 다크는 파랑
+   - 작은 장식(섹션 밑줄·영문 라벨·인원 수·오늘 날짜): 라이트는 남색, 다크는 회백색(선·글자)/회색(채움)
+   - 강조 글자(히어로 라벨·박스 안 강조): 라이트·다크 모두 연한 하늘색. 로고는 둘 다 캄몬 파랑
    데이터 색(승 파랑 / 패 빨강 / 형식 청록)은 그대로 둔다.
    ═══════════════════════════════════════════════════════════════════ */
 :root {
+    /* 캄몬스타즈 로고 파랑 */
+    --kammon: #055df3;
     --navy: #14264a;
+    /* 장식: 선·글자용(deco)과 채움용(deco-fill) */
     --navy-deco: #1c3563;
+    --navy-deco-fill: #1c3563;
     --navy-on-text: #e6ecf7;
     --navy-on-muted: #b3c2de;
+    /* 네이비/검정 면 위 강조 글자 */
+    --navy-accent: #a9c6ff;
     --color-head-bg: var(--navy);
     --color-head-text: var(--navy-on-text);
     --color-head-sun: #ffb0b0;
@@ -7354,13 +7368,19 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 
 html[data-theme="dark"] {
-    --navy: #15223d;
-    --navy-deco: #3b82ff;
-    --navy-on-text: #dbe5f5;
-    --navy-on-muted: #9fb0cf;
+    /* 다크: 네이비 대신 검정 계열 */
+    --navy: #17191f;
+    --navy-deco: #c9cdd4;
+    --navy-deco-fill: #2f333c;
+    --navy-on-text: #e9ecf1;
+    --navy-on-muted: #9aa0ab;
+    /* 다크도 강조 글자는 라이트와 같은 연한 하늘색 (로고만 캄몬 파랑) */
+    --navy-accent: #a9c6ff;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
     --color-head-sun: #ff9a9a;
-    --color-head-sat: #8fb8ff;
-    --color-tier-badge: #2c426e;
+    --color-head-sat: #3b82ff;
+    --color-tier-badge: #2a2d35;
 }
 
 /* ── 남색 띠: 페이지 머리 ── */
@@ -7369,7 +7389,7 @@ html[data-theme="dark"] {
     --panel-bg: var(--navy);
     --panel-text: #fff;
     --panel-muted: var(--navy-on-muted);
-    --panel-accent: #a9c6ff;
+    --panel-accent: var(--navy-accent);
     --panel-control: rgba(255, 255, 255, 0.12);
     --panel-line: rgba(255, 255, 255, 0.18);
     --color-text-strong: #fff;
@@ -7397,7 +7417,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="dark"] .page-header .sub-tab.active {
-    color: #15223d !important;
+    color: #17191f !important;
 }
 
 .page-header .sub-tab:hover:not(.active) {
@@ -7411,7 +7431,7 @@ html[data-theme="dark"] .page-header .sub-tab.active {
 }
 
 .home-carousel h1 i {
-    color: #a9c6ff;
+    color: var(--navy-accent);
 }
 
 .home-hero-links a,
@@ -7473,7 +7493,7 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     --panel-bg: var(--navy);
     --panel-text: #fff;
     --panel-muted: var(--navy-on-muted);
-    --panel-accent: #a9c6ff;
+    --panel-accent: var(--navy-accent);
     --panel-control: rgba(255, 255, 255, 0.12);
     --panel-line: rgba(255, 255, 255, 0.16);
     --color-card: var(--navy);
@@ -7485,7 +7505,6 @@ html[data-theme="dark"] .page-header .sub-tab.active {
     --color-border: rgba(255, 255, 255, 0.14);
     --color-bg-subtle: rgba(255, 255, 255, 0.12);
     --color-donut-track: rgba(255, 255, 255, 0.16);
-    --color-matchup-z: #c179e5;
     color: #fff;
     background-color: var(--navy) !important;
     background-image: var(--navy-pattern) !important;
@@ -7510,12 +7529,12 @@ html[data-theme="dark"] .page-header .sub-tab.active {
 }
 
 #page-schedule .cal-today-card-wrapper .cal-day-card-date {
-    color: #a9c6ff !important;
+    color: var(--navy-accent) !important;
     border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
 #page-schedule .cal-today-card-wrapper .cal-card-time {
-    color: #a9c6ff !important;
+    color: var(--navy-accent) !important;
 }
 
 #page-schedule .cal-today-card-wrapper .cal-offair-chip {
@@ -7524,13 +7543,13 @@ html[data-theme="dark"] .page-header .sub-tab.active {
 
 /* ── 작은 장식 ── */
 .section-title .section-title-label::after,
-.nav-menu .nav-item.active::after,
-.cal-day-cell.today .cal-day-number {
+.nav-menu .nav-item.active::after {
     background: var(--navy-deco) !important;
 }
 
-.section-title .title-count {
-    background: var(--navy-deco) !important;
+.section-title .title-count,
+.cal-day-cell.today .cal-day-number {
+    background: var(--navy-deco-fill) !important;
 }
 
 .section-title[data-en]::before,
@@ -7596,7 +7615,7 @@ html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-all.activ
 html[data-theme="dark"] .selection-layout > .tier-bar .tier-bar-item.active,
 html[data-theme="dark"] .selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
 html[data-theme="dark"] .selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
-    color: #15223d !important;
+    color: #17191f !important;
 }
 
 /* 흰 면 위 */
