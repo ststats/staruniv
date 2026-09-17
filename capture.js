@@ -47,10 +47,11 @@ function waitForServer(url, timeoutMs) {
 }
 
 (async () => {
-    const token = process.env.GH_TOKEN;
+    // 토큰은 "있으면 더 최신"을 위한 것이지 필수가 아니다. 넣어주면 admin.html이 GitHub API로
+    // 최신 calendar.json을 읽고, 없으면 저장소에 들어있는 docs/data/calendar.json을 그대로 쓴다.
+    const token = process.env.GH_TOKEN || '';
     if (!token) {
-        console.error('❌ GH_TOKEN 환경변수가 설정되지 않았습니다.');
-        process.exit(1);
+        console.log('ℹ️ GH_TOKEN이 없어 저장소에 있는 일정(docs/data/calendar.json)으로 캡처합니다.');
     }
 
     const server = spawn('python3', ['-m', 'http.server', String(PORT), '--directory', path.resolve(__dirname, 'docs')]);
@@ -72,9 +73,11 @@ function waitForServer(url, timeoutMs) {
         // 키워서 스크롤 자체가 필요 없게 만든다.
         await page.setViewport({ width: Math.round(CAPTURE_WIDTH) + 300, height: 1600 });
 
-        await page.evaluateOnNewDocument((t) => {
-            sessionStorage.setItem('gh_token', t);
-        }, token);
+        if (token) {
+            await page.evaluateOnNewDocument((t) => {
+                sessionStorage.setItem('gh_token', t);
+            }, token);
+        }
 
         await page.goto(`http://localhost:${PORT}/admin.html`, { waitUntil: 'networkidle0' });
 

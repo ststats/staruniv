@@ -10,10 +10,14 @@
       "videos":   [ { "id", "channel": "<등록 url>", "title", "published", "views", "thumb", "short" } ],
       "picks":    [ { "id", "title", "note", "addedAt", "author", "thumb", "short" } ] }
 
-[왜 RSS인가] API 키가 필요 없다. 대신 채널마다 최신 15개만 준다. 그래서 받은 영상을 이 파일에
-계속 쌓아 두고(보관), 피드에 남아 있는 동안은 조회수를 갱신한다. '더 보기'는 쌓인 영상으로 동작한다.
-조회수는 영상이 피드(최신 15개)에서 밀려난 뒤로는 그때 값에서 멈춘다 - 월간 인기는 최근 30일 영상만
-보므로 대부분 피드 안에 있다.
+[두 가지 방식]
+ 1) 유튜브 API 키가 있으면(환경변수 YOUTUBE_API_KEY) 채널 업로드 목록을 전부 받는다. 과거 영상까지
+    한 번에 채워진다. 할당량은 하루 10,000이고 1,000개 채널 하나가 40 정도라 사실상 넉넉하다.
+    처음 받는 채널은 전체를, 이미 쌓여 있는 채널은 최신 100개만 훑는다(--full 이면 다시 전체).
+ 2) 키가 없으면 RSS로 받는다. 키가 필요 없는 대신 채널마다 "최신 15개"만 준다. 그래서 받은 영상을
+    이 파일에 계속 쌓아 두고, 피드에 남아 있는 동안 조회수를 갱신한다. 과거 영상은 들어오지 않는다.
+어느 쪽이든 조회수는 이번에 훑은 범위 밖으로 밀려나면 그때 값에서 멈춘다 - 월간 인기는 최근 30일
+영상만 보므로 대부분 범위 안에 있다.
 
 [쇼츠 구분] RSS 링크가 /shorts/ 이면 쇼츠. 아니면 https://www.youtube.com/shorts/<id> 를 리다이렉트 없이
 요청해서 200이면 쇼츠, 303(일반 영상 주소로 넘김)이면 일반 영상으로 본다. 영상마다 처음 한 번만 확인한다.
@@ -36,6 +40,14 @@ import xml.etree.ElementTree as ET
 CONFIG_PATH = os.path.join('docs', 'data', 'video_channels.json')
 OUT_PATH = os.path.join('docs', 'data', 'videos.json')
 MAX_VIDEOS = 3000          # 보관 상한(오래된 것부터 버린다). 1건 약 200바이트라 3천 건이면 0.6MB
+
+# 유튜브 Data API (선택). 키가 없으면 아래 RSS 방식으로 돈다.
+API_KEY = os.environ.get('YOUTUBE_API_KEY', '').strip()
+API_BASE = 'https://www.googleapis.com/youtube/v3'
+API_PAGE = 50              # playlistItems 한 번에 받는 개수(최대 50)
+API_MAX_PAGES = 40         # 채널당 상한 = 50 × 40 = 2,000개
+API_RECENT_PAGES = 2       # 이미 쌓인 채널은 최신 100개만 훑는다
+SHORT_MAX_SEC = 185        # 쇼츠는 3분 이하 - 이보다 길면 확인할 것도 없이 일반 영상
 DELAY = 0.5                # 요청 사이 쉬는 시간(초)
 UA = 'Mozilla/5.0 (compatible; staruniv-videos/1.0; +https://ststats.github.io/staruniv)'
 
@@ -187,7 +199,130 @@ def oembed(vid):
         return {}
 
 
+def api_get(path, **params):
+    """유튜브 Data API 호출. 실패하면 RuntimeError - 부르는 쪽에서 RSS로 물러난다."""
+    params['key'] = API_KEY
+    status, body = http_get(f'{API_BASE}/{path}?' + urllib.parse.urlencode(params))
+    time.sleep(DELAY)
+    if status != 200:
+        detail = ''
+        try:
+            detail = json.loads(body).get('error', {}).get('message', '')
+        except Exception:
+            pass
+        raise RuntimeError(f'유튜브 API {path} 실패 (HTTP {status}) {detail}'.strip())
+    return json.loads(body)
+
+
+def api_channel(url, cached):
+    """등록 주소 → { id, title, thumb, url, uploads(업로드 재생목록 id) }"""
+    m = re.search(r'/channel/(UC[\w-]{22})', url)
+    params = {'part': 'snippet,contentDetails'}
+    if m:
+        params['id'] = m.group(1)
+    elif re.search(r'/@([^/?#]+)', url):
+        params['forHandle'] = '@' + urllib.parse.unquote(re.search(r'/@([^/?#]+)', url).group(1))
+    elif re.search(r'/user/([^/?#]+)', url):
+        params['forUsername'] = urllib.parse.unquote(re.search(r'/user/([^/?#]+)', url).group(1))
+    else:
+        # /c/이름 처럼 API가 바로 못 찾는 형태는 예전 방식으로 채널 id만 알아낸 뒤 API로 넘긴다
+        found = resolve_channel(url, cached)
+        if not found.get('id'):
+            raise RuntimeError('채널 id를 찾지 못했습니다')
+        params['id'] = found['id']
+
+    items = api_get('channels', **params).get('items') or []
+    if not items:
+        raise RuntimeError('채널을 찾지 못했습니다')
+    it = items[0]
+    sn = it.get('snippet') or {}
+    thumbs = sn.get('thumbnails') or {}
+    thumb = (thumbs.get('high') or thumbs.get('medium') or thumbs.get('default') or {}).get('url', '')
+    return {
+        'id': it['id'],
+        'title': sn.get('title', ''),
+        'thumb': thumb,
+        'url': url,
+        'uploads': ((it.get('contentDetails') or {}).get('relatedPlaylists') or {}).get('uploads', ''),
+    }
+
+
+def api_uploads(playlist_id, max_pages):
+    """업로드 재생목록에서 영상 목록(최신순). [{id, title, published, thumb}]"""
+    out, token = [], None
+    for _ in range(max_pages):
+        params = {'part': 'snippet,contentDetails', 'playlistId': playlist_id, 'maxResults': API_PAGE}
+        if token:
+            params['pageToken'] = token
+        data = api_get('playlistItems', **params)
+        for it in data.get('items') or []:
+            sn = it.get('snippet') or {}
+            vid = ((it.get('contentDetails') or {}).get('videoId')
+                   or (sn.get('resourceId') or {}).get('videoId') or '')
+            if not re.fullmatch(r'[A-Za-z0-9_-]{11}', vid):
+                continue
+            thumbs = sn.get('thumbnails') or {}
+            out.append({
+                'id': vid,
+                'title': (sn.get('title') or '').strip(),
+                'published': ((it.get('contentDetails') or {}).get('videoPublishedAt')
+                              or sn.get('publishedAt') or '')[:19],
+                'thumb': (thumbs.get('medium') or thumbs.get('high') or thumbs.get('default') or {})
+                         .get('url', f'https://i.ytimg.com/vi/{vid}/hqdefault.jpg'),
+            })
+        token = data.get('nextPageToken')
+        if not token:
+            break
+    return out
+
+
+def iso_duration_sec(text):
+    """PT1H2M3S → 3723초. 못 읽으면 0."""
+    m = re.fullmatch(r'P(?:\d+D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', str(text or ''))
+    if not m:
+        return 0
+    h, mi, se = (int(x) if x else 0 for x in m.groups())
+    return h * 3600 + mi * 60 + se
+
+
+def api_stats(ids):
+    """영상 id 목록 → { id: (조회수, 길이초) }. 50개씩 끊어 부른다."""
+    out = {}
+    for i in range(0, len(ids), 50):
+        chunk = ids[i:i + 50]
+        data = api_get('videos', part='statistics,contentDetails', id=','.join(chunk), maxResults=50)
+        for it in data.get('items') or []:
+            try:
+                views = int((it.get('statistics') or {}).get('viewCount', 0))
+            except (TypeError, ValueError):
+                views = 0
+            out[it['id']] = (views, iso_duration_sec((it.get('contentDetails') or {}).get('duration')))
+    return out
+
+
+def collect_with_api(url, cached, archived_count, full):
+    """API로 채널 정보 + 영상 목록을 받는다. (채널정보, [영상])"""
+    info = api_channel(url, cached)
+    if not info.get('uploads'):
+        raise RuntimeError('업로드 재생목록을 찾지 못했습니다')
+    pages = API_MAX_PAGES if (full or not archived_count) else API_RECENT_PAGES
+    items = api_uploads(info['uploads'], pages)
+    stats = api_stats([v['id'] for v in items])
+    videos = []
+    for v in items:
+        views, sec = stats.get(v['id'], (0, 0))
+        videos.append({**v, 'views': views,
+                       # 3분을 넘으면 쇼츠일 수 없다. 짧은 것만 뒤에서 한 번 확인한다.
+                       'short': None if (sec and sec <= SHORT_MAX_SEC) else False})
+    return info, videos
+
+
 def main():
+    full = '--full' in sys.argv        # API 키가 있을 때 과거 영상까지 다시 전부 받는다
+    if API_KEY:
+        print(f'▶ 유튜브 API 키로 받습니다{" (전체 다시 받기)" if full else ""}')
+    else:
+        print('▶ API 키가 없어 RSS로 받습니다 (채널당 최신 15개)')
     config = load_json(CONFIG_PATH, {'channels': [], 'picks': []})
     out = load_json(OUT_PATH, {'channels': {}, 'videos': [], 'picks': []})
     known_channels = out.get('channels', {})
@@ -200,15 +335,25 @@ def main():
             continue
         # 채널 하나가 잘못돼도(주소 오타·삭제된 채널 등) 나머지 채널은 계속 받는다.
         try:
-            info = resolve_channel(url, known_channels.get(url))
-            if not info.get('id'):
-                continue
-            feed_title, entries = fetch_feed(info['id'])
+            archived = sum(1 for v in videos.values() if v.get('channel') == url)
+            entries, feed_title, info = None, '', {}
+            if API_KEY:
+                try:
+                    info, entries = collect_with_api(url, known_channels.get(url), archived, full)
+                    feed_title = info.get('title', '')
+                except Exception as e:                      # 키 문제·할당량 초과 등은 RSS로 물러난다
+                    print(f'  ⚠️ API로 받지 못해 RSS로 받습니다: {e}')
+                    entries = None
+            if entries is None:
+                info = resolve_channel(url, known_channels.get(url))
+                if not info.get('id'):
+                    continue
+                feed_title, entries = fetch_feed(info['id'])
             info = {**info, 'name': str(ch.get('name', '')).strip() or feed_title or info.get('title', '')}
             if feed_title:
                 info['title'] = feed_title
             channels[url] = info
-            print(f'📺 {info["name"]}: 피드 {len(entries)}개')
+            print(f'📺 {info["name"]}: {len(entries)}개 (보관 {archived}개)')
             for entry in entries:
                 prev = videos.get(entry['id'], {})
                 short = entry['short'] if entry['short'] is not None else prev.get('short')
