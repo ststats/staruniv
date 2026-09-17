@@ -23,8 +23,17 @@
     내려면 행에 종족을 같이 담아야 한다(+0.6MB). 지금은 담지 않는다.
 
 [증분]
-응답은 경기 id 내림차순(최신 먼저)이다. 그래서 두 번째 이후 실행은 저장해 둔
-max_id에 도달하면 멈춘다 - 하루 20~30건 수준이라 요청 1~2회로 끝난다.
+응답은 경기 id 내림차순(최신 먼저)이다. 그래서 두 번째 이후 실행은 저장해 둔 max_id까지
+내려오면 멈춘다 - 하루 20~30건 수준이라 요청 1~2회로 끝난다.
+다만 id로만 끊으면 "이미 받은 경기의 결과·맵이 나중에 고쳐진 것"을 영영 못 본다. 그래서
+max_id에 닿은 뒤에도 최근 며칠치(--overlap-days, 기본 3일)는 한 번 더 받아 같은 id의 행을
+덮어쓴다. 3일치면 대개 같은 페이지 안이라 요청이 늘지 않는다.
+삭제도 이 겹쳐 읽기로 따라간다. 이번 실행이 실제로 훑은 id 구간(min_seen ~ ceiling) 안에서
+응답에 없던 경기는 원본에서 지워진 것으로 보고 우리 아카이브에서도 지운다. 그 구간 밖(더 옛날)
+경기의 삭제는 증분으로는 알 수 없고, --full 로 한 번 돌 때 정리된다.
+
+수집이 중간에 끊긴 실행(--max-pages 한도 등)은 max_id를 올리지 않고 삭제도 하지 않는다 -
+훑다 만 구간을 "없어진 경기"로 오해하면 안 되기 때문이다. 다음 실행이 같은 자리에서 이어받는다.
 전체 1회 수집은 37.5만 ÷ 190 = 약 1,974요청.
 행을 최신 먼저로 정렬해 두는 이유가 하나 더 있다: 새 경기가 파일 앞에 붙는 쪽이
 뒤에 붙는 쪽보다 git 팩이 작다(실측 4.0MB 대 5.0MB).
@@ -37,6 +46,7 @@ robots.txt가 /api/를 Disallow로 두고 Crawl-delay: 2를 걸어놨다. 기본
 """
 
 import argparse
+import datetime as dt
 import json
 import os
 import sys
@@ -174,11 +184,12 @@ def main():
     ap.add_argument('--delay', type=float, default=DEFAULT_DELAY,
                     help=f'요청 간 대기 초. 기본 {DEFAULT_DELAY}(robots.txt Crawl-delay)')
     # 전체 1회가 약 1,974페이지라 넉넉히 잡는다(무한 루프만 막는 용도).
+    ap.add_argument('--overlap-days', type=int, default=3,
+                    help='이미 받은 경기라도 최근 며칠치는 다시 받아 덮어쓴다(결과 수정 반영). 기본 3')
     ap.add_argument('--max-pages', type=int, default=4000, help='안전장치: 최대 페이지 수')
     args = ap.parse_args()
 
     store = load_store()
-    known = {r[0] for r in store['rows']}
     stop_at = 0 if args.full else store['max_id']
     if args.full:
         print('▶ 전체 수집 (37.5만 건이면 약 1,974요청)')
@@ -196,58 +207,89 @@ def main():
             races[k][v[1]] += 1
 
     warn = Counter()
-    new_rows = []
-    seen_new = set()
+    by_id = {r[0]: r for r in store['rows'] if r}
+    before = len(by_id)
+    changed = 0
+    seen = set()            # 이번에 응답으로 실제 본 경기 id (삭제 판단용)
+    min_seen = None         # 이번에 훑은 가장 낮은 id
     ceiling = None          # 수집을 시작한 시점의 최신 id. 그보다 새 경기는 다음 실행에 맡긴다
-    reached = False
+    reached = False         # 저장된 최신 경기까지 내려왔다
+    finished = False        # 이번 범위를 끝까지 받았다(도중에 끊기지 않았다)
+
+    # 겹쳐 읽기 기준일. 이 날짜 이후 경기는 이미 받았더라도 다시 받아 덮어쓴다.
+    cutoff = '' if args.full else (dt.date.today() - dt.timedelta(days=args.overlap_days)).isoformat()
+    if cutoff:
+        print(f'  (최근 {args.overlap_days}일 = {cutoff} 이후 경기는 겹쳐 받아 갱신합니다)')
 
     for page in range(args.max_pages):
         offset = START_OFFSET + page * PAGE_STEP
         batch = fetch_page(offset, PAGE_LIMIT, args.delay)
         if not batch:
             print(f'  빈 응답 - 끝까지 받았습니다 (offset {offset:,})')
+            finished = True
             break
 
         if ceiling is None:
             ceiling = max(r.get('id') or 0 for r in batch)
 
+        oldest = ''             # 이 페이지에서 가장 오래된 경기 날짜(겹쳐 읽기 종료 판단용)
         for rec in batch:
             rid = rec.get('id')
+            date = str(rec.get('played_on') or '')[:10]
             if rid is None:
                 warn['id_또는_날짜_없음'] += 1
                 continue
+            if date:
+                oldest = date if not oldest else min(oldest, date)
             # 수집 도중 새로 들어온 경기는 건너뛴다. offset 페이징은 위쪽에 행이
             # 끼어들면 전체가 한 칸씩 밀려서 경기가 빠지는데, 시작 시점의 최신
             # id를 천장으로 두면 이번 수집 범위가 고정된다.
             if rid > ceiling:
                 continue
+            seen.add(rid)
+            min_seen = rid if min_seen is None else min(min_seen, rid)
             if rid <= stop_at:
                 reached = True
-                continue
-            if rid in known or rid in seen_new:
-                continue
+                # 겹쳐 읽기 창(최근 며칠) 밖의 옛 경기는 다시 담지 않는다
+                if not cutoff or not date or date < cutoff:
+                    continue
             row = slim(rec, cats, maps, races, names, warn)
-            if row:
-                new_rows.append(row)
-                seen_new.add(rid)
+            if row and by_id.get(rid) != row:
+                by_id[rid] = row
+                changed += 1
 
-        print(f'  offset {offset:>7,} → {len(batch):>3}건 받음 / 새 경기 누적 {len(new_rows):,}')
-        if reached:
-            print('  저장된 최신 경기에 도달 - 중단')
+        print(f'  offset {offset:>7,} → {len(batch):>3}건 받음 / 담은 경기 누적 {changed:,}')
+        # 저장분에 닿았고, 이 페이지가 겹쳐 읽기 창보다 옛날이면 더 내려갈 이유가 없다
+        if reached and (not cutoff or (oldest and oldest < cutoff)):
+            print('  저장된 최신 경기 + 겹쳐 읽기 구간까지 확인 - 중단')
+            finished = True
             break
         if args.delay:
             time.sleep(args.delay)
     else:
         print(f'  ⚠️ --max-pages({args.max_pages}) 한도에 걸려 멈췄습니다. 다시 실행하면 이어집니다.')
 
-    rows = store['rows'] + new_rows
-    rows.sort(key=lambda r: -r[0])          # 최신 경기가 앞. 사이트가 그대로 쓰기 좋다
+    # 훑은 id 구간(min_seen 위쪽 전부) 안에서 응답에 없던 경기는 원본에서 지워진 것이다.
+    # 수집은 항상 목록 맨 위(offset 0)부터 훑으므로, 지금 서버 최신 id보다 높은 우리 행도
+    # "없어진 것"이 맞다(맨 위 경기가 지워진 경우). 훑다 만 실행에서는 손대지 않는다 -
+    # 받지 못한 구간을 삭제로 오해하면 안 된다.
+    deleted = 0
+    if finished and min_seen is not None:
+        gone = [rid for rid in by_id if rid >= min_seen and rid not in seen]
+        for rid in gone:
+            del by_id[rid]
+        deleted = len(gone)
+
+    rows = sorted(by_id.values(), key=lambda r: -r[0])   # 최신 경기가 앞. 사이트가 그대로 쓰기 좋다
+    added = len(rows) + deleted - before
+    updated = changed - added
     players = {k: [names.get(k, k), (races[k].most_common(1)[0][0] if races[k] else '')]
                for k in set(names) | set(races)}
 
     out = {
         'synced_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-        'max_id': rows[0][0] if rows else 0,
+        # 중간에 끊긴 실행은 max_id를 올리지 않는다(못 받은 구간이 영영 빈 채로 남지 않게).
+        'max_id': (rows[0][0] if rows else 0) if finished else store['max_id'],
         'count': len(rows),
         # 행의 6번째 값이 이 배열의 인덱스다
         'cats': cats,
@@ -260,8 +302,10 @@ def main():
     write_atomic(OUT_PATH, text)
 
     print()
-    print(f'✅ {OUT_PATH} 저장: 새 경기 {len(new_rows):,}건 / 총 {len(rows):,}건 '
-          f'({len(text) / 1048576:.1f} MB)')
+    print(f'✅ {OUT_PATH} 저장: 새 경기 {added:,}건 · 고쳐진 경기 {updated:,}건 · 지워진 경기 {deleted:,}건 '
+          f'/ 총 {len(rows):,}건 ({len(text) / 1048576:.1f} MB)')
+    if not finished:
+        print('   ⚠️ 이번 실행은 끝까지 받지 못해 max_id를 올리지 않았습니다(다음 실행이 이어받습니다).')
     print(f'   선수 {len(players):,}명 · 맵 {len(maps)}종 · 카테고리 {cats}')
     if warn:
         print('   ⚠️ 담지 못한/이상한 건:', dict(warn))
