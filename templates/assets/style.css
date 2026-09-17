@@ -2680,11 +2680,13 @@ html[data-theme="dark"] .cal-longterm-bar {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 28px;
-    padding: 0 9px 0 3px;
+    min-height: 28px;
+    /* 글줄 높이를 1로 고정해야 이름(12px)과 괄호 설명(10px)이 같은 중심선에 선다 */
+    padding: 3px 10px 3px 3px;
     background: var(--color-bg-subtle);
     clip-path: var(--cut-6);
     font-size: 12px;
+    line-height: 1;
 }
 .hist-chip-ava {
     display: inline-grid;
@@ -2696,9 +2698,9 @@ html[data-theme="dark"] .cal-longterm-bar {
     background: var(--color-placeholder-bg);
     font-size: 11px;
 }
-.hist-chip-name { font-weight: 700; color: var(--color-text-main); }
-.hist-chip-role { font-size: 10px; color: var(--color-text-sub); }
-.hist-chip.is-unknown { padding-left: 9px; }
+.hist-chip-name { font-weight: 700; line-height: 1; color: var(--color-text-main); }
+.hist-chip-role { font-size: 10px; line-height: 1; color: var(--color-text-sub); }
+.hist-chip.is-unknown { padding-left: 10px; }
 .hist-chip.is-unknown .hist-chip-ava { display: none; }
 .hist-media {
     position: relative;
@@ -2748,8 +2750,9 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: var(--color-text-sub);
 }
 
-/* 사진 크게 보기 · 유튜브 재생 팝업 */
-.hist-lightbox {
+/* 사진 크게 보기 · 유튜브 재생 팝업 (media-lightbox.js - 연혁 · 영상 공용) */
+body.media-lightbox-open { overflow: hidden; }
+.media-lightbox {
     position: fixed;
     inset: 0;
     z-index: 2000;
@@ -2758,22 +2761,39 @@ html[data-theme="dark"] .cal-longterm-bar {
     padding: 24px;
     background: rgba(5, 8, 14, 0.82);
 }
-.hist-lightbox-inner {
+.media-lightbox-inner {
     width: min(960px, 100%);
     background: #0b0e14;
     clip-path: var(--cut-14);
 }
-.hist-lightbox-head {
+/* 쇼츠: 세로 9:16. 화면 높이에 맞춰 폭을 정한다 */
+.media-lightbox.is-vertical .media-lightbox-inner { width: min(420px, 100%, calc((100vh - 100px) * 9 / 16)); }
+.media-lightbox-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
     padding: 10px 12px 10px 16px;
     font-size: 13px;
     font-weight: 700;
     color: #eef2f8;
 }
-.hist-lightbox-close {
+.media-lightbox-caption {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.media-lightbox-yt {
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #a9b4c6;
+    text-decoration: none;
+}
+.media-lightbox-yt:hover { color: #fff; }
+.media-lightbox-close {
+    flex: none;
     width: 32px;
     height: 32px;
     border: 0;
@@ -2781,20 +2801,25 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: #fff;
     clip-path: var(--cut-5);
 }
-.hist-lightbox-close:hover { background: var(--color-primary); }
-.hist-lightbox-video { aspect-ratio: 16 / 9; }
-.hist-lightbox-video iframe {
+.media-lightbox-close:hover { background: var(--color-primary); }
+.media-lightbox-video { aspect-ratio: 16 / 9; }
+.media-lightbox.is-vertical .media-lightbox-video { aspect-ratio: 9 / 16; }
+.media-lightbox-video iframe {
     display: block;
     width: 100%;
     height: 100%;
     border: 0;
 }
-.hist-lightbox-img {
+.media-lightbox-img {
     display: block;
     width: 100%;
     max-height: calc(100vh - 120px);
     object-fit: contain;
     background: #000;
+}
+@media (max-width: 767.98px) {
+    .media-lightbox { padding: 12px; }
+    .media-lightbox-yt { display: none; }
 }
 
 @media (max-width: 767.98px) {
@@ -2807,7 +2832,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     }
     .hist-item::before { left: -21px; top: 20px; width: 10px; height: 10px; }
     .hist-media { flex: none; width: 100%; align-self: stretch; }
-    .hist-lightbox { padding: 12px; }
 }
 
 
@@ -3513,7 +3537,8 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 
 .theme-toggle button.active,
-.mv-chip.selected {
+.mv-chip.selected,
+.video-channel-chip.active {
     background: var(--select-on-light);
     color: #fff;
 }
@@ -3721,7 +3746,284 @@ html[data-theme="dark"] .cal-longterm-bar {
 
 
 /* =============================================================================
-   12. 도구 · 멀티뷰어 · 캄몬라이더
+   12. 영상 (팬튜브 · 보자)
+   ============================================================================= */
+/* 채널 칩 줄: 가로로 넘치면 스크롤(.tab-scroll 끝 페이드) */
+.video-channel-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+.video-channel-row[hidden] { display: none; }
+.video-channel-chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 14px;
+    border: 0;
+    background: var(--color-card);
+    clip-path: var(--cut-6);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--color-text-main);
+    transition: background 0.15s, color 0.15s;
+}
+.video-channel-chip:has(.video-chip-avatar) { padding-left: 5px; }
+.video-channel-chip:hover:not(.active) { background: var(--color-bg-subtle); }
+.video-channel-chip.active { font-weight: 700; }
+.video-chip-avatar,
+.video-card-avatar {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--navy);
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+}
+.video-chip-avatar { width: 26px; height: 26px; }
+.video-card-avatar { width: 34px; height: 34px; margin-top: 2px; }
+.video-channel-chip.active .video-chip-avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
+
+/* 앞 섹션이 비어 숨겨지면 첫 제목의 윗여백을 뺀다(page-video.js가 is-first를 붙인다) */
+.section-title.section-title-spaced.is-first { margin-top: 0; }
+#video-top-wrap[hidden],
+#video-shorts-wrap[hidden],
+.video-more-wrap[hidden] { display: none; }
+
+/* 영상 카드: 위 16:9 썸네일(노치), 아래 채널 사진 + 제목 두 줄 + 채널 · 조회수 · 올린 때 */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px 16px;
+}
+.video-top-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.video-card { min-width: 0; }
+.video-thumb {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: var(--navy);
+    clip-path: var(--cut-10);
+    cursor: pointer;
+}
+.video-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;          /* hqdefault(4:3)의 위아래 검은 띠를 잘라낸다 */
+    transition: transform 0.25s;
+}
+.video-thumb:hover img { transform: scale(1.04); }
+.video-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 34px;
+    background: rgba(0, 0, 0, 0.7);
+    clip-path: var(--cut-6);
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.15s, background 0.15s;
+}
+.video-play::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-style: solid;
+    border-width: 8px 0 8px 13px;
+    border-color: transparent transparent transparent #fff;
+    transform: translate(-35%, -50%);
+}
+.video-thumb:hover .video-play,
+.video-thumb:focus-visible .video-play {
+    opacity: 1;
+    background: #ff0033;
+}
+.video-rank {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: start;
+    width: 40px;
+    height: 40px;
+    padding: 4px 0 0 9px;
+    background: var(--navy-deco-fill);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+}
+.video-card.is-top .video-rank { width: 52px; height: 52px; font-size: 18px; padding: 5px 0 0 11px; }
+.video-badge {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.72);
+    clip-path: var(--cut-3);
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #fff;
+}
+.video-card-body {
+    display: flex;
+    gap: 10px;
+    padding-top: 10px;
+}
+.video-card-text {
+    flex: 1;
+    min-width: 0;
+}
+.video-card-title {
+    display: -webkit-box;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: none;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-text-strong);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+.video-card-title:hover { color: var(--color-primary); }
+.video-card.is-top .video-card-title { font-size: 16px; }
+.video-card-channel,
+.video-card-meta {
+    margin-top: 3px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: var(--color-text-sub);
+}
+.video-card-meta { margin-top: 1px; }
+.video-card-note {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    background: var(--color-card);
+    clip-path: var(--cut-6);
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--color-text-main);
+    white-space: pre-wrap;
+    word-break: keep-all;
+}
+
+/* 쇼츠 선반: 세로 9:16 카드를 가로로 늘어놓는다 */
+.video-shorts-shelf {
+    display: flex;
+    gap: 12px;
+}
+.video-short {
+    display: flex;
+    flex: 0 0 calc((100% - 12px * 5) / 6);
+    flex-direction: column;
+    min-width: 150px;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+.video-short-thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    background: var(--navy);
+    clip-path: var(--cut-10);
+}
+.video-short-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s;
+}
+.video-short:hover .video-short-thumb img { transform: scale(1.04); }
+.video-short-title {
+    display: -webkit-box;
+    margin-top: 8px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-text-strong);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+.video-short:hover .video-short-title { color: var(--color-primary); }
+.video-short-meta {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--color-text-sub);
+}
+
+.video-empty {
+    grid-column: 1 / -1;
+    padding: 48px 0;
+    background: var(--color-card);
+    clip-path: var(--cut-12);
+    text-align: center;
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+}
+.video-more-wrap { margin-top: 22px; }
+.video-updated {
+    margin: 18px 0 0;
+    text-align: right;
+    font-size: 11px;
+    color: var(--color-text-faint);
+}
+.video-updated:empty { display: none; }
+
+@media (max-width: 1199.98px) {
+    .video-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .video-short { flex-basis: calc((100% - 12px * 4) / 5); }
+}
+@media (max-width: 991.98px) {
+    .video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .video-short { flex-basis: calc((100% - 12px * 3) / 4); }
+}
+@media (max-width: 767.98px) {
+    .video-channel-row { margin-bottom: 18px; }
+    .video-top-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .video-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .video-short { flex-basis: 42%; min-width: 0; }
+}
+
+
+/* =============================================================================
+   13. 도구 · 멀티뷰어 · 캄몬라이더
    ============================================================================= */
 .mv-chip-box {
     background: var(--color-card);
@@ -4007,6 +4309,11 @@ html[data-theme="dark"] .mv-order-row {
     transition: filter 0.1s, transform 0.1s;
     height: 100%;
     gap: 7px;
+}
+/* 실행(주 동작) 버튼: 흰 면 위의 선택색과 같은 규칙 - 라이트는 네이비, 다크는 파랑 */
+.mv-run-btn:not(:disabled) {
+    background: var(--select-on-light);
+    color: #fff;
 }
 .mv-run-btn:hover:not(:disabled) { filter: brightness(1.06); }
 .mv-run-btn:active:not(:disabled) { transform: scale(0.99); }
@@ -4343,7 +4650,7 @@ html[data-theme="dark"] .mv-order-row {
 
 
 /* =============================================================================
-   13. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
+   14. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
    ============================================================================= */
 /* 네이비(다크 모드는 검정) 면. 면 안에서는 --panel-* · --color-* 토큰을 흰 계열로 바꿔
    안쪽 부품이 따로 다크 규칙 없이 따라오게 한다.

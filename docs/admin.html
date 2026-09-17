@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=41c729b02c">
+<link rel="stylesheet" href="style.css?v=6341d49007">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
 <script>
     try {
@@ -403,6 +403,20 @@ body {
     cursor: pointer;
 }
 .admin-hist-list .hist-admin-bar .edit-btn { color: var(--color-primary); margin-left: auto; }
+.admin-hist-list .hist-move { display: inline-flex; gap: 2px; }
+.admin-hist-list .hist-move button {
+    width: 22px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    font-size: 9px;
+    line-height: 1;
+    color: var(--color-text-sub);
+    cursor: pointer;
+}
+.admin-hist-list .hist-move button:hover:not(:disabled) { color: var(--color-primary); border-color: var(--color-primary); }
+.admin-hist-list .hist-move button:disabled { opacity: 0.35; cursor: default; }
 .admin-hist-list .hist-admin-bar .delete-btn { color: var(--color-lose); }
 .hist-auto {
     display: inline-flex;
@@ -449,6 +463,17 @@ body {
     color: #fff;
     background: rgba(0, 0, 0, 0.6);
 }
+.admin-video-row img.admin-video-thumb { width: 64px; height: 36px; border-radius: 0; object-fit: cover; clip-path: var(--cut-4); background: var(--color-bg-subtle); }
+.admin-video-row img.admin-video-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.admin-video-row .admin-video-avatar-empty { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; }
+.admin-video-row .admin-video-state { flex: none; font-size: 11px; color: var(--color-text-sub); white-space: nowrap; }
+.admin-video-row .admin-video-state.is-wait { color: var(--color-badge-format); }
+.admin-video-row .admin-tool-info { flex: 1; min-width: 0; }
+.admin-video-row .admin-tool-name, .admin-video-row .admin-tool-url { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.admin-video-move { display: inline-flex; flex: none; flex-direction: column; }
+.admin-video-move button { width: 20px; height: 14px; padding: 0; border: 0; background: none; font-size: 9px; line-height: 1; color: var(--color-text-sub); }
+.admin-video-move button:hover:not(:disabled) { color: var(--color-primary); }
+.admin-video-move button:disabled { opacity: 0.3; }
 .admin-cancel-btn { background: var(--color-text-faint); }
 .admin-cancel-btn:hover { background: var(--color-text-sub); }
 </style>
@@ -466,6 +491,7 @@ body {
             <a class="nav-item" data-page="members" onclick="switchPage('members')">멤버</a>
             <a class="nav-item" data-page="records" onclick="switchPage('records')">전적</a>
             <a class="nav-item" data-page="tier" onclick="switchPage('tier')">티어표</a>
+            <a class="nav-item" data-page="video" onclick="switchPage('video')">영상</a>
             <a class="nav-item" data-page="stats" onclick="switchPage('stats')">방송통계</a>
             <a class="nav-item" data-page="tools" onclick="switchPage('tools')">도구</a>
         </div>
@@ -653,7 +679,7 @@ body {
                     <div class="admin-form-row"><input type="text" id="histTitle" placeholder="제목 (예: 대학대전 우승)" maxlength="60"></div>
                     <div class="admin-form-row"><textarea id="histDesc" placeholder="설명 (선택, 줄바꿈 가능)" maxlength="400"></textarea></div>
                     <div class="admin-form-row">
-                        <input type="text" id="histMembers" list="histMemberNames" placeholder="멤버 이름 (쉼표로 구분, 예: 토마토, 임조이)" oninput="renderHistMemberChips()">
+                        <input type="text" id="histMembers" list="histMemberNames" placeholder="멤버 (쉼표로 구분, 괄호 안은 설명 - 예: 토마토(선수), 임조이(코치))" oninput="renderHistMemberChips()">
                         <datalist id="histMemberNames"></datalist>
                     </div>
                     <div class="admin-hist-chips" id="histMemberChips"></div>
@@ -693,6 +719,43 @@ body {
         <div class="page-header-main" data-label="ADMIN · TIER"><h1 class="page-header-title">티어표</h1><p class="page-header-subtitle">티어표는 외부 데이터에서 자동으로 갱신됩니다.</p></div>
     </div>
     <div class="container"><a class="btn-view-all" href="tier/">티어표 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
+</div>
+
+<div id="page-video" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · VIDEO">
+            <h1 class="page-header-title">영상 관리</h1>
+            <p class="page-header-subtitle">팬튜브 채널과 보자 추천 영상을 관리합니다.</p>
+            <button id="saveVideoBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveVideoConfigToGithub()">저장</button>
+        </div>
+    </div>
+    <div class="container">
+
+    <div class="section-title"><span class="section-title-label">팬튜브 채널</span><span class="title-count" id="videoChannelCount"></span></div>
+    <div class="clean-card p-4 mb-4">
+        <p class="admin-hist-note">채널을 등록하고 저장하면 GitHub Actions가 곧 최신 영상을 불러옵니다(그 뒤로는 3시간마다 자동). 칩은 이 순서대로 보입니다.</p>
+        <div id="videoChannelList" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="text" id="videoChannelUrl" placeholder="채널 주소 (예: https://www.youtube.com/@handle 또는 @handle)">
+            <input type="text" id="videoChannelName" placeholder="표시 이름 (선택, 비우면 채널 이름)" maxlength="30">
+        </div>
+        <button id="videoChannelSubmit" class="admin-submit-btn" onclick="applyVideoChannelForm()">추가하기</button>
+        <button id="videoChannelCancel" class="admin-submit-btn admin-cancel-btn" style="display:none;" onclick="resetVideoChannelForm()">수정 취소</button>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">보자 (추천 영상)</span><span class="title-count" id="videoPickCount"></span></div>
+    <div class="clean-card p-4">
+        <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다.</p>
+        <div id="videoPickList" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="url" id="videoPickUrl" placeholder="유튜브 링크 (영상 · 쇼츠)">
+            <input type="text" id="videoPickTitle" placeholder="제목 (선택)" maxlength="80">
+        </div>
+        <div class="admin-form-row"><textarea id="videoPickNote" placeholder="한 줄 설명 (선택, 예: 역대급 역전승)" maxlength="200"></textarea></div>
+        <button id="videoPickSubmit" class="admin-submit-btn" onclick="applyVideoPickForm()">추가하기</button>
+        <button id="videoPickCancel" class="admin-submit-btn admin-cancel-btn" style="display:none;" onclick="resetVideoPickForm()">수정 취소</button>
+    </div>
+    </div>
 </div>
 
 <div id="page-stats" class="page-section">
@@ -740,11 +803,11 @@ body {
 
 <!-- 사이트가 실제로 쓰는 캘린더 렌더링 로직을 그대로 가져다 쓴다 (복사본 아님) -->
 <script src="calendar.js?v=b8ae2f4fb6"></script>
-<script src="history.js?v=f0258cd123"></script>
+<script src="history.js?v=8747e8260b"></script>
 
 <script>
     // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
-    const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'tier', 'stats', 'tools'];
+    const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'tier', 'video', 'stats', 'tools'];
     function setAdminTheme(theme) {
         document.documentElement.dataset.theme = theme;
         document.documentElement.dataset.bsTheme = theme;
@@ -841,7 +904,7 @@ body {
         const token = document.getElementById('githubToken').value.trim();
         if (!token) return alert('토큰을 입력해주세요.');
         adminTokenStore.set(token);
-        const loaded = await Promise.all([loadDataFromGithub(), loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub()]);
+        const loaded = await Promise.all([loadDataFromGithub(), loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub(), loadVideoConfigFromGithub()]);
         if (loaded.every(Boolean)) alert('연동 및 데이터 불러오기가 완료되었습니다. 토큰은 이 탭에만 보관됩니다.');
     };
 
@@ -1173,6 +1236,7 @@ body {
         { id: 'members', label: '멤버' },
         { id: 'records', label: '전적' },
         { id: 'tier', label: '티어표' },
+        { id: 'video', label: '영상' },
         { id: 'stats', label: '방송통계' },
         { id: 'tools', label: '도구' },
     ];
@@ -1493,7 +1557,12 @@ body {
     }
 
     function histFormMembers() {
-        return document.getElementById('histMembers').value.split(',').map(x => x.trim()).filter(Boolean);
+        return document.getElementById('histMembers').value.split(',')
+            .map(x => {
+                const { name, note } = histParseMember(x);
+                return name ? histFormatMember(name, note) : '';
+            })
+            .filter(Boolean);
     }
 
     function renderHistMemberChips() {
@@ -1550,7 +1619,7 @@ body {
         histFormImage = '';
         ['histDate', 'histTitle', 'histDesc', 'histMembers', 'histYoutube', 'histImage'].forEach(id => { document.getElementById(id).value = ''; });
         document.getElementById('histType').value = 'event';
-        ['histDate', 'histType', 'histMembers'].forEach(id => { document.getElementById(id).disabled = false; });
+        ['histDate', 'histType'].forEach(id => { document.getElementById(id).disabled = false; });
         document.getElementById('histFormTitle').innerText = '연혁 추가';
         document.getElementById('histSubmitBtn').innerText = '반영하기';
         document.getElementById('histCancelBtn').style.display = 'none';
@@ -1569,11 +1638,13 @@ body {
         document.getElementById('histTitle').value = item.auto ? ((historyData.overrides[id] || {}).title || '') : (item.title || '');
         document.getElementById('histTitle').placeholder = item.auto ? `제목 (비우면 "${item.title}")` : '제목 (예: 대학대전 우승)';
         document.getElementById('histDesc').value = item.desc || '';
-        document.getElementById('histMembers').value = (item.members || []).join(', ');
+        // 자동 항목(입단·퇴단)은 이름 뒤에 빈 괄호를 붙여 둔다 - 괄호 안만 고쳐 설명을 달 수 있다.
+        document.getElementById('histMembers').value = (item.members || [])
+            .map(e => (item.auto && !/\(/.test(e) ? e + '()' : e)).join(', ');
         document.getElementById('histYoutube').value = item.youtube || '';
         histFormImage = item.image || '';
-        // 자동 항목의 날짜·종류·멤버는 멤버 시트가 정한다
-        ['histDate', 'histType', 'histMembers'].forEach(f => { document.getElementById(f).disabled = !!item.auto; });
+        // 자동 항목의 날짜·종류는 멤버 시트가 정한다(멤버 칸은 괄호 설명을 달 수 있게 열어 둔다)
+        ['histDate', 'histType'].forEach(f => { document.getElementById(f).disabled = !!item.auto; });
         document.getElementById('histFormTitle').innerText = item.auto ? '자동 항목 꾸미기' : '연혁 수정';
         document.getElementById('histSubmitBtn').innerText = '수정 반영하기';
         document.getElementById('histCancelBtn').style.display = '';
@@ -1581,6 +1652,29 @@ body {
         renderHistPreview();
         renderHistoryAdmin();
         document.getElementById('histTitle').focus();
+    }
+
+    // 같은 날 안에서 위/아래로 옮긴다. 옮긴 날의 항목 전체에 순서(ord)를 다시 매겨 저장한다
+    // (자동 항목은 overrides에, 직접 추가한 항목은 그 항목에 들어간다).
+    function histAdminMove(id, dir) {
+        const items = histMergeItems(historyData, dbMembers, true);
+        const item = items.find(it => it.id === id);
+        if (!item) return;
+        const group = items.filter(it => it.date === item.date);
+        const from = group.findIndex(it => it.id === id);
+        const to = from + dir;
+        if (to < 0 || to >= group.length) return;
+        [group[from], group[to]] = [group[to], group[from]];
+        group.forEach((it, idx) => histSetOrder(it.id, idx));
+        renderHistoryAdmin();
+    }
+
+    function histSetOrder(id, ord) {
+        if (id.startsWith('auto-')) historyData.overrides[id] = { ...(historyData.overrides[id] || {}), ord };
+        else {
+            const item = historyData.items.find(it => it.id === id);
+            if (item) item.ord = ord;
+        }
     }
 
     function histAdminRemove(id) {
@@ -1615,9 +1709,16 @@ body {
         }
         if (isAuto) {
             const prev = historyData.overrides[id] || {};
-            historyData.overrides[id] = { ...(prev.hidden ? { hidden: true } : {}), title, desc, youtube, image };
+            historyData.overrides[id] = {
+                ...(prev.hidden ? { hidden: true } : {}),
+                ...(Number.isFinite(prev.ord) ? { ord: prev.ord } : {}),
+                title, desc, youtube, image,
+                members: histFormMembers().filter(e => /\(.+\)/.test(e)),   // 설명이 달린 것만 남긴다
+            };
         } else {
-            const item = { id, date, type, title, desc, members: histFormMembers(), youtube, image };
+            const prev = historyData.items.find(it => it.id === id);
+            const item = { id, date, type, title, desc, members: histFormMembers(), youtube, image,
+                ...(prev && Number.isFinite(prev.ord) ? { ord: prev.ord } : {}) };
             const idx = historyData.items.findIndex(it => it.id === id);
             if (idx >= 0) historyData.items[idx] = item; else historyData.items.push(item);
         }
@@ -1678,6 +1779,257 @@ body {
         }
     };
 
+    // ===== 영상 관리 (docs/data/video_channels.json) =====
+    // 여기서는 "무엇을 모을지"만 저장한다. 실제 영상 목록(docs/data/videos.json)은
+    // scripts/sync_videos.py가 GitHub Actions에서 유튜브 RSS로 만든다(이 파일이 바뀌면 바로, 그 뒤 3시간마다).
+    const VIDEO_CONFIG_PATH = 'docs/data/video_channels.json';
+    let videoConfig = { channels: [], picks: [] };
+    let videoSynced = { channels: {}, videos: [], picks: [] };   // 사이트에 올라가 있는 videos.json(상태 표시용)
+    let videoConfigLoaded = false;
+    let videoEditingChannel = -1;
+    let videoEditingPick = -1;
+
+    const videoIdFromUrl = url => {
+        const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+        return m ? m[1] : '';
+    };
+
+    // @handle · youtube.com/@handle · /channel/UC... · /c/이름 · /user/이름 을 받아 https://www.youtube.com/... 로 맞춘다
+    const normalizeChannelUrl = input => {
+        let v = String(input || '').trim();
+        if (!v) return '';
+        if (/^@[\w.\-가-힣]+$/.test(v)) return 'https://www.youtube.com/' + v;
+        if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+        let u;
+        try { u = new URL(v); } catch (_) { return ''; }
+        if (!/(^|\.)youtube\.com$/i.test(u.hostname)) return '';
+        const m = decodeURIComponent(u.pathname).match(/^\/(@[^/]+|channel\/UC[\w-]{22}|c\/[^/]+|user\/[^/]+)/);
+        return m ? 'https://www.youtube.com/' + m[1] : '';
+    };
+
+    const moveVideoItem = (list, idx, dir) => {
+        const to = idx + dir;
+        if (to < 0 || to >= list.length) return;
+        [list[idx], list[to]] = [list[to], list[idx]];
+    };
+
+    const videoMoveButtons = (kind, i, len) => `
+        <span class="admin-video-move">
+            <button type="button" aria-label="위로" ${i === 0 ? 'disabled' : ''} onclick="moveVideoRow('${kind}', ${i}, -1)">▲</button>
+            <button type="button" aria-label="아래로" ${i === len - 1 ? 'disabled' : ''} onclick="moveVideoRow('${kind}', ${i}, 1)">▼</button>
+        </span>`;
+
+    function renderVideoAdmin() {
+        const chList = document.getElementById('videoChannelList');
+        const pickList = document.getElementById('videoPickList');
+        if (!chList || !pickList) return;
+        const channels = videoConfig.channels || [];
+        const picks = videoConfig.picks || [];
+        const empty = text => `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">${videoConfigLoaded ? text : 'GitHub 연동 후 불러옵니다.'}</div>`;
+
+        chList.innerHTML = channels.length ? channels.map((ch, i) => {
+            const synced = (videoSynced.channels || {})[ch.url];
+            const count = synced ? (videoSynced.videos || []).filter(v => v.channel === ch.url).length : 0;
+            const name = ch.name || (synced && synced.title) || '';
+            const thumb = synced && /^https:\/\//.test(synced.thumb || '') ? synced.thumb : '';
+            const avatar = thumb
+                ? `<img class="admin-video-avatar" src="${escapeHTML(thumb)}" alt="">`
+                : `<span class="admin-video-avatar-empty">${escapeHTML((name || '?').slice(0, 1))}</span>`;
+            const state = synced ? `<span class="admin-video-state">영상 ${count}개</span>` : '<span class="admin-video-state is-wait">동기화 대기</span>';
+            return `
+                <div class="admin-tool-row admin-video-row">
+                    ${videoMoveButtons('channel', i, channels.length)}
+                    ${avatar}
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(name || '(이름은 동기화 후 채워집니다)')}</div>
+                        <div class="admin-tool-url">${escapeHTML(ch.url)}</div>
+                    </div>
+                    ${state}
+                    <button class="edit-btn" onclick="editVideoChannel(${i})">수정</button>
+                    <button class="delete-btn" onclick="deleteVideoChannel(${i})">삭제</button>
+                </div>`;
+        }).join('') : empty('등록된 채널이 없습니다.');
+
+        pickList.innerHTML = picks.length ? picks.map((p, i) => {
+            const id = videoIdFromUrl(p.url);
+            const synced = (videoSynced.picks || []).find(x => x.id === id);
+            const title = p.title || (synced && synced.oembedTitle) || '';
+            const sub = [p.addedAt, synced && synced.author, p.note].filter(Boolean).join(' · ');
+            return `
+                <div class="admin-tool-row admin-video-row">
+                    ${videoMoveButtons('pick', i, picks.length)}
+                    <img class="admin-video-thumb" src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="">
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(title || p.url)}</div>
+                        <div class="admin-tool-url">${escapeHTML(sub || p.url)}</div>
+                    </div>
+                    ${synced ? '' : '<span class="admin-video-state is-wait">동기화 대기</span>'}
+                    <button class="edit-btn" onclick="editVideoPick(${i})">수정</button>
+                    <button class="delete-btn" onclick="deleteVideoPick(${i})">삭제</button>
+                </div>`;
+        }).join('') : empty('추천 영상이 없습니다.');
+
+        document.getElementById('videoChannelCount').textContent = channels.length ? `${channels.length}개` : '';
+        document.getElementById('videoPickCount').textContent = picks.length ? `${picks.length}개` : '';
+    }
+
+    const moveVideoRow = (kind, idx, dir) => {
+        if (!videoConfigLoaded) return;
+        if (kind === 'channel') { resetVideoChannelForm(); moveVideoItem(videoConfig.channels, idx, dir); }
+        else { resetVideoPickForm(); moveVideoItem(videoConfig.picks, idx, dir); }
+        renderVideoAdmin();
+    };
+
+    function resetVideoChannelForm() {
+        videoEditingChannel = -1;
+        document.getElementById('videoChannelUrl').value = '';
+        document.getElementById('videoChannelName').value = '';
+        document.getElementById('videoChannelSubmit').innerText = '추가하기';
+        document.getElementById('videoChannelCancel').style.display = 'none';
+    }
+
+    const editVideoChannel = idx => {
+        const ch = videoConfig.channels[idx];
+        if (!ch) return;
+        videoEditingChannel = idx;
+        document.getElementById('videoChannelUrl').value = ch.url || '';
+        document.getElementById('videoChannelName').value = ch.name || '';
+        document.getElementById('videoChannelSubmit').innerText = '수정 반영하기';
+        document.getElementById('videoChannelCancel').style.display = '';
+        document.getElementById('videoChannelUrl').focus();
+    };
+
+    const applyVideoChannelForm = () => {
+        if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
+        const url = normalizeChannelUrl(document.getElementById('videoChannelUrl').value);
+        if (!url) return alert('유튜브 채널 주소를 확인해주세요. (예: https://www.youtube.com/@handle)');
+        const name = document.getElementById('videoChannelName').value.trim();
+        const dup = videoConfig.channels.findIndex(ch => ch.url.toLowerCase() === url.toLowerCase());
+        if (dup >= 0 && dup !== videoEditingChannel) return alert('이미 등록된 채널입니다.');
+        const item = { url, ...(name ? { name } : {}) };
+        if (videoEditingChannel >= 0) videoConfig.channels[videoEditingChannel] = item;
+        else videoConfig.channels.push(item);
+        resetVideoChannelForm();
+        renderVideoAdmin();
+    };
+
+    const deleteVideoChannel = idx => {
+        if (!confirm('이 채널을 삭제하시겠습니까? 저장하면 이 채널의 영상도 목록에서 빠집니다.')) return;
+        resetVideoChannelForm();
+        videoConfig.channels.splice(idx, 1);
+        renderVideoAdmin();
+    };
+
+    function resetVideoPickForm() {
+        videoEditingPick = -1;
+        ['videoPickUrl', 'videoPickTitle', 'videoPickNote'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('videoPickSubmit').innerText = '추가하기';
+        document.getElementById('videoPickCancel').style.display = 'none';
+    }
+
+    const editVideoPick = idx => {
+        const p = videoConfig.picks[idx];
+        if (!p) return;
+        videoEditingPick = idx;
+        document.getElementById('videoPickUrl').value = p.url || '';
+        document.getElementById('videoPickTitle').value = p.title || '';
+        document.getElementById('videoPickNote').value = p.note || '';
+        document.getElementById('videoPickSubmit').innerText = '수정 반영하기';
+        document.getElementById('videoPickCancel').style.display = '';
+        document.getElementById('videoPickUrl').focus();
+    };
+
+    const applyVideoPickForm = () => {
+        if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
+        const id = videoIdFromUrl(document.getElementById('videoPickUrl').value);
+        if (!id) return alert('유튜브 영상 링크를 확인해주세요. (watch · youtu.be · shorts 주소)');
+        const dup = videoConfig.picks.findIndex(p => videoIdFromUrl(p.url) === id);
+        if (dup >= 0 && dup !== videoEditingPick) return alert('이미 추가된 영상입니다.');
+        const title = document.getElementById('videoPickTitle').value.trim();
+        const note = document.getElementById('videoPickNote').value.trim();
+        const prev = videoEditingPick >= 0 ? videoConfig.picks[videoEditingPick] : null;
+        const t = new Date();
+        const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+        const item = { url: `https://www.youtube.com/watch?v=${id}`, title, note, addedAt: (prev && prev.addedAt) || today };
+        if (prev) videoConfig.picks[videoEditingPick] = item;
+        else videoConfig.picks.unshift(item);   // 새로 고른 영상이 맨 위
+        resetVideoPickForm();
+        renderVideoAdmin();
+    };
+
+    const deleteVideoPick = idx => {
+        if (!confirm('이 추천 영상을 삭제하시겠습니까?')) return;
+        resetVideoPickForm();
+        videoConfig.picks.splice(idx, 1);
+        renderVideoAdmin();
+    };
+
+    const loadVideoConfigFromGithub = async () => {
+        const token = adminTokenStore.get();
+        videoConfigLoaded = false;
+        try {
+            const [res, syncedRes] = await Promise.all([
+                fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${VIDEO_CONFIG_PATH}` : 'data/video_channels.json', {
+                    headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+                }),
+                fetch('data/videos.json', { cache: 'no-cache' }).catch(() => null),
+            ]);
+            if (syncedRes && syncedRes.ok) videoSynced = await syncedRes.json().catch(() => videoSynced);
+            if (res.ok) {
+                const data = await res.json();
+                const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+                videoConfig = {
+                    channels: Array.isArray(parsed.channels) ? parsed.channels.filter(ch => ch && ch.url) : [],
+                    picks: Array.isArray(parsed.picks) ? parsed.picks.filter(p => p && p.url) : [],
+                };
+                videoConfigLoaded = true;
+            } else if (res.status === 404) {
+                videoConfig = { channels: [], picks: [] };
+                videoConfigLoaded = true;
+            } else {
+                throw new Error(`영상 설정 불러오기 실패 (HTTP ${res.status})`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderVideoAdmin();
+        return videoConfigLoaded;
+    };
+
+    const saveVideoConfigToGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 메뉴에서 연동할 수 있습니다)');
+        if (!videoConfigLoaded) return alert('영상 설정을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+        const btn = document.getElementById('saveVideoBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+            const existing = await fetch(`${repoUrl}/contents/${VIDEO_CONFIG_PATH}`, { headers });
+            let sha;
+            if (existing.ok) sha = (await existing.json()).sha;
+            else if (existing.status !== 404) throw new Error(`최신 영상 설정 확인 실패 (HTTP ${existing.status})`);
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(videoConfig, null, 2) + '\n')));
+            const putRes = await fetch(`${repoUrl}/contents/${VIDEO_CONFIG_PATH}`, {
+                method: 'PUT', headers,
+                body: JSON.stringify({ message: '📺 영상 채널 · 추천 영상 업데이트', content, ...(sha ? { sha } : {}) })
+            });
+            if (!putRes.ok) {
+                const detail = await putRes.json().catch(() => ({}));
+                throw new Error(`영상 설정 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
+            }
+            alert('✅ 영상 설정이 저장되었습니다! 몇 분 안에 영상 목록이 갱신됩니다.');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '저장';
+            btn.disabled = false;
+        }
+    };
+
     const init = async () => {
         await Promise.all([loadPublicHolidays(), loadMembersData()]);
 
@@ -1695,7 +2047,7 @@ body {
         // 그렸던(비어있었을 수 있는) 체크박스 상태를 실제 데이터로 다시 맞춘다.
         renderOffAirCheckboxList();
         renderNavAdmin();
-        await Promise.all([loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub()]);
+        await Promise.all([loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub(), loadVideoConfigFromGithub()]);
     };
 
     init();

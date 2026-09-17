@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- 영상 페이지 -->
+<section id="page-video" class="page-section active">
+    <div class="page-header">
+        <div class="page-header-main" data-label="VIDEO">
+            <h1 class="page-header-title">영상</h1>
+            <p class="page-header-subtitle">{{ description }}</p>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-video-fantube" role="tab" tabindex="0" aria-selected="true" onclick="switchVideoView('fantube')">팬튜브</div>
+            <div class="sub-tab" id="tab-video-pick" role="tab" tabindex="0" aria-selected="false" onclick="switchVideoView('pick')">보자</div>
+        </div>
+    </div>
+    <div class="container">
+    {#- 1. 팬튜브: 어드민이 등록한 유튜브 채널의 최신 영상(scripts/sync_videos.py가 RSS로 모아 data/videos.json에 쌓는다).
+        채널 칩으로 거르고, 이번 달 인기 3개 → 쇼츠 선반 → 최신 영상 순. #}
+    <div id="view-video-fantube">
+        <div class="video-channel-row tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>
+
+        <div id="video-top-wrap">
+            <div class="section-title section-title-spaced" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
+            <div class="video-top-grid" id="video-top-grid"></div>
+        </div>
+
+        <div id="video-shorts-wrap">
+            <div class="section-title section-title-spaced" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span></div>
+            <div class="video-shorts-shelf tab-scroll" id="video-shorts-shelf"></div>
+        </div>
+
+        <div class="section-title section-title-spaced" data-en="LATEST"><span class="section-title-label">최신 영상</span><span class="title-count" id="video-latest-count"></span></div>
+        <div class="video-grid" id="video-latest-grid"></div>
+        <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
+            <button type="button" class="news-load-more" onclick="videoShowMore()">영상 더 보기</button>
+        </div>
+        <p class="video-updated" id="video-updated"></p>
+    </div>
+
+    {#- 2. 보자: 어드민이 골라 올린 영상. 한 줄 설명(note)을 같이 보여준다. #}
+    <div id="view-video-pick" class="d-none">
+        <div class="section-title" data-en="CURATED"><span class="section-title-label">보자</span><span class="title-count" id="video-pick-count"></span></div>
+        <div class="video-grid video-pick-grid" id="video-pick-grid"></div>
+    </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('media-lightbox.js') }}"></script>
+<script src="{{ asset_url('page-video.js') }}"></script>
+{% endblock %}
