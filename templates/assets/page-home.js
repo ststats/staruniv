@@ -118,16 +118,6 @@ function moveHomeCarousel(direction) {
     if (homeCarouselTimer) startHomeCarouselAuto();   // 누른 직후 바로 또 넘어가지 않게 다시 센다
 }
 
-function renderHeroMatchPreview(target) {
-    const box = target || document.querySelector('.home-carousel-preview[data-preview="0"]');
-    if (!box) return;
-    const match = SiteData.matches[0];
-    if (!match) { box.innerHTML = '<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-loading">경기 기록이 없습니다.</div>'; return; }
-    const result = match['최종 결과'] || match['최근 결과'] || '-';
-    const resultClass = result === '승' ? 'win' : result === '패' ? 'lose' : 'draw';
-    box.innerHTML = `<div class="home-preview-label">LATEST MATCH</div><div class="home-preview-teams"><b>캄몬스타즈</b><span class="home-preview-result ${resultClass}">${escapeHTML(result)}</span><b>${escapeHTML(match['상대팀'] || '-')}</b></div><div class="home-preview-meta"><span>${escapeHTML(match['형식'] || '-')}</span><span>${escapeHTML(match['세트 결과'] || '-')}</span><time>${escapeHTML(shortMatchDate(match['날짜']))}</time></div>`;
-}
-
 // [리디자인] 방송중 카드도 멤버 카드와 같은 규칙 - 왼쪽 3px 엣지에 종족 색.
 function liveRaceEdgeClass(m) {
     const letter = raceShortLabel(m['종족'] || '');

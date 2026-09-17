@@ -18,9 +18,8 @@
     나갈 수 없다(좌우에 100px씩 여백이 남는다). #}
 <section id="page-home" class="page-section active">
     {#- [리디자인] 가운데 워드마크 카드 하나였던 첫 화면을 넘기는 칸으로 바꿨다.
-        한 장이 페이지 하나를 설명하고 바로가기를 갖는다. 오른쪽 칸은 최신 경기 결과인데,
-        특정 날짜를 박지 않고 page-home.js의 renderHeroMatchPreview가 항상 제일 최근
-        경기를 넣는다. 넘기기/점은 goHomeCarousel/moveHomeCarousel이 담당한다. #}
+        한 장이 페이지 하나를 설명하고 바로가기를 갖는다. 오른쪽 칸은 page-home.js의
+        renderHomePreviewPanes가 채운다(첫 장은 오늘 일정). 넘기기/점은 goHomeCarousel/moveHomeCarousel이 담당한다. #}
     <section class="home-carousel nc" aria-label="스타대학 안내" aria-roledescription="carousel">
         <div class="home-carousel-track" id="home-carousel-track">
             <article class="home-carousel-slide">
@@ -29,8 +28,8 @@
                 <p>캄몬스타즈의 일정을 한곳에서 확인하세요.</p>
                 <div class="home-hero-links"><a href="schedule/">일정 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
                 <aside class="home-carousel-preview nc" data-preview="0" aria-live="polite">
-                    <div class="home-preview-label">LATEST MATCH</div>
-                    <div class="home-preview-loading">최근 경기를 불러오는 중...</div>
+                    <div class="home-preview-label">TODAY SCHEDULE</div>
+                    <div class="home-preview-loading">오늘 일정을 불러오는 중...</div>
                 </aside>
             </article>
             <article class="home-carousel-slide">
