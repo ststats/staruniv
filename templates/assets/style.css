@@ -2882,19 +2882,6 @@ a.home-notice-card:hover {
     scroll-margin-top: calc(var(--tier-navbar-h) + var(--tier-bar-h) + 16px);
 }
 
-.tier-live {
-    font-size: var(--fs-body);
-    font-weight: 700;
-    color: var(--color-lose);
-    white-space: nowrap;
-}
-
-.tier-live-sep {
-    color: var(--color-text-faint);
-    margin: 0 6px;
-    font-weight: 700;
-}
-
 .tier-race-block + .tier-race-block {
     margin-top: 16px;
 }
@@ -6165,26 +6152,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
 }
 
-.tier-row > .section-title .tier-live:not(:empty) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    min-height: 20px;
-    margin-left: 8px;
-    padding: 0 8px;
-    background: #e54848 !important;
-    color: #fff;
-    font-family: var(--font-num);
-    font-size: 9px;
-    font-weight: 700;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-}
-
-.tier-row > .section-title .tier-live-sep {
-    display: none;
-}
-
 .tier-card.edge-T {
     border-left: 3px solid var(--color-race-t) !important;
 }
@@ -6934,10 +6901,8 @@ html[data-theme="dark"] .section-title {
     color: var(--color-primary);
 }
 
-/* 제목 옆 숫자 배지: 방송중(빨강 바탕 + 흰 글씨)과 같은 규칙으로 파랑 바탕 + 흰 글씨.
-   글꼴·크기도 두 배지를 똑같이 맞춘다. */
-.section-title .title-count,
-.tier-row > .section-title .tier-live:not(:empty) {
+/* 제목 옆 숫자 배지: 채운 바탕 + 흰 글씨 */
+.section-title .title-count {
     min-height: 20px;
     padding: 0 8px;
     font-family: "Chakra Petch", "Pretendard", sans-serif;
@@ -6950,12 +6915,8 @@ html[data-theme="dark"] .section-title {
     background: var(--color-primary);
 }
 
-.tier-row > .section-title .tier-live:not(:empty) {
-    background: var(--color-lose) !important;
-}
-
 /* 배지 규칙 통일: 채운 바탕 + 흰 글씨.
-   경기 형식(대회·CK 등)은 청록, 티어는 짙은 남색, 인원 수는 파랑, 방송중은 빨강,
+   경기 형식(대회·CK 등)은 청록, 티어는 짙은 남색, 인원 수는 파랑,
    종족·직책은 각자 고유색(바탕만 다르고 흰 글씨는 같다). */
 /* 경기 형식 배지(대회·대학·미니·CK): 차분한 청록 + 흰 글씨. 결과(W/L) 배지와 겹치지 않게. */
 .tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge),
@@ -7505,6 +7466,7 @@ html[data-theme="dark"] .page-header .sub-tab.active {
 .head-plate,
 .profile-head,
 #statContent .clean-card:has(.donut-wrap),
+.mv-console,
 .selection-layout > .avatar-bar,
 .selection-layout > .tier-bar,
 #page-schedule .cal-today-card-wrapper > .cal-day-card {
@@ -7681,4 +7643,37 @@ html[data-theme="dark"] .mv-chip.selected:hover {
         grid-column: 1;
         grid-row: 1;
     }
+}
+
+/* ── 사이드바 세로 크기: 상단바를 뺀 화면 높이에 맞춘다 ──
+   사이드바는 상단바(68px) + 여백 16px = 84px 아래에 붙어 따라온다. 원래 목록 높이가
+   520px 고정이라 낮은 화면에서는 아래가 잘리고 높은 화면에서는 공간이 남았다.
+   화면 높이 − 84px − 아래 여백 16px − 사이드바 머리(제목·'전체' 줄) 높이만큼만 목록을 쓴다. */
+@media (min-width: 921px) {
+    .selection-layout > .avatar-bar .avatar-selector-scroll {
+        max-height: calc(100vh - 84px - 16px - 100px);
+    }
+
+    .selection-layout > .tier-bar .tier-bar-list {
+        max-height: calc(100vh - 84px - 16px - 54px);
+    }
+}
+
+
+/* ── 멀티뷰어 멤버 칩: LIVE 글자 배지 → 이름 옆 빨간 점 ── */
+.mv-chip-live {
+    display: inline-block;
+    flex: none;
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border-radius: 50%;
+    clip-path: none;
+    background: var(--color-lose);
+    box-shadow: 0 0 0 2px rgba(240, 62, 62, 0.22);
+    font-size: 0;
+}
+
+.mv-chip.selected .mv-chip-live {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
 }

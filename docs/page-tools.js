@@ -160,8 +160,8 @@ function mvChipHtml(m, isLive) {
     return `
         <div class="mv-chip${selected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${selected}" onclick="mvToggleMember('${jsAttr(soopId)}', '${jsAttr(m['이름'])}')">
             ${avatarHtml(soopId, 'mv-chip-avatar')}
-            ${isLive ? '<span class="mv-chip-live">LIVE</span>' : ''}
             <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
+            ${isLive ? '<span class="mv-chip-live" role="img" aria-label="방송 중" title="방송 중"></span>' : ''}
             <span class="mv-chip-check">✓</span>
         </div>`;
 }

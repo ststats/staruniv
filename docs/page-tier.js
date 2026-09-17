@@ -34,7 +34,7 @@ const TierState = {
     byId: {},          // soopId(소문자) -> member
     live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
     liveOnly: true,    // 방송 중인 사람만 보기 (첫 진입 기본값)
-    sections: [],      // [{ tier, id, count, total }] - 티어 바로가기 바가 쓴다
+    sections: [],      // [{ tier, id, count }] - 티어 제목·바로가기 바가 쓴다
     activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
     visibleThumbs: new Set(),
     thumbObserver: null,
@@ -213,14 +213,6 @@ function renderTierGroups() {
     const anchor = captureTierAnchor();
     const list = tierVisibleMembers();
 
-    // 제목에 쓸 "그 티어의 전체 인원"은 필터와 무관하게 항상 같은 값이어야 한다.
-    // '방송중'을 켰을 때 이 숫자까지 줄어들면, 뒤에 붙는 "N명 방송중"과 같은 값이 되어
-    // 같은 말을 두 번 하게 되고 정작 티어 규모라는 정보만 사라진다.
-    const totals = new Map();
-    TierState.members.forEach(m => {
-        const key = tierGroupKey(m);
-        totals.set(key, (totals.get(key) || 0) + 1);
-    });
 
     const groups = new Map();
     list.forEach(m => {
@@ -238,20 +230,19 @@ function renderTierGroups() {
     });
 
     // 티어 이름을 그대로 id에 쓰면(한글·숫자·공백) 선택자에서 다루기 번거로워서 순번으로 만든다.
-    // count = 지금 화면에 그려지는 수(바로가기 칩), total = 필터와 무관한 티어 전체 인원(제목).
+    // count = 지금 화면에 그려지는 인원. 제목 배지와 바로가기 칩이 같이 쓴다.
+    // '방송중' 보기면 방송 중인 인원, '전체' 보기면 티어 전체 인원이 된다.
     TierState.sections = tiers.map((tier, i) => ({
         tier,
         id: `tier-sec-${i}`,
         count: groups.get(tier).length,
-        total: totals.get(tier) || groups.get(tier).length,
     }));
 
     document.getElementById('tier-root').innerHTML = TierState.sections.length
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title" data-en="${tierLatinLabel(sec.tier)} TIER">
-                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span><span class="title-count">${sec.total}명</span>
-                    <span class="tier-live" data-tier-live></span>
+                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span><span class="title-count">${sec.count}명</span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')
@@ -260,7 +251,6 @@ function renderTierGroups() {
     observeTierThumbs();
     renderTierBar();
     ensureTierPick();
-    updateTierRowLiveCounts();
     restoreTierAnchor(anchor);
     highlightTierBar();  // 칩을 새로 만들었으니 지금 보고 있는 티어를 바로 강조해준다
     syncTierPickLabel();
@@ -272,18 +262,6 @@ function observeTierThumbs() {
     TierState.visibleThumbs.clear();
     document.querySelectorAll('#tier-root .tier-card-thumb')
         .forEach(img => TierState.thumbObserver.observe(img));
-}
-
-function updateTierRowLiveCounts() {
-    document.querySelectorAll('#tier-root .tier-row').forEach(row => {
-        const count = row.querySelectorAll('.tier-card.is-live').length;
-        const slot = row.querySelector('[data-tier-live]');
-        if (!slot) return;
-        // 0명이면 앞의 구분점까지 같이 사라져야 한다(점만 덩그러니 남으면 이상하다).
-        slot.innerHTML = count > 0
-            ? `<span class="tier-live-sep">·</span>${count}명 방송중`
-            : '';
-    });
 }
 
 // ---------------------------------------------------------------------------
@@ -617,7 +595,6 @@ async function refreshTierLive() {
         return;
     }
     applyLiveToCards(changed);
-    updateTierRowLiveCounts();
 }
 
 function liveSetChanged(prev, next) {
