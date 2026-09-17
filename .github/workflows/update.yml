@@ -1,28 +1,49 @@
-name: Update Stats
+name: Update Site
 
+# 한 번 돌리면 사이트에 필요한 걸 전부 갱신한다.
+#   1) 구글 시트 → data/db.json → 통계 → docs/ 페이지 빌드
+#   2) 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링 → docs/data/calendar.png)
+#   3) 유튜브 RSS → 영상 목록 (docs/data/videos.json)
+#   4) eloboard 전적 증분 → 상대전적 파일 (docs/data/h2h/)
+#   5) 바뀐 것만 한 번에 커밋
+#
+# 돌리는 방법 (셋 다 같은 일을 한다)
+#   · Actions 탭에서 'Run workflow' 수동 실행
+#   · 외부 크론에서 호출:
+#       curl -X POST -H "Authorization: Bearer <PAT>" -H "Accept: application/vnd.github+json" \
+#         https://api.github.com/repos/<소유자>/<저장소>/dispatches \
+#         -d '{"event_type":"update"}'
+#   · 어드민에서 영상 설정(docs/data/video_channels.json)을 저장하면 자동으로 한 번
+#
+# [처음 한 번] 전적 아카이브(data/eloboard.json)가 없으면 전적 단계는 건너뛴다.
+# 전체 수집(약 1시간)은 Bootstrap 워크플로우로 한 번 돌린 뒤부터 여기서 이어받는다.
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [update]
+  push:
+    paths:
+      - 'docs/data/video_channels.json'
 
 permissions:
   contents: write
 
+# 외부 크론이 짧은 간격으로 여러 번 불러도 한 번에 하나만 돌게 한다(같은 브랜치에 커밋하므로).
 concurrency:
-  group: stats-update
+  group: site-update
   cancel-in-progress: false
 
 jobs:
-  fetch-and-update:
+  update:
     runs-on: ubuntu-latest
 
     steps:
     - name: 저장소 체크아웃
       uses: actions/checkout@v4
       with:
-        # git push는 이 체크아웃 스텝이 설정한 인증 정보를 그대로 쓴다. 기본
-        # 자동 토큰(secrets.GITHUB_TOKEN)은 레포 Settings → Actions → Workflow
-        # permissions가 "읽기 전용"으로 되어있으면 push가 막힐 수 있는데, 그
-        # 설정 영향을 안 받는 개인 액세스 토큰(PAT, secrets.GH_TOKEN)을 대신
-        # 써서 그 가능성 자체를 없앤다.
+        # git push는 이 체크아웃 스텝이 설정한 인증 정보를 그대로 쓴다. 기본 자동 토큰
+        # (secrets.GITHUB_TOKEN)은 저장소 설정이 "읽기 전용"이면 push가 막힐 수 있어서,
+        # 그 설정 영향을 안 받는 개인 액세스 토큰(PAT, secrets.GH_TOKEN)을 쓴다.
         token: ${{ secrets.GH_TOKEN }}
 
     - name: 파이썬 환경 세팅
@@ -46,6 +67,23 @@ jobs:
         python scripts/generate_stats.py
         python scripts/build_html.py
 
+    # 아래 두 단계는 남의 서버(유튜브·eloboard)를 읽는 일이라 가끔 실패할 수 있다.
+    # 실패해도 시트/페이지 갱신과 커밋은 그대로 진행되도록 계속 간다.
+    - name: 유튜브 채널 RSS로 영상 목록 갱신
+      continue-on-error: true
+      run: python scripts/sync_videos.py
+
+    - name: 전적 아카이브 증분 수집 + 상대전적 파일 만들기
+      continue-on-error: true
+      run: |
+        if [ ! -f data/eloboard.json ]; then
+          echo "ℹ️ data/eloboard.json 이 없습니다 - 전적 단계를 건너뜁니다."
+          echo "   (처음 한 번은 Bootstrap 워크플로우로 전체 수집을 돌려주세요)"
+          exit 0
+        fi
+        python scripts/sync_eloboard.py
+        python scripts/build_h2h.py
+
     - name: Node 환경 세팅
       uses: actions/setup-node@v4
       with:
@@ -62,38 +100,42 @@ jobs:
     - name: Puppeteer 설치
       run: npm install puppeteer
 
-    - name: 캘린더 이미지 캡처 (오늘의 일정 + 이달의 일정 통합, admin.html을 헤드리스 브라우저로 렌더링)
+    - name: 캘린더 이미지 캡처 (오늘의 일정 + 이달의 일정)
       env:
-        # admin.html이 GitHub API로 최신 일정(calendar.json)을 읽어올 때 쓰는
-        # 토큰 - 체크아웃 스텝과 동일한 PAT으로 통일한다.
+        # admin.html이 GitHub API로 최신 일정(calendar.json)을 읽어올 때 쓰는 토큰 -
+        # 체크아웃 스텝과 같은 PAT으로 통일한다.
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: node capture.js
 
-    - name: 변경된 데이터 및 HTML 깃허브에 배포
+    - name: 바뀐 것 커밋
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
-        # templates/assets/(style.css, app.js, calendar.js, mv-shared.js 등)는
-        # build_html.py가 파일명 그대로 docs/에 복사해준다. 여기서 파일명을 하나하나
-        # 나열하면(예전 방식) 나중에 새 정적 파일이 추가됐을 때 이 목록에 추가하는 걸
-        # 깜빡하기 쉽고, 실제로 mv-shared.js가 그렇게 빠져서 배포가 안 된 적이 있다 -
-        # 그래서 이 폴더의 실제 파일 목록을 그대로 따라가도록 바꿔 같은 문제가
-        # 다시 생기지 않게 한다.
-        # 페이지는 메뉴마다 실제 파일로 생성된다(docs/index.html + docs/<메뉴>/index.html).
-        # 메뉴가 늘어도 이 줄을 고칠 필요가 없도록 폴더 패턴으로 추가한다.
-        git add data/*.json docs/index.html docs/*/index.html docs/holidays.json docs/data/site_data.json docs/data/calendar.png
+
+        # templates/assets/(style.css, core.js, page-*.js 등)는 build_html.py가 파일명 그대로
+        # docs/로 복사한다. 여기서 파일명을 하나하나 나열하면 새 정적 파일이 추가됐을 때
+        # 목록에 넣는 걸 깜빡하기 쉬워서(실제로 mv-shared.js가 그렇게 빠진 적이 있다)
+        # 폴더의 실제 파일 목록을 그대로 따라간다.
+        git add -A data
+        git add docs/index.html docs/*/index.html docs/holidays.json
+        git add docs/data/site_data.json docs/data/calendar.png docs/data/videos.json
+        git add -A docs/data/h2h
         for f in templates/assets/*; do
           git add "docs/$(basename "$f")"
         done
-        # 디버그용: 뭐가 바뀌었는지(또는 안 바뀌었는지) 로그에 남겨서, 다음에 또
-        # "워크플로우는 도는데 반영이 안 됨" 문제가 생기면 여기 로그만 보고
-        # (1) 애초에 diff가 없었는지 (2) commit은 됐는데 push가 실패했는지 바로 구분한다.
+
+        # 무엇이 바뀌었는지(또는 안 바뀌었는지) 로그에 남긴다 - "워크플로우는 도는데 반영이
+        # 안 됨" 문제가 생기면 (1) 애초에 diff가 없었는지 (2) 커밋은 됐는데 push가 실패했는지
+        # 이 로그만 보고 구분할 수 있다.
         echo "── git status (add 이후) ──"
         git status --short
+
         if git diff --staged --quiet; then
-          echo "ℹ️ 스테이징된 변경사항이 없습니다 (캡쳐/데이터가 이전과 동일) - 커밋을 건너뜁니다."
-        else
-          git commit -m "🚀 통계 웹페이지 자동 업데이트"
-          echo "── git push ──"
-          git push
+          echo "ℹ️ 바뀐 내용이 없습니다 - 커밋을 건너뜁니다."
+          exit 0
         fi
+
+        git commit -m "🚀 사이트 자동 업데이트"
+        # 어드민 저장 등 다른 커밋이 먼저 들어와 있으면 그 위에 다시 얹는다.
+        git pull --rebase
+        git push
