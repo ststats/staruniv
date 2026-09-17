@@ -1,6 +1,6 @@
 /* =============================================================================
    스타대학 style.css
-   구성: 토큰 → 기본 → 공통 레이아웃 → 공용 부품 → 사이드바 → 페이지별 → 여러 부품 덮어쓰기 → 네이비/검정 면
+   구성: 토큰 → 기본 → 공통 레이아웃 → 공용 부품 → 사이드바 → 페이지별 → 네이비/검정 면
    다크 모드는 html[data-theme="dark"]가 1번 토큰을 바꿔 끼우고, 토큰으로 안 되는 곳만 부품 옆에 다크 규칙을 둔다.
    ============================================================================= */
 
@@ -44,6 +44,7 @@
     --color-draw: #868e96;
     --color-ink: #0b1220;
     --color-badge-format: #5a9ea6;
+    --color-badge-role-text: #fff;
     --color-race-t: #1976d2;
     --color-race-z: #7b1fa2;
     --color-race-p: #f57f17;
@@ -91,8 +92,16 @@
     --radius-card: 0px;
     --shadow-card: none;
     --shadow-card-hover: 0 10px 22px rgba(24, 63, 130, 0.13);
-    --notch-sm: 7px;
-    --notch-md: 14px;
+    /* 오른쪽 위를 N px 잘라낸 모서리. 카드 14 · 사이드바 줄 7 · 배지와 버튼 4~8 · 작은 칩 3 */
+    --cut-3: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
+    --cut-4: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    --cut-5: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    --cut-6: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    --cut-7: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    --cut-8: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    --cut-9: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+    --cut-12: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    --cut-14: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
 
     /* 크기: 상단바 · 선택 바 · 스크롤바 · 목록 높이 */
     --scroll-gutter: 10px;
@@ -144,6 +153,10 @@ html[data-theme="dark"] {
 
     /* 강조 · 승패 · 종족 · 배지 */
     --color-badge-format: #336a71;
+    --color-badge-role-text: #a9c7ff;
+    --logo-accent: #3d82ff;          /* 로고 "대학": 검은 바탕에서 캄몬 파랑이 어둡게 보여 한 단계 밝힘 */
+    --title-line: var(--color-border-strong);   /* 작은 섹션 제목 밑줄 */
+    --mv-chip-hover: var(--color-primary-tint-strong);   /* 멀티뷰어 멤버 칩 호버 */
     --color-primary: #3b82ff;
     --color-primary-deep: #2a6cf0;
     --color-primary-tint: #0f1d36;
@@ -271,7 +284,7 @@ a {
     overflow: hidden;
     border-radius: 0;
     border: 0;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 
 .modal-header {
@@ -413,7 +426,7 @@ a {
     overflow: visible;
     align-items: stretch;
     max-width: 100%;
-    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+    clip-path: var(--cut-9);
 }
 
 .sub-tab {
@@ -426,16 +439,16 @@ a {
     font-size: 13px;
     font-weight: 600;
     justify-content: center;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    clip-path: var(--cut-8);
     background: var(--panel-control);
     color: var(--color-text-sub);
 }
 .sub-tab.active {
     border: 1px solid var(--color-primary);
     font-weight: 700;
-    clip-path: polygon(0 0, calc(100% - var(--notch-sm)) 0, 100% var(--notch-sm), 100% 100%, 0 100%);
+    clip-path: var(--cut-7);
 }
-.sub-tab.active:hover { background: var(--color-primary) !important; }
+.sub-tab.active:hover { background: var(--color-primary); }
 .sub-tab:hover {
     background: var(--color-primary-tint);
     color: var(--color-primary);
@@ -520,7 +533,6 @@ a {
     align-self: flex-start;
     margin-top: 22px;
 }
-html[data-theme="dark"] .page-header .sub-tab.active { color: #17191f !important; }
 .page-header .sub-tab:hover:not(.active) {
     background: rgba(255, 255, 255, 0.2);
     color: #fff;
@@ -552,6 +564,7 @@ html[data-theme="dark"] .page-header .sub-tab.active { color: #17191f !important
     font-weight: 700;
     align-items: baseline;
     flex-wrap: wrap;
+    border-bottom: 1px solid var(--color-border);
 }
 .section-title-sm {
     font-weight: 800;
@@ -561,11 +574,10 @@ html[data-theme="dark"] .page-header .sub-tab.active { color: #17191f !important
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--title-line, var(--color-border));
     font-size: 14px;
     flex-wrap: wrap;
 }
-html[data-theme="dark"] .section-title-sm { border-color: var(--color-border-strong); }
 .section-title.section-title-spaced { margin-top: 32px; }
 .section-title-sm[data-en]::before {
     content: attr(data-en);
@@ -590,23 +602,18 @@ html[data-theme="dark"] .section-title-sm { border-color: var(--color-border-str
     letter-spacing: 0.16em;
     text-transform: uppercase;
 }
-html[data-theme="dark"] .section-title { border-color: var(--color-border-strong); }
 .section-title .title-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
     margin-left: auto;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    clip-path: var(--cut-4);
     min-height: 20px;
     padding: 0 8px;
     font-family: "Chakra Petch", "Pretendard", sans-serif;
     font-size: 10px;
     color: #fff;
-}
-.section-title,
-html[data-theme="dark"] .section-title {
-    border-bottom: 1px solid var(--color-border);
 }
 .section-title .section-title-label {
     position: relative;
@@ -625,10 +632,7 @@ html[data-theme="dark"] .section-title {
     pointer-events: none;
 }
 
-.logo-accent { color: var(--panel-accent); }
-
-/* 로고 "대학": 검은 바탕에서는 같은 캄몬 파랑이 어둡게 보여 다크 모드만 한 단계 밝힌다. */
-html[data-theme="dark"] .logo-accent { color: #3d82ff; }
+.logo-accent { color: var(--logo-accent, var(--panel-accent)); }
 
 .theme-toggle {
     color: var(--panel-muted);
@@ -638,7 +642,7 @@ html[data-theme="dark"] .logo-accent { color: #3d82ff; }
     display: inline-flex;
     align-items: center;
     padding: 2px;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    clip-path: var(--cut-6);
     background: var(--color-bg-subtle);
 }
 .theme-toggle:hover { color: var(--panel-text); }
@@ -650,7 +654,7 @@ html[data-theme="dark"] .logo-accent { color: #3d82ff; }
     border: 0;
     background: transparent;
     font-size: 13px;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    clip-path: var(--cut-4);
     color: var(--color-text-sub);
 }
 
@@ -677,7 +681,7 @@ html[data-theme="dark"] .logo-accent { color: #3d82ff; }
     align-items: center;
     justify-content: center;
     gap: 3px;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    clip-path: var(--cut-4);
 }
 .nav-drawer-btn span {
     display: block;
@@ -801,11 +805,6 @@ html[data-theme="dark"] .logo-accent { color: #3d82ff; }
     margin-bottom: var(--space-trailer);
 }
 
-.clean-card:hover,
-.member-card:hover,
-.tool-card:hover {
-    border-color: #a9c6ff;
-}
 
 .tag-badge {
     font-weight: 700;
@@ -817,7 +816,7 @@ html[data-theme="dark"] .logo-accent { color: #3d82ff; }
     height: 20px;
     padding: 0 8px;
     font-size: 11px;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    clip-path: var(--cut-5);
 }
 .tag-badge.race-badge {
     padding: 0;
@@ -825,7 +824,6 @@ html[data-theme="dark"] .logo-accent { color: #3d82ff; }
     width: 20px;
     height: 20px;
 }
-html[data-theme="dark"] .tag-badge:not(.race-badge):not(.tier-badge) { color: #a9c7ff; }
 .tag-badge.race-badge.race-T { background: var(--color-race-t); }
 .tag-badge.race-badge.race-Z { background: var(--color-race-z); }
 .tag-badge.race-badge.race-P {
@@ -833,16 +831,14 @@ html[data-theme="dark"] .tag-badge:not(.race-badge):not(.tier-badge) { color: #a
     color: #141821;
 }
 .tag-badge.role-badge {
-    color: #fff;
+    color: var(--color-badge-role-text);   /* 바탕색은 page-members.js가 직책별로 인라인으로 준다 */
     font-family: "Pretendard", sans-serif;
 }
-.tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge),
-html[data-theme="dark"] .tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge) {
+.tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge) {
     background: var(--color-badge-format);
     color: #fff;
 }
-.tag-badge.tier-badge,
-html[data-theme="dark"] .tag-badge.tier-badge {
+.tag-badge.tier-badge {
     background: var(--color-tier-badge);
     color: #fff;
 }
@@ -854,7 +850,7 @@ html[data-theme="dark"] .tag-badge.tier-badge {
     font-weight: 800;
     line-height: 1;
     color: #fff;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    clip-path: var(--cut-5);
     width: 34px;
     height: 18px;
     font-size: 10px;
@@ -869,7 +865,7 @@ html[data-theme="dark"] .stat-table tbody td {
     background: var(--color-card);
     border-color: var(--color-border);
 }
-html[data-theme="dark"] .stat-table-sticky-col { background: var(--color-card); }
+html[data-theme="dark"] .stat-table tbody .stat-table-sticky-col { background: var(--color-card); }
 html[data-theme="dark"] .stat-table tbody tr:hover .stat-table-sticky-col,
 html[data-theme="dark"] .stat-table tbody tr:hover td {
     background: var(--color-primary-tint);
@@ -1048,7 +1044,18 @@ html[data-theme="dark"] .stat-table tbody tr:hover td {
 .soop-logo-icon,
 .team-logo-fallback {
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
+    clip-path: var(--cut-3);
+}
+/* 사람 아바타는 원형. 사진이 없을 때 쓰는 대체 글자 칸은 .team-logo-fallback을 같이 달기 때문에 그 뒤에 둔다 */
+.home-notice-avatar,
+.live-card-avatar,
+.live-card-avatar-ring,
+.mv-chip-avatar,
+.news-post-avatar,
+.player-avatar-sm,
+.selection-layout > .avatar-bar .avatar-select-fallback,
+.tier-card-avatar {
+    border-radius: 50%;
 }
 
 .chevron-rotatable { transition: transform 0.2s; }
@@ -1073,7 +1080,7 @@ a.btn-view-all {
 
 .badge-win { background-color: var(--color-primary); }
 
-.head-stat { clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%); }
+.head-stat { clip-path: var(--cut-8); }
 .head-stat-label {
     font-family: "Chakra Petch", sans-serif;
     font-weight: 600;
@@ -1158,12 +1165,39 @@ a.btn-view-all {
     gap: var(--bar-gap);
     padding: var(--bar-pad-y) var(--bar-pad-x);
 }
-.avatar-bar,
+.avatar-bar { background: var(--color-card); }
+
+/* 카드 공통: 테두리 없이 옅은 그림자, 호버 때 바탕만 한 단계 바뀐다.
+   네이비 면 안의 카드는 면이 --color-card · --color-card-hover를 네이비로 바꿔서 따라간다. */
 .clean-card,
 .live-broadcast-card,
+.member-card,
 .news-post-card,
+.tier-card,
 .tool-card {
+    border: 0;
     background: var(--color-card);
+    box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
+}
+.clean-card:hover,
+.live-broadcast-card:hover,
+.member-card:hover,
+.tool-card:hover {
+    background-color: var(--color-card-hover);
+}
+.news-post-card:hover,
+.tier-card:hover {
+    background-color: var(--color-primary-tint);
+}
+.live-broadcast-card:hover,
+.news-post-card:hover {
+    box-shadow: var(--shadow-card-hover);
+}
+.home-notice-card,
+.mv-chip-box,
+.mv-chip-row,
+.mv-order-row {
+    border: 0;
 }
 .avatar-bar-tools .avatar-select-all { transition: background 0.15s, box-shadow 0.15s; }
 .avatar-bar-tools .avatar-select-all .avatar-select-fallback {
@@ -1186,7 +1220,7 @@ a.btn-view-all {
 .tier-bar,
 .tier-card,
 .tool-card {
-    clip-path: polygon(0 0, calc(100% - var(--notch-md)) 0, 100% var(--notch-md), 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 .avatar-bar,
 .donut-text,
@@ -1337,7 +1371,7 @@ a.btn-view-all {
 }
 .selection-layout > .avatar-bar .avatar-select-all {
     border-bottom: 1px solid var(--panel-line);
-    clip-path: polygon(0 0, calc(100% - var(--notch-sm)) 0, 100% var(--notch-sm), 100% 100%, 0 100%) !important;
+    clip-path: var(--cut-7) !important;
 }
 .selection-layout > .avatar-bar .avatar-selector-scroll {
     width: 100%;
@@ -1397,7 +1431,7 @@ a.btn-view-all {
     background: var(--color-card);
     grid-template-columns: 1fr 1fr;
     gap: 2px;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    clip-path: var(--cut-8);
 }
 .selection-layout > .tier-bar .tier-bar-list {
     padding: 7px 0;
@@ -1420,15 +1454,7 @@ a.btn-view-all {
 .selection-layout > .avatar-bar .avatar-select-item,
 .selection-layout > .tier-bar .tier-bar-item,
 .selection-layout > .tier-bar .tier-scope-btn {
-    clip-path: polygon(0 0, calc(100% - var(--notch-sm)) 0, 100% var(--notch-sm), 100% 100%, 0 100%);
-}
-html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
-html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-tier,
-html[data-theme="dark"] .selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-count,
-html[data-theme="dark"] .selection-layout > .tier-bar .tier-bar-item.active,
-html[data-theme="dark"] .selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
-html[data-theme="dark"] .selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
-    color: #17191f !important;
+    clip-path: var(--cut-7);
 }
 
 @media (max-width: 920px) {
@@ -1641,10 +1667,7 @@ html[data-theme="dark"] .selection-layout > .tier-bar .tier-scope-btn.on .tier-s
     gap: 12px;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
-.live-broadcast-card:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-3px);
-}
+.live-broadcast-card:hover { transform: translateY(-3px); }
 .live-broadcast-card {
     overflow: hidden;
     transition: box-shadow 0.15s, transform 0.15s;
@@ -1691,7 +1714,7 @@ html[data-theme="dark"] .selection-layout > .tier-bar .tier-scope-btn.on .tier-s
     height: 20px;
     display: inline-flex;
     align-items: center;
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    clip-path: var(--cut-4);
     position: absolute;
     right: 9px;
 }
@@ -1772,13 +1795,12 @@ html[data-theme="dark"] .selection-layout > .tier-bar .tier-scope-btn.on .tier-s
     width: 36px;
     height: 36px;
 }
-html[data-theme="dark"] .home-notice-card:hover { background: var(--color-bg-subtle); }
 .home-notice-list {
     display: flex;
     flex-direction: column;
     gap: 0;
     overflow: hidden;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 .home-notice-card:hover { background: var(--color-bg-subtle); }
 .home-notice-main {
@@ -1845,7 +1867,7 @@ html[data-theme="dark"] .home-notice-card:hover { background: var(--color-bg-sub
     object-fit: cover;
     background: var(--color-bg-subtle);
     flex-shrink: 0;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    clip-path: var(--cut-6);
 }
 a.home-notice-card,
 a.home-notice-card:hover {
@@ -1909,7 +1931,7 @@ a.home-notice-card:hover {
     color: var(--panel-text);
     font-size: 18px;
     line-height: 1;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    clip-path: var(--cut-5);
 }
 .home-carousel-dots {
     display: flex;
@@ -2041,6 +2063,12 @@ a.home-notice-card:hover {
 }
 
 
+.home-carousel-slide > * {
+    position: relative;
+    z-index: 1;
+}
+
+
 /* =============================================================================
    7. 일정 (캘린더)
    ============================================================================= */
@@ -2091,7 +2119,7 @@ a.home-notice-card:hover {
 }
 .cal-calendar-area > .clean-card,
 .cal-sidebar .clean-card {
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 .cal-calendar-scroll-content {
     min-width: 770px;
@@ -2153,7 +2181,7 @@ a.home-notice-card:hover {
 .cal-cell-event {
     display: flex;
     flex-direction: column;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+    clip-path: var(--cut-5) !important;
     --ev-accent: var(--ev-accent-l);
     --ev-bg: var(--ev-bg-l);
     --ev-hover: var(--ev-hover-l);
@@ -2268,7 +2296,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    clip-path: var(--cut-6);
     padding: 4px 9px 4px 4px;
     background: var(--color-bg-subtle);
 }
@@ -2323,7 +2351,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: var(--calendar-outside-text);
 }
 .cal-day-cell.today .cal-day-number {
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    clip-path: var(--cut-4);
     color: #fff;
 }
 .cal-day-cell:hover { background: var(--color-primary-tint); }
@@ -2357,8 +2385,8 @@ html[data-theme="dark"] .cal-longterm-bar {
 .cal-month-bar .cal-nav-btn {
     width: 32px;
     height: 32px;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-    background: rgba(255, 255, 255, 0.12) !important;
+    clip-path: var(--cut-5);
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
 }
 .cal-month-bar .cal-nav-badge {
@@ -2542,10 +2570,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     opacity: 1;
     pointer-events: auto;
 }
-.news-post-card:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-1px);
-}
+.news-post-card:hover { transform: translateY(-1px); }
 .news-post-header {
     display: flex;
     align-items: center;
@@ -2698,13 +2723,9 @@ html[data-theme="dark"] .cal-longterm-bar {
     overflow: hidden;
     padding: 0 0 12px;
     text-align: center;
-    background: var(--color-card);
     padding-bottom: 13px;
 }
-.member-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--color-border-hover);
-}
+.member-card:hover { transform: translateY(-2px); }
 .member-card.former { opacity: 0.55; }
 .member-card.former:hover { opacity: 0.85; }
 .member-card-name {
@@ -2741,6 +2762,8 @@ html[data-theme="dark"] .cal-longterm-bar {
     height: 52px;
     border-radius: 50%;
 }
+/* 멤버 카드 본문은 티어 카드 본문(.tier-card-body)을 같이 쓰고 여백만 바꾼다 */
+.member-card .member-card-body { padding: 10px 12px 0; }
 .member-card-body .member-card-tags { margin: 6px 0 0; }
 
 .news-date-group-label {
@@ -2894,7 +2917,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 
 #news-past-list .news-date-group-label + .home-notice-card,
 #news-past-list > .home-notice-card:first-child {
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    clip-path: var(--cut-12);
 }
 
 @media (max-width: 767.98px) {
@@ -2909,7 +2932,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     .member-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     .selection-content #news-feed-content.news-feed-mobile .home-notice-card {
-        clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+        clip-path: var(--cut-12);
     }
 }
 
@@ -2918,7 +2941,6 @@ html[data-theme="dark"] .cal-longterm-bar {
    9. 전적
    ============================================================================= */
 .stat-card-box:hover {
-    box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
     border: 0;
 }
@@ -2963,7 +2985,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     background: var(--color-card);
 }
 .stat-card-box .wl {
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    clip-path: var(--cut-5);
     display: flex;
     height: 20px;
     overflow: hidden;
@@ -3010,7 +3032,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 .stat-card-box:hover .stat-card-arrow { color: #fff; }
 
 .wl {
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    clip-path: var(--cut-5);
     display: flex;
     overflow: hidden;
     font-weight: 700;
@@ -3187,7 +3209,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     place-items: center;
     line-height: 1;
     background: transparent;
-    clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
+    clip-path: var(--cut-3);
     flex: 0 0 auto;
     min-width: 36px;
     padding: 0 9px;
@@ -3203,7 +3225,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 .record-recent-header .filter-nav {
     width: fit-content;
     max-width: 100%;
-    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    clip-path: var(--cut-5);
     height: 28px;
     padding: 3px;
     gap: 2px;
@@ -3217,8 +3239,8 @@ html[data-theme="dark"] .cal-longterm-bar {
 .record-recent-header .filter-item.active { font-weight: 700; }
 .record-recent-header .filter-item.active,
 .mv-order-focus[aria-pressed="true"] {
-    background: var(--select-on-light) !important;
-    color: #fff !important;
+    background: var(--select-on-light);
+    color: #fff;
 }
 
 .theme-toggle button.active,
@@ -3297,13 +3319,9 @@ html[data-theme="dark"] .cal-longterm-bar {
 
 .tier-card {
     overflow: hidden;
-    background: var(--color-card);
     transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s, filter 0.15s, opacity 0.15s;
 }
-.tier-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--color-border-hover);
-}
+.tier-card:hover { transform: translateY(-2px); }
 .tier-card-thumb {
     width: 100%;
     height: 100%;
@@ -3372,9 +3390,6 @@ html[data-theme="dark"] .cal-longterm-bar {
 .tier-card-team {
     justify-content: center;
 }
-.tier-card.edge-T { border-left: 3px solid var(--color-race-t) !important; }
-.tier-card.edge-Z { border-left: 3px solid var(--color-race-z) !important; }
-.tier-card.edge-P { border-left: 3px solid var(--color-race-p) !important; }
 
 .selection-layout > .tier-bar .tier-scope-btn {
     flex: none;
@@ -3439,10 +3454,6 @@ html[data-theme="dark"] .cal-longterm-bar {
 /* =============================================================================
    12. 도구 · 멀티뷰어 · 캄몬라이더
    ============================================================================= */
-html[data-theme="dark"] .mv-chip:not(.selected) { background: var(--color-bg-subtle); }
-html[data-theme="dark"] .mv-chip:not(.selected):hover {
-    background: var(--color-primary-tint-strong);
-}
 .mv-chip-box {
     background: var(--color-card);
     padding: 14px 18px;
@@ -3471,7 +3482,7 @@ html[data-theme="dark"] .mv-chip:not(.selected):hover {
 }
 .mv-chip:hover {
     border-color: var(--color-border-hover);
-    background: var(--color-primary-tint);
+    background: var(--mv-chip-hover, var(--color-primary-tint));
 }
 .mv-chip.selected { border: 0; }
 .mv-chip-avatar {
@@ -3509,7 +3520,7 @@ html[data-theme="dark"] .mv-chip:not(.selected):hover {
 .mv-chip-box .mv-quickadd { max-width: 280px; }
 .mv-chip-box,
 .mv-order-row {
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 html[data-theme="dark"] .mv-chip-box,
 html[data-theme="dark"] .mv-order-row {
@@ -3518,11 +3529,11 @@ html[data-theme="dark"] .mv-order-row {
 .mv-chip,
 .mv-order-item,
 .mv-quickadd {
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    clip-path: var(--cut-6);
 }
 .mv-chip-check,
 .mv-quickadd-btn {
-    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    clip-path: var(--cut-4);
 }
 .mv-chip.selected .mv-chip-avatar { background: rgba(255, 255, 255, 0.25); }
 .mv-chip-name {
@@ -3530,11 +3541,11 @@ html[data-theme="dark"] .mv-order-row {
     font-weight: 500;
 }
 .mv-chip.selected .mv-chip-name { font-weight: 700; }
-.mv-chip.selected:hover,
-html[data-theme="dark"] .mv-chip.selected:hover {
-    background: var(--select-on-light) !important;
+.mv-chip.selected:hover {
+    background: var(--select-on-light);
     filter: brightness(1.15);
 }
+html[data-theme="dark"] .mv-settings-panel .section-title { border-bottom: 1px solid var(--color-border); }
 .mv-chip.selected .mv-chip-live { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
 
 .tool-grid {
@@ -3571,7 +3582,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     height: 52px;
     overflow: hidden;
     background: #fff;
-    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    clip-path: var(--cut-7);
 }
 .tool-card-icon img {
     width: 28px;
@@ -3612,7 +3623,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     margin-bottom: 20px;
     display: grid;
     gap: 18px;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 .mv-console-tiles {
     gap: 9px;
@@ -3738,7 +3749,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 }
 .mv-run-btn,
 .mv-tile {
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    clip-path: var(--cut-8);
 }
 .mv-run-btn svg {
     width: 22px;
@@ -3863,7 +3874,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     padding: 7px 8px;
     background: var(--color-bg);
     border-left: 3px solid transparent;
-    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    clip-path: var(--cut-7);
 }
 .mv-order-detail.focus-target { background: var(--color-primary-tint); }
 .mv-order-position {
@@ -3918,7 +3929,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     color: var(--color-primary);
 }
 .mv-order-focus[aria-pressed="true"]:hover {
-    background: var(--color-primary-deep);
+    background: var(--select-on-light);   /* 눌린 상태는 호버 때도 같은 바탕 */
     color: #fff;
 }
 .mv-order-actions .mv-order-remove:hover {
@@ -3950,7 +3961,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     border: 1px solid var(--color-border);
     overflow: hidden;
     height: min(860px, max(420px, calc(100dvh - 64px - var(--space-page-bottom))));
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    clip-path: var(--cut-14);
 }
 .rider-stage iframe {
     display: block;
@@ -4063,74 +4074,7 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 
 
 /* =============================================================================
-   13. 여러 부품에 한꺼번에 거는 덮어쓰기 (카드 면 · 호버 · 숫자 글꼴 · 종족 엣지)
-   ============================================================================= */
-/* 여러 부품을 한 선택자 목록으로 묶어 덮어쓰는 규칙. 각 부품 자리(4~12번)에 있는 규칙보다
-   뒤에 있어야 이기므로 따로 모았다. 옮기거나 쪼갤 때는 명시도와 순서를 같이 확인할 것. */
-.clean-card,
-.clean-card:hover,
-.live-broadcast-card,
-.member-card,
-.member-card:hover,
-.news-post-card,
-.tier-card,
-.tier-card:hover,
-.tool-card,
-.tool-card:hover {
-    box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
-}
-.clean-card,
-.home-notice-card,
-.live-broadcast-card,
-.member-card,
-.mv-chip-box,
-.mv-chip-row,
-.mv-order-row,
-.news-post-card,
-.tier-card,
-.tool-card {
-    border: 0;
-}
-
-.home-notice-avatar,
-.live-card-avatar,
-.live-card-avatar-ring,
-.mv-chip-avatar,
-.news-post-avatar,
-.player-avatar-sm,
-.selection-layout > .avatar-bar .avatar-select-fallback,
-.tier-card-avatar {
-    border-radius: 50%;
-}
-
-.live-broadcast-card:hover,
-.member-card:hover,
-.news-post-card:hover,
-.tier-card:hover,
-.tool-card:hover {
-    border: 0;
-    background: var(--color-primary-tint);
-}
-
-.member-card.is-live { background: var(--color-card); }
-
-.clean-card:hover,
-.member-card:hover,
-.tool-card:hover,
-.live-broadcast-card:hover {
-    background-color: var(--color-card-hover);
-}
-
-.member-card-body { padding: 10px 12px 0; }
-
-.home-carousel-slide > * {
-    position: relative;
-    z-index: 1;
-}
-
-
-/* =============================================================================
-   14. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
+   13. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
    ============================================================================= */
 /* 네이비(다크 모드는 검정) 면. 면 안에서는 --panel-* · --color-* 토큰을 흰 계열로 바꿔
    안쪽 부품이 따로 다크 규칙 없이 따라오게 한다.
@@ -4138,32 +4082,34 @@ html[data-theme="dark"] .mv-chip.selected:hover {
    - 네이비 면 위(히어로 탭 · 사이드바 · 달력 이동 버튼): 흰 바탕 + 네이비 글씨
    - 흰 면 위(최근 전적 필터 · 테마 버튼 · 멀티뷰어 멤버 칩): --select-on-light 바탕 + 흰 글씨
      (다크 모드는 네이비가 바탕에 묻히므로 파랑) */
-.selection-layout > .tier-bar .tier-bar-item.active {
-    border-left-color: #fff;
-    background: #fff;
-}
-.selection-layout > .avatar-bar .avatar-select-item.active {
-    border-left-color: #fff;
-    background: #fff !important;
-    color: var(--navy) !important;
-}
-.selection-layout > .tier-bar .tier-scope-btn.on {
+/* 네이비 면 위 선택 표시: 흰 바탕 + --navy 글씨 (다크 모드는 --navy가 검정이라 검정 글씨) */
+.selection-layout > .avatar-bar .avatar-select-item.active,
+.selection-layout > .tier-bar .tier-bar-item.active,
+.selection-layout > .tier-bar .tier-scope-btn.on,
+.page-header .sub-tab.active,
+.home-carousel .sub-tab.active,
+.cal-month-bar .cal-nav-btn:hover {
     background: #fff;
     color: var(--navy);
 }
-.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
-.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-count,
+.selection-layout > .avatar-bar .avatar-select-item.active,
 .selection-layout > .tier-bar .tier-bar-item.active {
-    color: var(--navy) !important;
+    border-left-color: #fff;
 }
+.page-header .sub-tab.active,
+.home-carousel .sub-tab.active {
+    border-color: #fff;
+}
+.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
 .selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-tier,
+.selection-layout > .avatar-bar .avatar-select-all.active .avatar-select-count,
 .selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
 .selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
     color: var(--navy);
 }
 
 .home-carousel .home-hero-links a {
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    clip-path: var(--cut-8);
     border: 0;
     background: #fff;
     color: var(--navy);
@@ -4172,11 +4118,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     display: block;
     font-style: normal;
     color: var(--navy-accent);
-}
-.home-carousel .sub-tab.active {
-    background: #fff !important;
-    color: var(--navy) !important;
-    border-color: #fff !important;
 }
 
 .head-plate-label {
@@ -4200,10 +4141,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .cal-month-bar .cal-month-year { color: var(--navy-on-muted); }
-.cal-month-bar .cal-nav-btn:hover {
-    background: #fff !important;
-    color: var(--navy) !important;
-}
 
 .page-header,
 .home-carousel {
@@ -4222,40 +4159,19 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     background-color: var(--navy);
     background-image: var(--navy-pattern);
 }
-.page-header .sub-tab.active {
-    background: #fff !important;
-    color: var(--navy);
-    border-color: #fff !important;
-}
 
+
+/* 네이비 박스 면: 요약 박스 · 프로필 머리 · 사이드바 · 멀티뷰어 설정칸 · 오늘 일정 카드.
+   카드 토큰(--color-card · --color-card-hover)까지 네이비로 바꿔서 .clean-card 호버도 면 색을 유지한다. */
 .stat-card-box,
 .head-plate,
-.profile-head {
-    --panel-bg: var(--navy);
-    --panel-text: #fff;
-    --panel-muted: var(--navy-on-muted);
-    --panel-accent: var(--navy-accent);
-    --panel-control: rgba(255, 255, 255, 0.12);
-    --panel-line: rgba(255, 255, 255, 0.16);
-    --color-card: var(--navy);
-    --color-text-strong: #fff;
-    --color-text-main: #fff;
-    --color-text-dark: #fff;
-    --color-text-sub: var(--navy-on-muted);
-    --color-text-muted: var(--navy-on-muted);
-    --color-border: rgba(255, 255, 255, 0.14);
-    --color-bg-subtle: rgba(255, 255, 255, 0.12);
-    --color-donut-track: rgba(255, 255, 255, 0.16);
-    color: #fff;
-    background-color: var(--navy) !important;
-    background-image: var(--navy-pattern);
-}
-
+.profile-head,
 #statContent .clean-card:has(.donut-wrap),
 .mv-console,
 .selection-layout > .avatar-bar,
 .selection-layout > .tier-bar,
 #page-schedule .cal-today-card-wrapper > .cal-day-card {
+    --color-card-hover: var(--navy);
     --panel-bg: var(--navy);
     --panel-text: #fff;
     --panel-muted: var(--navy-on-muted);
@@ -4297,8 +4213,6 @@ html[data-theme="dark"] .mv-chip.selected:hover {
     position: relative;
     overflow: hidden;
     aspect-ratio: 16 / 9;
-    background-color: var(--navy) !important;
-    background-image: var(--navy-pattern) !important;
 }
 
 #page-schedule .cal-today-card-wrapper .cal-card-time { color: var(--navy-accent) !important; }
@@ -4319,11 +4233,11 @@ html[data-theme="dark"] .mv-chip.selected:hover {
 .stat-table thead th {
     font-family: "Chakra Petch", "Pretendard", sans-serif;
     text-transform: uppercase;
-    background-color: var(--color-head-bg) !important;
+    background-color: var(--color-head-bg);
     color: var(--color-head-text);
-    border: 0 !important;
+    border: 0;
     letter-spacing: 0;
-    background-image: var(--navy-pattern) !important;
+    background-image: var(--navy-pattern);
     background-attachment: fixed;
 }
 
