@@ -743,6 +743,18 @@ body {
         <button id="videoChannelCancel" class="admin-submit-btn admin-cancel-btn" style="display:none;" onclick="resetVideoChannelForm()">수정 취소</button>
     </div>
 
+    <div class="section-title"><span class="section-title-label">영상 숨기기</span><span class="title-count" id="videoHiddenCount"></span></div>
+    <div class="clean-card p-4 mb-4">
+        <p class="admin-hist-note">사이트 팬튜브 목록에서 빼고 싶은 영상을 고릅니다. 지워지는 게 아니라 안 보이게만 하며, 언제든 되돌릴 수 있습니다.</p>
+        <div id="videoHiddenList" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="text" id="videoHideSearch" placeholder="제목으로 찾기 (비우면 최신 영상)" oninput="renderVideoHideSearch()">
+            <input type="text" id="videoHideUrl" placeholder="유튜브 링크로 바로 숨기기 (선택)">
+        </div>
+        <button class="admin-submit-btn" onclick="hideVideoByUrl()">링크로 숨기기</button>
+        <div id="videoHideList" class="admin-tool-list" style="margin-top:12px;"></div>
+    </div>
+
     <div class="section-title"><span class="section-title-label">보자 (추천 영상)</span><span class="title-count" id="videoPickCount"></span></div>
     <div class="clean-card p-4">
         <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다.</p>
@@ -1784,7 +1796,7 @@ body {
     // 여기서는 "무엇을 모을지"만 저장한다. 실제 영상 목록(docs/data/videos.json)은
     // scripts/sync_videos.py가 GitHub Actions에서 유튜브 RSS로 만든다(이 파일이 바뀌면 바로, 그 뒤 3시간마다).
     const VIDEO_CONFIG_PATH = 'docs/data/video_channels.json';
-    let videoConfig = { channels: [], picks: [] };
+    let videoConfig = { channels: [], picks: [], hidden: [] };   // hidden: 숨길 영상 id
     let videoSynced = { channels: {}, videos: [], picks: [] };   // 사이트에 올라가 있는 videos.json(상태 표시용)
     let videoConfigLoaded = false;
     let videoEditingChannel = -1;
@@ -1870,9 +1882,79 @@ body {
                 </div>`;
         }).join('') : empty('추천 영상이 없습니다.');
 
+        renderVideoHidden();
+        renderVideoHideSearch();
         document.getElementById('videoChannelCount').textContent = channels.length ? `${channels.length}개` : '';
         document.getElementById('videoPickCount').textContent = picks.length ? `${picks.length}개` : '';
     }
+
+    // ----- 영상 숨기기 -----
+    const videoHiddenSet = () => new Set(videoConfig.hidden || []);
+
+    function videoRowHtml(v, hidden) {
+        const title = v.title || v.id;
+        const ch = (videoSynced.channels || {})[v.channel];
+        const sub = [ch && (ch.name || ch.title), (v.published || '').slice(0, 10).replace(/-/g, '.'),
+                     v.views ? `조회수 ${Number(v.views).toLocaleString('ko-KR')}` : '', v.short ? '쇼츠' : '']
+                    .filter(Boolean).join(' · ');
+        return `
+            <div class="admin-tool-row admin-video-row">
+                <img class="admin-video-thumb" src="https://i.ytimg.com/vi/${escapeHTML(v.id)}/mqdefault.jpg" alt="">
+                <div class="admin-tool-info">
+                    <div class="admin-tool-name">${escapeHTML(title)}</div>
+                    <div class="admin-tool-url">${escapeHTML(sub)}</div>
+                </div>
+                <a class="edit-btn" href="https://www.youtube.com/watch?v=${escapeHTML(v.id)}" target="_blank" rel="noopener">보기</a>
+                ${hidden
+                    ? `<button class="edit-btn" onclick="unhideVideo('${escapeHTML(v.id)}')">다시 보이기</button>`
+                    : `<button class="delete-btn" onclick="hideVideo('${escapeHTML(v.id)}')">숨기기</button>`}
+            </div>`;
+    }
+
+    function renderVideoHidden() {
+        const box = document.getElementById('videoHiddenList');
+        if (!box) return;
+        const ids = videoConfig.hidden || [];
+        const byId = new Map((videoSynced.videos || []).map(v => [v.id, v]));
+        box.innerHTML = ids.length
+            ? ids.map(id => videoRowHtml(byId.get(id) || { id, title: '(목록에 없는 영상)' }, true)).join('')
+            : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">${videoConfigLoaded ? '숨긴 영상이 없습니다.' : 'GitHub 연동 후 불러옵니다.'}</div>`;
+        document.getElementById('videoHiddenCount').textContent = ids.length ? `${ids.length}개` : '';
+    }
+
+    // 검색 결과(또는 최신 영상) 30개까지. 이미 숨긴 것은 위 목록에 있으니 여기서는 뺀다.
+    function renderVideoHideSearch() {
+        const box = document.getElementById('videoHideList');
+        if (!box) return;
+        const q = (document.getElementById('videoHideSearch').value || '').trim().toLowerCase();
+        const hidden = videoHiddenSet();
+        const list = (videoSynced.videos || [])
+            .filter(v => !hidden.has(v.id))
+            .filter(v => !q || String(v.title || '').toLowerCase().includes(q))
+            .slice(0, 30);
+        box.innerHTML = list.length
+            ? list.map(v => videoRowHtml(v, false)).join('')
+            : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">${(videoSynced.videos || []).length ? '찾는 영상이 없습니다.' : '아직 불러온 영상이 없습니다(영상 갱신 후 표시됩니다).'}</div>`;
+    }
+
+    const hideVideo = id => {
+        if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요.');
+        if (!videoConfig.hidden.includes(id)) videoConfig.hidden.unshift(id);
+        renderVideoAdmin();
+    };
+
+    const unhideVideo = id => {
+        videoConfig.hidden = (videoConfig.hidden || []).filter(x => x !== id);
+        renderVideoAdmin();
+    };
+
+    const hideVideoByUrl = () => {
+        const input = document.getElementById('videoHideUrl');
+        const id = videoIdFromUrl(input.value);
+        if (!id) return alert('유튜브 영상 링크를 확인해주세요. (watch · youtu.be · shorts 주소)');
+        input.value = '';
+        hideVideo(id);
+    };
 
     const moveVideoRow = (kind, idx, dir) => {
         if (!videoConfigLoaded) return;
@@ -1982,10 +2064,11 @@ body {
                 videoConfig = {
                     channels: Array.isArray(parsed.channels) ? parsed.channels.filter(ch => ch && ch.url) : [],
                     picks: Array.isArray(parsed.picks) ? parsed.picks.filter(p => p && p.url) : [],
+                    hidden: (Array.isArray(parsed.hidden) ? parsed.hidden : []).filter(id => /^[A-Za-z0-9_-]{11}$/.test(id)),
                 };
                 videoConfigLoaded = true;
             } else if (res.status === 404) {
-                videoConfig = { channels: [], picks: [] };
+                videoConfig = { channels: [], picks: [], hidden: [] };
                 videoConfigLoaded = true;
             } else {
                 throw new Error(`영상 설정 불러오기 실패 (HTTP ${res.status})`);

@@ -2,12 +2,13 @@
 
 [입력] docs/data/video_channels.json (어드민 '영상 관리'에서 편집)
     { "channels": [ { "url": "https://www.youtube.com/@handle", "name": "표시 이름(선택)" } ],
-      "picks":    [ { "url": "https://youtu.be/...", "title": "(선택)", "note": "한 줄 설명", "addedAt": "YYYY-MM-DD" } ] }
+      "picks":    [ { "url": "https://youtu.be/...", "title": "(선택)", "note": "한 줄 설명", "addedAt": "YYYY-MM-DD" } ],
+      "hidden":   [ "영상id" ] }        # 사이트에서 감출 영상 (지우지 않고 표시만 한다)
 
 [출력] docs/data/videos.json
     { "updatedAt": "...",
       "channels": { "<등록 url>": { "id": "UC...", "title", "name", "thumb", "url" } },
-      "videos":   [ { "id", "channel": "<등록 url>", "title", "published", "views", "thumb", "short" } ],
+      "videos":   [ { "id", "channel": "<등록 url>", "title", "published", "views", "thumb", "short", "hidden"(선택) } ],
       "picks":    [ { "id", "title", "note", "addedAt", "author", "thumb", "short" } ] }
 
 [두 가지 방식]
@@ -391,6 +392,19 @@ def main():
             'addedAt': str(p.get('addedAt', '')).strip(),
             'thumb': f'https://i.ytimg.com/vi/{vid}/hqdefault.jpg',
         })
+
+    # 어드민에서 감춘 영상은 목록에서 빼지 않고 표시만 해 둔다(되돌리기가 바로 되도록).
+    hidden = {str(i) for i in (config.get('hidden') or []) if re.fullmatch(r'[A-Za-z0-9_-]{11}', str(i))}
+    for v in kept:
+        if v['id'] in hidden:
+            v['hidden'] = True
+        else:
+            v.pop('hidden', None)
+    for p_ in picks:
+        if p_['id'] in hidden:
+            p_['hidden'] = True
+        else:
+            p_.pop('hidden', None)
 
     result = {
         'updatedAt': dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M'),

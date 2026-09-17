@@ -2,9 +2,9 @@
  * 영상 페이지: 팬튜브(등록 채널 최신 영상) + 보자(어드민 추천). (core.js → media-lightbox.js → 이 파일)
  * URL: /video/ (팬튜브), /video/?view=pick (보자), 채널 필터는 ?ch=<채널 번호>
  *
- * 데이터는 data/videos.json 하나다. scripts/sync_videos.py가 GitHub Actions에서 3시간마다
- * 유튜브 RSS(API 키 없음)를 읽어 쌓는다. 형식은 그 파일 머리 주석 참고.
- * RSS에는 영상 길이가 없어서 카드에 길이는 표시하지 않는다.
+ * 데이터는 data/videos.json 하나다. scripts/sync_videos.py가 GitHub Actions에서 주기적으로
+ * 유튜브에서 받아 쌓는다(API 키가 있으면 과거 영상까지, 없으면 RSS 최신 15개). 형식은 그 파일 머리 주석 참고.
+ * hidden이 붙은 영상은 어드민이 감춘 것이라 화면에서 뺀다. 카드에 영상 길이는 표시하지 않는다.
  */
 
 const VIDEO_DATA_URL = 'data/videos.json';
@@ -233,9 +233,10 @@ bootPage(async () => {
     const data = await loadVideoData();
     VideoState.data = {
         channels: data.channels || {},
-        videos: (Array.isArray(data.videos) ? data.videos : []).filter(v => v && /^[A-Za-z0-9_-]{11}$/.test(v.id))
+        // hidden은 어드민이 감춘 영상이다(파일에는 남아 있고 화면에서만 뺀다)
+        videos: (Array.isArray(data.videos) ? data.videos : []).filter(v => v && !v.hidden && /^[A-Za-z0-9_-]{11}$/.test(v.id))
             .sort((a, b) => String(b.published || '').localeCompare(String(a.published || ''))),
-        picks: (Array.isArray(data.picks) ? data.picks : []).filter(v => v && /^[A-Za-z0-9_-]{11}$/.test(v.id)),
+        picks: (Array.isArray(data.picks) ? data.picks : []).filter(v => v && !v.hidden && /^[A-Za-z0-9_-]{11}$/.test(v.id)),
     };
     VideoState.channelKeys = Object.keys(VideoState.data.channels);
     [...VideoState.data.videos, ...VideoState.data.picks].forEach(v => {
