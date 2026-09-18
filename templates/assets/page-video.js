@@ -5,6 +5,9 @@
  * 데이터는 data/videos.json 하나다. scripts/sync_videos.py가 GitHub Actions에서 주기적으로
  * 유튜브에서 받아 쌓는다(API 키가 있으면 과거 영상까지, 없으면 RSS 최신 15개). 형식은 그 파일 머리 주석 참고.
  * hidden이 붙은 영상은 어드민이 감춘 것이라 화면에서 뺀다. 카드에 영상 길이는 표시하지 않는다.
+ *
+ * '보자'에는 유튜브 말고 숲(SOOP) VOD도 올릴 수 있다. 그런 항목은 id가 'soop:<번호>'이고
+ * kind가 'soop'이며, 재생은 숲 임베드 플레이어로 연다(유튜브는 유튜브 플레이어로).
  */
 
 const VIDEO_DATA_URL = 'data/videos.json';
@@ -58,11 +61,20 @@ function videoChannelName(ch) {
     return ch.name || ch.title || '채널';
 }
 
-// 썸네일은 i.ytimg.com만 쓴다(데이터 파일에 이상한 주소가 섞여도 따라가지 않는다).
+// 썸네일은 유튜브(i.ytimg.com)와 숲 이미지 서버만 쓴다(데이터 파일에 이상한 주소가 섞여도 따라가지 않는다).
+// 숲 VOD는 썸네일을 못 받아올 수 있어서, 그때는 빈 값을 주고 카드 쪽에서 글자 썸네일로 대신한다.
 function videoThumb(v) {
     const t = String(v.thumb || '');
+    if (videoIsSoop(v)) return /^https:\/\/[\w.-]+\.(afreecatv\.com|sooplive\.co\.kr|sooplive\.com)\//.test(t) ? t : '';
     return /^https:\/\/i\d?\.ytimg\.com\//.test(t) ? t : `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
 }
+
+// 숲 VOD 항목인지. 예전 데이터(유튜브만 있던 시절)에는 kind가 없다.
+function videoIsSoop(v) {
+    return v.kind === 'soop' || /^soop:/.test(String(v.id || ''));
+}
+
+const soopVodNo = v => String(v.id || '').replace(/^soop:/, '');
 
 function videoChannelAvatar(ch, cls) {
     const t = String(ch.thumb || '');
@@ -77,7 +89,7 @@ function videoChannelAvatar(ch, cls) {
 function videoCardHtml(v, opts) {
     opts = opts || {};
     const ch = videoChannel(v.channel);
-    const channelName = v.channel ? videoChannelName(ch) : (v.author || '');
+    const channelName = v.channel ? videoChannelName(ch) : (v.author || (videoIsSoop(v) ? '숲 VOD' : ''));
     // '보자'는 어드민이 고른 영상이라 추가한 날짜는 보여주지 않는다(정렬에만 쓴다).
     const meta = [
         v.views ? `조회수 ${videoFormatViews(v.views)}` : '',
@@ -88,7 +100,7 @@ function videoCardHtml(v, opts) {
     return `
         <article class="video-card${opts.top ? ' is-top' : ''}">
             <button type="button" class="video-thumb" onclick="videoPlay('${escapeHTML(v.id)}')" aria-label="${escapeHTML(v.title)} 재생">
-                <img src="${escapeHTML(videoThumb(v))}" alt="" loading="lazy">
+                ${videoThumbInnerHtml(v)}
                 ${rank}
                 ${v.short ? '<span class="video-badge">SHORTS</span>' : ''}
                 <span class="video-play" aria-hidden="true"></span>
@@ -108,10 +120,18 @@ function videoCardHtml(v, opts) {
 function videoShortHtml(v) {
     return `
         <button type="button" class="video-short" onclick="videoPlay('${escapeHTML(v.id)}')" aria-label="${escapeHTML(v.title)} 재생">
-            <span class="video-short-thumb"><img src="${escapeHTML(videoThumb(v))}" alt="" loading="lazy"></span>
+            <span class="video-short-thumb">${videoThumbInnerHtml(v)}</span>
             <span class="video-short-title">${escapeHTML(v.title)}</span>
             <span class="video-short-meta">${v.views ? `조회수 ${videoFormatViews(v.views)}` : escapeHTML(videoChannelName(videoChannel(v.channel)))}</span>
         </button>`;
+}
+
+// 썸네일 이미지가 없을 때(숲 VOD 등)는 글자 썸네일로 대신한다.
+function videoThumbInnerHtml(v) {
+    const t = videoThumb(v);
+    return t
+        ? `<img src="${escapeHTML(t)}" alt="" loading="lazy">`
+        : '<span class="video-thumb-blank">SOOP</span>';
 }
 
 function videoEmptyHtml(text) {
@@ -122,7 +142,12 @@ function videoPlay(id) {
     const v = VideoState.byId.get(String(id));
     if (!v) return;
     const ch = v.channel ? videoChannelName(videoChannel(v.channel)) : (v.author || '');
-    mediaLightboxOpen({ caption: ch ? `${ch} · ${v.title}` : v.title, youtubeId: v.id, vertical: !!v.short });
+    const caption = ch ? `${ch} · ${v.title}` : v.title;
+    if (videoIsSoop(v)) {
+        mediaLightboxOpen({ caption, soopVodNo: soopVodNo(v) });
+        return;
+    }
+    mediaLightboxOpen({ caption, youtubeId: v.id, vertical: !!v.short });
 }
 
 // ----- 팬튜브 -----
@@ -215,8 +240,11 @@ function renderPicks() {
     box.innerHTML = groups.map(([name, list], i) => {
         // 맨 위 묶음만 제목 없이 둘 수 있다. 분류 뒤에 오는 무분류는 앞 묶음에 딸려 보이므로 '기타'를 붙인다.
         const label = name || (i ? '기타' : '');
+        // 제목줄 위 작은 영문 라벨. 어드민에서 분류마다 적을 수 있고, 비우면 예전처럼 라벨 없이 나온다.
+        const labelEn = String((list.find(v => String(v.groupEn || '').trim()) || {}).groupEn || '').trim();
+        const enAttr = labelEn ? ` data-en="${escapeHTML(labelEn)}"` : '';
         return `
-        ${label ? `<div class="section-title${i ? ' section-title-spaced' : ''} video-pick-title"><span class="section-title-label">${escapeHTML(label)}</span><span class="title-count">${list.length}개</span></div>` : ''}
+        ${label ? `<div class="section-title${i ? ' section-title-spaced' : ''} video-pick-title"${enAttr}><span class="section-title-label">${escapeHTML(label)}</span><span class="title-count">${list.length}개</span></div>` : ''}
         <div class="video-grid video-pick-grid">${list.map(v => videoCardHtml(v, { pick: true })).join('')}</div>`;
     }).join('');
 }
@@ -254,7 +282,8 @@ bootPage(async () => {
         // hidden은 어드민이 감춘 영상이다(파일에는 남아 있고 화면에서만 뺀다)
         videos: (Array.isArray(data.videos) ? data.videos : []).filter(v => v && !v.hidden && /^[A-Za-z0-9_-]{11}$/.test(v.id))
             .sort((a, b) => String(b.published || '').localeCompare(String(a.published || ''))),
-        picks: (Array.isArray(data.picks) ? data.picks : []).filter(v => v && !v.hidden && /^[A-Za-z0-9_-]{11}$/.test(v.id)),
+        // 보자에는 유튜브 영상(11자 id)과 숲 VOD('soop:<번호>')가 같이 올 수 있다.
+        picks: (Array.isArray(data.picks) ? data.picks : []).filter(v => v && !v.hidden && /^([A-Za-z0-9_-]{11}|soop:\d{1,20})$/.test(v.id)),
     };
     VideoState.channelKeys = Object.keys(VideoState.data.channels);
     [...VideoState.data.videos, ...VideoState.data.picks].forEach(v => {

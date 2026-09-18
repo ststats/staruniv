@@ -56,7 +56,24 @@ async function loadSynergyData() {
     }
 }
 
+// 어드민에서 끈 지표 탭은 고를 수 없다. 숨긴 탭이 요청되면(주소에 남아 있거나 기본값이거나)
+// 보이는 탭 중 첫 번째로 옮긴다.
+function firstVisibleMetric() {
+    const el = staticAll('#synergy-metric-filter .sub-tab').find(x => !x.hidden);
+    return el ? el.dataset.metric : '';
+}
+
+// core.js가 nav.json을 읽어 탭을 숨긴 뒤 불러준다(이 페이지에 있을 때만).
+function syncStatsMetricVisibility() {
+    if (typeof isStatsTabHidden !== 'function' || !isStatsTabHidden(SynergyState.metric)) return;
+    const next = firstVisibleMetric();
+    if (next && next !== SynergyState.metric) setSynergyMetric(next);
+}
+
 function setSynergyMetric(metric) {
+    if (typeof isStatsTabHidden === 'function' && isStatsTabHidden(metric)) {
+        metric = firstVisibleMetric() || metric;
+    }
     SynergyState.metric = metric;
     const config = synergyMetricConfig(metric);
     staticAll('#synergy-metric-filter .sub-tab').forEach(el => {

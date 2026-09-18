@@ -771,18 +771,32 @@ const PageState = {
 // 다음 빌드(데이터 갱신 워크플로)까지 기다리지 않고 바로 반영되게 한다.
 // 실패하면(파일 없음/깨짐/오프라인) 아무것도 건드리지 않는다 - 메뉴가 사라지는 쪽보다
 // HTML에 이미 박혀 있는 상태를 그대로 두는 쪽이 안전한 실패다.
+// 숨긴 방송통계 지표 탭. nav.json을 읽기 전에는 비어 있다(= 아무것도 숨기지 않음).
+let HiddenStatsTabs = new Set();
+const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
+
 async function applyNavVisibility() {
     try {
         const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
         if (!res.ok) return;
         const data = await res.json();
-        if (!Array.isArray(data && data.hidden)) return;
-        const hidden = new Set(data.hidden.map(String));
-        document.querySelectorAll('.top-navbar .nav-item[data-page]').forEach(el => {
-            el.hidden = hidden.has(el.dataset.page);
+        if (!data || typeof data !== 'object') return;
+        if (Array.isArray(data.hidden)) {
+            const hidden = new Set(data.hidden.map(String));
+            document.querySelectorAll('.top-navbar .nav-item[data-page]').forEach(el => {
+                el.hidden = hidden.has(el.dataset.page);
+            });
+            const menu = document.getElementById('mainMenu');
+            if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
+        }
+        // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 파일에서 끈다. 빌드 때 이미 hidden이
+        // 붙어 있지만, 어드민에서 방금 저장한 걸 다음 빌드까지 기다리지 않고 바로 반영한다.
+        HiddenStatsTabs = new Set((Array.isArray(data.statsTabs) ? data.statsTabs : []).map(String));
+        document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]').forEach(el => {
+            el.hidden = HiddenStatsTabs.has(el.dataset.metric);
         });
-        const menu = document.getElementById('mainMenu');
-        if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
+        // 켜져 있던 탭이 숨겨졌으면 보이는 탭으로 옮긴다(방송통계 페이지에서만 있는 함수).
+        if (typeof syncStatsMetricVisibility === 'function') syncStatsMetricVisibility();
     } catch (_) {
         // 실패하면 빌드에 저장된 메뉴 상태를 유지한다.
     } finally {

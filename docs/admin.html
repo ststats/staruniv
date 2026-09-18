@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=ae375c73fd">
+<link rel="stylesheet" href="style.css?v=c7d00275c0">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
 <script>
     try {
@@ -372,7 +372,7 @@ body {
     transition: background 0.15s;
 }
 .admin-offair-item:hover {
-    background: var(--color-bg-subtle);
+    background: var(--color-primary-tint);
 }
 .admin-offair-item input[type="checkbox"] {
     width: 16px;
@@ -773,16 +773,19 @@ body {
 
     <div class="section-title"><span class="section-title-label">보자 (추천 영상)</span><span class="title-count" id="videoPickCount"></span></div>
     <div class="clean-card p-4">
-        <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다.
-            분류를 적으면 사이트에서 같은 분류끼리 묶이고 그 이름으로 제목줄이 생깁니다(비우면 제목줄 없이 맨 위에).</p>
+        <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다
+            (숲 VOD는 제목을 가져올 수 없어 직접 적어주세요).
+            분류를 적으면 사이트에서 같은 분류끼리 묶이고 그 이름으로 제목줄이 생깁니다(비우면 제목줄 없이 맨 위에).
+            영문 라벨은 제목줄 위에 작게 붙는 글자로, 같은 분류의 영상에 자동으로 함께 적용됩니다.</p>
         <div id="videoPickList" class="admin-tool-list"></div>
         <div class="admin-form-row" style="margin-top:12px;">
-            <input type="url" id="videoPickUrl" placeholder="유튜브 링크 (영상 · 쇼츠)">
+            <input type="url" id="videoPickUrl" placeholder="유튜브 링크 (영상 · 쇼츠) 또는 숲 VOD 링크">
             <input type="text" id="videoPickTitle" placeholder="제목 (선택)" maxlength="80">
         </div>
         <div class="admin-form-row">
-            <input type="text" id="videoPickGroup" list="videoPickGroups" placeholder="분류 (선택, 예: 명경기 모음)" maxlength="30">
+            <input type="text" id="videoPickGroup" list="videoPickGroups" placeholder="분류 (선택, 예: 명경기 모음)" maxlength="30" oninput="fillPickGroupEn()">
             <datalist id="videoPickGroups"></datalist>
+            <input type="text" id="videoPickGroupEn" placeholder="분류 영문 라벨 (선택, 예: BEST MATCHES)" maxlength="30">
         </div>
         <div class="admin-form-row"><textarea id="videoPickNote" placeholder="한 줄 설명 (선택, 예: 역대급 역전승)" maxlength="200"></textarea></div>
         <button id="videoPickSubmit" class="admin-submit-btn" onclick="applyVideoPickForm()">추가하기</button>
@@ -793,10 +796,23 @@ body {
 
 <div id="page-stats" class="page-section">
     <div class="page-header">
-        <div class="page-header-main" data-label="ADMIN · ANALYTICS"><h1 class="page-header-title">방송통계 관리</h1><p class="page-header-subtitle">이 페이지의 편집 기능은 아직 제공하지 않습니다.</p></div>
+        <div class="page-header-main" data-label="ADMIN · ANALYTICS">
+            <h1 class="page-header-title">방송통계 관리</h1>
+            <p class="page-header-subtitle">방송통계 페이지에 보여줄 지표 탭을 고릅니다.</p>
+            <button id="saveStatsTabsBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveNavToGithub('saveStatsTabsBtn')">저장</button>
+        </div>
     </div>
     <div class="container">
-    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+
+    <div class="section-title"><span class="section-title-label">지표 탭</span></div>
+    <div class="clean-card p-4">
+        <div id="statsTabList" class="admin-nav-list"></div>
+        <div class="text-secondary mt-2" style="font-size:11px;">
+            끈 탭은 방송통계 페이지의 탭 줄에서 사라지고, 그 지표를 보던 주소로 들어와도 남아 있는 탭으로 넘어갑니다.
+            저장하면 방문자에게 바로 반영되고, 다음 배포 때 HTML에도 함께 반영됩니다.
+            (상단바 메뉴 설정과 같은 파일에 저장되므로, 홈 관리에서 바꾼 메뉴 설정도 같이 저장됩니다)
+        </div>
+    </div>
     </div>
 </div>
 
@@ -836,7 +852,7 @@ body {
 
 <!-- 사이트가 실제로 쓰는 캘린더·연혁 로직을 그대로 가져다 쓴다 (복사본 아님) -->
 <script src="calendar.js?v=b8ae2f4fb6"></script>
-<script src="media-lightbox.js?v=50e58a1d95"></script>
+<script src="media-lightbox.js?v=93e2c5177c"></script>
 <script src="history.js?v=8747e8260b"></script>
 
 <script>
@@ -1277,6 +1293,15 @@ body {
     let navHidden = new Set();
     let navLoaded = false;
 
+    // 방송통계 페이지의 지표 탭. 사이트 쪽 templates/pages/stats.html의 data-metric 값과 같아야 한다.
+    const STATS_TABS = [
+        { id: 'balloons', label: '별풍선' },
+        { id: 'broadcast_seconds', label: '방송시간' },
+        { id: 'cumulative_viewers', label: '누적시청자' },
+        { id: 'sponsor', label: '스폰판수' },
+    ];
+    let statsTabsHidden = new Set();
+
     function renderNavAdmin() {
         const list = document.getElementById('navToggleList');
         if (!list) return;
@@ -1294,7 +1319,34 @@ body {
         }).join('');
         const notice = navLoaded ? '' : `<div class="text-center text-muted py-2" style="font-size:11px;">GitHub 연동 후 불러옵니다.</div>`;
         list.innerHTML = rows + notice;
+        renderStatsTabsAdmin();
     }
+
+    function renderStatsTabsAdmin() {
+        const list = document.getElementById('statsTabList');
+        if (!list) return;
+        const rows = STATS_TABS.map(tab => {
+            const on = !statsTabsHidden.has(tab.id);
+            return `
+                <label class="admin-tool-row admin-nav-row ${on ? 'is-on' : 'is-off'}">
+                    <input type="checkbox" ${on ? 'checked' : ''} ${navLoaded ? '' : 'disabled'} onchange="toggleStatsTab('${tab.id}', this.checked)">
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(tab.label)}</div>
+                        <div class="admin-tool-url">?view=${escapeHTML(tab.id)}</div>
+                    </div>
+                    <span class="admin-nav-state">${on ? '표시' : '숨김'}</span>
+                </label>`;
+        }).join('');
+        const notice = navLoaded ? '' : `<div class="text-center text-muted py-2" style="font-size:11px;">GitHub 연동 후 불러옵니다.</div>`;
+        list.innerHTML = rows + notice;
+    }
+
+    const toggleStatsTab = (id, visible) => {
+        if (!navLoaded) return;
+        if (visible) statsTabsHidden.delete(id);
+        else statsTabsHidden.add(id);
+        renderStatsTabsAdmin();
+    };
 
     const toggleNavItem = (id, visible) => {
         if (!navLoaded) return;
@@ -1314,10 +1366,12 @@ body {
                 const data = await res.json();
                 const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
                 navHidden = new Set((Array.isArray(parsed.hidden) ? parsed.hidden : []).map(String));
+                statsTabsHidden = new Set((Array.isArray(parsed.statsTabs) ? parsed.statsTabs : []).map(String));
                 navLoaded = true;
             } else if (res.status === 404) {
                 // 아직 파일이 없는 저장소 - "아무것도 숨기지 않음"에서 시작해 첫 저장 때 만든다.
                 navHidden = new Set();
+                statsTabsHidden = new Set();
                 navLoaded = true;
             } else {
                 navLoaded = false;
@@ -1331,13 +1385,16 @@ body {
         return navLoaded;
     };
 
-    const saveNavToGithub = async () => {
+    // 상단바 메뉴와 방송통계 지표 탭은 한 파일(nav.json)에 같이 들어간다. 그래서 두 페이지의
+    // 저장 버튼이 이 함수를 같이 쓴다 - 어느 쪽에서 눌렀는지만 btnId로 받는다.
+    const saveNavToGithub = async (btnId) => {
         const token = adminTokenStore.get();
-        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (위 GitHub 연동에서 할 수 있습니다)');
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 관리의 GitHub 연동에서 할 수 있습니다)');
         if (!navLoaded) return alert('메뉴 설정을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
         if (navHidden.size >= NAV_PAGES.length) return alert('메뉴를 전부 숨길 수는 없습니다. 하나 이상은 남겨주세요.');
+        if (statsTabsHidden.size >= STATS_TABS.length) return alert('방송통계 지표 탭을 전부 숨길 수는 없습니다. 하나 이상은 남겨주세요.');
 
-        const btn = document.getElementById('saveNavBtn');
+        const btn = document.getElementById(btnId || 'saveNavBtn');
         btn.innerText = '저장중...';
         btn.disabled = true;
         try {
@@ -1352,18 +1409,21 @@ body {
 
             // 순서는 NAV_PAGES를 따라 정렬해 둔다 - 저장할 때마다 순서가 뒤바뀌면 실제로
             // 바뀐 게 없는데도 커밋 차이가 생긴다.
-            const payload = { hidden: NAV_PAGES.map(p => p.id).filter(id => navHidden.has(id)) };
+            const payload = {
+                hidden: NAV_PAGES.map(p => p.id).filter(id => navHidden.has(id)),
+                statsTabs: STATS_TABS.map(t => t.id).filter(id => statsTabsHidden.has(id)),
+            };
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2) + '\n')));
             const putRes = await fetch(`${repoUrl}/contents/${NAV_FILE_PATH}`, {
                 method: 'PUT', headers,
-                body: JSON.stringify({ message: '🧭 상단바 메뉴 표시 설정 업데이트', content, ...(sha ? { sha } : {}) })
+                body: JSON.stringify({ message: '🧭 메뉴 · 방송통계 탭 표시 설정 업데이트', content, ...(sha ? { sha } : {}) })
             });
             if (!putRes.ok) {
                 const detail = await putRes.json().catch(() => ({}));
                 throw new Error(`메뉴 설정 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
             }
 
-            alert('✅ 상단바 메뉴 설정이 저장되었습니다!');
+            alert('✅ 메뉴 · 방송통계 탭 설정이 저장되었습니다!');
         } catch (error) {
             console.error(error);
             alert('저장 중 오류가 발생했습니다: ' + error.message);
@@ -1828,6 +1888,22 @@ body {
         return m ? m[1] : '';
     };
 
+    // 숲(SOOP) VOD 주소 → VOD 번호. vod.sooplive.co.kr/player/<번호>, 예전 afreecatv 주소도 받는다.
+    const soopVodNoFromUrl = url => {
+        const u = String(url || '');
+        if (!/https?:\/\/[\w.-]*(sooplive\.(co\.kr|com)|afreecatv\.com)\//i.test(u)) return '';
+        const m = u.match(/\/(?:player|video|PLAYER\/STATION)\/(\d{1,20})/i);
+        return m ? m[1] : '';
+    };
+
+    // 보자 목록에서 항목 하나를 가리키는 키(유튜브는 영상 id, 숲은 'soop:<번호>').
+    const pickKeyFromUrl = url => {
+        const vid = videoIdFromUrl(url);
+        if (vid) return vid;
+        const no = soopVodNoFromUrl(url);
+        return no ? `soop:${no}` : '';
+    };
+
     // @handle · youtube.com/@handle · /channel/UC... · /c/이름 · /user/이름 을 받아 https://www.youtube.com/... 로 맞춘다
     const normalizeChannelUrl = input => {
         let v = String(input || '').trim();
@@ -1885,14 +1961,20 @@ body {
         }).join('') : empty('등록된 채널이 없습니다.');
 
         pickList.innerHTML = picks.length ? picks.map((p, i) => {
-            const id = videoIdFromUrl(p.url);
-            const synced = (videoSynced.picks || []).find(x => x.id === id);
+            const key = pickKeyFromUrl(p.url);
+            const synced = (videoSynced.picks || []).find(x => x.id === key);
             const title = p.title || (synced && synced.oembedTitle) || '';
-            const sub = [p.group && `📂 ${p.group}`, p.addedAt, synced && synced.author, p.note].filter(Boolean).join(' · ');
+            const group = [p.group && `📂 ${p.group}`, p.groupEn].filter(Boolean).join(' ');
+            const sub = [group, p.addedAt, synced && synced.author, p.note].filter(Boolean).join(' · ');
+            // 숲 VOD는 썸네일 주소를 동기화 뒤에야 알 수 있다(그 전까지는 글자 판).
+            const thumbSrc = key.startsWith('soop:')
+                ? (synced && /^https:\/\//.test(synced.thumb || '') ? synced.thumb : '')
+                : `https://i.ytimg.com/vi/${key}/mqdefault.jpg`;
             return `
                 <div class="admin-tool-row admin-video-row">
                     ${videoMoveButtons('pick', i, picks.length)}
-                    <img class="admin-video-thumb" src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="">
+                    ${thumbSrc ? `<img class="admin-video-thumb" src="${escapeHTML(thumbSrc)}" alt="">`
+                               : '<span class="admin-video-avatar-empty">숲</span>'}
                     <div class="admin-tool-info">
                         <div class="admin-tool-name">${escapeHTML(title || p.url)}</div>
                         <div class="admin-tool-url">${escapeHTML(sub || p.url)}</div>
@@ -2031,7 +2113,7 @@ body {
 
     function resetVideoPickForm() {
         videoEditingPick = -1;
-        ['videoPickUrl', 'videoPickTitle', 'videoPickGroup', 'videoPickNote'].forEach(id => { document.getElementById(id).value = ''; });
+        ['videoPickUrl', 'videoPickTitle', 'videoPickGroup', 'videoPickGroupEn', 'videoPickNote'].forEach(id => { document.getElementById(id).value = ''; });
         document.getElementById('videoPickSubmit').innerText = '추가하기';
         document.getElementById('videoPickCancel').style.display = 'none';
     }
@@ -2043,25 +2125,40 @@ body {
         document.getElementById('videoPickUrl').value = p.url || '';
         document.getElementById('videoPickTitle').value = p.title || '';
         document.getElementById('videoPickGroup').value = p.group || '';
+        document.getElementById('videoPickGroupEn').value = p.groupEn || '';
         document.getElementById('videoPickNote').value = p.note || '';
         document.getElementById('videoPickSubmit').innerText = '수정 반영하기';
         document.getElementById('videoPickCancel').style.display = '';
         document.getElementById('videoPickUrl').focus();
     };
 
+    // 이미 있는 분류를 적으면 그 분류의 영문 라벨을 자동으로 채워준다(비워둔 칸일 때만).
+    const fillPickGroupEn = () => {
+        const box = document.getElementById('videoPickGroupEn');
+        if (!box || box.value.trim()) return;
+        const group = document.getElementById('videoPickGroup').value.trim();
+        const found = (videoConfig.picks || []).find(p => (p.group || '').trim() === group && (p.groupEn || '').trim());
+        if (group && found) box.value = found.groupEn;
+    };
+
     const applyVideoPickForm = () => {
         if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
-        const id = videoIdFromUrl(document.getElementById('videoPickUrl').value);
-        if (!id) return alert('유튜브 영상 링크를 확인해주세요. (watch · youtu.be · shorts 주소)');
-        const dup = videoConfig.picks.findIndex(p => videoIdFromUrl(p.url) === id);
+        const raw = document.getElementById('videoPickUrl').value;
+        const id = videoIdFromUrl(raw);
+        const soopNo = id ? '' : soopVodNoFromUrl(raw);
+        if (!id && !soopNo) return alert('영상 링크를 확인해주세요.\n유튜브(watch · youtu.be · shorts) 또는 숲 VOD(vod.sooplive.co.kr/player/번호) 주소를 넣어주세요.');
+        const key = id || `soop:${soopNo}`;
+        const dup = videoConfig.picks.findIndex(p => pickKeyFromUrl(p.url) === key);
         if (dup >= 0 && dup !== videoEditingPick) return alert('이미 추가된 영상입니다.');
         const title = document.getElementById('videoPickTitle').value.trim();
         const group = document.getElementById('videoPickGroup').value.trim();
+        const groupEn = document.getElementById('videoPickGroupEn').value.trim();
         const note = document.getElementById('videoPickNote').value.trim();
         const prev = videoEditingPick >= 0 ? videoConfig.picks[videoEditingPick] : null;
         const t = new Date();
         const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
-        const item = { url: `https://www.youtube.com/watch?v=${id}`, title, group, note, addedAt: (prev && prev.addedAt) || today };
+        const url = id ? `https://www.youtube.com/watch?v=${id}` : `https://vod.sooplive.co.kr/player/${soopNo}`;
+        const item = { url, title, group, groupEn, note, addedAt: (prev && prev.addedAt) || today };
         if (prev) {
             videoConfig.picks[videoEditingPick] = item;
         } else if (group) {
@@ -2070,6 +2167,13 @@ body {
             videoConfig.picks.splice(last >= 0 ? last + 1 : videoConfig.picks.length, 0, item);
         } else {
             videoConfig.picks.unshift(item);   // 분류 없는 영상은 맨 위
+        }
+        // 영문 라벨은 분류에 딸린 값이라, 같은 분류의 다른 영상에도 같이 적용한다
+        // (하나만 다르면 사이트에서 어느 쪽이 나올지 헷갈린다).
+        if (group) {
+            videoConfig.picks.forEach(p => {
+                if ((p.group || '').trim() === group) p.groupEn = groupEn;
+            });
         }
         resetVideoPickForm();
         renderVideoAdmin();

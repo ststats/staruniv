@@ -2,15 +2,19 @@
 
 [입력] docs/data/video_channels.json (어드민 '영상 관리'에서 편집)
     { "channels": [ { "url": "https://www.youtube.com/@handle", "name": "표시 이름(선택)" } ],
-      "picks":    [ { "url": "https://youtu.be/...", "title": "(선택)", "note": "한 줄 설명",
-                      "group": "분류 제목(선택)", "addedAt": "YYYY-MM-DD" } ],
+      "picks":    [ { "url": "https://youtu.be/... 또는 https://vod.sooplive.co.kr/player/<번호>",
+                      "title": "(선택, 숲 VOD는 적어주는 게 좋다)", "note": "한 줄 설명",
+                      "group": "분류 제목(선택)", "groupEn": "분류 영문 라벨(선택)",
+                      "addedAt": "YYYY-MM-DD" } ],
       "hidden":   [ "영상id" ] }        # 사이트에서 감출 영상 (지우지 않고 표시만 한다)
 
 [출력] docs/data/videos.json
     { "updatedAt": "...",
       "channels": { "<등록 url>": { "id": "UC...", "title", "name", "thumb", "url" } },
       "videos":   [ { "id", "channel": "<등록 url>", "title", "published", "views", "thumb", "short", "hidden"(선택) } ],
-      "picks":    [ { "id", "title", "note", "addedAt", "author", "thumb", "short" } ] }
+      "picks":    [ { "id", "kind": "youtube|soop", "title", "note", "group", "groupEn",
+                      "addedAt", "author", "thumb", "short" } ] }
+    (숲 VOD는 id가 "soop:<번호>"다. 썸네일은 VOD 페이지의 og:image를 한 번 받아 저장해 둔다.)
 
 [두 가지 방식]
  1) 유튜브 API 키가 있으면(환경변수 YOUTUBE_API_KEY) 채널 업로드 목록을 전부 받는다. 과거 영상까지
@@ -222,6 +226,33 @@ def is_short(vid):
     return status == 200
 
 
+def soop_vod_no(url):
+    """숲(SOOP) VOD 주소에서 VOD 번호를 뽑는다. 아니면 ''.
+
+    받는 모양 (도메인은 sooplive.co.kr / sooplive.com / 예전 afreecatv.com 다 받는다)
+      https://vod.sooplive.co.kr/player/109613658
+      https://vod.sooplive.co.kr/player/109613658/embed?...
+      https://vod.afreecatv.com/PLAYER/STATION/109613658
+      https://www.sooplive.co.kr/video/109613658
+    """
+    u = str(url or '')
+    if not re.search(r'https?://[\w.-]*(sooplive\.(?:co\.kr|com)|afreecatv\.com)/', u, re.I):
+        return ''
+    m = re.search(r'/(?:player|video|PLAYER/STATION)/(\d{1,20})', u, re.I)
+    return m.group(1) if m else ''
+
+
+def soop_vod_thumb(no):
+    """숲 VOD 페이지의 og:image(미리보기 그림). 못 받으면 ''를 준다 - 사이트에서 글자 썸네일로 대신한다."""
+    status, page = http_get(f'https://vod.sooplive.co.kr/player/{no}')
+    time.sleep(DELAY)
+    if status != 200 or not page:
+        return ''
+    m = re.search(r'<meta property="og:image" content="([^"]+)"', page)
+    thumb = html.unescape(m.group(1)) if m else ''
+    return thumb if thumb.startswith('https://') else ''
+
+
 def oembed(vid):
     q = urllib.parse.quote(f'https://www.youtube.com/watch?v={vid}', safe='')
     status, body = http_get(f'https://www.youtube.com/oembed?url={q}&format=json')
@@ -412,23 +443,36 @@ def main():
     picks = []
     for p in config.get('picks', []):
         vid = video_id(p.get('url'))
-        if not vid:
+        soop_no = '' if vid else soop_vod_no(p.get('url'))
+        if not vid and not soop_no:
             continue
-        prev = old_picks.get(vid, {})
-        if not prev.get('author'):
-            info = oembed(vid)
-            prev = {**prev, 'author': info.get('author_name', ''), 'oembedTitle': info.get('title', '')}
-        if 'short' not in prev:
-            prev['short'] = is_short(vid)
+        # 숲 VOD는 id를 'soop:<번호>'로 둔다(유튜브 id와 섞이지 않게).
+        key = vid or f'soop:{soop_no}'
+        prev = old_picks.get(key, {})
+        if soop_no:
+            # 제목은 어드민이 적은 걸 쓴다(숲 페이지의 제목은 '숲'으로만 오는 경우가 많다).
+            # 썸네일은 한 번 받아두면 다시 묻지 않는다.
+            if not prev.get('thumb'):
+                prev = {**prev, 'thumb': soop_vod_thumb(soop_no)}
+            prev = {**prev, 'author': prev.get('author') or '숲 VOD', 'short': False}
+        else:
+            if not prev.get('author'):
+                info = oembed(vid)
+                prev = {**prev, 'author': info.get('author_name', ''), 'oembedTitle': info.get('title', '')}
+            if 'short' not in prev:
+                prev['short'] = is_short(vid)
+            prev = {**prev, 'thumb': f'https://i.ytimg.com/vi/{vid}/hqdefault.jpg'}
         picks.append({
             **prev,
-            'id': vid,
-            'title': str(p.get('title', '')).strip() or prev.get('oembedTitle', ''),
+            'id': key,
+            'kind': 'soop' if soop_no else 'youtube',
+            'title': str(p.get('title', '')).strip() or prev.get('oembedTitle', '') or ('숲 VOD' if soop_no else ''),
             'note': str(p.get('note', '')).strip(),
             # 분류 제목. 같은 값끼리 사이트에서 한 묶음으로 묶여 제목줄이 생긴다.
             'group': str(p.get('group', '')).strip(),
+            # 분류 제목 위에 붙는 작은 영문 라벨(선택).
+            'groupEn': str(p.get('groupEn', '')).strip(),
             'addedAt': str(p.get('addedAt', '')).strip(),
-            'thumb': f'https://i.ytimg.com/vi/{vid}/hqdefault.jpg',
         })
 
     # 어드민에서 감춘 영상은 목록에서 빼지 않고 표시만 해 둔다(되돌리기가 바로 되도록).

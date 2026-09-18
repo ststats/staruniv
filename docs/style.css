@@ -883,7 +883,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     margin-left: 0;
     color: var(--color-icon-faint);
 }
-.stat-table { font-size: var(--fs-body); }
+/* 부트스트랩 .table이 늦게 오거나 못 불러와도 표는 카드 너비를 꽉 채운다 */
+.stat-table { width: 100%; font-size: var(--fs-body); }
 .stat-table tbody td.badge-cell { line-height: 0; }
 .stat-table-sticky-col {
     position: sticky;
@@ -1188,11 +1189,13 @@ a.btn-view-all {
     background: var(--color-card);
     box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
 }
+/* 흰 칸 위에서 마우스가 올라간 표시는 사이트 전체가 같은 연한 파랑(--color-primary-tint)이다.
+   전적표 줄 · 카드 · 소식 · 칩 · 추천 목록이 모두 이 색을 쓴다. */
 .clean-card:hover,
 .live-broadcast-card:hover,
 .member-card:hover,
 .tool-card:hover {
-    background-color: var(--color-card-hover);
+    background-color: var(--color-primary-tint);
 }
 .news-post-card:hover,
 .tier-card:hover {
@@ -1310,7 +1313,7 @@ a.btn-view-all {
     transition: background 0.15s, color 0.15s;
     gap: 9px;
 }
-.avatar-select-item:hover { background: var(--color-bg-subtle); }
+.avatar-select-item:hover { background: var(--color-primary-tint); }
 .avatar-select-fallback {
     object-fit: cover;
     flex-shrink: 0;
@@ -1813,7 +1816,7 @@ a.btn-view-all {
     overflow: hidden;
     clip-path: var(--cut-14);
 }
-.home-notice-card:hover { background: var(--color-bg-subtle); }
+.home-notice-card:hover { background: var(--color-primary-tint); }
 .home-notice-main {
     min-width: 0;
     flex: 1;
@@ -3120,7 +3123,7 @@ body.media-lightbox-open { overflow: hidden; }
     transition: background 0.15s, color 0.15s;
 }
 .news-load-more:hover {
-    background: var(--color-bg-subtle);
+    background: var(--color-primary-tint);
     color: var(--color-text-main);
 }
 
@@ -3530,7 +3533,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .record-recent-header .filter-item:hover:not(.active),
 .h2h-period .filter-item:hover:not(.active) {
-    background: var(--color-card);
+    background: var(--color-primary-tint);
     color: var(--color-primary);
 }
 .record-recent-header .filter-item.active,
@@ -3811,7 +3814,7 @@ body.media-lightbox-open { overflow: hidden; }
     background: none;
     text-align: left;
 }
-.h2h-suggest-item:hover { background: var(--color-bg-subtle); }
+.h2h-suggest-item:hover { background: var(--color-primary-tint); }
 .h2h-suggest-avatar,
 .h2h-rival-avatar {
     flex: none;
@@ -4040,7 +4043,7 @@ body.media-lightbox-open { overflow: hidden; }
     clip-path: var(--cut-6);
     text-align: left;
 }
-.h2h-rival:hover:not(:disabled) { background: var(--color-bg-subtle); }
+.h2h-rival:hover:not(:disabled) { background: var(--color-primary-tint); }
 .h2h-rival:disabled { cursor: default; }
 .h2h-rival-name {
     overflow: hidden;
@@ -4153,7 +4156,7 @@ body.media-lightbox-open { overflow: hidden; }
     transition: background 0.15s, color 0.15s;
 }
 .video-channel-chip:has(.video-chip-avatar) { padding-left: 5px; }
-.video-channel-chip:hover:not(.active) { background: var(--color-bg-subtle); }
+.video-channel-chip:hover:not(.active) { background: var(--color-primary-tint); }
 .video-channel-chip.active { font-weight: 700; }
 .video-chip-avatar,
 .video-card-avatar {
@@ -4210,6 +4213,19 @@ body.media-lightbox-open { overflow: hidden; }
     transition: transform 0.25s;
 }
 .video-thumb:hover img { transform: scale(1.04); }
+/* 썸네일을 못 받아온 영상(숲 VOD 등)은 이름만 넣은 판으로 대신한다 */
+.video-thumb-blank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--navy-on-muted);
+}
 .video-play {
     position: absolute;
     top: 50%;
@@ -4795,7 +4811,7 @@ html[data-theme="dark"] .mv-order-row {
     justify-content: center;
 }
 .mv-order-item button:hover:not(:disabled) {
-    background: var(--color-bg-subtle);
+    background: var(--color-primary-tint);
     color: var(--color-text-body);
 }
 .mv-order-item .mv-order-remove:hover:not(:disabled) { color: var(--color-lose); }
@@ -4895,7 +4911,7 @@ html[data-theme="dark"] .mv-order-row {
     color: #fff;
 }
 .mv-order-actions .mv-order-remove:hover {
-    background: var(--color-card);
+    background: var(--color-primary-tint);
     color: var(--color-lose);
 }
 .mv-order-actions button:disabled {
