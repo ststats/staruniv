@@ -1,11 +1,12 @@
 name: Update Site
 
-# 한 번 돌리면 사이트에 필요한 걸 전부 갱신한다.
-#   1) 구글 시트 → data/db.json → 통계 → docs/ 페이지 빌드
-#   2) 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링 → docs/data/calendar.png)
-#   3) 유튜브 RSS → 영상 목록 (docs/data/videos.json)
-#   4) eloboard 전적 증분 → 상대전적 파일 (docs/data/h2h/)
-#   5) 바뀐 것만 한 번에 커밋
+# 한 번 돌리면 사이트에 필요한 걸 전부 갱신한다. 서로 독립이라 하나가 실패해도 나머지는 간다.
+#   1) 유튜브 → 영상 목록 (docs/data/videos.json)                 - 키 있으면 전체, 없으면 RSS 15개
+#   2) eloboard 전적 증분 → 상대전적 파일 (docs/data/h2h/)        - 시트·외부 키 불필요
+#   3) 구글 시트 → data/db.json                                   - 시트 시크릿이 있을 때만
+#   4) 통계 산출 + docs/ 페이지 빌드 (data/db.json이 있을 때만)
+#   5) 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링 → docs/data/calendar.png)
+#   6) 바뀐 것만 한 번에 커밋
 #
 # 돌리는 방법 (셋 다 같은 일을 한다)
 #   · Actions 탭에서 'Run workflow' 수동 실행
@@ -13,17 +14,18 @@ name: Update Site
 #       curl -X POST -H "Authorization: Bearer <PAT>" -H "Accept: application/vnd.github+json" \
 #         https://api.github.com/repos/<소유자>/<저장소>/dispatches \
 #         -d '{"event_type":"update"}'
-#   · 어드민에서 영상 설정(docs/data/video_channels.json)을 저장하면 자동으로 한 번
+#   (어드민 저장은 커밋만 하고 이 워크플로우를 돌리지 않는다 - 다음 크론 때 반영된다)
 #
-# [처음 한 번] 전적 아카이브(data/eloboard.json)가 없으면 전적 단계는 건너뛴다.
-# 전체 수집(약 1시간)은 Bootstrap 워크플로우로 한 번 돌린 뒤부터 여기서 이어받는다.
+# [처음 한 번] 전적 아카이브(data/eloboard.json)가 없으면 전적 단계는 건너뛴다. 전체 수집은
+# 한 시간이 넘어서 여기 두지 않았다 - 따로 만든 수집용 저장소(eloboard-collect)에서 한 번 받아
+# data/eloboard.json 을 이 저장소에 커밋하면, 그 뒤부터 여기서 증분(요청 1~2회)으로 이어받는다.
+# [자동 실행 없음] 어드민에서 저장하면 저장소에 커밋만 되고 이 워크플로우는 돌지 않는다.
+# 예전에는 docs/data/video_channels.json 이 바뀌면 바로 한 번 돌게 해뒀는데, 저장할 때마다
+# 사이트 전체 갱신이 도는 게 부담스러워서 뺐다. 다음 크론 실행 때 함께 반영된다.
 on:
   workflow_dispatch:
   repository_dispatch:
     types: [update]
-  push:
-    paths:
-      - 'docs/data/video_channels.json'
 
 permissions:
   contents: write
@@ -36,6 +38,9 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    env:
+      # 시트 시크릿이 둘 다 있을 때만 시트 단계를 돈다.
+      HAS_SHEET: ${{ secrets.GOOGLE_SHEET_ID != '' && secrets.GOOGLE_CREDENTIALS_JSON != '' }}
 
     steps:
     - name: 저장소 체크아웃
@@ -44,7 +49,10 @@ jobs:
         # git push는 이 체크아웃 스텝이 설정한 인증 정보를 그대로 쓴다. 기본 자동 토큰
         # (secrets.GITHUB_TOKEN)은 저장소 설정이 "읽기 전용"이면 push가 막힐 수 있어서,
         # 그 설정 영향을 안 받는 개인 액세스 토큰(PAT, secrets.GH_TOKEN)을 쓴다.
-        token: ${{ secrets.GH_TOKEN }}
+        # GH_TOKEN(개인 액세스 토큰)을 넣어뒀으면 그걸 쓰고, 없으면 Actions가 자동으로 주는
+        # 토큰으로 푸시한다(그 경우 Settings → Actions → Workflow permissions 를
+        # 'Read and write'로 켜둬야 한다).
+        token: ${{ secrets.GH_TOKEN || github.token }}
 
     - name: 파이썬 환경 세팅
       uses: actions/setup-python@v5
@@ -53,36 +61,62 @@ jobs:
         cache: 'pip'
         cache-dependency-path: requirements.txt
 
-    - name: 필요 라이브러리 설치
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: 구글 시트 연동 및 통계 산출, 웹페이지 빌드
-      env:
-        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-      run: |
-        python scripts/update_data.py
-        python scripts/generate_stats.py
-        python scripts/build_html.py
-
-    # 아래 두 단계는 남의 서버(유튜브·eloboard)를 읽는 일이라 가끔 실패할 수 있다.
-    # 실패해도 시트/페이지 갱신과 커밋은 그대로 진행되도록 계속 간다.
-    - name: 유튜브 채널 RSS로 영상 목록 갱신
+    # 영상·전적 수집은 파이썬 표준 라이브러리만 쓴다(구글 시트도, pandas도 필요 없다).
+    # 그래서 라이브러리 설치나 시트 연동보다 먼저 돌려, 그쪽이 안 되는 상황에서도 갱신되게 한다.
+    # 남의 서버(유튜브·eloboard)를 읽는 일이라 실패해도 나머지 단계는 그대로 진행한다.
+    # YOUTUBE_API_KEY 시크릿이 있으면 채널 업로드 목록을 전부(과거 영상까지) 받고,
+    # 없으면 RSS로 최신 15개만 받는다. 어느 쪽이든 동작한다.
+    - name: 유튜브 영상 목록 갱신
       continue-on-error: true
-      run: python scripts/sync_videos.py
+      env:
+        # Secrets 탭이든 Variables 탭이든 어디에 넣었어도 읽는다(헷갈려서 Variables에 넣는 일이 잦다).
+        YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY || vars.YOUTUBE_API_KEY }}
+      run: |
+        # 키가 워크플로우까지 왔는지 먼저 알려준다. 값은 찍지 않고 길이만 본다(로그에 남으면 안 되니까).
+        if [ -z "$YOUTUBE_API_KEY" ]; then
+          echo "ℹ️ YOUTUBE_API_KEY 가 비어 있습니다 - RSS로 받습니다."
+          echo "   저장소 Settings → Secrets and variables → Actions 에 이 이름 그대로 넣어주세요."
+          echo "   (이 저장소의 'Repository secret' 이어야 합니다. Environment secret이나 다른 저장소에 넣으면 여기서 안 보입니다)"
+        else
+          echo "✅ YOUTUBE_API_KEY 확인 (${#YOUTUBE_API_KEY}자)"
+        fi
+        python scripts/sync_videos.py
 
     - name: 전적 아카이브 증분 수집 + 상대전적 파일 만들기
       continue-on-error: true
       run: |
         if [ ! -f data/eloboard.json ]; then
           echo "ℹ️ data/eloboard.json 이 없습니다 - 전적 단계를 건너뜁니다."
-          echo "   (처음 한 번은 Bootstrap 워크플로우로 전체 수집을 돌려주세요)"
+          echo "   (처음 한 번은 수집용 저장소에서 전체 수집 후 data/eloboard.json 을 커밋해주세요)"
           exit 0
         fi
         python scripts/sync_eloboard.py
         python scripts/build_h2h.py
+
+    - name: 필요 라이브러리 설치 (시트 연동 · 페이지 빌드용)
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 시트 시크릿이 없는 저장소에서는 이 단계를 건너뛴다(영상·전적만으로도 사이트는 돈다).
+    # 시트가 잠깐 안 되더라도 아래 빌드와 커밋은 그대로 진행한다 - 그때는 저장소에
+    # 이미 들어있는 data/db.json으로 빌드한다.
+    - name: 구글 시트에서 최신 데이터 받기
+      if: env.HAS_SHEET == 'true'
+      continue-on-error: true
+      env:
+        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+      run: python scripts/update_data.py
+
+    - name: 통계 산출 및 웹페이지 빌드
+      run: |
+        if [ ! -f data/db.json ]; then
+          echo "ℹ️ data/db.json 이 없어 통계·빌드를 건너뜁니다(시트를 아직 연결하지 않은 저장소)."
+          exit 0
+        fi
+        python scripts/generate_stats.py
+        python scripts/build_html.py
 
     - name: Node 환경 세팅
       uses: actions/setup-node@v4
@@ -101,9 +135,10 @@ jobs:
       run: npm install puppeteer
 
     - name: 캘린더 이미지 캡처 (오늘의 일정 + 이달의 일정)
+      continue-on-error: true
       env:
-        # admin.html이 GitHub API로 최신 일정(calendar.json)을 읽어올 때 쓰는 토큰 -
-        # 체크아웃 스텝과 같은 PAT으로 통일한다.
+        # admin.html이 GitHub API로 "가장 최신" 일정을 읽어올 때 쓰는 토큰. 없으면 저장소에
+        # 들어있는 docs/data/calendar.json으로 캡처한다(없어도 동작한다).
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: node capture.js
 
