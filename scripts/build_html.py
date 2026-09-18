@@ -113,6 +113,25 @@ def load_nav_config():
     return ids, tabs
 
 
+# ---------------------------------------------------------------------------
+# docs/data/site_data.json 에 담을 칸 (여기 없는 칸은 배포본에서 빠진다)
+# ---------------------------------------------------------------------------
+# 사이트는 정적 페이지라, 브라우저가 받아 그리는 데이터는 누구나 그대로 내려받을 수 있다.
+# 그래서 "화면에 안 쓰는 값은 아예 안 내보낸다"가 유일한 가리기 방법이다.
+# (시트와 data/db.json에는 그대로 남아 있고, 배포 폴더로만 안 나간다)
+SITE_MEMBER_FIELDS = ['이름', 'SOOP ID', '생년월일', '성별', '종족', '티어', '직책', '입단일', '퇴단일', 'MBTI']
+SITE_MATCH_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '방식', '최종 결과', '세트 결과', '_match_key']
+SITE_ROUND_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '세트', '라운드',
+                     '우리 선수', '결과', '상대 선수', '맵', '_match_key', '_mirrored']
+SITE_PLAYER_STAT_FIELDS = ['이름', '대회 전적', '대학 전적', '미니 전적', 'CK 전적',
+                           '테란전 전적', '저그전 전적', '프로토스전 전적', '상대전적']
+
+
+def pick(row, fields):
+    """정해둔 칸만 남긴 새 dict. 값이 없는 칸은 넣지 않는다(파일 크기도 줄어든다)."""
+    return {k: row[k] for k in fields if k in row}
+
+
 def page_output_path(page_id):
     return os.path.join(OUT_DIR, 'index.html') if page_id == 'home' else os.path.join(OUT_DIR, page_id, 'index.html')
 
@@ -230,11 +249,14 @@ def main():
     # 직접 박아넣지 않고 별도 JSON으로 빼서 브라우저가 비동기로 fetch하게 한다.
     # (초기 HTML 용량이 데이터량과 무관하게 항상 일정하게 유지됨)
     # 버전(해시)을 index.html에 넣어야 하므로 템플릿 렌더링보다 먼저 직렬화한다.
+    # 배포 폴더(docs/)에 올라가는 JSON은 인터넷에 그대로 공개된다. 그래서 화면에 실제로 쓰는
+    # 칸만 골라 담는다 - 시트에는 있지만 사이트가 안 쓰는 칸(펀딩·지원금·사비 같은 금액, 도전미션,
+    # 라운드별 종족·티어 등)은 여기서 걸러진다. 화면에 새 칸을 쓰기 시작하면 여기 목록에 추가한다.
     site_data = {
-        'members': sorted_members,
-        'matches': matches_list,
-        'rounds': rounds_list,
-        'playersStats': stats_data['member_stats']['전체'],
+        'members': [pick(m, SITE_MEMBER_FIELDS) for m in sorted_members],
+        'matches': [pick(m, SITE_MATCH_FIELDS) for m in matches_list],
+        'rounds': [pick(r, SITE_ROUND_FIELDS) for r in rounds_list],
+        'playersStats': [pick(p, SITE_PLAYER_STAT_FIELDS) for p in stats_data['member_stats']['전체']],
     }
     site_data_text = json.dumps(site_data, ensure_ascii=False)
 

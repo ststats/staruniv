@@ -260,7 +260,7 @@ function showIndivSummary() {
         const name = m['이름'];
         return `<tr class="stat-row clickable-row" role="button" tabindex="0" onclick="selectPlayer('${jsAttr(name)}')">
                 <td class="text-center stat-table-sticky-col text-nowrap colw-20"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span class="ellipsis-text">${escapeHTML(name)}</span></span></td>
-                ${FORMAT_KEYS.map(fmt => `<td class="text-nowrap colw-20">${escapeHTML(pStat[`${fmt} 전적`]) || '-'}</td>`).join('\n                ')}
+                ${FORMAT_KEYS.map(fmt => `<td class="text-nowrap colw-20">${winLossCellHtml(pStat[`${fmt} 전적`])}</td>`).join('\n                ')}
             </tr>`;
     }).join('');
     updateStatsHash();
@@ -333,6 +333,8 @@ function setIndivFilter(format) {
     renderIndivMatchesList('indiv-recent-list', format, 10);
 }
 
+// 좁은 화면에서는 '상대 팀' 칸을 숨기고(style.css의 .col-oppteam) 상대 선수 이름 밑
+// 작은 줄(.cell-subline)로 같은 정보를 보여준다 - 6칸을 5칸으로 줄여 한 화면에 넣는다.
 function renderIndivMatchesList(containerId, format, limit) {
     let filtered = SiteData.rounds.filter(m => m['우리 선수'] === RecordsState.player);
     if (format !== '전체') filtered = filtered.filter(m => m['형식'] === format);
@@ -340,8 +342,11 @@ function renderIndivMatchesList(containerId, format, limit) {
 
     document.getElementById(containerId).innerHTML = sliced.length ? sliced.map(m => `
             <tr class="stat-row">
-                <td class="stat-table-sticky-col cell-ellipsis">${escapeHTML(m['상대 선수']) || '-'}</td>
-                <td class="cell-ellipsis">
+                <td class="stat-table-sticky-col">
+                    <span class="cell-ellipsis">${escapeHTML(m['상대 선수']) || '-'}</span>
+                    <span class="cell-subline">${teamCellInnerHtml(m['상대팀'])}</span>
+                </td>
+                <td class="cell-ellipsis col-oppteam">
                     ${teamCellInnerHtml(m['상대팀'])}
                 </td>
                 <td class="badge-cell"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
@@ -352,6 +357,18 @@ function renderIndivMatchesList(containerId, format, limit) {
             `).join('') : EMPTY_MATCH_ROW_HTML;
 }
 
+
+// "3승 1패 (75.0%)" 한 칸. 넓은 화면은 지금까지와 똑같이 그 문장 그대로,
+// 좁은 화면(스타일시트가 바꿔준다)에서는 3-1 을 크게 + 75.0% 를 그 밑 작은 글씨로 보여준다.
+// 칸 4개가 "0승 2패 (0.0%)"면 휴대폰 화면에 절대 안 들어가서, 같은 내용을 짧게 적는 것이다.
+function winLossCellHtml(text) {
+    const raw = String(text == null ? '' : text).trim();
+    const m = raw.match(/^(\d+)승\s*(\d+)패(?:\s*\(([\d.]+)%\))?$/);
+    if (!m) return escapeHTML(raw) || '-';
+    return `<span class="wl-full">${escapeHTML(raw)}</span>`
+        + `<span class="wl-short"><span class="wl-short-num"><span class="wl-w">${m[1]}</span>-<span class="wl-l">${m[2]}</span></span>`
+        + (m[3] ? `<span class="wl-short-rate">${m[3]}%</span>` : '') + '</span>';
+}
 
 // [리디자인] 상대 전적 표의 셀은 build_html.py가 "3승 1패" 같은 문자열로 구워준다.
 // 25개 팀을 훑을 때 숫자를 하나하나 읽어야 우열이 보였다 - 시안대로 비율 바로 바꾼다.
