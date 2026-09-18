@@ -1,6 +1,28 @@
 {
- "updatedAt": "",
- "channels": {},
+ "updatedAt": "2026-09-18 11:23",
+ "channels": {
+  "https://www.youtube.com/@캄몬장난감만들기": {
+   "id": "UCcEKr3U4RuuC97lVwajKs7A",
+   "title": "캄몬 장난감",
+   "thumb": "https://yt3.googleusercontent.com/7eEqK-6H5ulsoblx-qVYLC-A3myDxZ8lWa26N9U9Y4KN-h5q-SsVRPA9Clw3y47mXwFyMnNgDZw=s900-c-k-c0x00ffffff-no-rj",
+   "url": "https://www.youtube.com/@캄몬장난감만들기",
+   "name": "캄몬 장난감"
+  },
+  "https://www.youtube.com/@MonstarzFantube": {
+   "id": "UCScT2Alywz14zjs9vsyiEzg",
+   "title": "캄몬팬튜브 Monstarz Fantube",
+   "thumb": "https://yt3.googleusercontent.com/-ehDJgbLso5Y1uSIj2Gy1zNXpMvxnL8AStC_OlbHyEtEt4Wki51gfeYPNrVTffFxBlTqjWtoGA=s900-c-k-c0x00ffffff-no-rj",
+   "url": "https://www.youtube.com/@MonstarzFantube",
+   "name": "캄몬팬튜브 Monstarz Fantube"
+  },
+  "https://www.youtube.com/@캄냥이": {
+   "id": "UCA2fElM1yTQdMJr_b_Sj8Bg",
+   "title": "캄냥이",
+   "thumb": "https://yt3.googleusercontent.com/PKTe2ArHkcUufDHyJ4STXLhtRs5MhMzgA_HbPOdc5s_yWO4nPYcdczTeqI_Ilf-nUmmECEUCTA=s900-c-k-c0x00ffffff-no-rj",
+   "url": "https://www.youtube.com/@캄냥이",
+   "name": "캄냥이"
+  }
+ },
  "videos": [],
  "picks": []
 }
