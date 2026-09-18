@@ -1,4 +1,15 @@
 {
-  "channels": [],
-  "picks": []
+  "channels": [
+    {
+      "url": "https://www.youtube.com/@캄몬장난감만들기"
+    },
+    {
+      "url": "https://www.youtube.com/@MonstarzFantube"
+    },
+    {
+      "url": "https://www.youtube.com/@캄냥이"
+    }
+  ],
+  "picks": [],
+  "hidden": []
 }
