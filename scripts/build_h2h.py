@@ -4,11 +4,26 @@
 원본 아카이브는 37.5만 건 14MB다. 상대전적은 "선수 두 명"만 보면 되는 화면이라, 그걸 통째로
 받게 하면 휴대폰에서 한 화면 보려고 14MB를 받는 셈이 된다. 그래서 선수별로 잘라 둔다.
 
-    docs/data/h2h/index.json      - 검색용 선수 목록 + 맵·대회 사전 (한 번만 받는다)
-    docs/data/h2h/p/<선수id>.json - 그 선수의 모든 경기 (선수를 고를 때 한 개씩 받는다)
+    docs/data/h2h/index.json  - 검색용 선수 목록 + 맵·대회 사전 + 샤드 경계(shardBounds) (한 번만 받는다)
+    docs/data/h2h/p/<샤드시작id>.json - 그 샤드에 속한 선수들의 경기
+                                          ({ "<선수id>": [[날짜,상대,이김,맵,대회], ...], ... })
 
-선수 한 명 파일은 평균 1~2천 경기라 30~60KB다. 두 명을 고르면 둘 중 한 명의 파일만 있으면
-상대전적이 나오지만(행에 상대 id가 있다), 프로필 카드에 각자 전체 승률도 보여줘야 해서 둘 다 받는다.
+[왜 선수 하나당 파일 하나가 아니라 샤드인가, 그리고 왜 폭이 고정이 아닌가]
+티어표 연결 선수가 1,100명이라 파일 하나씩 두면 그만큼 저장소에 파일이 쌓여 git
+클론/체크아웃과 GitHub Pages 요청 수에 불리하다. 그렇다고 id를 고정 폭(예: 200명씩)으로
+묶으면 실패한다 - eloboard는 오래 활동한(=경기 수가 많은) 선수일수록 id가 낮게 배정되는
+경향이 있어서, 낮은 id 구간 샤드 하나가 수 MB까지 커진다(실측: id 0~199 고정폭 샤드가
+6.7MB - 개별 파일 시절 가장 큰 파일(~270KB)의 20배가 넘는다. 이러면 "한 화면 보려고
+큰 파일을 받는" 원래 문제가 그대로 되살아난다).
+그래서 id 순서대로 선수를 채워 담다가, 다음 선수를 더하면 SHARD_TARGET_BYTES를
+넘기는 시점에 새 샤드로 끊는다(bin-packing). 샤드는 여전히 "연속된 id 범위"이지만
+폭이 구간마다 다르다 - 활동이 적은 구간은 수백 명이 한 샤드에 묶이고, 유난히 활동이
+많은 선수 하나만으로도 그 자체로 샤드 하나가 된다. 결과적으로 파일 수는 1,100개에서
+수십 개로 줄어들면서도, 한 샤드 최대 용량은 개별 파일 시절과 비슷한 수준으로 묶인다.
+선수를 고르면 그 선수가 속한 샤드 하나만 받고(같은 샤드를 다시 고르면 shardCache에서
+재사용 - page-h2h.js 참고), 원본 아카이브(14MB) 전체는 받지 않는다.
+두 명을 고르면 둘 중 한 명의 샤드만 있으면 상대전적이 나오지만(행에 상대 id가 있다),
+프로필 카드에 각자 전체 승률도 보여줘야 해서 둘 다 받는다(같은 샤드면 요청이 하나로 합쳐진다).
 
 [티어표와 잇기]
 검색 대상은 티어표(시너지 명단)에 있는 선수다. 시너지 명단에 eloboard 선수 번호(elo_id)가
@@ -35,6 +50,48 @@ OUT_DIR = os.path.join('docs', 'data', 'h2h')
 ALIAS_PATH = os.path.join('docs', 'data', 'h2h_alias.json')
 SYNERGY_BASE = 'https://ststats.github.io/synergy'
 HIDDEN_TEAMS = {'휴면'}          # page-tier.js의 TIER_HIDDEN_TEAMS와 같은 기준
+
+# 샤드 하나가 넘지 않으려는 목표 용량(바이트). 개별 파일 시절 가장 큰 선수 파일이
+# ~270KB였으므로, 그보다 조금 넉넉하게 잡아서 "샤드로 묶었더니 오히려 더 커졌다"는
+# 일이 없게 한다. 값을 바꾸면 다음 빌드부터 바로 반영된다(프론트엔드는 shardBounds를
+# index.json에서 매번 다시 읽으므로 하드코딩된 값이 없다).
+SHARD_TARGET_BYTES = 200 * 1024
+
+
+def _pid_num(pid):
+    """정렬/샤드 경계 계산용 숫자 값. 숫자로 못 바꾸면 None(항상 맨 뒤로 보낸다 - 실제
+    데이터에서 관찰된 적은 없지만, 만에 하나 있어도 빌드가 죽지 않게 하는 안전장치)."""
+    try:
+        return int(pid)
+    except (TypeError, ValueError):
+        return None
+
+
+def _pid_sort_key(pid):
+    n = _pid_num(pid)
+    return (0, n) if n is not None else (1, str(pid))
+
+
+def build_shards(per_sorted):
+    """(pid, matches) 목록(pid 오름차순)을 받아 [(시작pid, {pid: matches, ...}), ...] 로 묶는다.
+    각 선수의 JSON 직렬화 크기를 누적하다가 다음 선수를 더하면 목표치를 넘기는 시점에
+    새 샤드를 연다. 선수 하나만으로 이미 목표치를 넘어도(활동이 아주 많은 선수) 그 선수
+    단독으로 샤드 하나가 된다 - 억지로 더 쪼개지 않는다(파일이 더 늘어나기만 하고 얻는
+    게 없다)."""
+    shards = []
+    current = {}
+    current_size = 0
+    for pid, matches in per_sorted:
+        entry_size = len(json.dumps(matches, ensure_ascii=False, separators=(',', ':')))
+        if current and current_size + entry_size > SHARD_TARGET_BYTES:
+            shards.append(current)
+            current, current_size = {}, 0
+        current[str(pid)] = matches
+        current_size += entry_size
+    if current:
+        shards.append(current)
+    return shards
+
 
 # eloboard 형식 코드 → 화면에 쓸 이름 (2026-09 기준 건수: 스폰 27.6만 · 프로리그 3.8만 ·
 # 개인 대회 2.7만 · 팀 대회 2.8만 · 대학 미니 3.4천 · 대학 대회 2.1천 · 대학대전 1.7천)
@@ -226,7 +283,8 @@ def main():
         shutil.rmtree(tmp_players)
 
     index_players = {}
-    for pid, matches in per.items():
+    per_sorted = []
+    for pid, matches in sorted(per.items(), key=lambda kv: _pid_sort_key(kv[0])):
         if not matches:
             continue
         matches.sort(key=lambda x: x[0], reverse=True)          # 최신 경기가 앞
@@ -241,7 +299,15 @@ def main():
             # 티어표 닉네임과 eloboard 이름이 다르면 둘 다 남긴다(검색에서 양쪽 다 걸리게).
             **({'en': name} if link.get('n') and link['n'] != name else {}),
         }
-        write_json(os.path.join(tmp_players, f'{pid}.json'), {'id': str(pid), 'rows': matches})
+        per_sorted.append((str(pid), matches))
+
+    # 샤드 파일 이름 = 그 샤드에서 가장 작은 선수id (프론트엔드가 shardBounds로 어느
+    # 파일을 받을지 계산한다 - 고정 폭이 아니므로 계산식이 아니라 목록으로 넘긴다).
+    shard_bounds = []
+    for entries in build_shards(per_sorted):
+        start_pid = min(entries, key=_pid_sort_key)
+        shard_bounds.append(_pid_num(start_pid) if _pid_num(start_pid) is not None else start_pid)
+        write_json(os.path.join(tmp_players, f'{start_pid}.json'), entries)
 
     # 상대 이름 사전: 티어표 밖 선수도 경기 목록에 이름이 나와야 한다
     others = {}
@@ -257,6 +323,9 @@ def main():
         'syncedAt': store.get('synced_at', ''),
         'tierDate': tier_date,
         'count': store.get('count', len(rows)),
+        # 오름차순 샤드 시작 id 목록. page-h2h.js가 "이 값보다 작거나 같은 것 중 가장 큰
+        # 경계"를 찾아 그 샤드 파일(p/<경계>.json)을 받는다(폭이 고정이 아니라서 필요).
+        'shardBounds': shard_bounds,
         # 형식은 우리말 이름으로 바꿔 내보낸다(행에는 번호만 들어가므로 순서는 그대로 둔다)
         'cats': [CAT_LABELS.get(c, c or '기타') for c in cats],
         # 형식 보여줄 차례(CAT_LABELS에 적은 순서). 행의 형식 번호는 위 cats 자리 그대로다.
@@ -275,7 +344,8 @@ def main():
         os.replace(tmp_players, out_players)
 
     size = os.path.getsize(os.path.join(OUT_DIR, 'index.json')) / 1024
-    print(f'✅ {OUT_DIR}: 선수 {len(index_players):,}명 · 경기 {len(rows):,}건 · index {size:.0f}KB')
+    print(f'✅ {OUT_DIR}: 선수 {len(index_players):,}명 · 경기 {len(rows):,}건 · '
+          f'샤드 {len(shard_bounds)}개(목표 {SHARD_TARGET_BYTES // 1024}KB) · index {size:.0f}KB')
     if missing:
         print(f'   ℹ️ eloboard에서 못 찾은 티어표 선수 {len(missing)}명: {", ".join(missing[:15])}'
               f'{" ..." if len(missing) > 15 else ""}')

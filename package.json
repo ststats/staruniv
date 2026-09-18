@@ -1,0 +1,14 @@
+{
+  "name": "staruniv",
+  "private": true,
+  "description": "capture.js: admin.html의 캘린더 영역을 헤드리스 브라우저로 캡처해 docs/data/calendar.png로 저장",
+  "scripts": {
+    "capture": "node capture.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "puppeteer": "^25.0.0"
+  }
+}

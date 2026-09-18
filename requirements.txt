@@ -1,4 +1,7 @@
-pandas>=2.0
-numpy>=1.24
-gspread>=5.10
-jinja2>=3.0
+# 메이저 버전이 올라가면 조용히 빌드가 깨질 수 있어 상한을 둔다(하한은 기존 그대로).
+# 실제 배포 버전은 CI가 매번 이 범위 안에서 최신을 설치한다 - 완전 고정이 필요하면
+# `pip freeze > requirements.lock.txt`로 별도 잠금 파일을 만들어 쓴다.
+pandas>=2.0,<3
+numpy>=1.24,<3
+gspread>=5.10,<7
+jinja2>=3.0,<4
