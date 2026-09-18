@@ -438,6 +438,8 @@ function teamCellInnerHtml(teamName) {
 }
 
 const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
+// 시트에서 '체크'는 아직 티어를 매기지 않은 사람이다 - 화면에서는 미분류로 다룬다.
+const TIER_UNRANKED = new Set(['체크', '미분류']);
 
 function tierIndex(tier) {
     const idx = TIER_ORDER.indexOf(String(tier));
@@ -464,7 +466,10 @@ function raceBadgeHtml(race) {
 
 // 티어 표기(예: "3티어")를 멤버 카드/모달/개인전적 프로필에서 동일하게 사용
 function tierLabel(tier) {
-    return (tier !== undefined && tier !== null && tier !== '') ? `${tier}티어` : '티어 미정';
+    const raw = (tier === undefined || tier === null) ? '' : String(tier).trim();
+    // 비어 있거나 '체크'면 아직 티어를 안 매긴 사람이다 - 둘 다 '미분류'로 적는다.
+    if (!raw || TIER_UNRANKED.has(raw)) return '미분류';
+    return `${raw}티어`;
 }
 
 function tierBadgeHtml(tier) {

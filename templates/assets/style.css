@@ -4591,36 +4591,33 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 /* 제목줄 오른쪽 넘김 버튼(쇼츠 선반). 손가락으로 미는 화면에서는 필요 없어 숨긴다.
-   제목줄은 원래 '제목 - 개수'를 양끝으로 벌리는데, 버튼이 끼면 개수가 가운데로 밀려서
-   개수는 제목 옆에 붙이고 버튼만 오른쪽 끝으로 보낸다. */
-.section-title.has-shelf-nav .title-count { margin-right: auto; margin-left: 8px; }
+   개수는 다른 제목줄과 같이 맨 오른쪽에 두고, 넘김 버튼은 그 왼쪽에 붙인다. */
+.section-title.has-shelf-nav .shelf-nav { order: 2; margin-left: auto; }
+.section-title.has-shelf-nav .title-count { order: 3; margin-left: 10px; }
 .shelf-nav {
     display: inline-flex;
     gap: 6px;
     margin-left: auto;
     align-self: center;
 }
+/* 버튼은 옆에 있는 개수 뱃지와 같은 크기·같은 네이비 바탕 + 흰 글씨 */
 .shelf-nav-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 24px;
-    padding: 0;
+    min-height: 20px;
+    padding: 0 7px;
     border: 0;
-    background: var(--color-bg-subtle);
+    background: var(--navy-deco-fill);
     clip-path: var(--cut-4);
-    font-size: 15px;
+    font-size: 11px;
     line-height: 1;
-    color: var(--color-text-sub);
-    transition: background 0.15s, color 0.15s;
+    color: #fff;
+    transition: opacity 0.15s;
 }
-.shelf-nav-btn:hover:not(:disabled) {
-    background: var(--color-row-hover);
-    color: var(--color-primary);
-}
+.shelf-nav-btn:hover:not(:disabled) { opacity: 0.82; }
 .shelf-nav-btn:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: default;
 }
 

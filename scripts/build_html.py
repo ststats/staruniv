@@ -1,4 +1,5 @@
 import hashlib
+import datetime as dt
 import json
 import os
 import re
@@ -125,6 +126,38 @@ SITE_ROUND_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '세트',
                      '우리 선수', '결과', '상대 선수', '맵', '_match_key', '_mirrored']
 SITE_PLAYER_STAT_FIELDS = ['이름', '대회 전적', '대학 전적', '미니 전적', 'CK 전적',
                            '테란전 전적', '저그전 전적', '프로토스전 전적', '상대전적']
+
+
+# 티어표(스타 커뮤니티 전체 명단)에 내보낼 값. 시트에는 생년월일·성별도 있지만
+# 화면에 안 쓰는 값이라 배포본에는 넣지 않는다.
+TIER_HIDDEN_TEAMS = {'휴면'}
+
+
+def build_tier_members(rows):
+    """구글시트 members 시트 → 티어표가 읽을 명단.
+    소속이 '휴면'인 사람과 SOOP 아이디가 없는 사람은 뺀다(방송 상태를 물을 수 없다)."""
+    out, skipped = [], 0
+    seen = set()
+    for r in rows or []:
+        soop = str(r.get('SOOP ID', '') or '').strip()
+        team = str(r.get('소속', '') or '').strip()
+        nickname = str(r.get('닉네임', '') or '').strip() or str(r.get('이름', '') or '').strip()
+        if not soop or not nickname or team in TIER_HIDDEN_TEAMS:
+            skipped += 1
+            continue
+        key = soop.lower()
+        if key in seen:            # 같은 아이디가 두 번 적힌 경우 앞의 행만 쓴다
+            skipped += 1
+            continue
+        seen.add(key)
+        out.append({
+            'id': soop,
+            'nickname': nickname,
+            'team': team,
+            'tier': str(r.get('티어', '') or '').strip(),
+            'race': str(r.get('종족', '') or '').strip(),
+        })
+    return out, skipped
 
 
 def pick(row, fields):
@@ -283,6 +316,19 @@ def main():
     site_data_path = os.path.join(OUT_DIR, 'data', 'site_data.json')
     write_text_atomic(site_data_path, site_data_text)
     print(f"✅ site_data.json 저장 완료 ({os.path.getsize(site_data_path) / 1024:.1f} KB)")
+
+    # 티어표 명단. 예전에는 브라우저가 시너지(ststats)에서 직접 받아갔는데, 이제 시트가
+    # 원본이라 여기서 파일로 구워둔다(외부 사이트가 죽어도 티어표는 그대로 뜬다).
+    tier_members, tier_skipped = build_tier_members(db_data.get('tierMembers', []))
+    if tier_members:
+        tier_path = os.path.join(OUT_DIR, 'data', 'tier_members.json')
+        write_text_atomic(tier_path, json.dumps(
+            {'updatedAt': dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M'),
+             'members': tier_members}, ensure_ascii=False))
+        print(f"✅ tier_members.json 저장 완료 ({len(tier_members):,}명"
+              f"{f' · 제외 {tier_skipped}명' if tier_skipped else ''})")
+    else:
+        print("ℹ️ members 시트를 못 읽어 tier_members.json은 건너뜁니다(티어표는 예전 파일/시너지로 동작).")
 
     copy_static_assets()
     # 독립 관리자/멀티뷰어도 일반 페이지와 같은 자산 버전을 사용한다.

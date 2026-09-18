@@ -21,7 +21,11 @@ SHEET_MAPPING = {
     '팀 목록': 'teams',
     '멤버 목록': 'members',
     '매치 목록': 'matches',
-    '매치 전적': 'rounds'
+    '매치 전적': 'rounds',
+    # 스타 커뮤니티 전체 선수 명단(티어표 원본). 예전에는 시너지(ststats)가 매일 올리는
+    # 파일을 그대로 읽었는데, 그쪽 명단은 소속이 있는 사람만 담겨 상대전적에서 찾을 수 있는
+    # 선수가 적었다. 이제 이 시트가 원본이고 시너지는 방송통계에만 쓴다.
+    'members': 'tierMembers',
 }
 
 # 시트별 필수 컬럼 - 이 컬럼이 없으면 이후 통계 산출(generate_stats.py)이
@@ -29,6 +33,7 @@ SHEET_MAPPING = {
 REQUIRED_COLUMNS = {
     'settings': ['시즌', '날짜'],
     'members': ['이름'],
+    'tierMembers': ['닉네임', 'SOOP ID', 'ELO ID', '종족', '티어', '소속'],
     'matches': ['날짜', '상대팀', '형식', '최종 결과'],
     'rounds': ['날짜', '상대팀', '형식', '우리 선수', '결과', '상대 종족', '맵'],
 }

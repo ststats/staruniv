@@ -73,8 +73,33 @@ def http_json(url):
         return json.loads(res.read().decode('utf-8'))
 
 
+DB_PATH = os.path.join('data', 'db.json')
+
+
+def sheet_tier_members():
+    """구글시트 members 시트(= 티어표 원본)에서 명단을 읽는다.
+    시너지 명단과 달리 휴면·FA까지 다 들어 있어서, 상대전적에서 찾을 수 있는 선수가 훨씬 많다.
+    돌려주는 모양은 fetch_tier_members()와 같다."""
+    db = load_json(DB_PATH, {})
+    out = []
+    for r in db.get('tierMembers') or []:
+        elo = str(r.get('ELO ID', '') or '').strip()
+        nickname = str(r.get('닉네임', '') or '').strip() or str(r.get('이름', '') or '').strip()
+        if not nickname:
+            continue
+        out.append({
+            'id': str(r.get('SOOP ID', '') or '').strip(),
+            'nickname': nickname,
+            'elo_id': elo,
+            'team': str(r.get('소속', '') or '').strip(),
+            'tier': str(r.get('티어', '') or '').strip(),
+            'race': str(r.get('종족', '') or '').strip(),
+        })
+    return out
+
+
 def fetch_tier_members():
-    """시너지가 매일 공개하는 명단(티어표와 같은 출처). [{id, nickname, team, tier, race}]"""
+    """(예비) 시너지가 매일 공개하는 명단. 시트를 아직 안 채운 저장소에서만 쓴다."""
     with urllib.request.urlopen(f'{SYNERGY_BASE}/data/dates.js', timeout=30) as res:
         text = res.read().decode('utf-8')
     m = re.search(r'window\.AVAILABLE_DATES\s*=\s*(\[[^\]]*\])', text)
@@ -122,10 +147,15 @@ def main():
 
     tier_date, tier_members = '', []
     if not args.offline:
-        try:
-            tier_date, tier_members = fetch_tier_members()
-        except Exception as e:                  # 명단을 못 받아도 파일은 만든다(이름만으로)
-            print(f'⚠️ 시너지 명단을 받지 못했습니다({e}). 이름/종족만으로 만듭니다.')
+        tier_members = sheet_tier_members()
+        if tier_members:
+            print(f'  명단: 구글시트 members 시트 {len(tier_members):,}명')
+        else:
+            try:                                 # 시트가 아직 없는 저장소 - 예전처럼 시너지에서
+                tier_date, tier_members = fetch_tier_members()
+                print(f'  명단: 시너지 {len(tier_members):,}명 (구글시트 members 시트가 비어 있음)')
+            except Exception as e:               # 명단을 못 받아도 파일은 만든다(이름만으로)
+                print(f'⚠️ 명단을 받지 못했습니다({e}). 이름/종족만으로 만듭니다.')
 
     alias = load_json(ALIAS_PATH, {})           # { 시너지 닉네임: eloboard 이름 }
     by_norm = {}
@@ -152,7 +182,7 @@ def main():
         linked[pid] = {'n': m['nickname'], 'tm': m['team'], 's': m['id'],
                        **({'t': m['tier']} if m['tier'] not in (None, '') else {})}
     if tier_members:
-        print(f'  잇기: elo_id {by_eloid}명 · 이름 {by_name}명 · 못 찾음 {len(missing)}명 (시너지 명단 {len(tier_members)}명)')
+        print(f'  잇기: elo_id {by_eloid}명 · 이름 {by_name}명 · 못 찾음 {len(missing)}명 (명단 {len(tier_members)}명)')
 
     # 티어표 선수의 경기만 선수별로 모은다. 행: [경기id, 날짜, 승자, 패자, 맵, 대회]
     # 명단을 못 받았는데도 그냥 진행하면 eloboard 전체 선수(수천 명)로 파일을 만들어
@@ -161,14 +191,14 @@ def main():
         # 왜 0명인지 바로 알 수 있게 양쪽 상태를 찍어준다.
         sample = lambda names: ', '.join(list(names)[:8]) or '(없음)'
         print('❌ 티어표 명단과 이어붙인 선수가 0명입니다. 기존 파일을 그대로 두고 멈춥니다.')
-        print(f'   · 시너지 명단: {len(tier_members)}명   예) {sample(m["nickname"] for m in tier_members)}')
+        print(f'   · 명단: {len(tier_members)}명   예) {sample(m["nickname"] for m in tier_members)}')
         print(f'   · eloboard 선수: {len(players)}명   예) {sample((v[0] if isinstance(v, list) else v) for v in players.values())}')
         if not players:
             print('   → 아카이브에 선수가 없습니다. scripts/sync_eloboard.py 가 제대로 받았는지 먼저 확인해주세요.')
         elif not tier_members:
-            print('   → 시너지 명단을 받지 못했습니다(위 경고 참고). 네트워크나 주소를 확인해주세요.')
+            print('   → 명단이 비어 있습니다. 구글시트 members 시트와 data/db.json 을 확인해주세요.')
         else:
-            print('   → 양쪽 다 있는데 하나도 안 맞습니다. 시너지 명단의 elo_id가 비어 있다면')
+            print('   → 양쪽 다 있는데 하나도 안 맞습니다. 명단의 ELO ID가 비어 있다면')
             print('      docs/data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 몇 명 적어주세요.')
         sys.exit(1)
     target = set(linked) if linked else set(players)

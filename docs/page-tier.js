@@ -1,11 +1,10 @@
 /**
  * 티어표 페이지 - 스타 커뮤니티 전체 명단을 티어별로, 티어 안에서는 종족별로 보여준다.
  *
- * core.js의 fetchSynergyData()를 안 쓰는 이유:
- *   그 함수는 시너지 명단에서 "우리 멤버"만 남기고 나머지를 버린다(방송통계 페이지는
- *   그게 맞다). 티어표는 전체 명단이 필요해서 같은 파일을 따로 읽는다. 읽는 주소와
- *   방식은 완전히 동일하므로, 나중에 core.js가 전체 목록도 남겨두게 고치면
- *   fetchAllSynergyMembers()를 지우고 그걸 쓰면 된다.
+ * 명단은 우리 구글시트(members 시트)에서 온다. 빌드가 docs/data/tier_members.json으로
+ * 구워두고 여기서는 그 파일만 읽는다. 예전에는 시너지(ststats)가 매일 올리는 명단을
+ * 브라우저가 직접 받아갔는데, 그 명단은 소속이 있는 사람만 담겨 있어서 FA·휴면 선수는
+ * 상대전적에서 찾을 수 없었다. 파일이 아직 없는 저장소에서는 예전처럼 시너지로 물러난다.
  *
  * soop.js의 checkIsLiveRealtime()을 안 쓰는 이유:
  *   그건 한 명씩 bjapi에 묻는 방식이라 "활성 멤버가 소수"일 때만 성립한다. 수백 명에
@@ -60,6 +59,16 @@ function switchTierView(view) {
 // ---------------------------------------------------------------------------
 // 데이터
 // ---------------------------------------------------------------------------
+// 빌드가 구워둔 우리 명단(구글시트 members 시트). 없으면 null을 돌려준다.
+async function fetchSheetTierMembers() {
+    const res = await fetch('data/tier_members.json', { cache: 'no-cache' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const members = asArray(data && data.members).filter(m => m && isValidSoopId(m.id));
+    if (!members.length) return null;
+    return { date: '', updatedAt: (data && data.updatedAt) || '', members };
+}
+
 async function fetchAllSynergyMembers() {
     // dates.js는 JS 파일이라 JSON으로 못 읽는다 - 텍스트로 받아 배열만 뽑는다
     // (core.js의 fetchSynergyData와 같은 방식).
@@ -98,7 +107,9 @@ async function fetchAllSynergyMembers() {
 // ---------------------------------------------------------------------------
 function tierGroupKey(member) {
     const raw = (member.tier === null || member.tier === undefined) ? '' : String(member.tier).trim();
-    return raw || '미분류';
+    // 시트의 '체크'는 아직 티어를 안 매긴 사람이라 미분류 묶음으로 보낸다(맨 뒤에 온다).
+    if (!raw || TIER_UNRANKED.has(raw)) return '미분류';
+    return raw;
 }
 
 function tierRaceKey(member) {
@@ -435,7 +446,8 @@ function scrollTierBarItemIntoView(btn) {
 }
 
 // [리디자인] 티어 제목 위에 붙는 라틴 라벨. 이름 티어는 대응 영문을, 숫자 티어는 T0~T8로.
-const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE', '베이비': 'BABY' };
+const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE',
+                 '베이비': 'BABY', '미분류': 'UNRANKED' };
 function tierLatinLabel(tier) {
     const key = String(tier || '').replace('티어', '').trim();
     if (TIER_EN[key]) return TIER_EN[key];
@@ -651,7 +663,9 @@ bootPage(async () => {
 
     let payload;
     try {
-        payload = await fetchAllSynergyMembers();
+        // 우리 시트 명단이 먼저, 그 파일이 아직 없으면 예전처럼 시너지 명단으로 채운다.
+        payload = await fetchSheetTierMembers();
+        if (!payload) payload = await fetchAllSynergyMembers();
     } catch (e) {
         console.error('티어 명단을 불러오지 못했습니다:', e);
         root.innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';
