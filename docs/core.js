@@ -364,9 +364,13 @@ async function cachedFetchJson(url, ttlMs) {
 // 같은 가족이 되려면 폭이 비슷해야 하는데, 세 글자는 36px을 먹어서 늘 혼자 커 보였다.
 // 원래 글자는 title로 남겨둔다(마우스를 올리면 승/패/무가 뜬다).
 function resultBadgeHtml(resText) {
-    if (resText === '승') return '<span class="match-badge badge-win" title="승">W</span>';
-    if (resText === '무' || resText === '무승부') return '<span class="match-badge badge-draw" title="무">D</span>';
-    return '<span class="match-badge badge-lose" title="패">L</span>';
+    const res = String(resText == null ? '' : resText).trim();
+    if (res === '승') return '<span class="match-badge badge-win" title="승">W</span>';
+    if (res === '무' || res === '무승부') return '<span class="match-badge badge-draw" title="무">D</span>';
+    if (res === '패') return '<span class="match-badge badge-lose" title="패">L</span>';
+    // 시트에 결과가 아직 안 적혔거나 오타인 경기. 예전에는 무조건 '패'로 나와서
+    // 집계(승패 계산에서는 빠진다)와 화면이 어긋났다.
+    return '<span class="match-badge badge-draw" title="결과 미기재">-</span>';
 }
 
 const SOOP_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;

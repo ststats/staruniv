@@ -24,7 +24,14 @@
         </div>
 
         <div id="video-shorts-wrap">
-            <div class="section-title section-title-spaced" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span></div>
+            {#- 쇼츠 선반은 가로로 넘긴다. 손가락으로 미는 화면과 달리 마우스에서는 밀 방법이
+                마땅치 않아, 제목줄 오른쪽에 넘김 버튼을 둔다(좁은 화면에서는 숨긴다). #}
+            <div class="section-title section-title-spaced has-shelf-nav" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span>
+                <span class="shelf-nav" id="video-shorts-nav" hidden>
+                    <button type="button" class="shelf-nav-btn" aria-label="이전 쇼츠" onclick="videoShortsScroll(-1)">‹</button>
+                    <button type="button" class="shelf-nav-btn" aria-label="다음 쇼츠" onclick="videoShortsScroll(1)">›</button>
+                </span>
+            </div>
             <div class="video-shorts-shelf tab-scroll" id="video-shorts-shelf"></div>
         </div>
 

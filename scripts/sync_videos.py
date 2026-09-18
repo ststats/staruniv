@@ -415,6 +415,10 @@ def main():
             if entries is None:
                 info = resolve_channel(url, known_channels.get(url))
                 if not info.get('id'):
+                    # 채널 id를 못 찾았다고 이 채널을 목록에서 빼면, 아래 kept 필터에서 그동안
+                    # 쌓아둔 이 채널 영상이 통째로 사라진다. 지난번 정보를 그대로 살려 둔다.
+                    if known_channels.get(url):
+                        channels[url] = known_channels[url]
                     continue
                 feed_title, entries = fetch_feed(info['id'])
             info = {**info, 'name': str(ch.get('name', '')).strip() or feed_title or info.get('title', '')}

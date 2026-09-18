@@ -79,9 +79,11 @@ const soopVodNo = v => String(v.id || '').replace(/^soop:/, '');
 function videoChannelAvatar(ch, cls) {
     const t = String(ch.thumb || '');
     const ok = /^https:\/\/(yt\d\.ggpht\.com|yt\d\.googleusercontent\.com|i\d?\.ytimg\.com)\//.test(t);
-    const initial = escapeHTML(videoChannelName(ch).slice(0, 1));
+    const name1 = videoChannelName(ch).slice(0, 1);
+    const initial = escapeHTML(name1);          // HTML 글자 자리
+    const initialJs = jsAttr(name1);            // onerror 안 JS 문자열 자리
     return ok
-        ? `<img class="${cls}" src="${escapeHTML(t)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${cls}',textContent:'${initial}'}))">`
+        ? `<img class="${cls}" src="${escapeHTML(t)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${cls}',textContent:'${initialJs}'}))">`
         : `<span class="${cls}">${initial}</span>`;
 }
 
@@ -90,11 +92,13 @@ function videoCardHtml(v, opts) {
     opts = opts || {};
     const ch = videoChannel(v.channel);
     const channelName = v.channel ? videoChannelName(ch) : (v.author || (videoIsSoop(v) ? '숲 VOD' : ''));
+    // 채널 이름 · 조회수 · 올린 때를 한 줄에 점으로 잇는다(줄을 나눠 쓰면 카드가 길어진다).
     // '보자'는 어드민이 고른 영상이라 추가한 날짜는 보여주지 않는다(정렬에만 쓴다).
     const meta = [
+        channelName,
         v.views ? `조회수 ${videoFormatViews(v.views)}` : '',
         opts.pick ? '' : videoAgo(v.published),
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean).map(escapeHTML).join('<span class="video-meta-dot">·</span>');
     const rank = opts.rank ? `<span class="video-rank">${opts.rank}</span>` : '';
     const avatar = v.channel ? videoChannelAvatar(ch, 'video-card-avatar') : '';
     return `
@@ -109,7 +113,6 @@ function videoCardHtml(v, opts) {
                 ${avatar}
                 <div class="video-card-text">
                     <button type="button" class="video-card-title" onclick="videoPlay('${escapeHTML(v.id)}')">${escapeHTML(v.title)}</button>
-                    <div class="video-card-channel">${escapeHTML(channelName)}</div>
                     ${meta ? `<div class="video-card-meta">${meta}</div>` : ''}
                     ${opts.pick && v.note ? `<p class="video-card-note">${escapeHTML(v.note)}</p>` : ''}
                 </div>
@@ -132,6 +135,39 @@ function videoThumbInnerHtml(v) {
     return t
         ? `<img src="${escapeHTML(t)}" alt="" loading="lazy">`
         : '<span class="video-thumb-blank">SOOP</span>';
+}
+
+// ----- 쇼츠 선반 넘김(마우스용) -----
+// 선반은 원래 손가락으로 미는 가로 스크롤이다. PC에서는 밀 방법이 없어서 제목줄 오른쪽
+// 버튼으로 한 화면씩 넘긴다. 끝에 닿으면 그 방향 버튼을 꺼서 더 갈 데가 없다는 걸 알린다.
+function videoShortsShelf() {
+    return document.getElementById('video-shorts-shelf');
+}
+
+function videoShortsScroll(dir) {
+    const shelf = videoShortsShelf();
+    if (!shelf) return;
+    shelf.scrollBy({ left: dir * Math.round(shelf.clientWidth * 0.9), behavior: 'smooth' });
+}
+
+function updateShortsNav() {
+    const shelf = videoShortsShelf();
+    const nav = document.getElementById('video-shorts-nav');
+    if (!shelf || !nav) return;
+    const max = shelf.scrollWidth - shelf.clientWidth;
+    nav.hidden = max <= 1;                       // 다 보이면 버튼 자체를 숨긴다
+    const [prev, next] = nav.querySelectorAll('.shelf-nav-btn');
+    if (prev) prev.disabled = shelf.scrollLeft <= 1;
+    if (next) next.disabled = shelf.scrollLeft >= max - 1;
+}
+
+function bindShortsNav() {
+    const shelf = videoShortsShelf();
+    if (!shelf || shelf._shortsNavBound) return;
+    shelf._shortsNavBound = true;
+    shelf.addEventListener('scroll', updateShortsNav, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateShortsNav).observe(shelf);
+    else window.addEventListener('resize', updateShortsNav);
 }
 
 function videoEmptyHtml(text) {
@@ -162,7 +198,7 @@ function renderVideoChannels() {
     const keys = VideoState.channelKeys;
     row.hidden = keys.length < 2;   // 채널이 하나뿐이면 거를 게 없다
     const chip = (key, label, avatar) => `
-        <button type="button" class="video-channel-chip${VideoState.channel === key ? ' active' : ''}" aria-pressed="${VideoState.channel === key}" onclick="selectVideoChannel('${escapeHTML(key)}')">
+        <button type="button" class="video-channel-chip${VideoState.channel === key ? ' active' : ''}" aria-pressed="${VideoState.channel === key}" onclick="selectVideoChannel('${jsAttr(key)}')">
             ${avatar}<span>${escapeHTML(label)}</span>
         </button>`;
     row.innerHTML = chip('', '전체', '') + keys.map(k => chip(k, videoChannelName(videoChannel(k)), videoChannelAvatar(videoChannel(k), 'video-chip-avatar'))).join('');
@@ -205,6 +241,7 @@ function renderFantube() {
         const el = document.getElementById(id);
         if (el && el._edgeFadeUpdate) el._edgeFadeUpdate();
     });
+    updateShortsNav();
 }
 
 function selectVideoChannel(key) {
@@ -292,6 +329,7 @@ bootPage(async () => {
     const updated = document.getElementById('video-updated');
     if (updated && data.updatedAt) updated.textContent = `${data.updatedAt} 기준 · 몇 시간마다 자동으로 갱신됩니다`;
     renderPicks();
+    bindShortsNav();
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         const idx = parseInt(params.get('ch'), 10);
         VideoState.channel = VideoState.channelKeys[idx - 1] || '';

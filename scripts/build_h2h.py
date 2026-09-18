@@ -184,8 +184,12 @@ def main():
                 per[me].append([date, opp, res, map_id, cat])
                 names_used.add(opp)
 
-    if os.path.isdir(os.path.join(OUT_DIR, 'p')):
-        shutil.rmtree(os.path.join(OUT_DIR, 'p'))   # 명단에서 빠진 선수 파일이 남지 않게
+    # 선수 파일은 새 폴더에 전부 쓴 뒤 마지막에 바꿔치기한다. 예전처럼 먼저 지우고 쓰면
+    # 도중에 죽었을 때 '절반만 있는' 폴더가 그대로 커밋돼 상대전적이 404가 난다.
+    out_players = os.path.join(OUT_DIR, 'p')
+    tmp_players = out_players + '.new'
+    if os.path.isdir(tmp_players):
+        shutil.rmtree(tmp_players)
 
     index_players = {}
     for pid, matches in per.items():
@@ -203,7 +207,7 @@ def main():
             # 티어표 닉네임과 eloboard 이름이 다르면 둘 다 남긴다(검색에서 양쪽 다 걸리게).
             **({'en': name} if link.get('n') and link['n'] != name else {}),
         }
-        write_json(os.path.join(OUT_DIR, 'p', f'{pid}.json'), {'id': str(pid), 'rows': matches})
+        write_json(os.path.join(tmp_players, f'{pid}.json'), {'id': str(pid), 'rows': matches})
 
     # 상대 이름 사전: 티어표 밖 선수도 경기 목록에 이름이 나와야 한다
     others = {}
@@ -229,6 +233,12 @@ def main():
         'others': others,
     }
     write_json(os.path.join(OUT_DIR, 'index.json'), index)
+
+    # 여기까지 왔으면 선수 파일이 전부 만들어졌다. 이제야 옛 폴더를 지우고 새 폴더로 바꾼다.
+    if os.path.isdir(tmp_players):
+        if os.path.isdir(out_players):
+            shutil.rmtree(out_players)              # 명단에서 빠진 선수 파일이 남지 않게
+        os.replace(tmp_players, out_players)
 
     size = os.path.getsize(os.path.join(OUT_DIR, 'index.json')) / 1024
     print(f'✅ {OUT_DIR}: 선수 {len(index_players):,}명 · 경기 {len(rows):,}건 · index {size:.0f}KB')

@@ -118,9 +118,14 @@ def fetch_all_sheets(spreadsheet):
     existing_titles = {ws.title for ws in with_retry('시트 목록 조회', spreadsheet.worksheets)}
 
     valid_sheets = {name: key for name, key in SHEET_MAPPING.items() if name in existing_titles}
-    for name in SHEET_MAPPING:
-        if name not in existing_titles:
+    missing = [name for name in SHEET_MAPPING if name not in existing_titles]
+    if missing:
+        # 하나라도 없으면 그 시트 키가 통째로 빠진 db.json을 덮어쓰게 된다. 그러면 다음 빌드가
+        # "멤버 0명"처럼 비어 있는 페이지를 정상인 것처럼 구워버린다. 저장하지 말고 여기서 멈춘다
+        # (워크플로는 이 단계가 실패해도 저장소에 있던 기존 db.json으로 계속 빌드한다).
+        for name in missing:
             print(f"❌ '{name}' 시트를 찾을 수 없습니다. 이름을 확인해주세요.")
+        sys.exit("❌ 시트 이름이 맞지 않아 db.json을 건드리지 않고 멈춥니다(기존 데이터 유지).")
 
     db_dict = {}
     if not valid_sheets:

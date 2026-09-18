@@ -309,7 +309,7 @@ def main():
                for k in set(names) | set(races)}
 
     out = {
-        'synced_at': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'synced_at': dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S'),
         # 중간에 끊긴 실행은 max_id를 올리지 않는다(못 받은 구간이 영영 빈 채로 남지 않게).
         'max_id': (rows[0][0] if rows else 0) if finished else store['max_id'],
         'count': len(rows),

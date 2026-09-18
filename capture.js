@@ -112,7 +112,12 @@ function waitForServer(url, timeoutMs) {
         const target = await page.$('#captureArea');
         if (!target) throw new Error('#captureArea 요소를 찾을 수 없습니다.');
 
-        await target.screenshot({ path: path.resolve(__dirname, 'docs/data/calendar.png') });
+        // 임시 파일에 찍고 마지막에 바꿔치기한다. 바로 덮어쓰면 캡처 도중 중단됐을 때
+        // 반쯤 쓰인 PNG가 남고, 워크플로가 그걸 그대로 커밋해버린다.
+        const outPath = path.resolve(__dirname, 'docs/data/calendar.png');
+        const tmpPath = outPath + '.tmp';
+        await target.screenshot({ path: tmpPath });
+        require('fs').renameSync(tmpPath, outPath);
         console.log('✅ docs/data/calendar.png 캡처 완료 (오늘의 일정 + 이달의 일정 통합)');
     } finally {
         if (browser) await browser.close();

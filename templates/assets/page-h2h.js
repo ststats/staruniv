@@ -135,7 +135,7 @@ function h2hSuggestHtml(slot) {
 
 function h2hSlotHtml(slot) {
     const pid = H2hState.picks[slot];
-    const label = slot === 0 ? '선수 1' : '선수 2';
+    const label = slot === 0 ? 'PLAYER 1' : 'PLAYER 2';
     if (!pid) {
         return `
             <div class="h2h-slot-inner is-empty">
@@ -364,7 +364,11 @@ function renderH2hResult() {
     if (!box) return;
     const [a, b] = H2hState.picks;
     if (!a && !b) {
-        box.innerHTML = '<div class="h2h-empty">선수를 골라주세요. 대학 이름으로 검색하면 그 대학 선수들이 모두 나옵니다.</div>';
+        box.innerHTML = `
+            <div class="h2h-empty">
+                <span class="h2h-empty-title">선수를 골라주세요</span>
+                <span class="h2h-empty-sub">이름 · 대학으로 검색</span>
+            </div>`;
         return;
     }
     // 한 명만 골랐을 때: 자주 만난 상대 → 맵별 전적 → 경기 목록 (셋 다 10개씩 + 더 보기)
