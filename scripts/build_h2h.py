@@ -40,12 +40,12 @@ HIDDEN_TEAMS = {'휴면'}          # page-tier.js의 TIER_HIDDEN_TEAMS와 같은
 # 개인 대회 2.7만 · 팀 대회 2.8만 · 대학 미니 3.4천 · 대학 대회 2.1천 · 대학대전 1.7천)
 CAT_LABELS = {
     'sponsored': '스폰',
-    'pro_league': '프로리그',
-    'solo_event': '개인 대회',
-    'team_event': '팀 대회',
-    'college_event': '대학 대회',
-    'college_mini': '대학 미니',
-    'college_war': '대학대전',
+    'pro_league': '리그',
+    'solo_event': '개인',
+    'team_event': '팀',
+    'college_event': '대회',
+    'college_mini': '미니',
+    'college_war': '대학',
     '': '기타',
 }
 
