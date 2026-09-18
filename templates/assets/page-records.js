@@ -157,7 +157,7 @@ function teamSetDetailsHtml(m) {
                         <td class="colw-18-8">${resBadge}</td>
                         <td class="colw-18-8 ${(!isWin && !isDraw) ? winnerCls : otherCls}">${escapeHTML(r['상대 선수'])||'-'}</td>
                         <td class="colw-18-8 set-detail-map">${escapeHTML(r['맵']) || '-'}</td>
-                        <td class="colw-6"></td>
+                        <td class="colw-6 col-arrow"></td>
                     </tr>`;
     }).join('');
 }
@@ -173,7 +173,7 @@ function teamMatchRowHtml(m, collapseId) {
                 <td>${escapeHTML(m['세트 결과']) || '-'}</td>
                 <td class="badge-cell">${resultBadgeHtml(resText)}</td>
                 <td>${escapeHTML(shortMatchDate(m['날짜']))}</td>
-                <td><span class="m-arrow">${chevronDownSvg(9)}</span></td>
+                <td class="col-arrow"><span class="m-arrow">${chevronDownSvg(9)}</span></td>
             </tr>
             <tr>
                 <td colspan="6" class="set-detail-host">
@@ -343,14 +343,14 @@ function renderIndivMatchesList(containerId, format, limit) {
     document.getElementById(containerId).innerHTML = sliced.length ? sliced.map(m => `
             <tr class="stat-row">
                 <td class="stat-table-sticky-col">
-                    <span class="cell-ellipsis">${escapeHTML(m['상대 선수']) || '-'}</span>
+                    <span class="cell-clip">${escapeHTML(m['상대 선수']) || '-'}</span>
                     <span class="cell-subline">${teamCellInnerHtml(m['상대팀'])}</span>
                 </td>
                 <td class="cell-ellipsis col-oppteam">
                     ${teamCellInnerHtml(m['상대팀'])}
                 </td>
                 <td class="badge-cell"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
-                <td class="cell-ellipsis cell-muted">${escapeHTML(m['맵']) || '-'}</td>
+                <td class="cell-ellipsis cell-muted"><span class="cell-clip">${escapeHTML(m['맵']) || '-'}</span></td>
                 <td class="badge-cell">${resultBadgeHtml(m['결과'] || '')}</td>
                 <td>${escapeHTML(shortMatchDate(m['날짜']))}</td>
             </tr>
@@ -370,8 +370,9 @@ function winLossCellHtml(text) {
         + (m[3] ? `<span class="wl-short-rate">${m[3]}%</span>` : '') + '</span>';
 }
 
-// [리디자인] 상대 전적 표의 셀은 build_html.py가 "3승 1패" 같은 문자열로 구워준다.
-// 25개 팀을 훑을 때 숫자를 하나하나 읽어야 우열이 보였다 - 시안대로 비율 바로 바꾼다.
+// 상대 전적 표의 셀은 build_html.py가 "3승 1패" 같은 문자열로 구워준다.
+// 표를 훑을 때 문장으로 읽으면 우열이 안 보여서 3-1 (파랑-빨강)로 줄여 적는다.
+// 개인 전체전적 표와 같은 표기다(그쪽은 승률을 한 줄 더 붙인다).
 // 마크업을 서버에서 바꾸지 않고 여기서 올려 씌우는 이유: JS가 죽어도 원래 숫자가 그대로
 // 남아 정보가 사라지지 않는다(점진적 향상). 원래 문구는 title에 남긴다.
 function upgradeOpponentStatCells() {
@@ -388,13 +389,11 @@ function upgradeOpponentStatCells() {
                 td.setAttribute('aria-label', '기록 없음');
                 return;
             }
-            const total = stat.wins + stat.losses;
             td.setAttribute('title', stat.text);
             td.setAttribute('aria-label', stat.text);
-            td.innerHTML = '<span class="wl wl-cell">'
-                + (stat.wins ? `<span class="wl-win" style="width:${(stat.wins / total * 100).toFixed(1)}%">${stat.wins}</span>` : '')
-                + (stat.losses ? `<span class="wl-lose" style="width:${(stat.losses / total * 100).toFixed(1)}%">${stat.losses}</span>` : '')
-                + '</span>';
+            // 승률은 넓은 화면에서만 한 줄 더 붙는다(좁아지면 style.css가 감춘다).
+            td.innerHTML = `<span class="wl-short-num"><span class="wl-w">${stat.wins}</span>-<span class="wl-l">${stat.losses}</span></span>`
+                + `<span class="wl-short-rate">${getRateText(stat.wins, stat.losses)}</span>`;
         });
     });
 }

@@ -244,9 +244,9 @@ function h2hShowMoreMaps() {
 function h2hMatchRowsHtml(rows, showOpponent) {
     return rows.map(([date, opp, win, mapId, cat]) => `
             <tr class="stat-row">
-                ${showOpponent ? `<td class="stat-table-sticky-col cell-ellipsis">${escapeHTML(h2hName(String(opp)))}</td>` : ''}
+                ${showOpponent ? `<td class="stat-table-sticky-col cell-ellipsis"><span class="cell-clip">${escapeHTML(h2hName(String(opp)))}</span></td>` : ''}
                 <td class="badge-cell"><span class="tag-badge">${escapeHTML(h2hCatName(cat) || '-')}</span></td>
-                <td class="cell-ellipsis cell-muted">${escapeHTML(h2hMapName(mapId) || '-')}</td>
+                <td class="cell-ellipsis cell-muted"><span class="cell-clip">${escapeHTML(h2hMapName(mapId) || '-')}</span></td>
                 <td class="badge-cell">${resultBadgeHtml(win ? '승' : '패')}</td>
                 <td>${escapeHTML(shortMatchDate(date))}</td>
             </tr>`).join('');

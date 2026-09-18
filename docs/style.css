@@ -894,8 +894,14 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     margin-left: 0;
     color: var(--color-icon-faint);
 }
-/* 부트스트랩 .table이 늦게 오거나 못 불러와도 표는 카드 너비를 꽉 채운다 */
-.stat-table { width: 100%; font-size: var(--fs-body); }
+/* 부트스트랩 .table/.text-center가 늦게 오거나 못 불러와도 표 모양이 흔들리지 않게
+   너비와 가운데 정렬은 우리 스타일시트에서 직접 잡는다(표 칸은 모두 가운데 정렬이다). */
+.stat-table,
+.set-detail-table {
+    width: 100%;
+    text-align: center;
+}
+.stat-table { font-size: var(--fs-body); }
 .stat-table tbody td.badge-cell { line-height: 0; }
 .stat-table-sticky-col {
     position: sticky;
@@ -923,9 +929,17 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .stat-table thead .stat-table-sticky-col { z-index: 3; }
 .stat-table tbody td.cell-muted { color: var(--color-text-sub); }
 
-/* 좁은 화면에서만 쓰는 조각들의 기본값(넓은 화면에서는 숨긴다) */
-.cell-subline,
-.wl-short { display: none; }
+/* 좁은 화면에서만 쓰는 조각의 기본값(넓은 화면에서는 숨긴다) */
+.cell-subline { display: none; }
+
+/* 전적 칸 표기: "6승 4패 (60.0%)" 대신 6-4 + 그 밑에 승률.
+   상대 전적 표와 개인 전체전적 표가 같은 표기를 쓴다.
+   승률 줄은 넓은 화면에서만 붙이고, 좁아지면 숨긴다(줄이 두 줄이라 표가 길어진다). */
+.wl-full { display: none; }
+.wl-short { display: block; }
+.wl-short-num { font-size: 13px; font-weight: 700; }
+/* 넓은 화면에서는 승률을 같은 줄 옆에 둔다(칸이 넉넉해 굳이 두 줄로 쓸 이유가 없다) */
+.wl-short-rate { margin-left: 6px; font-size: 11px; color: var(--color-text-muted); }
 .wl-w { color: var(--color-primary); }
 .wl-l { color: var(--color-lose); }
 
@@ -939,13 +953,14 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
      · 긴 이름·맵은 말줄임(…)으로 자른다
    이렇게 하면 열 구성은 그대로 둔 채 한 화면에 들어간다. 데스크톱은 건드리지 않는다. */
 @media (max-width: 767.98px) {
-    .stat-table.minw-520,
-    .stat-table.minw-480,
-    .minw-520 > .stat-table,
-    .minw-480 > .stat-table { min-width: 0; }
+    .stat-table[class*="minw-"] { min-width: 0; }
     .stat-table.table-fixed { table-layout: auto; }
     .stat-table th[class*="colw-"],
     .stat-table td[class*="colw-"] { width: auto; }
+    /* 단, 펼쳐지는 세트 상세표는 칸 비율을 그대로 둔다. 경기마다 따로 그려지는 표라
+       내용에 맡기면 펼칠 때마다 칸 폭이 달라져 줄이 서로 안 맞는다. */
+    .stat-table .set-detail-table td.colw-18-8 { width: 18.8%; }
+    .stat-table .set-detail-table td.colw-6 { width: 6%; }
 
     .stat-table { font-size: 11.5px; }
     .stat-table thead th,
@@ -953,8 +968,17 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         padding: 6px 5px;
         white-space: nowrap;
     }
-    .stat-table .cell-ellipsis,
-    .stat-table .ellipsis-text { max-width: 84px; }
+    /* 표 칸(td)에 max-width를 주면 브라우저가 참고만 하고 지키지 않는다(칸이 내용만큼 늘어난다).
+       그래서 실제로 자르는 건 칸 안의 span이다 - 긴 이름·맵이 들어와도 표가 화면을 넘지 않는다. */
+    .stat-table .cell-clip,
+    .stat-table .ellipsis-text {
+        display: inline-block;
+        max-width: 78px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
     .stat-table .tag-badge {
         height: 16px;
         padding: 0 5px;
@@ -981,14 +1005,46 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         color: var(--color-text-muted);
     }
     .stat-table .cell-subline .team-logo-icon,
-    .stat-table .cell-subline .team-logo-fallback { width: 12px !important; height: 12px !important; }
+    .stat-table .cell-subline .team-logo-fallback { width: 11px !important; height: 11px !important; }
+    /* 로고와 팀 이름 사이는 붙여 둔다(부트스트랩 gap-2는 8px라 한 덩어리로 안 보였다) */
+    .stat-table .cell-subline > span { gap: 3px !important; }
 
-    /* 개인 전체전적: "3승 1패 (75.0%)"는 4칸이 들어갈 수 없다. 좁은 화면에서는
-       승-패를 크게, 승률을 그 밑 작은 글씨로 바꿔 보여준다(같은 내용, 다른 표기). */
-    .wl-full { display: none; }
-    .wl-short { display: block; }
-    .wl-short-num { font-size: 12px; font-weight: 700; }
-    .wl-short-rate { display: block; margin-top: 1px; font-size: 9.5px; color: var(--color-text-muted); }
+    /* 좁은 화면: 숫자만 한 단계 작게 남기고 승률 줄은 뺀다 */
+    .wl-short-num { font-size: 12px; }
+    .wl-short-rate { display: none; }
+
+    /* 상세로 넘어가는 ↗·⌄ 표시는 표가 작아진 만큼 같이 줄인다(예전엔 글자보다 커 보였다) */
+    .stat-table .col-arrow .ext-arrow.i-arrow { width: 8px; height: 8px; }
+    .stat-table .col-arrow { padding-left: 0; padding-right: 2px; }
+    .stat-table .col-arrow .m-arrow svg { width: 8px; height: 8px; }
+
+    /* 상대 전적 표와 최근 전적 표는 나란히 보는 표라 첫 칸(상대) 폭을 같게 맞춘다
+       (칸 폭을 내용에 맡기면 로고 유무·이름 길이에 따라 표마다 달라진다) */
+    .stat-table th.stat-table-sticky-col { width: 88px; }
+}
+
+/* 더 좁은 기기(갤럭시 S 계열 360px, 아이폰 SE 375px 등)에서는 한 단계 더 조인다.
+   위 규칙만으로는 '상대·형식·세트·결과·날짜'가 몇 픽셀씩 넘쳤다. 펼침 화살표는
+   줄 전체를 눌러도 열리므로 이 폭에서는 칸째로 뺀다. */
+@media (max-width: 389.98px) {
+    .stat-table { font-size: 11px; }
+    .stat-table thead th,
+    .stat-table tbody td { padding: 5px 3px; }
+    .stat-table .cell-clip,
+    .stat-table .ellipsis-text { max-width: 58px; }
+    .stat-table .tag-badge { padding: 0 4px; font-size: 8.5px; }
+    .stat-table .col-arrow { display: none; }
+    .stat-table .set-detail-table td { padding: 4px 3px; }
+    .wl-short-num { font-size: 11.5px; }
+}
+
+/* 아주 좁은 기기(아이폰 SE 1세대 320px 등). 한 칸이 2~3px씩 넘쳐서 여기서 더 줄인다. */
+@media (max-width: 339.98px) {
+    .stat-table { font-size: 10.5px; }
+    .stat-table thead th,
+    .stat-table tbody td { padding: 5px 2px; }
+    .stat-table .cell-clip,
+    .stat-table .ellipsis-text { max-width: 48px; }
 }
 
 .filter-nav { display: flex; }
@@ -2221,8 +2277,11 @@ a.home-notice-card:hover {
 .cal-sidebar .clean-card {
     clip-path: var(--cut-14);
 }
+/* 달력은 칸 폭을 화면에 맞춰 줄인다. 예전에는 최소 770px을 잡아둬서, 달력이 놓이는 자리가
+   그보다 좁은 구간(태블릿 가로 768~890px, 노트북 992~1270px의 2단 배치)에서 가로 스크롤이
+   생겼다. 칸이 좁아지면 일정 칩의 글자만 한 단계 작아지고 내용은 그대로 보인다. */
 .cal-calendar-scroll-content {
-    min-width: 770px;
+    min-width: 0;
     width: 100%;
 }
 
@@ -2269,7 +2328,7 @@ a.home-notice-card:hover {
 .cal-weekdays,
 .cal-days-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(110px, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     width: 100%;
 }
 .cal-weekdays div:first-child { color: var(--color-head-sun); }
@@ -2306,6 +2365,15 @@ html[data-theme="dark"] .cal-longterm-bar {
     --ev-accent: var(--ev-accent-d);
     --ev-bg: var(--ev-bg-d);
     --ev-hover: var(--ev-hover-d);
+}
+
+/* 칸이 좁아지는 구간(태블릿·노트북 2단 배치)에서는 일정 칩 글자를 한 단계 줄인다. */
+@media (min-width: 768px) and (max-width: 1279.98px) {
+    .cal-day-cell { padding: 5px 5px 6px; }
+    .cal-cell-event { padding: 3px 5px; }
+    .cal-event-desc { font-size: 11px; }
+    .cal-event-time,
+    .cal-event-person { font-size: 10px; }
 }
 
 /* 여러 날 이어지는 막대: 칸 여백 밖으로 번져 옆 칸 막대와 붙는다(calendar.js calBarEdgeStyle).
@@ -3543,7 +3611,10 @@ body.media-lightbox-open { overflow: hidden; }
     border-top: 1px dashed var(--color-border);
     padding: 8px clamp(12px, 3vw, 24px);
 }
-.set-detail-table { table-layout: fixed; }
+.set-detail-table {
+    width: 100%;
+    table-layout: fixed;
+}
 .set-detail-table td.set-detail-label {
     font-weight: 800;
     color: var(--color-text-muted);

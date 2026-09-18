@@ -43,7 +43,7 @@
                     <div class="table-responsive scroll-area">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
                             <thead>
-                                <tr><th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-18-8">상대</th><th scope="col" class="text-center text-nowrap colw-18-8">대회</th><th scope="col" class="text-center text-nowrap colw-18-8">대학</th><th scope="col" class="text-center text-nowrap colw-18-8">미니</th><th scope="col" class="text-center text-nowrap colw-18-8">CK</th><th scope="col" class="colw-6" aria-label="상세"></th></tr>
+                                <tr><th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-18-8">상대</th><th scope="col" class="text-center text-nowrap colw-18-8">대회</th><th scope="col" class="text-center text-nowrap colw-18-8">대학</th><th scope="col" class="text-center text-nowrap colw-18-8">미니</th><th scope="col" class="text-center text-nowrap colw-18-8">CK</th><th scope="col" class="colw-6 col-arrow" aria-label="상세"></th></tr>
                             </thead>
                             <tbody>
                                 {% for row in crew_stats['전체'] %}
@@ -58,7 +58,7 @@
                                     <td class="text-center text-nowrap colw-18-8">{{ row['미니 전적'] | e }}</td><td class="text-center text-nowrap colw-18-8">{{ row['CK 전적'] | e }}</td>
                                     <!-- 이 행은 클릭 시 팝업(모달)이 열리므로, 도구 페이지의 외부링크
                                          화살표(↗)와 같은 모양을 써서 "이동/열기"라는 의미를 통일한다. -->
-                                    <td class="text-center colw-6">
+                                    <td class="text-center colw-6 col-arrow">
                                         <span class="ext-arrow i-arrow" aria-hidden="true"></span>
                                     </td>
                                 </tr>
