@@ -262,6 +262,7 @@ function renderTierGroups() {
         : `<div class="tier-empty">${TierState.liveOnly ? '방송 중인 사람이 없습니다.' : '표시할 인원이 없습니다.'}</div>`;
 
     observeTierThumbs();
+    syncTierCardHeight();
     renderTierBar();
     ensureTierPick();
     restoreTierAnchor(anchor);
@@ -364,9 +365,20 @@ function onTierBarClick(event) {
     bar.classList.add('is-closed');
     bar.querySelector('.tier-bar-pick')?.setAttribute('aria-expanded', 'false');
     syncTierBarHeight();
-    window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - tierStickyOffset() - 12, behavior: 'instant' });
+    scrollTierIntoPlace(target);
+}
+
+// 티어 제목이 고정 바 바로 아래에 오게 맞춘다.
+// 한 번에 끝나지 않는 이유: 화면 밖 카드는 실제로 그려지기 전까지 예상 높이로 자리만
+// 잡아둬서(style.css의 content-visibility), 스크롤한 순간 그려지면서 위치가 조금 밀린다.
+// 다음 두 프레임에 다시 재서 어긋난 만큼만 보정한다(1px 안쪽이면 그만둔다).
+function scrollTierIntoPlace(target, tries) {
+    const gap = target.getBoundingClientRect().top - tierStickyOffset() - 12;
+    if (Math.abs(gap) > 1) window.scrollBy({ top: gap, behavior: 'instant' });
     TierState.jump = { id: target.id, y: window.scrollY };
     highlightTierBar();
+    const left = tries === undefined ? 2 : tries;
+    if (left > 0 && Math.abs(gap) > 1) requestAnimationFrame(() => scrollTierIntoPlace(target, left - 1));
 }
 
 // 지금 화면을 차지하고 있는 티어 섹션의 id.
@@ -453,6 +465,26 @@ function tierLatinLabel(tier) {
     const key = ((tier === null || tier === undefined) ? '' : String(tier)).replace('티어', '').trim();
     if (TIER_EN[key]) return TIER_EN[key];
     return /^\d+$/.test(key) ? key + ' TIER' : 'TIER';
+}
+
+// 화면 밖 카드를 건너뛰게 하려면(style.css의 content-visibility) 아직 안 그린 카드의
+// 높이를 브라우저에 알려줘야 스크롤바가 튀지 않는다. 카드 높이는 화면 폭마다 다르니
+// 실제로 그려진 첫 카드를 재서 넣어준다.
+// 맨 앞 카드 하나에 is-measure를 달아 content-visibility를 끄고(style.css) 그 높이를 잰다.
+// 건너뛰는 카드를 재면 방금 넣어준 예상 높이가 그대로 돌아와서 값이 영영 안 맞는다.
+function syncTierCardHeight() {
+    const card = document.querySelector('#tier-root .tier-card');
+    if (!card) return;
+    card.classList.add('is-measure');
+    // 방금 붙인 카드는 바로 재면 안 된다 - 브라우저가 아직 '건너뛸지' 판정 전이라 예상
+    // 높이를 그대로 돌려준다. 한 번 그려진 다음 프레임에 재야 진짜 높이가 나온다.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        const h = Math.round(card.getBoundingClientRect().height);
+        const root = document.documentElement;
+        if (h > 0 && root.style.getPropertyValue('--tier-card-h') !== `${h}px`) {
+            root.style.setProperty('--tier-card-h', `${h}px`);
+        }
+    }));
 }
 
 function tierStickyOffset() {
@@ -656,6 +688,8 @@ function applyLiveToCards(setChanged) {
 // ---------------------------------------------------------------------------
 // 시작
 // ---------------------------------------------------------------------------
+// 티어표는 site_data.json(우리 팀 멤버·경기 기록)을 쓰지 않는다 - 명단은 구글시트에서
+// 구워둔 tier_members.json이다. 그래서 그 파일을 기다리지 않고 바로 시작한다.
 bootPage(async () => {
     const root = document.getElementById('tier-root');
     // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
@@ -700,6 +734,7 @@ bootPage(async () => {
     }, { passive: true });
 
     window.addEventListener('resize', syncTierBarHeight);
+    window.addEventListener('resize', syncTierCardHeight);
 
     renderTierScope();
     renderTierGroups();
@@ -729,4 +764,4 @@ bootPage(async () => {
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         switchTierView(params.get('view'));
     }));
-});
+}, { siteData: false });

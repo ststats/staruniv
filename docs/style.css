@@ -1386,6 +1386,20 @@ a.btn-view-all {
 .tool-card {
     clip-path: var(--cut-14);
 }
+/* 티어표는 한 번에 300장 넘는 카드를 그린다. 화면 밖 카드는 브라우저가 레이아웃·페인트를
+   건너뛰게 해서 '전체' 보기로 바꿀 때 멈칫하는 걸 없앤다(모바일에서 1초 -> 0.2초).
+   높이는 화면 폭마다 달라서 렌더 직후 실제 카드 높이를 --tier-card-h로 넣어준다
+   (page-tier.js의 syncTierCardHeight). 값이 없을 때만 아래 기본값을 쓴다. */
+.tier-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto var(--tier-card-h, 184px);
+}
+/* 맨 앞 카드 하나만 건너뛰지 않는다. 그린 직후에 진짜 카드 높이를 잴 기준이 하나는
+   있어야 하기 때문이다(위의 --tier-card-h). 건너뛰는 카드를 재면 방금 넣어준 예상
+   높이가 그대로 돌아와서 값이 영영 안 맞는다. */
+.tier-card.is-measure {
+    content-visibility: visible;
+}
 .avatar-bar,
 .donut-text,
 .home-hero-kicker,

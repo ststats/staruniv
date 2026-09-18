@@ -816,13 +816,18 @@ async function applyNavVisibility() {
 // 페이지 시작: 사이트 데이터(멤버/경기 등)를 먼저 불러온 뒤 페이지별 초기화를 실행한다.
 // 이 스크립트들은 body 맨 끝에서 실행되므로 DOM은 이미 준비돼 있지만, 순서를 확실히 하려고
 // DOMContentLoaded에 맞춘다(이미지 로딩까지 기다리는 window.onload보다 빠르다).
-function bootPage(init) {
+// opts.siteData: false 면 site_data.json(멤버·경기 기록)을 아예 안 받는다.
+// 티어표·영상처럼 그 데이터를 한 줄도 안 쓰는 페이지가 400KB짜리 파일을 기다렸다
+// 시작하던 걸 없애기 위한 것이다. 그 페이지에서 SiteData를 쓰기 시작하면 여기 옵션을
+// 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
+function bootPage(init, opts) {
+    const needsSiteData = !(opts && opts.siteData === false);
     const start = async () => {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
         applyNavVisibility();   // 메뉴는 사이트 데이터와 무관하므로 기다리지 않는다
-        await loadSiteData();
+        if (needsSiteData) await loadSiteData();
         safeInit('페이지', init);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

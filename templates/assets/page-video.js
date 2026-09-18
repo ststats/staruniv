@@ -312,6 +312,7 @@ async function loadVideoData() {
     return { channels: {}, videos: [], picks: [] };
 }
 
+// 영상 페이지도 site_data.json을 쓰지 않는다(데이터는 videos.json 하나뿐).
 bootPage(async () => {
     const data = await loadVideoData();
     VideoState.data = {
@@ -338,4 +339,4 @@ bootPage(async () => {
         renderVideoChannels();
         renderFantube();
     }));
-});
+}, { siteData: false });

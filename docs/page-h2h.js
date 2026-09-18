@@ -145,16 +145,15 @@ function h2hSuggestHtml(slot) {
     </div>`;
 }
 
-// 목록 끝까지 내리면 다음 묶음을 이어 붙인다(스크롤 위치는 그대로 둔다).
+// 목록 끝까지 내리면 다음 묶음만 뒤에 붙인다. 이미 그린 줄은 그대로 두는 게 중요하다 -
+// 매번 전체를 다시 그리면 200줄쯤부터 스크롤이 눈에 띄게 걸린다.
 function h2hSuggestScroll(slot, el) {
     if (el.scrollTop + el.clientHeight < el.scrollHeight - 120) return;
     const list = h2hSuggest(H2hState.query[slot]);
-    if (H2hState.suggestShown >= list.length) return;
-    H2hState.suggestShown = Math.min(list.length, H2hState.suggestShown + H2H_SUGGEST_STEP);
-    const keep = el.scrollTop;
-    el.querySelectorAll('.h2h-suggest-item').forEach(node => node.remove());
-    el.insertAdjacentHTML('beforeend', h2hSuggestItemsHtml(slot, list.slice(0, H2hState.suggestShown)));
-    el.scrollTop = keep;
+    const from = H2hState.suggestShown;
+    if (from >= list.length) return;
+    H2hState.suggestShown = Math.min(list.length, from + H2H_SUGGEST_STEP);
+    el.insertAdjacentHTML('beforeend', h2hSuggestItemsHtml(slot, list.slice(from, H2hState.suggestShown)));
 }
 
 function h2hSlotHtml(slot) {
