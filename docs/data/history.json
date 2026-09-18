@@ -4,12 +4,482 @@
       "id": "h-founding",
       "date": "2024-07-08",
       "type": "founding",
-      "title": "캄몬스타즈 창단",
-      "desc": "츠캄시즌1과 함께 팀이 시작됐습니다.",
-      "members": [],
-      "youtube": "",
-      "image": ""
+      "title": "츠캄 몬스타즈 창단",
+      "desc": "",
+      "members": [
+        "김윤환(감독)",
+        "이경민(감독)"
+      ],
+      "youtube": "https://youtu.be/AUVSbE3CJPk?si=sp0XotYnl7vMNuY2",
+      "image": "",
+      "ord": 1
     }
   ],
-  "overrides": {}
+  "overrides": {
+    "auto-join-2024-07-08": {
+      "ord": 0,
+      "hidden": true
+    },
+    "auto-join-2024-07-09": {
+      "title": "디임, 졈니 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "디임(선수)",
+        "졈니(선수)"
+      ]
+    },
+    "auto-join-2024-07-12": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "앵지(선수)"
+      ]
+    },
+    "auto-join-2024-07-17": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "토마토(선수)",
+        "임조이(유스)"
+      ]
+    },
+    "auto-leave-2024-07-20": {
+      "ord": 0,
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "킹지(유스)"
+      ]
+    },
+    "auto-join-2024-07-20": {
+      "ord": 1,
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "킹지(유스)"
+      ]
+    },
+    "auto-join-2024-08-07": {
+      "title": "효짱, 한쪼니 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "효짱(유스)",
+        "한쪼니(유스)"
+      ]
+    },
+    "auto-join-2024-08-17": {
+      "title": "몽군, 모리 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "몽군(코치)",
+        "모리(선수)"
+      ]
+    },
+    "auto-join-2024-08-19": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "치리(선수)"
+      ]
+    },
+    "auto-join-2024-09-01": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "강덕구(선수)"
+      ]
+    },
+    "auto-leave-2024-09-25": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "강덕구(선수)"
+      ]
+    },
+    "auto-join-2024-09-30": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "수입뿌드(코치)"
+      ]
+    },
+    "auto-join-2024-10-18": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "박준오(코치)"
+      ]
+    },
+    "auto-join-2024-10-31": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "정윤종(전력분석관)"
+      ]
+    },
+    "auto-join-2024-11-02": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "세나(선수)"
+      ]
+    },
+    "auto-leave-2025-01-08": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "디임(선수)"
+      ]
+    },
+    "auto-join-2025-02-21": {
+      "title": "진땅콩, 송혜림 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "진땅콩 T(인턴)",
+        "송혜림(인턴)"
+      ]
+    },
+    "auto-join-2025-02-28": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "다예(선수)"
+      ]
+    },
+    "auto-join-2025-03-06": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "막내현진(유스)"
+      ]
+    },
+    "auto-leave-2025-03-07": {
+      "title": "진땅콩 퇴단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "진땅콩 T(인턴)"
+      ]
+    },
+    "auto-leave-2025-06-12": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "송혜림(유스)"
+      ]
+    },
+    "auto-leave-2025-07-14": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "몽군(코치)",
+        "세나(선수)",
+        "졈니(선수)",
+        "앵지(선수)",
+        "효짱(선수)",
+        "한쪼니(선수)"
+      ]
+    },
+    "auto-join-2025-07-26": {
+      "title": "황병영, 지동원 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "황병영(코치)",
+        "지동원(코치)"
+      ]
+    },
+    "auto-join-2025-07-27": {
+      "title": "진땅콩 재입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "진땅콩(유스)"
+      ]
+    },
+    "auto-join-2025-08-04": {
+      "title": "조일장, 두디 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "조일장(코치)",
+        "두디(선수)"
+      ]
+    },
+    "auto-join-2025-08-05": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "주하랑(선수)"
+      ]
+    },
+    "auto-join-2025-08-07": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "햇살(선수)"
+      ]
+    },
+    "auto-join-2025-09-24": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "소주양(선수)"
+      ]
+    },
+    "auto-leave-2025-10-29": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "두디(선수)",
+        "모리(선수)",
+        "막내현진(선수)"
+      ]
+    },
+    "auto-join-2025-11-03": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "파도튜브(코치)"
+      ]
+    },
+    "auto-join-2025-11-15": {
+      "title": "연또, 박쭈이, 정유랭 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "연또(인턴)",
+        "박쭈이(인턴)",
+        "정유랭(인턴)"
+      ]
+    },
+    "auto-leave-2025-11-29": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "정유랭(인턴)"
+      ]
+    },
+    "auto-leave-2025-12-06": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "연또(인턴)"
+      ]
+    },
+    "auto-leave-2026-01-14": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "정윤종(전력분석관)"
+      ]
+    },
+    "auto-leave-2026-01-17": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "다예(선수)"
+      ]
+    },
+    "auto-join-2026-01-17": {
+      "title": "배성흠, 박수범, 먼진 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "배성흠(코치)",
+        "박수범(코치)",
+        "먼진(선수)"
+      ]
+    },
+    "auto-leave-2026-03-14": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "조일장(코치)",
+        "황병영(코치)",
+        "수입뿌드(코치)"
+      ]
+    },
+    "auto-join-2026-03-16": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "비타밍(선수)"
+      ]
+    },
+    "auto-join-2026-03-19": {
+      "title": "지두두, 아리송이 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "지두두(선수)",
+        "아리송이(선수)"
+      ]
+    },
+    "auto-leave-2026-03-21": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "박쭈이(유스)"
+      ]
+    },
+    "auto-join-2026-03-26": {
+      "title": "사테, 찌킹 입단",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "사테(코치)",
+        "찌킹(선수)"
+      ]
+    },
+    "auto-join-2026-04-28": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "낭니(유스)"
+      ]
+    },
+    "auto-leave-2026-05-04": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "이경민(감독)"
+      ]
+    },
+    "auto-join-2026-06-13": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "변현제(코치)"
+      ]
+    },
+    "auto-join-2026-06-16": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "김민철(코치)"
+      ]
+    },
+    "auto-leave-2026-06-28": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "파도튜브(코치)",
+        "진땅콩(선수)"
+      ]
+    },
+    "auto-join-2026-07-08": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "남덕선(선수)"
+      ]
+    },
+    "auto-join-2026-07-31": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "왜냐맨(코치)"
+      ]
+    },
+    "auto-leave-2026-09-04": {
+      "title": "",
+      "desc": "",
+      "youtube": "",
+      "image": "",
+      "members": [
+        "변현제(코치)",
+        "지동원(코치)",
+        "박수범(코치)",
+        "찌킹(선수)",
+        "치리(선수)"
+      ]
+    }
+  }
 }
