@@ -21,7 +21,7 @@ const HISTORY_TYPES = {
     leave: '퇴단',
     match: '대회',
     broadcast: '방송',
-    event: '이벤트',
+    event: '경기',
 };
 
 function histEscape(str) {
