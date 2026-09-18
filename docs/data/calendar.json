@@ -349,6 +349,16 @@
       "desc": "스튜디오 장판교체",
       "detail": "",
       "color": "#1677ff"
+    },
+    {
+      "id": 1789733765026,
+      "startDate": "2026-09-18",
+      "endDate": "2026-09-18",
+      "time": "20:00",
+      "person": "캄몬",
+      "desc": "단체종겜",
+      "detail": "",
+      "color": "#1677ff"
     }
   ],
   "offAir": {
@@ -412,7 +422,8 @@
       "brainzerg7",
       "freshtomato",
       "thelddl",
-      "dlaguswl501"
+      "dlaguswl501",
+      "vldpfm2"
     ],
     "2026-09-19": [
       "brainzerg7"
