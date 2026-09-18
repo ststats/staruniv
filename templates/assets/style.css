@@ -3828,6 +3828,11 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-strong);
     white-space: nowrap;
 }
+.h2h-suggest-alt {
+    flex: none;
+    font-size: 11px;
+    color: var(--color-text-faint);
+}
 .h2h-suggest-team {
     overflow: hidden;
     white-space: nowrap;

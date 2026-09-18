@@ -40,12 +40,12 @@ HIDDEN_TEAMS = {'휴면'}          # page-tier.js의 TIER_HIDDEN_TEAMS와 같은
 # 개인 대회 2.7만 · 팀 대회 2.8만 · 대학 미니 3.4천 · 대학 대회 2.1천 · 대학대전 1.7천)
 CAT_LABELS = {
     'sponsored': '스폰',
-    'pro_league': '리그',
-    'solo_event': '개인',
-    'team_event': '팀',
-    'college_event': '대회',
-    'college_mini': '미니',
-    'college_war': '대학',
+    'pro_league': '프로리그',
+    'solo_event': '개인 대회',
+    'team_event': '팀 대회',
+    'college_event': '대학 대회',
+    'college_mini': '대학 미니',
+    'college_war': '대학대전',
     '': '기타',
 }
 
@@ -147,7 +147,9 @@ def main():
         if not pid:
             missing.append(m['nickname'])
             continue
-        linked[pid] = {'tm': m['team'], 's': m['id'], **({'t': m['tier']} if m['tier'] not in (None, '') else {})}
+        # 이름은 티어표(시너지) 닉네임을 쓴다 - 사이트 다른 화면과 같은 이름으로 보이게.
+        linked[pid] = {'n': m['nickname'], 'tm': m['team'], 's': m['id'],
+                       **({'t': m['tier']} if m['tier'] not in (None, '') else {})}
     if tier_members:
         print(f'  잇기: elo_id {by_eloid}명 · 이름 {by_name}명 · 못 찾음 {len(missing)}명 (시너지 명단 {len(tier_members)}명)')
 
@@ -193,9 +195,12 @@ def main():
         name = info[0] if isinstance(info, list) else str(info)
         race = (info[1] if isinstance(info, list) and len(info) > 1 else '') or ''
         wins = sum(1 for x in matches if x[2])
+        link = linked.get(pid, {})
         index_players[str(pid)] = {
             'n': name, 'r': race, 'm': len(matches), 'w': wins, 'd': matches[0][0],
-            **linked.get(pid, {}),
+            **link,
+            # 티어표 닉네임과 eloboard 이름이 다르면 둘 다 남긴다(검색에서 양쪽 다 걸리게).
+            **({'en': name} if link.get('n') and link['n'] != name else {}),
         }
         write_json(os.path.join(OUT_DIR, 'p', f'{pid}.json'), {'id': str(pid), 'rows': matches})
 

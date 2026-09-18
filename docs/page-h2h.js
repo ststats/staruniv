@@ -4,7 +4,8 @@
  *
  * 데이터: docs/data/h2h/ - scripts/build_h2h.py가 eloboard 아카이브를 선수별로 잘라 둔 것.
  *   index.json      { syncedAt, cats:[대회 이름], maps:{맵id:이름},
- *                     players:{ 선수id: {n:이름, r:종족, m:판수, w:승, d:최근 경기일, tm:대학, t:티어, s:숲아이디} },
+ *                     players:{ 선수id: {n:이름(티어표 닉네임), en:eloboard 이름(다를 때만),
+ *                                        r:종족, m:판수, w:승, d:최근 경기일, tm:대학, t:티어, s:숲아이디} },
  *                     others: { 선수id: 이름 } }        // 티어표 밖 상대 이름
  *   p/<선수id>.json { id, rows:[[날짜, 상대id, 이김(1/0), 맵id, 대회 인덱스], ...] }   // 최신순
  * 한 명 파일이 30~60KB라 고를 때 하나씩 받는다(원본 아카이브는 14MB라 통째로 못 준다).
@@ -103,7 +104,9 @@ function h2hSuggest(query) {
     const byName = [];
     const byTeam = [];
     entries.forEach(([pid, p]) => {
-        if (String(p.n).toLowerCase().includes(q)) byName.push([pid, p]);
+        // 티어표 닉네임으로도, eloboard 이름(본명 등)으로도 찾을 수 있게 둘 다 본다
+        const names = [p.n, p.en].filter(Boolean).map(x => String(x).toLowerCase());
+        if (names.some(n => n.includes(q))) byName.push([pid, p]);
         else if (String(p.tm || '').toLowerCase().includes(q)) byTeam.push([pid, p]);   // 대학으로 찾으면 소속 전원
     });
     const sort = list => list.sort((a, b) =>
@@ -119,6 +122,7 @@ function h2hSuggestHtml(slot) {
         <button type="button" class="h2h-suggest-item" onclick="h2hPick(${slot}, '${escapeHTML(pid)}')">
             ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
             <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
+            ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
             ${p.r ? raceBadgeHtml(p.r) : ''}
             <span class="h2h-suggest-team">${escapeHTML([p.t !== undefined && p.t !== '' ? tierLabel(p.t) : '', p.tm || ''].filter(Boolean).join(' · '))}</span>
             <span class="h2h-suggest-count">${(p.m || 0).toLocaleString('ko-KR')}판</span>
