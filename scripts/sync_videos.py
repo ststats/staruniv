@@ -51,6 +51,8 @@ API_MAX_PAGES = 40         # 채널당 상한 = 50 × 40 = 2,000개
 API_RECENT_PAGES = 2       # 이미 쌓인 채널은 최신 100개만 훑는다
 SHORT_MAX_SEC = 185        # 쇼츠는 3분 이하 - 이보다 길면 확인할 것도 없이 일반 영상
 DELAY = 0.5                # 요청 사이 쉬는 시간(초)
+RSS_RETRY = 3              # RSS가 404를 낼 때 다시 시도할 횟수(유튜브 쪽이 들쭉날쭉하다)
+RSS_RETRY_WAIT = 4         # 다시 시도하기 전에 쉬는 시간(초). 시도할수록 배로 늘린다
 UA = 'Mozilla/5.0 (compatible; staruniv-videos/1.0; +https://ststats.github.io/staruniv)'
 
 NS = {
@@ -89,7 +91,12 @@ def http_get(url, allow_redirect=True, timeout=20):
         with opener.open(req, timeout=timeout) as res:
             return res.status, res.read().decode('utf-8', 'replace')
     except urllib.error.HTTPError as e:
-        return e.code, ''
+        # 오류 본문도 돌려준다. 유튜브 API는 왜 막혔는지를 본문에 적어주는데
+        # (키 제한·API 미사용 설정·할당량 초과 등) 이걸 버리면 'HTTP 403'만 남아 원인을 알 수 없다.
+        try:
+            return e.code, e.read().decode('utf-8', 'replace')
+        except Exception:
+            return e.code, ''
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         print(f'  ⚠️ {url}: {e}')
         return 0, ''
@@ -144,14 +151,40 @@ def resolve_channel(url, cached):
     return {'id': cid, 'title': title, 'thumb': thumb, 'url': url}
 
 
+def fetch_rss(channel_id):
+    """RSS 원문을 받아온다. (본문, 채널 피드였는지) - 못 받으면 (None, False).
+
+    2025년 말부터 유튜브 RSS(feeds/videos.xml)가 멀쩡한 채널에도 404를 내는 일이 잦다.
+    유튜브 쪽 문제라 우리가 고칠 수는 없고, 대신 두 가지로 버틴다.
+      1) 같은 채널을 '업로드 재생목록'(채널 id의 UC → UU) 주소로도 물어본다. 한쪽이 404여도
+         다른 쪽이 오는 경우가 많다.
+      2) 그래도 안 되면 잠깐 쉬었다 다시 시도한다(몇 분~몇 시간 단위로 됐다 안 됐다 한다).
+    이 단계가 끝내 실패해도 저장해둔 영상은 그대로 두니 사이트가 비지는 않는다.
+    """
+    base = 'https://www.youtube.com/feeds/videos.xml'
+    tries = [(f'{base}?channel_id={channel_id}', True),
+             (f'{base}?playlist_id=UU{channel_id[2:]}', False)]
+    for attempt in range(RSS_RETRY):
+        for url, is_channel_feed in tries:
+            status, body = http_get(url)
+            time.sleep(DELAY)
+            if status == 200 and body:
+                return body, is_channel_feed
+        if attempt + 1 < RSS_RETRY:
+            time.sleep(RSS_RETRY_WAIT * (attempt + 1))
+    return None, False
+
+
 def fetch_feed(channel_id):
-    status, body = http_get(f'https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}')
-    time.sleep(DELAY)
-    if status != 200 or not body:
-        print(f'  ⚠️ RSS를 받지 못했습니다: {channel_id} (HTTP {status})')
+    body, is_channel_feed = fetch_rss(channel_id)
+    if not body:
+        print(f'  ⚠️ RSS를 받지 못했습니다: {channel_id}')
+        print('     유튜브 RSS가 멀쩡한 채널에도 404를 내는 날이 있습니다(유튜브 쪽 문제).')
+        print('     자주 겪는다면 YOUTUBE_API_KEY 시크릿을 넣어주세요 - API로 받으면 이 문제가 없고 과거 영상도 전부 받습니다.')
         return None, []
     root = ET.fromstring(body)
-    title = (root.findtext('atom:title', '', NS) or '').strip()
+    # 업로드 재생목록 피드의 제목은 채널 이름이 아닐 수 있어 채널 피드일 때만 쓴다.
+    title = (root.findtext('atom:title', '', NS) or '').strip() if is_channel_feed else ''
     entries = []
     for e in root.findall('atom:entry', NS):
         vid = e.findtext('yt:videoId', '', NS)
@@ -345,6 +378,8 @@ def main():
                     feed_title = info.get('title', '')
                 except Exception as e:                      # 키 문제·할당량 초과 등은 RSS로 물러난다
                     print(f'  ⚠️ API로 받지 못해 RSS로 받습니다: {e}')
+                    print('     (403이면 키의 "애플리케이션 제한"을 없음으로 두었는지, '
+                          'Google Cloud 프로젝트에서 YouTube Data API v3를 사용 설정했는지 확인해주세요)')
                     entries = None
             if entries is None:
                 info = resolve_channel(url, known_channels.get(url))
