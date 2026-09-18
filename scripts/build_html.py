@@ -78,6 +78,15 @@ OWN_TEAM_LOGO_NAME = '캄몬스타즈'
 _URI_COMPONENT_SAFE = "!'()*"
 
 
+def cell(row, key):
+    """시트 한 칸을 문자열로 읽는다.
+    gspread가 "0"처럼 숫자로 보이는 칸을 int로 바꿔주기 때문에, 흔히 쓰는
+    `str(row.get(k, '') or '')`는 0티어를 빈 값(=미분류)으로 만들어버린다.
+    None만 빈 값으로 보고 나머지는 그대로 문자열로 만든다."""
+    v = row.get(key)
+    return '' if v is None else str(v).strip()
+
+
 def tier_index(tier):
     return _TIER_INDEX.get(str(tier) if tier is not None else '', len(TIER_ORDER))
 
@@ -139,9 +148,9 @@ def build_tier_members(rows):
     out, skipped = [], 0
     seen = set()
     for r in rows or []:
-        soop = str(r.get('SOOP ID', '') or '').strip()
-        team = str(r.get('소속', '') or '').strip()
-        nickname = str(r.get('닉네임', '') or '').strip() or str(r.get('이름', '') or '').strip()
+        soop = cell(r, 'SOOP ID')
+        team = cell(r, '소속')
+        nickname = cell(r, '닉네임') or cell(r, '이름')
         if not soop or not nickname or team in TIER_HIDDEN_TEAMS:
             skipped += 1
             continue
@@ -154,8 +163,8 @@ def build_tier_members(rows):
             'id': soop,
             'nickname': nickname,
             'team': team,
-            'tier': str(r.get('티어', '') or '').strip(),
-            'race': str(r.get('종족', '') or '').strip(),
+            'tier': cell(r, '티어'),
+            'race': cell(r, '종족'),
         })
     return out, skipped
 

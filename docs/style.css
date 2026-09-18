@@ -4038,6 +4038,19 @@ body.media-lightbox-open { overflow: hidden; }
     box-shadow: 0 12px 28px rgba(10, 20, 40, 0.16);
     clip-path: var(--cut-8);
 }
+.h2h-suggest-head {
+    position: sticky;
+    top: -6px;                 /* .h2h-suggest의 padding(6px)만큼 올려 붙여 목록 위에 고정한다 */
+    z-index: 1;
+    margin: -6px -6px 4px;
+    padding: 7px 10px;
+    background: var(--color-card);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--color-text-muted);
+}
 .h2h-suggest-item {
     display: flex;
     align-items: center;

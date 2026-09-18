@@ -533,7 +533,7 @@ function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member) {
     const race = m['종족'] || '';
     const letter = raceShortLabel(race);
     const edgeClass = ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
-    const tierText = tierLabel(m['티어'] || '').replace('티어', '');
+    const tierText = tierLabel(m['티어']).replace('티어', '');
     return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0" onclick="${onclickFn}('${jsAttr(name)}')">
                             ${race ? raceBadgeHtml(race) : ''}
                             <span class="avatar-select-name">${escapeHTML(name)}</span>

@@ -82,18 +82,22 @@ def sheet_tier_members():
     돌려주는 모양은 fetch_tier_members()와 같다."""
     db = load_json(DB_PATH, {})
     out = []
+    # gspread가 "0"을 int 0으로 바꿔 넘겨주므로 `x or ''`로 읽으면 0티어가 사라진다.
+    def cell(row, key):
+        v = row.get(key)
+        return '' if v is None else str(v).strip()
+
     for r in db.get('tierMembers') or []:
-        elo = str(r.get('ELO ID', '') or '').strip()
-        nickname = str(r.get('닉네임', '') or '').strip() or str(r.get('이름', '') or '').strip()
+        nickname = cell(r, '닉네임') or cell(r, '이름')
         if not nickname:
             continue
         out.append({
-            'id': str(r.get('SOOP ID', '') or '').strip(),
+            'id': cell(r, 'SOOP ID'),
             'nickname': nickname,
-            'elo_id': elo,
-            'team': str(r.get('소속', '') or '').strip(),
-            'tier': str(r.get('티어', '') or '').strip(),
-            'race': str(r.get('종족', '') or '').strip(),
+            'elo_id': cell(r, 'ELO ID'),
+            'team': cell(r, '소속'),
+            'tier': cell(r, '티어'),
+            'race': cell(r, '종족'),
         })
     return out
 

@@ -16,7 +16,10 @@ const H2H_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 9
 const H2H_LIST_STEP = 10;          // 경기 목록 한 번에 보여줄 개수
 const H2H_RIVAL_STEP = 10;         // '자주 만난 상대' 한 번에 보여줄 명수
 const H2H_MAP_STEP = 10;           // '맵별 전적' 한 번에 보여줄 개수
-const H2H_SUGGEST_MAX = 12;
+// 검색 결과는 전부 볼 수 있어야 한다(대학 이름으로 찾으면 수십~수백 명이 나온다).
+// 다만 한 글자만 쳐도 수백 줄을 한꺼번에 그리면 타자마다 버벅이므로, 스크롤이 끝에
+// 닿을 때마다 이어서 그린다 - 사용자 입장에서는 그냥 계속 스크롤되는 목록이다.
+const H2H_SUGGEST_STEP = 40;
 
 const H2hState = {
     index: null,
@@ -28,6 +31,7 @@ const H2hState = {
     rivalShown: H2H_RIVAL_STEP,
     mapShown: H2H_MAP_STEP,
     suggestSlot: -1,      // 추천 목록이 열려 있는 칸
+    suggestShown: H2H_SUGGEST_STEP,   // 추천 목록에 지금 그려둔 개수
     query: ['', ''],
 };
 
@@ -115,22 +119,42 @@ function h2hSuggest(query) {
     });
     const sort = list => list.sort((a, b) =>
         tierIndex(a[1].t) - tierIndex(b[1].t) || (b[1].m || 0) - (a[1].m || 0) || String(a[1].n).localeCompare(b[1].n, 'ko'));
-    return [...sort(byName), ...sort(byTeam)].slice(0, H2H_SUGGEST_MAX);
+    return [...sort(byName), ...sort(byTeam)];
 }
 
-function h2hSuggestHtml(slot) {
-    const list = h2hSuggest(H2hState.query[slot]);
-    if (!H2hState.query[slot].trim()) return '';
-    if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다.</div></div>';
-    return `<div class="h2h-suggest">${list.map(([pid, p]) => `
-        <button type="button" class="h2h-suggest-item" onclick="h2hPick(${slot}, '${escapeHTML(pid)}')">
+function h2hSuggestItemsHtml(slot, list) {
+    return list.map(([pid, p]) => `
+        <button type="button" class="h2h-suggest-item" onclick="h2hPick(${slot}, '${jsAttr(pid)}')">
             ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
             <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
             ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
             ${p.r ? raceBadgeHtml(p.r) : ''}
             <span class="h2h-suggest-team">${escapeHTML([p.t !== undefined && p.t !== '' ? tierLabel(p.t) : '', p.tm || ''].filter(Boolean).join(' · '))}</span>
             <span class="h2h-suggest-count">${(p.m || 0).toLocaleString('ko-KR')}판</span>
-        </button>`).join('')}</div>`;
+        </button>`).join('');
+}
+
+function h2hSuggestHtml(slot) {
+    const list = h2hSuggest(H2hState.query[slot]);
+    if (!H2hState.query[slot].trim()) return '';
+    if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다.</div></div>';
+    const shown = Math.min(list.length, H2hState.suggestShown);
+    return `<div class="h2h-suggest" onscroll="h2hSuggestScroll(${slot}, this)">
+        <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
+        ${h2hSuggestItemsHtml(slot, list.slice(0, shown))}
+    </div>`;
+}
+
+// 목록 끝까지 내리면 다음 묶음을 이어 붙인다(스크롤 위치는 그대로 둔다).
+function h2hSuggestScroll(slot, el) {
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - 120) return;
+    const list = h2hSuggest(H2hState.query[slot]);
+    if (H2hState.suggestShown >= list.length) return;
+    H2hState.suggestShown = Math.min(list.length, H2hState.suggestShown + H2H_SUGGEST_STEP);
+    const keep = el.scrollTop;
+    el.querySelectorAll('.h2h-suggest-item').forEach(node => node.remove());
+    el.insertAdjacentHTML('beforeend', h2hSuggestItemsHtml(slot, list.slice(0, H2hState.suggestShown)));
+    el.scrollTop = keep;
 }
 
 function h2hSlotHtml(slot) {
@@ -174,6 +198,7 @@ function h2hSlotHtml(slot) {
 function h2hOnQuery(slot, value) {
     H2hState.query[slot] = value;
     H2hState.suggestSlot = slot;
+    H2hState.suggestShown = H2H_SUGGEST_STEP;   // 검색어가 바뀌었으니 처음부터 다시 그린다
     const box = document.getElementById(`h2h-slot-${slot}`);
     const old = box.querySelector('.h2h-suggest');
     if (old) old.remove();
@@ -184,6 +209,7 @@ async function h2hPick(slot, pid) {
     H2hState.picks[slot] = pid;
     H2hState.query[slot] = '';
     H2hState.suggestSlot = -1;
+    H2hState.suggestShown = H2H_SUGGEST_STEP;
     H2hState.shown = H2H_LIST_STEP;
     H2hState.rivalShown = H2H_RIVAL_STEP;
     H2hState.mapShown = H2H_MAP_STEP;

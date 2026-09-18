@@ -125,7 +125,7 @@ function tierIdKey(member) {
 // 헷갈려서 "3티어"로 적는다. 갓/킹/잭처럼 이름이 있는 티어는 그대로 둔다
 // ("갓티어"는 어색하다). 그룹 키는 원본 값 그대로 쓰고 표기만 바꾼다.
 function tierDisplayName(tier) {
-    const label = String(tier);
+    const label = (tier === null || tier === undefined) ? '' : String(tier);
     return /^\d+$/.test(label) ? `${label}티어` : label;
 }
 
@@ -449,7 +449,8 @@ function scrollTierBarItemIntoView(btn) {
 const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE',
                  '베이비': 'BABY', '미분류': 'UNRANKED' };
 function tierLatinLabel(tier) {
-    const key = String(tier || '').replace('티어', '').trim();
+    // 0티어가 있어서 `tier || ''`로 읽으면 안 된다(0은 falsy라 통째로 사라진다).
+    const key = ((tier === null || tier === undefined) ? '' : String(tier)).replace('티어', '').trim();
     if (TIER_EN[key]) return TIER_EN[key];
     return /^\d+$/.test(key) ? key + ' TIER' : 'TIER';
 }
