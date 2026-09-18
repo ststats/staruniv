@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-09-18 11:23",
+ "updatedAt": "2026-09-18 11:25",
  "channels": {
   "https://www.youtube.com/@캄몬장난감만들기": {
    "id": "UCcEKr3U4RuuC97lVwajKs7A",
@@ -24,5 +24,17 @@
   }
  },
  "videos": [],
- "picks": []
+ "picks": [
+  {
+   "author": "김윤환TV",
+   "oembedTitle": "왜 09김윤환인가",
+   "short": false,
+   "id": "6ahN19lIHaA",
+   "title": "왜 09김윤환인가",
+   "note": "",
+   "group": "",
+   "addedAt": "2026-09-18",
+   "thumb": "https://i.ytimg.com/vi/6ahN19lIHaA/hqdefault.jpg"
+  }
+ ]
 }
