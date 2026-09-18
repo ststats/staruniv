@@ -38,11 +38,12 @@ HIDDEN_TEAMS = {'휴면'}          # page-tier.js의 TIER_HIDDEN_TEAMS와 같은
 
 # eloboard 형식 코드 → 화면에 쓸 이름 (2026-09 기준 건수: 스폰 27.6만 · 프로리그 3.8만 ·
 # 개인 대회 2.7만 · 팀 대회 2.8만 · 대학 미니 3.4천 · 대학 대회 2.1천 · 대학대전 1.7천)
+# 적어둔 차례가 곧 보여줄 차례다(나중에 형식 필터를 붙이면 이 순서로 나온다).
 CAT_LABELS = {
     'sponsored': '스폰',
     'pro_league': '리그',
     'solo_event': '개인',
-    'team_event': '팀',
+    'team_event': 'CK',
     'college_event': '대회',
     'college_mini': '미니',
     'college_war': '대학',
@@ -220,6 +221,9 @@ def main():
         'count': store.get('count', len(rows)),
         # 형식은 우리말 이름으로 바꿔 내보낸다(행에는 번호만 들어가므로 순서는 그대로 둔다)
         'cats': [CAT_LABELS.get(c, c or '기타') for c in cats],
+        # 형식 보여줄 차례(CAT_LABELS에 적은 순서). 행의 형식 번호는 위 cats 자리 그대로다.
+        'catOrder': [CAT_LABELS.get(c, c) for c in CAT_LABELS if CAT_LABELS.get(c, c) in
+                     {CAT_LABELS.get(x, x or '기타') for x in cats}],
         'maps': maps,
         'players': index_players,
         'others': others,

@@ -345,9 +345,9 @@ function renderIndivMatchesList(containerId, format, limit) {
                     ${teamCellInnerHtml(m['상대팀'])}
                 </td>
                 <td class="badge-cell"><span class="tag-badge">${escapeHTML(m['형식'])}</span></td>
+                <td class="cell-ellipsis cell-muted">${escapeHTML(m['맵']) || '-'}</td>
                 <td class="badge-cell">${resultBadgeHtml(m['결과'] || '')}</td>
                 <td>${escapeHTML(shortMatchDate(m['날짜']))}</td>
-                <td class="cell-muted">${escapeHTML(m['맵']) || '-'}</td>
             </tr>
             `).join('') : EMPTY_MATCH_ROW_HTML;
 }

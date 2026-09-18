@@ -226,9 +226,9 @@ function h2hMatchRowsHtml(rows, showOpponent) {
             <tr class="stat-row">
                 ${showOpponent ? `<td class="stat-table-sticky-col cell-ellipsis">${escapeHTML(h2hName(String(opp)))}</td>` : ''}
                 <td class="badge-cell"><span class="tag-badge">${escapeHTML(h2hCatName(cat) || '-')}</span></td>
+                <td class="cell-ellipsis cell-muted">${escapeHTML(h2hMapName(mapId) || '-')}</td>
                 <td class="badge-cell">${resultBadgeHtml(win ? '승' : '패')}</td>
                 <td>${escapeHTML(shortMatchDate(date))}</td>
-                <td class="cell-ellipsis cell-muted">${escapeHTML(h2hMapName(mapId) || '-')}</td>
             </tr>`).join('');
 }
 
@@ -245,9 +245,9 @@ function h2hTableHtml(rows, showOpponent) {
                         <tr>
                             ${showOpponent ? head('상대', true) : ''}
                             ${head('형식', !showOpponent)}
+                            ${head('맵')}
                             ${head('결과')}
                             ${head('날짜')}
-                            ${head('맵')}
                         </tr>
                     </thead>
                     <tbody>${shown.length ? h2hMatchRowsHtml(shown, showOpponent)

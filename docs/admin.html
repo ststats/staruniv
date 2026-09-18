@@ -72,6 +72,22 @@ body {
     gap: 20px;
     order: 1;
 }
+/* 연혁 편집 폼은 목록이 길어서, 사이트의 선택 사이드바처럼 화면에 붙여 따라다니게 한다.
+   (일정 탭은 달력 높이가 화면과 비슷해 굳이 붙일 필요가 없어 그대로 둔다) */
+#admin-view-history .admin-side {
+    position: sticky;
+    top: var(--sidebar-top, 84px);
+    max-height: calc(100vh - var(--sidebar-top, 84px) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+@media (max-width: 888px) {
+    #admin-view-history .admin-side {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+}
 @media (max-width: 888px) {
     .admin-layout {
         flex-direction: column;
