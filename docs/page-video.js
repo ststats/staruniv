@@ -78,9 +78,10 @@ function videoCardHtml(v, opts) {
     opts = opts || {};
     const ch = videoChannel(v.channel);
     const channelName = v.channel ? videoChannelName(ch) : (v.author || '');
+    // '보자'는 어드민이 고른 영상이라 추가한 날짜는 보여주지 않는다(정렬에만 쓴다).
     const meta = [
         v.views ? `조회수 ${videoFormatViews(v.views)}` : '',
-        opts.pick ? (v.addedAt ? `${escapeHTML(v.addedAt.replace(/-/g, '.'))} 추가` : '') : videoAgo(v.published),
+        opts.pick ? '' : videoAgo(v.published),
     ].filter(Boolean).join(' · ');
     const rank = opts.rank ? `<span class="video-rank">${opts.rank}</span>` : '';
     const avatar = v.channel ? videoChannelAvatar(ch, 'video-card-avatar') : '';
