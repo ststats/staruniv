@@ -4091,6 +4091,15 @@ body.media-lightbox-open { overflow: hidden; }
     }
     .h2h-score-num { font-size: 30px; }
     .h2h-score-mid { order: 1; }
+    /* 좁은 화면에서도 '자주 만난 상대'와 맵 카드는 한 줄에 두 개씩 */
+    .h2h-rivals,
+    .h2h-maps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .h2h-rival { padding: 8px 10px; }
+    .h2h-rival-name { font-size: 12px; }
+    .h2h-map { padding: 8px 10px; }
 }
 
 

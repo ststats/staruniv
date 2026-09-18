@@ -13,7 +13,9 @@
 
 const H2H_INDEX_URL = 'data/h2h/index.json';
 const H2H_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
-const H2H_LIST_STEP = 30;          // 경기 목록 한 번에 보여줄 개수
+const H2H_LIST_STEP = 10;          // 경기 목록 한 번에 보여줄 개수
+const H2H_RIVAL_STEP = 10;         // '자주 만난 상대' 한 번에 보여줄 명수
+const H2H_MAP_STEP = 10;           // '맵별 전적' 한 번에 보여줄 개수
 const H2H_SUGGEST_MAX = 12;
 
 const H2hState = {
@@ -23,6 +25,8 @@ const H2hState = {
     picks: [null, null],  // 선수 id
     rows: {},             // 선수 id -> 경기 행
     shown: H2H_LIST_STEP,
+    rivalShown: H2H_RIVAL_STEP,
+    mapShown: H2H_MAP_STEP,
     suggestSlot: -1,      // 추천 목록이 열려 있는 칸
     query: ['', ''],
 };
@@ -181,6 +185,8 @@ async function h2hPick(slot, pid) {
     H2hState.query[slot] = '';
     H2hState.suggestSlot = -1;
     H2hState.shown = H2H_LIST_STEP;
+    H2hState.rivalShown = H2H_RIVAL_STEP;
+    H2hState.mapShown = H2H_MAP_STEP;
     renderH2hSlots();
     document.getElementById('h2h-result').innerHTML = '<div class="h2h-empty">전적을 불러오는 중...</div>';
     try {
@@ -198,6 +204,8 @@ async function h2hPick(slot, pid) {
 function h2hClear(slot) {
     H2hState.picks[slot] = null;
     H2hState.shown = H2H_LIST_STEP;
+    H2hState.rivalShown = H2H_RIVAL_STEP;
+    H2hState.mapShown = H2H_MAP_STEP;
     renderH2hSlots();
     renderH2hResult();
     h2hSyncUrl();
@@ -206,6 +214,8 @@ function h2hClear(slot) {
 function h2hSetPeriod(period) {
     H2hState.period = period;
     H2hState.shown = H2H_LIST_STEP;
+    H2hState.rivalShown = H2H_RIVAL_STEP;
+    H2hState.mapShown = H2H_MAP_STEP;
     renderH2hPeriod();
     renderH2hSlots();
     renderH2hResult();
@@ -213,6 +223,16 @@ function h2hSetPeriod(period) {
 
 function h2hShowMore() {
     H2hState.shown += H2H_LIST_STEP;
+    renderH2hResult();
+}
+
+function h2hShowMoreRivals() {
+    H2hState.rivalShown += H2H_RIVAL_STEP;
+    renderH2hResult();
+}
+
+function h2hShowMoreMaps() {
+    H2hState.mapShown += H2H_MAP_STEP;
     renderH2hResult();
 }
 
@@ -262,15 +282,16 @@ function h2hTableHtml(rows, showOpponent) {
 }
 
 // 맵별 전적: 많이 한 순으로
-function h2hMapTableHtml(rows) {
+function h2hMapTableHtml(rows, limited) {
     const byMap = new Map();
     rows.forEach(r => {
         const key = String(r[3]);
         if (!byMap.has(key)) byMap.set(key, [0, 0]);
         byMap.get(key)[r[2] ? 0 : 1] += 1;
     });
-    const list = [...byMap.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
-    if (!list.length) return '';
+    const all = [...byMap.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+    if (!all.length) return '';
+    const list = limited ? all.slice(0, H2hState.mapShown) : all;
     return `
         <div class="h2h-maps">
             ${list.map(([mapId, [win, lose]]) => `
@@ -279,7 +300,11 @@ function h2hMapTableHtml(rows) {
                     <span class="h2h-map-rec"><span class="h2h-win">${win}</span> · <span class="h2h-lose">${lose}</span></span>
                     <span class="h2h-map-bar"><span style="width:${win + lose ? (win / (win + lose)) * 100 : 0}%"></span></span>
                 </div>`).join('')}
-        </div>`;
+        </div>
+        ${all.length > list.length ? `
+        <div class="news-load-more-wrap h2h-more-wrap">
+            <button type="button" class="news-load-more" onclick="h2hShowMoreMaps()">맵 더 보기 (${all.length - list.length}개 남음)</button>
+        </div>` : ''}`;
 }
 
 function h2hScoreHtml(a, b, winA, winB) {
@@ -311,10 +336,12 @@ function h2hTopOpponentsHtml(rows) {
         if (!byOpp.has(key)) byOpp.set(key, [0, 0]);
         byOpp.get(key)[r[2] ? 0 : 1] += 1;
     });
-    const list = [...byOpp.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1])).slice(0, 8);
-    if (!list.length) return '';
+    const all = [...byOpp.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+    if (!all.length) return '';
+    const list = all.slice(0, H2hState.rivalShown);
     return `
-        <div class="section-title section-title-spaced" data-en="RIVALS"><span class="section-title-label">자주 만난 상대</span></div>
+        <div class="section-title" data-en="RIVALS"><span class="section-title-label">자주 만난 상대</span>
+            <span class="title-count">${all.length.toLocaleString('ko-KR')}명</span></div>
         <div class="h2h-rivals">
             ${list.map(([pid, [win, lose]]) => {
                 const known = h2hPlayer(pid);
@@ -325,7 +352,11 @@ function h2hTopOpponentsHtml(rows) {
                     <span class="h2h-rival-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span></span>
                 </button>`;
             }).join('')}
-        </div>`;
+        </div>
+        ${all.length > list.length ? `
+        <div class="news-load-more-wrap h2h-more-wrap">
+            <button type="button" class="news-load-more" onclick="h2hShowMoreRivals()">상대 더 보기 (${(all.length - list.length).toLocaleString('ko-KR')}명 남음)</button>
+        </div>` : ''}`;
 }
 
 function renderH2hResult() {
@@ -336,17 +367,21 @@ function renderH2hResult() {
         box.innerHTML = '<div class="h2h-empty">선수를 골라주세요. 대학 이름으로 검색하면 그 대학 선수들이 모두 나옵니다.</div>';
         return;
     }
+    // 한 명만 골랐을 때: 자주 만난 상대 → 맵별 전적 → 경기 목록 (셋 다 10개씩 + 더 보기)
     if (!a || !b) {
         const pid = a || b;
         const rows = h2hRowsInPeriod(pid);
-        const rec = h2hRecord(rows);
+        if (!rows.length) {
+            box.innerHTML = '<div class="h2h-empty">이 기간에 경기가 없습니다.</div>';
+            return;
+        }
         box.innerHTML = `
-            <div class="section-title" data-en="RECORD"><span class="section-title-label">${escapeHTML(h2hName(pid))} 전적</span>
-                <span class="title-count">${rec.total.toLocaleString('ko-KR')}전 ${rec.win}승 ${rec.lose}패 · ${h2hRateText(rec.win, rec.lose)}</span></div>
-            ${h2hMapTableHtml(rows)}
             ${h2hTopOpponentsHtml(rows)}
-            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">경기 목록</span></div>
-            ${rows.length ? h2hTableHtml(rows, true) : '<div class="h2h-empty">이 기간에 경기가 없습니다.</div>'}`;
+            <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span></div>
+            ${h2hMapTableHtml(rows, true)}
+            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">경기 목록</span>
+                <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
+            ${h2hTableHtml(rows, true)}`;
         return;
     }
     const rows = h2hRowsInPeriod(a).filter(r => String(r[1]) === String(b));
