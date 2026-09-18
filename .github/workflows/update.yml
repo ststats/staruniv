@@ -82,7 +82,7 @@ jobs:
         fi
         python scripts/sync_videos.py
 
-    - name: 전적 아카이브 증분 수집 + 상대전적 파일 만들기
+    - name: 전적 아카이브 증분 수집
       continue-on-error: true
       run: |
         if [ ! -f data/eloboard.json ]; then
@@ -91,7 +91,6 @@ jobs:
           exit 0
         fi
         python scripts/sync_eloboard.py
-        python scripts/build_h2h.py
 
     - name: 필요 라이브러리 설치 (시트 연동 · 페이지 빌드용)
       run: |
@@ -108,6 +107,17 @@ jobs:
         GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
       run: python scripts/update_data.py
+
+    # 상대전적 파일은 시트에서 받은 선수 명단(data/db.json의 members 시트)을 쓰기 때문에
+    # 시트 단계 뒤에 온다. 명단이 없으면 예전처럼 시너지 명단으로 물러난다.
+    - name: 상대전적 파일 만들기
+      continue-on-error: true
+      run: |
+        if [ ! -f data/eloboard.json ]; then
+          echo "ℹ️ data/eloboard.json 이 없어 상대전적 단계를 건너뜁니다."
+          exit 0
+        fi
+        python scripts/build_h2h.py
 
     - name: 통계 산출 및 웹페이지 빌드
       run: |
@@ -153,7 +163,10 @@ jobs:
         # 폴더의 실제 파일 목록을 그대로 따라간다.
         git add -A data
         git add docs/index.html docs/*/index.html docs/holidays.json
+        # 손으로 관리하는 두 페이지도 빌드가 자산 버전(?v=)을 고쳐 쓰므로 같이 커밋한다.
+        git add docs/admin.html docs/multiview.html
         git add docs/data/site_data.json docs/data/calendar.png docs/data/videos.json
+        git add docs/data/tier_members.json
         git add -A docs/data/h2h
         for f in templates/assets/*; do
           git add "docs/$(basename "$f")"
