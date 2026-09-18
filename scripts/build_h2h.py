@@ -11,9 +11,12 @@
 상대전적이 나오지만(행에 상대 id가 있다), 프로필 카드에 각자 전체 승률도 보여줘야 해서 둘 다 받는다.
 
 [티어표와 잇기]
-검색 대상은 티어표(시너지 명단)에 있는 선수다. eloboard 선수 이름과 시너지 닉네임을 맞춰
-이어붙이고(공백·대소문자 무시), 이름이 서로 다른 사람은 docs/data/h2h_alias.json에
-{"시너지 닉네임": "eloboard 이름"} 으로 적어주면 된다.
+검색 대상은 티어표(시너지 명단)에 있는 선수다. 시너지 명단에 eloboard 선수 번호(elo_id)가
+들어 있으므로 그 번호로 잇는다. elo_id가 비어 있는 선수만 이름으로 맞춰보고(공백·대소문자 무시),
+그래도 못 찾으면 docs/data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 적어주면 된다.
+
+[대회 이름] eloboard는 형식을 영문 코드로 준다(sponsored, college_war ...). 화면에 그대로 쓰면
+읽기 어려워서 아래 CAT_LABELS로 우리말 이름을 붙인다. 목록에 없는 코드는 원문 그대로 둔다.
 
     python scripts/build_h2h.py            # 시너지 명단을 받아서 만든다
     python scripts/build_h2h.py --offline  # 명단을 못 받으면 이름/종족만으로 만든다(로컬 테스트)
@@ -32,6 +35,19 @@ OUT_DIR = os.path.join('docs', 'data', 'h2h')
 ALIAS_PATH = os.path.join('docs', 'data', 'h2h_alias.json')
 SYNERGY_BASE = 'https://ststats.github.io/synergy'
 HIDDEN_TEAMS = {'휴면'}          # page-tier.js의 TIER_HIDDEN_TEAMS와 같은 기준
+
+# eloboard 형식 코드 → 화면에 쓸 이름 (2026-09 기준 건수: 스폰 27.6만 · 프로리그 3.8만 ·
+# 개인 대회 2.7만 · 팀 대회 2.8만 · 대학 미니 3.4천 · 대학 대회 2.1천 · 대학대전 1.7천)
+CAT_LABELS = {
+    'sponsored': '스폰',
+    'pro_league': '프로리그',
+    'solo_event': '개인 대회',
+    'team_event': '팀 대회',
+    'college_event': '대학 대회',
+    'college_mini': '대학 미니',
+    'college_war': '대학대전',
+    '': '기타',
+}
 
 
 def norm(name):
@@ -75,6 +91,7 @@ def fetch_tier_members():
         out.append({
             'id': str(m2['id']).strip(),
             'nickname': str(m2.get('nickname') or '').strip(),
+            'elo_id': str(m2.get('elo_id') or '').strip(),   # eloboard 선수 번호(이게 있으면 바로 이어진다)
             'team': team,
             'tier': m2.get('tier'),
             'race': str(m2.get('race') or '').strip(),
@@ -114,16 +131,25 @@ def main():
     for pid, info in players.items():
         by_norm.setdefault(norm(info[0] if isinstance(info, list) else info), pid)
 
-    # 시너지 명단 ↔ eloboard 선수 잇기
+    # 시너지 명단 ↔ eloboard 선수 잇기: elo_id가 먼저, 없으면 이름으로
     linked = {}                                  # pid -> {tier, team, soop}
     missing = []
+    by_eloid, by_name = 0, 0
     for m in tier_members:
-        want = alias.get(m['nickname']) or m['nickname']
-        pid = by_norm.get(norm(want))
+        pid = ''
+        if m.get('elo_id') and m['elo_id'] in players:
+            pid, by_eloid = m['elo_id'], by_eloid + 1
+        else:
+            want = alias.get(m['nickname']) or m['nickname']
+            pid = by_norm.get(norm(want), '')
+            if pid:
+                by_name += 1
         if not pid:
             missing.append(m['nickname'])
             continue
         linked[pid] = {'tm': m['team'], 's': m['id'], **({'t': m['tier']} if m['tier'] not in (None, '') else {})}
+    if tier_members:
+        print(f'  잇기: elo_id {by_eloid}명 · 이름 {by_name}명 · 못 찾음 {len(missing)}명 (시너지 명단 {len(tier_members)}명)')
 
     # 티어표 선수의 경기만 선수별로 모은다. 행: [경기id, 날짜, 승자, 패자, 맵, 대회]
     # 명단을 못 받았는데도 그냥 진행하면 eloboard 전체 선수(수천 명)로 파일을 만들어
@@ -139,8 +165,8 @@ def main():
         elif not tier_members:
             print('   → 시너지 명단을 받지 못했습니다(위 경고 참고). 네트워크나 주소를 확인해주세요.')
         else:
-            print('   → 양쪽 다 있는데 이름이 하나도 안 맞습니다. docs/data/h2h_alias.json 에')
-            print('      {"시너지 닉네임": "eloboard 이름"} 형태로 몇 명 적어주면 이어집니다.')
+            print('   → 양쪽 다 있는데 하나도 안 맞습니다. 시너지 명단의 elo_id가 비어 있다면')
+            print('      docs/data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 몇 명 적어주세요.')
         sys.exit(1)
     target = set(linked) if linked else set(players)
     per = {pid: [] for pid in target}
@@ -187,7 +213,8 @@ def main():
         'syncedAt': store.get('synced_at', ''),
         'tierDate': tier_date,
         'count': store.get('count', len(rows)),
-        'cats': cats,
+        # 형식은 우리말 이름으로 바꿔 내보낸다(행에는 번호만 들어가므로 순서는 그대로 둔다)
+        'cats': [CAT_LABELS.get(c, c or '기타') for c in cats],
         'maps': maps,
         'players': index_players,
         'others': others,
