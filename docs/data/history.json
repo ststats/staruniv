@@ -13,6 +13,30 @@
       "youtube": "https://youtu.be/AUVSbE3CJPk?si=sp0XotYnl7vMNuY2",
       "image": "",
       "ord": 1
+    },
+    {
+      "id": "h-mu6xzcc5",
+      "date": "2024-09-01",
+      "type": "broadcast",
+      "title": "츠캄 몬스타즈 창단식",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "디임",
+        "졈니",
+        "앵지",
+        "토마토",
+        "임조이",
+        "효짱",
+        "한쪼니",
+        "몽군",
+        "모리",
+        "강덕구"
+      ],
+      "youtube": "https://youtu.be/Wee70wXys_c?si=5ZijExlkYo-_xEzz",
+      "image": "",
+      "ord": 0
     }
   ],
   "overrides": {
@@ -105,7 +129,8 @@
       "image": "",
       "members": [
         "강덕구(선수)"
-      ]
+      ],
+      "ord": 1
     },
     "auto-leave-2024-09-25": {
       "title": "",
