@@ -13,6 +13,9 @@
     --color-bg: #eef2f8;
     --color-card: #ffffff;
     --color-card-hover: #f6f9ff;
+    /* 줄·칩·목록에 마우스를 올렸을 때. 파랑기를 거의 뺀 옅은 회청색이라 바탕(--color-bg)과
+       카드 흰색 사이에 조용히 앉는다. 여기 한 줄만 바꾸면 사이트의 호버가 같이 바뀐다. */
+    --color-row-hover: #f2f5fa;
     --color-border: #dde4ee;
     --color-bg-subtle: #f1f5fb;
     --color-border-strong: #cdd6e3;
@@ -138,6 +141,7 @@ html[data-theme="dark"] {
     --color-bg: #07090d;
     --color-card: #10131a;
     --color-card-hover: #151b27;
+    --color-row-hover: #1a202b;
     --color-border: #1f2531;
     --color-bg-subtle: #171c26;
     --color-border-strong: #353b46;
@@ -241,7 +245,13 @@ body {
     background: var(--color-bg);
 }
 
-body.modal-open { overflow-y: visible !important; }
+/* 부트스트랩은 모달을 열 때 본문에 스크롤바 폭만큼 padding-right를 넣는다(스크롤바가 사라지는
+   브라우저 보정). 우리는 html에 scrollbar-gutter로 그 자리를 늘 비워두기 때문에 보정이 필요 없고,
+   그대로 두면 모달을 열 때마다 페이지가 왼쪽으로 한 번 밀린다. */
+body.modal-open {
+    overflow-y: visible !important;
+    padding-right: 0 !important;
+}
 
 a {
     text-decoration: none;
@@ -378,7 +388,8 @@ a {
 .top-navbar a.logo:hover .logo-accent { color: var(--color-primary-deep, var(--color-primary)); }
 .top-navbar .nav-menu { margin-right: auto; }
 .top-navbar .theme-toggle { margin-left: 16px; }
-.top-navbar.menu-open .nav-drawer-btn { background: var(--color-primary); }
+.top-navbar.menu-open .nav-drawer-btn { background: var(--select-on-light); }
+.top-navbar.menu-open .nav-drawer-btn span { background: #fff; }
 
 .nav-menu {
     display: flex;
@@ -464,7 +475,7 @@ a {
 }
 .sub-tab.active:hover { background: var(--color-primary); }
 .sub-tab:hover {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
     color: var(--color-primary);
 }
 
@@ -877,7 +888,7 @@ html[data-theme="dark"] .stat-table tbody td {
 html[data-theme="dark"] .stat-table tbody .stat-table-sticky-col { background: var(--color-card); }
 html[data-theme="dark"] .stat-table tbody tr:hover > .stat-table-sticky-col,
 html[data-theme="dark"] .stat-table tbody tr:hover > td {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
 }
 .stat-table .ext-arrow {
     margin-left: 0;
@@ -896,11 +907,18 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     font-weight: 700;
     color: var(--color-text-dark);
 }
+/* 부트스트랩 .table-hover는 칸마다 반투명 검정(inset box-shadow)을 덧칠한다. 그래서 우리가
+   연한 파랑을 깔아도 표 안에서만 살짝 어둡게 보였다 - 덧칠을 꺼서 카드·목록과 같은 색이 되게 한다. */
+.table {
+    --bs-table-hover-bg: transparent;
+    --bs-table-hover-color: inherit;
+}
+
 /* 호버는 그 줄의 칸에만. (자식 선택자 > 가 없으면 전적 상세처럼 표 안에 표가 든 줄에서
    바깥 줄 호버가 안쪽 세트 줄 전체를 한꺼번에 칠한다) */
 .stat-table tbody tr:hover > .stat-table-sticky-col,
 .stat-table tbody tr:hover > td {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
 }
 .stat-table thead .stat-table-sticky-col { z-index: 3; }
 .stat-table tbody td.cell-muted { color: var(--color-text-sub); }
@@ -1025,7 +1043,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .donut-sub { font-size: var(--fs-body); }
 
 .team-row-clickable { transition: background 0.1s; }
-.team-row-clickable:hover { background: var(--color-primary-tint) !important; }
+.team-row-clickable:hover { background: var(--color-row-hover) !important; }
 .team-row-clickable:hover .ext-arrow { color: var(--color-primary); }
 
 .fs-body { font-size: var(--fs-body); }
@@ -1189,17 +1207,17 @@ a.btn-view-all {
     background: var(--color-card);
     box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
 }
-/* 흰 칸 위에서 마우스가 올라간 표시는 사이트 전체가 같은 연한 파랑(--color-primary-tint)이다.
-   전적표 줄 · 카드 · 소식 · 칩 · 추천 목록이 모두 이 색을 쓴다. */
+/* 카드 자체(요약 카드 포함)의 호버는 예전 그대로 아주 옅은 흰빛이다.
+   '연한 파랑'으로 맞춘 건 줄·칩처럼 고르는 항목들이다. */
 .clean-card:hover,
 .live-broadcast-card:hover,
 .member-card:hover,
 .tool-card:hover {
-    background-color: var(--color-primary-tint);
+    background-color: var(--color-card-hover);
 }
 .news-post-card:hover,
 .tier-card:hover {
-    background-color: var(--color-primary-tint);
+    background-color: var(--color-row-hover);
 }
 .live-broadcast-card:hover,
 .news-post-card:hover {
@@ -1313,7 +1331,7 @@ a.btn-view-all {
     transition: background 0.15s, color 0.15s;
     gap: 9px;
 }
-.avatar-select-item:hover { background: var(--color-primary-tint); }
+.avatar-select-item:hover { background: var(--color-row-hover); }
 .avatar-select-fallback {
     object-fit: cover;
     flex-shrink: 0;
@@ -1816,7 +1834,7 @@ a.btn-view-all {
     overflow: hidden;
     clip-path: var(--cut-14);
 }
-.home-notice-card:hover { background: var(--color-primary-tint); }
+.home-notice-card:hover { background: var(--color-row-hover); }
 .home-notice-main {
     min-width: 0;
     flex: 1;
@@ -2167,7 +2185,7 @@ a.home-notice-card:hover {
     transition: 0.15s;
 }
 .cal-nav-btn:hover {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
     color: var(--color-primary);
 }
 .cal-nav-badge {
@@ -2368,7 +2386,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     clip-path: var(--cut-4);
     color: #fff;
 }
-.cal-day-cell:hover { background: var(--color-primary-tint); }
+.cal-day-cell:hover { background: var(--color-row-hover); }
 .cal-day-cell.other-month,
 .cal-day-cell.other-month:hover {
     background: var(--calendar-outside-bg);
@@ -2632,8 +2650,9 @@ html[data-theme="dark"] .cal-longterm-bar {
     gap: 8px;
     margin-bottom: 6px;
 }
+/* 날짜 옆에 요일(한글)이 붙는 자리라, 숫자만 다른 글꼴이면 자간이 어긋나 보인다.
+   본문과 같은 Pretendard로 두고 숫자 폭만 고정한다. */
 .hist-date {
-    font-family: "Chakra Petch", "Pretendard", sans-serif;
     font-size: 13px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -3123,7 +3142,7 @@ body.media-lightbox-open { overflow: hidden; }
     transition: background 0.15s, color 0.15s;
 }
 .news-load-more:hover {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
     color: var(--color-text-main);
 }
 
@@ -3345,7 +3364,7 @@ body.media-lightbox-open { overflow: hidden; }
     font-size: 10px;
 }
 
-.match-row:hover { background: var(--color-primary-tint); }
+.match-row:hover { background: var(--color-row-hover); }
 .match-row[aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
 
 .past-posts {
@@ -3533,7 +3552,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .record-recent-header .filter-item:hover:not(.active),
 .h2h-period .filter-item:hover:not(.active) {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
     color: var(--color-primary);
 }
 .record-recent-header .filter-item.active,
@@ -3814,7 +3833,7 @@ body.media-lightbox-open { overflow: hidden; }
     background: none;
     text-align: left;
 }
-.h2h-suggest-item:hover { background: var(--color-primary-tint); }
+.h2h-suggest-item:hover { background: var(--color-row-hover); }
 .h2h-suggest-avatar,
 .h2h-rival-avatar {
     flex: none;
@@ -4043,7 +4062,7 @@ body.media-lightbox-open { overflow: hidden; }
     clip-path: var(--cut-6);
     text-align: left;
 }
-.h2h-rival:hover:not(:disabled) { background: var(--color-primary-tint); }
+.h2h-rival:hover:not(:disabled) { background: var(--color-row-hover); }
 .h2h-rival:disabled { cursor: default; }
 .h2h-rival-name {
     overflow: hidden;
@@ -4156,7 +4175,7 @@ body.media-lightbox-open { overflow: hidden; }
     transition: background 0.15s, color 0.15s;
 }
 .video-channel-chip:has(.video-chip-avatar) { padding-left: 5px; }
-.video-channel-chip:hover:not(.active) { background: var(--color-primary-tint); }
+.video-channel-chip:hover:not(.active) { background: var(--color-row-hover); }
 .video-channel-chip.active { font-weight: 700; }
 .video-chip-avatar,
 .video-card-avatar {
@@ -4455,7 +4474,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .mv-chip:hover {
     border-color: var(--color-border-hover);
-    background: var(--mv-chip-hover, var(--color-primary-tint));
+    background: var(--mv-chip-hover, var(--color-row-hover));
 }
 .mv-chip.selected { border: 0; }
 .mv-chip-avatar {
@@ -4811,7 +4830,7 @@ html[data-theme="dark"] .mv-order-row {
     justify-content: center;
 }
 .mv-order-item button:hover:not(:disabled) {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
     color: var(--color-text-body);
 }
 .mv-order-item .mv-order-remove:hover:not(:disabled) { color: var(--color-lose); }
@@ -4911,7 +4930,7 @@ html[data-theme="dark"] .mv-order-row {
     color: #fff;
 }
 .mv-order-actions .mv-order-remove:hover {
-    background: var(--color-primary-tint);
+    background: var(--color-row-hover);
     color: var(--color-lose);
 }
 .mv-order-actions button:disabled {
@@ -5155,6 +5174,7 @@ html[data-theme="dark"] .mv-order-row {
     --panel-accent: var(--navy-accent);
     --panel-control: rgba(255, 255, 255, 0.12);
     --panel-line: rgba(255, 255, 255, 0.16);
+    --color-row-hover: rgba(255, 255, 255, 0.1);
     --color-card: var(--navy);
     --color-text-strong: #fff;
     --color-text-main: #fff;
