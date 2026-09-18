@@ -46,7 +46,39 @@
     },
     {
       "url": "https://vod.sooplive.co.kr/player/146974661",
-      "title": "[MV]최강스타",
+      "title": "[MV] 최강스타",
+      "group": "몬스타즈",
+      "groupEn": "MONSTARZ",
+      "note": "",
+      "addedAt": "2026-09-18"
+    },
+    {
+      "url": "https://vod.sooplive.co.kr/player/144331057",
+      "title": "[MV] We are",
+      "group": "몬스타즈",
+      "groupEn": "MONSTARZ",
+      "note": "",
+      "addedAt": "2026-09-18"
+    },
+    {
+      "url": "https://vod.sooplive.co.kr/player/145640549",
+      "title": "[MV] 완전감각Dreamer",
+      "group": "몬스타즈",
+      "groupEn": "MONSTARZ",
+      "note": "",
+      "addedAt": "2026-09-18"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=aZudQBdk01Q",
+      "title": "",
+      "group": "몬스타즈",
+      "groupEn": "MONSTARZ",
+      "note": "",
+      "addedAt": "2026-09-18"
+    },
+    {
+      "url": "https://vod.sooplive.co.kr/player/146040651",
+      "title": "[MV] 100 Bad Days",
       "group": "몬스타즈",
       "groupEn": "MONSTARZ",
       "note": "",
