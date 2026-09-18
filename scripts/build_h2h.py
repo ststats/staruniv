@@ -155,6 +155,9 @@ def sheet_tier_members():
             'team': cell(r, '소속'),
             'tier': cell(r, '티어'),
             'race': cell(r, '종족'),
+            # 티어표가 남성부/여성부로 나뉘어 있어(명칭 티어 갓~스페이드=남성부, 숫자
+            # 티어 0~베이비=주로 여성부) generate_elo.py가 부문별 순위를 매길 때 쓴다.
+            'gender': cell(r, '성별'),
         })
     return out
 
@@ -194,37 +197,33 @@ def write_json(path, data):
     os.replace(tmp, path)
 
 
-def main():
-    ap = argparse.ArgumentParser(description='상대전적 데이터 만들기')
-    ap.add_argument('--offline', action='store_true', help='시너지 명단 없이 만든다(로컬 테스트)')
-    ap.add_argument('--src', default=SRC_PATH, help=f'원본 아카이브 경로 (기본 {SRC_PATH})')
-    args = ap.parse_args()
+def resolve_tier_members(offline):
+    """티어표 명단을 구한다. 구글시트 우선, 없으면 시너지로 물러난다(scripts/generate_elo.py도
+    같은 명단이 필요해 여기서 공용으로 뺐다). 돌려주는 값: (tier_date, tier_members)."""
+    if offline:
+        return '', []
+    tier_members = sheet_tier_members()
+    if tier_members:
+        print(f'  명단: 구글시트 members 시트 {len(tier_members):,}명')
+        return '', tier_members
+    try:                                     # 시트가 아직 없는 저장소 - 예전처럼 시너지에서
+        tier_date, tier_members = fetch_tier_members()
+        print(f'  명단: 시너지 {len(tier_members):,}명 (구글시트 members 시트가 비어 있음)')
+        return tier_date, tier_members
+    except Exception as e:                    # 명단을 못 받아도 파일은 만든다(이름만으로)
+        print(f'⚠️ 명단을 받지 못했습니다({e}). 이름/종족만으로 만듭니다.')
+        return '', []
 
-    store = load_json(args.src)
-    rows = store.get('rows') or []
-    players = store.get('players') or {}       # { "id": [이름, 주종족] }
-    maps = store.get('maps') or {}
-    cats = store.get('cats') or []
 
-    tier_date, tier_members = '', []
-    if not args.offline:
-        tier_members = sheet_tier_members()
-        if tier_members:
-            print(f'  명단: 구글시트 members 시트 {len(tier_members):,}명')
-        else:
-            try:                                 # 시트가 아직 없는 저장소 - 예전처럼 시너지에서
-                tier_date, tier_members = fetch_tier_members()
-                print(f'  명단: 시너지 {len(tier_members):,}명 (구글시트 members 시트가 비어 있음)')
-            except Exception as e:               # 명단을 못 받아도 파일은 만든다(이름만으로)
-                print(f'⚠️ 명단을 받지 못했습니다({e}). 이름/종족만으로 만듭니다.')
-
-    alias = load_json(ALIAS_PATH, {})           # { 시너지 닉네임: eloboard 이름 }
+def link_tier_players(players, tier_members, alias):
+    """티어표 명단 ↔ eloboard 선수 잇기: elo_id가 먼저, 없으면 이름으로(scripts/generate_elo.py도
+    같은 잇기 결과가 필요해 여기서 공용으로 뺐다).
+    돌려주는 값: (linked: {pid: {n,tm,s,t?,g?}}, missing: [명단에 있는데 못 찾은 닉네임, ...])."""
     by_norm = {}
     for pid, info in players.items():
         by_norm.setdefault(norm(info[0] if isinstance(info, list) else info), pid)
 
-    # 시너지 명단 ↔ eloboard 선수 잇기: elo_id가 먼저, 없으면 이름으로
-    linked = {}                                  # pid -> {tier, team, soop}
+    linked = {}
     missing = []
     by_eloid, by_name = 0, 0
     for m in tier_members:
@@ -241,9 +240,29 @@ def main():
             continue
         # 이름은 티어표(시너지) 닉네임을 쓴다 - 사이트 다른 화면과 같은 이름으로 보이게.
         linked[pid] = {'n': m['nickname'], 'tm': m['team'], 's': m['id'],
-                       **({'t': m['tier']} if m['tier'] not in (None, '') else {})}
+                       **({'t': m['tier']} if m['tier'] not in (None, '') else {}),
+                       # 시너지 명단(fetch_tier_members)엔 성별이 없을 수 있다 - 그때는 그냥 뺀다.
+                       **({'g': m['gender']} if m.get('gender') else {})}
     if tier_members:
         print(f'  잇기: elo_id {by_eloid}명 · 이름 {by_name}명 · 못 찾음 {len(missing)}명 (명단 {len(tier_members)}명)')
+    return linked, missing
+
+
+def main():
+    ap = argparse.ArgumentParser(description='상대전적 데이터 만들기')
+    ap.add_argument('--offline', action='store_true', help='시너지 명단 없이 만든다(로컬 테스트)')
+    ap.add_argument('--src', default=SRC_PATH, help=f'원본 아카이브 경로 (기본 {SRC_PATH})')
+    args = ap.parse_args()
+
+    store = load_json(args.src)
+    rows = store.get('rows') or []
+    players = store.get('players') or {}       # { "id": [이름, 주종족] }
+    maps = store.get('maps') or {}
+    cats = store.get('cats') or []
+
+    tier_date, tier_members = resolve_tier_members(args.offline)
+    alias = load_json(ALIAS_PATH, {})           # { 시너지 닉네임: eloboard 이름 }
+    linked, missing = link_tier_players(players, tier_members, alias)
 
     # 티어표 선수의 경기만 선수별로 모은다. 행: [경기id, 날짜, 승자, 패자, 맵, 대회]
     # 명단을 못 받았는데도 그냥 진행하면 eloboard 전체 선수(수천 명)로 파일을 만들어

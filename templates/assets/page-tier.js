@@ -52,8 +52,13 @@ const TIER_TABS = {
 function switchTierView(view) {
     const key = TIER_TABS[view] ? view : 'list';
     activateTabView(TIER_TABS, key);
-    PageState.update(key === 'list' ? {} : { view: key });
+    // URL 복원 중(PageState.restoring)에는 주소를 다시 쓰지 않는다 - 그대로 두면 h2h/분석이
+    // 이어서 읽어야 할 p1/p2/p가 여기서 'view=xxx'로 지워져 버려서, 공유 링크로 새로 열었을 때
+    // 선수가 하나도 안 불러와지는 버그가 있었다. 사용자가 탭을 직접 클릭했을 때만(=복원 중이
+    // 아닐 때만) 이전 뷰의 파라미터를 정리한다.
+    if (!PageState.restoring) PageState.update(key === 'list' ? {} : { view: key });
     if (key === 'h2h') safeInit('상대전적', h2hEnter);   // page-h2h.js (처음 열 때만 데이터를 읽는다)
+    if (key === 'analysis') safeInit('분석', analysisEnter);   // page-analysis.js (처음 열 때만 데이터를 읽는다)
 }
 
 // ---------------------------------------------------------------------------

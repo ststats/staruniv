@@ -2,13 +2,19 @@
  * 티어표 · 상대전적 탭: 선수 두 명을 고르면 맞대결 전적과 경기 목록을 보여준다.
  * (core.js → page-tier.js → 이 파일. 탭을 처음 열 때만 데이터를 읽는다)
  *
- * 데이터: docs/data/h2h/ - scripts/build_h2h.py가 eloboard 아카이브를 선수별로 잘라 둔 것.
- *   index.json      { syncedAt, cats:[대회 이름], maps:{맵id:이름},
- *                     players:{ 선수id: {n:이름(티어표 닉네임), en:eloboard 이름(다를 때만),
- *                                        r:종족, m:판수, w:승, d:최근 경기일, tm:대학, t:티어, s:숲아이디} },
- *                     others: { 선수id: 이름 } }        // 티어표 밖 상대 이름
- *   p/<선수id>.json { id, rows:[[날짜, 상대id, 이김(1/0), 맵id, 대회 인덱스], ...] }   // 최신순
- * 한 명 파일이 30~60KB라 고를 때 하나씩 받는다(원본 아카이브는 14MB라 통째로 못 준다).
+ * 데이터: docs/data/h2h/ - scripts/build_h2h.py가 eloboard 아카이브를 선수id 범위별로 잘라 둔 것.
+ *   index.json          { syncedAt, shardBounds:[샤드 시작id, ... 오름차순], cats:[대회 이름],
+ *                         maps:{맵id:이름},
+ *                         players:{ 선수id: {n:이름(티어표 닉네임), en:eloboard 이름(다를 때만),
+ *                                            r:종족, m:판수, w:승, d:최근 경기일, tm:대학, t:티어, s:숲아이디} },
+ *                         others: { 선수id: 이름 } }        // 티어표 밖 상대 이름
+ *   p/<샤드시작id>.json { 선수id: [[날짜, 상대id, 이김(1/0), 맵id, 대회 인덱스], ...], ... }  // 각 선수 최신순
+ * 선수 한 명당 파일 하나를 두면 1,100개가 넘게 쌓여서, id 순서대로 묶어 파일 수를 줄였다
+ * (약 120개). 폭을 고정하지 않고 "한 샤드 용량이 목표치를 넘기 전까지" 채우는 방식이라
+ * (활동이 많아 경기가 몰린 선수는 그 자체로 샤드 하나가 되기도 한다) 경계가 shardBounds에
+ * 들어 있다 - 선수id보다 작거나 같은 것 중 가장 큰 경계가 그 선수가 속한 샤드다.
+ * 선수를 고르면 그 샤드 하나만 받고(같은 탭에서 같은 샤드를 다시 고르면 shardCache에서
+ * 재사용), 원본 아카이브(14MB) 전체는 안 받는다.
  */
 
 const H2H_INDEX_URL = 'data/h2h/index.json';
@@ -27,6 +33,8 @@ const H2hState = {
     period: '90',
     picks: [null, null],  // 선수 id
     rows: {},             // 선수 id -> 경기 행
+    shardData: {},        // 샤드 시작id -> 받아온 원본 { 선수id: rows } (같은 샤드 재요청 방지)
+    shardLoading: {},     // 샤드 시작id -> 진행 중인 요청(동시에 여러 번 고를 때 중복 요청 방지)
     shown: H2H_LIST_STEP,
     rivalShown: H2H_RIVAL_STEP,
     mapShown: H2H_MAP_STEP,
@@ -49,13 +57,40 @@ async function h2hLoadIndex() {
     return H2hState.loading;
 }
 
+// 이 선수가 속한 샤드의 시작id(=파일명)를 찾는다. shardBounds는 오름차순이므로
+// "pid보다 작거나 같은 것 중 가장 큰 경계"가 그 샤드다. 목록이 짧아(백여 개) 그냥 훑는다.
+function h2hShardOf(pid) {
+    const bounds = (H2hState.index && H2hState.index.shardBounds) || [];
+    const n = Number(pid);
+    let found = bounds.length ? bounds[0] : pid;
+    for (const b of bounds) {
+        if (b > n) break;
+        found = b;
+    }
+    return found;
+}
+
+async function h2hLoadShard(shard) {
+    if (H2hState.shardData[shard]) return H2hState.shardData[shard];
+    if (!H2hState.shardLoading[shard]) {
+        H2hState.shardLoading[shard] = fetch(`data/h2h/p/${encodeURIComponent(shard)}.json`, { cache: 'no-cache' })
+            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+            .then(data => { H2hState.shardData[shard] = data; return data; })
+            .finally(() => { delete H2hState.shardLoading[shard]; });
+    }
+    return H2hState.shardLoading[shard];
+}
+
 async function h2hLoadPlayer(pid) {
     if (!pid) return [];
     if (H2hState.rows[pid]) return H2hState.rows[pid];
-    const res = await fetch(`data/h2h/p/${encodeURIComponent(pid)}.json`, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`선수 전적을 불러오지 못했습니다 (HTTP ${res.status})`);
-    const data = await res.json();
-    H2hState.rows[pid] = Array.isArray(data.rows) ? data.rows : [];
+    let data;
+    try {
+        data = await h2hLoadShard(h2hShardOf(pid));
+    } catch (e) {
+        throw new Error(`선수 전적을 불러오지 못했습니다 (${e.message})`);
+    }
+    H2hState.rows[pid] = Array.isArray(data[pid]) ? data[pid] : [];
     return H2hState.rows[pid];
 }
 
