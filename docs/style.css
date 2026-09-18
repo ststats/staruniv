@@ -929,6 +929,15 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .stat-table thead .stat-table-sticky-col { z-index: 3; }
 .stat-table tbody td.cell-muted { color: var(--color-text-sub); }
 
+/* 표 두 개를 나란히 놓는 구간에서는 칸이 좁아지므로 글자·여백을 한 단계 줄인다
+   (모바일 압축 표만큼은 아니고, 열 구성과 표기는 그대로다) */
+@media (min-width: 768px) and (max-width: 1279.98px) {
+    .stat-table { font-size: 12.5px; }
+    .stat-table thead th,
+    .stat-table tbody td { padding: 8px 6px; }
+    .wl-short-rate { margin-left: 4px; font-size: 10.5px; }
+}
+
 /* 좁은 화면에서만 쓰는 조각의 기본값(넓은 화면에서는 숨긴다) */
 .cell-subline { display: none; }
 
@@ -1174,6 +1183,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
 .ellipsis-text {
     overflow: hidden;
+    white-space: nowrap;      /* 부트스트랩 .text-nowrap에 기대지 않고 직접 잡는다 */
     text-overflow: ellipsis;
     line-height: normal;
 }
@@ -3583,11 +3593,14 @@ body.media-lightbox-open { overflow: hidden; }
     flex-shrink: 0;
 }
 
-.minw-320 { min-width: 320px; }
+.minw-320 { min-width: min(320px, 100%); }
 
-.minw-480 { min-width: 480px; }
+/* 표의 최소 너비. 자리(칸)가 이 값보다 좁아지면 최소 너비를 포기하고 자리에 맞춘다
+   - 예전에는 그냥 520px이라, 화면은 넓어도 표가 놓인 칸이 좁은 구간(노트북에서 표 두 개를
+   나란히 놓는 992~1200px 등)에서 표에 가로 스크롤이 생겼다. min()이 그 구간을 없애준다. */
+.minw-480 { min-width: min(480px, 100%); }
 
-.minw-520 { min-width: 520px; }
+.minw-520 { min-width: min(520px, 100%); }
 
 .colw-6 { width: 6%; }
 
