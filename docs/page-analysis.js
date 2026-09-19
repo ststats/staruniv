@@ -7,18 +7,6 @@ const ANALYSIS_MAP_STEP = 8;           // '맵별 전적' 한 번에 보여줄 �
 const ANALYSIS_RIVAL_STEP = 8;         // '동티어 전적' 한 번에 보여줄 상대 수
 const ANALYSIS_CAT_PER_PAGE = 3;       // '형식별 전적' 한 화면에 보여줄 도넛 수
 
-// 형식 묶음: eloboard 형식(스폰·리그·개인·CK·대회·미니·대학·기타)을 화면용으로 묶는다.
-// CK와 리그는 둘 다 팀 단위 경기라 하나로 본다.
-// [정식 이름, 짧은 이름, 묶을 원본 형식들] - 도넛에는 정식 이름을, 필터 칩에는 짧은 이름을 쓴다
-// (칩에 '개인대회·대학대회…'를 다 적으면 휴대폰에서 필터 줄이 옆으로 밀린다).
-const ANALYSIS_CAT_GROUPS = [
-    ['개인대회', '개인', ['개인']],
-    ['대학대회', '대회', ['대회']],
-    ['대학대전', '대학', ['대학']],
-    ['미니대전', '미니', ['미니']],
-    ['CK · 리그', 'CK · 리그', ['CK', '리그']],
-    ['스폰', '스폰', ['스폰', '기타']],
-];
 
 const AnalysisState = {
     rows: {},              // 선수id -> 경기 로그(최신순)
@@ -28,7 +16,7 @@ const AnalysisState = {
     suggestOpen: false,
     suggestShown: ANALYSIS_SUGGEST_STEP,
     matchPage: 1,           // 최근 전적 페이지(10경기씩)
-    matchFilter: '전체',    // 최근 전적 형식 필터(ANALYSIS_CAT_GROUPS의 이름 또는 '전체')
+    matchFilter: '전체',    // 최근 전적 형식 필터(H2H_CAT_GROUPS의 이름 또는 '전체')
     catPage: 0,             // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
     mapShown: ANALYSIS_MAP_STEP,
     rivalShown: ANALYSIS_RIVAL_STEP,
@@ -230,10 +218,10 @@ function analysisHeadHtml(pid, p, e) {
 function analysisCatTotals(e) {
     const cats = (H2hState.index && H2hState.index.cats) || [];
     const totals = new Map();
-    ANALYSIS_CAT_GROUPS.forEach(([label]) => totals.set(label, [0, 0]));
+    H2H_CAT_GROUPS.forEach(([label]) => totals.set(label, [0, 0]));
     cats.forEach((name, i) => {
         const pair = (e.cat && e.cat[i]) || [0, 0];
-        const group = ANALYSIS_CAT_GROUPS.find(([, , members]) => members.includes(name));
+        const group = H2H_CAT_GROUPS.find(([, , members]) => members.includes(name));
         if (!group) return;
         const acc = totals.get(group[0]);
         acc[0] += pair[0];
@@ -243,7 +231,7 @@ function analysisCatTotals(e) {
 }
 
 function analysisCatPages() {
-    return Math.max(1, Math.ceil(ANALYSIS_CAT_GROUPS.length / ANALYSIS_CAT_PER_PAGE));
+    return Math.max(1, Math.ceil(H2H_CAT_GROUPS.length / ANALYSIS_CAT_PER_PAGE));
 }
 
 function analysisSetCatPage(page) {
@@ -258,7 +246,7 @@ function analysisCatHtml(e) {
     const totals = analysisCatTotals(e);
     const pages = analysisCatPages();
     const from = AnalysisState.catPage * ANALYSIS_CAT_PER_PAGE;
-    const boxes = ANALYSIS_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE).map(([label]) => {
+    const boxes = H2H_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE).map(([label]) => {
         const [w, l] = totals.get(label) || [0, 0];
         return analysisDonutHtml(label, w, l);
     }).join('');
@@ -608,12 +596,7 @@ function analysisRivalHtml(rows, myTier) {
 // 최근 전적 (형식 필터)
 // ---------------------------------------------------------------------------
 function analysisFilterRows(rows) {
-    if (AnalysisState.matchFilter === '전체') return rows;
-    const group = ANALYSIS_CAT_GROUPS.find(([, short]) => short === AnalysisState.matchFilter);
-    if (!group) return rows;
-    const cats = (H2hState.index && H2hState.index.cats) || [];
-    const wanted = new Set(group[2].map(name => cats.indexOf(name)).filter(i => i >= 0));
-    return rows.filter(r => wanted.has(r[4]));
+    return h2hFilterRowsByCategory(rows, AnalysisState.matchFilter);
 }
 
 function analysisSetFilter(label) {
@@ -631,7 +614,7 @@ function analysisMatchesHtml(rows) {
     const filtered = analysisFilterRows(rows);
     const page = Math.min(Math.max(1, AnalysisState.matchPage), Math.max(1, Math.ceil(filtered.length / ANALYSIS_PAGE_SIZE)));
     const shown = filtered.slice((page - 1) * ANALYSIS_PAGE_SIZE, page * ANALYSIS_PAGE_SIZE);
-    const chips = ['전체', ...ANALYSIS_CAT_GROUPS.map(([, short]) => short)].map(label => `
+    const chips = ['전체', ...H2H_CAT_GROUPS.map(([, short]) => short)].map(label => `
         <div class="filter-item${AnalysisState.matchFilter === label ? ' active' : ''}" role="tab" tabindex="0"
              onclick="analysisSetFilter('${jsAttr(label)}')">${escapeHTML(label)}</div>`).join('');
     return `

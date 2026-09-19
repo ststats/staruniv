@@ -27,6 +27,19 @@ const H2H_MAP_STEP = 8;            // '맵별 전적' 한 번에 보여줄 개�
 // 닿을 때마다 이어서 그린다 - 사용자 입장에서는 그냥 계속 스크롤되는 목록이다.
 const H2H_SUGGEST_STEP = 40;
 
+// 형식 묶음: eloboard 형식(스폰·리그·개인·CK·대회·미니·대학·기타)을 화면용으로 묶는다.
+// CK와 리그는 둘 다 팀 단위 경기라 하나로 본다.
+// [정식 이름, 짧은 이름, 묶을 원본 형식들] - 도넛에는 정식 이름을, 필터 칩에는 짧은 이름을 쓴다
+// (칩에 '개인대회·대학대회…'를 다 적으면 휴대폰에서 필터 줄이 옆으로 밀린다).
+const H2H_CAT_GROUPS = [
+    ['개인대회', '개인', ['개인']],
+    ['대학대회', '대회', ['대회']],
+    ['대학대전', '대학', ['대학']],
+    ['미니대전', '미니', ['미니']],
+    ['CK · 리그', 'CK · 리그', ['CK', '리그']],
+    ['스폰', '스폰', ['스폰', '기타']],
+];
+
 const H2hState = {
     index: null,
     loading: null,        // 진행 중인 index 요청(중복 요청 방지)
@@ -36,6 +49,7 @@ const H2hState = {
     shardData: {},        // 샤드 시작id -> 받아온 원본 { 선수id: rows } (같은 샤드 재요청 방지)
     shardLoading: {},     // 샤드 시작id -> 진행 중인 요청(동시에 여러 번 고를 때 중복 요청 방지)
     page: 1,
+    matchFilter: '전체',
     rivalShown: H2H_RIVAL_STEP,
     mapShown: H2H_MAP_STEP,
     suggestSlot: -1,      // 추천 목록이 열려 있는 칸
@@ -300,6 +314,34 @@ function h2hMatchRowsHtml(rows, showOpponent) {
             </tr>`).join('');
 }
 
+// 분석과 상대전적이 같은 형식 묶음을 사용한다. 요약/맵 통계에는 적용하지 않는다.
+function h2hFilterRowsByCategory(rows, label) {
+    const group = H2H_CAT_GROUPS.find(([, short]) => short === label);
+    if (!group) return rows;
+    const cats = (H2hState.index && H2hState.index.cats) || [];
+    const wanted = new Set(group[2].map(name => cats.indexOf(name)).filter(i => i >= 0));
+    return rows.filter(r => wanted.has(r[4]));
+}
+
+function h2hSetFilter(label) {
+    H2hState.matchFilter = label;
+    H2hState.page = 1;
+    renderH2hResult();
+}
+
+function h2hMatchesHtml(rows, showOpponent) {
+    const filtered = h2hFilterRowsByCategory(rows, H2hState.matchFilter);
+    H2hState.page = Math.min(Math.max(1, H2hState.page), Math.max(1, Math.ceil(filtered.length / H2H_LIST_STEP)));
+    const chips = ['전체', ...H2H_CAT_GROUPS.map(([, short]) => short)].map(label => `
+        <button type="button" class="filter-item${H2hState.matchFilter === label ? ' active' : ''}"
+            aria-pressed="${H2hState.matchFilter === label}" onclick="h2hSetFilter('${jsAttr(label)}')">${escapeHTML(label)}</button>`).join('');
+    return `<div class="section-title record-recent-header section-title-spaced" data-en="RECENT">
+        <span class="record-recent-title section-title-label">최근 전적</span>
+        <div class="filter-nav tab-scroll" role="group" aria-label="최근 전적 형식">${chips}</div>
+        <span class="title-count">${filtered.length.toLocaleString('ko-KR')}경기</span>
+    </div>${h2hTableHtml(filtered, showOpponent)}`;
+}
+
 function h2hTableHtml(rows, showOpponent) {
     const shown = rows.slice((H2hState.page - 1) * H2H_LIST_STEP, H2hState.page * H2H_LIST_STEP);
     const colw = showOpponent ? 'colw-20' : 'colw-25';
@@ -319,7 +361,7 @@ function h2hTableHtml(rows, showOpponent) {
                         </tr>
                     </thead>
                     <tbody>${shown.length ? h2hMatchRowsHtml(shown, showOpponent)
-                        : emptyRowHtml(showOpponent ? 5 : 4, '경기 기록이 없습니다.')}</tbody>
+                        : emptyRowHtml(showOpponent ? 5 : 4, '이 형식의 경기가 없습니다.')}</tbody>
                 </table>
             </div>
         </div>
@@ -439,9 +481,7 @@ function renderH2hResult() {
             ${h2hTopOpponentsHtml(rows, targetSlot)}
             <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span></div>
             ${h2hMapTableHtml(rows)}
-            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
-                <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
-            ${h2hTableHtml(rows, true)}`;
+            ${h2hMatchesHtml(rows, true)}`;
         return;
     }
     const rows = h2hRowsInPeriod(a).filter(r => String(r[1]) === String(b));
@@ -452,9 +492,7 @@ function renderH2hResult() {
             <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span>
                 <span class="title-count">${escapeHTML(h2hName(a))} 기준</span></div>
             ${h2hMapTableHtml(rows)}
-            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
-                <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
-            ${h2hTableHtml(rows, false)}`
+            ${h2hMatchesHtml(rows, false)}`
         : '<div class="h2h-empty h2h-empty-spaced">이 기간에 맞대결이 없습니다. 기간을 넓혀보세요.</div>'}`;
 }
 

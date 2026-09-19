@@ -4503,17 +4503,17 @@ body.media-lightbox-open { overflow: hidden; }
 @media (max-width: 767.98px) {
     /* 최근 전적 형식 필터는 제목과 같은 줄에 둔다(예전엔 줄을 통째로 내줘서 제목 아래로
        떨어졌다). 칩이 다 안 들어가면 그 칸 안에서만 옆으로 밀어 볼 수 있게 한다. */
-    #view-tier-analysis .record-recent-header {
+    :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header {
         grid-template-columns: max-content minmax(0, 1fr) max-content;
         align-items: center;
     }
-    #view-tier-analysis .record-recent-header .filter-nav {
+    :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header .filter-nav {
         grid-column: 2;
         grid-row: auto;
         min-width: 0;
         overflow-x: auto;
     }
-    #view-tier-analysis .record-recent-header .title-count { grid-column: 3; }
+    :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header .title-count { grid-column: 3; }
 }
 @media (max-width: 575.98px) {
     .analysis-donut-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 4px; }
