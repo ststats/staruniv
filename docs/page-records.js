@@ -296,9 +296,11 @@ function selectPlayer(name) {
 
     document.getElementById('p-name').innerText = name;
     applyBadge(document.getElementById('p-tier'), tierLabel(pDb['티어']), 'tag-badge tier-badge');
-    // 랭킹 뱃지도 상대전적·분석과 같은 문구로. 이 페이지는 티어표 전체 명단을 안 읽으므로
-    // 티어 인원수('/N명')는 붙이지 않는다.
-    applyBadge(document.getElementById('p-rank'), `${tierLabel(pDb['티어'])} · ?위`, 'tag-badge rank-badge');
+    // 상대전적·분석 카드의 티어랭킹 자리. 이 페이지는 랭킹을 따지지 않으므로 멤버 프로필
+    // 팝업과 같은 활동기간을 대신 넣는다.
+    const periodEl = document.getElementById('p-period');
+    periodEl.className = 'tag-badge rank-badge';
+    periodEl.innerHTML = memberPeriodBadgeHtml(pDb);
     applyBadge(document.getElementById('p-race'), raceShortLabel(pDb['종족']), 'tag-badge' + raceBadgeClass(pDb['종족']));
     document.getElementById('p-avatar').innerHTML = profileAvatarInnerHtml(pDb['SOOP ID']);
 
@@ -315,7 +317,7 @@ function selectPlayer(name) {
     }, { wins: 0, losses: 0 });
     const officialTotal = official.wins + official.losses;
     document.getElementById('p-total-label').innerText =
-        `총 전적 ${officialTotal.toLocaleString('ko-KR')}전 · 대회 + 대학`;
+        `대학 · 대회 총 전적 ${officialTotal.toLocaleString('ko-KR')}전`;
     document.getElementById('p-total-wl').innerHTML = officialTotal
         ? `${official.wins}<small>승</small> ${official.losses}<small>패</small>`
         : '<small>기록 없음</small>';

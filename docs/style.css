@@ -4292,10 +4292,10 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 /* 자주 만난 상대 · 동티어 전적: 맵 카드와 같은 짜임(이름 / 승-패 · 승률 / 승률 막대)에
-   프로필 사진만 오른쪽 끝에 두 줄에 걸쳐 세운다. */
+   프로필 사진을 왼쪽 끝에 두 줄에 걸쳐 세운다. */
 .h2h-rival {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 2px 8px;
     padding: 10px 12px;
@@ -4307,7 +4307,7 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-rival:hover:not(:disabled) { background: var(--color-row-hover); }
 .h2h-rival:disabled { cursor: default; }
 .h2h-rival-name {
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 1;
     overflow: hidden;
     white-space: nowrap;
@@ -4317,7 +4317,7 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-main);
 }
 .h2h-rival-rec {
-    grid-column: 2;
+    grid-column: 3;
     grid-row: 1;
     justify-self: end;
     flex: none;
@@ -4327,13 +4327,13 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-sub);
 }
 .h2h-rival-avatar {
-    grid-column: 3;
+    grid-column: 1;
     grid-row: 1 / span 2;
     width: 32px;
     height: 32px;
 }
 .h2h-rival-bar {
-    grid-column: 1 / 3;
+    grid-column: 2 / 4;
     grid-row: 2;
     display: block;
     height: 6px;
@@ -5758,6 +5758,7 @@ html[data-theme="dark"] .mv-order-row {
 .player-summary-badges .team-badge { flex:0 1 auto; min-width:0; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:22px; }
 .player-summary-position { margin:0; display:flex; align-items:center; min-width:0; }
 .player-summary .player-summary-position .tag-badge.rank-badge { background:rgba(255,255,255,.16); color:#fff; }
+.rank-badge-pre { font-style:normal; }
 .player-summary-stats { flex:none; text-align:right; justify-items:end; white-space:nowrap; }
 .player-summary-total { align-self:end; padding-bottom:5px; font-size:11px; line-height:1; color:var(--navy-on-muted); }
 .player-summary-wl,.player-summary-rate { margin:0; font-size:16px; line-height:1; font-weight:700; }
@@ -5772,13 +5773,13 @@ html[data-theme="dark"] .mv-order-row {
 #analysis-search { margin-bottom:22px; }
 
 /* 페이지 넘김: 표 아래에 가로로 꽉 찬 카드 한 장. 버튼은 바탕 없이 두고 현재 쪽만 칠한다. */
-.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:56px; padding:10px 14px; margin:14px 0 0; background:var(--color-card); clip-path:var(--cut-8); }
-.match-pagination-nav,.match-page-nums { display:flex; align-items:center; gap:4px; }
-.match-page { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 8px; border:0; background:transparent; clip-path:var(--cut-4); font-family:"Pretendard",sans-serif; font-size:13px; font-weight:600; line-height:1; color:var(--color-text-sub); }
+.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:14px 0 0; background:var(--color-card); clip-path:var(--cut-8); }
+.match-pagination-nav,.match-page-nums { display:flex; align-items:center; gap:3px; }
+.match-page { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 5px; border:0; background:transparent; clip-path:var(--cut-3); font-family:"Pretendard",sans-serif; font-size:12px; font-weight:600; line-height:1; color:var(--color-text-sub); }
 .match-page:hover:not(:disabled):not(.active) { background:var(--color-row-hover); color:var(--color-primary); }
 .match-page.active { background:var(--select-on-light); color:#fff; font-weight:700; }
-.match-page.is-edge { min-width:28px; padding:0 6px; font-size:15px; }
-.match-page.is-gap { min-width:22px; padding:0; }
+.match-page.is-edge { min-width:22px; padding:0 4px; font-size:13px; }
+.match-page.is-gap { min-width:18px; padding:0; }
 .match-page:disabled { opacity:.3; }
 .match-pagination-info { position:absolute; right:14px; font-family:"Pretendard",sans-serif; font-size:11px; color:var(--color-text-muted); }
 
@@ -5801,6 +5802,8 @@ html[data-theme="dark"] .mv-order-row {
     .player-summary-position .tag-badge { height:18px; padding:0 5px; font-size:9.5px; }
     .player-summary-badges .tag-badge.race-badge { width:18px; padding:0; }
     .player-summary-badges .team-badge { line-height:18px; }
+    /* 뱃지 한 칸에 다 안 들어가므로 앞머리(기간 범위)는 감추고 일수만 남긴다 */
+    .rank-badge-pre { display:none; }
     .player-summary-wl,.player-summary-rate { font-size:14px; }
     .player-summary-total { padding-bottom:3px; font-size:9px; }
     .analysis-formline { padding:10px 8px; gap:6px; }
@@ -5813,6 +5816,6 @@ html[data-theme="dark"] .mv-order-row {
     .h2h-suggest-alt,.h2h-suggest-count { display:none; }
     .h2h-suggest-item .tag-badge { font-size:10px; padding:2px 4px; }
 
-    .match-pagination { gap:4px; padding:10px 8px; min-height:52px; }
-    .match-page { min-width:28px; height:30px; padding:0 6px; font-size:12px; }
+    .match-pagination { gap:4px; padding:8px; min-height:44px; }
+    .match-page { min-width:22px; height:24px; padding:0 4px; font-size:11px; }
 }

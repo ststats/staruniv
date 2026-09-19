@@ -523,6 +523,20 @@ function daysBetween(startStr, endStr) {
     return Math.floor((end - start) / 86400000) + 1;
 }
 
+// 활동기간 한 줄(멤버 프로필 팝업 · 개인 전적 머리 카드 공용).
+// 뱃지 한 칸에 들어가야 해서, 좁은 화면에서는 앞의 기간 범위를 감추고 '900일째'만 남긴다
+// (.rank-badge-pre). 퇴단한 멤버는 퇴단일까지만 센다.
+function memberPeriodBadgeHtml(m) {
+    const join = m && m['입단일'];
+    if (!join) return '<i class="rank-badge-pre">활동기간 </i>-';
+    const active = isActiveMember(m);
+    const end = active ? '현재' : (m['퇴단일'] || '-');
+    const range = `${escapeHTML(String(join)).replace(/-/g, '.')} ~ ${escapeHTML(String(end)).replace(/-/g, '.')}`;
+    const days = daysBetween(join, active ? todayStr() : (m['퇴단일'] || null));
+    if (days === null) return `<i class="rank-badge-pre">활동기간 </i>${range}`;
+    return `<i class="rank-badge-pre">${range} · </i>${days.toLocaleString('ko-KR')}일${active ? '째' : ''}`;
+}
+
 // 아바타 선택 바(개인 전적/멤버 공지 상단)의 항목 한 칸 - 두 화면이 같은 마크업을 쓴다.
 // [리디자인] 선택 사이드바의 한 줄 구성은 시안대로 [종족 뱃지][이름][방송 표시][티어]다.
 // 프로필 사진을 쓰지 않는 이유: 40명을 세로로 훑을 때 필요한 건 "누가 무슨 종족 몇 티어인지"이고,

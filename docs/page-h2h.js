@@ -410,9 +410,9 @@ function h2hRivalCardHtml(pid, win, lose, onclick, disabled) {
     const pct = total ? (win / total) * 100 : 0;
     return `
         <button type="button" class="h2h-rival"${disabled ? ' disabled' : ` onclick="${onclick}"`}>
+            ${avatarHtml(known ? (known.s || '') : '', 'h2h-rival-avatar')}
             <span class="h2h-rival-name">${escapeHTML(h2hName(pid))}</span>
             <span class="h2h-rival-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span> · ${h2hRateText(win, lose)}</span>
-            ${avatarHtml(known ? (known.s || '') : '', 'h2h-rival-avatar')}
             <span class="h2h-rival-bar"><span style="width:${pct}%"></span></span>
         </button>`;
 }

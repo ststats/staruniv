@@ -183,8 +183,9 @@ function openMemberProfile(name) {
     const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : (m['퇴단일'] || null)) : null;
     // 다른 뱃지들(직책/티어/종족)과 같은 tag-badge 패밀리를 써서 톤을 맞추고, 텍스트와
     // 뱃지를 flex로 묶어 기준선이 아니라 박스 높이 기준으로 정렬한다.
+    // (개인 전적 머리 카드는 같은 내용을 뱃지 한 칸에 담는다 - core.js의 memberPeriodBadgeHtml)
     const daysBadge = days !== null
-        ? `<span class="tag-badge tier-badge">${days}일${active ? '째' : ''}</span>`
+        ? `<span class="tag-badge tier-badge">${days.toLocaleString('ko-KR')}일${active ? '째' : ''}</span>`
         : '';
     const period = m['입단일']
         ? `<span class="d-inline-flex align-items-center flex-wrap gap-2">${escapeHTML(m['입단일'])} ~ ${active ? '현재' : (escapeHTML(m['퇴단일']) || '-')}${daysBadge}</span>`
