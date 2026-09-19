@@ -385,7 +385,7 @@ function getProfileImgUrl(soopId) {
     // SOOP 아이디는 영문/숫자/일부 특수문자만 쓰이므로, 형식이 이상한 값은 URL/속성에 꽂지 않고 무시
     if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
     const prefix = id.substring(0, 2);
-    return `https://profile.img.sooplive.co.kr/LOGO/${prefix}/${id}/${id}.jpg`;
+    return `https://stimg.sooplive.com/LOGO/${prefix}/${id}/m/${id}.webp`;
 }
 
 function avatarHtml(soopId, cls) {

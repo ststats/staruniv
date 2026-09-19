@@ -615,7 +615,7 @@ html[data-theme="dark"] .mv-settings-panel {
     function mvAvatarHtml(soopId) {
         const id = String(soopId || '').trim().toLowerCase();
         if (!id || !/^[a-z0-9_-]+$/.test(id)) return `<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>`;
-        const url = `https://profile.img.sooplive.co.kr/LOGO/${id.substring(0, 2)}/${id}/${id}.jpg`;
+        const url = `https://stimg.sooplive.com/LOGO/${id.substring(0, 2)}/${id}/m/${id}.webp`;
         return `<img src="${url}" class="mv-chip-avatar" loading="lazy" onerror="this.outerHTML='<span class=\\'mv-chip-avatar d-flex align-items-center justify-content-center\\'>👤</span>';">`;
     }
     function mvChipHtml(m) {

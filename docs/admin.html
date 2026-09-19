@@ -919,7 +919,7 @@ body {
         const id = String(soopId).trim().toLowerCase();
         if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
         const prefix = id.substring(0, 2);
-        return `https://profile.img.sooplive.co.kr/LOGO/${prefix}/${id}/${id}.jpg`;
+        return `https://stimg.sooplive.com/LOGO/${prefix}/${id}/m/${id}.webp`;
     }
 
     // ===== GitHub 토큰 보관 =====
