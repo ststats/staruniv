@@ -311,6 +311,8 @@ function selectPlayer(name) {
         return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
     }, { wins: 0, losses: 0 });
     const officialTotal = official.wins + official.losses;
+    document.getElementById('p-total-label').innerText =
+        `총 전적 ${officialTotal.toLocaleString('ko-KR')}전 · 대회 + 대학`;
     document.getElementById('p-total-wl').innerHTML = officialTotal
         ? `${official.wins}<small>승</small> ${official.losses}<small>패</small>`
         : '<small>기록 없음</small>';

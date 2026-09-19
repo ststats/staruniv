@@ -20,8 +20,8 @@
 const H2H_INDEX_URL = 'data/h2h/index.json';
 const H2H_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
 const H2H_LIST_STEP = 10;          // 최근 전적 한 번에 보여줄 개수
-const H2H_RIVAL_STEP = 10;         // '자주 만난 상대' 한 번에 보여줄 명수
-const H2H_MAP_STEP = 10;           // '맵별 전적' 한 번에 보여줄 개수
+const H2H_RIVAL_STEP = 8;          // '자주 만난 상대' 한 번에 보여줄 명수(4열 x 2줄)
+const H2H_MAP_STEP = 8;            // '맵별 전적' 한 번에 보여줄 개수
 // 검색 결과는 전부 볼 수 있어야 한다(대학 이름으로 찾으면 수십~수백 명이 나온다).
 // 다만 한 글자만 쳐도 수백 줄을 한꺼번에 그리면 타자마다 버벅이므로, 스크롤이 끝에
 // 닿을 때마다 이어서 그린다 - 사용자 입장에서는 그냥 계속 스크롤되는 목록이다.
@@ -367,7 +367,9 @@ function h2hScoreHtml(a, b, winA, winB) {
 }
 
 // 한 명만 골랐을 때: 자주 만난 상대와 최근 경기
-function h2hTopOpponentsHtml(rows) {
+// targetSlot: 카드를 누르면 채울 칸. 비어 있는 쪽으로 넣는다 - PLAYER 2만 골라둔
+// 상태에서 상대를 누르면 PLAYER 1로 들어가야 맞대결이 성립한다.
+function h2hTopOpponentsHtml(rows, targetSlot) {
     const byOpp = new Map();
     rows.forEach(r => {
         const key = String(r[1]);
@@ -381,20 +383,27 @@ function h2hTopOpponentsHtml(rows) {
         <div class="section-title" data-en="RIVALS"><span class="section-title-label">자주 만난 상대</span>
             <span class="title-count">${all.length.toLocaleString('ko-KR')}명</span></div>
         <div class="h2h-rivals">
-            ${list.map(([pid, [win, lose]]) => {
-                const known = h2hPlayer(pid);
-                return `
-                <button type="button" class="h2h-rival" ${known ? `onclick="h2hPick(1, '${escapeHTML(pid)}')"` : 'disabled'}>
-                    ${avatarHtml(known ? (known.s || '') : '', 'h2h-rival-avatar')}
-                    <span class="h2h-rival-name">${escapeHTML(h2hName(pid))}</span>
-                    <span class="h2h-rival-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span></span>
-                </button>`;
-            }).join('')}
+            ${list.map(([pid, [win, lose]]) => h2hRivalCardHtml(pid, win, lose, `h2hPick(${targetSlot}, '${jsAttr(pid)}')`, !h2hPlayer(pid))).join('')}
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
             <button type="button" class="news-load-more" onclick="h2hShowMoreRivals()">상대 더 보기 (${(all.length - list.length).toLocaleString('ko-KR')}명 남음)</button>
         </div>` : ''}`;
+}
+
+// 상대 카드 한 장: 맵별 전적(.h2h-map)과 같은 짜임 - 이름 / 승-패 · 승률 / 승률 막대.
+// 프로필 사진은 오른쪽 끝에 두 줄에 걸쳐 세운다.
+function h2hRivalCardHtml(pid, win, lose, onclick, disabled) {
+    const known = h2hPlayer(pid);
+    const total = win + lose;
+    const pct = total ? (win / total) * 100 : 0;
+    return `
+        <button type="button" class="h2h-rival"${disabled ? ' disabled' : ` onclick="${onclick}"`}>
+            <span class="h2h-rival-name">${escapeHTML(h2hName(pid))}</span>
+            <span class="h2h-rival-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span> · ${h2hRateText(win, lose)}</span>
+            ${avatarHtml(known ? (known.s || '') : '', 'h2h-rival-avatar')}
+            <span class="h2h-rival-bar"><span style="width:${pct}%"></span></span>
+        </button>`;
 }
 
 function renderH2hResult() {
@@ -412,13 +421,14 @@ function renderH2hResult() {
     // 한 명만 골랐을 때: 자주 만난 상대 → 맵별 전적 → 최근 전적 (셋 다 10개씩 + 더 보기)
     if (!a || !b) {
         const pid = a || b;
+        const targetSlot = a ? 1 : 0;
         const rows = h2hRowsInPeriod(pid);
         if (!rows.length) {
             box.innerHTML = '<div class="h2h-empty">이 기간에 경기가 없습니다.</div>';
             return;
         }
         box.innerHTML = `
-            ${h2hTopOpponentsHtml(rows)}
+            ${h2hTopOpponentsHtml(rows, targetSlot)}
             <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span></div>
             ${h2hMapTableHtml(rows, true)}
             <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
@@ -437,7 +447,7 @@ function renderH2hResult() {
             <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
                 <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
             ${h2hTableHtml(rows, false)}`
-        : '<div class="h2h-empty">이 기간에 맞대결이 없습니다. 기간을 넓혀보세요.</div>'}`;
+        : '<div class="h2h-empty h2h-empty-spaced">이 기간에 맞대결이 없습니다. 기간을 넓혀보세요.</div>'}`;
 }
 
 function renderH2hPeriod() {

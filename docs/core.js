@@ -834,22 +834,53 @@ function bootPage(init, opts) {
     else start();
 }
 
+// 티어 랭킹 자리 뱃지. 랭킹 시스템을 새로 만들기 전까지는 값이 없어서 자리만 잡아 둔다.
+// 종족·티어 뱃지와 같은 높이·크기의 뱃지지만, 뱃지 줄에 같이 세우면 좁은 화면에서 줄이
+// 넘쳐 잘리므로 머리 카드의 셋째 줄을 따로 내준다(.player-summary-position).
+function playerRankBadgeHtml() {
+    return '<span class="tag-badge rank-badge">티어랭킹 · 0티어 0위</span>';
+}
+
 function playerBadgesHtml(p) {
-    return `${p.r ? raceBadgeHtml(p.r) : ''}${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}${p.tm ? `<span class="tag-badge">${escapeHTML(p.tm)}</span>` : ''}`;
+    return `${p.r ? raceBadgeHtml(p.r) : ''}${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}${p.tm ? `<span class="tag-badge team-badge">${escapeHTML(p.tm)}</span>` : ''}`;
 }
 function playerSummaryHtml(p, rec, close = '') {
     return `<div class="player-summary">
         <div class="player-summary-avatar">${avatarHtml(p.s || '', 'player-summary-image')}</div>
-        <div class="player-summary-id"><div class="player-summary-name">${escapeHTML(p.n)}</div>
-        <div class="player-summary-badges">${playerBadgesHtml(p)}</div><div class="player-summary-position">?티어 ?위</div></div>
-        <div class="player-summary-stats"><div class="player-summary-total">총 전적 ${rec.total.toLocaleString('ko-KR')}전</div>
-        <div class="player-summary-wl">${rec.win}승 ${rec.lose}패</div>
-        <div class="player-summary-rate">${rec.total ? `${Math.round(rec.win / rec.total * 1000) / 10}%` : '-'}</div></div>${close}</div>`;
+        <div class="player-summary-id">
+            <div class="player-summary-name">${escapeHTML(p.n)}</div>
+            <div class="player-summary-badges">${playerBadgesHtml(p)}</div>
+            <div class="player-summary-position">${playerRankBadgeHtml()}</div>
+        </div>
+        <div class="player-summary-stats">
+            <div class="player-summary-total">총 전적 ${rec.total.toLocaleString('ko-KR')}전</div>
+            <div class="player-summary-wl">${rec.win}승 ${rec.lose}패</div>
+            <div class="player-summary-rate">${rec.total ? `${Math.round(rec.win / rec.total * 1000) / 10}%` : '-'}</div>
+        </div>${close}</div>`;
 }
 function matchPaginationHtml(total, page, size, handler) {
     const count = Math.max(1, Math.ceil(total / size));
-    const start = Math.floor((page - 1) / 5) * 5 + 1;
+    const cur = Math.min(Math.max(1, page), count);
+    const start = Math.floor((cur - 1) / 5) * 5 + 1;
     const end = Math.min(count, start + 4);
-    const button = (n, label, disabled = false) => `<button type="button" class="match-page${n === page && label === String(n) ? ' active' : ''}" ${disabled ? 'disabled' : `onclick="${handler}(${n})"`} ${n === page && label === String(n) ? 'aria-current="page"' : ''}>${label}</button>`;
-    return `<nav class="match-pagination" aria-label="최근 전적 페이지">${button(page - 1, '&lt;', page === 1)}${start > 1 ? button(start - 1, '…') : ''}${Array.from({length: end - start + 1}, (_, i) => button(start + i, String(start + i))).join('')}${end < count ? button(end + 1, '…') : ''}${button(page + 1, '&gt;', page === count)}</nav>`;
+    // 숫자 버튼과 앞뒤 이동 버튼은 모양이 달라서(활성 표시가 숫자에만 붙는다) 따로 만든다.
+    const num = n => `<button type="button" class="match-page${n === cur ? ' active' : ''}"${n === cur ? ' aria-current="page"' : ''} onclick="${handler}(${n})">${n}</button>`;
+    const step = (n, label, aria, disabled) =>
+        `<button type="button" class="match-page is-edge" aria-label="${aria}"${disabled ? ' disabled' : ` onclick="${handler}(${n})"`}>${label}</button>`;
+    return `<nav class="match-pagination" aria-label="페이지">
+        <span class="match-pagination-nav">
+            ${step(1, '&laquo;', '첫 페이지', cur === 1)}
+            ${step(cur - 1, '&lsaquo;', '이전 페이지', cur === 1)}
+        </span>
+        <span class="match-page-nums">
+            ${start > 1 ? `<button type="button" class="match-page is-gap" onclick="${handler}(${start - 1})" aria-label="이전 묶음">…</button>` : ''}
+            ${Array.from({ length: end - start + 1 }, (_, i) => num(start + i)).join('')}
+            ${end < count ? `<button type="button" class="match-page is-gap" onclick="${handler}(${end + 1})" aria-label="다음 묶음">…</button>` : ''}
+        </span>
+        <span class="match-pagination-nav">
+            ${step(cur + 1, '&rsaquo;', '다음 페이지', cur === count)}
+            ${step(count, '&raquo;', '마지막 페이지', cur === count)}
+        </span>
+        <span class="match-pagination-info">${cur} / ${count} 페이지 · ${total.toLocaleString('ko-KR')}경기</span>
+    </nav>`;
 }

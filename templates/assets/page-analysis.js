@@ -1,11 +1,11 @@
-const ANALYSIS_MATCH_STEP = 15;        // 최근 전적 한 번에 보여줄 경기 수
+const ANALYSIS_PAGE_SIZE = 10;         // 최근 전적 한 페이지에 보여줄 경기 수
 const ANALYSIS_SUGGEST_STEP = 40;
 const ANALYSIS_FORM_COUNT = 10;        // '최근 10경기'
 const ANALYSIS_CHART_MONTHS = 18;      // 월별 그래프에 보여줄 최근 개월 수
 const ANALYSIS_RATE_MIN = 5;           // 월별 승률 선을 그릴 최소 표본(이 미만인 달은 선을 끊는다)
-const ANALYSIS_MAP_MIN = 10;           // 맵별 승률에 올릴 최소 경기 수
-const ANALYSIS_MAP_COUNT = 8;
-const ANALYSIS_RIVAL_COUNT = 8;        // 동티어 맞대결에 보여줄 상대 수
+const ANALYSIS_MAP_STEP = 8;           // '맵별 전적' 한 번에 보여줄 개수(4열 x 2줄)
+const ANALYSIS_RIVAL_STEP = 8;         // '동티어 전적' 한 번에 보여줄 상대 수
+const ANALYSIS_CAT_PER_PAGE = 3;       // '형식별 전적' 한 화면에 보여줄 도넛 수
 
 // 형식 묶음: eloboard 형식(스폰·리그·개인·CK·대회·미니·대학·기타)을 화면용으로 묶는다.
 // CK와 리그는 둘 다 팀 단위 경기라 하나로 본다.
@@ -17,7 +17,7 @@ const ANALYSIS_CAT_GROUPS = [
     ['대학대전', '대학', ['대학']],
     ['미니대전', '미니', ['미니']],
     // 칩 이름은 '리그'로 줄인다 - 320px 폭 휴대폰에서 필터 줄이 옆으로 밀리지 않게.
-    ['CK+리그', '리그', ['CK', '리그']],
+    ['CK · 리그', '리그', ['CK', '리그']],
     ['스폰', '스폰', ['스폰', '기타']],
 ];
 
@@ -28,9 +28,19 @@ const AnalysisState = {
     query: '',
     suggestOpen: false,
     suggestShown: ANALYSIS_SUGGEST_STEP,
-    matchShown: ANALYSIS_MATCH_STEP,
+    matchPage: 1,           // 최근 전적 페이지(10경기씩)
     matchFilter: '전체',    // 최근 전적 형식 필터(ANALYSIS_CAT_GROUPS의 이름 또는 '전체')
+    catPage: 0,             // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
+    mapShown: ANALYSIS_MAP_STEP,
+    rivalShown: ANALYSIS_RIVAL_STEP,
 };
+
+// 선수를 바꾸거나 기간을 바꾸면 '더 보기'로 펼쳐둔 것들과 페이지를 처음으로 되돌린다.
+function analysisResetLists() {
+    AnalysisState.matchPage = 1;
+    AnalysisState.mapShown = ANALYSIS_MAP_STEP;
+    AnalysisState.rivalShown = ANALYSIS_RIVAL_STEP;
+}
 
 // ---------------------------------------------------------------------------
 // 데이터
@@ -72,7 +82,7 @@ function analysisSummary(rows) {
 }
 function analysisSetPeriod(period) {
     AnalysisState.period = period;
-    AnalysisState.matchShown = ANALYSIS_MATCH_STEP;
+    analysisResetLists();
     renderAnalysisBody();
 }
 function analysisPeriodHtml() {
@@ -197,7 +207,7 @@ function analysisHeadHtml(pid, p, e) {
 }
 
 // ---------------------------------------------------------------------------
-// 형식별 · 종족별 승률 (도넛)
+// 형식별 전적 · 종족전 전적 (도넛)
 // ---------------------------------------------------------------------------
 function analysisCatTotals(e) {
     const cats = (H2hState.index && H2hState.index.cats) || [];
@@ -214,15 +224,36 @@ function analysisCatTotals(e) {
     return totals;
 }
 
+function analysisCatPages() {
+    return Math.max(1, Math.ceil(ANALYSIS_CAT_GROUPS.length / ANALYSIS_CAT_PER_PAGE));
+}
+
+function analysisSetCatPage(page) {
+    const pages = analysisCatPages();
+    AnalysisState.catPage = ((page % pages) + pages) % pages;   // 끝에서 누르면 처음으로 돈다
+    renderAnalysisBody();
+}
+
+// 형식은 6가지인데 한 줄에 6개를 늘어놓으면 도넛이 너무 작아진다.
+// 3개씩 한 화면에 보여주고 오른쪽 화살표로 나머지(미니대전 · CK · 리그 · 스폰)를 넘겨 본다.
 function analysisCatHtml(e) {
     const totals = analysisCatTotals(e);
-    const boxes = ANALYSIS_CAT_GROUPS.map(([label]) => {
+    const pages = analysisCatPages();
+    const from = AnalysisState.catPage * ANALYSIS_CAT_PER_PAGE;
+    const boxes = ANALYSIS_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE).map(([label]) => {
         const [w, l] = totals.get(label) || [0, 0];
         return analysisDonutHtml(label, w, l);
     }).join('');
     return `
-        <div class="clean-card analysis-panel h-100 p-3">
-            <div class="section-title-sm" data-en="BY FORMAT">형식별 승률</div>
+        <div class="section-title" data-en="BY FORMAT">
+            <span class="section-title-label">형식별 전적</span>
+            <span class="analysis-pager">
+                <button type="button" class="analysis-pager-btn" aria-label="이전 형식" onclick="analysisSetCatPage(${AnalysisState.catPage - 1})">&lsaquo;</button>
+                <span class="analysis-pager-page">${AnalysisState.catPage + 1} / ${pages}</span>
+                <button type="button" class="analysis-pager-btn" aria-label="다음 형식" onclick="analysisSetCatPage(${AnalysisState.catPage + 1})">&rsaquo;</button>
+            </span>
+        </div>
+        <div class="clean-card analysis-panel p-3">
             <div class="donut-wrap analysis-donut-wrap">${boxes}</div>
         </div>`;
 }
@@ -239,38 +270,36 @@ function analysisRaceHtml(e) {
         return analysisDonutHtml(label, w, l, { labelClass: cls, ringColor: color });
     }).join('');
     return `
-        <div class="clean-card analysis-panel h-100 p-3">
-            <div class="section-title-sm" data-en="BY MATCHUP">종족별 승률</div>
-            <div class="donut-wrap">${boxes}</div>
+        <div class="section-title" data-en="BY MATCHUP">
+            <span class="section-title-label">종족전 전적</span>
+        </div>
+        <div class="clean-card analysis-panel p-3">
+            <div class="donut-wrap analysis-donut-wrap">${boxes}</div>
         </div>`;
 }
 
 // ---------------------------------------------------------------------------
-// 최근 10경기
+// 최근 10경기 (폼)
 // ---------------------------------------------------------------------------
-// 최근 폼: 한 줄짜리 W/L 배지 띠. 표 하나를 더 두는 것보다 이 쪽이 한눈에 들어온다.
+// 최근 10경기: 한 줄짜리 W/L 배지 띠. 표 하나를 더 두는 것보다 이 쪽이 한눈에 들어온다.
 // 배지는 사이트 공용 .match-badge(노치 사각형)를 그대로 쓴다.
-function analysisFormHtml(rows, e) {
+// 오른쪽에 요약 글(몇승 몇패 · 연승)을 붙이면 휴대폰에서 줄이 두 줄로 접혀서 뺐다.
+function analysisFormHtml(rows) {
     if (!rows.length) return '';
     const recent = rows.slice(0, ANALYSIS_FORM_COUNT).reverse();   // 로그가 최신순이다
-    const w = recent.filter(r => r[2]).length;
-    const streak = e.st && e.st.n
-        ? ` · <span class="${e.st.t === 'W' ? 'h2h-win' : 'h2h-lose'}">${e.st.t === 'W' ? `${e.st.n}연승` : `${e.st.n}연패`}</span>`
-        : '';
     return `
         <div class="analysis-formline">
-            <span class="analysis-formline-label">최근 폼</span>
+            <span class="analysis-formline-label">최근 ${recent.length}경기</span>
             <span class="analysis-formline-badges">
                 ${recent.map(([date, opp, win]) => `
                     <span class="match-badge ${win ? 'badge-win' : 'badge-lose'}"
                           title="${escapeHTML(shortMatchDate(date))} vs ${escapeHTML(h2hName(String(opp)))}">${win ? 'W' : 'L'}</span>`).join('')}
             </span>
-            <span class="analysis-formline-sum">최근 ${recent.length}경기 ${w}승 ${recent.length - w}패${streak}</span>
         </div>`;
 }
 
 // ---------------------------------------------------------------------------
-// 월별 전적 · 승률 추세
+// 월별 전적
 // ---------------------------------------------------------------------------
 function analysisMonthlyHtml(rows) {
     if (rows.length < 2) return '';
@@ -294,50 +323,71 @@ function analysisMonthlyHtml(rows) {
     });
     if (!data.length) return '';
 
-    const W = 640, H = 190, PAD_T = 14, PAD_B = 24, PAD_X = 6;
+    // 왼쪽에 경기 수, 오른쪽에 승률(%) 축을 따로 둔다. 예전엔 눈금이 하나도 없어서
+    // 막대 높이도 승률 선 높이도 눈대중으로만 읽어야 했다.
+    const W = 660, H = 220, PAD_T = 12, PAD_B = 26, PAD_L = 30, PAD_R = 34;
     const plotH = H - PAD_T - PAD_B;
+    const plotW = W - PAD_L - PAD_R;
     const maxTotal = Math.max(...data.map(d => d.total), 1);
-    const slot = (W - PAD_X * 2) / data.length;
-    const barW = Math.min(24, Math.max(4, slot * 0.6));
+    const slot = plotW / data.length;
+    const barW = Math.min(26, Math.max(5, slot * 0.56));
+    const yOf = ratio => PAD_T + plotH - ratio * plotH;
+
+    // 가로 눈금 다섯 줄(0 · 25 · 50 · 75 · 100%). 왼쪽 숫자는 경기 수, 오른쪽은 승률.
+    const grid = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+        const y = yOf(ratio);
+        return `<line class="analysis-chart-grid${ratio === 0.5 ? ' is-mid' : ''}" x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}"></line>`
+             + `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${Math.round(maxTotal * ratio)}</text>`
+             + `<text class="analysis-chart-axis" x="${W - PAD_R + 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="start">${Math.round(ratio * 100)}%</text>`;
+    }).join('');
 
     const bars = data.map((d, i) => {
         if (!d.total) return '';
-        const x = PAD_X + slot * i + (slot - barW) / 2;
+        const x = PAD_L + slot * i + (slot - barW) / 2;
         const h = (d.total / maxTotal) * plotH;
         const y = PAD_T + (plotH - h);
         const winH = (d.w / d.total) * h;
-        return `<rect class="analysis-bar-win" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${winH.toFixed(1)}"><title>${d.key} ${d.w}승 ${d.l}패</title></rect>`
-             + `<rect class="analysis-bar-lose" x="${x.toFixed(1)}" y="${(y + winH).toFixed(1)}" width="${barW.toFixed(1)}" height="${(h - winH).toFixed(1)}"></rect>`;
+        const tip = `<title>${d.key} · ${d.total}전 ${d.w}승 ${d.l}패 (${Math.round((d.w / d.total) * 100)}%)</title>`;
+        return `<g class="analysis-bar">`
+             + `<rect class="analysis-bar-win" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${winH.toFixed(1)}">${tip}</rect>`
+             + `<rect class="analysis-bar-lose" x="${x.toFixed(1)}" y="${(y + winH).toFixed(1)}" width="${barW.toFixed(1)}" height="${(h - winH).toFixed(1)}">${tip}</rect>`
+             + `</g>`;
     }).join('');
 
     // 표본이 적은 달(ANALYSIS_RATE_MIN 미만)은 승률 선을 끊는다 - 1~2경기짜리 달이 0%/100%로
-    // 튀면서 추세를 못 읽게 만들기 때문.
+    // 튀면서 추세를 못 읽게 만들기 때문. 점을 같이 찍어 어느 달이 이어진 건지 보이게 한다.
     let path = '';
     let open = false;
+    const dots = [];
     data.forEach((d, i) => {
         if (d.total < ANALYSIS_RATE_MIN) { open = false; return; }
-        const x = PAD_X + slot * i + slot / 2;
-        const y = PAD_T + plotH - (d.w / d.total) * plotH;
+        const x = PAD_L + slot * i + slot / 2;
+        const y = yOf(d.w / d.total);
         path += `${open ? 'L' : 'M'} ${x.toFixed(1)} ${y.toFixed(1)} `;
         open = true;
+        dots.push(`<circle class="analysis-rate-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"><title>${d.key} 승률 ${Math.round((d.w / d.total) * 100)}%</title></circle>`);
     });
 
     const step = Math.max(1, Math.ceil(data.length / 12));
     const labels = data.map((d, i) => {
         if (i % step !== 0) return '';
         const [y, m] = d.key.split('-');
-        const x = PAD_X + slot * i + slot / 2;
-        return `<text class="analysis-chart-label" x="${x.toFixed(1)}" y="${H - 7}" text-anchor="middle">${m === '01' ? `${y.slice(2)}.${m}` : m}</text>`;
+        const x = PAD_L + slot * i + slot / 2;
+        return `<text class="analysis-chart-label" x="${x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${m === '01' ? `${y.slice(2)}.${m}` : m}</text>`;
     }).join('');
 
-    const mid = PAD_T + plotH / 2;
+    const sum = data.reduce((acc, d) => ({ w: acc.w + d.w, l: acc.l + d.l }), { w: 0, l: 0 });
     return `
+        <div class="section-title section-title-spaced" data-en="BY MONTH">
+            <span class="section-title-label">월별 전적</span>
+            <span class="title-count">${data.length}개월 · ${analysisWlText(sum.w, sum.l)}</span>
+        </div>
         <div class="clean-card p-3">
-            <div class="section-title-sm" data-en="TREND">월별 전적 · 승률</div>
             <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 전적과 승률 추세">
-                <line class="analysis-chart-mid" x1="${PAD_X}" y1="${mid.toFixed(1)}" x2="${W - PAD_X}" y2="${mid.toFixed(1)}"></line>
+                ${grid}
                 ${bars}
                 ${path ? `<path class="analysis-rate-line" d="${path.trim()}" fill="none"></path>` : ''}
+                ${dots.join('')}
                 ${labels}
             </svg>
             <div class="analysis-chart-legend">
@@ -349,37 +399,47 @@ function analysisMonthlyHtml(rows) {
 }
 
 // ---------------------------------------------------------------------------
-// 맵별 승률 · 동티어 맞대결
+// 맵별 전적 · 동티어 전적 (둘 다 8개씩 + 더 보기)
 // ---------------------------------------------------------------------------
+function analysisShowMoreMaps() {
+    AnalysisState.mapShown += ANALYSIS_MAP_STEP;
+    renderAnalysisBody();
+}
+
+function analysisShowMoreRivals() {
+    AnalysisState.rivalShown += ANALYSIS_RIVAL_STEP;
+    renderAnalysisBody();
+}
+
 function analysisMapHtml(rows) {
     const byMap = new Map();
     rows.forEach(([, , win, mapId]) => {
         const key = String(mapId);
+        if (!h2hMapName(key)) return;
         if (!byMap.has(key)) byMap.set(key, [0, 0]);
         byMap.get(key)[win ? 0 : 1] += 1;
     });
-    const list = [...byMap.entries()]
-        .filter(([mapId, [w, l]]) => w + l >= ANALYSIS_MAP_MIN && h2hMapName(mapId))
-        .sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]))
-        .slice(0, ANALYSIS_MAP_COUNT);
-    if (!list.length) return '';
+    const all = [...byMap.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+    if (!all.length) return '';
+    const list = all.slice(0, AnalysisState.mapShown);
     // 상대전적 탭의 '맵별 전적'과 같은 부품(.h2h-maps)을 쓴다.
     return `
         <div class="section-title section-title-spaced" data-en="BY MAP">
-            <span class="section-title-label">맵별 승률</span>
-            <span class="title-count">${ANALYSIS_MAP_MIN}경기 이상</span>
+            <span class="section-title-label">맵별 전적</span>
+            <span class="title-count">${all.length}개</span>
         </div>
         <div class="h2h-maps">
-            ${list.map(([mapId, [w, l]]) => {
-                const rate = analysisRate(w, l);
-                return `
+            ${list.map(([mapId, [w, l]]) => `
                 <div class="h2h-map">
                     <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId))}</span>
-                    <span class="h2h-map-rec"><span class="h2h-win">${w}</span> · <span class="h2h-lose">${l}</span> · ${rate}%</span>
-                    <span class="h2h-map-bar"><span style="width:${rate}%"></span></span>
-                </div>`;
-            }).join('')}
-        </div>`;
+                    <span class="h2h-map-rec"><span class="h2h-win">${w}</span>-<span class="h2h-lose">${l}</span> · ${h2hRateText(w, l)}</span>
+                    <span class="h2h-map-bar"><span style="width:${w + l ? (w / (w + l)) * 100 : 0}%"></span></span>
+                </div>`).join('')}
+        </div>
+        ${all.length > list.length ? `
+        <div class="news-load-more-wrap h2h-more-wrap">
+            <button type="button" class="news-load-more" onclick="analysisShowMoreMaps()">맵 더 보기 (${all.length - list.length}개 남음)</button>
+        </div>` : ''}`;
 }
 
 function analysisRivalHtml(rows, myTier) {
@@ -392,27 +452,22 @@ function analysisRivalHtml(rows, myTier) {
         if (!byOpp.has(key)) byOpp.set(key, [0, 0]);
         byOpp.get(key)[win ? 0 : 1] += 1;
     });
-    const list = [...byOpp.entries()]
-        .sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]))
-        .slice(0, ANALYSIS_RIVAL_COUNT);
-    if (!list.length) return '';
+    const all = [...byOpp.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+    if (!all.length) return '';
+    const list = all.slice(0, AnalysisState.rivalShown);
     // 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rivals)을 쓴다 - 누르면 그 선수로 넘어간다.
     return `
         <div class="section-title section-title-spaced" data-en="SAME TIER">
-            <span class="section-title-label">동티어 맞대결</span>
-            <span class="title-count">${escapeHTML(tierLabel(myTier))} · ${list.length}명</span>
+            <span class="section-title-label">동티어 전적</span>
+            <span class="title-count">${escapeHTML(tierLabel(myTier))} · ${all.length}명</span>
         </div>
         <div class="h2h-rivals">
-            ${list.map(([pid, [w, l]]) => {
-                const info = h2hPlayer(pid);
-                return `
-                <button type="button" class="h2h-rival" onclick="analysisPick('${jsAttr(pid)}')">
-                    ${avatarHtml(info ? (info.s || '') : '', 'h2h-rival-avatar')}
-                    <span class="h2h-rival-name">${escapeHTML(info ? info.n : h2hName(pid))}</span>
-                    <span class="h2h-rival-rec"><span class="h2h-win">${w}</span>-<span class="h2h-lose">${l}</span></span>
-                </button>`;
-            }).join('')}
-        </div>`;
+            ${list.map(([pid, [w, l]]) => h2hRivalCardHtml(pid, w, l, `analysisPick('${jsAttr(pid)}')`)).join('')}
+        </div>
+        ${all.length > list.length ? `
+        <div class="news-load-more-wrap h2h-more-wrap">
+            <button type="button" class="news-load-more" onclick="analysisShowMoreRivals()">상대 더 보기 (${(all.length - list.length).toLocaleString('ko-KR')}명 남음)</button>
+        </div>` : ''}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -429,18 +484,19 @@ function analysisFilterRows(rows) {
 
 function analysisSetFilter(label) {
     AnalysisState.matchFilter = label;
-    AnalysisState.matchShown = ANALYSIS_MATCH_STEP;
+    AnalysisState.matchPage = 1;
     renderAnalysisBody();
 }
 
-function analysisShowMoreMatches() {
-    AnalysisState.matchShown += ANALYSIS_MATCH_STEP;
+function analysisSetPage(page) {
+    AnalysisState.matchPage = page;
     renderAnalysisBody();
 }
 
 function analysisMatchesHtml(rows) {
     const filtered = analysisFilterRows(rows);
-    const shown = filtered.slice(0, AnalysisState.matchShown);
+    const page = Math.min(Math.max(1, AnalysisState.matchPage), Math.max(1, Math.ceil(filtered.length / ANALYSIS_PAGE_SIZE)));
+    const shown = filtered.slice((page - 1) * ANALYSIS_PAGE_SIZE, page * ANALYSIS_PAGE_SIZE);
     const chips = ['전체', ...ANALYSIS_CAT_GROUPS.map(([, short]) => short)].map(label => `
         <div class="filter-item${AnalysisState.matchFilter === label ? ' active' : ''}" role="tab" tabindex="0"
              onclick="analysisSetFilter('${jsAttr(label)}')">${escapeHTML(label)}</div>`).join('');
@@ -448,7 +504,6 @@ function analysisMatchesHtml(rows) {
         <div class="section-title record-recent-header section-title-spaced" data-en="RECENT">
             <span class="record-recent-title section-title-label">최근 전적</span>
             <div class="filter-nav tab-scroll" role="tablist">${chips}</div>
-            <span class="title-count">${filtered.length.toLocaleString('ko-KR')}경기</span>
         </div>
         <div class="clean-card p-0 overflow-hidden">
             <div class="table-responsive scroll-area">
@@ -471,10 +526,7 @@ function analysisMatchesHtml(rows) {
                 </table>
             </div>
         </div>
-        ${filtered.length > shown.length ? `
-        <div class="news-load-more-wrap">
-            <button type="button" class="news-load-more" onclick="analysisShowMoreMatches()">더 보기 (${(filtered.length - shown.length).toLocaleString('ko-KR')}경기 남음)</button>
-        </div>` : ''}`;
+        ${matchPaginationHtml(filtered.length, page, ANALYSIS_PAGE_SIZE, 'analysisSetPage')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -487,14 +539,12 @@ function analysisProfileHtml(pid) {
     if (!p || !e) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다.</div>';
     return `
         ${analysisHeadHtml(pid, p, e)}
-        ${analysisFormHtml(rows, e)}
+        ${analysisFormHtml(rows)}
         <div class="row g-3 mb-block">
-            <div class="col-lg-7">${analysisCatHtml(e)}</div>
-            <div class="col-lg-5">${analysisRaceHtml(e)}</div>
+            <div class="col-lg-6">${analysisCatHtml(e)}</div>
+            <div class="col-lg-6">${analysisRaceHtml(e)}</div>
         </div>
-        <div class="row g-3 mb-block">
-            <div class="col-12">${analysisMonthlyHtml(rows)}</div>
-        </div>
+        ${analysisMonthlyHtml(rows)}
         ${analysisMapHtml(rows)}
         ${analysisRivalHtml(rows, p.t)}
         ${analysisMatchesHtml(rows)}`;
@@ -511,13 +561,16 @@ function analysisEmptyHtml() {
 function renderAnalysisBody() {
     const box = document.getElementById('analysis-body');
     if (!box) return;
-    box.innerHTML = analysisPeriodHtml() + (AnalysisState.picked ? analysisProfileHtml(AnalysisState.picked) : analysisEmptyHtml());
+    const period = document.getElementById('analysis-period');
+    if (period) period.innerHTML = analysisPeriodHtml();
+    box.innerHTML = AnalysisState.picked ? analysisProfileHtml(AnalysisState.picked) : analysisEmptyHtml();
 }
 
 async function analysisPick(pid) {
     AnalysisState.picked = pid;
-    AnalysisState.matchShown = ANALYSIS_MATCH_STEP;
+    analysisResetLists();
     AnalysisState.matchFilter = '전체';
+    AnalysisState.catPage = 0;
     AnalysisState.query = '';
     AnalysisState.suggestOpen = false;
     const input = document.getElementById('analysis-search-input');
