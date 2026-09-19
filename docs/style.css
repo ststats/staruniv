@@ -2087,7 +2087,7 @@ a.home-notice-card:hover {
     position: relative;
     z-index: 1;
     flex: 0 0 100%;
-    min-height: 330px;
+    min-height: 0;
     padding: 48px max(32px, calc((100vw - 1240px) / 2 + 40px)) 60px;
     align-content: center;
     grid-auto-rows: min-content;
@@ -2114,14 +2114,19 @@ a.home-notice-card:hover {
 .home-carousel-controls {
     position: absolute;
     z-index: 2;
-    bottom: 22px;
+    inset: 0;
     display: flex;
     align-items: center;
     gap: 18px;
     width: 100%;
     justify-content: center;
+    pointer-events: none;
 }
 .home-carousel-controls > button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: auto;
     border: 0;
     width: 30px;
     height: 30px;
@@ -2131,7 +2136,12 @@ a.home-notice-card:hover {
     line-height: 1;
     clip-path: var(--cut-5);
 }
+.home-carousel-controls > button:first-child { left: max(0px, calc((100vw - 1240px) / 4)); }
+.home-carousel-controls > button:last-child { right: max(0px, calc((100vw - 1240px) / 4)); }
 .home-carousel-dots {
+    position: absolute;
+    bottom: 22px;
+    pointer-events: auto;
     display: flex;
     gap: 5px;
     align-items: center;
@@ -2146,9 +2156,9 @@ a.home-notice-card:hover {
 }
 .home-carousel-preview {
     grid-column: 2;
-    grid-row: 2 / span 3;
+    grid-row: 1 / span 4;
     justify-self: end;
-    align-self: start;
+    align-self: center;
     width: min(100%, 360px);
     padding: 19px 20px;
     background: var(--panel-control);
@@ -2164,7 +2174,8 @@ a.home-notice-card:hover {
     width: 22px;
     background: var(--dot-active);
 }
-.home-carousel h1 span { display: block; }
+.home-carousel h1 span { display: inline; }
+.home-carousel h1 { white-space: nowrap; }
 .home-carousel h1,
 .home-carousel h1 span {
     color: #fff;
@@ -2178,7 +2189,7 @@ a.home-notice-card:hover {
 .home-hero-links {
     display: flex;
     gap: 8px;
-    margin-top: 25px;
+    margin-top: 22px;
 }
 .home-hero-links a {
     padding: 0 15px;
@@ -2225,6 +2236,23 @@ a.home-notice-card:hover {
 }
 .home-preview-row b { font-size: 14px; }
 
+/* 일정마다 글자 수가 달라도 시간 · 제목 · 내용의 시작 위치를 맞춘다. */
+.home-carousel-preview[data-preview="0"] .home-preview-row {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1.3fr);
+    align-items: start;
+}
+.home-carousel-preview[data-preview="0"] .home-preview-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+    text-align: left;
+}
+.home-carousel-preview[data-preview="0"] .home-preview-row > span:first-child {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
 #page-home { padding-top: 0; }
 #page-home > .container { padding-top: var(--space-page-top); }
 
@@ -2233,6 +2261,7 @@ a.home-notice-card:hover {
 }
 
 @media (max-width: 767.98px) {
+    .home-carousel-controls > button { display: none; }
     .home-carousel-slide {
         padding: 32px 24px 60px;
         min-height: 0;
@@ -5575,7 +5604,7 @@ html[data-theme="dark"] .mv-order-row {
     color: var(--navy);
 }
 .home-carousel h1 i {
-    display: block;
+    display: inline;
     font-style: normal;
     color: var(--navy-accent);
 }
