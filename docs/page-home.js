@@ -48,24 +48,8 @@ async function renderHomeRecordsPreview(box) {
     }
 }
 
-async function renderHomeVideoPreview(box) {
-    box.innerHTML = '<div class="home-preview-loading">추천 영상을 불러오는 중...</div>';
-    try {
-        const data = await fetchHomePreviewData('data/videos.json');
-        // 영상 페이지의 '보자'와 같은 공개 조건·등록 순서를 사용한다.
-        const video = (Array.isArray(data.picks) ? data.picks : []).find(v => v && !v.hidden && /^([A-Za-z0-9_-]{11}|soop:\d{1,20})$/.test(v.id));
-        if (!video) { box.innerHTML = '<div class="home-preview-loading">추천 영상이 아직 없습니다.</div>'; return; }
-        const isSoop = String(video.id).startsWith('soop:');
-        const thumb = isSoop
-            ? (/^https:\/\/[\w.-]+\.(afreecatv\.com|sooplive\.co\.kr|sooplive\.com)\//.test(video.thumb || '') ? video.thumb : '')
-            : `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-        box.innerHTML = `<a class="home-video-preview" href="video/?view=pick" aria-label="${escapeHTML(video.title || '추천 영상')} — 보자에서 보기">
-            ${thumb ? `<img src="${escapeHTML(thumb)}" alt="" loading="lazy">` : '<span class="home-video-placeholder">SOOP</span>'}
-            <span class="home-video-caption"><span>보자 · 추천 영상</span><b>${escapeHTML(video.title || '추천 영상')}</b></span>
-        </a>`;
-    } catch (e) {
-        box.innerHTML = '<div class="home-preview-loading">추천 영상을 불러오지 못했습니다.</div>';
-    }
+function renderHomeVideoPreview(box) {
+    box.innerHTML = '<a class="home-video-preview" href="video/" aria-label="캄몬플레이 영상 보기"><span class="home-video-play" aria-hidden="true"></span><span class="home-video-caption"><b>CALM MON PLAY</b><span>영상 보러 가기</span></span></a>';
 }
 
 async function renderTodaySchedulePreview(box) {
