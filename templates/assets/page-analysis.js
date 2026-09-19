@@ -434,7 +434,8 @@ function analysisRatingHtml(pid) {
     const have = pts.filter(Boolean);
     if (have.length < 2) return '';
 
-    const W = 440, H = 220, PAD_T = 14, PAD_B = 26, PAD_L = 38, PAD_R = 10;
+    // 월별 전적 그래프와 같은 틀(660x220)이어야 두 카드가 같은 크기로 나란히 선다.
+    const W = 660, H = 220, PAD_T = 12, PAD_B = 26, PAD_L = 42, PAD_R = 14;
     const plotH = H - PAD_T - PAD_B;
     const plotW = W - PAD_L - PAD_R;
     const vals = have.map(p => p.v);
@@ -473,6 +474,7 @@ function analysisRatingHtml(pid) {
     const first = have[0].v, last = have[have.length - 1].v;
     const diff = last - first;
     const sign = diff > 0 ? 'h2h-win' : (diff < 0 ? 'h2h-lose' : '');
+    const top = Math.max(...vals), bottom = Math.min(...vals);
     return `
         <div class="section-title section-title-spaced" data-en="RATING">
             <span class="section-title-label">레이팅 변화</span>
@@ -486,6 +488,10 @@ function analysisRatingHtml(pid) {
                 ${dots}
                 ${labels}
             </svg>
+            <div class="analysis-chart-legend">
+                <span><i class="analysis-legend-line"></i>레이팅 (달 말일 기준)</span>
+                <span>최고 ${top}점 · 최저 ${bottom}점</span>
+            </div>
         </div>`;
 }
 
@@ -636,8 +642,8 @@ function analysisProfileHtml(pid) {
             <div class="col-lg-6">${analysisRaceHtml(e)}</div>
         </div>
         <div class="row g-3">
-            <div class="col-lg-7">${analysisMonthlyHtml(rows)}</div>
-            <div class="col-lg-5">${analysisRatingHtml(pid)}</div>
+            <div class="col-lg-6">${analysisMonthlyHtml(rows)}</div>
+            <div class="col-lg-6">${analysisRatingHtml(pid)}</div>
         </div>
         ${analysisMapHtml(rows)}
         ${analysisRivalHtml(rows, p.t)}
