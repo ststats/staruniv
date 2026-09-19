@@ -296,6 +296,9 @@ function selectPlayer(name) {
 
     document.getElementById('p-name').innerText = name;
     applyBadge(document.getElementById('p-tier'), tierLabel(pDb['티어']), 'tag-badge tier-badge');
+    // 랭킹 뱃지도 상대전적·분석과 같은 문구로. 이 페이지는 티어표 전체 명단을 안 읽으므로
+    // 티어 인원수('/N명')는 붙이지 않는다.
+    applyBadge(document.getElementById('p-rank'), `${tierLabel(pDb['티어'])} · ?위`, 'tag-badge rank-badge');
     applyBadge(document.getElementById('p-race'), raceShortLabel(pDb['종족']), 'tag-badge' + raceBadgeClass(pDb['종족']));
     document.getElementById('p-avatar').innerHTML = profileAvatarInnerHtml(pDb['SOOP ID']);
 

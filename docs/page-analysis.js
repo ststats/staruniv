@@ -203,7 +203,9 @@ document.addEventListener('click', e => {
 // 머리 카드 (전적 페이지의 .profile-head와 같은 틀)
 // ---------------------------------------------------------------------------
 function analysisHeadHtml(pid, p, e) {
-    return playerSummaryHtml(p, {total: e.m, win: e.w, lose: e.l}, '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>');
+    return playerSummaryHtml(p, {total: e.m, win: e.w, lose: e.l},
+        '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>',
+        { tierTotal: h2hTierCount(p.t) });
 }
 
 // ---------------------------------------------------------------------------

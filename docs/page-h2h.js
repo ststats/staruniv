@@ -94,6 +94,17 @@ async function h2hLoadPlayer(pid) {
     return H2hState.rows[pid];
 }
 
+// 이 티어에 몇 명이 있는지 - 머리 카드의 '킹티어 · ?위/29명' 뱃지에 쓴다.
+function h2hTierCount(tier) {
+    if (tier === undefined || tier === null || tier === '') return 0;
+    const players = (H2hState.index && H2hState.index.players) || {};
+    let n = 0;
+    for (const id in players) {
+        if (String(players[id].t) === String(tier)) n++;
+    }
+    return n;
+}
+
 function h2hPlayer(pid) {
     return (H2hState.index && H2hState.index.players[pid]) || null;
 }
@@ -207,7 +218,7 @@ function h2hSlotHtml(slot) {
     const p = h2hPlayer(pid) || { n: h2hName(pid) };
     const rec = h2hRecord(h2hRowsInPeriod(pid));
     return `<div class="h2h-slot-inner"><div class="h2h-slot-label">${label}</div>
-        ${playerSummaryHtml(p, rec, `<button type="button" class="h2h-card-clear" aria-label="선수 지우기" onclick="h2hClear(${slot})">✕</button>`)}</div>`;
+        ${playerSummaryHtml(p, rec, `<button type="button" class="h2h-card-clear" aria-label="선수 지우기" onclick="h2hClear(${slot})">✕</button>`, { tierTotal: h2hTierCount(p.t) })}</div>`;
 }
 
 function h2hOnQuery(slot, value) {

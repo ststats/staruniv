@@ -834,23 +834,26 @@ function bootPage(init, opts) {
     else start();
 }
 
-// 티어 랭킹 자리 뱃지. 랭킹 시스템을 새로 만들기 전까지는 값이 없어서 자리만 잡아 둔다.
-// 종족·티어 뱃지와 같은 높이·크기의 뱃지지만, 뱃지 줄에 같이 세우면 좁은 화면에서 줄이
-// 넘쳐 잘리므로 머리 카드의 셋째 줄을 따로 내준다(.player-summary-position).
-function playerRankBadgeHtml() {
-    return '<span class="tag-badge rank-badge">티어랭킹 · 0티어 0위</span>';
+// 티어 랭킹 뱃지: '갓티어 · 3위/16명' 꼴로 읽힌다. 랭킹 시스템을 새로 만들기 전까지
+// 순위 자리는 '?'로 두고, 티어 인원수는 그걸 셀 수 있는 화면(티어표 데이터를 들고 있는
+// 상대전적·분석)에서만 tierTotal로 받아 붙인다.
+// 종족·티어 뱃지와 같은 높이·크기지만, 뱃지 줄에 같이 세우면 좁은 화면에서 줄이 넘쳐
+// 잘리므로 머리 카드의 셋째 줄을 따로 내준다(.player-summary-position).
+function playerRankBadgeHtml(tier, tierTotal) {
+    const total = tierTotal ? `/${Number(tierTotal).toLocaleString('ko-KR')}명` : '';
+    return `<span class="tag-badge rank-badge">${escapeHTML(tierLabel(tier))} · ?위${total}</span>`;
 }
 
 function playerBadgesHtml(p) {
     return `${p.r ? raceBadgeHtml(p.r) : ''}${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}${p.tm ? `<span class="tag-badge team-badge">${escapeHTML(p.tm)}</span>` : ''}`;
 }
-function playerSummaryHtml(p, rec, close = '') {
+function playerSummaryHtml(p, rec, close = '', opts = {}) {
     return `<div class="player-summary">
         <div class="player-summary-avatar">${avatarHtml(p.s || '', 'player-summary-image')}</div>
         <div class="player-summary-id">
             <div class="player-summary-name">${escapeHTML(p.n)}</div>
             <div class="player-summary-badges">${playerBadgesHtml(p)}</div>
-            <div class="player-summary-position">${playerRankBadgeHtml()}</div>
+            <div class="player-summary-position">${playerRankBadgeHtml(p.t, opts.tierTotal)}</div>
         </div>
         <div class="player-summary-stats">
             <div class="player-summary-total">총 전적 ${rec.total.toLocaleString('ko-KR')}전</div>
