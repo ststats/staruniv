@@ -423,7 +423,9 @@ function summaryCellsHtml(stat) {
 
 // ----- 팀: 상대 전적 -----
 // 표는 build_html.py가 5칸으로 구워 둔다(JS가 죽어도 숫자가 남게). 여기서 그 숫자를
-// 한 번 읽어 두고, 이후로는 고른 형식만 3칸으로 다시 그린다.
+// 한 번 읽어 두고, 이후로는 고른 형식만 카드로 다시 그린다.
+// 카드는 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rival)이다 - 이름 / 전적 /
+// 승률 막대 짜임이 똑같고, 프로필 사진 자리에 팀 로고가 들어간다.
 function readOpponentRows() {
     if (RecordsState.oppRows) return RecordsState.oppRows;
     RecordsState.oppRows = [...document.querySelectorAll('#view-team-stat tbody tr.team-row-clickable')]
@@ -443,31 +445,35 @@ function setTeamOppFormat(format) {
 }
 
 function renderOpponentTable() {
-    const table = document.querySelector('#view-team-stat .stat-table');
-    if (!table) return;
+    const wrap = document.getElementById('team-opp-wrap');
+    if (!wrap) return;
     const rows = readOpponentRows();
     const format = RecordsState.oppFormat || '합계';
 
     document.getElementById('team-opp-filters').innerHTML =
         summaryFilterHtml(format, 'setTeamOppFormat');
 
-    table.classList.remove('minw-520');
-    table.classList.add('minw-320');
-    table.querySelector('thead').innerHTML = `
-        <tr>
-            <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-25">상대</th>
-            <th scope="col" class="text-center text-nowrap colw-25">전적</th>
-            <th scope="col" class="text-center wl-bar-col" aria-label="승률"></th>
-            <th scope="col" class="colw-6 col-arrow" aria-label="상세"></th>
-        </tr>`;
-    table.querySelector('tbody').innerHTML = rows.map(r => {
-        const stat = statFor(f => r.stats[f], format);
-        return `<tr class="team-row-clickable stat-row" role="button" tabindex="0" data-team="${escapeHTML(r.team)}">
-            <td class="text-center stat-table-sticky-col text-nowrap colw-25">${teamCellInnerHtml(r.team)}</td>
-            ${summaryCellsHtml(stat)}
-            <td class="text-center colw-6 col-arrow"><span class="ext-arrow i-arrow" aria-hidden="true"></span></td>
-        </tr>`;
-    }).join('');
+    // 고른 형식에 기록이 있는 상대만, 많이 붙은 순으로. 예전 표는 기록 없는 상대까지
+    // 줄을 차지하며 '—'만 찍었다.
+    const cards = rows
+        .map(r => ({ team: r.team, stat: statFor(f => r.stats[f], format) }))
+        .filter(x => x.stat.wins + x.stat.losses > 0)
+        .sort((a, b) => (b.stat.wins + b.stat.losses) - (a.stat.wins + a.stat.losses));
+
+    if (!cards.length) {
+        wrap.innerHTML = '<div class="h2h-empty">이 형식의 전적이 없습니다.</div>';
+        return;
+    }
+    wrap.innerHTML = `<div class="h2h-rivals is-compact">${cards.map(({ team, stat }) => {
+        const total = stat.wins + stat.losses;
+        return `
+        <button type="button" class="h2h-rival team-row-clickable" data-team="${escapeHTML(team)}">
+            <span class="h2h-rival-avatar is-logo">${teamLogoHtml(team, 26)}</span>
+            <span class="h2h-rival-name">${escapeHTML(team)}</span>
+            <span class="h2h-rival-rec">${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span></span>
+            <span class="h2h-rival-bar"><span style="width:${(stat.wins / total * 100).toFixed(1)}%"></span></span>
+        </button>`;
+    }).join('')}</div>`;
 }
 
 // ----- 개인: 전체 전적 -----

@@ -566,7 +566,7 @@ function analysisMapHtml(rows) {
             ${list.map(([mapId, [w, l]]) => `
                 <div class="h2h-map">
                     <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId))}</span>
-                    <span class="h2h-map-rec">${winLoseText(w, l)} · ${h2hRateText(w, l)}</span>
+                    <span class="h2h-map-rec">${winLoseText(w, l)}<span class="h2h-rate-sub"> · ${h2hRateText(w, l)}</span></span>
                     <span class="h2h-map-bar"><span style="width:${w + l ? (w / (w + l)) * 100 : 0}%"></span></span>
                 </div>`).join('')}
         </div>

@@ -44,6 +44,9 @@
                     <span class="record-recent-title section-title-label">상대 전적</span>
                     <div id="team-opp-filters" class="filter-nav tab-scroll" role="tablist"></div>
                 </div>
+                {#- JS가 이 표를 읽어 카드로 다시 그린다(page-records.js). JS가 죽으면
+                    서버가 구운 이 표가 그대로 남아 숫자가 사라지지 않는다. #}
+                <div id="team-opp-wrap">
                 <div class="clean-card p-0 overflow-hidden">
                     <div class="table-responsive scroll-area">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
@@ -71,6 +74,7 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
                 </div>
             </div>
 

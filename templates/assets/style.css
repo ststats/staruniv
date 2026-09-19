@@ -950,6 +950,16 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .wl-short-num { font-size: 13px; font-weight: 700; }
 /* 넓은 화면에서는 승률을 같은 줄 옆에 둔다(칸이 넉넉해 굳이 두 줄로 쓸 이유가 없다) */
 .wl-short-rate { margin-left: 6px; font-size: 11px; color: var(--color-text-muted); }
+/* 전적 페이지의 상대 전적 카드는 반쪽 칸(col-lg-6) 안에 들어가므로 4열이 아니라 2열이다. */
+.h2h-rivals.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* 팀 로고는 얼굴 사진이 아니라 도형이라 동그랗게 자르지 않고 그대로 담는다 */
+.h2h-rival-avatar.is-logo {
+    display: grid;
+    place-items: center;
+    border-radius: 0;
+    background: none;
+}
+
 /* 승률 막대 칸은 내용이 없어서 자동 폭 계산에 밀린다(좁은 화면은 table-layout:auto다).
    colw-* 를 쓰면 좁은 화면에서 width:auto로 덮이므로 전용 클래스로 폭을 잡는다. */
 .stat-table .wl-bar-col { width: 38%; }
@@ -4533,6 +4543,9 @@ body.media-lightbox-open { overflow: hidden; }
         gap: 8px;
     }
     .h2h-rival { padding: 8px 10px; gap: 2px 6px; }
+    /* 좁은 화면에서는 승률 숫자를 뺀다 - 바로 아래 막대가 같은 걸 보여주고,
+       그 자리를 이름에 내줘야 '연합팀'이나 '컬러리스 페이트'가 잘리지 않는다. */
+    .h2h-rate-sub { display: none; }
     .h2h-rival-name { font-size: 12px; }
     .h2h-rival-avatar { width: 26px; height: 26px; }
     .h2h-map { padding: 8px 10px; }
