@@ -1167,6 +1167,15 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     flex-shrink: 0;
     vertical-align: middle;
 }
+/* 팀 전적 모달 제목의 'vs 로고 팀이름' - 텍스트/이미지가 섞여 있어 각자 다른 간격으로
+   벌어져 보였다. 셋을 하나의 flex 줄로 묶어 간격·높이를 gap 하나로만 맞춘다. */
+.modal-title-vs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+}
+.modal-title-vs .team-logo-icon { margin-right: 0; }
 .team-logo-fallback {
     display: inline-flex;
     align-items: center;
@@ -3573,7 +3582,7 @@ body.media-lightbox-open { overflow: hidden; }
 .profile-modal-status:empty { display: none; }
 .profile-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .profile-modal-metric { padding: 14px; background: var(--color-bg-subtle); clip-path: var(--cut-7); }
-.profile-modal-value { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profile-modal-value { font-size: var(--fs-body); font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .profile-modal-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 20px; }
 .profile-modal-shortcuts > a:only-child, .profile-modal-shortcuts > a:first-child[hidden] + a { grid-column: 1 / -1; }
 .profile-modal-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 12px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-6); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }

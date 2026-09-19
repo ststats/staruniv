@@ -240,7 +240,7 @@ function openTeamMatchModal(format) {
 function openTeamOpponentModal(opponent, format) {
     const fmt = format || '전체';
     document.getElementById('teamModalTitle').innerHTML =
-        `vs ${teamLogoHtml(opponent, 20)} ${escapeHTML(opponent)} ${fmt === '전체' ? '전체 전적' : `${escapeHTML(fmt)} 전적`}`;
+        `<span class="modal-title-vs">vs${teamLogoHtml(opponent, 20)}${escapeHTML(opponent)} ${fmt === '전체' ? '전체 전적' : `${escapeHTML(fmt)} 전적`}</span>`;
     renderTeamMatchesList('team-modal-list', {format: fmt, opponent}, null);
     showModal('teamMatchesModal');
 }
