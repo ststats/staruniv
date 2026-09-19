@@ -3583,11 +3583,14 @@ body.media-lightbox-open { overflow: hidden; }
 .profile-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .profile-modal-metric { padding: 14px; background: var(--color-bg-subtle); clip-path: var(--cut-7); }
 .profile-modal-value { font-size: var(--fs-body); font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.profile-modal-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 20px; }
-.profile-modal-shortcuts > a:only-child, .profile-modal-shortcuts > a:first-child[hidden] + a { grid-column: 1 / -1; }
-.profile-modal-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 12px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-6); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }
+/* 3개(티어표 분석·개인 전적·SOOP 방송국)까지 한 줄로 - flex라 숨김([hidden])인
+   링크는 레이아웃에서 완전히 빠지고 남은 것들이 폭을 나눠 가진다(grid처럼 빈 칸이
+   안 남는다). 세 개가 다 보일 때를 기준으로 글자를 줄였다. */
+.profile-modal-shortcuts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+.profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 38px; padding: 9px 10px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-6); text-decoration: none; font-size: var(--fs-meta); font-weight: 700; }
+.profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
-.profile-modal-station { margin-top: 8px; background: var(--navy); color: var(--navy-on-text); }
+.profile-modal-station { background: var(--navy); color: var(--navy-on-text); }
 .profile-modal-station:hover { background: var(--color-primary); color: #fff; }
 .profile-modal-link[hidden], .profile-modal-days[hidden] { display: none; }
 @media (max-width: 380px) {
