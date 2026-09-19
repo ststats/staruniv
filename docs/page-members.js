@@ -143,11 +143,11 @@ function renderMembersPage() {
         html += `
             <div class="section-title" data-en="FORMER">
                 <span class="section-title-label">이전 멤버</span>
-                <span class="title-count">${sortedFormer.length}명</span>
                 <button type="button" class="btn-view-all former-members-toggle" id="former-members-toggle-btn"
                     aria-expanded="false" aria-controls="former-members-section" onclick="toggleFormerMembersSection()">
                     <span id="former-members-toggle-text">보기</span>${chevronDownSvg(9, ' id="former-members-toggle-chevron" class="chevron-rotatable"')}
                 </button>
+                <span class="title-count">${sortedFormer.length}명</span>
             </div>
             <div id="former-members-section" class="d-none">
                 <div class="member-grid mb-block">${sortedFormer.map(memberCardHtml).join('')}</div>
@@ -515,7 +515,7 @@ function newsDesktopLayoutHtml(sorted, loadMoreHtml) {
                 </div>`;
 }
 
-const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">지난 공지 더 불러오기 ${chevronDownSvg(9)}</button></div>`;
+const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">더 보기 ${chevronDownSvg(9)}</button></div>`;
 
 // "전체 공지"/"멤버별 공지" 공용 렌더러.
 function renderNewsLayout(content) {

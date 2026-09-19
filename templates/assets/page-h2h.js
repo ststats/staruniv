@@ -326,8 +326,9 @@ function h2hTableHtml(rows, showOpponent) {
         ${matchPaginationHtml(rows.length, H2hState.page, H2H_LIST_STEP, "h2hSetPage")}`;
 }
 
-// 맵별 전적: 많이 한 순으로
-function h2hMapTableHtml(rows, limited) {
+// 맵별 전적: 많이 한 순으로. 두 명을 골랐을 때도 똑같이 8개씩 보여준다
+// (예전엔 맞대결 화면에서만 전부 쏟아내서 목록이 길어졌다).
+function h2hMapTableHtml(rows) {
     const byMap = new Map();
     rows.forEach(r => {
         const key = String(r[3]);
@@ -336,7 +337,7 @@ function h2hMapTableHtml(rows, limited) {
     });
     const all = [...byMap.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
     if (!all.length) return '';
-    const list = limited ? all.slice(0, H2hState.mapShown) : all;
+    const list = all.slice(0, H2hState.mapShown);
     return `
         <div class="h2h-maps">
             ${list.map(([mapId, [win, lose]]) => `
@@ -348,7 +349,7 @@ function h2hMapTableHtml(rows, limited) {
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="h2hShowMoreMaps()">맵 더 보기 (${all.length - list.length}개 남음)</button>
+            <button type="button" class="news-load-more" onclick="h2hShowMoreMaps()">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
@@ -394,7 +395,7 @@ function h2hTopOpponentsHtml(rows, targetSlot) {
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="h2hShowMoreRivals()">상대 더 보기 (${(all.length - list.length).toLocaleString('ko-KR')}명 남음)</button>
+            <button type="button" class="news-load-more" onclick="h2hShowMoreRivals()">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
@@ -437,7 +438,7 @@ function renderH2hResult() {
         box.innerHTML = `
             ${h2hTopOpponentsHtml(rows, targetSlot)}
             <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span></div>
-            ${h2hMapTableHtml(rows, true)}
+            ${h2hMapTableHtml(rows)}
             <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
                 <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
             ${h2hTableHtml(rows, true)}`;

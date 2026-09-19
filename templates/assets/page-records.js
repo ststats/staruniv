@@ -133,7 +133,7 @@ function calculateTeamSummaries() {
         rateEl.style.color = ringColor;
         document.getElementById(`t-sum-${fmt}-donut`).style.background = donutBackground(ringColor, rate);
     });
-    renderTeamMatchesList('team-recent-list', {format: '전체'}, 10);
+    renderTeamMatchesList('team-recent-list', {format: '전체'}, 10, 'team-recent-pagination');
 }
 
 // 팀 매치 한 경기의 세트별 상세 행들
@@ -189,18 +189,31 @@ function teamMatchRowHtml(m, collapseId) {
             `;
 }
 
-function renderTeamMatchesList(containerId, filters, limit) {
+// paginationId를 주면 그 자리에 페이지 넘김을 그리고 limit개씩 끊어 보여준다.
+// 모달(팀 전체/상대별 전적)은 목록을 통째로 보여주므로 limit도 paginationId도 안 넘긴다.
+function renderTeamMatchesList(containerId, filters, limit, paginationId) {
     filters = filters || {};
     const format = filters.format || '전체';
     const opponent = filters.opponent || null;
 
     let filtered = format === '전체' ? SiteData.matches : SiteData.matches.filter(m => m['형식'] === format);
     if (opponent) filtered = filtered.filter(m => m['상대팀'] === opponent);
-    const sliced = limit ? filtered.slice(0, limit) : filtered;
+
+    const page = paginationId ? (RecordsState.teamPage || 1) : 1;
+    const sliced = limit ? filtered.slice((page - 1) * limit, page * limit) : filtered;
 
     document.getElementById(containerId).innerHTML = sliced.length
         ? sliced.map((m, idx) => teamMatchRowHtml(m, `collapse-${containerId}-${idx}`)).join('')
         : EMPTY_MATCH_ROW_HTML;
+    if (paginationId) {
+        document.getElementById(paginationId).innerHTML =
+            matchPaginationHtml(filtered.length, page, limit, 'setTeamPage');
+    }
+}
+
+function setTeamPage(page) {
+    RecordsState.teamPage = page;
+    renderTeamMatchesList('team-recent-list', { format: '전체' }, 10, 'team-recent-pagination');
 }
 
 function openTeamMatchModal(format) {

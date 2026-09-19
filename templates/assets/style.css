@@ -2650,14 +2650,21 @@ html[data-theme="dark"] .cal-longterm-bar {
 #page-schedule .cal-card-desc {
     line-height: 1.35;
 }
+/* '휴방'은 바로 위 일정 줄의 시간 칸과 같은 자리에 오는 글자다. 예전엔 여기에만
+   자간(0.14em)과 대문자 변환이 걸려 있어서, 같은 13px·700인데도 혼자 벌어져 보이고
+   뒤따르는 칩이 위 줄 내용과 어긋났다. 시간 칸과 똑같이 맞춘다. */
 #page-schedule .cal-offair-label {
-    font-size: 13px;
+    font-size: var(--fs-body);
     line-height: 1.35;
     font-weight: 700;
+    letter-spacing: normal;
+    text-transform: none;
     display: flex;
     align-items: center;
     min-height: 26px;
 }
+/* 칩이 시작하는 자리도 일정 줄(.cal-card-main)의 두 번째 칸과 같은 간격으로 */
+#page-schedule .cal-offair-section { gap: 13px; }
 #page-schedule .cal-selected-card-wrapper > .cal-day-card { background-color: var(--panel-bg); }
 #page-schedule .cal-sidebar .cal-card-person,
 #page-schedule .cal-sidebar .cal-card-desc,
@@ -4405,42 +4412,6 @@ body.media-lightbox-open { overflow: hidden; }
     gap: 16px 8px;
 }
 
-/* 형식별 전적 넘김 버튼 (제목 줄 오른쪽) */
-.analysis-pager {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    flex: 0 0 auto;
-    margin-left: auto;
-    padding: 2px;
-    clip-path: var(--cut-5);
-    background: var(--color-bg-subtle);
-}
-.analysis-pager-btn {
-    display: grid;
-    place-items: center;
-    min-width: 24px;
-    height: 22px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    clip-path: var(--cut-3);
-    font-size: 15px;
-    line-height: 1;
-    color: var(--color-text-sub);
-}
-.analysis-pager-btn:hover {
-    background: var(--color-row-hover);
-    color: var(--color-primary);
-}
-.analysis-pager-page {
-    padding: 0 4px;
-    font-family: "Pretendard", sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--color-text-sub);
-}
-
 /* 월별 전적 그래프(막대: 경기 수, 선: 승률) */
 .analysis-chart-svg {
     display: block;
@@ -4825,7 +4796,9 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 @media (max-width: 767.98px) {
-    .shelf-nav { display: none; }
+    /* 쇼츠 선반은 손가락으로 밀 수 있어 좁은 화면에서 넘김 버튼을 숨긴다.
+       밀 수 없는 곳(분석 탭 형식별 전적)은 is-always로 계속 띄운다. */
+    .shelf-nav:not(.is-always) { display: none; }
 }
 .video-short {
     display: flex;
@@ -5785,6 +5758,17 @@ html[data-theme="dark"] .mv-order-row {
 /* 레이팅 그래프를 못 그릴 때(그 기간에 점이 하나뿐) 자리만 지키는 안내.
    높이를 그래프 카드와 맞춰 옆의 월별 전적과 어긋나지 않게 한다. */
 .analysis-rating-empty { display:grid; place-items:center; min-height:255px; font-size:12px; color:var(--color-text-sub); text-align:center; }
+
+/* 좁은 화면에서 모달이 화면 위쪽에 붙어 떴다. 부트스트랩 .modal-dialog-centered와
+   같은 방식으로 세로 가운데에 놓는다(스크롤되는 모달과 같이 써도 되는 조합이다).
+   넓은 화면은 지금처럼 위에서 내려오는 모양을 그대로 둔다. */
+@media (max-width: 767.98px) {
+    .modal-dialog {
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - 1rem);
+    }
+}
 
 /* 물음표 도움말: 뱃지나 제목 옆의 작은 ? 단추와, 눌렀을 때 뜨는 설명 상자.
    상자는 단추 기준으로 띄우되 좁은 화면에서 화면 밖으로 나가지 않게 폭을 제한한다. */

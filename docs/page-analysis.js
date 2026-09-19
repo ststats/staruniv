@@ -263,13 +263,13 @@ function analysisCatHtml(e) {
         return analysisDonutHtml(label, w, l);
     }).join('');
     return `
-        <div class="section-title" data-en="BY FORMAT">
+        <div class="section-title has-shelf-nav" data-en="BY FORMAT">
             <span class="section-title-label">형식별 전적</span>
-            <span class="analysis-pager">
-                <button type="button" class="analysis-pager-btn" aria-label="이전 형식" onclick="analysisSetCatPage(${AnalysisState.catPage - 1})">&lsaquo;</button>
-                <span class="analysis-pager-page">${AnalysisState.catPage + 1} / ${pages}</span>
-                <button type="button" class="analysis-pager-btn" aria-label="다음 형식" onclick="analysisSetCatPage(${AnalysisState.catPage + 1})">&rsaquo;</button>
+            <span class="shelf-nav is-always">
+                <button type="button" class="shelf-nav-btn" aria-label="이전 형식" onclick="analysisSetCatPage(${AnalysisState.catPage - 1})">&lsaquo;</button>
+                <button type="button" class="shelf-nav-btn" aria-label="다음 형식" onclick="analysisSetCatPage(${AnalysisState.catPage + 1})">&rsaquo;</button>
             </span>
+            <span class="title-count">${AnalysisState.catPage + 1} / ${pages}</span>
         </div>
         <div class="clean-card analysis-panel p-3">
             <div class="donut-wrap analysis-donut-wrap">${boxes}</div>
@@ -572,7 +572,7 @@ function analysisMapHtml(rows) {
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="analysisShowMoreMaps()">맵 더 보기 (${all.length - list.length}개 남음)</button>
+            <button type="button" class="news-load-more" onclick="analysisShowMoreMaps()">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
@@ -600,7 +600,7 @@ function analysisRivalHtml(rows, myTier) {
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="analysisShowMoreRivals()">상대 더 보기 (${(all.length - list.length).toLocaleString('ko-KR')}명 남음)</button>
+            <button type="button" class="news-load-more" onclick="analysisShowMoreRivals()">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
