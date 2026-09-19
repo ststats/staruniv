@@ -101,6 +101,9 @@ TIER_ORDER = ['갓', '킹', '잭', '조커', '스페이드', '0', '1', '2', '3',
 # 아직 티어를 안 매긴 사람(체크)과 티어표 밖 상대. 순위는 안 내지만 노드로는 넣는다 -
 # 이 사람들과의 경기도 실력 정보이고, 티어 간 연결을 조금이나마 더 이어준다.
 UNRANKED = '미분류'
+# 소속이 이 값이면 지금 쉬는 사람이다. 상대로서는 계산에 그대로 넣되(그 경기도 실력
+# 정보다) 순위에는 올리지 않는다 - 지금 뛰는 사람들의 줄 세우기여야 하기 때문.
+DORMANT_TEAM = '휴면'
 
 # 형식 가중치. 키는 eloboard 원본 코드(scripts/build_h2h.py의 CAT_LABELS와 같은 코드다).
 CAT_WEIGHT = {
@@ -379,13 +382,16 @@ def main():
     # 순위 대상: 티어가 매겨져 있고(=지금 티어표에 있고), 최근 RECENT_DAYS 안에
     # MIN_RECENT_GAMES판 이상 둔 선수. 휴면인 사람은 맞출 때는 상대로 쓰지만 순위에는 안 올린다.
     ranked = {}          # 티어 -> [(순위점수, 선수id)]
-    skipped_recent = skipped_thin = 0
+    skipped_recent = skipped_thin = skipped_dormant = 0
     for k, pid in enumerate(order):
         entry = players.get(pid)
         if entry is None:
             continue                       # 티어표 밖 상대(others)
         t = tier_of(entry)
         if t == UNRANKED:
+            continue
+        if str(entry.get('tm') or '').strip() == DORMANT_TEAM:
+            skipped_dormant += 1
             continue
         n_recent = recent_games.get(pid, 0)
         if n_recent == 0:
@@ -422,7 +428,7 @@ def main():
 
     total = sum(tier_sizes.values())
     print(f'✅ 티어랭킹: {total:,}명 순위 매김 '
-          f'(최근 {RECENT_DAYS}일 경기 없음 {skipped_recent:,}명 · '
+          f'(휴면 {skipped_dormant:,}명 · 최근 {RECENT_DAYS}일 경기 없음 {skipped_recent:,}명 · '
           f'{MIN_RECENT_GAMES}판 미만 {skipped_thin:,}명)')
     print(f'   기준일 {today} · 반감기 {int(HALF_LIFE_DAYS)}일 · 쌍 {len(ww):,}개'
           f' (판 적은 미분류 제외 {dropped_pairs:,}쌍)')
