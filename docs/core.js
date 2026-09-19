@@ -858,7 +858,7 @@ function helpBadgeHtml(text) {
     const uid = `help-${++helpSeq}`;
     return `<span class="help-pop"><button type="button" class="help-btn" id="${uid}"
             aria-expanded="false" aria-label="설명 보기"
-            data-help="${escapeHTML(text)}" onclick="toggleHelp(this)">?</button></span>`;
+            data-help="${escapeHTML(text)}" onclick="toggleHelp(this)"><i class="i-info" aria-hidden="true"></i></button></span>`;
 }
 
 function helpBox() {
@@ -917,11 +917,13 @@ window.addEventListener('scroll', () => closeAllHelp(), { passive: true });
 window.addEventListener('resize', () => closeAllHelp());
 
 // 티어랭킹 뱃지 옆 설명. 계산 방식은 scripts/build_ranking.py에 자세히 적어뒀다.
-const RANK_HELP = '같은 티어 안에서의 순위입니다. 최근 경기일수록 무겁게(반감기 12개월), '
-    + '형식은 개인·대학대회 > 대학대전 > 미니대전 > 프로리그·CK > 스폰 순으로 반영합니다. '
-    + '표본이 얇으면 순위를 낮게 잡고, 최근 1년에 10판을 못 채웠으면 "기록 없음"입니다. '
-    + '소속이 휴면인 분은 상대로는 계산에 넣되 순위에는 올리지 않습니다. '
-    + '티어는 사람이 매긴 것이라, 순위는 그 티어 안에서만 매깁니다.';
+const RANK_HELP = '스타대학이 전적 데이터로 매긴 자체 랭킹입니다.\n\n'
+    + '티어는 티어표를 그대로 쓰고, 순위는 같은 티어 안에서만 매깁니다.\n'
+    + '최근 경기일수록 무겁게 봅니다 (반감기 12개월).\n'
+    + '판 수가 적으면 보수적으로 잡습니다.\n\n'
+    + '형식 비중\n'
+    + '개인·대학대회 › 대학대전 › 미니대전 › 프로리그·CK › 스폰\n\n'
+    + '최근 1년 10판 미만이거나 휴면이면 기록 없음.';
 
 // 티어 랭킹 뱃지: '갓티어 · 3위/16명'. 순위는 scripts/build_ranking.py가 계산해
 // docs/data/h2h/index.json에 적어 둔 것을 그대로 쓴다(선수별 k, 티어별 인원 ranking.tierCounts).

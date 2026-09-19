@@ -425,12 +425,21 @@ function analysisMonthlyHtml(rows) {
 // 여기서는 가로축 구간만 자른다. 최근 30일은 한 달이라 점이 하나뿐인데, 그러면 선이
 // 안 그려지므로 직전 달 한 점만 붙여 줄을 잇는다.
 const RATING_WINDOW = { all: 18, 365: 12, 90: 3, 30: 2 };
+// 30일은 점이 둘뿐이라 선이 왼쪽에 몰려 보인다. 오른쪽에 다음 달 자리를 한 칸 비워 둬서
+// 이번 달이 가운데 오게 한다(예: 08 · 09 · 10, 값은 08과 09에만).
+const RATING_PAD_RIGHT = { 30: 1 };
 
-const RATING_HELP = '달마다 그 시점까지의 경기만으로 다시 계산한 점수입니다. '
-    + '한 선수가 올라갔는지 내려갔는지를 보는 값이라, 티어가 다른 선수끼리 점수를 '
-    + '직접 비교하면 안 됩니다. 그 달에 경기가 없으면 선이 끊깁니다. '
-    + '위에서 기간을 고르면 보여주는 구간이 바뀝니다(전체 18개월 · 1년 12개월 · 90일 3개월 · 30일 1개월). '
-    + '점수를 내는 방식은 기간과 상관없이 늘 같습니다. 30일은 점이 하나뿐이라 직전 달 한 점을 붙여 줄을 잇습니다.';
+function nextMonthKey(key) {
+    const [y, m] = String(key).split('-').map(Number);
+    return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+
+const RATING_HELP = '스타대학이 전적 데이터로 매긴 자체 점수입니다.\n\n'
+    + '달마다 그때까지의 경기만으로 다시 계산합니다.\n'
+    + '한 선수의 오르내림을 보는 값이라, 티어가 다른 선수끼리 점수를 맞대 보면 안 됩니다.\n'
+    + '그 달에 경기가 없으면 선이 끊깁니다.\n\n'
+    + '보여주는 구간 — 전체 18개월 · 1년 12개월 · 90일 3개월 · 30일 1개월\n'
+    + '(점수 계산 방식은 기간과 무관하게 늘 같습니다.)';
 
 function analysisRatingTitleHtml(count) {
     return `
@@ -452,6 +461,10 @@ function analysisRatingHtml(pid) {
     const from = Math.max(0, allMonths.length - want);
     const months = allMonths.slice(from);
     const series = all.slice(from);
+    for (let k = RATING_PAD_RIGHT[AnalysisState.period] || 0; k > 0; k--) {
+        months.push(nextMonthKey(months[months.length - 1]));
+        series.push(null);
+    }
 
     const pts = series.map((v, i) => (v === null || v === undefined ? null : { i, v, key: months[i] }));
     const have = pts.filter(Boolean);
