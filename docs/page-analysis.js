@@ -417,13 +417,15 @@ function analysisMonthlyHtml(rows) {
 }
 
 // ---------------------------------------------------------------------------
-// 레이팅 변화
+// 레이팅
 // ---------------------------------------------------------------------------
 // 달마다 '그 시점까지의 경기'로 다시 맞춘 점수다(scripts/build_ranking.py).
 // 같은 선수의 오르내림을 보는 값이라, 티어가 다른 선수끼리 점수를 맞대 보면 안 된다.
-const RATING_HELP = '달마다 그 시점까지의 경기만으로 다시 계산한 점수입니다. '
+const RATING_HELP = '달마다 그 시점까지의 경기만으로 다시 계산한 점수입니다(최근 18개월). '
     + '한 선수가 올라갔는지 내려갔는지를 보는 값이라, 티어가 다른 선수끼리 점수를 '
-    + '직접 비교하면 안 됩니다. 그 달에 경기가 없으면 선이 끊깁니다.';
+    + '직접 비교하면 안 됩니다. 그 달에 경기가 없으면 선이 끊깁니다. '
+    + '레이팅은 과거 전체를 반감기 12개월로 녹여 만드는 값이라, 위의 기간 선택(전체·1년·90일·30일)을 '
+    + '따르지 않고 늘 같은 구간을 보여줍니다.';
 
 function analysisRatingHtml(pid) {
     const data = AnalysisState.rating;
@@ -477,12 +479,12 @@ function analysisRatingHtml(pid) {
     const top = Math.max(...vals), bottom = Math.min(...vals);
     return `
         <div class="section-title section-title-spaced" data-en="RATING">
-            <span class="section-title-label">레이팅 변화</span>
+            <span class="section-title-label">레이팅</span>
             ${helpBadgeHtml(RATING_HELP)}
-            <span class="title-count">${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>
+            <span class="title-count">${have.length}개월 · ${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>
         </div>
         <div class="clean-card p-3">
-            <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 레이팅 변화">
+            <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 레이팅">
                 ${grid}
                 <path class="analysis-rate-line" d="${path.trim()}" fill="none"></path>
                 ${dots}
