@@ -338,7 +338,6 @@ function h2hMatchesHtml(rows, showOpponent) {
     return `<div class="section-title record-recent-header section-title-spaced" data-en="RECENT">
         <span class="record-recent-title section-title-label">최근 전적</span>
         <div class="filter-nav tab-scroll" role="group" aria-label="최근 전적 형식">${chips}</div>
-        <span class="title-count">${filtered.length.toLocaleString('ko-KR')}경기</span>
     </div>${h2hTableHtml(filtered, showOpponent)}`;
 }
 

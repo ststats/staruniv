@@ -44,6 +44,7 @@ function roundsForMatch(m) {
 
 const RecordsState = {
     player: '',          // 개인 전적에서 선택된 멤버 이름('' = 전체 요약)
+    teamFilter: '전체', // 팀 최근 전적 형식 필터
     indivFilter: '전체', // 개인 최근 전적 형식 필터
 };
 
@@ -133,7 +134,7 @@ function calculateTeamSummaries() {
         rateEl.style.color = ringColor;
         document.getElementById(`t-sum-${fmt}-donut`).style.background = donutBackground(ringColor, rate);
     });
-    renderTeamMatchesList('team-recent-list', {format: '전체'}, 10, 'team-recent-pagination');
+    renderTeamRecentMatches();
 }
 
 // 팀 매치 한 경기의 세트별 상세 행들
@@ -211,9 +212,21 @@ function renderTeamMatchesList(containerId, filters, limit, paginationId) {
     }
 }
 
+function renderTeamRecentMatches() {
+    document.getElementById('team-recent-filters').innerHTML =
+        summaryFilterHtml(RecordsState.teamFilter, 'setTeamFilter');
+    renderTeamMatchesList('team-recent-list', { format: RecordsState.teamFilter }, 10, 'team-recent-pagination');
+}
+
+function setTeamFilter(format) {
+    RecordsState.teamFilter = format;
+    RecordsState.teamPage = 1;
+    renderTeamRecentMatches();
+}
+
 function setTeamPage(page) {
     RecordsState.teamPage = page;
-    renderTeamMatchesList('team-recent-list', { format: '전체' }, 10, 'team-recent-pagination');
+    renderTeamRecentMatches();
 }
 
 function openTeamMatchModal(format) {
@@ -225,7 +238,7 @@ function openTeamMatchModal(format) {
 // 카드에서 열 때는 지금 고른 형식만 보여준다 - '대회'를 고르고 누른 사람은
 // 그 팀과의 대회 경기를 보고 싶은 것이지 전체 목록을 보고 싶은 게 아니다.
 function openTeamOpponentModal(opponent, format) {
-    const fmt = (format && format !== '합계') ? format : '전체';
+    const fmt = format || '전체';
     document.getElementById('teamModalTitle').innerHTML =
         `${teamLogoHtml(opponent, 20)} vs ${escapeHTML(opponent)} ${fmt === '전체' ? '전체 전적' : `${escapeHTML(fmt)} 전적`}`;
     renderTeamMatchesList('team-modal-list', {format: fmt, opponent}, null);
@@ -390,7 +403,7 @@ function renderIndivMatchesList(containerId, format, limit) {
 // 상대 전적 · 개인 전체 전적 표는 둘 다 "상대(멤버) x 형식 4개"라 칸의 절반이 비어 있었다
 // (실측 47%). 한 번에 형식 하나만 보여주고 제목줄의 칩으로 바꾸면 빈 칸이 사라지고,
 // 남는 폭으로 승률 막대를 넣을 수 있다. 칩은 최근 전적 필터와 같은 부품(.filter-nav)이다.
-const SUMMARY_FORMATS = ['합계', ...FORMAT_KEYS];
+const SUMMARY_FORMATS = ['전체', ...FORMAT_KEYS];
 
 // 형식 칩 한 줄. 지금 고른 것만 active.
 function summaryFilterHtml(current, handler) {
@@ -399,9 +412,9 @@ function summaryFilterHtml(current, handler) {
              aria-selected="${f === current}" onclick="${handler}('${jsAttr(f)}')">${escapeHTML(f)}</div>`).join('');
 }
 
-// 고른 형식의 전적. '합계'면 네 형식을 다 더한다.
+// 고른 형식의 전적. '전체'면 네 형식을 다 더한다.
 function statFor(getText, format) {
-    if (format !== '합계') return parseStat(getText(format));
+    if (format !== '전체') return parseStat(getText(format));
     return FORMAT_KEYS.reduce((acc, f) => {
         const st = parseStat(getText(f));
         return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
@@ -435,7 +448,7 @@ function renderOpponentTable() {
     const wrap = document.getElementById('team-opp-wrap');
     if (!wrap) return;
     const rows = readOpponentRows();
-    const format = RecordsState.oppFormat || '합계';
+    const format = RecordsState.oppFormat || '전체';
 
     document.getElementById('team-opp-filters').innerHTML =
         summaryFilterHtml(format, 'setTeamOppFormat');
@@ -475,7 +488,7 @@ function setIndivSummaryFormat(format) {
 function renderIndivSummaryTable() {
     const grid = document.getElementById('indiv-summary-grid');
     if (!grid) return;
-    const format = RecordsState.summaryFormat || '합계';
+    const format = RecordsState.summaryFormat || '전체';
     document.getElementById('indiv-summary-filters').innerHTML =
         summaryFilterHtml(format, 'setIndivSummaryFormat');
 
