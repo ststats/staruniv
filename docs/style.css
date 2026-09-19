@@ -5263,6 +5263,7 @@ html:not([data-theme="dark"]) .mv-run-btn:not(:disabled) {
     height: 14px;
 }
 .mv-quickadd-btn:hover { filter: brightness(1.08); }
+html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 
 .mv-order-row {
     flex-wrap: wrap;
