@@ -653,7 +653,7 @@ const HEART_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="curren
 
 const EYE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
-// 사진이 2장 이상이면 가로 스와이프(스크롤 스냅) + 하단 인디케이터. PC는 항상 보이는
+// 사진이 2장 이상이면 인스타처럼 가로 스와이프(스크롤 스냅) + 하단 인디케이터. PC는 호버 시
 // 좌우 화살표, 모바일은 스와이프만(화살표는 CSS @media (hover:none)에서 숨김). 첫 사진은
 // 즉시 로드하고, 스와이프해야 보이는 두 번째 사진부터만 지연 로딩한다.
 function newsPhotosHtml(photos) {
