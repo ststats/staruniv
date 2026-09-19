@@ -2233,6 +2233,7 @@ a.home-notice-card:hover {
 .home-carousel-dots button.active {
     width: 22px;
     background: var(--dot-active);
+    clip-path: var(--cut-2);
 }
 .home-carousel h1 span { display: inline; }
 .home-carousel h1 { white-space: nowrap; }
@@ -3344,6 +3345,7 @@ body.media-lightbox-open { overflow: hidden; }
     width: 16px;
     height: 6px;
     border-radius: 0 !important;
+    clip-path: var(--cut-2);
 }
 
 .member-card {
