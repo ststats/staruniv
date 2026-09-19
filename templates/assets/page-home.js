@@ -22,22 +22,51 @@ function formatLiveElapsed(broadStart) {
 
 let homeCarouselIndex = 0;
 
-// [리디자인] 오른쪽 칸은 장마다 다른 걸 보여준다. 예전엔 최근 경기 하나가 모든 장에 그대로
-// 붙어 있어서, 2·3번째 장(전적 / 멤버 안내)에서도 같은 경기 결과가 떠 있었다.
-// 장별 내용은 SiteData에서 뽑고, 못 뽑으면 그 칸을 비운다.
-const HOME_PREVIEWS = [
-    { label: 'TODAY SCHEDULE', rows: () => [] },
-    { label: 'RECORDS', rows: () => [
-        ['상대 팀', `${new Set((SiteData.matches || []).map(m => m['상대팀'])).size}팀`],
-        ['누적 경기', `${(SiteData.matches || []).length}경기`],
-        ['누적 세트', `${(SiteData.rounds || []).length}세트`],
-    ] },
-    { label: 'ROSTER', rows: () => {
-        const active = (SiteData.members || []).filter(isActiveMember);
-        const byRole = role => active.filter(m => (m['직책'] || '') === role).length;
-        return [['감독', `${byRole('감독')}명`], ['코치', `${byRole('코치')}명`], ['선수', `${byRole('선수')}명`]];
-    } },
-];
+async function fetchHomePreviewData(path) {
+    const res = await fetch(path, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`미리보기 데이터를 불러오지 못했습니다: ${path}`);
+    return res.json();
+}
+
+async function renderHomeRecordsPreview(box) {
+    box.innerHTML = '<div class="home-preview-label">RECORDS ARCHIVE</div><div class="home-preview-loading">전체 전적을 불러오는 중...</div>';
+    try {
+        const [tier, archive] = await Promise.all([
+            fetchHomePreviewData('data/tier_members.json'),
+            fetchHomePreviewData('data/h2h/index.json'),
+        ]);
+        if (!Array.isArray(tier.members) || !archive.players || !Number.isFinite(archive.count)) throw new Error('잘못된 집계 데이터');
+        const excluded = new Set(['FA', '휴면', '미분류']);
+        const teams = new Set(tier.members.map(m => String(m.team || '').trim()).filter(t => t && !excluded.has(t.toUpperCase())));
+        // 티어표 밖 상대 선수까지 포함하되 같은 선수 ID는 한 번만 센다.
+        const players = new Set([...Object.keys(archive.players), ...Object.keys(archive.others || {})]);
+        const rows = [['대학 수', teams.size, '개'], ['누적 선수', players.size, '명'], ['누적 경기', archive.count, '경기']];
+        box.innerHTML = '<div class="home-preview-label">RECORDS ARCHIVE</div>' + rows.map(([label, count, unit]) =>
+            `<div class="home-preview-row"><span>${label}</span><b>${count.toLocaleString('ko-KR')}${unit}</b></div>`).join('');
+    } catch (e) {
+        box.innerHTML = '<div class="home-preview-label">RECORDS ARCHIVE</div><div class="home-preview-loading">전체 전적을 불러오지 못했습니다.</div>';
+    }
+}
+
+async function renderHomeVideoPreview(box) {
+    box.innerHTML = '<div class="home-preview-loading">추천 영상을 불러오는 중...</div>';
+    try {
+        const data = await fetchHomePreviewData('data/videos.json');
+        // 영상 페이지의 '보자'와 같은 공개 조건·등록 순서를 사용한다.
+        const video = (Array.isArray(data.picks) ? data.picks : []).find(v => v && !v.hidden && /^([A-Za-z0-9_-]{11}|soop:\d{1,20})$/.test(v.id));
+        if (!video) { box.innerHTML = '<div class="home-preview-loading">추천 영상이 아직 없습니다.</div>'; return; }
+        const isSoop = String(video.id).startsWith('soop:');
+        const thumb = isSoop
+            ? (/^https:\/\/[\w.-]+\.(afreecatv\.com|sooplive\.co\.kr|sooplive\.com)\//.test(video.thumb || '') ? video.thumb : '')
+            : `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+        box.innerHTML = `<a class="home-video-preview" href="video/?view=pick" aria-label="${escapeHTML(video.title || '추천 영상')} — 보자에서 보기">
+            ${thumb ? `<img src="${escapeHTML(thumb)}" alt="" loading="lazy">` : '<span class="home-video-placeholder">SOOP</span>'}
+            <span class="home-video-caption"><span>보자 · 추천 영상</span><b>${escapeHTML(video.title || '추천 영상')}</b></span>
+        </a>`;
+    } catch (e) {
+        box.innerHTML = '<div class="home-preview-loading">추천 영상을 불러오지 못했습니다.</div>';
+    }
+}
 
 async function renderTodaySchedulePreview(box) {
     if (!box) return;
@@ -67,13 +96,8 @@ function renderHomePreviewPanes() {
     document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(box => {
         const index = Number(box.dataset.preview);
         if (index === 0) { renderTodaySchedulePreview(box); return; }
-        const cfg = HOME_PREVIEWS[index];
-        if (!cfg) { box.innerHTML = ''; return; }
-        let rows = [];
-        try { rows = cfg.rows(); } catch (e) { rows = []; }
-        box.innerHTML = `<div class="home-preview-label">${escapeHTML(cfg.label)}</div>`
-            + rows.map(([k, v]) => `<div class="home-preview-row"><span>${escapeHTML(k)}</span>`
-                + `<b>${escapeHTML(String(v))}</b></div>`).join('');
+        if (index === 1) renderHomeRecordsPreview(box);
+        if (index === 2) renderHomeVideoPreview(box);
     });
 }
 
@@ -99,10 +123,63 @@ function startHomeCarouselAuto() {
 function stopHomeCarouselAuto() {
     if (homeCarouselTimer) { clearInterval(homeCarouselTimer); homeCarouselTimer = null; }
 }
+
+function initHomeCarouselSwipe(car) {
+    let gesture = null;
+    let suppressClickUntil = 0;
+    car.addEventListener('touchstart', event => {
+        if (!window.matchMedia('(max-width: 767.98px)').matches) return;
+        stopHomeCarouselAuto();
+        suppressClickUntil = 0;
+        if (event.touches.length !== 1) { gesture = null; return; }
+        const touch = event.touches[0];
+        gesture = { id: touch.identifier, x: touch.clientX, y: touch.clientY, axis: null };
+    }, { passive: true });
+    car.addEventListener('touchmove', event => {
+        if (!gesture) return;
+        if (event.touches.length !== 1) { gesture = null; return; }
+        const touch = event.touches[0];
+        const dx = Math.abs(touch.clientX - gesture.x);
+        const dy = Math.abs(touch.clientY - gesture.y);
+        if (!gesture.axis && Math.max(dx, dy) >= 12) {
+            gesture.axis = dx > dy ? 'horizontal' : 'vertical';
+        }
+        // 가로 제스처만 처리한다. 세로 스크롤과 확대 동작은 브라우저에 맡긴다.
+        if (gesture.axis === 'horizontal' && event.cancelable) event.preventDefault();
+    }, { passive: false });
+    car.addEventListener('touchend', event => {
+        if (gesture) {
+            const touch = Array.from(event.changedTouches).find(t => t.identifier === gesture.id);
+            if (touch) {
+                const dx = touch.clientX - gesture.x;
+                const dy = touch.clientY - gesture.y;
+                if (gesture.axis !== 'vertical' && Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
+                    // 이동 거리에 관계없이 손을 뗄 때 딱 한 장만 넘긴다.
+                    moveHomeCarousel(dx < 0 ? 1 : -1);
+                    suppressClickUntil = Date.now() + 500;
+                }
+            }
+        }
+        gesture = null;
+        if (!event.touches.length && !document.hidden) startHomeCarouselAuto();
+    }, { passive: true });
+    car.addEventListener('touchcancel', () => {
+        gesture = null;
+        if (!document.hidden) startHomeCarouselAuto();
+    }, { passive: true });
+    car.addEventListener('click', event => {
+        if (Date.now() < suppressClickUntil) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+}
+
 function initHomeCarousel() {
     const car = document.querySelector('.home-carousel');
     if (!car) return;
     renderHomePreviewPanes();
+    initHomeCarouselSwipe(car);
     car.addEventListener('mouseenter', stopHomeCarouselAuto);
     car.addEventListener('mouseleave', startHomeCarouselAuto);
     car.addEventListener('focusin', stopHomeCarouselAuto);
