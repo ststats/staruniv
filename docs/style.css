@@ -1165,6 +1165,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     object-fit: contain;
     margin-right: 4px;
     flex-shrink: 0;
+    vertical-align: middle;
 }
 .team-logo-fallback {
     display: inline-flex;
@@ -3540,18 +3541,28 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 .profile-dialog { max-width: 440px; }
-.profile-modal-hero { padding: 16px 24px 24px; background: var(--navy); background-image: var(--navy-pattern); color: var(--navy-on-text); }
-.profile-modal-rail { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; font-size: var(--fs-eyebrow); letter-spacing: .16em; font-weight: 600; color: var(--navy-on-muted); }
-.profile-modal-rail .btn-close { width: 32px; height: 32px; padding: 0; background-size: 12px; flex: none; }
+.profile-modal-hero { position: relative; padding: 20px 24px 24px; background: var(--navy); background-image: var(--navy-pattern); color: var(--navy-on-text); }
+/* 예전엔 이 자리에 'MEMBER PROFILE' 영문 레일이 한 줄 통째로 있었다 - 정보 없이 높이만
+   차지해서 뺐다. 닫기 버튼만 우상단에 얹는다. */
+.profile-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; padding: 0; background-size: 12px; }
 .profile-modal-identity { display: flex; align-items: center; gap: 18px; }
 .profile-modal-identity .profile-avatar { width: 76px; height: 76px; margin: 0; }
-.profile-modal-identity-text { min-width: 0; }
+.profile-modal-identity-text { min-width: 0; padding-right: 34px; }
 .profile-modal-affiliation { color: var(--navy-on-muted); font-size: var(--fs-meta); margin-bottom: 4px; }
 .profile-modal-name { margin: 0 0 12px; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -.03em; overflow-wrap: anywhere; }
 .profile-dialog .profile-modal-body { padding: 22px 24px 24px; }
 .profile-modal-section { margin-bottom: 14px; font-size: 13px; }
 .profile-modal-section h3 { margin: 0; font: inherit; }
 .profile-modal-section .section-title-label::after { background: var(--navy); }
+/* 이 모달만: 영문 레일을 제목 위 한 줄로 빼지 않고 제목 옆에 붙인다(모달이 너무 길어져서). */
+.profile-modal-section[data-en]::before {
+    flex: 0 0 auto;
+    order: 1;
+    align-self: center;
+    margin-bottom: 0;
+    margin-left: 8px;
+    color: var(--color-text-faint);
+}
 .profile-modal-facts { display: grid; grid-template-columns: .8fr 1.4fr .8fr; gap: 12px; margin: 0; padding-bottom: 18px; border-bottom: 1px solid var(--color-border); }
 .profile-modal-facts > div { min-width: 0; }
 .profile-modal-facts dt, .profile-modal-label { margin-bottom: 5px; color: var(--color-text-sub); font-size: var(--fs-meta); font-weight: 500; }
@@ -3577,7 +3588,7 @@ body.media-lightbox-open { overflow: hidden; }
     .profile-modal-identity .profile-avatar { width: 64px; height: 64px; }
     .profile-modal-metric { padding: 12px; }
 }
-@media (pointer: coarse) { .profile-modal-rail .btn-close { width: 44px; height: 44px; } }
+@media (pointer: coarse) { .profile-modal-close { width: 44px; height: 44px; } }
 
 .activity-label {
     color: var(--color-text-sub);
@@ -5977,7 +5988,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 @media (max-width:767.98px) {
     /* 모바일도 PC와 같은 짜임으로 - 동그란 프로필, 같은 두 줄 격자, 줄만 조금 작게 */
     .player-summary { gap:var(--space-compact-gap); padding:16px 14px; }
-    .player-summary-avatar { width:54px; height:54px; border-radius:50%; font-size:22px; }
+    .player-summary-avatar { width:64px; height:64px; border-radius:50%; font-size:26px; }
     .player-summary-id,.player-summary-stats { grid-template-rows:24px 19px 19px; row-gap:4px; }
     .player-summary-name { font-size:18px; }
     .player-summary-badges { gap:3px; }
@@ -5990,7 +6001,9 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     .analysis-formline { padding:10px 8px; gap:6px; }
     .analysis-formline-label { font-size:10px; }
     .analysis-formline-badges { gap:2px; }
-    .analysis-formline-badges .match-badge { flex:1; min-width:0; width:auto; font-size:9px; }
+    /* flex-grow는 0으로 둬서 자리 남는다고 뱃지가 커지지 않게 하고, 아주 좁은 화면에서만
+       flex-shrink로 조금씩 줄어들게 한다(예전엔 flex:1이라 남는 폭만큼 계속 늘어났다). */
+    .analysis-formline-badges .match-badge { flex:0 1 20px; width:20px; height:18px; font-size:9px; }
 
     .h2h-map-rec,.h2h-rival-rec { white-space:nowrap; font-size:10px; }
     .h2h-suggest-item { gap:4px; }
