@@ -523,18 +523,18 @@ function daysBetween(startStr, endStr) {
     return Math.floor((end - start) / 86400000) + 1;
 }
 
-// 활동기간 한 줄(멤버 프로필 팝업 · 개인 전적 머리 카드 공용).
-// 뱃지 한 칸에 들어가야 해서, 좁은 화면에서는 앞의 기간 범위를 감추고 '900일째'만 남긴다
-// (.rank-badge-pre). 퇴단한 멤버는 퇴단일까지만 센다.
+// 활동기간 뱃지(개인 전적 머리 카드). 뱃지 한 칸에 들어가야 해서 '804일째'만 적고,
+// 기간 범위는 마우스를 올렸을 때 보이게 title로 붙인다. 퇴단한 멤버는 퇴단일까지만 센다.
+// (멤버 프로필 팝업은 표 한 줄을 통째로 쓰므로 범위를 그대로 적는다 - page-members.js)
 function memberPeriodBadgeHtml(m) {
     const join = m && m['입단일'];
-    if (!join) return '<i class="rank-badge-pre">활동기간 </i>-';
+    if (!join) return '<span class="rank-badge-text">활동기간 -</span>';
     const active = isActiveMember(m);
     const end = active ? '현재' : (m['퇴단일'] || '-');
-    const range = `${escapeHTML(String(join)).replace(/-/g, '.')} ~ ${escapeHTML(String(end)).replace(/-/g, '.')}`;
+    const range = `${String(join).replace(/-/g, '.')} ~ ${String(end).replace(/-/g, '.')}`;
     const days = daysBetween(join, active ? todayStr() : (m['퇴단일'] || null));
-    if (days === null) return `<i class="rank-badge-pre">활동기간 </i>${range}`;
-    return `<i class="rank-badge-pre">${range} · </i>${days.toLocaleString('ko-KR')}일${active ? '째' : ''}`;
+    const text = days === null ? range : `${days.toLocaleString('ko-KR')}일${active ? '째' : ''}`;
+    return `<span class="rank-badge-text" title="활동기간 ${escapeHTML(range)}">${escapeHTML(text)}</span>`;
 }
 
 // 아바타 선택 바(개인 전적/멤버 공지 상단)의 항목 한 칸 - 두 화면이 같은 마크업을 쓴다.
