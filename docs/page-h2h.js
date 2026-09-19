@@ -1,5 +1,5 @@
 /**
- * 티어표 · 상대전적 탭: 선수 두 명을 고르면 맞대결 전적과 경기 목록을 보여준다.
+ * 티어표 · 상대전적 탭: 선수 두 명을 고르면 맞대결 전적과 최근 전적을 보여준다.
  * (core.js → page-tier.js → 이 파일. 탭을 처음 열 때만 데이터를 읽는다)
  *
  * 데이터: docs/data/h2h/ - scripts/build_h2h.py가 eloboard 아카이브를 선수id 범위별로 잘라 둔 것.
@@ -19,7 +19,7 @@
 
 const H2H_INDEX_URL = 'data/h2h/index.json';
 const H2H_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
-const H2H_LIST_STEP = 10;          // 경기 목록 한 번에 보여줄 개수
+const H2H_LIST_STEP = 10;          // 최근 전적 한 번에 보여줄 개수
 const H2H_RIVAL_STEP = 10;         // '자주 만난 상대' 한 번에 보여줄 명수
 const H2H_MAP_STEP = 10;           // '맵별 전적' 한 번에 보여줄 개수
 // 검색 결과는 전부 볼 수 있어야 한다(대학 이름으로 찾으면 수십~수백 명이 나온다).
@@ -35,7 +35,7 @@ const H2hState = {
     rows: {},             // 선수 id -> 경기 행
     shardData: {},        // 샤드 시작id -> 받아온 원본 { 선수id: rows } (같은 샤드 재요청 방지)
     shardLoading: {},     // 샤드 시작id -> 진행 중인 요청(동시에 여러 번 고를 때 중복 요청 방지)
-    shown: H2H_LIST_STEP,
+    page: 1,
     rivalShown: H2H_RIVAL_STEP,
     mapShown: H2H_MAP_STEP,
     suggestSlot: -1,      // 추천 목록이 열려 있는 칸
@@ -164,7 +164,7 @@ function h2hSuggestItemsHtml(slot, list) {
             <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
             ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
             ${p.r ? raceBadgeHtml(p.r) : ''}
-            <span class="h2h-suggest-team">${escapeHTML([p.t !== undefined && p.t !== '' ? tierLabel(p.t) : '', p.tm || ''].filter(Boolean).join(' · '))}</span>
+            ${playerBadgesHtml({...p, r: ""})}
             <span class="h2h-suggest-count">${(p.m || 0).toLocaleString('ko-KR')}판</span>
         </button>`).join('');
 }
@@ -206,27 +206,8 @@ function h2hSlotHtml(slot) {
     }
     const p = h2hPlayer(pid) || { n: h2hName(pid) };
     const rec = h2hRecord(h2hRowsInPeriod(pid));
-    return `
-        <div class="h2h-slot-inner">
-            <div class="h2h-slot-label">${label}</div>
-            <div class="h2h-card">
-                <div class="h2h-card-avatar">${avatarHtml(p.s || '', 'h2h-card-avatar-img')}</div>
-                <div class="h2h-card-body">
-                    <div class="h2h-card-nameline">
-                        <span class="h2h-card-name">${escapeHTML(p.n)}</span>
-                        ${p.r ? raceBadgeHtml(p.r) : ''}
-                    </div>
-                    <div class="h2h-card-sub">${escapeHTML([p.t !== undefined && p.t !== '' ? tierLabel(p.t) : '', p.tm || ''].filter(Boolean).join(' · ')) || '&nbsp;'}</div>
-                    <div class="h2h-card-rec">
-                        <strong>${rec.total.toLocaleString('ko-KR')}전</strong>
-                        <span class="h2h-win">${rec.win}승</span>
-                        <span class="h2h-lose">${rec.lose}패</span>
-                        <span class="h2h-card-rate">${h2hRateText(rec.win, rec.lose)}</span>
-                    </div>
-                </div>
-                <button type="button" class="h2h-card-clear" aria-label="선수 지우기" onclick="h2hClear(${slot})">✕</button>
-            </div>
-        </div>`;
+    return `<div class="h2h-slot-inner"><div class="h2h-slot-label">${label}</div>
+        ${playerSummaryHtml(p, rec, `<button type="button" class="h2h-card-clear" aria-label="선수 지우기" onclick="h2hClear(${slot})">✕</button>`)}</div>`;
 }
 
 function h2hOnQuery(slot, value) {
@@ -244,7 +225,7 @@ async function h2hPick(slot, pid) {
     H2hState.query[slot] = '';
     H2hState.suggestSlot = -1;
     H2hState.suggestShown = H2H_SUGGEST_STEP;
-    H2hState.shown = H2H_LIST_STEP;
+    H2hState.page = 1;
     H2hState.rivalShown = H2H_RIVAL_STEP;
     H2hState.mapShown = H2H_MAP_STEP;
     renderH2hSlots();
@@ -263,7 +244,7 @@ async function h2hPick(slot, pid) {
 
 function h2hClear(slot) {
     H2hState.picks[slot] = null;
-    H2hState.shown = H2H_LIST_STEP;
+    H2hState.page = 1;
     H2hState.rivalShown = H2H_RIVAL_STEP;
     H2hState.mapShown = H2H_MAP_STEP;
     renderH2hSlots();
@@ -273,7 +254,7 @@ function h2hClear(slot) {
 
 function h2hSetPeriod(period) {
     H2hState.period = period;
-    H2hState.shown = H2H_LIST_STEP;
+    H2hState.page = 1;
     H2hState.rivalShown = H2H_RIVAL_STEP;
     H2hState.mapShown = H2H_MAP_STEP;
     renderH2hPeriod();
@@ -281,8 +262,8 @@ function h2hSetPeriod(period) {
     renderH2hResult();
 }
 
-function h2hShowMore() {
-    H2hState.shown += H2H_LIST_STEP;
+function h2hSetPage(page) {
+    H2hState.page = page;
     renderH2hResult();
 }
 
@@ -299,7 +280,7 @@ function h2hShowMoreMaps() {
 // ---------------------------------------------------------------------------
 // 결과
 // ---------------------------------------------------------------------------
-// 경기 목록: 전적 페이지의 '최근 전적' 표와 같은 틀·같은 부품을 쓴다
+// 최근 전적: 전적 페이지의 '최근 전적' 표와 같은 틀·같은 부품을 쓴다
 // (stat-table + tag-badge + resultBadgeHtml + shortMatchDate). 표가 페이지마다 달라 보이지 않게.
 function h2hMatchRowsHtml(rows, showOpponent) {
     return rows.map(([date, opp, win, mapId, cat]) => `
@@ -313,7 +294,7 @@ function h2hMatchRowsHtml(rows, showOpponent) {
 }
 
 function h2hTableHtml(rows, showOpponent) {
-    const shown = rows.slice(0, H2hState.shown);
+    const shown = rows.slice((H2hState.page - 1) * H2H_LIST_STEP, H2hState.page * H2H_LIST_STEP);
     const colw = showOpponent ? 'colw-20' : 'colw-25';
     const head = (label, sticky) =>
         `<th scope="col" class="text-center ${sticky ? 'stat-table-sticky-col ' : ''}${colw}">${label}</th>`;
@@ -335,10 +316,7 @@ function h2hTableHtml(rows, showOpponent) {
                 </table>
             </div>
         </div>
-        ${rows.length > shown.length ? `
-        <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="h2hShowMore()">경기 더 보기 (${(rows.length - shown.length).toLocaleString('ko-KR')}경기 남음)</button>
-        </div>` : ''}`;
+        ${matchPaginationHtml(rows.length, H2hState.page, H2H_LIST_STEP, "h2hSetPage")}`;
 }
 
 // 맵별 전적: 많이 한 순으로
@@ -357,7 +335,7 @@ function h2hMapTableHtml(rows, limited) {
             ${list.map(([mapId, [win, lose]]) => `
                 <div class="h2h-map">
                     <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId) || '맵 정보 없음')}</span>
-                    <span class="h2h-map-rec"><span class="h2h-win">${win}</span> · <span class="h2h-lose">${lose}</span></span>
+                    <span class="h2h-map-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span> · ${h2hRateText(win, lose)}</span>
                     <span class="h2h-map-bar"><span style="width:${win + lose ? (win / (win + lose)) * 100 : 0}%"></span></span>
                 </div>`).join('')}
         </div>
@@ -426,12 +404,12 @@ function renderH2hResult() {
     if (!a && !b) {
         box.innerHTML = `
             <div class="h2h-empty">
-                <span class="h2h-empty-title">선수를 골라주세요</span>
+                <span class="h2h-empty-title">선수를 검색해주세요</span>
                 <span class="h2h-empty-sub">이름 · 대학으로 검색</span>
             </div>`;
         return;
     }
-    // 한 명만 골랐을 때: 자주 만난 상대 → 맵별 전적 → 경기 목록 (셋 다 10개씩 + 더 보기)
+    // 한 명만 골랐을 때: 자주 만난 상대 → 맵별 전적 → 최근 전적 (셋 다 10개씩 + 더 보기)
     if (!a || !b) {
         const pid = a || b;
         const rows = h2hRowsInPeriod(pid);
@@ -443,7 +421,7 @@ function renderH2hResult() {
             ${h2hTopOpponentsHtml(rows)}
             <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span></div>
             ${h2hMapTableHtml(rows, true)}
-            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">경기 목록</span>
+            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
                 <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
             ${h2hTableHtml(rows, true)}`;
         return;
@@ -456,7 +434,7 @@ function renderH2hResult() {
             <div class="section-title section-title-spaced" data-en="BY MAP"><span class="section-title-label">맵별 전적</span>
                 <span class="title-count">${escapeHTML(h2hName(a))} 기준</span></div>
             ${h2hMapTableHtml(rows)}
-            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">경기 목록</span>
+            <div class="section-title section-title-spaced" data-en="MATCHES"><span class="section-title-label">최근 전적</span>
                 <span class="title-count">${rows.length.toLocaleString('ko-KR')}경기</span></div>
             ${h2hTableHtml(rows, false)}`
         : '<div class="h2h-empty">이 기간에 맞대결이 없습니다. 기간을 넓혀보세요.</div>'}`;

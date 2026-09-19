@@ -278,6 +278,7 @@ const INDIV_DONUTS = [
 
 function selectPlayer(name) {
     RecordsState.player = name;
+    RecordsState.indivPage = 1;
     setVisible(document.getElementById('indiv-summary-content'), false);
     setVisible(document.getElementById('statContent'), true);
     document.getElementById('indiv-content-title').innerText = `${name}의 전적`;
@@ -329,16 +330,23 @@ function syncIndivFilterUI() {
 
 function setIndivFilter(format) {
     RecordsState.indivFilter = format;
+    RecordsState.indivPage = 1;
     syncIndivFilterUI();
     renderIndivMatchesList('indiv-recent-list', format, 10);
 }
 
 // 좁은 화면에서는 '상대 팀' 칸을 숨기고(style.css의 .col-oppteam) 상대 선수 이름 밑
 // 작은 줄(.cell-subline)로 같은 정보를 보여준다 - 6칸을 5칸으로 줄여 한 화면에 넣는다.
+function setIndivPage(page) {
+    RecordsState.indivPage = page;
+    renderIndivMatchesList('indiv-recent-list', RecordsState.indivFilter, 10);
+}
 function renderIndivMatchesList(containerId, format, limit) {
     let filtered = SiteData.rounds.filter(m => m['우리 선수'] === RecordsState.player);
     if (format !== '전체') filtered = filtered.filter(m => m['형식'] === format);
-    const sliced = limit ? filtered.slice(0, limit) : filtered;
+    const page = RecordsState.indivPage || 1;
+    const sliced = limit ? filtered.slice((page - 1) * limit, page * limit) : filtered;
+    if (containerId === 'indiv-recent-list') document.getElementById('indiv-pagination').innerHTML = matchPaginationHtml(filtered.length, page, limit || 10, 'setIndivPage');
 
     document.getElementById(containerId).innerHTML = sliced.length ? sliced.map(m => `
             <tr class="stat-row">

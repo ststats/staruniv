@@ -1,25 +1,3 @@
-/**
- * 티어표 · 분석 탭: 선수 한 명을 골라 그 선수의 전적을 여러 각도로 뜯어본다.
- * (core.js → page-tier.js → page-h2h.js → 이 파일. 탭을 처음 열 때만 데이터를 읽는다)
- *
- * 화면 구성은 전적 페이지의 개인 프로필(templates/pages/records.html)을 따른다 -
- * 같은 사이트 안에서 "선수 한 명을 보는 화면"은 같은 모양이어야 한다.
- *   큰 프로필 + 티어/종족/소속 + 티어 내 순위 · 자체 레이팅(한 줄)
- *   → 총 전적 → 형식별 승률(도넛) → 종족별 승률(도넛) → 최근 10경기
- *   → 월별 승률 추세 → 맵별 승률 → 동티어 맞대결 → 최근 전적(형식 필터)
- *
- * [데이터] 두 파일을 같이 쓴다. 경기 로그는 상대전적 탭이 쓰는 것을 그대로 재사용한다 -
- * 같은 내용을 두 벌 두면 저장소만 커지고 서로 어긋날 여지가 생긴다.
- *   docs/data/h2h/index.json   - 선수 이름·티어·소속·맵/형식 사전 + 샤드 경계 (page-h2h.js와 공유)
- *   docs/data/h2h/p/<샤드>.json - 선수별 경기 [[날짜, 상대id, 이김(1/0), 맵id, 형식idx], ...] (최신순)
- *   docs/data/elo/index.json   - scripts/generate_elo.py가 계산한 요약
- *                                 { rt:레이팅, tr:티어내순위, ts:티어인원, g:동티어경기수,
- *                                   m,w,l, race, cat, st:연승/연패, lw, ll, last, dm:휴면, up:🚀 }
- * 상대 종족·형식별 집계는 elo/index.json 것을 쓴다(티어표 밖 상대의 종족까지 계산해 둔 값이라
- * 브라우저에서 다시 세면 그만큼 빠진다). 맵·동티어 맞대결·최근 폼은 경기 로그에서 바로 센다.
- */
-
-const ANALYSIS_ELO_URL = 'data/elo/index.json';
 const ANALYSIS_MATCH_STEP = 15;        // 최근 전적 한 번에 보여줄 경기 수
 const ANALYSIS_SUGGEST_STEP = 40;
 const ANALYSIS_FORM_COUNT = 10;        // '최근 10경기'
@@ -44,9 +22,8 @@ const ANALYSIS_CAT_GROUPS = [
 ];
 
 const AnalysisState = {
-    elo: null,
-    loading: null,
     rows: {},              // 선수id -> 경기 로그(최신순)
+    period: 'all',
     picked: null,          // 선수id (null이면 검색 안내 화면)
     query: '',
     suggestOpen: false,
@@ -58,19 +35,7 @@ const AnalysisState = {
 // ---------------------------------------------------------------------------
 // 데이터
 // ---------------------------------------------------------------------------
-async function analysisLoadData() {
-    if (AnalysisState.elo) return AnalysisState.elo;
-    if (!AnalysisState.loading) {
-        // 선수 이름·티어·맵 사전은 상대전적 탭과 같은 파일을 쓴다(h2hLoadIndex가 캐시까지 해준다).
-        AnalysisState.loading = Promise.all([
-            h2hLoadIndex(),
-            fetch(ANALYSIS_ELO_URL, { cache: 'no-cache' })
-                .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); }),
-        ]).then(([, elo]) => { AnalysisState.elo = elo; return elo; })
-          .finally(() => { AnalysisState.loading = null; });
-    }
-    return AnalysisState.loading;
-}
+async function analysisLoadData() { return h2hLoadIndex(); }
 
 // 경기 로그는 상대전적 탭의 샤드를 그대로 쓴다.
 async function analysisLoadPlayer(pid) {
@@ -81,8 +46,37 @@ async function analysisLoadPlayer(pid) {
     return rows;
 }
 
-function analysisElo(pid) {
-    return (AnalysisState.elo && AnalysisState.elo.players[pid]) || null;
+function analysisRows(pid) {
+    const rows = AnalysisState.rows[pid] || [];
+    if (AnalysisState.period === 'all') return rows;
+    const d = new Date(Date.now() - Number(AnalysisState.period) * 86400000);
+    const since = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return rows.filter(r => String(r[0]) >= since);
+}
+function analysisSummary(rows) {
+    const e = {m: rows.length, w: 0, l: 0, cat: {}, race: {}};
+    rows.forEach(r => {
+        const i = r[2] ? 0 : 1;
+        e[r[2] ? 'w' : 'l']++;
+        (e.cat[r[4]] ||= [0, 0])[i]++;
+        const race = (h2hPlayer(String(r[1])) || {}).r || (H2hState.index.otherRaces || {})[r[1]];
+        if (race) (e.race[race] ||= [0, 0])[i]++;
+    });
+    if (rows.length) {
+        const win = rows[0][2];
+        let n = 0;
+        while (n < rows.length && rows[n][2] === win) n++;
+        e.st = {t: win ? 'W' : 'L', n};
+    }
+    return e;
+}
+function analysisSetPeriod(period) {
+    AnalysisState.period = period;
+    AnalysisState.matchShown = ANALYSIS_MATCH_STEP;
+    renderAnalysisBody();
+}
+function analysisPeriodHtml() {
+    return `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="기간 선택">${H2H_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${AnalysisState.period === key ? ' active' : ''}" aria-pressed="${AnalysisState.period === key}" onclick="analysisSetPeriod('${key}')">${label}</button>`).join('')}</div></div>`;
 }
 
 // 이름·티어·소속·종족은 상대전적 index(h2h)에서 가져온다.
@@ -143,15 +137,14 @@ function analysisSuggest(query) {
 
 function analysisSuggestItemsHtml(list) {
     return list.map(p => {
-        const e = analysisElo(p.pid);
         return `
         <button type="button" class="h2h-suggest-item" onclick="analysisPick('${jsAttr(p.pid)}')">
             ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
             <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
             ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
             ${p.r ? raceBadgeHtml(p.r) : ''}
-            <span class="h2h-suggest-team">${escapeHTML([p.t !== undefined && p.t !== '' ? tierLabel(p.t) : '', p.tm || ''].filter(Boolean).join(' · '))}</span>
-            <span class="h2h-suggest-count">${e && e.tr ? `티어 ${e.tr}위` : `${(p.m || 0).toLocaleString('ko-KR')}판`}</span>
+            ${playerBadgesHtml({...p, r: ""})}
+            <span class="h2h-suggest-count">${(p.m || 0).toLocaleString("ko-KR")}판</span>
         </button>`;
     }).join('');
 }
@@ -200,67 +193,7 @@ document.addEventListener('click', e => {
 // 머리 카드 (전적 페이지의 .profile-head와 같은 틀)
 // ---------------------------------------------------------------------------
 function analysisHeadHtml(pid, p, e) {
-    const rate = analysisRate(e.w, e.l);
-    const tierName = (p.t !== undefined && p.t !== '') ? tierLabel(p.t) : '미분류';
-    const rankText = e.tr
-        ? `<strong>${e.tr}</strong><small>위 / ${e.ts}명</small>`
-        : (e.lo ? '<small>표본 부족</small>' : '<small>순위 없음</small>');
-    return `
-        <div class="clean-card profile-head analysis-head p-4">
-            <button type="button" class="h2h-card-clear analysis-close" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>
-            <div class="profile-avatar analysis-avatar">${avatarHtml(p.s || '', 'analysis-avatar-img')}</div>
-            <div class="profile-head-id analysis-head-id">
-                <h3 class="fw-bold m-0 mb-2 profile-name">${escapeHTML(p.n)}${e.up ? '<span class="analysis-rise" title="최근 폼이 눈에 띄게 올라왔습니다">🚀</span>' : ''}</h3>
-                <div class="d-flex gap-2 flex-wrap align-items-center">
-                    ${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierName)}</span>` : ''}
-                    ${p.r ? raceBadgeHtml(p.r) : ''}
-                    ${p.tm ? `<span class="tag-badge">${escapeHTML(p.tm)}</span>` : ''}
-                    ${e.dm ? '<span class="tag-badge analysis-dormant-badge">휴면</span>' : ''}
-                    ${e.lo && !e.dm ? `<span class="tag-badge analysis-dormant-badge">표본 부족</span>` : ''}
-                </div>
-                <div class="analysis-rating-line">
-                    자체 레이팅 <strong>${e.rt.toLocaleString('ko-KR')}</strong>
-                    <span class="analysis-rating-note">${e.g
-                        ? `같은 ${escapeHTML(tierName)} 상대 ${(e.op || 0).toLocaleString('ko-KR')}명 · ${e.g.toLocaleString('ko-KR')}경기 기준`
-                        : '같은 티어 상대 경기가 없어 기본 점수입니다'}</span>
-                    <button type="button" class="analysis-help" onclick="analysisToggleHelp()" aria-label="레이팅 설명">?</button>
-                </div>
-            </div>
-            <div class="profile-head-stats analysis-head-stats">
-                <div class="profile-head-stat">
-                    <div class="profile-head-label">${escapeHTML(tierName)} 순위</div>
-                    <div class="profile-head-value">${rankText}</div>
-                </div>
-                <div class="profile-head-stat">
-                    <div class="profile-head-label">총 전적</div>
-                    <div class="profile-head-value">${(e.m || 0).toLocaleString('ko-KR')}<small>전</small></div>
-                    <div class="profile-head-note">${analysisWlText(e.w, e.l)}</div>
-                </div>
-                <div class="profile-head-stat">
-                    <div class="profile-head-label">WIN RATE</div>
-                    <div class="profile-head-value profile-head-rate">${rate === null ? '-' : `${rate}%`}</div>
-                </div>
-            </div>
-        </div>
-        <div class="analysis-help-box" id="analysis-help" hidden>
-            <p><strong>티어와는 다른 줄자입니다.</strong> 티어가 "어느 등급에 속해 있는가"라면, 이 점수는
-            <strong>같은 티어 안에서 지금 어느 정도인가</strong>를 봅니다. 그래서 점수 옆에 늘 경기 수를 같이 적습니다 —
-            12승 3패(80%)와 120승 60패(67%)는 같은 무게가 아니니까요.</p>
-            <p>① 같은 티어끼리 붙은 경기만, ② 그것도 <strong>지금 티어로 올라온 뒤</strong>의 경기만 셉니다.
-            ③ 기간을 자르는 대신 반감기로 기울입니다(스폰 ${(AnalysisState.elo.halfLifeDays || 90)}일,
-            대회·대학대전 같은 중요 경기는 ${(AnalysisState.elo.importantHalfLifeDays || 540)}일).
-            ④ 형식마다 무게가 다릅니다(개인·대회 2.5 &gt; 대학 2 &gt; 미니·리그·CK 1.5 &gt; 스폰 1).</p>
-            <p>⑤ 같은 날 여러 판은 다전제 한 경기로 묶고, <strong>이미 여러 번 만난 상대는 가중을 낮춥니다</strong> —
-            같은 사람을 반복해 이긴 것보다 여러 상대를 이긴 쪽을 높게 봅니다.
-            ⑥ 표본이 적으면 기준점 ${(AnalysisState.elo.initialRating || 1500).toLocaleString('ko-KR')}점 쪽에 가깝게 두고,
-            동티어 ${(AnalysisState.elo.minRankedGames || 10)}경기에 못 미치면 순위를 매기지 않고 '표본 부족'으로 표시합니다.
-            최근 ${(AnalysisState.elo.dormantDays || 50)}일간 경기가 없으면 휴면입니다.</p>
-        </div>`;
-}
-
-function analysisToggleHelp() {
-    const box = document.getElementById('analysis-help');
-    if (box) box.hidden = !box.hidden;
+    return playerSummaryHtml(p, {total: e.m, win: e.w, lose: e.l}, '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>');
 }
 
 // ---------------------------------------------------------------------------
@@ -319,7 +252,7 @@ function analysisRaceHtml(e) {
 // 배지는 사이트 공용 .match-badge(노치 사각형)를 그대로 쓴다.
 function analysisFormHtml(rows, e) {
     if (!rows.length) return '';
-    const recent = rows.slice(0, ANALYSIS_FORM_COUNT);   // 로그가 최신순이다
+    const recent = rows.slice(0, ANALYSIS_FORM_COUNT).reverse();   // 로그가 최신순이다
     const w = recent.filter(r => r[2]).length;
     const streak = e.st && e.st.n
         ? ` · <span class="${e.st.t === 'W' ? 'h2h-win' : 'h2h-lose'}">${e.st.t === 'W' ? `${e.st.n}연승` : `${e.st.n}연패`}</span>`
@@ -549,9 +482,9 @@ function analysisMatchesHtml(rows) {
 // ---------------------------------------------------------------------------
 function analysisProfileHtml(pid) {
     const p = analysisInfo(pid);
-    const e = analysisElo(pid);
+    const rows = analysisRows(pid);
+    const e = analysisSummary(rows);
     if (!p || !e) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다.</div>';
-    const rows = AnalysisState.rows[pid] || [];
     return `
         ${analysisHeadHtml(pid, p, e)}
         ${analysisFormHtml(rows, e)}
@@ -569,16 +502,16 @@ function analysisProfileHtml(pid) {
 
 function analysisEmptyHtml() {
     return `
-        <div class="analysis-placeholder">
-            <span class="analysis-placeholder-title">선수를 검색해주세요</span>
-            <span class="analysis-placeholder-sub">이름 · 대학으로 찾으면 그 선수의 전적을 자세히 보여줍니다</span>
+        <div class="h2h-empty">
+            <span class="h2h-empty-title">선수를 검색해주세요</span>
+            <span class="h2h-empty-sub">이름 · 대학으로 검색</span>
         </div>`;
 }
 
 function renderAnalysisBody() {
     const box = document.getElementById('analysis-body');
     if (!box) return;
-    box.innerHTML = AnalysisState.picked ? analysisProfileHtml(AnalysisState.picked) : analysisEmptyHtml();
+    box.innerHTML = analysisPeriodHtml() + (AnalysisState.picked ? analysisProfileHtml(AnalysisState.picked) : analysisEmptyHtml());
 }
 
 async function analysisPick(pid) {
@@ -636,13 +569,13 @@ async function analysisEnter() {
         return;
     }
     const updated = document.getElementById('analysis-updated');
-    if (updated && AnalysisState.elo.syncedAt) {
-        updated.textContent = `${String(AnalysisState.elo.syncedAt).slice(0, 10).replace(/-/g, '.')} 기준`;
+    if (updated && H2hState.index.syncedAt) {
+        updated.textContent = `${String(H2hState.index.syncedAt).slice(0, 10).replace(/-/g, '.')} 기준`;
     }
 
     const params = new URLSearchParams(location.search);
     const wanted = params.get('p');
-    if (wanted && analysisElo(wanted)) {
+    if (wanted && analysisInfo(wanted)) {
         await analysisPick(wanted);
         return;
     }

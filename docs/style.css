@@ -4349,121 +4349,6 @@ body.media-lightbox-open { overflow: hidden; }
 
 /* 분석 탭 - 전적 페이지의 개인 프로필과 같은 틀을 쓰고, 분석 전용 부품만 여기서 더한다 */
 
-/* 선수를 고르기 전 안내판. 흰 카드로 두면 검색창과 구분이 안 가서 페이지 머리와 같은
-   네이비 사선 면으로 세운다(검색창과는 간격을 띄운다). */
-.analysis-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 180px;
-    margin-top: 22px;
-    padding: 32px 20px;
-    background-color: var(--navy);
-    background-image: var(--navy-pattern);
-    clip-path: var(--cut-12);
-    text-align: center;
-}
-.analysis-placeholder-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--navy-on-text);
-}
-.analysis-placeholder-sub { font-size: 12px; color: var(--navy-on-muted); }
-
-/* 머리 카드: .profile-head를 그대로 쓰되 사진을 키우고, 오른쪽 통계가 아래로 밀리지 않게
-   가운데 블록이 남는 폭을 먹게 한다(예전엔 줄바꿈이 나면서 오른쪽이 텅 비었다). */
-.analysis-head {
-    position: relative;
-    /* .profile-head 자체에는 display가 없다(전적 페이지는 마크업에서 부트스트랩 d-flex를
-       붙여 쓴다). 여기서는 클래스 하나로 끝나게 직접 지정한다. */
-    display: flex;
-    gap: 22px;
-    margin-top: 22px;
-    margin-bottom: 14px;
-    /* .profile-head 기본값은 wrap이다. 그대로 두면 레이팅 줄이 길어질 때 오른쪽 통계가
-       통째로 아랫줄로 떨어지면서 카드 오른쪽이 텅 빈다 - 한 줄로 고정하고, 가운데 블록이
-       줄어들게 한다(좁은 화면에서는 아래 미디어쿼리가 다시 세로로 쌓는다). */
-    flex-wrap: nowrap;
-    align-items: center;
-    padding-right: 52px;      /* 오른쪽 위 ✕와 글자가 겹치지 않게 */
-}
-.analysis-avatar {
-    width: 92px;
-    height: 92px;
-    flex: none;
-    font-size: 36px;
-}
-.analysis-avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: inherit;
-}
-.analysis-head-id { flex: 1 1 auto; min-width: 0; }
-.analysis-head-stats {
-    flex: none;
-    gap: 26px;
-    align-items: flex-end;
-    white-space: nowrap;
-}
-.analysis-head-stats .profile-head-value small { font-weight: 600; }
-.profile-head-note {
-    margin-top: 3px;
-    font-size: 11px;
-    color: var(--panel-muted);
-    font-family: "Pretendard", sans-serif;
-}
-/* 닫기(✕)는 상대전적 카드와 같은 부품을 쓰되, 손가락으로도 눌리게 과녁을 키운다 */
-.analysis-close {
-    width: 34px;
-    height: 34px;
-    top: 10px;
-    right: 10px;
-    font-size: 14px;
-    z-index: 2;
-}
-.analysis-rise { margin-left: 6px; font-size: 18px; }
-.analysis-rating-line {
-    margin-top: 12px;
-    font-size: var(--fs-body);
-    color: var(--panel-muted);
-}
-.analysis-rating-line strong {
-    margin-right: 2px;
-    color: var(--panel-text);
-    font-size: 17px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-}
-.analysis-rating-note { font-size: 12px; }
-.analysis-dormant-badge { background: var(--color-bg-subtle); color: var(--color-text-faint); }
-.analysis-help {
-    width: 18px;
-    height: 18px;
-    margin-left: 4px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.14);
-    color: var(--panel-text);
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 18px;
-}
-.analysis-help:hover { background: rgba(255, 255, 255, 0.26); }
-.analysis-help-box {
-    margin-bottom: var(--space-block-gap);
-    padding: 14px 16px;
-    background: var(--color-bg-subtle);
-    clip-path: var(--cut-8);
-    font-size: 12px;
-    color: var(--color-text-sub);
-}
-.analysis-help-box p { margin: 0; }
-.analysis-help-box p + p { margin-top: 6px; }
-
 /* 최근 폼: W/L 배지 한 줄 (사이트 공용 .match-badge를 그대로 쓴다) */
 .analysis-formline {
     display: flex;
@@ -4536,11 +4421,8 @@ body.media-lightbox-open { overflow: hidden; }
 .analysis-legend-dot.is-lose { background: var(--color-lose); }
 .analysis-legend-line { width: 14px; height: 2px; background: var(--color-text-main); }
 
-/* 좁은 화면: 3칸 격자는 휴대폰에서 글자가 뭉개진다 - 2칸으로 접고 머리 카드도 세로로 쌓는다 */
+/* 좁은 화면의 분석 필터와 도넛 배치 */
 @media (max-width: 767.98px) {
-    /* 좁아지면 오른쪽 통계를 아래로 내려 가로 스크롤이 생기지 않게 한다 */
-    .analysis-head { flex-wrap: wrap; align-items: flex-start; padding-right: 44px; }
-    .analysis-head-stats { width: 100%; margin-left: 0; text-align: left; justify-content: flex-start; }
     /* 최근 전적 형식 필터: 제목과 같은 줄에 두면 폭이 200px도 안 돼 옆으로 밀린다.
        한 줄을 통째로 내줘서 칩이 그대로 다 보이게 한다. */
     #view-tier-analysis .record-recent-header { grid-template-columns: minmax(0, 1fr) max-content; }
@@ -4552,11 +4434,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 @media (max-width: 575.98px) {
     .analysis-donut-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .analysis-head { gap: 14px; }
-    .analysis-avatar { width: 68px; height: 68px; }
-    .analysis-head-stats { width: 100%; margin-left: 0; text-align: left; gap: 20px; align-items: flex-start; }
-    .analysis-formline-sum { margin-left: 0; width: 100%; }
-}
+    .analysis-formline-sum { margin-left: 0; }
 }
 
 
@@ -5786,4 +5664,50 @@ html[data-theme="dark"] .mv-order-row {
         padding: 34px 24px 56px;
         background-image: var(--hero-glow), var(--navy-pattern);
     }
+}
+
+.player-summary { position:relative; display:flex; align-items:center; flex-wrap:nowrap; gap:16px; padding:24px 30px 24px 20px; margin-bottom:14px; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--cut-12); }
+.player-summary-avatar { flex:none; width:76px; height:76px; border-radius:50%; overflow:hidden; display:grid; place-items:center; }
+.player-summary-avatar img,.player-summary-image { width:100%; height:100%; object-fit:cover; }
+.player-summary-id { flex:1; min-width:0; text-align:left; }
+.player-summary-name { margin:0 0 6px; font-size:24px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.player-summary-badges { display:flex; gap:4px; flex-wrap:nowrap; white-space:nowrap; }
+.player-summary-badges .tag-badge { font-size:11px; padding:2px 5px; }
+.player-summary-position { margin-top:6px; font-size:12px; color:var(--navy-on-muted); }
+.player-summary-stats { flex:none; text-align:right; white-space:nowrap; }
+.player-summary-total { font-size:11px; color:var(--navy-on-muted); }
+.player-summary-wl { margin:5px 0; font-size:18px; font-weight:700; }
+.player-summary-rate { color:#68b5ff; font-size:20px; font-weight:800; }
+.player-summary .h2h-card-clear { color:var(--navy-on-muted); top:3px; right:3px; }
+.h2h-empty { background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-muted); }
+.h2h-empty-title { color:var(--navy-on-text); }
+.h2h-empty-sub { color:var(--navy-on-muted); }
+#analysis-search { margin-bottom:22px; }
+.match-pagination { display:flex; justify-content:center; gap:5px; margin:18px 0; }
+.match-page { border:0; min-width:30px; height:32px; background:var(--color-card); color:var(--color-text-main); }
+.match-page.active { background:var(--navy); color:#fff; }
+.match-page:disabled { opacity:.35; }
+.analysis-formline { flex-wrap:nowrap; gap:8px; }
+.analysis-formline-label { flex:none; white-space:nowrap; }
+.analysis-formline-badges { flex-wrap:nowrap; min-width:0; }
+.analysis-formline-sum { width:auto; }
+@media (max-width:767.98px) {
+ .player-summary { gap:8px; padding:18px 22px 18px 10px; }
+ .player-summary-avatar { width:48px; height:60px; border-radius:8px; }
+ .player-summary-name { font-size:20px; }
+ .player-summary-badges { gap:2px; }
+ .player-summary-badges .tag-badge { font-size:9px; padding:2px 3px; }
+ .player-summary-wl { font-size:14px; }
+ .player-summary-rate { font-size:17px; }
+ .player-summary-total { font-size:10px; }
+ .analysis-formline { padding:10px 6px; gap:5px; }
+ .analysis-formline-label { font-size:10px; }
+ .analysis-formline-badges { gap:2px; flex:1; }
+ .analysis-formline-badges .match-badge { flex:1; min-width:0; width:18px; font-size:9px; }
+ .analysis-formline-sum { font-size:9px; margin-left:auto; }
+ .h2h-map-rec { white-space:nowrap; font-size:10px; }
+ .h2h-maps { grid-template-columns:minmax(0,1fr); }
+ .h2h-suggest-item { gap:4px; }
+ .h2h-suggest-alt,.h2h-suggest-count { display:none; }
+ .h2h-suggest-item .tag-badge { font-size:10px; padding:2px 4px; }
 }

@@ -833,3 +833,23 @@ function bootPage(init, opts) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
 }
+
+function playerBadgesHtml(p) {
+    return `${p.r ? raceBadgeHtml(p.r) : ''}${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}${p.tm ? `<span class="tag-badge">${escapeHTML(p.tm)}</span>` : ''}`;
+}
+function playerSummaryHtml(p, rec, close = '') {
+    return `<div class="player-summary">
+        <div class="player-summary-avatar">${avatarHtml(p.s || '', 'player-summary-image')}</div>
+        <div class="player-summary-id"><div class="player-summary-name">${escapeHTML(p.n)}</div>
+        <div class="player-summary-badges">${playerBadgesHtml(p)}</div><div class="player-summary-position">?티어 ?위</div></div>
+        <div class="player-summary-stats"><div class="player-summary-total">총 전적 ${rec.total.toLocaleString('ko-KR')}전</div>
+        <div class="player-summary-wl">${rec.win}승 ${rec.lose}패</div>
+        <div class="player-summary-rate">${rec.total ? `${Math.round(rec.win / rec.total * 1000) / 10}%` : '-'}</div></div>${close}</div>`;
+}
+function matchPaginationHtml(total, page, size, handler) {
+    const count = Math.max(1, Math.ceil(total / size));
+    const start = Math.floor((page - 1) / 5) * 5 + 1;
+    const end = Math.min(count, start + 4);
+    const button = (n, label, disabled = false) => `<button type="button" class="match-page${n === page && label === String(n) ? ' active' : ''}" ${disabled ? 'disabled' : `onclick="${handler}(${n})"`} ${n === page && label === String(n) ? 'aria-current="page"' : ''}>${label}</button>`;
+    return `<nav class="match-pagination" aria-label="최근 전적 페이지">${button(page - 1, '&lt;', page === 1)}${start > 1 ? button(start - 1, '…') : ''}${Array.from({length: end - start + 1}, (_, i) => button(start + i, String(start + i))).join('')}${end < count ? button(end + 1, '…') : ''}${button(page + 1, '&gt;', page === count)}</nav>`;
+}

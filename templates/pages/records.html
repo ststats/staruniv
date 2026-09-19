@@ -123,31 +123,19 @@
             {#- [리디자인] 선수 머리 카드. 시안에서는 흰 카드가 아니라 잉크 면이고,
                 오른쪽에 합계가 붙는다. 합계는 대회 + 대학만 센다(미니·CK는 성격이 달라
                 한 숫자로 묶으면 의미가 흐려진다) - page-records.js의 selectPlayer가 채운다. #}
-            <div class="clean-card profile-head d-flex align-items-center mb-block p-4">
-                <div class="profile-avatar" id="p-avatar">👤</div>
-                <div class="profile-head-id">
-                    <h3 class="fw-bold m-0 mb-2 profile-name" id="p-name">이름</h3>
-                    <div class="d-flex gap-2">
-                        <span class="tag-badge" id="p-tier">티어</span>
-                        <span class="tag-badge" id="p-race">종족</span>
-                    </div>
-                </div>
-                <div class="profile-head-stats">
-                    <div class="profile-head-stat">
-                        <div class="profile-head-label">대회 + 대학</div>
-                        <div class="profile-head-value" id="p-total-wl">-</div>
-                    </div>
-                    <div class="profile-head-stat">
-                        <div class="profile-head-label">WIN RATE</div>
-                        <div class="profile-head-value profile-head-rate" id="p-total-rate">-</div>
-                    </div>
-                </div>
+            <div class="player-summary mb-block">
+                <div class="player-summary-avatar" id="p-avatar">👤</div>
+                <div class="player-summary-id"><h3 class="player-summary-name" id="p-name">이름</h3>
+                    <div class="player-summary-badges"><span class="tag-badge" id="p-race">종족</span><span class="tag-badge" id="p-tier">티어</span></div>
+                    <div class="player-summary-position">?티어 ?위</div></div>
+                <div class="player-summary-stats"><div class="player-summary-total">대회 + 대학</div>
+                    <div class="player-summary-wl" id="p-total-wl">-</div><div class="player-summary-rate" id="p-total-rate">-</div></div>
             </div>
 
             <div class="row g-3 mb-block">
                 <div class="col-md-6">
-                    <div class="clean-card h-100 p-3">
-                        <div class="section-title-sm" data-en="BY FORMAT">형식별 승률</div>
+                    <div class="section-title" data-en="BY FORMAT"><span class="section-title-label">형식별 승률</span></div>
+                    <div class="clean-card p-3">
                         <div class="donut-wrap">
                             <div class="donut-box"><div class="donut" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label">대회</div><div class="donut-sub" id="dw-fmt-1">-</div></div>
                             <div class="donut-box"><div class="donut" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label">대학</div><div class="donut-sub" id="dw-fmt-2">-</div></div>
@@ -156,8 +144,8 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="clean-card h-100 p-3">
-                        <div class="section-title-sm" data-en="BY MATCHUP">종족전 승률</div>
+                    <div class="section-title" data-en="BY MATCHUP"><span class="section-title-label">종족전 승률</span></div>
+                    <div class="clean-card p-3">
                         <div class="donut-wrap">
                             <div class="donut-box"><div class="donut" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label donut-label-t">vs T</div><div class="donut-sub" id="dw-race-t">-</div></div>
                             <div class="donut-box"><div class="donut" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label donut-label-z">vs Z</div><div class="donut-sub" id="dw-race-z">-</div></div>
@@ -176,7 +164,6 @@
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('미니')">미니</div>
                         <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('CK')">CK</div>
                     </div>
-                <button class="btn-view-all" onclick="openIndivMatchModal()">전체 보기 <span class="i-arrow" aria-hidden="true"></span></button>
             </div>
 
             <div class="clean-card p-0 overflow-hidden">
@@ -196,6 +183,7 @@
                     </table>
                 </div>
             </div>
+            <div id="indiv-pagination"></div>
         </div>
             </div>{#- /.selection-content #}
         </div>{#- /.selection-layout #}

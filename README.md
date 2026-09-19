@@ -14,7 +14,6 @@ eloboard.co.kr ───┼──> data/*.json (원본) ──> scripts/*.py ─
 1. **구글 시트 → `data/db.json`** ([scripts/update_data.py](scripts/update_data.py)) - 설정/팀/멤버/매치/라운드/티어멤버 시트를 통합
 2. **eloboard 전적 → `data/eloboard.json`** ([scripts/sync_eloboard.py](scripts/sync_eloboard.py)) - 최초 1회 전체 수집, 이후 증분(매일 몇십 건)
 3. **상대전적 파일 생성** ([scripts/build_h2h.py](scripts/build_h2h.py)) - `docs/data/h2h/`로 선수 단위 분리(아래 참고)
-4. **자체 레이팅 계산** ([scripts/generate_elo.py](scripts/generate_elo.py)) → `docs/data/elo/index.json` (티어표 '분석' 탭이 쓰는 요약. 경기 로그는 3번 산출물을 그대로 재사용한다)
 5. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
 6. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
 7. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
@@ -71,22 +70,6 @@ Actions 탭에서 **Squash Git History** 워크플로를 손으로 실행하세�
 돌리지 않고, 실수 방지를 위해 `SQUASH`를 직접 입력해야 실행됩니다. 자세한 내용은
 [.github/workflows/squash-history.yml](.github/workflows/squash-history.yml) 참고.
 실행 후에는 이 저장소를 이미 clone/fork한 사람 모두 다시 clone해야 합니다.
-
-### 자체 레이팅 산정 기준
-티어표 '분석' 탭의 레이팅은 **티어와는 다른 줄자**입니다. 티어가 "어느 등급에 속해 있는가"라면
-이 점수는 **같은 티어 안에서 지금 어느 정도인가**를 봅니다(그래서 점수 옆에 늘 경기 수를 같이 적습니다 —
-12승 3패와 120승 60패는 같은 무게가 아니니까요). 여섯 가지 규칙으로 계산합니다.
-
-1. 같은 티어끼리 붙은 경기만 셉니다(티어 간 대전은 전체의 5%도 안 돼 섞으면 척도가 흔들립니다).
-2. 시트의 'N티어 승급' 날짜를 읽어 **지금 티어로 올라온 뒤**의 경기만 셉니다.
-3. 기간을 자르는 대신 반감기로 기울입니다(스폰 90일, 대회·대학대전 같은 중요 경기 540일).
-4. 형식마다 무게가 다릅니다(개인·대회 2.5 > 대학 2 > 미니·리그·CK 1.5 > 스폰 1).
-5. 같은 날 여러 판은 다전제 한 경기로 묶고, 이미 여러 번 만난 상대는 가중을 낮춥니다
-   (우리 데이터는 한 상대와만 수백 경기인 경우가 흔해서 "몇 판 이겼나"보다 "몇 명을 이겼나"를 봅니다).
-6. 표본이 적으면 기준점(1500)에 가깝게 두고(베이즈 수축), 동티어 10경기 미만은 순위를 매기지 않고
-   '표본 부족'으로 표시합니다. 최근 50일간 경기가 없으면 휴면으로 보고 순위 모집단에서 뺍니다.
-
-상수와 근거는 [scripts/generate_elo.py](scripts/generate_elo.py) 상단 docstring에 정리돼 있습니다.
 
 ### admin.html 보안 주의
 `docs/admin.html`은 GitHub Pages로 공개된 페이지지만, 여기서 입력한 GitHub 토큰으로

@@ -2,7 +2,7 @@
 {% block content %}
 <section id="page-tier" class="page-section active">
     <div class="page-header">
-        <div class="page-header-main" data-label="STARCRAFT RANKING">
+        <div class="page-header-main" data-label="STARCRAFT TIERS">
             <h1 class="page-header-title">티어표</h1>
             {#- 명단 출처를 밝혀둔다. 이 표는 우리가 매기는 게 아니라 시너지가 매일 정리해
                 공개하는 것을 그대로 읽어온다. -#}
@@ -66,9 +66,6 @@
         <div id="h2h-result"><div class="h2h-empty">불러오는 중...</div></div>
     </div>
 
-    {#- 분석: 선수 한 명을 골라 그 선수의 전적을 여러 각도로 뜯어본다(전적 페이지의 개인
-        프로필과 같은 틀). 요약은 docs/data/elo/index.json(scripts/generate_elo.py),
-        경기 로그는 상대전적 탭이 쓰는 docs/data/h2h/ 를 그대로 재사용한다. -#}
     <div id="view-tier-analysis" class="d-none">
         <div class="section-title" data-en="ANALYSIS">
             <span class="section-title-label">분석</span>
