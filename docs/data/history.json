@@ -37,6 +37,71 @@
       "youtube": "https://youtu.be/Wee70wXys_c?si=5ZijExlkYo-_xEzz",
       "image": "",
       "ord": 0
+    },
+    {
+      "id": "h-mu8l836x",
+      "date": "2024-09-08",
+      "type": "event",
+      "title": "첫 대학대전",
+      "desc": "",
+      "members": [
+        "앵지",
+        "강덕구",
+        "졈니",
+        "토마토",
+        "치리",
+        "디임",
+        "모리"
+      ],
+      "youtube": "https://youtu.be/fOt_dRg5C_Y?si=WSLgxGmfRFNQKx2W",
+      "image": ""
+    },
+    {
+      "id": "h-mu8lfnto",
+      "date": "2024-09-14",
+      "type": "broadcast",
+      "title": "추석특집 전부치기",
+      "desc": "",
+      "members": [
+        "강덕구",
+        "김윤환",
+        "이경민",
+        "몽군",
+        "디임",
+        "토마토",
+        "졈니",
+        "치리",
+        "모리",
+        "임조이",
+        "효짱",
+        "한쪼니"
+      ],
+      "youtube": "https://youtu.be/YBYHN2ZmGzA?si=z_Cgcpf19wHFqpZ3",
+      "image": ""
+    },
+    {
+      "id": "h-mu8ljyfb",
+      "date": "2024-10-08",
+      "type": "broadcast",
+      "title": "알탕즈 낚시방송",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "몽군",
+        "수입뿌드"
+      ],
+      "youtube": "https://youtu.be/33PqXjSe-Wo?si=rAVAfB_pAAjEoXwB",
+      "image": ""
+    },
+    {
+      "id": "h-mu8ll7n0",
+      "date": "2024-10-16",
+      "type": "broadcast",
+      "title": "첫 MT",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/_1FjsDpUf0s?si=i3-F8UKCQIa1izlq",
+      "image": ""
     }
   ],
   "overrides": {
