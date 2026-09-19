@@ -3395,8 +3395,7 @@ body.media-lightbox-open { overflow: hidden; }
 .member-card-media .member-profile-media .member-avatar-img {
     width: 52px;
     height: 52px;
-    border-radius: 0;
-    clip-path: var(--cut-5);
+    border-radius: 50%;
 }
 /* 멤버 카드 본문은 티어 카드 본문(.tier-card-body)을 같이 쓰고 여백만 바꾼다 */
 .member-card .member-card-body { padding: var(--space-card-pad-y) var(--space-card-pad-x) 0; }
@@ -3430,7 +3429,8 @@ body.media-lightbox-open { overflow: hidden; }
     transform: translateY(-50%);
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 0;
+    clip-path: var(--cut-5);
     border: none;
     background: rgba(0, 0, 0, 0.4);
     color: #fff;
