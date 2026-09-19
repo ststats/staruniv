@@ -205,6 +205,17 @@ def build_pairs(rows, cats, today):
     return wi, li, ww, order, wsum, last_day
 
 
+def ranking_scores(theta, wi, li, ww, lam):
+    """현재 순위와 월별 그래프가 공유하는 최종 레이팅(불확실성 차감)."""
+    d = np.clip(theta[wi] - theta[li], -60, 60)
+    p_hat = 1.0 / (1.0 + np.exp(-d))
+    info = ww * p_hat * (1.0 - p_hat)
+    prec = lam.copy()
+    np.add.at(prec, wi, info)
+    np.add.at(prec, li, info)
+    return theta - SE_PENALTY / np.sqrt(prec)
+
+
 def solve_at(rows, cats, as_of, players, t_pos, n_tiers):
     """as_of 시점까지의 경기만으로 한 번 맞춘다. 반환: (선수id -> 점수) 사전.
 
@@ -222,6 +233,7 @@ def solve_at(rows, cats, as_of, players, t_pos, n_tiers):
     lam = np.where(unranked, 1.0 / SIGMA_UNRANKED ** 2, 1.0 / SIGMA_DELTA ** 2)
     m, delta = fit(wi[keep], li[keep], ww[keep], tier_idx, lam, n, n_tiers)
     theta = m[tier_idx] + delta
+    score = ranking_scores(theta, wi[keep], li[keep], ww[keep], lam)
 
     cutoff = (as_of - dt.timedelta(days=RECENT_DAYS)).isoformat()
     out = {}
@@ -231,7 +243,7 @@ def solve_at(rows, cats, as_of, players, t_pos, n_tiers):
             continue
         if last_day.get(k, '') < cutoff:
             continue
-        out[pid] = round(float(theta[k]) * SCORE_SCALE + SCORE_BASE)
+        out[pid] = round(float(score[k]) * SCORE_SCALE + SCORE_BASE, 1)
     return out
 
 
@@ -360,14 +372,7 @@ def main():
 
     # 추정의 표준오차. 로지스틱 로그가능도의 대각 헤시안이 prior 정밀도 + Σ w·p(1-p)다.
     # 많이 둘수록 커지고(=확신), 표준오차는 그 역제곱근이다.
-    d = np.clip(theta[wi] - theta[li], -60, 60)
-    p_hat = 1.0 / (1.0 + np.exp(-d))
-    info = ww * p_hat * (1.0 - p_hat)
-    prec = lam.copy()
-    np.add.at(prec, wi, info)
-    np.add.at(prec, li, info)
-    se = 1.0 / np.sqrt(prec)
-    score = theta - SE_PENALTY * se        # 순위는 이 보수 추정으로 매긴다
+    score = ranking_scores(theta, wi, li, ww, lam)
 
     # 최근 RECENT_DAYS 안에 실제로 몇 판 뒀는지(가중치 없는 날것). 눈에 보이는 문턱이라
     # 가중치가 아니라 판 수 그대로 센다.
@@ -401,6 +406,10 @@ def main():
             skipped_thin += 1
             continue
         ranked.setdefault(t, []).append((score[k], pid))
+        # 어드민에 같은 적합 결과의 실력 추정치와 보수적 순위 점수를 함께 표시한다.
+        # 정렬에는 반올림 전 score를 그대로 쓴다.
+        entry['rawRating'] = round(float(theta[k]) * SCORE_SCALE + SCORE_BASE, 1)
+        entry['rating'] = round(float(score[k]) * SCORE_SCALE + SCORE_BASE, 1)
 
     tier_sizes = {}
     for t, lst in ranked.items():
@@ -412,8 +421,11 @@ def main():
     # 다시 돌릴 때 옛 순위가 남지 않게, 이번에 순위를 못 받은 사람은 지운다.
     ranked_ids = {pid for lst in ranked.values() for _s, pid in lst}
     for pid, entry in players.items():
+        entry.pop('rankScore', None)
         if pid not in ranked_ids:
             entry.pop('k', None)
+            entry.pop('rawRating', None)
+            entry.pop('rating', None)
 
     index['ranking'] = {
         'asOf': today.isoformat(),

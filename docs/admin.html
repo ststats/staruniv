@@ -493,7 +493,7 @@ body {
 .admin-cancel-btn:hover { background: var(--color-text-sub); }
 .admin-ranking-group { margin-bottom:24px; }
 .admin-ranking-table-wrap { overflow-x:auto; background:var(--color-card); clip-path:var(--cut-12); }
-.admin-ranking-table { width:100%; min-width:520px; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+.admin-ranking-table { width:100%; min-width:720px; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
 .admin-ranking-table th, .admin-ranking-table td { padding:13px 16px; border-bottom:1px solid var(--panel-line); text-align:left; white-space:nowrap; }
 .admin-ranking-table th { background:var(--color-bg-subtle); color:var(--color-text-sub); font-size:11px; }
 .admin-ranking-table td:first-child { width:70px; font-weight:800; }
@@ -921,11 +921,11 @@ body {
         const ranked = Object.values(data.players).filter(p => Number.isInteger(p.k) && p.k > 0 && ADMIN_RANKING_TIERS.includes(String(p.t)));
         const meta = data.ranking;
         const tiers = ADMIN_RANKING_TIERS.filter(t => ranked.some(p => String(p.t) === t));
-        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 같은 티어 안에서의 순위입니다. 경기 형식·최근성·표본 수를 반영하며, 휴면 선수와 최근 ${meta.recentDays}일 ${meta.minRecentGames}경기 미만 선수는 순위에서 제외합니다. 전적과 승률은 수집된 전체 기간 기준입니다.`;
+        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 같은 티어 안에서의 순위입니다. 경기 형식·최근성·표본 수를 반영하며, 휴면 선수와 최근 ${meta.recentDays}일 ${meta.minRecentGames}경기 미만 선수는 순위에서 제외합니다. 보정 전 점수는 추정 실력이며, 레이팅은 불확실성까지 반영한 최종 점수입니다. 순위는 반올림 전 레이팅 기준이며, 서로 다른 티어의 점수는 직접 비교하지 않습니다. 전적과 승률은 수집된 전체 기간 기준입니다.`;
         const html = tiers.map(t => {
             const players = ranked.filter(p => String(p.t) === t).sort((a, b) => a.k - b.k);
             if (!players.length) return '';
-            return `<section class="admin-ranking-group"><div class="section-title"><span class="section-title-label">${adminRankingTierLabel(t)} · ${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th scope="col">순위</th><th scope="col">선수</th><th scope="col">종족</th><th scope="col">소속</th><th scope="col">전체 전적</th><th scope="col">승률</th></tr></thead><tbody>${players.map(p => `<tr data-top="${p.k <= 3}"><td>${p.k}<small>위</small></td><td>${escapeHTML(p.n || '—')}</td><td>${escapeHTML(p.r || '—')}</td><td>${escapeHTML(p.tm || '무소속')}</td><td>${Number(p.w) || 0}승 ${Math.max(0, (Number(p.m) || 0) - (Number(p.w) || 0))}패</td><td>${p.m > 0 ? (p.w / p.m * 100).toFixed(1) + '%' : '—'}</td></tr>`).join('')}</tbody></table></div></section>`;
+            return `<section class="admin-ranking-group"><div class="section-title"><span class="section-title-label">${adminRankingTierLabel(t)} · ${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th scope="col">순위</th><th scope="col">선수</th><th scope="col">종족</th><th scope="col">소속</th><th scope="col">보정 전 점수</th><th scope="col">레이팅</th><th scope="col">전체 전적</th><th scope="col">승률</th></tr></thead><tbody>${players.map(p => `<tr data-top="${p.k <= 3}"><td>${p.k}<small>위</small></td><td>${escapeHTML(p.n || '—')}</td><td>${escapeHTML(p.r || '—')}</td><td>${escapeHTML(p.tm || '무소속')}</td><td>${Number.isFinite(p.rawRating) ? p.rawRating.toFixed(1) : '—'}</td><td>${Number.isFinite(p.rating) ? p.rating.toFixed(1) : '—'}</td><td>${Number(p.w) || 0}승 ${Math.max(0, (Number(p.m) || 0) - (Number(p.w) || 0))}패</td><td>${p.m > 0 ? (p.w / p.m * 100).toFixed(1) + '%' : '—'}</td></tr>`).join('')}</tbody></table></div></section>`;
         }).join('');
         document.getElementById('admin-ranking-results').innerHTML = html || '<div class="clean-card p-4">등록된 티어 랭킹이 없습니다.</div>';
     }
