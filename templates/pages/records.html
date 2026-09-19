@@ -20,7 +20,6 @@
         <div class="row g-3 mb-block">
             {%- for fmt in ['대회', '대학', '미니', 'CK'] %}
             <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('{{ fmt }}')">
-                <span class="stat-card-arrow i-arrow" aria-hidden="true"></span>
                 <div class="label">{{ fmt }}</div>
                 <div class="donut" id="t-sum-{{ fmt }}-donut"><span class="donut-text" id="t-sum-{{ fmt }}-r">0%</span></div>
                 {#- [리디자인] 시안에는 큰 승패 숫자와 비율 바가 둘 다 있었다.

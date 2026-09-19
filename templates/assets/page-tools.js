@@ -316,7 +316,6 @@ function toolCardHtml(tool) {
     return `
         <a class="tool-card"${safeHttpUrl(url) ? ` href="${escapeHTML(safeHttpUrl(url))}"` : ''} target="_blank" rel="noopener">
             <div class="tool-card-media">
-                <span class="tool-card-ext i-arrow" aria-hidden="true"></span>
                 <div class="tool-card-icon"><img loading="lazy" src="${iconUrl}" alt="" onerror="this.style.display='none';"></div>
             </div>
             <div class="tool-card-body">

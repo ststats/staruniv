@@ -143,9 +143,9 @@ function renderMembersPage() {
         html += `
             <div class="section-title" data-en="FORMER">
                 <span class="section-title-label">이전 멤버</span>
-                <button type="button" class="btn-view-all former-members-toggle" id="former-members-toggle-btn"
+                <button type="button" class="text-action former-members-toggle" id="former-members-toggle-btn"
                     aria-expanded="false" aria-controls="former-members-section" onclick="toggleFormerMembersSection()">
-                    <span id="former-members-toggle-text">보기</span>${chevronDownSvg(9, ' id="former-members-toggle-chevron" class="chevron-rotatable"')}
+                    <span id="former-members-toggle-text">보기</span>${chevronDownSvg(12, ' id="former-members-toggle-chevron" class="chevron-rotatable"')}
                 </button>
                 <span class="title-count">${sortedFormer.length}명</span>
             </div>
@@ -712,8 +712,8 @@ function renderFeaturedPostHtml(item) {
             ${newsPhotosHtml(asArray(post.photos))}
             <div class="news-post-link-row">
                 ${newsPostStatsHtml(post)}
-                <a class="news-post-link" href="${postUrl}" target="_blank" rel="noopener">
-                    원글 보기 <span class="ext-arrow i-arrow" aria-hidden="true"></span>
+                <a class="text-action news-post-link" href="${postUrl}" target="_blank" rel="noopener">
+                    <span>원글 보기</span><span class="i-arrow" aria-hidden="true"></span>
                 </a>
             </div>
         </div>`;
