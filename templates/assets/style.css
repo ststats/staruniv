@@ -4458,6 +4458,12 @@ body.media-lightbox-open { overflow: hidden; }
     font-size: 9px;
     font-family: "Pretendard", sans-serif;
 }
+/* 그래프에 마우스를 올리면 눈금 숫자도 같이 진해진다 - 막대를 짚어 읽는 동안
+   옆의 수치가 흐리면 대조가 안 된다. */
+.analysis-chart-axis,
+.analysis-chart-label { transition: fill 0.12s; }
+.analysis-chart-svg:hover .analysis-chart-axis,
+.analysis-chart-svg:hover .analysis-chart-label { fill: var(--color-text-main); }
 .analysis-bar rect { transition: opacity 0.1s; }
 .analysis-chart-svg:hover .analysis-bar { opacity: 0.55; }
 .analysis-chart-svg .analysis-bar:hover { opacity: 1; }
@@ -5568,9 +5574,11 @@ html[data-theme="dark"] .mv-order-row {
     color: var(--navy);
 }
 
-/* 방송중 인원 수는 켜져 있든 아니든 빨강. '지금 방송 중인 사람'이라 전체 인원(파랑)과
-   한눈에 구분된다. 위 '선택된 버튼은 남색' 규칙보다 뒤에 와야 이긴다. */
+/* 인원 수는 켜져 있든 아니든 제 색을 지킨다 - 방송중은 빨강, 전체는 파랑이라 한눈에
+   구분된다. 위 '선택된 버튼은 남색' 규칙보다 뒤에 와야 이긴다.
+   켜진 쪽은 바탕이 흰색이라 네이비 면용 --panel-accent 대신 --color-primary를 쓴다. */
 .selection-layout > .tier-bar .tier-scope-btn.tier-scope-live .tier-scope-num { color: var(--color-lose); }
+.selection-layout > .tier-bar .tier-scope-btn.tier-scope-all.on .tier-scope-num { color: var(--color-primary); }
 
 .home-carousel .home-hero-links a {
     clip-path: var(--cut-8);
