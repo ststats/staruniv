@@ -376,20 +376,30 @@ a {
 
 .modal-header {
     position: relative;
+    min-height: 52px;
+    align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 12px 56px;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-card);
 }
 .modal-header .btn-close {
     position: absolute;
-    right: 18px;
+    right: 12px;
     top: 50%;
-    transform: translateY(-50%) scale(0.7);
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background-size: 12px;
     margin: 0;
 }
 
 .modal-title {
+    margin: 0;
+    line-height: 27px;
+    overflow-wrap: anywhere;
     font-size: var(--fs-heading);
     font-weight: 800;
     text-align: center;
@@ -963,6 +973,13 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     text-align: center;
 }
 .stat-table { font-size: var(--fs-body); }
+/* 목록 표는 같은 한 줄 높이를 쓰고, 상세 펼침·두 줄 정보는 내용에 따라 늘어난다. */
+.stat-table > thead > tr > th,
+.stat-table > tbody > tr > td:not(.set-detail-host) {
+    line-height: 20px;
+    vertical-align: middle;
+}
+.stat-table > thead > tr > th { border-bottom: 1px solid transparent; }
 .stat-table tbody td.badge-cell { line-height: 0; }
 .stat-table-sticky-col {
     position: sticky;
@@ -4646,12 +4663,6 @@ body.media-lightbox-open { overflow: hidden; }
 
 .synergy-rank {
     font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
     color: var(--synergy-rank-color, var(--color-text-sub));
 }
 
