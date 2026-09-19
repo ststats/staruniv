@@ -49,7 +49,7 @@ async function renderHomeRecordsPreview(box) {
 }
 
 function renderHomeVideoPreview(box) {
-    box.innerHTML = '<a class="home-video-preview" href="video/" aria-label="캄몬플레이 영상 보기"><span class="home-video-play" aria-hidden="true"></span><span class="home-video-caption"><b>CALM MON PLAY</b><span>영상 보러 가기</span></span></a>';
+    box.innerHTML = '<a class="home-video-preview" href="video/" aria-label="캄몬플레이 영상 보기"><span class="home-video-play" aria-hidden="true"></span></a>';
 }
 
 async function renderTodaySchedulePreview(box) {

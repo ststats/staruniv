@@ -2147,6 +2147,12 @@ a.home-notice-card:hover {
     padding: 12px 20px;
     background: var(--panel-control);
 }
+.home-carousel-preview[data-preview="0"],
+.home-carousel-preview[data-preview="1"] {
+    display: grid;
+    grid-template-rows: auto;
+    grid-auto-rows: minmax(0, 1fr);
+}
 .home-carousel-controls > button:hover { background: var(--color-primary); }
 .home-carousel-dots button.active {
     width: 22px;
@@ -2190,11 +2196,13 @@ a.home-notice-card:hover {
     font-size: 12px;
 }
 .home-preview-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
-    justify-content: space-between;
+    align-content: center;
+    min-height: 0;
     gap: 11px;
-    padding: 3px 0;
+    padding: 0;
     border-top: 1px solid var(--color-ink-3, var(--panel-line));
 }
 .home-preview-row:first-of-type { border-top: 0; }
@@ -2204,16 +2212,13 @@ a.home-notice-card:hover {
     color: var(--panel-muted);
 }
 .home-preview-row b { font-size: 14px; }
-.home-carousel-preview[data-preview="1"] .home-preview-row { padding: 6px 0; }
 
 .home-carousel-preview[data-preview="2"]:has(.home-video-preview) { padding: 0; overflow: hidden; }
 .home-video-preview {
     position: relative;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
     width: 100%;
     height: 100%;
     color: #fff;
@@ -2222,28 +2227,13 @@ a.home-notice-card:hover {
 }
 .home-video-preview:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
 .home-video-play {
-    display: grid;
-    place-items: center;
-    width: 56px;
-    height: 56px;
-    border: 1px solid var(--panel-line);
-    border-radius: 50%;
-    background: var(--panel-control);
+    width: 0;
+    height: 0;
+    margin-left: 8px;
+    border-top: 22px solid transparent;
+    border-bottom: 22px solid transparent;
+    border-left: 34px solid currentColor;
 }
-.home-video-play::before {
-    content: '';
-    margin-left: 4px;
-    border-top: 9px solid transparent;
-    border-bottom: 9px solid transparent;
-    border-left: 14px solid #fff;
-}
-.home-video-caption {
-    display: grid;
-    gap: 4px;
-    text-align: center;
-}
-.home-video-caption > span { font-size: 11px; color: var(--panel-muted); }
-.home-video-caption > b { font-size: 12px; line-height: 1.4; letter-spacing: 0.12em; }
 .home-video-preview:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
 
 /* 일정마다 글자 수가 달라도 시간 · 제목 · 내용의 시작 위치를 맞춘다. */
@@ -2282,7 +2272,7 @@ a.home-notice-card:hover {
 
 @media (max-width: 920px) {
     .home-carousel-slide > .page-header-main { width: 100%; }
-    .home-carousel-preview { display: none; }
+    .home-carousel-slide > .home-carousel-preview { display: none; }
 }
 
 
