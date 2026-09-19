@@ -421,20 +421,45 @@ function analysisMonthlyHtml(rows) {
 // ---------------------------------------------------------------------------
 // 달마다 '그 시점까지의 경기'로 다시 맞춘 점수다(scripts/build_ranking.py).
 // 같은 선수의 오르내림을 보는 값이라, 티어가 다른 선수끼리 점수를 맞대 보면 안 된다.
-const RATING_HELP = '달마다 그 시점까지의 경기만으로 다시 계산한 점수입니다(최근 18개월). '
+// 기간 칩에 따라 보여줄 개월 수. 점수 자체는 늘 같은 방식(반감기 12개월)으로 계산하고,
+// 여기서는 가로축 구간만 자른다. 최근 30일은 점이 하나뿐이라 선이 안 그려져서 90일과 같이 둔다.
+const RATING_WINDOW = { all: 18, 365: 12, 90: 3, 30: 3 };
+
+const RATING_HELP = '달마다 그 시점까지의 경기만으로 다시 계산한 점수입니다. '
     + '한 선수가 올라갔는지 내려갔는지를 보는 값이라, 티어가 다른 선수끼리 점수를 '
     + '직접 비교하면 안 됩니다. 그 달에 경기가 없으면 선이 끊깁니다. '
-    + '레이팅은 과거 전체를 반감기 12개월로 녹여 만드는 값이라, 위의 기간 선택(전체·1년·90일·30일)을 '
-    + '따르지 않고 늘 같은 구간을 보여줍니다.';
+    + '위에서 기간을 고르면 보여주는 구간이 바뀝니다(전체 18개월 · 1년 12개월 · 90일 3개월). '
+    + '점수를 내는 방식은 기간과 상관없이 늘 같고, 최근 30일은 점이 하나뿐이라 90일과 같은 구간을 봅니다.';
+
+function analysisRatingTitleHtml(count) {
+    return `
+        <div class="section-title section-title-spaced" data-en="RATING">
+            <span class="section-title-label">레이팅</span>
+            ${helpBadgeHtml(RATING_HELP)}
+            ${count}
+        </div>`;
+}
 
 function analysisRatingHtml(pid) {
     const data = AnalysisState.rating;
-    const series = data && data.players && data.players[String(pid)];
-    const months = (data && data.months) || [];
-    if (!series || !months.length) return '';
+    const all = data && data.players && data.players[String(pid)];
+    const allMonths = (data && data.months) || [];
+    if (!all || !allMonths.length) return '';
+
+    // 기간 칩에 맞춰 가로축을 자른다(점수 자체는 다시 계산하지 않는다 - 맨 위 주석 참고).
+    const want = RATING_WINDOW[AnalysisState.period] || RATING_WINDOW.all;
+    const from = Math.max(0, allMonths.length - want);
+    const months = allMonths.slice(from);
+    const series = all.slice(from);
+
     const pts = series.map((v, i) => (v === null || v === undefined ? null : { i, v, key: months[i] }));
     const have = pts.filter(Boolean);
-    if (have.length < 2) return '';
+    // 점이 하나뿐이면 선을 못 그린다. 칸을 비우면 옆의 월별 전적과 높이가 어긋나므로
+    // 제목과 안내만 남긴다.
+    if (have.length < 2) {
+        return analysisRatingTitleHtml('')
+            + '<div class="clean-card p-3 analysis-rating-empty">이 기간에는 그릴 만한 기록이 없습니다.</div>';
+    }
 
     // 월별 전적 그래프와 같은 틀(660x220)이어야 두 카드가 같은 크기로 나란히 선다.
     const W = 660, H = 220, PAD_T = 12, PAD_B = 26, PAD_L = 42, PAD_R = 14;
@@ -477,12 +502,8 @@ function analysisRatingHtml(pid) {
     const diff = last - first;
     const sign = diff > 0 ? 'h2h-win' : (diff < 0 ? 'h2h-lose' : '');
     const top = Math.max(...vals), bottom = Math.min(...vals);
-    return `
-        <div class="section-title section-title-spaced" data-en="RATING">
-            <span class="section-title-label">레이팅</span>
-            ${helpBadgeHtml(RATING_HELP)}
-            <span class="title-count">${have.length}개월 · ${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>
-        </div>
+    return analysisRatingTitleHtml(
+        `<span class="title-count">${have.length}개월 · ${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>`) + `
         <div class="clean-card p-3">
             <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 레이팅">
                 ${grid}
