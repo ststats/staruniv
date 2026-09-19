@@ -4347,38 +4347,189 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .h2h-empty-sub { font-size: 12px; color: var(--color-text-muted); }
 
-/* 분석 탭 */
-.analysis-row { cursor: pointer; }
-.analysis-summary-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 16px;
-    margin: 12px 0 4px;
-    font-size: var(--fs-body);
+/* 분석 탭 - 전적 페이지의 개인 프로필과 같은 틀을 쓰고, 분석 전용 부품만 여기서 더한다 */
+.analysis-toolbar { margin-bottom: 12px; }
+.analysis-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 16px;
+    border: 0;
+    background: var(--color-card);
+    clip-path: var(--cut-8);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-sub);
 }
-.analysis-summary-item { color: var(--color-text-sub); }
-.analysis-trend-svg {
+.analysis-back:hover { background: var(--color-row-hover); color: var(--color-text-main); }
+
+/* 머리 카드: .profile-head를 그대로 쓰되 사진을 키우고 레이팅 한 줄을 넣는다 */
+.analysis-head { gap: 18px; flex-wrap: wrap; }
+.analysis-avatar {
+    width: 86px;
+    height: 86px;
+    flex: none;
+    font-size: 34px;
+}
+.analysis-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+.analysis-rise { margin-left: 6px; font-size: 18px; }
+.analysis-rating-line {
+    margin-top: 10px;
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+}
+.analysis-rating-line strong {
+    color: var(--color-text-main);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+}
+.analysis-rating-note { color: var(--color-text-faint); font-size: 12px; }
+.analysis-dormant-badge { background: var(--color-bg-subtle); color: var(--color-text-faint); }
+.analysis-help {
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-sub);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+}
+.analysis-help:hover { background: var(--color-row-hover); color: var(--color-text-main); }
+.analysis-help-box {
+    margin: -8px 0 var(--space-block-gap);
+    padding: 14px 16px;
+    background: var(--color-bg-subtle);
+    clip-path: var(--cut-8);
+    font-size: 12px;
+    color: var(--color-text-sub);
+}
+.analysis-help-box p { margin: 0; }
+.analysis-help-box p + p { margin-top: 6px; }
+
+/* 형식별 도넛은 6개다. 흘려보내면 5+1처럼 어정쩡하게 끊겨서 3+3으로 고정한다
+   (종족별 3개는 기존 .donut-wrap 그대로 한 줄). */
+.analysis-donut-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 8px;
+}
+
+/* 최근 10경기 - 5개씩 두 줄 */
+.analysis-form {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+.analysis-form-item {
+    padding: 9px 10px;
+    clip-path: var(--cut-6);
+    background: var(--color-bg-subtle);
+    border-left: 3px solid var(--color-border);
+    text-align: center;
+}
+.analysis-form-item.is-win { border-left-color: var(--color-win); }
+.analysis-form-item.is-lose { border-left-color: var(--color-lose); }
+.analysis-form-res { display: block; font-size: 14px; font-weight: 800; }
+.analysis-form-item.is-win .analysis-form-res { color: var(--color-win); }
+.analysis-form-item.is-lose .analysis-form-res { color: var(--color-lose); }
+.analysis-form-opp {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.analysis-form-date { display: block; font-size: 10px; color: var(--color-text-faint); }
+
+/* 월별 전적 · 승률 그래프 */
+.analysis-chart-svg {
     display: block;
     width: 100%;
-    height: 160px;
+    height: 190px;
+    margin-top: 10px;
 }
-.analysis-trend-mid {
+.analysis-chart-mid {
     stroke: var(--color-border);
     stroke-width: 1;
     stroke-dasharray: 4 4;
 }
-.analysis-trend-line {
-    stroke: var(--color-win);
+.analysis-bar-win { fill: var(--color-win); }
+.analysis-bar-lose { fill: var(--color-lose); }
+.analysis-rate-line {
+    stroke: var(--color-text-main);
     stroke-width: 2;
     stroke-linejoin: round;
     stroke-linecap: round;
 }
-.analysis-trend-caption {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--color-text-sub);
-    text-align: right;
+.analysis-chart-label {
+    fill: var(--color-text-faint);
+    font-size: 10px;
+    font-family: "Pretendard", sans-serif;
 }
+.analysis-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--color-text-sub);
+}
+.analysis-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.analysis-legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+.analysis-legend-dot.is-win { background: var(--color-win); }
+.analysis-legend-dot.is-lose { background: var(--color-lose); }
+.analysis-legend-line { width: 14px; height: 2px; background: var(--color-text-main); }
+
+/* 맵별 승률 · 동티어 맞대결 (같은 줄 부품을 공유한다) */
+.analysis-bars { margin-top: 10px; }
+.analysis-bar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 4px 10px;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    background: none;
+    text-align: left;
+}
+.analysis-bar-row + .analysis-bar-row { border-top: 1px solid var(--color-border); }
+.analysis-bar-link:hover .analysis-bar-name { color: var(--color-primary); }
+.analysis-bar-name {
+    font-size: var(--fs-body);
+    font-weight: 600;
+    color: var(--color-text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.analysis-bar-rate { font-size: var(--fs-body); font-weight: 800; font-variant-numeric: tabular-nums; }
+.analysis-bar-rec { font-size: 12px; color: var(--color-text-sub); white-space: nowrap; }
+.analysis-bar-row .h2h-map-bar { grid-column: 1 / -1; margin: 2px 0 0; height: 6px; }
+
+/* 좁은 화면: 5칸·3칸 격자는 휴대폰에서 글자가 뭉개진다 - 2칸으로 접는다 */
+@media (max-width: 575.98px) {
+    .analysis-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .analysis-donut-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .analysis-head { gap: 14px; }
+    .analysis-avatar { width: 68px; height: 68px; }
+    .analysis-head .profile-head-stats { width: 100%; margin-left: 0; text-align: left; gap: 18px; }
+}
+
 
 @media (max-width: 767.98px) {
     .h2h-pick {

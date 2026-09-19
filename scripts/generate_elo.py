@@ -1,291 +1,337 @@
-"""티어표 '분석' 탭이 읽을 자체 레이팅(Elo)을 계산한다: data/eloboard.json → docs/data/elo/
+"""티어표 '분석' 탭이 읽을 자체 레이팅을 계산한다: data/eloboard.json → docs/data/elo/index.json
 
-[왜 자체 레이팅인가]
-eloboard 원본에는 선수별 레이팅 수치가 없고 승/패 기록만 있다. 37.5만 건이 쌓여 있으니
-그걸로 직접 Elo를 계산해서 "누가 더 잘하는가"를 숫자 하나로 비교할 수 있게 만든다.
+[철학] "꾸준함은 기본, 지금의 기량이 순위를 결정한다"
+단순 승률이 아니라 (1) 같은 티어 안에서의 경쟁력, (2) 중요 경기의 업적, (3) 최근의 폼,
+(4) 표본의 신뢰도를 함께 본다. 아래 네 가지가 그 네 축이다.
 
-[형식별 가중치]
-스폰(캐주얼)이 27.6만 건으로 전체의 73%를 차지한다. 가중치 없이 그대로 계산하면 레이팅이
-사실상 스폰 결과로만 정해진다. 그래서 형식마다 중요도에 따라 K값(한 경기가 레이팅을 얼마나
-움직이는지)에 배수를 곱한다 - 판수가 적어도 중요한 대회의 결과가 더 크게 반영되게.
-중요도(운영자 지정): 개인 = 대회(대학대회) > 대학(대학대전) > 리그(프로리그) > 미니(대학미니)
-> CK(팀대회) > 스폰. CAT_WEIGHTS 값만 바꾸면 다음 빌드부터 바로 반영된다.
+1. [동일 티어 경기만 센다]
+   티어가 다르면 애초에 서로 거의 붙지 않는다(실측: 명칭 티어 갓~조커는 숫자 티어와의
+   맞대결이 0.5~10%뿐이다). 그런데도 한 판이라도 섞이면, 다른 티어를 상대로 쌓은 점수가
+   같은 티어 안 순위를 흔든다. 그래서 레이팅은 "같은 티어끼리 붙은 경기"만으로 계산한다.
+   (경기 기록 자체는 분석 탭에서 전부 보여준다 - 점수 계산에만 안 쓸 뿐이다.)
 
-[계산 범위 ≠ 노출 범위]
-레이팅 계산 자체는 eloboard 전체 선수(휴면 포함, 수천 명)를 대상으로 한다 - 은퇴한
-강자에게 이긴 기록도 그 강자의 레이팅에 반영돼야 정확하기 때문이다. 반면 사이트에 순위표로
-"노출"하는 건 티어표 소속이 '휴면'이 아닌 선수만이다(약 300명 - build_h2h.py가 쓰는
-"티어표에 연결된 1,100명"보다 좁은 부분집합). 이렇게 나누면 나중에 노출 기준이 바뀌어도
-(예: 300명이 아니라 400명으로) 레이팅을 다시 계산할 필요 없이 필터만 바꾸면 된다.
+2. [중요 경기는 가치가 줄지 않는다 / 연습은 최근 것이 더 값지다]
+   대회·대학대전 같은 중요 경기의 승리는 커리어에 남는 업적이라 시간이 지나도 그대로 센다.
+   반면 스폰(연습)은 "지금 폼"을 보는 지표라 오래될수록 완만하게 값이 준다
+   (반감기 DECAY_HALF_LIFE_DAYS일 - 90일 전 스폰 승리는 어제 승리의 절반만큼 반영).
 
-[출력]
-    docs/data/elo/index.json      - 노출 대상(휴면 제외) 선수 요약: 레이팅·순위·전적·연승 등 (한 번만 받는다)
-    docs/data/elo/p/<샤드시작id>.json - 그 샤드 선수들의 "경기별 레이팅 변화" 로그
-                                          ({ "<선수id>": [[날짜,상대,이김,맵,대회,경기후레이팅], ...], ... })
-        h2h와 달리 오래된 경기가 앞(시간순 그대로) - 추세 그래프가 그대로 쓸 수 있게.
-    샤드 나누는 방식은 build_h2h.py의 build_shards()를 그대로 재사용한다(용량 기준 빈 패킹).
+3. [다전제 환산]
+   같은 날 같은 상대와 여러 판을 하면 그건 사실상 다전제 한 판이다. 판마다 따로 세면
+   "하루에 같은 사람 열 번 이기기"로 점수를 부풀릴 수 있어서, 하루·상대·형식이 같은 묶음은
+   승률 하나짜리 결과 한 경기로 환산한다.
 
-    python scripts/generate_elo.py            # 티어표 명단을 받아서 만든다
-    python scripts/generate_elo.py --offline  # 명단을 못 받으면 만들지 않고 멈춘다(휴면 필터에 팀 정보가 필요)
+4. [표본이 적으면 점수를 깎는다]
+   10경기도 안 되는 레이팅은 우연이 대부분이다. 기준선(1500)쪽으로 끌어당겨서
+   "표본이 쌓여야 높은 점수가 유지된다"는 걸 점수 자체에 반영한다(penalty_factor 참고).
+   다만 중요 경기를 IMPORTANT_EXEMPT_GAMES번 이상 뛴 선수는 이미 검증된 것으로 보고 면제한다.
+
+[휴면] 점수와 무관하게 "최근 DORMANT_DAYS일 동안 공식 경기가 하나도 없는가"만 본다
+(다른 티어와의 경기도 활동으로 친다 - 활동 여부를 보는 것이지 경쟁력을 보는 게 아니다).
+휴면 선수는 티어 내 순위 모집단에서 빠진다(순위가 유령으로 채워지지 않게). 대신 분석
+화면에서 검색해 보는 것 자체는 된다.
+
+[성장 가속도 🚀] 최근 RISING_RECENT_DAYS일 승률이 그 앞 구간보다 RISING_GAP 이상 높고
+양쪽 표본이 충분하면 표시한다. 점수에 보너스를 주지는 않고, "지금 폼이 좋다"는 신호다.
+
+[출력] docs/data/elo/index.json 하나뿐이다.
+    { syncedAt, cats, catWeights, initialRating, dormantDays,
+      players: { 선수id: { rt:레이팅, tr:티어내순위, ts:티어인원, g:동티어경기수,
+                           m,w,l, race:{T:[승,패],...}, cat:[[승,패],...],
+                           st:{t,n}, lw, ll, last:최근경기일, dm:휴면?, up:성장가속도? } } }
+경기 로그는 따로 만들지 않고 분석 탭이 docs/data/h2h/p/*.json(build_h2h.py 산출물)을 그대로
+읽는다 - 같은 내용을 두 벌 갖고 있으면 저장소만 커지고 서로 어긋날 여지만 생긴다.
+
+    python scripts/generate_elo.py
 """
 
 import argparse
-import json
+import datetime as dt
 import os
-import shutil
 import sys
 
 from build_h2h import (
     ALIAS_PATH, CAT_LABELS, SRC_PATH,
-    build_shards, link_tier_players, load_json, resolve_tier_members, write_json,
-    _pid_num, _pid_sort_key,
+    link_tier_players, load_json, resolve_tier_members, write_json,
 )
 
-OUT_DIR = os.path.join('docs', 'data', 'elo')
-HIDDEN_TEAMS = {'휴면'}           # 순위표에 안 보여줄 팀(=계산엔 포함, 노출만 제외)
+OUT_PATH = os.path.join('docs', 'data', 'elo', 'index.json')
 
-# 표준 Elo 초기값·기본 K. 기본 K는 흔히 쓰는 24~32 범위 중 32(변동이 좀 더 빠른 쪽)로 잡았다.
 INITIAL_RATING = 1500.0
 BASE_K = 32.0
-# 판수가 적은 선수는 K를 키워 레이팅이 실력에 더 빨리 수렴하게 한다(체스 레이팅에서 흔한
-# "프로비저널" 처리와 같은 아이디어). 30판을 넘기면 보통 K로 돌아온다.
-PROVISIONAL_GAMES = 30
-PROVISIONAL_MULT = 1.5
 
 # 형식별 중요도 가중치. 코드값은 build_h2h.py의 CAT_LABELS와 같은 eloboard 형식 코드다.
 # 목록에 없는 코드(새 형식이 생기거나 빈 값 '')는 기본값 1.0(스폰과 동일)을 쓴다.
 CAT_WEIGHTS = {
-    'solo_event': 3.0,     # 개인
-    'college_event': 3.0,  # 대회 (대학대회) - 개인과 동률 1순위
-    'college_war': 2.5,    # 대학 (대학대전)
-    'pro_league': 2.0,     # 리그 (프로리그)
-    'college_mini': 1.5,   # 미니 (대학미니)
-    'team_event': 1.5,     # CK (팀대회)
+    'solo_event': 2.5,     # 개인 (개인대회) - 대회와 동률 1순위
+    'college_event': 2.5,  # 대회 (대학대회)
+    'college_war': 2.0,    # 대학 (대학대전)
+    'college_mini': 1.5,   # 미니 (미니대전)
+    'pro_league': 1.5,     # 리그 (프로리그)
+    'team_event': 1.5,     # CK (팀리그)
     'sponsored': 1.0,      # 스폰
     '': 1.0,                # 기타/미상
 }
+
+# 시간이 지나면 값이 주는 형식(=연습). 여기 없는 형식은 "업적"이라 감쇠하지 않는다.
+DECAY_CATS = {'sponsored', ''}
+DECAY_HALF_LIFE_DAYS = 90.0
+DECAY_FLOOR = 0.15          # 아무리 오래돼도 이만큼은 남긴다(옛 기록이 0이 되면 표본이 사라진다)
+
+# 중요 경기 = 감쇠하지 않는 형식. 페널티 면제 판정에 쓴다.
+IMPORTANT_EXEMPT_GAMES = 3
+PENALTY_FREE_GAMES = 30     # 이 판수부터는 깎지 않는다
+
+DORMANT_DAYS = 50           # 이 기간 동안 아무 공식 경기도 없으면 휴면
+
+RISING_RECENT_DAYS = 30     # 성장 가속도: 최근 구간
+RISING_BASE_DAYS = 90       # 비교 구간(최근 구간 포함 전체)
+RISING_MIN_GAMES = 8        # 양쪽 구간 최소 표본
+RISING_GAP = 0.12           # 승률 차이가 이만큼 이상이면 🚀
 
 
 def expected_score(rating_a, rating_b):
     return 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
 
 
-def compute_ratings(rows, cats):
-    """전체 선수(휴면 포함) 대상으로 시간순 Elo를 계산한다.
-    돌려주는 값: (rating: {pid: float}, per_player_log: {pid: [[날짜,상대,이김,맵,대회,레이팅후], ...]})
-    per_player_log는 이 함수 안에서 시간순으로 순회하며 그대로 append하므로 이미 오래된 경기가
-    앞이다(따로 정렬할 필요가 없다 - h2h처럼 나중에 reverse하지 않는다)."""
-    rating = {}
-    games = {}
-    log = {}
+def parse_date(value):
+    try:
+        return dt.date.fromisoformat(str(value)[:10])
+    except (TypeError, ValueError):
+        return None
 
-    def get_rating(pid):
+
+def decay_factor(cat_code, days_ago):
+    """오래된 연습 경기의 가치를 줄이는 배수(중요 경기는 항상 1.0)."""
+    if cat_code not in DECAY_CATS or days_ago <= 0:
+        return 1.0
+    raw = 0.5 ** (days_ago / DECAY_HALF_LIFE_DAYS)
+    return DECAY_FLOOR + (1.0 - DECAY_FLOOR) * raw
+
+
+def penalty_factor(games, important_games):
+    """표본이 적을 때 레이팅을 기준선 쪽으로 끌어당기는 비율(1.0이면 그대로 둔다).
+    구간: 10판 미만은 최대 80%까지 깎고, 10~19판은 30%, 20~29판은 완만하게 풀어
+    30판부터 그대로 둔다. 중요 경기를 충분히 뛴 선수는 표본이 10판만 넘으면 면제한다."""
+    if games >= PENALTY_FREE_GAMES:
+        return 1.0
+    if games >= 10 and important_games >= IMPORTANT_EXEMPT_GAMES:
+        return 1.0
+    if games < 10:
+        return 0.20 + 0.05 * games          # 0판 0.20 → 9판 0.65
+    if games < 20:
+        return 0.70
+    return 0.70 + 0.03 * (games - 20)       # 20판 0.70 → 29판 0.97
+
+
+def to_series(matches):
+    """[다전제 환산] 같은 날·같은 상대·같은 형식의 여러 판을 한 경기로 묶는다.
+    돌려주는 값: [{date, opp, cat, wins, losses}, ...] (입력 순서 유지)."""
+    series = []
+    index = {}
+    for date, opp, win, cat in matches:
+        key = (date, opp, cat)
+        item = index.get(key)
+        if item is None:
+            item = {'date': date, 'opp': opp, 'cat': cat, 'wins': 0, 'losses': 0}
+            index[key] = item
+            series.append(item)
+        if win:
+            item['wins'] += 1
+        else:
+            item['losses'] += 1
+    return series
+
+
+def compute_ratings(same_tier_series, today):
+    """같은 티어끼리 붙은 경기(다전제로 묶은 것)를 시간순으로 훑어 레이팅을 계산한다.
+    한 경기가 레이팅을 움직이는 폭 = BASE_K × 형식 가중치 × 시간 감쇠.
+    돌려주는 값: {pid: 레이팅}"""
+    rating = {}
+
+    def get(pid):
         return rating.setdefault(pid, INITIAL_RATING)
 
-    def k_for(pid, weight):
-        n = games.get(pid, 0)
-        mult = PROVISIONAL_MULT if n < PROVISIONAL_GAMES else 1.0
-        return BASE_K * weight * mult
-
-    # 실제 경기 날짜(date) 오름차순 = 시간순(오래된 경기 먼저). id는 "아카이브에 들어온 순서"라
-    # 과거 기록을 나중에 입력하는 경우가 섞여 있어 날짜와 어긋난다(실측: id는 근접한데 날짜가
-    # 2019년과 2026년으로 널뛰는 행들이 있었다) - id로 정렬하면 Elo가 실제와 다른 순서로
-    # 계산돼 버린다. 날짜가 같은 경기끼리는 id로 안정 정렬한다(동률 순서를 결정적으로 만들
-    # 뿐, 결과에 큰 영향은 없다).
-    for r in sorted(rows, key=lambda r: (str(r[1]), r[0])):
-        if len(r) < 6:
+    for s in same_tier_series:
+        a, b = s['a'], s['b']
+        total = s['wins'] + s['losses']
+        if not total:
             continue
-        _, date, win_id, lose_id, map_id, cat_idx = r[:6]
-        w, l = str(win_id), str(lose_id)
-        rw, rl = get_rating(w), get_rating(l)
-        cat_code = cats[cat_idx] if isinstance(cat_idx, int) and 0 <= cat_idx < len(cats) else ''
-        weight = CAT_WEIGHTS.get(cat_code, CAT_WEIGHTS[''])
-        exp_w = expected_score(rw, rl)
-
-        new_rw = rw + k_for(w, weight) * (1 - exp_w)
-        new_rl = rl + k_for(l, weight) * (0 - (1 - exp_w))
-        rating[w], rating[l] = new_rw, new_rl
-        games[w] = games.get(w, 0) + 1
-        games[l] = games.get(l, 0) + 1
-
-        log.setdefault(w, []).append([date, l, 1, map_id, cat_idx, round(new_rw)])
-        log.setdefault(l, []).append([date, w, 0, map_id, cat_idx, round(new_rl)])
-
-    return rating, log
+        score_a = s['wins'] / total          # 다전제 결과를 0~1 점수로
+        ra, rb = get(a), get(b)
+        days_ago = (today - s['date']).days if s['date'] else 0
+        weight = CAT_WEIGHTS.get(s['cat'], CAT_WEIGHTS['']) * decay_factor(s['cat'], days_ago)
+        k = BASE_K * weight
+        exp_a = expected_score(ra, rb)
+        rating[a] = ra + k * (score_a - exp_a)
+        rating[b] = rb + k * ((1 - score_a) - (1 - exp_a))
+    return rating
 
 
-def summarize(matches, cats, players):
-    """한 선수의 경기 로그(시간순)에서 순위표에 보여줄 요약 통계를 뽑는다."""
-    wins = sum(1 for m in matches if m[2])
-    losses = len(matches) - wins
-
-    streak_type, streak_len = '', 0
-    longest_win = longest_lose = 0
-    cur_win = cur_lose = 0
-    by_race = {'T': [0, 0], 'Z': [0, 0], 'P': [0, 0]}
-    by_cat = [[0, 0] for _ in cats]
-    for date, opp, win, map_id, cat_idx, rating_after in matches:
-        if win:
-            cur_win += 1
-            cur_lose = 0
-            longest_win = max(longest_win, cur_win)
-        else:
-            cur_lose += 1
-            cur_win = 0
-            longest_lose = max(longest_lose, cur_lose)
-        if isinstance(cat_idx, int) and 0 <= cat_idx < len(cats):
-            by_cat[cat_idx][0 if win else 1] += 1
-        opp_info = players.get(opp) or players.get(str(opp))
-        opp_race = opp_info[1] if isinstance(opp_info, list) and len(opp_info) > 1 else ''
-        if opp_race in by_race:
-            by_race[opp_race][0 if win else 1] += 1
-
-    if matches:
-        streak_type = 'W' if matches[-1][2] else 'L'
-        streak_len = cur_win if streak_type == 'W' else cur_lose
-
-    return {
-        'm': len(matches), 'w': wins, 'l': losses,
-        'streak': {'t': streak_type, 'n': streak_len},
-        'lw': longest_win, 'll': longest_lose,
-        'race': by_race,
-        'cat': by_cat,
-        'rating': matches[-1][5] if matches else round(INITIAL_RATING),
-    }
+def rising_flag(dated_results, today):
+    """최근 구간 승률이 그 앞 구간보다 뚜렷하게 높으면 True(🚀)."""
+    recent_cut = today - dt.timedelta(days=RISING_RECENT_DAYS)
+    base_cut = today - dt.timedelta(days=RISING_BASE_DAYS)
+    recent = [win for date, win in dated_results if date and date > recent_cut]
+    prior = [win for date, win in dated_results if date and base_cut < date <= recent_cut]
+    if len(recent) < RISING_MIN_GAMES or len(prior) < RISING_MIN_GAMES:
+        return False
+    return (sum(recent) / len(recent)) - (sum(prior) / len(prior)) >= RISING_GAP
 
 
 def main():
-    ap = argparse.ArgumentParser(description='자체 Elo 레이팅 계산')
-    ap.add_argument('--offline', action='store_true',
-                    help='명단 없이는 휴면 필터를 할 수 없으므로, 이 모드에선 만들지 않고 멈춘다')
+    ap = argparse.ArgumentParser(description='자체 레이팅 계산 (분석 탭용)')
     ap.add_argument('--src', default=SRC_PATH, help=f'원본 아카이브 경로 (기본 {SRC_PATH})')
     args = ap.parse_args()
-
-    if args.offline:
-        sys.exit('ℹ️ --offline: 티어표 명단(휴면 필터)이 필요해 자체 레이팅은 만들지 않습니다.')
 
     store = load_json(args.src)
     rows = store.get('rows') or []
     players = store.get('players') or {}
     cats = store.get('cats') or []
-    maps = store.get('maps') or {}
 
-    tier_date, tier_members = resolve_tier_members(args.offline)
+    tier_date, tier_members = resolve_tier_members(False)
     alias = load_json(ALIAS_PATH, {})
     linked, _missing = link_tier_players(players, tier_members, alias)
     if not linked:
         sys.exit('❌ 티어표 명단과 이어붙인 선수가 0명입니다. build_h2h.py를 먼저 정상적으로 돌려보세요.')
 
-    # 계산은 전체 선수(휴면 포함) 대상, 노출은 휴면이 아닌 선수만.
-    active = {pid: info for pid, info in linked.items() if info.get('tm') not in HIDDEN_TEAMS}
-    print(f'  티어표 연결 {len(linked):,}명 중 휴면 제외 {len(active):,}명을 순위표에 노출합니다.')
+    tier_of = {pid: str(info.get('t', '')) for pid, info in linked.items()}
+    # 기준일: 아카이브가 마지막으로 동기화된 날(로컬 시계가 아니라 데이터 기준이라야
+    # 언제 돌리든 같은 결과가 나온다).
+    today = parse_date(store.get('synced_at')) or dt.date.today()
 
-    print('  전체 경기를 시간순으로 훑어 레이팅을 계산합니다...')
-    _rating, log = compute_ratings(rows, cats)
+    # 선수별 경기 모으기 (동티어/전체를 한 번에)
+    per = {pid: [] for pid in linked}           # pid -> [(date, opp, win, cat_code)]
+    same_tier_raw = []                          # (date, a, b, cat, a가 이겼나)
+    for r in rows:
+        if len(r) < 6:
+            continue
+        _, date, win_id, lose_id, _map_id, cat_idx = r[:6]
+        w, l = str(win_id), str(lose_id)
+        cat = cats[cat_idx] if isinstance(cat_idx, int) and 0 <= cat_idx < len(cats) else ''
+        day = parse_date(date)
+        if w in per:
+            per[w].append((day, l, 1, cat))
+        if l in per:
+            per[l].append((day, w, 0, cat))
+        # 둘 다 티어표에 있고 티어가 같을 때만 레이팅 대상
+        tw, tl = tier_of.get(w), tier_of.get(l)
+        if tw and tw == tl:
+            same_tier_raw.append((day, w, l, cat))
 
-    out_players = os.path.join(OUT_DIR, 'p')
-    tmp_players = out_players + '.new'
-    if os.path.isdir(tmp_players):
-        shutil.rmtree(tmp_players)
+    # [다전제 환산] 같은 날·같은 짝·같은 형식은 한 경기로 묶는다. 짝은 (작은id, 큰id)로
+    # 정규화해서 누가 이겼든 같은 묶음에 들어가게 한다.
+    bundle = {}
+    order = []
+    for day, w, l, cat in same_tier_raw:
+        a, b = (w, l) if w <= l else (l, w)
+        key = (day, a, b, cat)
+        item = bundle.get(key)
+        if item is None:
+            item = {'date': day, 'a': a, 'b': b, 'cat': cat, 'wins': 0, 'losses': 0}
+            bundle[key] = item
+            order.append(item)
+        if w == a:
+            item['wins'] += 1        # a 기준 승
+        else:
+            item['losses'] += 1
+    order.sort(key=lambda s: (s['date'] or dt.date.min))
+    print(f'  동티어 경기 {len(same_tier_raw):,}건 → 다전제 환산 {len(order):,}경기')
 
+    rating = compute_ratings(order, today)
+
+    # 선수별 요약
     index_players = {}
-    per_sorted = []
-    names_used = set()          # 상대로 나온 모든 선수id(활성 명단 밖 상대도 이름은 보여줘야 한다)
-    for pid, info in sorted(active.items(), key=lambda kv: _pid_sort_key(kv[0])):
-        matches = log.get(pid, [])
+    dormant_cut = today - dt.timedelta(days=DORMANT_DAYS)
+    for pid, matches in per.items():
         if not matches:
             continue
-        stat = summarize(matches, cats, players)
-        player_info = players.get(pid) or players.get(str(pid)) or ['', '']
-        name_elo = player_info[0] if isinstance(player_info, list) else str(player_info)
-        race = (player_info[1] if isinstance(player_info, list) and len(player_info) > 1 else '') or ''
-        index_players[str(pid)] = {
-            'n': info['n'], 'tm': info.get('tm', ''), 's': info.get('s', ''), 'r': race,
-            **({'t': info['t']} if 't' in info else {}),
-            **({'g': info['g']} if 'g' in info else {}),
-            **({'en': name_elo} if info.get('n') and info['n'] != name_elo else {}),
-            **stat,
+        matches.sort(key=lambda x: (x[0] or dt.date.min))
+        wins = sum(1 for m in matches if m[2])
+        losses = len(matches) - wins
+
+        by_race = {'T': [0, 0], 'Z': [0, 0], 'P': [0, 0]}
+        by_cat = [[0, 0] for _ in cats]
+        cur_w = cur_l = longest_w = longest_l = 0
+        for day, opp, win, cat in matches:
+            if win:
+                cur_w += 1
+                cur_l = 0
+                longest_w = max(longest_w, cur_w)
+            else:
+                cur_l += 1
+                cur_w = 0
+                longest_l = max(longest_l, cur_l)
+            if cat in cats:
+                by_cat[cats.index(cat)][0 if win else 1] += 1
+            info = players.get(opp)
+            race = info[1] if isinstance(info, list) and len(info) > 1 else ''
+            if race in by_race:
+                by_race[race][0 if win else 1] += 1
+
+        last_day = matches[-1][0]
+        same_tier = [(d, win) for d, opp, win, cat in matches if tier_of.get(opp) and tier_of.get(opp) == tier_of.get(pid)]
+        important = sum(1 for _d, _o, _w, cat in matches
+                        if tier_of.get(_o) == tier_of.get(pid) and cat not in DECAY_CATS)
+        raw = rating.get(pid, INITIAL_RATING)
+        factor = penalty_factor(len(same_tier), important)
+        adjusted = INITIAL_RATING + (raw - INITIAL_RATING) * factor
+
+        entry = {
+            'rt': round(adjusted),
+            'g': len(same_tier),
+            'm': len(matches), 'w': wins, 'l': losses,
+            'race': by_race,
+            'cat': by_cat,
+            'st': {'t': 'W' if matches[-1][2] else 'L', 'n': cur_w if matches[-1][2] else cur_l},
+            'lw': longest_w, 'll': longest_l,
+            'last': last_day.isoformat() if last_day else '',
         }
-        per_sorted.append((str(pid), matches))
-        names_used.update(str(m[1]) for m in matches)
+        if not last_day or last_day <= dormant_cut:
+            entry['dm'] = 1
+        if rising_flag(same_tier, today):
+            entry['up'] = 1
+        index_players[pid] = entry
 
     if not index_players:
-        sys.exit('❌ 휴면 제외 선수 중 경기 기록이 있는 사람이 0명입니다 - 계산을 멈춥니다(기존 파일 유지).')
+        sys.exit('❌ 요약할 선수가 0명입니다 - 계산을 멈춥니다(기존 파일 유지).')
 
-    # 상대 이름 사전: 활성 명단 밖 상대(휴면·미연결 등)도 경기 목록에 이름이 나와야 한다
-    # (h2h의 index.json 'others'와 같은 목적).
-    others = {}
-    for pid in names_used:
-        if pid in index_players:
+    # 티어 내 순위: 휴면이 아니고 동티어 경기가 있는 선수만 모집단에 넣는다.
+    by_tier = {}
+    for pid, entry in index_players.items():
+        t = tier_of.get(pid, '')
+        if not t or entry.get('dm') or not entry['g']:
             continue
-        info = players.get(pid)
-        if info:
-            others[pid] = info[0] if isinstance(info, list) else str(info)
-
-    # 순위: 전체 레이팅 내림차순, 동점이면 판수가 많은 쪽이 위(더 검증된 기록이므로).
-    # [주의] 명칭 티어와 숫자 티어는 경기 상대가 거의 안 겹쳐서(전체 교차 4.67%) 하나의
-    # 척도로 비교할 근거가 얇다. 다만 서브티어별로 뜯어보면 균일하지 않다 - 갓~조커는
-    # 숫자티어 상대 비중이 0.5~10.3%로 자기들끼리 붙지만, 스페이드는 47.5%가 숫자티어
-    # 상대다(사실상 혼성 구간). 그래서 스페이드는 '명칭 티어(프로급)'이 아니라 숫자 티어
-    # 쪽('일반')으로 묶는다 - 실제로 붙는 상대를 기준으로 나눈 것이다.
-    # 'rank'(전체)는 참고용으로만 남기고, 실질적인 순위는 'divisionRank'(같은 급 안에서의
-    # 순위)를 쓴다.
-    NAMED_TIERS = {'갓', '킹', '잭', '조커'}
-
-    def bracket_of(player):
-        t = str(player.get('t', ''))
-        if not t:
-            return None
-        return 'named' if t in NAMED_TIERS else 'numeric'
-
-    ranked = sorted(index_players.items(), key=lambda kv: (-kv[1]['rating'], -kv[1]['m']))
-    for rank, (pid, _p) in enumerate(ranked, start=1):
-        index_players[pid]['rank'] = rank
-
-    def rank_within(key_fn, out_field):
-        groups = {}
-        for pid, _p in ranked:               # ranked가 이미 레이팅순이라 그대로 훑으면 그룹 내 순위도 맞다
-            key = key_fn(index_players[pid])
-            if key in (None, ''):
-                continue
-            groups.setdefault(key, []).append(pid)
-        for pids in groups.values():
-            for i, pid in enumerate(pids, start=1):
-                index_players[pid][out_field] = i
-
-    rank_within(lambda p: p.get('t'), 'tierRank')       # 티어 내 순위(가장 정확 - 같은 티어면 서로 자주 붙는다)
-    rank_within(bracket_of, 'divisionRank')             # 급(명칭/숫자 티어) 내 순위
-
-    shard_bounds = []
-    for entries in build_shards(per_sorted):
-        start_pid = min(entries, key=_pid_sort_key)
-        shard_bounds.append(_pid_num(start_pid) if _pid_num(start_pid) is not None else start_pid)
-        write_json(os.path.join(tmp_players, f'{start_pid}.json'), entries)
+        by_tier.setdefault(t, []).append(pid)
+    for t, pids in by_tier.items():
+        pids.sort(key=lambda p: (-index_players[p]['rt'], -index_players[p]['g']))
+        for rank, pid in enumerate(pids, start=1):
+            index_players[pid]['tr'] = rank
+            index_players[pid]['ts'] = len(pids)
 
     index = {
         'syncedAt': store.get('synced_at', ''),
         'tierDate': tier_date,
-        'count': len(index_players),
-        'shardBounds': shard_bounds,
+        'basedOn': today.isoformat(),
         'cats': [CAT_LABELS.get(c, c or '기타') for c in cats],
         'catWeights': {CAT_LABELS.get(c, c or '기타'): CAT_WEIGHTS.get(c, CAT_WEIGHTS['']) for c in cats},
         'initialRating': round(INITIAL_RATING),
-        'maps': maps,
+        'dormantDays': DORMANT_DAYS,
+        'halfLifeDays': round(DECAY_HALF_LIFE_DAYS),
         'players': index_players,
-        'others': others,
     }
-    write_json(os.path.join(OUT_DIR, 'index.json'), index)
+    write_json(OUT_PATH, index)
 
-    if os.path.isdir(tmp_players):
-        if os.path.isdir(out_players):
-            shutil.rmtree(out_players)
-        os.replace(tmp_players, out_players)
-
-    size = os.path.getsize(os.path.join(OUT_DIR, 'index.json')) / 1024
-    top = ranked[0][1] if ranked else None
-    print(f'✅ {OUT_DIR}: 순위표 {len(index_players):,}명 · 샤드 {len(shard_bounds)}개 · index {size:.0f}KB')
-    if top:
-        print(f'   1위: {top["n"]} (레이팅 {top["rating"]}, {top["m"]}전 {top["w"]}승 {top["l"]}패)')
+    ranked = sum(1 for e in index_players.values() if 'tr' in e)
+    dormant = sum(1 for e in index_players.values() if e.get('dm'))
+    rising = sum(1 for e in index_players.values() if e.get('up'))
+    size = os.path.getsize(OUT_PATH) / 1024
+    print(f'✅ {OUT_PATH}: 선수 {len(index_players):,}명 (순위 대상 {ranked:,}명 · '
+          f'휴면 {dormant:,}명 · 🚀 {rising}명) · {size:.0f}KB')
+    top = sorted((e for e in index_players.values() if e.get('tr') == 1), key=lambda e: -e['rt'])[:3]
+    for e in top:
+        name = next(k for k, v in index_players.items() if v is e)
+        print(f'   티어 1위: {(linked.get(name) or {}).get("n", name)} '
+              f'({e["rt"]}점 · 동티어 {e["g"]}경기)')
 
 
 if __name__ == '__main__':

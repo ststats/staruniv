@@ -14,10 +14,11 @@ eloboard.co.kr ───┼──> data/*.json (원본) ──> scripts/*.py ─
 1. **구글 시트 → `data/db.json`** ([scripts/update_data.py](scripts/update_data.py)) - 설정/팀/멤버/매치/라운드/티어멤버 시트를 통합
 2. **eloboard 전적 → `data/eloboard.json`** ([scripts/sync_eloboard.py](scripts/sync_eloboard.py)) - 최초 1회 전체 수집, 이후 증분(매일 몇십 건)
 3. **상대전적 파일 생성** ([scripts/build_h2h.py](scripts/build_h2h.py)) - `docs/data/h2h/`로 선수 단위 분리(아래 참고)
-4. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
-5. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
-6. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
-7. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 `admin.html`을 렌더링해 `docs/data/calendar.png` 생성
+4. **자체 레이팅 계산** ([scripts/generate_elo.py](scripts/generate_elo.py)) → `docs/data/elo/index.json` (티어표 '분석' 탭이 쓰는 요약. 경기 로그는 3번 산출물을 그대로 재사용한다)
+5. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
+6. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
+7. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
+8. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 `admin.html`을 렌더링해 `docs/data/calendar.png` 생성
 
 전체 순서와 실패 시 동작은 [.github/workflows/update.yml](.github/workflows/update.yml) 참고(각 단계가 독립적이라 하나가 실패해도 나머지는 진행됨).
 
@@ -70,6 +71,14 @@ Actions 탭에서 **Squash Git History** 워크플로를 손으로 실행하세�
 돌리지 않고, 실수 방지를 위해 `SQUASH`를 직접 입력해야 실행됩니다. 자세한 내용은
 [.github/workflows/squash-history.yml](.github/workflows/squash-history.yml) 참고.
 실행 후에는 이 저장소를 이미 clone/fork한 사람 모두 다시 clone해야 합니다.
+
+### 자체 레이팅 산정 기준
+티어표 '분석' 탭의 레이팅은 **같은 티어끼리 붙은 경기만** 으로 계산합니다(티어가 다르면 서로
+거의 붙지 않아 한 척도로 비교할 근거가 얇습니다). 대회·대학대전 같은 중요 경기는 시간이 지나도
+값이 그대로이고, 스폰(연습)은 90일 반감기로 완만하게 줄어듭니다. 같은 날 같은 상대와 여러 판은
+다전제 한 경기로 환산하고, 표본이 적으면 기준점(1500)쪽으로 점수를 끌어당깁니다. 최근 50일간
+경기가 없으면 휴면으로 보고 티어 내 순위 모집단에서 뺍니다. 자세한 규칙과 상수는
+[scripts/generate_elo.py](scripts/generate_elo.py) 상단 docstring에 적혀 있습니다.
 
 ### admin.html 보안 주의
 `docs/admin.html`은 GitHub Pages로 공개된 페이지지만, 여기서 입력한 GitHub 토큰으로

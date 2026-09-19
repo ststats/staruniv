@@ -66,16 +66,13 @@
         <div id="h2h-result"><div class="h2h-empty">불러오는 중...</div></div>
     </div>
 
-    {#- 분석: 선수 개개인의 티어내 순위·승률 추세를 보여준다. 데이터는
-        docs/data/elo/(scripts/generate_elo.py가 eloboard 아카이브로 계산한 자체 레이팅)를
-        이 탭을 처음 열 때 읽는다. -#}
+    {#- 분석: 선수 한 명을 골라 그 선수의 전적을 여러 각도로 뜯어본다(전적 페이지의 개인
+        프로필과 같은 틀). 요약은 docs/data/elo/index.json(scripts/generate_elo.py),
+        경기 로그는 상대전적 탭이 쓰는 docs/data/h2h/ 를 그대로 재사용한다. -#}
     <div id="view-tier-analysis" class="d-none">
         <div class="section-title" data-en="ANALYSIS">
             <span class="section-title-label">분석</span>
             <span class="h2h-updated" id="analysis-updated"></span>
-        </div>
-        <div class="h2h-topbar">
-            <div class="filter-nav h2h-period tab-scroll" id="analysis-period" role="group" aria-label="기간 선택" hidden></div>
         </div>
         <div class="h2h-slot-inner" id="analysis-search">
             <label class="h2h-slot-label" for="analysis-search-input">선수 검색</label>
