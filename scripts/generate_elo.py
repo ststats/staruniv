@@ -1,43 +1,55 @@
 """티어표 '분석' 탭이 읽을 자체 레이팅을 계산한다: data/eloboard.json → docs/data/elo/index.json
 
-[철학] "꾸준함은 기본, 지금의 기량이 순위를 결정한다"
-단순 승률이 아니라 (1) 같은 티어 안에서의 경쟁력, (2) 중요 경기의 업적, (3) 최근의 폼,
-(4) 표본의 신뢰도를 함께 본다. 아래 네 가지가 그 네 축이다.
+[이 점수가 재는 것]
+티어는 "어느 등급에 속해 있는가"를 나타내는 누적 성격의 자리다. 이 레이팅은 그 티어를 다시
+줄 세우려는 게 아니라 **같은 티어 안에서 지금 어느 정도인가**를 재는 다른 줄자다.
+그래서 점수 옆에는 항상 경기 수를 같이 보여준다 - 12승 3패(80%)와 120승 60패(67%)는
+같은 무게가 아니기 때문이다.
 
-1. [동일 티어 경기만 센다]
-   티어가 다르면 애초에 서로 거의 붙지 않는다(실측: 명칭 티어 갓~조커는 숫자 티어와의
-   맞대결이 0.5~10%뿐이다). 그런데도 한 판이라도 섞이면, 다른 티어를 상대로 쌓은 점수가
-   같은 티어 안 순위를 흔든다. 그래서 레이팅은 "같은 티어끼리 붙은 경기"만으로 계산한다.
-   (경기 기록 자체는 분석 탭에서 전부 보여준다 - 점수 계산에만 안 쓸 뿐이다.)
+[여섯 가지 규칙]
+1. 같은 티어끼리 붙은 경기만 센다.
+   티어가 다르면 애초에 서로 거의 안 붙는다(실측: 갓~조커는 숫자 티어와의 대전이 0.5~10%).
+   한 판이라도 섞이면 다른 티어에서 쌓은 점수가 같은 티어 안 순위를 흔든다.
+   (경기 기록 자체는 분석 화면에서 전부 보여준다 - 점수 계산에만 안 쓸 뿐이다.)
 
-2. [중요 경기는 가치가 줄지 않는다 / 연습은 최근 것이 더 값지다]
-   대회·대학대전 같은 중요 경기의 승리는 커리어에 남는 업적이라 시간이 지나도 그대로 센다.
-   반면 스폰(연습)은 "지금 폼"을 보는 지표라 오래될수록 완만하게 값이 준다
-   (반감기 DECAY_HALF_LIFE_DAYS일 - 90일 전 스폰 승리는 어제 승리의 절반만큼 반영).
+2. 지금 티어로 올라온 뒤의 경기만 센다.
+   시트의 'N티어 승급' 날짜를 쓴다. 8티어 시절 성적으로 3티어 순위를 매기면 안 되기 때문이다.
+   승급일이 적혀 있지 않은 선수는 전체 기간을 쓴다.
 
-3. [다전제 환산]
-   같은 날 같은 상대와 여러 판을 하면 그건 사실상 다전제 한 판이다. 판마다 따로 세면
-   "하루에 같은 사람 열 번 이기기"로 점수를 부풀릴 수 있어서, 하루·상대·형식이 같은 묶음은
-   승률 하나짜리 결과 한 경기로 환산한다.
+3. 시간은 자르지 않고 기울인다.
+   "최근 60일만" 같은 칼자름은 60일차와 61일차가 갑자기 달라진다. 대신 반감기로 완만하게
+   줄인다 - 연습(스폰)은 90일, 대회·대학대전 같은 업적은 540일. 업적은 오래 남지만
+   영원히 그대로는 아니다("지금의 기량"을 재는 표이므로).
 
-4. [표본이 적으면 점수를 깎는다]
-   10경기도 안 되는 레이팅은 우연이 대부분이다. 기준선(1500)쪽으로 끌어당겨서
-   "표본이 쌓여야 높은 점수가 유지된다"는 걸 점수 자체에 반영한다(penalty_factor 참고).
-   다만 중요 경기를 IMPORTANT_EXEMPT_GAMES번 이상 뛴 선수는 이미 검증된 것으로 보고 면제한다.
+4. 형식마다 무게가 다르다.
+   개인대회 = 대학대회 2.5 > 대학대전 2 > 미니대전 = 프로리그 = CK 1.5 > 스폰 1.
+
+5. 같은 상대를 반복해 이긴 것은 조금씩만 센다.
+   같은 날 여러 판은 다전제 한 경기로 묶고(하루에 같은 사람 열 번 이겨서 점수를 부풀릴 수
+   없게), 이미 여러 번 만난 상대는 그 경기의 가중을 낮춘다. 우리 데이터는 "늘 붙는 연습
+   상대"가 뚜렷해서(한 상대와만 수백 경기인 경우가 흔하다) 이 보정이 특히 크게 작동한다.
+   결과적으로 "몇 판 이겼나"보다 "몇 명을 이겼나"가 무겁다.
+
+6. 표본이 적으면 숨기지 않고 드러낸다.
+   기준점(1500)에 가상 경기 PRIOR_GAMES판을 깔아 둔다(베이즈 수축) - 표본이 적으면 자연히
+   기준점에 가깝고 경기가 쌓일수록 매끄럽게 제 점수로 풀린다. 구간별로 계단처럼 깎으면
+   경계에서 점수가 튀어서 이 방식을 골랐다. 그리고 동티어 MIN_RANKED_GAMES경기에 못 미치면
+   순위를 매기지 않고 '표본 부족'으로 따로 표시한다(점수 자체는 그대로 보여준다).
 
 [휴면] 점수와 무관하게 "최근 DORMANT_DAYS일 동안 공식 경기가 하나도 없는가"만 본다
 (다른 티어와의 경기도 활동으로 친다 - 활동 여부를 보는 것이지 경쟁력을 보는 게 아니다).
-휴면 선수는 티어 내 순위 모집단에서 빠진다(순위가 유령으로 채워지지 않게). 대신 분석
-화면에서 검색해 보는 것 자체는 된다.
+휴면 선수는 순위 모집단에서 빠지지만 분석 화면에서 검색해 보는 것은 된다.
 
 [성장 가속도 🚀] 최근 RISING_RECENT_DAYS일 승률이 그 앞 구간보다 RISING_GAP 이상 높고
-양쪽 표본이 충분하면 표시한다. 점수에 보너스를 주지는 않고, "지금 폼이 좋다"는 신호다.
+양쪽 표본이 충분하면 표시한다. 점수에 보너스를 주지는 않고 "지금 폼이 좋다"는 신호다.
 
 [출력] docs/data/elo/index.json 하나뿐이다.
-    { syncedAt, cats, catWeights, initialRating, dormantDays,
-      players: { 선수id: { rt:레이팅, tr:티어내순위, ts:티어인원, g:동티어경기수,
+    { syncedAt, basedOn, cats, catWeights, initialRating, dormantDays, halfLifeDays,
+      importantHalfLifeDays, minRankedGames,
+      players: { 선수id: { rt:레이팅, tr:티어내순위, ts:티어인원, g:동티어경기수, op:동티어상대수,
                            m,w,l, race:{T:[승,패],...}, cat:[[승,패],...],
-                           st:{t,n}, lw, ll, last:최근경기일, dm:휴면?, up:성장가속도? } } }
+                           st:{t,n}, lw, ll, last:최근경기일,
+                           dm:휴면?, lo:표본부족?, up:성장가속도? } } }
 경기 로그는 따로 만들지 않고 분석 탭이 docs/data/h2h/p/*.json(build_h2h.py 산출물)을 그대로
 읽는다 - 같은 내용을 두 벌 갖고 있으면 저장소만 커지고 서로 어긋날 여지만 생긴다.
 
@@ -72,14 +84,27 @@ CAT_WEIGHTS = {
     '': 1.0,                # 기타/미상
 }
 
-# 시간이 지나면 값이 주는 형식(=연습). 여기 없는 형식은 "업적"이라 감쇠하지 않는다.
-DECAY_CATS = {'sponsored', ''}
-DECAY_HALF_LIFE_DAYS = 90.0
+# [시간 가중] "최근 60일만 본다" 같은 칼자름은 60일차와 61일차 경기가 갑자기 달라진다.
+# 대신 연속적으로 줄인다. 연습(스폰)은 최근 폼이 중요하니 빠르게, 대회·대학대전 같은 업적은
+# 아주 느리게 준다 - 영원히 그대로 두면 "예전에 잘했던 사람"이 계속 윗자리에 남기 때문이다.
+PRACTICE_CATS = {'sponsored', ''}
+PRACTICE_HALF_LIFE_DAYS = 90.0
+IMPORTANT_HALF_LIFE_DAYS = 540.0
 DECAY_FLOOR = 0.15          # 아무리 오래돼도 이만큼은 남긴다(옛 기록이 0이 되면 표본이 사라진다)
 
-# 중요 경기 = 감쇠하지 않는 형식. 페널티 면제 판정에 쓴다.
-IMPORTANT_EXEMPT_GAMES = 3
-PENALTY_FREE_GAMES = 30     # 이 판수부터는 깎지 않는다
+# [상대 다양성] 이 사이트만의 보정이다. 우리 데이터는 "늘 붙는 연습 상대"가 뚜렷해서
+# (한 선수가 특정 상대와만 수백 경기를 한 경우가 흔하다) 같은 사람을 반복해서 이기는 것만으로
+# 점수가 계속 오르면 실제 경쟁력과 멀어진다. 이미 여러 번 만난 상대일수록 그 경기가
+# 새로 알려주는 정보가 적다고 보고 가중을 줄인다 - "몇 명을 이겼나"가 "몇 판을 이겼나"보다
+# 무겁게 반영된다. (같은 날 여러 판은 이와 별개로 다전제 한 경기로 먼저 묶는다.)
+REPEAT_SCALE = 6.0          # 이만큼 다시 만날 때마다 가중이 절반 가까이로 준다
+REPEAT_FLOOR = 0.30         # 아무리 자주 만나도 이만큼은 남긴다
+
+# [표본] 점수를 구간별로 계단처럼 깎는 대신, 기준점(1500)에 "가상의 경기"를 몇 판 깔아둔다.
+# 표본이 적으면 자연스럽게 기준점에 가깝고, 경기가 쌓일수록 매끄럽게 제 점수로 풀린다.
+PRIOR_GAMES = 12.0
+# 이 판수에 못 미치면 순위를 매기지 않고 '표본 부족'으로 표시한다(점수는 그대로 보여준다).
+MIN_RANKED_GAMES = 10
 
 DORMANT_DAYS = 50           # 이 기간 동안 아무 공식 경기도 없으면 휴면
 
@@ -101,26 +126,20 @@ def parse_date(value):
 
 
 def decay_factor(cat_code, days_ago):
-    """오래된 연습 경기의 가치를 줄이는 배수(중요 경기는 항상 1.0)."""
-    if cat_code not in DECAY_CATS or days_ago <= 0:
+    """오래된 경기의 가치를 줄이는 배수. 연습은 빠르게, 중요 경기는 아주 느리게 준다."""
+    if days_ago <= 0:
         return 1.0
-    raw = 0.5 ** (days_ago / DECAY_HALF_LIFE_DAYS)
+    half = PRACTICE_HALF_LIFE_DAYS if cat_code in PRACTICE_CATS else IMPORTANT_HALF_LIFE_DAYS
+    raw = 0.5 ** (days_ago / half)
     return DECAY_FLOOR + (1.0 - DECAY_FLOOR) * raw
 
 
-def penalty_factor(games, important_games):
-    """표본이 적을 때 레이팅을 기준선 쪽으로 끌어당기는 비율(1.0이면 그대로 둔다).
-    구간: 10판 미만은 최대 80%까지 깎고, 10~19판은 30%, 20~29판은 완만하게 풀어
-    30판부터 그대로 둔다. 중요 경기를 충분히 뛴 선수는 표본이 10판만 넘으면 면제한다."""
-    if games >= PENALTY_FREE_GAMES:
-        return 1.0
-    if games >= 10 and important_games >= IMPORTANT_EXEMPT_GAMES:
-        return 1.0
-    if games < 10:
-        return 0.20 + 0.05 * games          # 0판 0.20 → 9판 0.65
-    if games < 20:
-        return 0.70
-    return 0.70 + 0.03 * (games - 20)       # 20판 0.70 → 29판 0.97
+def shrink_factor(games):
+    """표본이 적을수록 기준점(1500) 쪽으로 끌어당기는 비율.
+    1500점에 가상 경기 PRIOR_GAMES판을 깔아둔 것과 같다 - 12판이면 절반, 50판이면 80%,
+    120판이면 91%가 제 점수로 반영된다. 구간을 나눠 계단처럼 깎는 것보다 경계에서 점수가
+    튀지 않고, "표본이 쌓여야 높은 점수가 유지된다"는 성질은 그대로다."""
+    return games / (games + PRIOR_GAMES) if games else 0.0
 
 
 def to_series(matches):
@@ -142,11 +161,17 @@ def to_series(matches):
     return series
 
 
+def repeat_factor(prior_meetings):
+    """같은 상대를 이미 여러 번 만났으면 그만큼 가중을 줄인다(상대 다양성 보정)."""
+    return max(REPEAT_FLOOR, 1.0 / (1.0 + prior_meetings / REPEAT_SCALE))
+
+
 def compute_ratings(same_tier_series, today):
     """같은 티어끼리 붙은 경기(다전제로 묶은 것)를 시간순으로 훑어 레이팅을 계산한다.
-    한 경기가 레이팅을 움직이는 폭 = BASE_K × 형식 가중치 × 시간 감쇠.
+    한 경기가 레이팅을 움직이는 폭 = BASE_K × 형식 가중치 × 시간 감쇠 × 상대 다양성.
     돌려주는 값: {pid: 레이팅}"""
     rating = {}
+    met = {}                                  # (a, b) -> 지금까지 만난 횟수
 
     def get(pid):
         return rating.setdefault(pid, INITIAL_RATING)
@@ -159,12 +184,23 @@ def compute_ratings(same_tier_series, today):
         score_a = s['wins'] / total          # 다전제 결과를 0~1 점수로
         ra, rb = get(a), get(b)
         days_ago = (today - s['date']).days if s['date'] else 0
-        weight = CAT_WEIGHTS.get(s['cat'], CAT_WEIGHTS['']) * decay_factor(s['cat'], days_ago)
+        pair = (a, b)
+        weight = (CAT_WEIGHTS.get(s['cat'], CAT_WEIGHTS[''])
+                  * decay_factor(s['cat'], days_ago)
+                  * repeat_factor(met.get(pair, 0)))
+        met[pair] = met.get(pair, 0) + 1
         k = BASE_K * weight
         exp_a = expected_score(ra, rb)
         rating[a] = ra + k * (score_a - exp_a)
         rating[b] = rb + k * ((1 - score_a) - (1 - exp_a))
     return rating
+
+
+def _before_promotion(day, promoted_on, *pids):
+    """둘 중 한 명이라도 아직 그 티어로 승급하기 전이면 True(레이팅에서 제외)."""
+    if day is None:
+        return False
+    return any(promoted_on.get(pid) and day < promoted_on[pid] for pid in pids)
 
 
 def rising_flag(dated_results, today):
@@ -195,6 +231,13 @@ def main():
         sys.exit('❌ 티어표 명단과 이어붙인 선수가 0명입니다. build_h2h.py를 먼저 정상적으로 돌려보세요.')
 
     tier_of = {pid: str(info.get('t', '')) for pid, info in linked.items()}
+    # 지금 티어로 승급한 날(시트의 'N티어 승급' 칸). 있으면 그 날 이후 경기만 레이팅에 센다 -
+    # 8티어 시절 성적으로 3티어 순위를 매기면 안 되기 때문. 값이 없는 선수는 전체 기간을 쓴다.
+    promoted_on = {}
+    for pid, info in linked.items():
+        day = parse_date(info.get('pr'))
+        if day:
+            promoted_on[pid] = day
     # 기준일: 아카이브가 마지막으로 동기화된 날(로컬 시계가 아니라 데이터 기준이라야
     # 언제 돌리든 같은 결과가 나온다).
     today = parse_date(store.get('synced_at')) or dt.date.today()
@@ -213,9 +256,10 @@ def main():
             per[w].append((day, l, 1, cat))
         if l in per:
             per[l].append((day, w, 0, cat))
-        # 둘 다 티어표에 있고 티어가 같을 때만 레이팅 대상
+        # 둘 다 티어표에 있고 티어가 같을 때만 레이팅 대상.
+        # 둘 중 한 명이라도 "그 티어로 올라오기 전"이면 세지 않는다.
         tw, tl = tier_of.get(w), tier_of.get(l)
-        if tw and tw == tl:
+        if tw and tw == tl and not _before_promotion(day, promoted_on, w, l):
             same_tier_raw.append((day, w, l, cat))
 
     # [다전제 환산] 같은 날·같은 짝·같은 형식은 한 경기로 묶는다. 짝은 (작은id, 큰id)로
@@ -269,16 +313,20 @@ def main():
                 by_race[race][0 if win else 1] += 1
 
         last_day = matches[-1][0]
-        same_tier = [(d, win) for d, opp, win, cat in matches if tier_of.get(opp) and tier_of.get(opp) == tier_of.get(pid)]
-        important = sum(1 for _d, _o, _w, cat in matches
-                        if tier_of.get(_o) == tier_of.get(pid) and cat not in DECAY_CATS)
+        # 레이팅에 실제로 쓰인 경기와 같은 기준(같은 티어 + 승급 이후)으로 센다.
+        counted = [(d, opp, win) for d, opp, win, cat in matches
+                   if tier_of.get(opp) and tier_of.get(opp) == tier_of.get(pid)
+                   and not _before_promotion(d, promoted_on, pid, opp)]
+        same_tier = [(d, win) for d, _opp, win in counted]
+        # 동티어 상대가 몇 명인지(상대 다양성) - 레이팅 가중에도 쓰이는 개념이라 화면에도 같이 보여준다.
+        same_tier_opps = {opp for _d, opp, _w in counted}
         raw = rating.get(pid, INITIAL_RATING)
-        factor = penalty_factor(len(same_tier), important)
-        adjusted = INITIAL_RATING + (raw - INITIAL_RATING) * factor
+        adjusted = INITIAL_RATING + (raw - INITIAL_RATING) * shrink_factor(len(same_tier))
 
         entry = {
             'rt': round(adjusted),
             'g': len(same_tier),
+            'op': len(same_tier_opps),
             'm': len(matches), 'w': wins, 'l': losses,
             'race': by_race,
             'cat': by_cat,
@@ -288,6 +336,8 @@ def main():
         }
         if not last_day or last_day <= dormant_cut:
             entry['dm'] = 1
+        if len(same_tier) < MIN_RANKED_GAMES:
+            entry['lo'] = 1                     # 표본 부족 - 순위는 매기지 않는다
         if rising_flag(same_tier, today):
             entry['up'] = 1
         index_players[pid] = entry
@@ -299,7 +349,7 @@ def main():
     by_tier = {}
     for pid, entry in index_players.items():
         t = tier_of.get(pid, '')
-        if not t or entry.get('dm') or not entry['g']:
+        if not t or entry.get('dm') or entry.get('lo'):
             continue
         by_tier.setdefault(t, []).append(pid)
     for t, pids in by_tier.items():
@@ -316,7 +366,9 @@ def main():
         'catWeights': {CAT_LABELS.get(c, c or '기타'): CAT_WEIGHTS.get(c, CAT_WEIGHTS['']) for c in cats},
         'initialRating': round(INITIAL_RATING),
         'dormantDays': DORMANT_DAYS,
-        'halfLifeDays': round(DECAY_HALF_LIFE_DAYS),
+        'halfLifeDays': round(PRACTICE_HALF_LIFE_DAYS),
+        'importantHalfLifeDays': round(IMPORTANT_HALF_LIFE_DAYS),
+        'minRankedGames': MIN_RANKED_GAMES,
         'players': index_players,
     }
     write_json(OUT_PATH, index)

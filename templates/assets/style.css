@@ -4348,29 +4348,52 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-empty-sub { font-size: 12px; color: var(--color-text-muted); }
 
 /* 분석 탭 - 전적 페이지의 개인 프로필과 같은 틀을 쓰고, 분석 전용 부품만 여기서 더한다 */
-.analysis-toolbar { margin-bottom: 12px; }
-.analysis-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 38px;
-    padding: 0 16px;
-    border: 0;
-    background: var(--color-card);
-    clip-path: var(--cut-8);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-sub);
-}
-.analysis-back:hover { background: var(--color-row-hover); color: var(--color-text-main); }
 
-/* 머리 카드: .profile-head를 그대로 쓰되 사진을 키우고 레이팅 한 줄을 넣는다 */
-.analysis-head { gap: 18px; flex-wrap: wrap; }
+/* 선수를 고르기 전 안내판. 흰 카드로 두면 검색창과 구분이 안 가서 페이지 머리와 같은
+   네이비 사선 면으로 세운다(검색창과는 간격을 띄운다). */
+.analysis-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 180px;
+    margin-top: 22px;
+    padding: 32px 20px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    clip-path: var(--cut-12);
+    text-align: center;
+}
+.analysis-placeholder-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--navy-on-text);
+}
+.analysis-placeholder-sub { font-size: 12px; color: var(--navy-on-muted); }
+
+/* 머리 카드: .profile-head를 그대로 쓰되 사진을 키우고, 오른쪽 통계가 아래로 밀리지 않게
+   가운데 블록이 남는 폭을 먹게 한다(예전엔 줄바꿈이 나면서 오른쪽이 텅 비었다). */
+.analysis-head {
+    position: relative;
+    /* .profile-head 자체에는 display가 없다(전적 페이지는 마크업에서 부트스트랩 d-flex를
+       붙여 쓴다). 여기서는 클래스 하나로 끝나게 직접 지정한다. */
+    display: flex;
+    gap: 22px;
+    margin-top: 22px;
+    margin-bottom: 14px;
+    /* .profile-head 기본값은 wrap이다. 그대로 두면 레이팅 줄이 길어질 때 오른쪽 통계가
+       통째로 아랫줄로 떨어지면서 카드 오른쪽이 텅 빈다 - 한 줄로 고정하고, 가운데 블록이
+       줄어들게 한다(좁은 화면에서는 아래 미디어쿼리가 다시 세로로 쌓는다). */
+    flex-wrap: nowrap;
+    align-items: center;
+    padding-right: 52px;      /* 오른쪽 위 ✕와 글자가 겹치지 않게 */
+}
 .analysis-avatar {
-    width: 86px;
-    height: 86px;
+    width: 92px;
+    height: 92px;
     flex: none;
-    font-size: 34px;
+    font-size: 36px;
 }
 .analysis-avatar-img {
     width: 100%;
@@ -4378,18 +4401,43 @@ body.media-lightbox-open { overflow: hidden; }
     object-fit: cover;
     border-radius: inherit;
 }
+.analysis-head-id { flex: 1 1 auto; min-width: 0; }
+.analysis-head-stats {
+    flex: none;
+    gap: 26px;
+    align-items: flex-end;
+    white-space: nowrap;
+}
+.analysis-head-stats .profile-head-value small { font-weight: 600; }
+.profile-head-note {
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--panel-muted);
+    font-family: "Pretendard", sans-serif;
+}
+/* 닫기(✕)는 상대전적 카드와 같은 부품을 쓰되, 손가락으로도 눌리게 과녁을 키운다 */
+.analysis-close {
+    width: 34px;
+    height: 34px;
+    top: 10px;
+    right: 10px;
+    font-size: 14px;
+    z-index: 2;
+}
 .analysis-rise { margin-left: 6px; font-size: 18px; }
 .analysis-rating-line {
-    margin-top: 10px;
+    margin-top: 12px;
     font-size: var(--fs-body);
-    color: var(--color-text-sub);
+    color: var(--panel-muted);
 }
 .analysis-rating-line strong {
-    color: var(--color-text-main);
-    font-size: 15px;
+    margin-right: 2px;
+    color: var(--panel-text);
+    font-size: 17px;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
-.analysis-rating-note { color: var(--color-text-faint); font-size: 12px; }
+.analysis-rating-note { font-size: 12px; }
 .analysis-dormant-badge { background: var(--color-bg-subtle); color: var(--color-text-faint); }
 .analysis-help {
     width: 18px;
@@ -4398,15 +4446,15 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: var(--color-bg-subtle);
-    color: var(--color-text-sub);
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--panel-text);
     font-size: 11px;
     font-weight: 700;
     line-height: 18px;
 }
-.analysis-help:hover { background: var(--color-row-hover); color: var(--color-text-main); }
+.analysis-help:hover { background: rgba(255, 255, 255, 0.26); }
 .analysis-help-box {
-    margin: -8px 0 var(--space-block-gap);
+    margin-bottom: var(--space-block-gap);
     padding: 14px 16px;
     background: var(--color-bg-subtle);
     clip-path: var(--cut-8);
@@ -4416,44 +4464,38 @@ body.media-lightbox-open { overflow: hidden; }
 .analysis-help-box p { margin: 0; }
 .analysis-help-box p + p { margin-top: 6px; }
 
-/* 형식별 도넛은 6개다. 흘려보내면 5+1처럼 어정쩡하게 끊겨서 3+3으로 고정한다
+/* 최근 폼: W/L 배지 한 줄 (사이트 공용 .match-badge를 그대로 쓴다) */
+.analysis-formline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: var(--space-block-gap);
+    padding: 12px 16px;
+    background: var(--color-card);
+    clip-path: var(--cut-8);
+}
+.analysis-formline-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text-sub);
+}
+.analysis-formline-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.analysis-formline-badges .match-badge { width: 26px; height: 20px; font-size: 11px; }
+.analysis-formline-sum {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--color-text-sub);
+    white-space: nowrap;
+}
+
+/* 형식별 도넛은 6개다. 흘려보내면 5+1처럼 어정쩡하게 끊겨서 3x2로 고정한다
    (종족별 3개는 기존 .donut-wrap 그대로 한 줄). */
 .analysis-donut-wrap {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px 8px;
 }
-
-/* 최근 10경기 - 5개씩 두 줄 */
-.analysis-form {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 10px;
-}
-.analysis-form-item {
-    padding: 9px 10px;
-    clip-path: var(--cut-6);
-    background: var(--color-bg-subtle);
-    border-left: 3px solid var(--color-border);
-    text-align: center;
-}
-.analysis-form-item.is-win { border-left-color: var(--color-win); }
-.analysis-form-item.is-lose { border-left-color: var(--color-lose); }
-.analysis-form-res { display: block; font-size: 14px; font-weight: 800; }
-.analysis-form-item.is-win .analysis-form-res { color: var(--color-win); }
-.analysis-form-item.is-lose .analysis-form-res { color: var(--color-lose); }
-.analysis-form-opp {
-    display: block;
-    margin-top: 2px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-main);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.analysis-form-date { display: block; font-size: 10px; color: var(--color-text-faint); }
 
 /* 월별 전적 · 승률 그래프 */
 .analysis-chart-svg {
@@ -4494,40 +4536,27 @@ body.media-lightbox-open { overflow: hidden; }
 .analysis-legend-dot.is-lose { background: var(--color-lose); }
 .analysis-legend-line { width: 14px; height: 2px; background: var(--color-text-main); }
 
-/* 맵별 승률 · 동티어 맞대결 (같은 줄 부품을 공유한다) */
-.analysis-bars { margin-top: 10px; }
-.analysis-bar-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 4px 10px;
-    width: 100%;
-    padding: 7px 0;
-    border: 0;
-    background: none;
-    text-align: left;
+/* 좁은 화면: 3칸 격자는 휴대폰에서 글자가 뭉개진다 - 2칸으로 접고 머리 카드도 세로로 쌓는다 */
+@media (max-width: 767.98px) {
+    /* 좁아지면 오른쪽 통계를 아래로 내려 가로 스크롤이 생기지 않게 한다 */
+    .analysis-head { flex-wrap: wrap; align-items: flex-start; padding-right: 44px; }
+    .analysis-head-stats { width: 100%; margin-left: 0; text-align: left; justify-content: flex-start; }
+    /* 최근 전적 형식 필터: 제목과 같은 줄에 두면 폭이 200px도 안 돼 옆으로 밀린다.
+       한 줄을 통째로 내줘서 칩이 그대로 다 보이게 한다. */
+    #view-tier-analysis .record-recent-header { grid-template-columns: minmax(0, 1fr) max-content; }
+    #view-tier-analysis .record-recent-header .filter-nav {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        width: 100%;
+    }
 }
-.analysis-bar-row + .analysis-bar-row { border-top: 1px solid var(--color-border); }
-.analysis-bar-link:hover .analysis-bar-name { color: var(--color-primary); }
-.analysis-bar-name {
-    font-size: var(--fs-body);
-    font-weight: 600;
-    color: var(--color-text-main);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.analysis-bar-rate { font-size: var(--fs-body); font-weight: 800; font-variant-numeric: tabular-nums; }
-.analysis-bar-rec { font-size: 12px; color: var(--color-text-sub); white-space: nowrap; }
-.analysis-bar-row .h2h-map-bar { grid-column: 1 / -1; margin: 2px 0 0; height: 6px; }
-
-/* 좁은 화면: 5칸·3칸 격자는 휴대폰에서 글자가 뭉개진다 - 2칸으로 접는다 */
 @media (max-width: 575.98px) {
-    .analysis-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .analysis-donut-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .analysis-head { gap: 14px; }
     .analysis-avatar { width: 68px; height: 68px; }
-    .analysis-head .profile-head-stats { width: 100%; margin-left: 0; text-align: left; gap: 18px; }
+    .analysis-head-stats { width: 100%; margin-left: 0; text-align: left; gap: 20px; align-items: flex-start; }
+    .analysis-formline-sum { margin-left: 0; width: 100%; }
+}
 }
 
 
@@ -5647,6 +5676,7 @@ html[data-theme="dark"] .mv-order-row {
 .head-plate,
 .profile-head,
 #statContent .clean-card:has(.donut-wrap),
+.analysis-panel,
 .mv-console,
 .selection-layout > .avatar-bar,
 .selection-layout > .tier-bar,

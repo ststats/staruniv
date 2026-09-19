@@ -148,13 +148,17 @@ def sheet_tier_members():
         nickname = cell(r, '닉네임') or cell(r, '이름')
         if not nickname:
             continue
+        tier = cell(r, '티어')
         out.append({
             'id': cell(r, 'SOOP ID'),
             'nickname': nickname,
             'elo_id': cell(r, 'ELO ID'),
             'team': cell(r, '소속'),
-            'tier': cell(r, '티어'),
+            'tier': tier,
             'race': cell(r, '종족'),
+            # 시트의 'N티어 승급' 칸(숫자 티어만 있다). generate_elo.py가 "지금 티어로 올라온
+            # 뒤의 경기만" 세는 데 쓴다 - 8티어 시절 성적으로 3티어 순위를 매기면 안 되니까.
+            'promoted': cell(r, f'{tier}티어 승급') if tier else '',
             # 티어표가 남성부/여성부로 나뉘어 있어(명칭 티어 갓~스페이드=남성부, 숫자
             # 티어 0~베이비=주로 여성부) generate_elo.py가 부문별 순위를 매길 때 쓴다.
             'gender': cell(r, '성별'),
@@ -241,8 +245,9 @@ def link_tier_players(players, tier_members, alias):
         # 이름은 티어표(시너지) 닉네임을 쓴다 - 사이트 다른 화면과 같은 이름으로 보이게.
         linked[pid] = {'n': m['nickname'], 'tm': m['team'], 's': m['id'],
                        **({'t': m['tier']} if m['tier'] not in (None, '') else {}),
-                       # 시너지 명단(fetch_tier_members)엔 성별이 없을 수 있다 - 그때는 그냥 뺀다.
-                       **({'g': m['gender']} if m.get('gender') else {})}
+                       # 시너지 명단(fetch_tier_members)엔 성별·승급일이 없을 수 있다 - 그때는 그냥 뺀다.
+                       **({'g': m['gender']} if m.get('gender') else {}),
+                       **({'pr': m['promoted']} if m.get('promoted') else {})}
     if tier_members:
         print(f'  잇기: elo_id {by_eloid}명 · 이름 {by_name}명 · 못 찾음 {len(missing)}명 (명단 {len(tier_members)}명)')
     return linked, missing

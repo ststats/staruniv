@@ -31,13 +31,15 @@ const ANALYSIS_RIVAL_COUNT = 8;        // 동티어 맞대결에 보여줄 상�
 
 // 형식 묶음: eloboard 형식(스폰·리그·개인·CK·대회·미니·대학·기타)을 화면용으로 묶는다.
 // CK와 리그는 둘 다 팀 단위 경기라 하나로 본다.
+// [정식 이름, 짧은 이름, 묶을 원본 형식들] - 도넛에는 정식 이름을, 필터 칩에는 짧은 이름을 쓴다
+// (칩에 '개인대회·대학대회…'를 다 적으면 휴대폰에서 필터 줄이 옆으로 밀린다).
 const ANALYSIS_CAT_GROUPS = [
-    ['개인대회', ['개인']],
-    ['대학대회', ['대회']],
-    ['대학대전', ['대학']],
-    ['미니대전', ['미니']],
-    ['CK+리그', ['CK', '리그']],
-    ['스폰', ['스폰', '기타']],
+    ['개인대회', '개인', ['개인']],
+    ['대학대회', '대회', ['대회']],
+    ['대학대전', '대학', ['대학']],
+    ['미니대전', '미니', ['미니']],
+    ['CK+리그', 'CK+리그', ['CK', '리그']],
+    ['스폰', '스폰', ['스폰', '기타']],
 ];
 
 const AnalysisState = {
@@ -107,16 +109,18 @@ function analysisWlText(w, l) {
 }
 
 // 전적 페이지와 같은 도넛(conic-gradient). page-records.js의 donutBackground와 같은 규칙이다.
-function analysisDonutHtml(label, w, l, labelClass) {
+// ringColor를 주면 그 색으로(종족전은 종족색), 안 주면 50% 기준 승/패 색으로 칠한다.
+function analysisDonutHtml(label, w, l, opts) {
+    const o = opts || {};
     const rate = analysisRate(w, l);
     const pct = rate === null ? 0 : rate;
-    const color = rate === null ? 'var(--color-donut-track)' : analysisRateColor(rate);
+    const color = rate === null ? 'var(--color-donut-track)' : (o.ringColor || analysisRateColor(rate));
     return `
         <div class="donut-box">
             <div class="donut" style="background:conic-gradient(${color} ${pct}%, var(--color-donut-track) 0)">
                 <span class="donut-text" style="${rate === null ? '' : `color:${color}`}">${rate === null ? '-' : `${rate}%`}</span>
             </div>
-            <div class="donut-label${labelClass ? ` ${labelClass}` : ''}">${escapeHTML(label)}</div>
+            <div class="donut-label${o.labelClass ? ` ${o.labelClass}` : ''}">${escapeHTML(label)}</div>
             <div class="donut-sub">${analysisWlText(w, l)}</div>
         </div>`;
 }
@@ -198,28 +202,30 @@ function analysisHeadHtml(pid, p, e) {
     const rate = analysisRate(e.w, e.l);
     const tierName = (p.t !== undefined && p.t !== '') ? tierLabel(p.t) : '미분류';
     const rankText = e.tr
-        ? `<strong>${e.tr}위</strong><small> / ${e.ts}명</small>`
-        : '<small>순위 없음</small>';
+        ? `<strong>${e.tr}</strong><small>위 / ${e.ts}명</small>`
+        : (e.lo ? '<small>표본 부족</small>' : '<small>순위 없음</small>');
     return `
-        <div class="clean-card profile-head analysis-head p-4 mb-block">
+        <div class="clean-card profile-head analysis-head p-4">
+            <button type="button" class="h2h-card-clear analysis-close" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>
             <div class="profile-avatar analysis-avatar">${avatarHtml(p.s || '', 'analysis-avatar-img')}</div>
-            <div class="profile-head-id">
+            <div class="profile-head-id analysis-head-id">
                 <h3 class="fw-bold m-0 mb-2 profile-name">${escapeHTML(p.n)}${e.up ? '<span class="analysis-rise" title="최근 폼이 눈에 띄게 올라왔습니다">🚀</span>' : ''}</h3>
                 <div class="d-flex gap-2 flex-wrap align-items-center">
                     ${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierName)}</span>` : ''}
                     ${p.r ? raceBadgeHtml(p.r) : ''}
                     ${p.tm ? `<span class="tag-badge">${escapeHTML(p.tm)}</span>` : ''}
                     ${e.dm ? '<span class="tag-badge analysis-dormant-badge">휴면</span>' : ''}
+                    ${e.lo && !e.dm ? `<span class="tag-badge analysis-dormant-badge">표본 부족</span>` : ''}
                 </div>
                 <div class="analysis-rating-line">
-                    자체 레이팅 <strong>${e.rt.toLocaleString('ko-KR')}점</strong>
+                    자체 레이팅 <strong>${e.rt.toLocaleString('ko-KR')}</strong>
                     <span class="analysis-rating-note">${e.g
-                        ? `· 같은 ${escapeHTML(tierName)} 상대 ${e.g.toLocaleString('ko-KR')}경기 기준`
-                        : '· 같은 티어 상대 경기가 없어 기본 점수입니다'}</span>
+                        ? `같은 ${escapeHTML(tierName)} 상대 ${(e.op || 0).toLocaleString('ko-KR')}명 · ${e.g.toLocaleString('ko-KR')}경기 기준`
+                        : '같은 티어 상대 경기가 없어 기본 점수입니다'}</span>
                     <button type="button" class="analysis-help" onclick="analysisToggleHelp()" aria-label="레이팅 설명">?</button>
                 </div>
             </div>
-            <div class="profile-head-stats">
+            <div class="profile-head-stats analysis-head-stats">
                 <div class="profile-head-stat">
                     <div class="profile-head-label">${escapeHTML(tierName)} 순위</div>
                     <div class="profile-head-value">${rankText}</div>
@@ -227,6 +233,7 @@ function analysisHeadHtml(pid, p, e) {
                 <div class="profile-head-stat">
                     <div class="profile-head-label">총 전적</div>
                     <div class="profile-head-value">${(e.m || 0).toLocaleString('ko-KR')}<small>전</small></div>
+                    <div class="profile-head-note">${analysisWlText(e.w, e.l)}</div>
                 </div>
                 <div class="profile-head-stat">
                     <div class="profile-head-label">WIN RATE</div>
@@ -235,11 +242,18 @@ function analysisHeadHtml(pid, p, e) {
             </div>
         </div>
         <div class="analysis-help-box" id="analysis-help" hidden>
-            <p>같은 티어끼리 붙은 경기만으로 계산합니다. 대회·대학대전 같은 중요 경기는 시간이 지나도 값이 그대로지만,
-            스폰(연습)은 ${(AnalysisState.elo.halfLifeDays || 90)}일 반감기로 오래될수록 완만하게 값이 줄어듭니다.</p>
-            <p>같은 날 같은 상대와 여러 판을 한 경우는 다전제 한 경기로 환산하고, 표본(동티어 경기)이 적으면
-            기준점 ${(AnalysisState.elo.initialRating || 1500).toLocaleString('ko-KR')}점 쪽으로 점수를 끌어당깁니다.
-            최근 ${(AnalysisState.elo.dormantDays || 50)}일간 경기가 없으면 휴면으로 보고 순위 모집단에서 뺍니다.</p>
+            <p><strong>티어와는 다른 줄자입니다.</strong> 티어가 "어느 등급에 속해 있는가"라면, 이 점수는
+            <strong>같은 티어 안에서 지금 어느 정도인가</strong>를 봅니다. 그래서 점수 옆에 늘 경기 수를 같이 적습니다 —
+            12승 3패(80%)와 120승 60패(67%)는 같은 무게가 아니니까요.</p>
+            <p>① 같은 티어끼리 붙은 경기만, ② 그것도 <strong>지금 티어로 올라온 뒤</strong>의 경기만 셉니다.
+            ③ 기간을 자르는 대신 반감기로 기울입니다(스폰 ${(AnalysisState.elo.halfLifeDays || 90)}일,
+            대회·대학대전 같은 중요 경기는 ${(AnalysisState.elo.importantHalfLifeDays || 540)}일).
+            ④ 형식마다 무게가 다릅니다(개인·대회 2.5 &gt; 대학 2 &gt; 미니·리그·CK 1.5 &gt; 스폰 1).</p>
+            <p>⑤ 같은 날 여러 판은 다전제 한 경기로 묶고, <strong>이미 여러 번 만난 상대는 가중을 낮춥니다</strong> —
+            같은 사람을 반복해 이긴 것보다 여러 상대를 이긴 쪽을 높게 봅니다.
+            ⑥ 표본이 적으면 기준점 ${(AnalysisState.elo.initialRating || 1500).toLocaleString('ko-KR')}점 쪽에 가깝게 두고,
+            동티어 ${(AnalysisState.elo.minRankedGames || 10)}경기에 못 미치면 순위를 매기지 않고 '표본 부족'으로 표시합니다.
+            최근 ${(AnalysisState.elo.dormantDays || 50)}일간 경기가 없으면 휴면입니다.</p>
         </div>`;
 }
 
@@ -257,7 +271,7 @@ function analysisCatTotals(e) {
     ANALYSIS_CAT_GROUPS.forEach(([label]) => totals.set(label, [0, 0]));
     cats.forEach((name, i) => {
         const pair = (e.cat && e.cat[i]) || [0, 0];
-        const group = ANALYSIS_CAT_GROUPS.find(([, members]) => members.includes(name));
+        const group = ANALYSIS_CAT_GROUPS.find(([, , members]) => members.includes(name));
         if (!group) return;
         const acc = totals.get(group[0]);
         acc[0] += pair[0];
@@ -273,21 +287,25 @@ function analysisCatHtml(e) {
         return analysisDonutHtml(label, w, l);
     }).join('');
     return `
-        <div class="clean-card h-100 p-3">
+        <div class="clean-card analysis-panel h-100 p-3">
             <div class="section-title-sm" data-en="BY FORMAT">형식별 승률</div>
             <div class="donut-wrap analysis-donut-wrap">${boxes}</div>
         </div>`;
 }
 
+// 종족전 도넛은 승/패 색이 아니라 종족색으로 칠한다(전적 페이지와 같은 규칙).
 function analysisRaceHtml(e) {
     const race = e.race || {};
-    const boxes = [['T', 'vs T', 'donut-label-t'], ['Z', 'vs Z', 'donut-label-z'], ['P', 'vs P', 'donut-label-p']]
-        .map(([code, label, cls]) => {
-            const [w, l] = race[code] || [0, 0];
-            return analysisDonutHtml(label, w, l, cls);
-        }).join('');
+    const boxes = [
+        ['T', 'vs T', 'donut-label-t', 'var(--color-race-t)'],
+        ['Z', 'vs Z', 'donut-label-z', 'var(--color-race-z)'],
+        ['P', 'vs P', 'donut-label-p', 'var(--color-race-p)'],
+    ].map(([code, label, cls, color]) => {
+        const [w, l] = race[code] || [0, 0];
+        return analysisDonutHtml(label, w, l, { labelClass: cls, ringColor: color });
+    }).join('');
     return `
-        <div class="clean-card h-100 p-3">
+        <div class="clean-card analysis-panel h-100 p-3">
             <div class="section-title-sm" data-en="BY MATCHUP">종족별 승률</div>
             <div class="donut-wrap">${boxes}</div>
         </div>`;
@@ -296,26 +314,24 @@ function analysisRaceHtml(e) {
 // ---------------------------------------------------------------------------
 // 최근 10경기
 // ---------------------------------------------------------------------------
+// 최근 폼: 한 줄짜리 W/L 배지 띠. 표 하나를 더 두는 것보다 이 쪽이 한눈에 들어온다.
+// 배지는 사이트 공용 .match-badge(노치 사각형)를 그대로 쓴다.
 function analysisFormHtml(rows, e) {
     if (!rows.length) return '';
     const recent = rows.slice(0, ANALYSIS_FORM_COUNT);   // 로그가 최신순이다
     const w = recent.filter(r => r[2]).length;
     const streak = e.st && e.st.n
-        ? `<span class="${e.st.t === 'W' ? 'h2h-win' : 'h2h-lose'}">${e.st.t === 'W' ? `${e.st.n}연승 중` : `${e.st.n}연패 중`}</span>`
+        ? ` · <span class="${e.st.t === 'W' ? 'h2h-win' : 'h2h-lose'}">${e.st.t === 'W' ? `${e.st.n}연승` : `${e.st.n}연패`}</span>`
         : '';
     return `
-        <div class="clean-card p-3 analysis-form-card">
-            <div class="section-title-sm" data-en="LAST 10">최근 ${recent.length}경기
-                <span class="title-count">${w}승 ${recent.length - w}패 ${streak ? `· ${streak}` : ''}</span>
-            </div>
-            <div class="analysis-form">
+        <div class="analysis-formline">
+            <span class="analysis-formline-label">최근 폼</span>
+            <span class="analysis-formline-badges">
                 ${recent.map(([date, opp, win]) => `
-                    <div class="analysis-form-item ${win ? 'is-win' : 'is-lose'}" title="${escapeHTML(String(date))} vs ${escapeHTML(h2hName(String(opp)))}">
-                        <span class="analysis-form-res">${win ? '승' : '패'}</span>
-                        <span class="analysis-form-opp">${escapeHTML(h2hName(String(opp)))}</span>
-                        <span class="analysis-form-date">${escapeHTML(shortMatchDate(date))}</span>
-                    </div>`).join('')}
-            </div>
+                    <span class="match-badge ${win ? 'badge-win' : 'badge-lose'}"
+                          title="${escapeHTML(shortMatchDate(date))} vs ${escapeHTML(h2hName(String(opp)))}">${win ? 'W' : 'L'}</span>`).join('')}
+            </span>
+            <span class="analysis-formline-sum">최근 ${recent.length}경기 ${w}승 ${recent.length - w}패${streak}</span>
         </div>`;
 }
 
@@ -413,23 +429,22 @@ function analysisMapHtml(rows) {
         .sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]))
         .slice(0, ANALYSIS_MAP_COUNT);
     if (!list.length) return '';
+    // 상대전적 탭의 '맵별 전적'과 같은 부품(.h2h-maps)을 쓴다.
     return `
-        <div class="clean-card h-100 p-3">
-            <div class="section-title-sm" data-en="BY MAP">맵별 승률
-                <span class="title-count">${ANALYSIS_MAP_MIN}경기 이상</span>
-            </div>
-            <div class="analysis-bars">
-                ${list.map(([mapId, [w, l]]) => {
-                    const rate = analysisRate(w, l);
-                    return `
-                    <div class="analysis-bar-row">
-                        <span class="analysis-bar-name">${escapeHTML(h2hMapName(mapId))}</span>
-                        <span class="analysis-bar-rate" style="color:${analysisRateColor(rate)}">${rate}%</span>
-                        <span class="analysis-bar-rec">${w}승 ${l}패</span>
-                        <span class="h2h-map-bar"><span style="width:${rate}%"></span></span>
-                    </div>`;
-                }).join('')}
-            </div>
+        <div class="section-title section-title-spaced" data-en="BY MAP">
+            <span class="section-title-label">맵별 승률</span>
+            <span class="title-count">${ANALYSIS_MAP_MIN}경기 이상</span>
+        </div>
+        <div class="h2h-maps">
+            ${list.map(([mapId, [w, l]]) => {
+                const rate = analysisRate(w, l);
+                return `
+                <div class="h2h-map">
+                    <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId))}</span>
+                    <span class="h2h-map-rec"><span class="h2h-win">${w}</span> · <span class="h2h-lose">${l}</span> · ${rate}%</span>
+                    <span class="h2h-map-bar"><span style="width:${rate}%"></span></span>
+                </div>`;
+            }).join('')}
         </div>`;
 }
 
@@ -447,24 +462,22 @@ function analysisRivalHtml(rows, myTier) {
         .sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]))
         .slice(0, ANALYSIS_RIVAL_COUNT);
     if (!list.length) return '';
+    // 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rivals)을 쓴다 - 누르면 그 선수로 넘어간다.
     return `
-        <div class="clean-card h-100 p-3">
-            <div class="section-title-sm" data-en="SAME TIER">동티어 맞대결
-                <span class="title-count">${escapeHTML(tierLabel(myTier))}</span>
-            </div>
-            <div class="analysis-bars">
-                ${list.map(([pid, [w, l]]) => {
-                    const rate = analysisRate(w, l);
-                    const info = h2hPlayer(pid);
-                    return `
-                    <button type="button" class="analysis-bar-row analysis-bar-link" onclick="analysisPick('${jsAttr(pid)}')">
-                        <span class="analysis-bar-name">${escapeHTML(info ? info.n : h2hName(pid))}</span>
-                        <span class="analysis-bar-rate" style="color:${analysisRateColor(rate)}">${rate}%</span>
-                        <span class="analysis-bar-rec">${w}승 ${l}패</span>
-                        <span class="h2h-map-bar"><span style="width:${rate}%"></span></span>
-                    </button>`;
-                }).join('')}
-            </div>
+        <div class="section-title section-title-spaced" data-en="SAME TIER">
+            <span class="section-title-label">동티어 맞대결</span>
+            <span class="title-count">${escapeHTML(tierLabel(myTier))} · ${list.length}명</span>
+        </div>
+        <div class="h2h-rivals">
+            ${list.map(([pid, [w, l]]) => {
+                const info = h2hPlayer(pid);
+                return `
+                <button type="button" class="h2h-rival" onclick="analysisPick('${jsAttr(pid)}')">
+                    ${avatarHtml(info ? (info.s || '') : '', 'h2h-rival-avatar')}
+                    <span class="h2h-rival-name">${escapeHTML(info ? info.n : h2hName(pid))}</span>
+                    <span class="h2h-rival-rec"><span class="h2h-win">${w}</span>-<span class="h2h-lose">${l}</span></span>
+                </button>`;
+            }).join('')}
         </div>`;
 }
 
@@ -473,10 +486,10 @@ function analysisRivalHtml(rows, myTier) {
 // ---------------------------------------------------------------------------
 function analysisFilterRows(rows) {
     if (AnalysisState.matchFilter === '전체') return rows;
-    const group = ANALYSIS_CAT_GROUPS.find(([label]) => label === AnalysisState.matchFilter);
+    const group = ANALYSIS_CAT_GROUPS.find(([, short]) => short === AnalysisState.matchFilter);
     if (!group) return rows;
     const cats = (H2hState.index && H2hState.index.cats) || [];
-    const wanted = new Set(group[1].map(name => cats.indexOf(name)).filter(i => i >= 0));
+    const wanted = new Set(group[2].map(name => cats.indexOf(name)).filter(i => i >= 0));
     return rows.filter(r => wanted.has(r[4]));
 }
 
@@ -494,7 +507,7 @@ function analysisShowMoreMatches() {
 function analysisMatchesHtml(rows) {
     const filtered = analysisFilterRows(rows);
     const shown = filtered.slice(0, AnalysisState.matchShown);
-    const chips = ['전체', ...ANALYSIS_CAT_GROUPS.map(([label]) => label)].map(label => `
+    const chips = ['전체', ...ANALYSIS_CAT_GROUPS.map(([, short]) => short)].map(label => `
         <div class="filter-item${AnalysisState.matchFilter === label ? ' active' : ''}" role="tab" tabindex="0"
              onclick="analysisSetFilter('${jsAttr(label)}')">${escapeHTML(label)}</div>`).join('');
     return `
@@ -539,32 +552,25 @@ function analysisProfileHtml(pid) {
     if (!p || !e) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다.</div>';
     const rows = AnalysisState.rows[pid] || [];
     return `
-        <div class="analysis-toolbar">
-            <button type="button" class="analysis-back" onclick="analysisBack()"><span aria-hidden="true">←</span> 다른 선수 찾기</button>
-        </div>
         ${analysisHeadHtml(pid, p, e)}
+        ${analysisFormHtml(rows, e)}
         <div class="row g-3 mb-block">
             <div class="col-lg-7">${analysisCatHtml(e)}</div>
             <div class="col-lg-5">${analysisRaceHtml(e)}</div>
         </div>
         <div class="row g-3 mb-block">
-            <div class="col-12">${analysisFormHtml(rows, e)}</div>
-        </div>
-        <div class="row g-3 mb-block">
             <div class="col-12">${analysisMonthlyHtml(rows)}</div>
         </div>
-        <div class="row g-3 mb-block">
-            <div class="col-lg-6">${analysisMapHtml(rows)}</div>
-            <div class="col-lg-6">${analysisRivalHtml(rows, p.t)}</div>
-        </div>
+        ${analysisMapHtml(rows)}
+        ${analysisRivalHtml(rows, p.t)}
         ${analysisMatchesHtml(rows)}`;
 }
 
 function analysisEmptyHtml() {
     return `
-        <div class="h2h-empty">
-            <span class="h2h-empty-title">선수를 검색해주세요</span>
-            <span class="h2h-empty-sub">이름 · 대학으로 찾으면 그 선수의 전적을 자세히 보여줍니다</span>
+        <div class="analysis-placeholder">
+            <span class="analysis-placeholder-title">선수를 검색해주세요</span>
+            <span class="analysis-placeholder-sub">이름 · 대학으로 찾으면 그 선수의 전적을 자세히 보여줍니다</span>
         </div>`;
 }
 
