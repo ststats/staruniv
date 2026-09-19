@@ -165,6 +165,41 @@
       ],
       "youtube": "https://youtu.be/CvT2Tvgm09o?si=JyetpWvBXJumF2Uk",
       "image": ""
+    },
+    {
+      "id": "h-mu8sa6va",
+      "date": "2024-11-11",
+      "type": "broadcast",
+      "title": "아차산 등산 벌칙",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "정윤종",
+        "앵지",
+        "졈니",
+        "모리",
+        "효짱",
+        "한쪼니"
+      ],
+      "youtube": "https://youtu.be/wQsiFxOMens?si=BLxvi165eQTnnYhN",
+      "image": ""
+    },
+    {
+      "id": "h-mu8sh2t3",
+      "date": "2024-11-24",
+      "type": "match",
+      "title": "첫 대회, 첫 승",
+      "desc": "",
+      "members": [
+        "세나",
+        "디임",
+        "토마토",
+        "졈니",
+        "치리",
+        "임조이"
+      ],
+      "youtube": "https://youtu.be/sveWh1Abl2o?si=TK4p--0s77oBWxGv",
+      "image": ""
     }
   ],
   "overrides": {
@@ -632,6 +667,15 @@
         "박수범(코치)",
         "찌킹(선수)",
         "치리(선수)"
+      ]
+    },
+    "auto-join-2024-10-30": {
+      "title": "",
+      "desc": "",
+      "youtube": "https://youtu.be/EnbnUabTY-M?si=iGlrZhLoN_jL_axB",
+      "image": "",
+      "members": [
+        "정윤종(전력분석관)"
       ]
     }
   }
