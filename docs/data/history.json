@@ -102,6 +102,42 @@
       "members": [],
       "youtube": "https://youtu.be/_1FjsDpUf0s?si=i3-F8UKCQIa1izlq",
       "image": ""
+    },
+    {
+      "id": "h-mu8rbkfo",
+      "date": "2024-10-26",
+      "type": "event",
+      "title": "대학대전 0승 4패 직면",
+      "desc": "",
+      "members": [
+        "디임",
+        "앵지",
+        "임조이",
+        "모리",
+        "졈니",
+        "치리"
+      ],
+      "youtube": "https://youtu.be/9f-g3d_VeBM?si=UB7aHuLzD1NCgZDm",
+      "image": ""
+    },
+    {
+      "id": "h-mu8rj1ab",
+      "date": "2024-10-27",
+      "type": "broadcast",
+      "title": "국토 벌칙",
+      "desc": "2024-10-27 ~ 2024-10-30",
+      "members": [
+        "김윤환",
+        "이경민",
+        "몽군",
+        "서리",
+        "김성대",
+        "지동원",
+        "이유란",
+        "정윤종"
+      ],
+      "youtube": "https://youtu.be/Qk8H63liFII?si=HsEqv3OkKr31R3zY",
+      "image": ""
     }
   ],
   "overrides": {
@@ -227,7 +263,7 @@
     "auto-join-2024-10-31": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/EnbnUabTY-M?si=9HUZInK6DuXQhaNB",
       "image": "",
       "members": [
         "정윤종(전력분석관)"
