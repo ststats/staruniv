@@ -501,7 +501,7 @@ function analysisRatingHtml(pid) {
     }).join('');
 
     const first = have[0].v, last = have[have.length - 1].v;
-    const diff = last - first;
+    const diff = Number((last - first).toFixed(1));
     const sign = diff > 0 ? 'h2h-win' : (diff < 0 ? 'h2h-lose' : '');
     const top = Math.max(...vals), bottom = Math.min(...vals);
     return analysisRatingTitleHtml(
