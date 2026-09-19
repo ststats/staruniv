@@ -33,11 +33,10 @@
             {%- endfor %}
         </div>
 
-        <!-- [폭 통일] 예전엔 7:5로 나뉘어 있었다. 두 표는 헤더가 똑같이 6칸이라
-             같은 폭(6:6)·같은 min-width로 맞춘다. 세로 스크롤은 두지 않고(표는
-             내용만큼 늘어난다) 좁을 때 가로로만 스크롤된다. -->
-        <div class="row gap-block mb-block">
-            <div class="col-lg-6">
+        {#- [배치] 예전엔 두 표를 6:6으로 나란히 뒀다. 상대 전적이 카드가 되면서
+            가로를 다 쓰는 게 나아(카드 4열) 위아래로 놓는다. 최근 전적 표도 넓어져
+            좁은 화면에서 칸이 덜 쪼그라든다. #}
+        <div class="mb-block">
                 {#- 형식 필터는 page-records.js가 채운다. JS가 죽으면 칩이 안 생기고
                     아래 표가 서버에서 구운 5칸 그대로 남는다(정보는 그대로다). #}
                 <div class="section-title record-recent-header" data-en="HEAD TO HEAD">
@@ -76,9 +75,9 @@
                     </div>
                 </div>
                 </div>
-            </div>
+        </div>
 
-            <div class="col-lg-6">
+        <div class="mb-block">
                 <div class="section-title" data-en="RECENT">
                     <span class="section-title-label">최근 전적</span>
                 </div>
@@ -91,7 +90,6 @@
                     </div>
                 </div>
                 <div id="team-recent-pagination"></div>
-            </div>
         </div>
     </div>
 
@@ -111,22 +109,9 @@
             <div id="indiv-summary-filters" class="filter-nav tab-scroll" role="tablist"></div>
         </div>
 
+        {#- 상대 전적과 같은 카드 부품(.h2h-rival)을 쓴다. page-records.js가 채운다. #}
         <div id="indiv-summary-content">
-            <div class="clean-card p-0 overflow-hidden">
-                <div class="table-responsive scroll-area">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
-                        <thead>
-                            <tr>
-                                <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-25">멤버</th>
-                                <th scope="col" class="text-nowrap colw-25">전적</th>
-                                <th scope="col" class="text-nowrap wl-bar-col" aria-label="승률"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="indiv-summary-tbody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="indiv-summary-grid"></div>
         </div>
 
         <div id="statContent" class="d-none">

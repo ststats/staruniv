@@ -222,16 +222,21 @@ function openTeamMatchModal(format) {
     showModal('teamMatchesModal');
 }
 
-function openTeamOpponentModal(opponent) {
-    document.getElementById('teamModalTitle').innerHTML = `${teamLogoHtml(opponent, 20)} vs ${escapeHTML(opponent)} 전체 전적`;
-    renderTeamMatchesList('team-modal-list', {format: '전체', opponent}, null);
+// 카드에서 열 때는 지금 고른 형식만 보여준다 - '대회'를 고르고 누른 사람은
+// 그 팀과의 대회 경기를 보고 싶은 것이지 전체 목록을 보고 싶은 게 아니다.
+function openTeamOpponentModal(opponent, format) {
+    const fmt = (format && format !== '합계') ? format : '전체';
+    document.getElementById('teamModalTitle').innerHTML =
+        `${teamLogoHtml(opponent, 20)} vs ${escapeHTML(opponent)} ${fmt === '전체' ? '전체 전적' : `${escapeHTML(fmt)} 전적`}`;
+    renderTeamMatchesList('team-modal-list', {format: fmt, opponent}, null);
     showModal('teamMatchesModal');
 }
 
-// 상대 전적 표(서버에서 구운 행)는 행마다 onclick을 달지 않고 한 곳에서 위임 처리한다.
+// 상대 전적 카드는 하나하나 onclick을 달지 않고 한 곳에서 위임 처리한다
+// (서버가 구운 표가 그대로 남았을 때도 같은 핸들러가 받는다).
 document.addEventListener('click', function(e) {
     const row = e.target.closest('.team-row-clickable');
-    if (row) openTeamOpponentModal(row.dataset.team);
+    if (row) openTeamOpponentModal(row.dataset.team, RecordsState.oppFormat);
 });
 
 function renderIndividualSidebar() {
@@ -394,13 +399,6 @@ function summaryFilterHtml(current, handler) {
              aria-selected="${f === current}" onclick="${handler}('${jsAttr(f)}')">${escapeHTML(f)}</div>`).join('');
 }
 
-// 승률 막대. 표 칸에 들어가는 얇은 띠라 맵별 전적 막대와 같은 모양을 쓴다.
-function wlBarHtml(wins, losses) {
-    const total = wins + losses;
-    if (!total) return '';
-    return `<span class="wl-mini-bar"><span style="width:${(wins / total * 100).toFixed(1)}%"></span></span>`;
-}
-
 // 고른 형식의 전적. '합계'면 네 형식을 다 더한다.
 function statFor(getText, format) {
     if (format !== '합계') return parseStat(getText(format));
@@ -408,17 +406,6 @@ function statFor(getText, format) {
         const st = parseStat(getText(f));
         return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
     }, { wins: 0, losses: 0 });
-}
-
-function summaryCellsHtml(stat) {
-    if (!stat.wins && !stat.losses) {
-        return `<td class="text-nowrap colw-25"><span class="wl-empty" aria-hidden="true">—</span></td><td class="wl-bar-col"></td>`;
-    }
-    const text = `${stat.wins}승 ${stat.losses}패`;
-    return `<td class="text-nowrap colw-25" title="${text} (${getRateText(stat.wins, stat.losses)})">`
-        + `<span class="wl-short-num">${winLoseText(stat.wins, stat.losses, 'wl-w', 'wl-l')}</span>`
-        + `<span class="wl-short-rate">${getRateText(stat.wins, stat.losses)}</span></td>`
-        + `<td class="wl-bar-col">${wlBarHtml(stat.wins, stat.losses)}</td>`;
 }
 
 // ----- 팀: 상대 전적 -----
@@ -464,7 +451,7 @@ function renderOpponentTable() {
         wrap.innerHTML = '<div class="h2h-empty">이 형식의 전적이 없습니다.</div>';
         return;
     }
-    wrap.innerHTML = `<div class="h2h-rivals is-compact">${cards.map(({ team, stat }) => {
+    wrap.innerHTML = `<div class="h2h-rivals">${cards.map(({ team, stat }) => {
         const total = stat.wins + stat.losses;
         return `
         <button type="button" class="h2h-rival team-row-clickable" data-team="${escapeHTML(team)}">
@@ -482,22 +469,32 @@ function setIndivSummaryFormat(format) {
     renderIndivSummaryTable();
 }
 
+// 상대 전적과 같은 카드 부품을 쓴다. 다만 이쪽은 명단이라, 고른 형식에 기록이 없는
+// 멤버도 '기록 없음'으로 남긴다(상대 전적은 기록 없는 팀을 아예 뺀다 - 그쪽은 명단이
+// 아니라 붙어 본 팀 목록이라서다). 차례도 로스터 순서를 그대로 둔다.
 function renderIndivSummaryTable() {
-    const body = document.getElementById('indiv-summary-tbody');
-    if (!body) return;
+    const grid = document.getElementById('indiv-summary-grid');
+    if (!grid) return;
     const format = RecordsState.summaryFormat || '합계';
     document.getElementById('indiv-summary-filters').innerHTML =
         summaryFilterHtml(format, 'setIndivSummaryFormat');
 
-    body.innerHTML = SiteData.members.filter(isActiveMember).map(m => {
+    grid.innerHTML = `<div class="h2h-rivals">${SiteData.members.filter(isActiveMember).map(m => {
         const pStat = findPlayerStats(m['이름']);
         const name = m['이름'];
         const stat = statFor(f => pStat[`${f} 전적`], format);
-        return `<tr class="stat-row clickable-row" role="button" tabindex="0" onclick="selectPlayer('${jsAttr(name)}')">
-                <td class="text-center stat-table-sticky-col text-nowrap colw-25"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span class="ellipsis-text">${escapeHTML(name)}</span></span></td>
-                ${summaryCellsHtml(stat)}
-            </tr>`;
-    }).join('');
+        const total = stat.wins + stat.losses;
+        const rec = total
+            ? `${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span>`
+            : '<span class="wl-empty">기록 없음</span>';
+        return `
+        <button type="button" class="h2h-rival" onclick="selectPlayer('${jsAttr(name)}')">
+            ${avatarHtml(m['SOOP ID'], 'h2h-rival-avatar')}
+            <span class="h2h-rival-name">${escapeHTML(name)}</span>
+            <span class="h2h-rival-rec">${rec}</span>
+            ${total ? `<span class="h2h-rival-bar"><span style="width:${(stat.wins / total * 100).toFixed(1)}%"></span></span>` : '<span class="h2h-rival-bar is-empty"></span>'}
+        </button>`;
+    }).join('')}</div>`;
 }
 
 function openIndivMatchModal() {

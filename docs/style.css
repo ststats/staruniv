@@ -950,8 +950,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .wl-short-num { font-size: 13px; font-weight: 700; }
 /* 넓은 화면에서는 승률을 같은 줄 옆에 둔다(칸이 넉넉해 굳이 두 줄로 쓸 이유가 없다) */
 .wl-short-rate { margin-left: 6px; font-size: 11px; color: var(--color-text-muted); }
-/* 전적 페이지의 상대 전적 카드는 반쪽 칸(col-lg-6) 안에 들어가므로 4열이 아니라 2열이다. */
-.h2h-rivals.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* 팀 로고는 얼굴 사진이 아니라 도형이라 동그랗게 자르지 않고 그대로 담는다 */
 .h2h-rival-avatar.is-logo {
     display: grid;
@@ -960,19 +958,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     background: none;
 }
 
-/* 승률 막대 칸은 내용이 없어서 자동 폭 계산에 밀린다(좁은 화면은 table-layout:auto다).
-   colw-* 를 쓰면 좁은 화면에서 width:auto로 덮이므로 전용 클래스로 폭을 잡는다. */
-.stat-table .wl-bar-col { width: 38%; }
-
-/* 표 칸 안의 얇은 승률 막대. 맵별 전적 막대(.h2h-map-bar)와 같은 모양이다. */
-.wl-mini-bar {
-    display: block;
-    height: 6px;
-    overflow: hidden;
-    background: var(--color-lose);
-    clip-path: var(--cut-3);
-}
-.wl-mini-bar > span { display: block; height: 100%; background: var(--color-win); }
 .wl-w { color: var(--color-primary); }
 .wl-l { color: var(--color-lose); }
 
@@ -4377,6 +4362,8 @@ body.media-lightbox-open { overflow: hidden; }
     clip-path: var(--cut-3);
 }
 .h2h-rival-bar > span { display: block; height: 100%; background: var(--color-win); }
+/* 기록이 없으면 막대를 비워 둔다 - 칸을 없애면 카드 높이가 제각각이 된다 */
+.h2h-rival-bar.is-empty { background: var(--color-bg-subtle); }
 
 @media (max-width: 1199.98px) {
     .h2h-maps,
