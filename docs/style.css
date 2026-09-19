@@ -98,12 +98,22 @@
     --fs-badge: 11px;        /* 뱃지·칩 */
     --fs-badge-sm: 10px;     /* 표 안에 들어가는 뱃지 */
 
-    /* 간격 */
+    /* 간격: 페이지/큰 묶음 → 내부 묶음 → 조밀한 카드 → 라벨 순서.
+       같은 역할은 같은 토큰을 쓰고, 표·아이콘의 광학 보정은 개별 값을 유지한다. */
     --space-page-top: 24px;
     --space-page-bottom: 40px;
     --space-block-gap: 24px;
     --space-title-gap: 16px;
     --space-trailer: 16px;
+    --space-section-gap: 32px;
+    --space-stack-gap: 20px;
+    --space-content-gap: 16px;
+    --space-card-gap: 14px;
+    --space-compact-gap: 12px;
+    --space-inline-gap: 8px;
+    --space-label-gap: 6px;
+    --space-card-pad-y: 10px;
+    --space-card-pad-x: 12px;
 
     /* 모서리 · 그림자 · 잘린 모서리 */
     --radius-card: 0px;
@@ -594,7 +604,7 @@ a {
     padding: 0 0 9px;
     font-size: 18px;
     letter-spacing: -0.025em;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-title-gap);
     padding-bottom: 9px;
     font-weight: 700;
     align-items: baseline;
@@ -605,7 +615,7 @@ a {
     font-weight: 800;
     color: var(--color-text-strong);
     padding-bottom: 8px;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-compact-gap);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -613,7 +623,7 @@ a {
     font-size: 14px;
     flex-wrap: wrap;
 }
-.section-title.section-title-spaced { margin-top: 32px; }
+.section-title.section-title-spaced { margin-top: var(--space-section-gap); }
 .section-title-sm[data-en]::before {
     content: attr(data-en);
     flex: 0 0 100%;
@@ -1127,7 +1137,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
-    gap: 28px;
+    gap: var(--space-block-gap);
     align-items: stretch;
 }
 
@@ -1255,7 +1265,7 @@ a.btn-view-all {
 .tier-row + .tier-row { margin-top: 30px; }
 .tier-row:last-child { margin-bottom: 0; }   /* 페이지 아래 여백은 .page-section이 준다 */
 
-.tier-race-block + .tier-race-block { margin-top: 16px; }
+.tier-race-block + .tier-race-block { margin-top: var(--space-content-gap); }
 
 .selection-content { min-width: 0; }
 
@@ -1293,7 +1303,7 @@ a.btn-view-all {
 .g2 {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 26px;
+    gap: var(--space-block-gap);
 }
 
 .i-arrow {
@@ -1319,7 +1329,7 @@ a.btn-view-all {
 @media (max-width: 767.98px) {
     .tier-row { margin-bottom: 28px; }
 
-    .tier-race-block + .tier-race-block { margin-top: 12px; }
+    .tier-race-block + .tier-race-block { margin-top: var(--space-compact-gap); }
 
     .head-stat { flex: 1; }
 }
@@ -1327,7 +1337,7 @@ a.btn-view-all {
 @media (max-width: 920px) {
     .g2 {
         grid-template-columns: minmax(0, 1fr);
-        gap: 18px;
+        gap: var(--space-stack-gap);
     }
 }
 
@@ -1543,7 +1553,7 @@ a.btn-view-all {
 
 .selection-layout {
     display: grid;
-    gap: 26px;
+    gap: var(--space-block-gap);
     align-items: start;
 }
 .selection-layout > .avatar-bar {
@@ -1607,15 +1617,41 @@ a.btn-view-all {
     padding: 0;
     border: 0;
 }
-.selection-layout > .tier-bar::before {
-    content: "티어  ·  JUMP";
-    display: block;
-    padding: 14px 15px 11px;
+.tier-bar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--panel-line);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--sidebar-title, currentColor);
+}
+.tier-thumb-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding: 7px 2px;
+    border: 0;
+    background: transparent;
+    color: var(--panel-muted);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.tier-thumb-refresh:hover { color: var(--panel-accent); }
+.tier-thumb-refresh:disabled { opacity: .5; cursor: wait; }
+.tier-thumb-refresh:focus-visible { outline: 2px solid var(--panel-accent); outline-offset: 2px; }
+@media (max-width: 920px) {
+    .tier-bar-heading { padding: 0; border-bottom: 0; }
+    .tier-bar-title, .tier-thumb-refresh { display: none; }
+    .tier-bar-heading .tier-bar-pick { flex: 1; min-width: 0; width: auto; }
 }
 .selection-layout > .tier-bar .tier-bar-tools {
     display: block;
@@ -1710,7 +1746,7 @@ a.btn-view-all {
 
     .selection-layout {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: var(--space-content-gap);
     }
     .selection-layout > .avatar-bar {
         position: sticky;
@@ -1864,7 +1900,7 @@ a.btn-view-all {
    ============================================================================= */
 .live-broadcast-grid {
     display: grid;
-    gap: 12px;
+    gap: var(--space-compact-gap);
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
 .live-broadcast-card:hover { transform: translateY(-3px); }
@@ -2284,7 +2320,7 @@ a.home-notice-card:hover {
     align-items: flex-start;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 26px;
+    gap: var(--space-block-gap);
 }
 
 .cal-sidebar {
@@ -2297,13 +2333,13 @@ a.home-notice-card:hover {
     grid-row: 1;
     display: flex;
     flex-direction: column;
-    gap: 26px;
+    gap: var(--space-block-gap);
 }
 
 .cal-calendar-area {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--space-title-gap);
     overflow: hidden;
     order: 2;
     grid-column: 1;
@@ -2723,7 +2759,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     .cal-main-layout {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: var(--space-stack-gap);
     }
 }
 
@@ -3281,9 +3317,8 @@ body.media-lightbox-open { overflow: hidden; }
     align-items: center;
     position: relative;
     overflow: hidden;
-    padding: 0 0 12px;
+    padding: 0 0 var(--space-compact-gap);
     text-align: center;
-    padding-bottom: 13px;
 }
 .member-card:hover { transform: translateY(-2px); }
 .member-card.former { opacity: 0.55; }
@@ -3323,8 +3358,8 @@ body.media-lightbox-open { overflow: hidden; }
     border-radius: 50%;
 }
 /* 멤버 카드 본문은 티어 카드 본문(.tier-card-body)을 같이 쓰고 여백만 바꾼다 */
-.member-card .member-card-body { padding: 10px 12px 0; }
-.member-card-body .member-card-tags { margin: 6px 0 0; }
+.member-card .member-card-body { padding: var(--space-card-pad-y) var(--space-card-pad-x) 0; }
+.member-card-body .member-card-tags { margin: var(--space-label-gap) 0 0; }
 
 
 .featured-post {
@@ -3335,7 +3370,7 @@ body.media-lightbox-open { overflow: hidden; }
 #news-feed-content.news-feed-mobile {
     flex-direction: column;
     flex-wrap: nowrap;
-    gap: 12px;
+    gap: var(--space-compact-gap);
     max-width: 100%;
 }
 #news-feed-content.news-feed-mobile > .featured-post {
@@ -3432,7 +3467,7 @@ body.media-lightbox-open { overflow: hidden; }
 .member-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-    gap: 14px;
+    gap: var(--space-card-gap);
 }
 
 .member-avatar-img {
@@ -3905,7 +3940,7 @@ body.media-lightbox-open { overflow: hidden; }
 .tier-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
-    gap: 12px;
+    gap: var(--space-compact-gap);
 }
 
 .tier-card {
@@ -4023,8 +4058,8 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-topbar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
+    gap: var(--space-compact-gap);
+    margin-bottom: var(--space-content-gap);
 }
 .h2h-updated {
     margin-left: auto;
@@ -4037,10 +4072,12 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-pick {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    gap: 14px;
+    gap: var(--space-card-gap);
     align-items: center;
-    margin-bottom: 26px;
+    margin-bottom: var(--space-block-gap);
 }
+/* 선택 영역의 바깥 여백은 .h2h-pick이 담당한다. 카드 여백이 더해지지 않게 한다. */
+.h2h-pick .player-summary { margin-bottom: 0; }
 /* VS는 '선수 1/2' 라벨이 아니라 카드 높이의 한가운데에 와야 한다.
    라벨 높이만큼(16px + 아래 여백 6px) 내려준다. */
 .h2h-vs {
@@ -4055,7 +4092,7 @@ body.media-lightbox-open { overflow: hidden; }
     display: block;
     height: 16px;
     line-height: 16px;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-label-gap);
     font-family: "Pretendard", sans-serif;
     font-size: var(--fs-eyebrow);
     font-weight: 700;
@@ -4390,7 +4427,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 /* 경기 목록은 전적 페이지 표(.stat-table)를 그대로 쓴다 */
-.h2h-more-wrap { margin-top: 14px; }
+.h2h-more-wrap { margin-top: var(--space-trailer); }
 .h2h-empty {
     display: flex;
     flex-direction: column;
@@ -4523,8 +4560,10 @@ body.media-lightbox-open { overflow: hidden; }
 @media (max-width: 767.98px) {
     .h2h-pick {
         grid-template-columns: minmax(0, 1fr);
-        gap: 8px;
+        gap: var(--space-inline-gap);
     }
+    /* 첫 선수와 VS 사이만 16 + 8px. 마지막 선수 아래는 공통 블록 여백 하나만 쓴다. */
+    .h2h-pick > .h2h-slot:first-child { padding-bottom: var(--space-content-gap); }
     .h2h-vs {
         justify-self: center;
         margin-top: 0;
@@ -4587,8 +4626,8 @@ body.media-lightbox-open { overflow: hidden; }
 /* 채널 칩 줄: 가로로 넘치면 스크롤(.tab-scroll 끝 페이드) */
 .video-channel-row {
     display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
+    gap: var(--space-inline-gap);
+    margin-bottom: var(--space-block-gap);
 }
 .video-channel-row[hidden] { display: none; }
 .video-channel-chip {
@@ -4637,12 +4676,12 @@ body.media-lightbox-open { overflow: hidden; }
 .video-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 22px 16px;
+    gap: var(--space-block-gap) var(--space-content-gap);
 }
 .video-top-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: var(--space-content-gap);
 }
 .video-card { min-width: 0; }
 .video-thumb {
@@ -4880,9 +4919,9 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 /* 보자: 분류 제목줄과 그 아래 묶음 */
-.video-pick-title { margin-top: 26px; }
+.video-pick-title { margin-top: var(--space-block-gap); }
 .video-pick-title:first-child { margin-top: 0; }
-.video-pick-grid + .video-pick-title { margin-top: 30px; }
+.video-pick-grid + .video-pick-title { margin-top: var(--space-section-gap); }
 
 .video-empty {
     grid-column: 1 / -1;
@@ -4893,7 +4932,7 @@ body.media-lightbox-open { overflow: hidden; }
     font-size: var(--fs-body);
     color: var(--color-text-sub);
 }
-.video-more-wrap { margin-top: 22px; }
+.video-more-wrap { margin-top: var(--space-block-gap); }
 
 @media (max-width: 1199.98px) {
     .video-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -4904,9 +4943,9 @@ body.media-lightbox-open { overflow: hidden; }
     .video-short { flex-basis: calc((100% - 12px * 3) / 4); }
 }
 @media (max-width: 767.98px) {
-    .video-channel-row { margin-bottom: 18px; }
-    .video-top-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-    .video-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .video-channel-row { margin-bottom: var(--space-content-gap); }
+    .video-top-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-stack-gap); }
+    .video-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-stack-gap); }
     .video-short { flex-basis: 42%; min-width: 0; }
 }
 
@@ -5010,7 +5049,7 @@ html[data-theme="dark"] .mv-order-row {
 .tool-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));   /* 멤버 카드 그리드와 같은 폭 */
-    gap: 14px;
+    gap: var(--space-card-gap);
 }
 
 /* 외부 도구 카드: 멤버 프로필 카드와 같은 틀. 위는 네이비 면 + 파비콘, 아래는 이름과 주소 */
@@ -5019,7 +5058,7 @@ html[data-theme="dark"] .mv-order-row {
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    padding: 0 0 13px;
+    padding: 0 0 var(--space-compact-gap);
     text-align: center;
     text-decoration: none;
     transition: box-shadow 0.15s, transform 0.15s, background-color 0.15s;
@@ -5058,7 +5097,7 @@ html[data-theme="dark"] .mv-order-row {
 .tool-card:hover .tool-card-ext { color: #fff; }
 .tool-card-body {
     min-width: 0;
-    padding: 10px 12px 0;
+    padding: var(--space-card-pad-y) var(--space-card-pad-x) 0;
 }
 .tool-card-name {
     overflow: hidden;
@@ -5070,7 +5109,7 @@ html[data-theme="dark"] .mv-order-row {
 }
 .tool-card-host {
     overflow: hidden;
-    margin-top: 6px;
+    margin-top: var(--space-label-gap);
     white-space: nowrap;
     text-overflow: ellipsis;
     font-size: 11px;
@@ -5080,9 +5119,9 @@ html[data-theme="dark"] .mv-order-row {
 .mv-console {
     flex-direction: column;
     border-radius: var(--radius-card);
-    margin-bottom: 20px;
+    margin-bottom: var(--space-stack-gap);
     display: grid;
-    gap: 18px;
+    gap: var(--space-content-gap);
     clip-path: var(--cut-14);
 }
 .mv-console-tiles {
@@ -5760,7 +5799,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
      이름 ↔ 총 전적 / 뱃지 ↔ 승패 / 티어랭킹 뱃지 ↔ 승률.
    티어 랭킹은 예전엔 작은 글씨였는데 종족·티어 뱃지와 같은 크기의 뱃지로 올렸다. 다만
    뱃지 줄에 같이 세우면 좁은 화면에서 줄이 넘쳐 잘려서, 셋째 줄을 따로 내준다. */
-.player-summary { position:relative; display:flex; align-items:center; flex-wrap:nowrap; gap:18px; padding:22px 26px; margin-bottom:14px; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--cut-12); }
+.player-summary { position:relative; display:flex; align-items:center; flex-wrap:nowrap; gap:var(--space-content-gap); padding:22px 26px; margin-bottom:var(--space-content-gap); background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--cut-12); }
 .player-summary-avatar { flex:none; width:76px; height:76px; border-radius:50%; overflow:hidden; display:grid; place-items:center; background:rgba(255,255,255,.1); font-size:30px; }
 .player-summary-avatar img,.player-summary-image { width:100%; height:100%; object-fit:cover; }
 .player-summary-id { flex:1; min-width:0; text-align:left; }
@@ -5785,7 +5824,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .h2h-empty-spaced { margin-top:var(--space-block-gap); }
 .h2h-empty-title { color:var(--navy-on-text); }
 .h2h-empty-sub { color:var(--navy-on-muted); }
-#analysis-search { margin-bottom:22px; }
+#analysis-search { margin-bottom:var(--space-block-gap); }
 /* 레이팅 그래프를 못 그릴 때(그 기간에 점이 하나뿐) 자리만 지키는 안내.
    높이를 그래프 카드와 맞춰 옆의 월별 전적과 어긋나지 않게 한다. */
 .analysis-rating-empty { display:grid; place-items:center; min-height:255px; font-size:12px; color:var(--color-text-sub); text-align:center; }
@@ -5827,7 +5866,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .section-title .help-pop { align-self:center; }
 
 /* 페이지 넘김: 표 아래에 가로로 꽉 찬 카드 한 장. 버튼은 바탕 없이 두고 현재 쪽만 칠한다. */
-.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:14px 0 0; background:var(--color-card); clip-path:var(--cut-8); }
+.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:var(--space-trailer) 0 0; background:var(--color-card); clip-path:var(--cut-8); }
 .match-pagination-nav,.match-page-nums { display:flex; align-items:center; gap:3px; }
 .match-page { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 5px; border:0; background:transparent; clip-path:var(--cut-3); font-family:"Pretendard",sans-serif; font-size:12px; font-weight:600; line-height:1; color:var(--color-text-sub); }
 .match-page:hover:not(:disabled):not(.active) { background:var(--color-row-hover); color:var(--color-primary); }
@@ -5847,7 +5886,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 }
 @media (max-width:767.98px) {
     /* 모바일도 PC와 같은 짜임으로 - 동그란 프로필, 같은 두 줄 격자, 줄만 조금 작게 */
-    .player-summary { gap:12px; padding:16px 14px; }
+    .player-summary { gap:var(--space-compact-gap); padding:16px 14px; }
     .player-summary-avatar { width:54px; height:54px; border-radius:50%; font-size:22px; }
     .player-summary-id,.player-summary-stats { grid-template-rows:24px 19px 19px; row-gap:4px; }
     .player-summary-name { font-size:18px; }

@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=27d2f0a2c2">
+<link rel="stylesheet" href="style.css?v=ac741779d4">
 <script>
     try {
         const theme = localStorage.getItem('staruniv-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -41,7 +41,7 @@ body {
 }
 .admin-layout {
     display: flex;
-    gap: 24px;
+    gap: var(--space-block-gap);
     align-items: flex-start;
     width: 100%;
     min-width: 0;
@@ -68,7 +68,7 @@ body {
     flex: 0 0 300px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--space-stack-gap);
     order: 1;
 }
 /* 연혁 편집 폼은 목록이 길어서, 사이트의 선택 사이드바처럼 화면에 붙여 따라다니게 한다.

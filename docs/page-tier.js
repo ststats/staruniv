@@ -137,8 +137,40 @@ function tierDisplayName(tier) {
 // 썸네일 주소에는 아이디가 아니라 방송번호가 들어간다 - 방송을 켤 때마다 새로 생기는
 // 값이라 아이디만으로는 만들 수 없다. 뒤의 분 단위 값은 브라우저 캐시를 1분에 한 번만
 // 비우기 위한 것(매번 새로 받으면 낭비).
+let tierThumbRefreshToken = 0;
 function tierThumbUrl(broadNo) {
-    return `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broadNo)}?t=${Math.floor(Date.now() / 60000)}`;
+    return `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broadNo)}?t=${Math.floor(Date.now() / 60000)}&r=${tierThumbRefreshToken}`;
+}
+
+async function refreshTierThumbnails() {
+    const button = document.getElementById('tier-thumb-refresh');
+    if (button.disabled) return;
+    tierThumbRefreshToken = Math.max(Date.now(), tierThumbRefreshToken + 1);
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+        await Promise.all(Array.from(document.querySelectorAll('#tier-root .tier-card-thumb')).map(img => {
+            const rect = img.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0 || rect.bottom < 0 || rect.top > window.innerHeight) return;
+            const live = TierState.live[img.closest('.tier-card').dataset.tierId];
+            if (!live) return;
+            return new Promise(resolve => {
+                const done = () => {
+                    clearTimeout(timeout);
+                    img.removeEventListener('load', done);
+                    img.removeEventListener('error', done);
+                    resolve();
+                };
+                const timeout = setTimeout(done, 8000);
+                img.addEventListener('load', done);
+                img.addEventListener('error', done);
+                img.src = tierThumbUrl(live.broadNo);
+            });
+        }));
+    } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+    }
 }
 
 // 팀 로고 경로 규칙은 build_html.py의 team_logo_src와 같다(images/{팀이름}.webp).
@@ -332,7 +364,8 @@ function ensureTierPick() {
         pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
     });
     bar.classList.add('is-closed');
-    bar.insertBefore(pick, bar.firstChild);
+    const heading = bar.querySelector('.tier-bar-heading');
+    heading.insertBefore(pick, heading.firstChild);
 }
 
 // 눌린 티어 칩의 이름을 모바일 선택 줄에 반영하고 목록을 접는다.
@@ -729,6 +762,7 @@ bootPage(async () => {
 
     document.getElementById('tier-scope').addEventListener('click', onTierScopeClick);
     document.getElementById('tier-bar').addEventListener('click', onTierBarClick);
+    document.getElementById('tier-thumb-refresh').addEventListener('click', refreshTierThumbnails);
 
     // 스크롤 이벤트는 초당 수십 번 온다. 프레임당 한 번만 계산한다.
     let highlightScheduled = false;
