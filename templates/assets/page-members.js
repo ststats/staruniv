@@ -181,37 +181,45 @@ function openMemberProfile(name) {
 
     const active = isActiveMember(m);
     const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : (m['퇴단일'] || null)) : null;
-    // 다른 뱃지들(직책/티어/종족)과 같은 tag-badge 패밀리를 써서 톤을 맞추고, 텍스트와
-    // 뱃지를 flex로 묶어 기준선이 아니라 박스 높이 기준으로 정렬한다.
-    // (개인 전적 머리 카드는 같은 내용을 뱃지 한 칸에 담는다 - core.js의 memberPeriodBadgeHtml)
-    const daysBadge = days !== null
-        ? `<span class="tag-badge tier-badge">${days.toLocaleString('ko-KR')}일${active ? '째' : ''}</span>`
-        : '';
-    const period = m['입단일']
-        ? `<span class="d-inline-flex align-items-center flex-wrap gap-2">${escapeHTML(m['입단일'])} ~ ${active ? '현재' : (escapeHTML(m['퇴단일']) || '-')}${daysBadge}</span>`
-        : '-';
-    const soopId = m['SOOP ID'];
-    const broadcast = isValidSoopId(soopId)
-        ? `<a href="https://www.sooplive.com/station/${encodeURIComponent(String(soopId).trim())}" target="_blank" rel="noopener" class="d-inline-flex align-items-center" aria-label="SOOP 방송국">
-                   <img src="images/숲로고.webp" alt="SOOP" class="soop-logo-icon">
-               </a>`
-        : '-';
-
-    const rows = [
-        ['성별', escapeHTML(m['성별']) || '-'],
-        ['생년월일', escapeHTML(m['생년월일']) || '-'],
-        ['MBTI', escapeHTML(m['MBTI']) || '-'],
-        ['활동기간', period],
-        ['방송국', broadcast],
-    ];
-    document.getElementById('mp-info-body').innerHTML = rows.map(([label, val]) => `
-            <tr>
-                <td class="profile-info-label">${label}</td>
-                <td class="fw-bold profile-info-value">${val}</td>
-            </tr>`).join('');
+    document.getElementById('mp-affiliation').textContent = active ? '캄몬스타즈' : '이전 멤버';
+    document.getElementById('mp-period').textContent = m['입단일']
+        ? m['입단일'] + ' ~ ' + (active ? '현재' : (m['퇴단일'] || '-')) : '-';
+    const daysEl = document.getElementById('mp-days');
+    daysEl.hidden = days === null || !Number.isFinite(days);
+    daysEl.textContent = daysEl.hidden ? '' : days.toLocaleString('ko-KR') + (active ? '일째' : '일 활동');
+    const rows = [['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
+    document.getElementById('mp-info-body').innerHTML = rows.map(([label, value]) =>
+        '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>').join('');
+    const station = document.getElementById('mp-station-link');
+    station.hidden = !isValidSoopId(m['SOOP ID']);
+    station.removeAttribute('href');
+    if (!station.hidden) station.href = 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim());
+    document.getElementById('mp-records-link').href = 'records/?view=solo&member=' + encodeURIComponent(name);
+    updateMemberAnalysisLink(m);
 
     renderMemberActivitySummary(m);
     showModal('memberProfileModal');
+}
+
+// 분석 탭은 별도의 선수 ID를 사용하므로 SOOP ID로 정확히 연결한다.
+let profileAnalysisIndexPromise = null;
+async function updateMemberAnalysisLink(member) {
+    const link = document.getElementById('mp-analysis-link');
+    link.hidden = true;
+    link.removeAttribute('href');
+    const soopId = String(member['SOOP ID'] || '').trim().toLowerCase();
+    if (!isValidSoopId(soopId)) return;
+    if (!profileAnalysisIndexPromise) {
+        profileAnalysisIndexPromise = fetch('data/h2h/index.json', { cache: 'no-cache' })
+            .then(response => { if (!response.ok) throw new Error('분석 명단 로드 실패'); return response.json(); })
+            .catch(() => { profileAnalysisIndexPromise = null; return null; });
+    }
+    const data = await profileAnalysisIndexPromise;
+    if (_profileMember !== member || !data) return;
+    const found = Object.entries(data.players || {}).find(([, player]) => String(player.s || '').trim().toLowerCase() === soopId);
+    if (!found) return;
+    link.href = 'tier/?view=analysis&p=' + encodeURIComponent(found[0]);
+    link.hidden = false;
 }
 
 // 프로필 팝업의 "이번 달 방송 활동"을 시너지표(ststats)에서 가져온 데이터로 채운다.
