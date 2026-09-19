@@ -507,7 +507,7 @@ async function h2hEnter() {
     }
     const updated = document.getElementById('h2h-updated');
     if (updated && H2hState.index.syncedAt) {
-        updated.textContent = `${String(H2hState.index.syncedAt).slice(0, 10).replace(/-/g, '.')} 기준 · ${(H2hState.index.count || 0).toLocaleString('ko-KR')}경기`;
+        updated.textContent = `${String(H2hState.index.syncedAt).slice(0, 10).replace(/-/g, '.')} 기준`;
     }
     renderH2hSlots();
     renderH2hResult();
