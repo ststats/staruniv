@@ -5199,10 +5199,14 @@ html[data-theme="dark"] .mv-order-row {
     height: 100%;
     gap: 7px;
 }
-/* 실행(주 동작) 버튼: 흰 면 위의 선택색과 같은 규칙 - 라이트는 네이비, 다크는 파랑 */
+/* 실행 버튼: 라이트에서는 네이비 설정판 위에 흰색, 다크에서는 파랑. */
 .mv-run-btn:not(:disabled) {
     background: var(--select-on-light);
     color: #fff;
+}
+html:not([data-theme="dark"]) .mv-run-btn:not(:disabled) {
+    background: #fff;
+    color: var(--navy);
 }
 .mv-run-btn:hover:not(:disabled) { filter: brightness(1.06); }
 .mv-run-btn:active:not(:disabled) { transform: scale(0.99); }
