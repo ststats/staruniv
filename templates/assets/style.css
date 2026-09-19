@@ -89,6 +89,14 @@
     --fs-heading: 16px;
     --fs-subheading: 14px;
     --fs-body: 13px;
+    /* 아래 여섯은 11·10·9·8px이 곳곳에 흩어져 있던 것을 역할 이름으로 묶은 것이다.
+       같은 역할이면 같은 토큰을 쓴다 - 새 부품을 만들 때 px를 새로 고르지 않게. */
+    --fs-card-title: 14px;   /* 카드 격자의 개체 이름(멤버·도구·영상) */
+    --fs-list-name: 13px;    /* 촘촘한 목록 안의 이름(방송·검색 결과·공지·티어 카드) */
+    --fs-meta: 11px;         /* 날짜·개수·보조 설명 */
+    --fs-eyebrow: 9px;       /* 제목 위 대문자 눈썹 라벨 */
+    --fs-badge: 11px;        /* 뱃지·칩 */
+    --fs-badge-sm: 10px;     /* 표 안에 들어가는 뱃지 */
 
     /* 간격 */
     --space-page-top: 24px;
@@ -614,7 +622,7 @@ a {
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    font-size: 8px;
+    font-size: var(--fs-eyebrow);
     margin-bottom: 4px;
 }
 .section-title[data-en]::before {
@@ -623,7 +631,7 @@ a {
     order: -1;
     margin-bottom: 5px;
     font-family: "Pretendard", sans-serif;
-    font-size: 9px;
+    font-size: var(--fs-eyebrow);
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -688,7 +696,7 @@ a {
     padding-left: 10px;
     border-left: 1px solid var(--panel-line);
     color: var(--panel-muted);
-    font-size: 8px;
+    font-size: var(--fs-eyebrow);
     font-weight: 600;
     letter-spacing: 0.12em;
     line-height: 1.25;
@@ -777,7 +785,7 @@ a {
         min-width: 44px;
         padding: 3px 7px;
     }
-    .page-header-stats .head-stat-label { font-size: 7px; }
+    .page-header-stats .head-stat-label { font-size: 8px; }
     .page-header > .sub-tabs,
     .page-header-main > .sub-tabs {
         align-self: flex-start;
@@ -836,7 +844,7 @@ a {
     vertical-align: middle;
     height: 20px;
     padding: 0 8px;
-    font-size: 11px;
+    font-size: var(--fs-badge);
     clip-path: var(--cut-5);
 }
 .tag-badge.race-badge {
@@ -874,7 +882,7 @@ a {
     clip-path: var(--cut-5);
     width: 34px;
     height: 18px;
-    font-size: 10px;
+    font-size: var(--fs-badge-sm);
     vertical-align: middle;
 }
 
@@ -933,10 +941,10 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 /* 표 두 개를 나란히 놓는 구간에서는 칸이 좁아지므로 글자·여백을 한 단계 줄인다
    (모바일 압축 표만큼은 아니고, 열 구성과 표기는 그대로다) */
 @media (min-width: 768px) and (max-width: 1279.98px) {
-    .stat-table { font-size: 12.5px; }
+    .stat-table { font-size: 12px; }
     .stat-table thead th,
     .stat-table tbody td { padding: 8px 6px; }
-    .wl-short-rate { margin-left: 4px; font-size: 10.5px; }
+    .wl-short-rate { margin-left: 4px; font-size: 10px; }
 }
 
 /* 좁은 화면에서만 쓰는 조각의 기본값(넓은 화면에서는 숨긴다) */
@@ -980,7 +988,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table .set-detail-table td.colw-18-8 { width: 18.8%; }
     .stat-table .set-detail-table td.colw-6 { width: 6%; }
 
-    .stat-table { font-size: 11.5px; }
+    .stat-table { font-size: 11px; }
     .stat-table thead th,
     .stat-table tbody td {
         padding: 6px 5px;
@@ -1003,7 +1011,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         font-size: 9px;
         line-height: 16px;
     }
-    .stat-table .match-badge { font-size: 9.5px; }
+    .stat-table .match-badge { font-size: 9px; }
     .stat-table .team-logo-icon,
     .stat-table .team-logo-fallback { width: 14px !important; height: 14px !important; }
     .stat-table .player-avatar-sm { width: 16px; height: 16px; font-size: 8px; }
@@ -1018,7 +1026,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         justify-content: center;
         gap: 4px;
         margin-top: 1px;
-        font-size: 9.5px;
+        font-size: 9px;
         font-weight: 500;
         color: var(--color-text-muted);
     }
@@ -1050,15 +1058,15 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table tbody td { padding: 5px 3px; }
     .stat-table .cell-clip,
     .stat-table .ellipsis-text { max-width: 58px; }
-    .stat-table .tag-badge { padding: 0 4px; font-size: 8.5px; }
+    .stat-table .tag-badge { padding: 0 4px; font-size: 9px; }
     .stat-table .col-arrow { display: none; }
     .stat-table .set-detail-table td { padding: 4px 3px; }
-    .wl-short-num { font-size: 11.5px; }
+    .wl-short-num { font-size: 11px; }
 }
 
 /* 아주 좁은 기기(아이폰 SE 1세대 320px 등). 한 칸이 2~3px씩 넘쳐서 여기서 더 줄인다. */
 @media (max-width: 339.98px) {
-    .stat-table { font-size: 10.5px; }
+    .stat-table { font-size: 10px; }
     .stat-table thead th,
     .stat-table tbody td { padding: 5px 2px; }
     .stat-table .cell-clip,
@@ -1256,6 +1264,7 @@ a.btn-view-all {
     font-family: "Pretendard", sans-serif;
     font-weight: 600;
     color: var(--color-text-sub);
+    font-size: var(--fs-eyebrow);
 }
 .head-stat-value {
     font-weight: 700;
@@ -1456,7 +1465,7 @@ a.btn-view-all {
     color: var(--panel-muted);
 }
 .tier-bar-count {
-    font-size: 10px;
+    font-size: var(--fs-meta);
     font-weight: 700;
     color: var(--color-text-faint);
 }
@@ -1946,7 +1955,7 @@ a.btn-view-all {
     grid-area: name;
     align-self: end;
     font-weight: 700;
-    font-size: 13px;
+    font-size: var(--fs-list-name);
 }
 .live-card-body {
     display: grid;
@@ -2011,8 +2020,8 @@ a.btn-view-all {
     flex: 1;
 }
 .home-notice-name {
-    font-weight: 800;
-    font-size: var(--fs-body);
+    font-weight: 700;
+    font-size: var(--fs-list-name);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2025,7 +2034,7 @@ a.btn-view-all {
 }
 .home-notice-title {
     font-weight: 700;
-    font-size: var(--fs-body);
+    font-size: var(--fs-list-name);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2037,7 +2046,7 @@ a.btn-view-all {
     flex-shrink: 0;
 }
 .home-notice-meta {
-    font-size: 11px;
+    font-size: var(--fs-meta);
     color: var(--color-text-faint);
     flex-shrink: 0;
     white-space: nowrap;
@@ -2189,7 +2198,7 @@ a.home-notice-card:hover {
     margin-bottom: 14px;
     color: var(--panel-muted);
     font-family: "Pretendard", sans-serif;
-    font-size: 9px;
+    font-size: var(--fs-eyebrow);
     font-weight: 700;
     letter-spacing: 0.16em;
 }
@@ -2429,7 +2438,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 
 .cal-event-desc {
     white-space: pre-wrap;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     line-height: 1.3;
     word-break: keep-all;
@@ -2960,7 +2969,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     font-size: 11px;
 }
 .hist-chip-name { font-weight: 700; line-height: 1; color: var(--color-text-main); }
-.hist-chip-role { font-size: 10px; line-height: 1; color: var(--color-text-sub); }
+.hist-chip-role { font-size: var(--fs-badge-sm); line-height: 1; color: var(--color-text-sub); }
 .hist-chip.is-unknown { padding-left: 10px; }
 .hist-chip.is-unknown .hist-chip-ava { display: none; }
 .hist-media {
@@ -3126,11 +3135,11 @@ body.media-lightbox-open { overflow: hidden; }
     flex-shrink: 0;
 }
 .news-post-name {
-    font-weight: 800;
-    font-size: var(--fs-body);
+    font-weight: 700;
+    font-size: var(--fs-list-name);
 }
 .news-post-meta {
-    font-size: 11px;
+    font-size: var(--fs-meta);
     color: var(--color-text-faint);
     margin-top: 4px;
 }
@@ -3273,7 +3282,7 @@ body.media-lightbox-open { overflow: hidden; }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 14px;
+    font-size: var(--fs-card-title);
     font-weight: 700;
 }
 .member-card-tags {
@@ -3694,7 +3703,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .profile-head-label {
     font-family: "Pretendard", sans-serif;
-    font-size: 9px;
+    font-size: var(--fs-eyebrow);
     font-weight: 600;
     letter-spacing: 0.14em;
     color: var(--panel-muted);
@@ -3727,7 +3736,7 @@ body.media-lightbox-open { overflow: hidden; }
     white-space: nowrap;
 }
 .head-plate-sub {
-    font-size: 11px;
+    font-size: var(--fs-meta);
     color: var(--panel-muted);
     margin-top: 9px;
     overflow: hidden;
@@ -3930,8 +3939,8 @@ body.media-lightbox-open { overflow: hidden; }
     gap: 5px;
 }
 .tier-card-name {
-    font-weight: 800;
-    font-size: var(--fs-body);
+    font-weight: 700;
+    font-size: var(--fs-list-name);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4010,7 +4019,7 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-updated {
     margin-left: auto;
     align-self: center;
-    font-size: 11px;
+    font-size: var(--fs-meta);
     font-weight: 500;
     color: var(--color-text-faint);
 }
@@ -4038,7 +4047,7 @@ body.media-lightbox-open { overflow: hidden; }
     line-height: 16px;
     margin-bottom: 6px;
     font-family: "Pretendard", sans-serif;
-    font-size: 10px;
+    font-size: var(--fs-eyebrow);
     font-weight: 700;
     letter-spacing: 0.1em;
     color: var(--color-text-sub);
@@ -4108,7 +4117,7 @@ body.media-lightbox-open { overflow: hidden; }
     font-size: 12px;
 }
 .h2h-suggest-name {
-    font-size: 13px;
+    font-size: var(--fs-list-name);
     font-weight: 700;
     color: var(--color-text-strong);
     white-space: nowrap;
@@ -4129,7 +4138,7 @@ body.media-lightbox-open { overflow: hidden; }
     margin-left: auto;
     flex: none;
     font-family: "Pretendard", sans-serif;
-    font-size: 11px;
+    font-size: var(--fs-meta);
     color: var(--color-text-faint);
 }
 .h2h-suggest-empty {
@@ -4184,7 +4193,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .h2h-card-sub {
     margin-top: 2px;
-    font-size: 11px;
+    font-size: var(--fs-meta);
     color: var(--color-text-sub);
 }
 .h2h-card-rec {
@@ -4272,7 +4281,7 @@ body.media-lightbox-open { overflow: hidden; }
     background: var(--color-win);
 }
 .h2h-score-total {
-    font-size: 11px;
+    font-size: var(--fs-meta);
     color: var(--color-text-sub);
 }
 
@@ -4387,7 +4396,7 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-sub);
 }
 .h2h-empty-title {
-    font-size: 14px;
+    font-size: var(--fs-card-title);
     font-weight: 700;
     color: var(--color-text-main);
 }
@@ -4711,7 +4720,7 @@ body.media-lightbox-open { overflow: hidden; }
     background: rgba(0, 0, 0, 0.72);
     clip-path: var(--cut-3);
     font-family: "Pretendard", sans-serif;
-    font-size: 10px;
+    font-size: var(--fs-badge-sm);
     font-weight: 700;
     letter-spacing: 0.06em;
     color: #fff;
@@ -4735,7 +4744,7 @@ body.media-lightbox-open { overflow: hidden; }
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     text-align: left;
-    font-size: 14px;
+    font-size: var(--fs-card-title);
     font-weight: 700;
     line-height: 1.4;
     color: var(--color-text-strong);
@@ -4749,7 +4758,7 @@ body.media-lightbox-open { overflow: hidden; }
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 12px;
+    font-size: var(--fs-meta);
     color: var(--color-text-sub);
 }
 .video-card-meta { margin-top: 3px; }
@@ -4846,7 +4855,7 @@ body.media-lightbox-open { overflow: hidden; }
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    font-size: 13px;
+    font-size: var(--fs-list-name);
     font-weight: 700;
     line-height: 1.4;
     color: var(--color-text-strong);
@@ -4856,7 +4865,7 @@ body.media-lightbox-open { overflow: hidden; }
 .video-short:hover .video-short-title { color: var(--color-primary); }
 .video-short-meta {
     margin-top: 2px;
-    font-size: 12px;
+    font-size: var(--fs-meta);
     color: var(--color-text-sub);
 }
 
@@ -5045,7 +5054,7 @@ html[data-theme="dark"] .mv-order-row {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 14px;
+    font-size: var(--fs-card-title);
     font-weight: 700;
     color: var(--color-text-main);
 }
@@ -5573,7 +5582,7 @@ html[data-theme="dark"] .mv-order-row {
 
 .head-plate-label {
     font-family: "Pretendard", sans-serif;
-    font-size: 9px;
+    font-size: var(--fs-eyebrow);
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -5828,7 +5837,7 @@ html[data-theme="dark"] .mv-order-row {
     .player-summary-name { font-size:18px; }
     .player-summary-badges { gap:3px; }
     .player-summary-badges .tag-badge,
-    .player-summary-position .tag-badge { height:18px; padding:0 5px; font-size:9.5px; }
+    .player-summary-position .tag-badge { height:18px; padding:0 5px; font-size:9px; }
     .player-summary-badges .tag-badge.race-badge { width:18px; padding:0; }
     .player-summary-badges .team-badge { line-height:18px; }
     .player-summary-wl,.player-summary-rate { font-size:14px; }
