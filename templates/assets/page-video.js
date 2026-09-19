@@ -327,8 +327,6 @@ bootPage(async () => {
     [...VideoState.data.videos, ...VideoState.data.picks].forEach(v => {
         if (!VideoState.byId.has(v.id)) VideoState.byId.set(v.id, v);
     });
-    const updated = document.getElementById('video-updated');
-    if (updated && data.updatedAt) updated.textContent = `${data.updatedAt} 기준 · 몇 시간마다 자동으로 갱신됩니다`;
     renderPicks();
     bindShortsNav();
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {

@@ -38,7 +38,12 @@
              내용만큼 늘어난다) 좁을 때 가로로만 스크롤된다. -->
         <div class="row gap-block mb-block">
             <div class="col-lg-6">
-                <div class="section-title" data-en="HEAD TO HEAD"><span class="section-title-label">상대 전적</span></div>
+                {#- 형식 필터는 page-records.js가 채운다. JS가 죽으면 칩이 안 생기고
+                    아래 표가 서버에서 구운 5칸 그대로 남는다(정보는 그대로다). #}
+                <div class="section-title record-recent-header" data-en="HEAD TO HEAD">
+                    <span class="record-recent-title section-title-label">상대 전적</span>
+                    <div id="team-opp-filters" class="filter-nav tab-scroll" role="tablist"></div>
+                </div>
                 <div class="clean-card p-0 overflow-hidden">
                     <div class="table-responsive scroll-area">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
@@ -97,19 +102,20 @@
                 <div class="avatar-selector-list" id="indiv-avatar-list"></div>
             </div>
             <div class="selection-content">
-        <div class="section-title" data-en="PLAYER"><span class="section-title-label" id="indiv-content-title">전체 전적</span></div>
+        <div class="section-title record-recent-header" data-en="PLAYER">
+            <span class="record-recent-title section-title-label" id="indiv-content-title">전체 전적</span>
+            <div id="indiv-summary-filters" class="filter-nav tab-scroll" role="tablist"></div>
+        </div>
 
         <div id="indiv-summary-content">
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
                         <thead>
                             <tr>
-                                <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-20">멤버</th>
-                                <th scope="col" class="text-nowrap colw-20">대회</th>
-                                <th scope="col" class="text-nowrap colw-20">대학</th>
-                                <th scope="col" class="text-nowrap colw-20">미니</th>
-                                <th scope="col" class="text-nowrap colw-20">CK</th>
+                                <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-25">멤버</th>
+                                <th scope="col" class="text-nowrap colw-25">전적</th>
+                                <th scope="col" class="text-nowrap wl-bar-col" aria-label="승률"></th>
                             </tr>
                         </thead>
                         <tbody id="indiv-summary-tbody">

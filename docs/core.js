@@ -938,6 +938,13 @@ function playerRankBadgeHtml(tier, rank, tierTotal) {
     return `<span class="tag-badge rank-badge">${label} · ${body}</span>`;
 }
 
+// 승패 표기. 사이트 어디서나 '20승 19패'로 같게 적는다(예전엔 '20-19'와 섞여 있었다).
+// 숫자만 색을 입히고 '승/패' 글자는 본문 색으로 둬서, 좁은 칸에서도 숫자가 먼저 읽힌다.
+function winLoseText(win, lose, winClass, loseClass) {
+    return `<span class="${winClass || 'h2h-win'}">${win}</span>승 `
+        + `<span class="${loseClass || 'h2h-lose'}">${lose}</span>패`;
+}
+
 function playerBadgesHtml(p) {
     return `${p.r ? raceBadgeHtml(p.r) : ''}${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}${p.tm ? `<span class="tag-badge team-badge">${escapeHTML(p.tm)}</span>` : ''}`;
 }

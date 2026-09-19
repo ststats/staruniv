@@ -343,7 +343,7 @@ function h2hMapTableHtml(rows) {
             ${list.map(([mapId, [win, lose]]) => `
                 <div class="h2h-map">
                     <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId) || '맵 정보 없음')}</span>
-                    <span class="h2h-map-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span> · ${h2hRateText(win, lose)}</span>
+                    <span class="h2h-map-rec">${winLoseText(win, lose)} · ${h2hRateText(win, lose)}</span>
                     <span class="h2h-map-bar"><span style="width:${win + lose ? (win / (win + lose)) * 100 : 0}%"></span></span>
                 </div>`).join('')}
         </div>
@@ -409,7 +409,7 @@ function h2hRivalCardHtml(pid, win, lose, onclick, disabled) {
         <button type="button" class="h2h-rival"${disabled ? ' disabled' : ` onclick="${onclick}"`}>
             ${avatarHtml(known ? (known.s || '') : '', 'h2h-rival-avatar')}
             <span class="h2h-rival-name">${escapeHTML(h2hName(pid))}</span>
-            <span class="h2h-rival-rec"><span class="h2h-win">${win}</span>-<span class="h2h-lose">${lose}</span> · ${h2hRateText(win, lose)}</span>
+            <span class="h2h-rival-rec">${winLoseText(win, lose)} · ${h2hRateText(win, lose)}</span>
             <span class="h2h-rival-bar"><span style="width:${pct}%"></span></span>
         </button>`;
 }

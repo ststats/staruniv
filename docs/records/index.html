@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=b93e9d707a">
+    <link rel="stylesheet" href="style.css?v=379c29c70b">
     <meta name="site-data-version" content="3ae728c47a">
 </head>
 <body><header class="top-navbar">
@@ -112,7 +112,10 @@
              내용만큼 늘어난다) 좁을 때 가로로만 스크롤된다. -->
         <div class="row gap-block mb-block">
             <div class="col-lg-6">
-                <div class="section-title" data-en="HEAD TO HEAD"><span class="section-title-label">상대 전적</span></div>
+                <div class="section-title record-recent-header" data-en="HEAD TO HEAD">
+                    <span class="record-recent-title section-title-label">상대 전적</span>
+                    <div id="team-opp-filters" class="filter-nav tab-scroll" role="tablist"></div>
+                </div>
                 <div class="clean-card p-0 overflow-hidden">
                     <div class="table-responsive scroll-area">
                         <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
@@ -560,19 +563,20 @@
                 <div class="avatar-selector-list" id="indiv-avatar-list"></div>
             </div>
             <div class="selection-content">
-        <div class="section-title" data-en="PLAYER"><span class="section-title-label" id="indiv-content-title">전체 전적</span></div>
+        <div class="section-title record-recent-header" data-en="PLAYER">
+            <span class="record-recent-title section-title-label" id="indiv-content-title">전체 전적</span>
+            <div id="indiv-summary-filters" class="filter-nav tab-scroll" role="tablist"></div>
+        </div>
 
         <div id="indiv-summary-content">
             <div class="clean-card p-0 overflow-hidden">
                 <div class="table-responsive scroll-area">
-                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-520">
+                    <table class="table table-borderless table-hover mb-0 text-center stat-table table-fixed minw-320">
                         <thead>
                             <tr>
-                                <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-20">멤버</th>
-                                <th scope="col" class="text-nowrap colw-20">대회</th>
-                                <th scope="col" class="text-nowrap colw-20">대학</th>
-                                <th scope="col" class="text-nowrap colw-20">미니</th>
-                                <th scope="col" class="text-nowrap colw-20">CK</th>
+                                <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-25">멤버</th>
+                                <th scope="col" class="text-nowrap colw-25">전적</th>
+                                <th scope="col" class="text-nowrap wl-bar-col" aria-label="승률"></th>
                             </tr>
                         </thead>
                         <tbody id="indiv-summary-tbody">
@@ -719,9 +723,9 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="core.js?v=695f685551"></script>
+<script src="core.js?v=cabb5e9e00"></script>
 <script src="soop.js?v=68531e35cd"></script>
-<script src="page-records.js?v=3cb914c09e"></script>
+<script src="page-records.js?v=8c7173c359"></script>
 
 </body>
 </html>

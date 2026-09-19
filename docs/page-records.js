@@ -268,14 +268,8 @@ function showIndivSummary() {
     document.getElementById('indiv-content-title').innerText = '전체 전적';
     setActiveAvatarItem('indiv-avatar-list', document.getElementById('side-btn-summary'));
 
-    document.getElementById('indiv-summary-tbody').innerHTML = SiteData.members.filter(isActiveMember).map(m => {
-        const pStat = findPlayerStats(m['이름']);
-        const name = m['이름'];
-        return `<tr class="stat-row clickable-row" role="button" tabindex="0" onclick="selectPlayer('${jsAttr(name)}')">
-                <td class="text-center stat-table-sticky-col text-nowrap colw-20"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span class="ellipsis-text">${escapeHTML(name)}</span></span></td>
-                ${FORMAT_KEYS.map(fmt => `<td class="text-nowrap colw-20">${winLossCellHtml(pStat[`${fmt} 전적`])}</td>`).join('\n                ')}
-            </tr>`;
-    }).join('');
+    setVisible(document.getElementById('indiv-summary-filters'), true);
+    renderIndivSummaryTable();
     updateStatsHash();
 }
 
@@ -290,6 +284,7 @@ const INDIV_DONUTS = [
 ];
 
 function selectPlayer(name) {
+    setVisible(document.getElementById('indiv-summary-filters'), false);
     RecordsState.player = name;
     RecordsState.indivPage = 1;
     setVisible(document.getElementById('indiv-summary-content'), false);
@@ -387,43 +382,116 @@ function renderIndivMatchesList(containerId, format, limit) {
 
 
 // "3승 1패 (75.0%)" 한 칸. 넓은 화면은 지금까지와 똑같이 그 문장 그대로,
-// 좁은 화면(스타일시트가 바꿔준다)에서는 3-1 을 크게 + 75.0% 를 그 밑 작은 글씨로 보여준다.
-// 칸 4개가 "0승 2패 (0.0%)"면 휴대폰 화면에 절대 안 들어가서, 같은 내용을 짧게 적는 것이다.
-function winLossCellHtml(text) {
-    const raw = String(text == null ? '' : text).trim();
-    const m = raw.match(/^(\d+)승\s*(\d+)패(?:\s*\(([\d.]+)%\))?$/);
-    if (!m) return escapeHTML(raw) || '-';
-    return `<span class="wl-full">${escapeHTML(raw)}</span>`
-        + `<span class="wl-short"><span class="wl-short-num"><span class="wl-w">${m[1]}</span>-<span class="wl-l">${m[2]}</span></span>`
-        + (m[3] ? `<span class="wl-short-rate">${m[3]}%</span>` : '') + '</span>';
+// 상대 전적 · 개인 전체 전적 표는 둘 다 "상대(멤버) x 형식 4개"라 칸의 절반이 비어 있었다
+// (실측 47%). 한 번에 형식 하나만 보여주고 제목줄의 칩으로 바꾸면 빈 칸이 사라지고,
+// 남는 폭으로 승률 막대를 넣을 수 있다. 칩은 최근 전적 필터와 같은 부품(.filter-nav)이다.
+const SUMMARY_FORMATS = ['합계', ...FORMAT_KEYS];
+
+// 형식 칩 한 줄. 지금 고른 것만 active.
+function summaryFilterHtml(current, handler) {
+    return SUMMARY_FORMATS.map(f => `
+        <div class="filter-item${f === current ? ' active' : ''}" role="tab" tabindex="0"
+             aria-selected="${f === current}" onclick="${handler}('${jsAttr(f)}')">${escapeHTML(f)}</div>`).join('');
 }
 
-// 상대 전적 표의 셀은 build_html.py가 "3승 1패" 같은 문자열로 구워준다.
-// 표를 훑을 때 문장으로 읽으면 우열이 안 보여서 3-1 (파랑-빨강)로 줄여 적는다.
-// 개인 전체전적 표와 같은 표기다(그쪽은 승률을 한 줄 더 붙인다).
-// 마크업을 서버에서 바꾸지 않고 여기서 올려 씌우는 이유: JS가 죽어도 원래 숫자가 그대로
-// 남아 정보가 사라지지 않는다(점진적 향상). 원래 문구는 title에 남긴다.
-function upgradeOpponentStatCells() {
-    const rows = document.querySelectorAll('#view-team-stat tbody tr.team-row-clickable');
-    rows.forEach(tr => {
-        // 0번째는 상대팀 이름(행 머리글), 마지막은 화살표 칸이라 건너뛴다.
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1, 5);
-        cells.forEach(td => {
-            if (td.dataset.wlDone) return;
-            const stat = parseStat(td.textContent.trim());
-            td.dataset.wlDone = '1';
-            if (stat.text === '-') {
-                td.innerHTML = '<span class="wl-empty" aria-hidden="true">—</span>';
-                td.setAttribute('aria-label', '기록 없음');
-                return;
-            }
-            td.setAttribute('title', stat.text);
-            td.setAttribute('aria-label', stat.text);
-            // 승률은 넓은 화면에서만 한 줄 더 붙는다(좁아지면 style.css가 감춘다).
-            td.innerHTML = `<span class="wl-short-num"><span class="wl-w">${stat.wins}</span>-<span class="wl-l">${stat.losses}</span></span>`
-                + `<span class="wl-short-rate">${getRateText(stat.wins, stat.losses)}</span>`;
+// 승률 막대. 표 칸에 들어가는 얇은 띠라 맵별 전적 막대와 같은 모양을 쓴다.
+function wlBarHtml(wins, losses) {
+    const total = wins + losses;
+    if (!total) return '';
+    return `<span class="wl-mini-bar"><span style="width:${(wins / total * 100).toFixed(1)}%"></span></span>`;
+}
+
+// 고른 형식의 전적. '합계'면 네 형식을 다 더한다.
+function statFor(getText, format) {
+    if (format !== '합계') return parseStat(getText(format));
+    return FORMAT_KEYS.reduce((acc, f) => {
+        const st = parseStat(getText(f));
+        return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
+    }, { wins: 0, losses: 0 });
+}
+
+function summaryCellsHtml(stat) {
+    if (!stat.wins && !stat.losses) {
+        return `<td class="text-nowrap colw-25"><span class="wl-empty" aria-hidden="true">—</span></td><td class="wl-bar-col"></td>`;
+    }
+    const text = `${stat.wins}승 ${stat.losses}패`;
+    return `<td class="text-nowrap colw-25" title="${text} (${getRateText(stat.wins, stat.losses)})">`
+        + `<span class="wl-short-num">${winLoseText(stat.wins, stat.losses, 'wl-w', 'wl-l')}</span>`
+        + `<span class="wl-short-rate">${getRateText(stat.wins, stat.losses)}</span></td>`
+        + `<td class="wl-bar-col">${wlBarHtml(stat.wins, stat.losses)}</td>`;
+}
+
+// ----- 팀: 상대 전적 -----
+// 표는 build_html.py가 5칸으로 구워 둔다(JS가 죽어도 숫자가 남게). 여기서 그 숫자를
+// 한 번 읽어 두고, 이후로는 고른 형식만 3칸으로 다시 그린다.
+function readOpponentRows() {
+    if (RecordsState.oppRows) return RecordsState.oppRows;
+    RecordsState.oppRows = [...document.querySelectorAll('#view-team-stat tbody tr.team-row-clickable')]
+        .map(tr => {
+            const td = [...tr.querySelectorAll('td')];
+            return {
+                team: tr.dataset.team || '',
+                stats: Object.fromEntries(FORMAT_KEYS.map((f, i) => [f, (td[i + 1] || {}).textContent || ''])),
+            };
         });
-    });
+    return RecordsState.oppRows;
+}
+
+function setTeamOppFormat(format) {
+    RecordsState.oppFormat = format;
+    renderOpponentTable();
+}
+
+function renderOpponentTable() {
+    const table = document.querySelector('#view-team-stat .stat-table');
+    if (!table) return;
+    const rows = readOpponentRows();
+    const format = RecordsState.oppFormat || '합계';
+
+    document.getElementById('team-opp-filters').innerHTML =
+        summaryFilterHtml(format, 'setTeamOppFormat');
+
+    table.classList.remove('minw-520');
+    table.classList.add('minw-320');
+    table.querySelector('thead').innerHTML = `
+        <tr>
+            <th scope="col" class="text-center stat-table-sticky-col text-nowrap colw-25">상대</th>
+            <th scope="col" class="text-center text-nowrap colw-25">전적</th>
+            <th scope="col" class="text-center wl-bar-col" aria-label="승률"></th>
+            <th scope="col" class="colw-6 col-arrow" aria-label="상세"></th>
+        </tr>`;
+    table.querySelector('tbody').innerHTML = rows.map(r => {
+        const stat = statFor(f => r.stats[f], format);
+        return `<tr class="team-row-clickable stat-row" role="button" tabindex="0" data-team="${escapeHTML(r.team)}">
+            <td class="text-center stat-table-sticky-col text-nowrap colw-25">${teamCellInnerHtml(r.team)}</td>
+            ${summaryCellsHtml(stat)}
+            <td class="text-center colw-6 col-arrow"><span class="ext-arrow i-arrow" aria-hidden="true"></span></td>
+        </tr>`;
+    }).join('');
+}
+
+// ----- 개인: 전체 전적 -----
+function setIndivSummaryFormat(format) {
+    RecordsState.summaryFormat = format;
+    renderIndivSummaryTable();
+}
+
+function renderIndivSummaryTable() {
+    const body = document.getElementById('indiv-summary-tbody');
+    if (!body) return;
+    const format = RecordsState.summaryFormat || '합계';
+    document.getElementById('indiv-summary-filters').innerHTML =
+        summaryFilterHtml(format, 'setIndivSummaryFormat');
+
+    body.innerHTML = SiteData.members.filter(isActiveMember).map(m => {
+        const pStat = findPlayerStats(m['이름']);
+        const name = m['이름'];
+        const stat = statFor(f => pStat[`${f} 전적`], format);
+        return `<tr class="stat-row clickable-row" role="button" tabindex="0" onclick="selectPlayer('${jsAttr(name)}')">
+                <td class="text-center stat-table-sticky-col text-nowrap colw-25"><span class="d-flex align-items-center justify-content-center gap-2">${avatarHtml(m['SOOP ID'], 'player-avatar-sm')}<span class="ellipsis-text">${escapeHTML(name)}</span></span></td>
+                ${summaryCellsHtml(stat)}
+            </tr>`;
+    }).join('');
 }
 
 function openIndivMatchModal() {
@@ -435,7 +503,7 @@ function openIndivMatchModal() {
 
 bootPage(() => {
     safeInit('팀 요약 통계', calculateTeamSummaries);
-    safeInit('상대 전적 승패 바', upgradeOpponentStatCells);
+    safeInit('상대 전적 표', renderOpponentTable);
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         const view = params.get('view') === 'solo' ? 'individual' : 'team';
         switchStatView(view);

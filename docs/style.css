@@ -950,6 +950,19 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .wl-short-num { font-size: 13px; font-weight: 700; }
 /* 넓은 화면에서는 승률을 같은 줄 옆에 둔다(칸이 넉넉해 굳이 두 줄로 쓸 이유가 없다) */
 .wl-short-rate { margin-left: 6px; font-size: 11px; color: var(--color-text-muted); }
+/* 승률 막대 칸은 내용이 없어서 자동 폭 계산에 밀린다(좁은 화면은 table-layout:auto다).
+   colw-* 를 쓰면 좁은 화면에서 width:auto로 덮이므로 전용 클래스로 폭을 잡는다. */
+.stat-table .wl-bar-col { width: 38%; }
+
+/* 표 칸 안의 얇은 승률 막대. 맵별 전적 막대(.h2h-map-bar)와 같은 모양이다. */
+.wl-mini-bar {
+    display: block;
+    height: 6px;
+    overflow: hidden;
+    background: var(--color-lose);
+    clip-path: var(--cut-3);
+}
+.wl-mini-bar > span { display: block; height: 100%; background: var(--color-win); }
 .wl-w { color: var(--color-primary); }
 .wl-l { color: var(--color-lose); }
 
@@ -4862,13 +4875,6 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-sub);
 }
 .video-more-wrap { margin-top: 22px; }
-.video-updated {
-    margin: 18px 0 0;
-    text-align: right;
-    font-size: 11px;
-    color: var(--color-text-faint);
-}
-.video-updated:empty { display: none; }
 
 @media (max-width: 1199.98px) {
     .video-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
