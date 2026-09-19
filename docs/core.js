@@ -848,14 +848,91 @@ function bootPage(init, opts) {
     else start();
 }
 
-// 티어 랭킹 뱃지: '갓티어 · 3위/16명' 꼴로 읽힌다. 랭킹 시스템을 새로 만들기 전까지
-// 순위 자리는 '?'로 두고, 티어 인원수는 그걸 셀 수 있는 화면(티어표 데이터를 들고 있는
-// 상대전적·분석)에서만 tierTotal로 받아 붙인다.
+// 물음표 도움말. 뱃지나 제목 옆에 붙여서, 누르면 설명 상자가 열린다.
+// 설명 상자는 단추 옆이 아니라 <body>에 띄운다 - 선수 머리 카드 같은 곳은 노치 모서리를
+// clip-path로 깎기 때문에, 카드 안에 두면 상자가 카드 밖으로 못 나가고 잘린다.
+// 문구는 우리가 적는 고정 텍스트고, 그리기도 textContent로 하므로 HTML이 섞일 일이 없다.
+let helpSeq = 0;
+
+function helpBadgeHtml(text) {
+    const uid = `help-${++helpSeq}`;
+    return `<span class="help-pop"><button type="button" class="help-btn" id="${uid}"
+            aria-expanded="false" aria-label="설명 보기"
+            data-help="${escapeHTML(text)}" onclick="toggleHelp(this)">?</button></span>`;
+}
+
+function helpBox() {
+    let box = document.getElementById('help-floating');
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'help-floating';
+        box.className = 'help-body';
+        box.setAttribute('role', 'tooltip');
+        box.hidden = true;
+        document.body.appendChild(box);
+    }
+    return box;
+}
+
+function closeAllHelp() {
+    const box = document.getElementById('help-floating');
+    if (box) { box.hidden = true; box.removeAttribute('data-owner'); }
+    document.querySelectorAll('.help-btn[aria-expanded="true"]')
+        .forEach(el => el.setAttribute('aria-expanded', 'false'));
+}
+
+function toggleHelp(btn) {
+    const box = helpBox();
+    const wasOpen = !box.hidden && box.dataset.owner === btn.id;
+    closeAllHelp();
+    if (wasOpen) return;                       // 같은 단추를 다시 누르면 닫기만 한다
+
+    box.textContent = btn.dataset.help || '';
+    box.dataset.owner = btn.id;
+    box.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+
+    // 단추 바로 아래에 두되, 좁은 화면에서 오른쪽으로 삐져나가지 않게 안쪽으로 당긴다.
+    const r = btn.getBoundingClientRect();
+    box.style.left = '0px';
+    box.style.top = '0px';
+    const w = box.offsetWidth;
+    const h = box.offsetHeight;
+    box.style.left = `${Math.round(Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - w - 8)))}px`;
+    // 아래 공간이 모자라면 단추 위로 올린다
+    const below = r.bottom + 6;
+    box.style.top = `${Math.round(below + h > window.innerHeight - 8 && r.top - 6 - h > 8 ? r.top - 6 - h : below)}px`;
+}
+
+// 설명 상자 바깥을 누르거나 Esc를 누르면 닫는다. 화면을 스크롤해도 닫는다 -
+// 위치를 열 때 한 번만 계산하므로 따라다니게 두면 어긋난다.
+document.addEventListener('click', e => {
+    if (e.target.closest && (e.target.closest('.help-pop') || e.target.closest('#help-floating'))) return;
+    closeAllHelp();
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeAllHelp();
+});
+window.addEventListener('scroll', () => closeAllHelp(), { passive: true });
+window.addEventListener('resize', () => closeAllHelp());
+
+// 티어랭킹 뱃지 옆 설명. 계산 방식은 scripts/build_ranking.py에 자세히 적어뒀다.
+const RANK_HELP = '같은 티어 안에서의 순위입니다. 최근 경기일수록 무겁게(반감기 12개월), '
+    + '형식은 개인·대학대회 > 대학대전 > 미니대전 > 프로리그·CK > 스폰 순으로 반영합니다. '
+    + '표본이 얇으면 순위를 낮게 잡고, 최근 1년에 10판을 못 채웠으면 "기록 없음"입니다. '
+    + '티어는 사람이 매긴 것이라, 순위는 그 티어 안에서만 매깁니다.';
+
+// 티어 랭킹 뱃지: '갓티어 · 3위/16명'. 순위는 scripts/build_ranking.py가 계산해
+// docs/data/h2h/index.json에 적어 둔 것을 그대로 쓴다(선수별 k, 티어별 인원 ranking.tierCounts).
+// 최근 1년에 10판을 못 채웠거나 지금 티어표에 없는 사람은 순위가 없어서 '기록 없음'이 된다.
 // 종족·티어 뱃지와 같은 높이·크기지만, 뱃지 줄에 같이 세우면 좁은 화면에서 줄이 넘쳐
 // 잘리므로 머리 카드의 셋째 줄을 따로 내준다(.player-summary-position).
-function playerRankBadgeHtml(tier, tierTotal) {
-    const total = tierTotal ? `/${Number(tierTotal).toLocaleString('ko-KR')}명` : '';
-    return `<span class="tag-badge rank-badge">${escapeHTML(tierLabel(tier))} · ?위${total}</span>`;
+function playerRankBadgeHtml(tier, rank, tierTotal) {
+    const label = escapeHTML(tierLabel(tier));
+    const body = (rank && tierTotal)
+        ? `${rank}위/${Number(tierTotal).toLocaleString('ko-KR')}명`
+        : '기록 없음';
+    return `<span class="tag-badge rank-badge">${label} · ${body}</span>`;
 }
 
 function playerBadgesHtml(p) {
@@ -867,7 +944,7 @@ function playerSummaryHtml(p, rec, close = '', opts = {}) {
         <div class="player-summary-id">
             <div class="player-summary-name">${escapeHTML(p.n)}</div>
             <div class="player-summary-badges">${playerBadgesHtml(p)}</div>
-            <div class="player-summary-position">${playerRankBadgeHtml(p.t, opts.tierTotal)}</div>
+            <div class="player-summary-position">${playerRankBadgeHtml(p.t, opts.rank, opts.tierTotal)}${helpBadgeHtml(RANK_HELP)}</div>
         </div>
         <div class="player-summary-stats">
             <div class="player-summary-total">총 전적 ${rec.total.toLocaleString('ko-KR')}전</div>

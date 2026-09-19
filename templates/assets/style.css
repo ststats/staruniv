@@ -5775,6 +5775,17 @@ html[data-theme="dark"] .mv-order-row {
 .h2h-empty-sub { color:var(--navy-on-muted); }
 #analysis-search { margin-bottom:22px; }
 
+/* 물음표 도움말: 뱃지나 제목 옆의 작은 ? 단추와, 눌렀을 때 뜨는 설명 상자.
+   상자는 단추 기준으로 띄우되 좁은 화면에서 화면 밖으로 나가지 않게 폭을 제한한다. */
+.help-pop { position:relative; display:inline-flex; align-items:center; flex:none; }
+.help-btn { display:grid; place-items:center; width:16px; height:16px; padding:0; margin-left:5px; border:0; clip-path:var(--cut-3); background:var(--color-bg-subtle); color:var(--color-text-sub); font-family:"Pretendard",sans-serif; font-size:10px; font-weight:800; line-height:1; }
+.help-btn:hover,.help-btn[aria-expanded="true"] { background:var(--select-on-light); color:#fff; }
+/* 상자는 <body>에 떠 있다(카드의 clip-path에 잘리지 않게). 위치는 core.js가 잡는다. */
+.help-body { position:fixed; z-index:1200; width:max-content; max-width:min(320px,calc(100vw - 16px)); padding:10px 12px; clip-path:var(--cut-6); background:var(--color-card); color:var(--color-text-main); box-shadow:var(--shadow-card-hover); font-size:11px; font-weight:500; line-height:1.6; white-space:normal; text-align:left; }
+.help-body[hidden] { display:none; }
+.player-summary .help-btn { background:rgba(255,255,255,.18); color:#fff; }
+.section-title .help-pop { align-self:center; }
+
 /* 페이지 넘김: 표 아래에 가로로 꽉 찬 카드 한 장. 버튼은 바탕 없이 두고 현재 쪽만 칠한다. */
 .match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:14px 0 0; background:var(--color-card); clip-path:var(--cut-8); }
 .match-pagination-nav,.match-page-nums { display:flex; align-items:center; gap:3px; }

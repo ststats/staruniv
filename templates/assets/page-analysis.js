@@ -32,6 +32,8 @@ const AnalysisState = {
     catPage: 0,             // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
     mapShown: ANALYSIS_MAP_STEP,
     rivalShown: ANALYSIS_RIVAL_STEP,
+    rating: null,           // 레이팅 변화 데이터(한 번만 받는다)
+    ratingLoading: null,
 };
 
 // 선수를 바꾸거나 기간을 바꾸면 '더 보기'로 펼쳐둔 것들과 페이지를 처음으로 되돌린다.
@@ -45,6 +47,21 @@ function analysisResetLists() {
 // 데이터
 // ---------------------------------------------------------------------------
 async function analysisLoadData() { return h2hLoadIndex(); }
+
+// 레이팅 변화(월별 스냅샷)는 scripts/build_ranking.py가 따로 구워둔 파일이다.
+// 분석 탭에서만 쓰므로 여기서 한 번만 받는다 - 티어표나 상대전적만 보는 사람은 안 받는다.
+const ANALYSIS_RATING_URL = 'data/h2h/rating.json';
+
+async function analysisLoadRating() {
+    if (AnalysisState.rating) return AnalysisState.rating;
+    if (!AnalysisState.ratingLoading) {
+        AnalysisState.ratingLoading = fetch(ANALYSIS_RATING_URL, { cache: 'no-cache' })
+            .then(res => (res.ok ? res.json() : null))
+            .catch(() => null)                 // 없으면 그래프만 빠지고 나머지는 그대로 나온다
+            .then(data => { AnalysisState.rating = data || { months: [], players: {} }; return AnalysisState.rating; });
+    }
+    return AnalysisState.ratingLoading;
+}
 
 // 경기 로그는 상대전적 탭의 샤드를 그대로 쓴다.
 async function analysisLoadPlayer(pid) {
@@ -204,7 +221,7 @@ document.addEventListener('click', e => {
 function analysisHeadHtml(pid, p, e) {
     return playerSummaryHtml(p, {total: e.m, win: e.w, lose: e.l},
         '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>',
-        { tierTotal: h2hTierCount(p.t) });
+        h2hRankInfo(p));
 }
 
 // ---------------------------------------------------------------------------
@@ -400,6 +417,79 @@ function analysisMonthlyHtml(rows) {
 }
 
 // ---------------------------------------------------------------------------
+// 레이팅 변화
+// ---------------------------------------------------------------------------
+// 달마다 '그 시점까지의 경기'로 다시 맞춘 점수다(scripts/build_ranking.py).
+// 같은 선수의 오르내림을 보는 값이라, 티어가 다른 선수끼리 점수를 맞대 보면 안 된다.
+const RATING_HELP = '달마다 그 시점까지의 경기만으로 다시 계산한 점수입니다. '
+    + '한 선수가 올라갔는지 내려갔는지를 보는 값이라, 티어가 다른 선수끼리 점수를 '
+    + '직접 비교하면 안 됩니다. 그 달에 경기가 없으면 선이 끊깁니다.';
+
+function analysisRatingHtml(pid) {
+    const data = AnalysisState.rating;
+    const series = data && data.players && data.players[String(pid)];
+    const months = (data && data.months) || [];
+    if (!series || !months.length) return '';
+    const pts = series.map((v, i) => (v === null || v === undefined ? null : { i, v, key: months[i] }));
+    const have = pts.filter(Boolean);
+    if (have.length < 2) return '';
+
+    const W = 440, H = 220, PAD_T = 14, PAD_B = 26, PAD_L = 38, PAD_R = 10;
+    const plotH = H - PAD_T - PAD_B;
+    const plotW = W - PAD_L - PAD_R;
+    const vals = have.map(p => p.v);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (hi - lo < 40) { const mid = (hi + lo) / 2; lo = mid - 20; hi = mid + 20; }   // 평평한 선이 납작해 보이지 않게
+    const pad = (hi - lo) * 0.15;
+    lo -= pad; hi += pad;
+    const x = i => PAD_L + (months.length === 1 ? plotW / 2 : (plotW * i) / (months.length - 1));
+    const y = v => PAD_T + plotH - ((v - lo) / (hi - lo)) * plotH;
+
+    // 가로 눈금 3줄. 점수는 정수로 읽히는 게 편하다.
+    const grid = [0, 0.5, 1].map(r => {
+        const v = lo + (hi - lo) * r;
+        return `<line class="analysis-chart-grid" x1="${PAD_L}" y1="${y(v).toFixed(1)}" x2="${W - PAD_R}" y2="${y(v).toFixed(1)}"></line>`
+             + `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`;
+    }).join('');
+
+    // 쉰 달은 선을 잇지 않고 끊는다
+    let path = '';
+    let open = false;
+    pts.forEach(p => {
+        if (!p) { open = false; return; }
+        path += `${open ? 'L' : 'M'} ${x(p.i).toFixed(1)} ${y(p.v).toFixed(1)} `;
+        open = true;
+    });
+    const dots = have.map(p =>
+        `<circle class="analysis-rate-dot" cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6"><title>${escapeHTML(p.key)} ${p.v}점</title></circle>`).join('');
+
+    const step = Math.max(1, Math.ceil(months.length / 6));
+    const labels = months.map((k, i) => {
+        if (i % step !== 0) return '';
+        const [yy, mm] = k.split('-');
+        return `<text class="analysis-chart-label" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${mm === '01' ? `${yy.slice(2)}.${mm}` : mm}</text>`;
+    }).join('');
+
+    const first = have[0].v, last = have[have.length - 1].v;
+    const diff = last - first;
+    const sign = diff > 0 ? 'h2h-win' : (diff < 0 ? 'h2h-lose' : '');
+    return `
+        <div class="section-title section-title-spaced" data-en="RATING">
+            <span class="section-title-label">레이팅 변화</span>
+            ${helpBadgeHtml(RATING_HELP)}
+            <span class="title-count">${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>
+        </div>
+        <div class="clean-card p-3">
+            <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 레이팅 변화">
+                ${grid}
+                <path class="analysis-rate-line" d="${path.trim()}" fill="none"></path>
+                ${dots}
+                ${labels}
+            </svg>
+        </div>`;
+}
+
+// ---------------------------------------------------------------------------
 // 맵별 전적 · 동티어 전적 (둘 다 8개씩 + 더 보기)
 // ---------------------------------------------------------------------------
 function analysisShowMoreMaps() {
@@ -545,7 +635,10 @@ function analysisProfileHtml(pid) {
             <div class="col-lg-6">${analysisCatHtml(e)}</div>
             <div class="col-lg-6">${analysisRaceHtml(e)}</div>
         </div>
-        ${analysisMonthlyHtml(rows)}
+        <div class="row g-3">
+            <div class="col-lg-7">${analysisMonthlyHtml(rows)}</div>
+            <div class="col-lg-5">${analysisRatingHtml(pid)}</div>
+        </div>
         ${analysisMapHtml(rows)}
         ${analysisRivalHtml(rows, p.t)}
         ${analysisMatchesHtml(rows)}`;
@@ -582,7 +675,8 @@ async function analysisPick(pid) {
 
     document.getElementById('analysis-body').innerHTML = '<div class="h2h-empty">불러오는 중...</div>';
     try {
-        await analysisLoadPlayer(pid);
+        // 레이팅 변화는 없어도 나머지가 나와야 하므로, 실패해도 멈추지 않는다(위에서 잡는다).
+        await Promise.all([analysisLoadPlayer(pid), analysisLoadRating()]);
     } catch (err) {
         console.error(err);
         document.getElementById('analysis-body').innerHTML =

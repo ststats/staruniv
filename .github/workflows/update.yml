@@ -3,6 +3,7 @@ name: Update Site
 # 한 번 돌리면 사이트에 필요한 걸 전부 갱신한다. 서로 독립이라 하나가 실패해도 나머지는 간다.
 #   1) 유튜브 → 영상 목록 (docs/data/videos.json)                 - 키 있으면 전체, 없으면 RSS 15개
 #   2) eloboard 전적 증분 → 상대전적 파일 (docs/data/h2h/)        - 시트·외부 키 불필요
+#      + 티어 안 순위(티어랭킹)를 계산해 같은 index.json에 적어 넣는다
 #   3) 구글 시트 → data/db.json                                   - 시트 시크릿이 있을 때만
 #   4) 통계 산출 + docs/ 페이지 빌드 (data/db.json이 있을 때만)
 #   5) 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링 → docs/data/calendar.png)
@@ -118,6 +119,18 @@ jobs:
           exit 0
         fi
         python scripts/build_h2h.py
+
+    # 티어 안 순위. 상대전적 index.json을 읽어 순위 필드만 덧붙인다(numpy·scipy가 필요해서
+    # 라이브러리 설치 뒤에 온다). 여기서 실패해도 사이트는 순위 없이 그대로 나가야 하므로
+    # 나머지 단계를 막지 않는다.
+    - name: 티어랭킹 계산
+      continue-on-error: true
+      run: |
+        if [ ! -f docs/data/h2h/index.json ]; then
+          echo "ℹ️ 상대전적 index.json 이 없어 티어랭킹을 건너뜁니다."
+          exit 0
+        fi
+        python scripts/build_ranking.py
 
     - name: 통계 산출 및 웹페이지 빌드
       run: |
