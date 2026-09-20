@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=ea88a91443">
+    <link rel="stylesheet" href="style.css?v=65f3accb2a">
     <meta name="site-data-version" content="f8745ef991">
 </head>
 <body><header class="top-navbar">
@@ -133,23 +133,22 @@
                 <div class="entry-team-chips tab-scroll" id="entry-chips-b" role="group" aria-label="오른쪽 소속"></div>
             </div>
         </div>
-        <div class="entry-modebar">
-            <label class="entry-target-field">이름
-                <input type="text" id="entry-label-a" class="entry-label" maxlength="14" placeholder="A" onchange="entrySetLabel(0,this.value)" oninput="entrySetLabel(0,this.value)" aria-label="왼쪽 진영 이름">
-                <input type="text" id="entry-label-b" class="entry-label" maxlength="14" placeholder="B" onchange="entrySetLabel(1,this.value)" oninput="entrySetLabel(1,this.value)" aria-label="오른쪽 진영 이름">
-            </label>
-            <label class="entry-target-field">경기 수
+        <div class="entry-toolbar">
+            <button type="button" class="entry-tool-btn entry-tool-main" onclick="entryAutoFill()">후보 뽑기</button>
+            <button type="button" class="entry-tool-btn" onclick="entrySwapTeams()">진영 교체</button>
+            <button type="button" class="entry-tool-btn" onclick="entryReset()">대진 비우기</button>
+            <span class="entry-tool-sep" aria-hidden="true"></span>
+            <label class="entry-tool-field">경기 수
                 <input type="number" id="entry-target" class="entry-target" min="1" max="31" step="2" value="9" onchange="entrySetTarget(this.value)" aria-label="채워야 하는 경기 수">
             </label>
-            <div class="entry-modebar-right">
-                <button type="button" class="text-action" onclick="entrySwapTeams()"><span>좌우 바꾸기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
-                <button type="button" class="text-action" onclick="entryAllCandidates()"><span>후보 전부</span></button>
-                <button type="button" class="entry-auto" onclick="entryAutoFill()">엔트리 짜기</button>
-            </div>
+            <label class="entry-tool-field">이름
+                <input type="text" id="entry-label-a" class="entry-label" maxlength="14" placeholder="A" oninput="entrySetLabel(0,this.value)" aria-label="왼쪽 진영 이름">
+                <input type="text" id="entry-label-b" class="entry-label" maxlength="14" placeholder="B" oninput="entrySetLabel(1,this.value)" aria-label="오른쪽 진영 이름">
+            </label>
         </div>
         <div class="entry-layout">
-            <div class="entry-rosters" id="entry-rosters"></div>
             <div class="entry-result" id="entry-result"></div>
+            <div class="entry-rosters" id="entry-rosters"></div>
         </div>
     </div>
     <div id="view-tools-rider" class="d-none">
@@ -185,7 +184,7 @@
 <script src="core.js?v=bcdad8866d"></script>
 <script src="soop.js?v=68531e35cd"></script>
 <script src="page-tools.js?v=3c82d190b3"></script>
-<script src="page-entry.js?v=fcb9498bc6"></script>
+<script src="page-entry.js?v=60ed03a914"></script>
 
 </body>
 </html>

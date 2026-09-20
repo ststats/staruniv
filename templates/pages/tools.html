@@ -92,23 +92,24 @@
                 <div class="entry-team-chips tab-scroll" id="entry-chips-b" role="group" aria-label="오른쪽 소속"></div>
             </div>
         </div>
-        <div class="entry-modebar">
-            <label class="entry-target-field">이름
-                <input type="text" id="entry-label-a" class="entry-label" maxlength="14" placeholder="A" onchange="entrySetLabel(0,this.value)" oninput="entrySetLabel(0,this.value)" aria-label="왼쪽 진영 이름">
-                <input type="text" id="entry-label-b" class="entry-label" maxlength="14" placeholder="B" onchange="entrySetLabel(1,this.value)" oninput="entrySetLabel(1,this.value)" aria-label="오른쪽 진영 이름">
-            </label>
-            <label class="entry-target-field">경기 수
+        <div class="entry-toolbar">
+            <button type="button" class="entry-tool-btn entry-tool-main" onclick="entryAutoFill()">후보 뽑기</button>
+            <button type="button" class="entry-tool-btn" onclick="entrySwapTeams()">진영 교체</button>
+            <button type="button" class="entry-tool-btn" onclick="entryReset()">대진 비우기</button>
+            <span class="entry-tool-sep" aria-hidden="true"></span>
+            <label class="entry-tool-field">경기 수
                 <input type="number" id="entry-target" class="entry-target" min="1" max="31" step="2" value="9" onchange="entrySetTarget(this.value)" aria-label="채워야 하는 경기 수">
             </label>
-            <div class="entry-modebar-right">
-                <button type="button" class="text-action" onclick="entrySwapTeams()"><span>좌우 바꾸기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
-                <button type="button" class="text-action" onclick="entryAllCandidates()"><span>후보 전부</span></button>
-                <button type="button" class="entry-auto" onclick="entryAutoFill()">엔트리 짜기</button>
-            </div>
+            <label class="entry-tool-field">이름
+                <input type="text" id="entry-label-a" class="entry-label" maxlength="14" placeholder="A" oninput="entrySetLabel(0,this.value)" aria-label="왼쪽 진영 이름">
+                <input type="text" id="entry-label-b" class="entry-label" maxlength="14" placeholder="B" oninput="entrySetLabel(1,this.value)" aria-label="오른쪽 진영 이름">
+            </label>
         </div>
+        {#- 대진표가 넓은 쪽, 선수 고르는 칸이 좁은 쪽이다. 짜고 있는 결과를 계속 보면서
+            옆에서 사람을 집어넣는 흐름이라 그렇다. #}
         <div class="entry-layout">
-            <div class="entry-rosters" id="entry-rosters"></div>
             <div class="entry-result" id="entry-result"></div>
+            <div class="entry-rosters" id="entry-rosters"></div>
         </div>
     </div>
 

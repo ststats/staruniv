@@ -103,13 +103,18 @@ function entryTeamList() {
     return Object.keys(count).sort((a, b) => count[b] - count[a] || a.localeCompare(b, 'ko'));
 }
 
+// 소속을 고르면 그 명단, 안 고르면 씬 전체. 소속 칩은 긴 명단을 줄이는 필터일 뿐이라
+// 안 골랐다고 화면을 비워 두지 않는다.
 function entryRoster(team) {
-    if (!team) return [];
     const players = entryPlayers();
     return Object.entries(players)
-        .filter(([, p]) => String(p.tm || '').trim() === team)
+        .filter(([, p]) => {
+            const t = String(p.tm || '').trim();
+            if (t === ENTRY_DORMANT) return false;
+            return team ? t === team : true;
+        })
         .map(([pid, p]) => ({ pid, ...p }))
-        .sort((a, b) => tierIndex(a.t) - tierIndex(b.t) || (a.k || 99) - (b.k || 99)
+        .sort((a, b) => entrySeqIndex(a.t) - entrySeqIndex(b.t) || (a.k || 99) - (b.k || 99)
             || String(a.n).localeCompare(String(b.n), 'ko'));
 }
 
@@ -292,46 +297,18 @@ function entrySameTierPairs() {
     return out;
 }
 
-function entryAllCandidates() {
-    EntryState.matches = entrySameTierPairs();
-    EntryState.sel = [null, null];
-    renderEntry();
-    entryRefreshProbs();
-}
-
-// 경기 수에 맞춰 엔트리를 짠다.
-// 1차 - 같은 티어끼리, 양쪽 모두 한 번씩만. 9경기짜리인데 여기서 4개밖에 안 나오는
-//       일이 흔하다. 그래도 그 4개는 그대로 간다.
-// 2차 - 모자란 자리를 한 번 더 돌려 채운다. 이번엔 중복을 허용하되, 지금까지 적게
-//       나온 선수부터 뽑아 한 사람에게 몰리지 않게 한다(실제로는 핀볼로 뽑는 자리다).
+// 후보를 뽑는다. 자르지 않는다 - 9경기짜리라고 아홉 개만 주면 그건 이미 남이 정한
+// 편성이다. 상대 5티어가 셋이면 그 셋과 붙는 경우가 전부 올라와야 하고, 한 선수가
+// 여러 줄에 있는 것도 그대로 둔다(9칸을 같은 티어로 다 못 채우면 그렇게 메운다).
+// 여기서 사람이 × 로 추려 경기 수만큼 남기면 그게 곧 엔트리다.
 function entryAutoFill() {
+    if (!EntryState.teams[0] || !EntryState.teams[1]) {
+        alert('후보를 뽑으려면 양쪽 소속을 골라 주세요. 소속 없이도 검색해서 직접 넣을 수 있습니다.');
+        return;
+    }
     const all = entrySameTierPairs();
     if (!all.length) return;
-    const target = EntryState.target;
-    const usedA = new Set(); const usedB = new Set();
-    const out = [];
-    all.forEach(m => {
-        if (out.length >= target || usedA.has(m.a) || usedB.has(m.b)) return;
-        usedA.add(m.a); usedB.add(m.b);
-        out.push(m);
-    });
-    // 2차: 남은 자리를 중복으로 메운다
-    const taken = new Set(out.map(m => `${m.a}|${m.b}`));
-    const count = {};
-    out.forEach(m => { count[m.a] = (count[m.a] || 0) + 1; count[m.b] = (count[m.b] || 0) + 1; });
-    while (out.length < target) {
-        const rest = all.filter(m => !taken.has(`${m.a}|${m.b}`));
-        if (!rest.length) break;                 // 같은 티어로 더 만들 짝이 없다
-        rest.sort((x, y) => ((count[x.a] || 0) + (count[x.b] || 0)) - ((count[y.a] || 0) + (count[y.b] || 0)));
-        const pick = rest[0];
-        taken.add(`${pick.a}|${pick.b}`);
-        count[pick.a] = (count[pick.a] || 0) + 1;
-        count[pick.b] = (count[pick.b] || 0) + 1;
-        out.push(pick);
-    }
-    const order = new Map(all.map((m, i) => [`${m.a}|${m.b}`, i]));
-    out.sort((x, y) => order.get(`${x.a}|${x.b}`) - order.get(`${y.a}|${y.b}`));
-    EntryState.matches = out;
+    EntryState.matches = all;
     EntryState.sel = [null, null];
     renderEntry();
     entryRefreshProbs();
@@ -432,21 +409,19 @@ function renderEntryRosters() {
         const q = EntryState.query[side];
         const searching = !!String(q || '').trim();
         const list = searching ? entrySearch(q) : entryRoster(team);
-        const head = searching
-            ? `검색 결과` : escapeHTML(team || '소속을 고르세요');
-        const empty = searching
-            ? '찾는 선수가 없습니다.'
-            : '위에서 소속을 고르거나 이름으로 찾으세요.';
+        const head = `${side === 0 ? 'A' : 'B'} · ${escapeHTML(searching ? '검색' : (team || '전체'))}`;
+        const empty = searching ? '찾는 선수가 없습니다.' : '명단이 비어 있습니다.';
         return `<div class="entry-col">
             <div class="entry-col-head"><span class="entry-col-name">${head}</span><span class="entry-col-count">${list.length}명</span></div>
             <div class="entry-col-search">
+                <span class="i-search" aria-hidden="true"></span>
                 <input type="search" id="entry-q-${side === 0 ? 'a' : 'b'}" class="entry-search-input"
-                    placeholder="이름·대학으로 검색" aria-label="${side === 0 ? '왼쪽' : '오른쪽'} 선수 검색"
+                    placeholder="선수 이름으로 찾기" aria-label="${side === 0 ? '왼쪽' : '오른쪽'} 선수 검색"
                     value="${escapeHTML(q || '')}" oninput="entrySetQuery(${side}, this.value)">
                 ${searching ? `<button type="button" class="entry-search-clear" onclick="entryClearQuery(${side})" aria-label="검색어 지우기">×</button>` : ''}
             </div>
             <div class="entry-col-body">${list.length
-                ? list.map(p => entryPlayerChipHtml(side, p, searching)).join('')
+                ? list.map(p => entryPlayerChipHtml(side, p, searching || !team)).join('')
                 : `<div class="entry-empty">${empty}</div>`}</div>
         </div>`;
     }).join('');
@@ -521,9 +496,8 @@ function renderEntryResult() {
         box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>소속을 고르면 명단이 한 번에 뜨고, 아니면 이름으로 찾아 넣으면 됩니다.</div>';
         return;
     }
-    // 경기 수를 넘어가면 아직 '후보를 늘어놓은' 상태로 본다. 그 수로 스코어 분포를
-    // 내 봐야 뜻이 없다. 경기 수 안으로 추려지면 그때부터 엔트리로 보고 확률을 낸다.
-    // (중복으로 채운 자리는 정상이다 - 9경기를 같은 티어로 다 못 채우면 그렇게 메운다)
+    // 경기 수보다 많으면 아직 후보를 늘어놓은 상태다. 그 수로 스코어 분포를 내 봐야
+    // 뜻이 없다. × 로 경기 수만큼 추리면 그게 곧 엔트리이고, 그때 확률이 나온다.
     const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
     const n = ps.length;
     const target = EntryState.target;
@@ -541,8 +515,8 @@ function renderEntryResult() {
         </div>`;
     } else {
         head = `<div class="entry-summary">
-            <div class="entry-summary-head">후보 ${n}개</div>
-            <div class="entry-summary-note">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. × 로 ${target}경기 안으로 추리면 매치 승리 확률과 예상 스코어가 나옵니다.</div>
+            <div class="entry-summary-head">후보 ${n}개 · ${target}경기</div>
+            <div class="entry-summary-note">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. × 로 ${n - target}개를 걷어 내면 매치 승리 확률과 예상 스코어가 나옵니다.</div>
         </div>`;
     }
     box.innerHTML = head
