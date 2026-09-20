@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=1e2807b50b">
+    <link rel="stylesheet" href="style.css?v=9c54160c12">
     <meta name="site-data-version" content="f8745ef991">
 </head>
 <body><header class="top-navbar">
@@ -134,13 +134,10 @@
             </div>
         </div>
         <div class="entry-modebar">
-            <div class="filter-nav entry-mode" role="group" aria-label="대전 방식">
-                <button type="button" class="filter-item active" id="entry-mode-normal" aria-pressed="true" onclick="entrySetMode('normal')">1:1 대진</button>
-                <button type="button" class="filter-item" id="entry-mode-glad" aria-pressed="false" onclick="entrySetMode('glad')">검투사</button>
-            </div>
+            <div class="entry-modebar-hint">같은 티어로 나올 수 있는 조합을 모두 올린 뒤 추려 냅니다.</div>
             <div class="entry-modebar-right">
                 <button type="button" class="text-action" onclick="entrySwapTeams()"><span>좌우 바꾸기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
-                <button type="button" class="entry-auto" onclick="entryAutoFill()"><span id="entry-auto-label">자동 매치</span></button>
+                <button type="button" class="entry-auto" onclick="entryAutoFill()">후보 전부</button>
             </div>
         </div>
         <div class="entry-layout">
@@ -181,7 +178,7 @@
 <script src="core.js?v=bcdad8866d"></script>
 <script src="soop.js?v=68531e35cd"></script>
 <script src="page-tools.js?v=3c82d190b3"></script>
-<script src="page-entry.js?v=abce575812"></script>
+<script src="page-entry.js?v=23c2c47c64"></script>
 
 </body>
 </html>

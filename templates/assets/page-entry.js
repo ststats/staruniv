@@ -36,9 +36,7 @@ const EntryState = {
     index: null,
     loading: null,
     teams: [null, null],     // 소속 이름
-    mode: 'normal',          // 'normal'(1:1 대진) | 'glad'(검투사)
-    matches: [],             // normal: [{a, b}]  a/b는 선수 id
-    orders: [[], []],        // glad: 팀별 출전 순서(선수 id 배열)
+    matches: [],             // [{a, b}]  a/b는 선수 id
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     h2h: {},                 // "a|b" -> {w, l}  (받아온 맞대결)
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
@@ -221,54 +219,26 @@ function entryPickTeam(side, team) {
     EntryState.teams[side] = (EntryState.teams[side] === team) ? null : (team || null);
     EntryState.sel = [null, null];
     EntryState.matches = [];
-    EntryState.orders = [[], []];
     renderEntryTeamChips();
     renderEntry();
 }
 
 function entrySwapTeams() {
     EntryState.teams.reverse();
-    EntryState.orders.reverse();
     EntryState.matches = EntryState.matches.map(m => ({ a: m.b, b: m.a }));
     EntryState.sel.reverse();
     renderEntryTeamChips();
     renderEntry();
 }
 
-function entrySetMode(mode) {
-    EntryState.mode = mode === 'glad' ? 'glad' : 'normal';
-    EntryState.sel = [null, null];
-    ['normal', 'glad'].forEach(m => {
-        const el = document.getElementById(m === 'normal' ? 'entry-mode-normal' : 'entry-mode-glad');
-        if (!el) return;
-        const on = EntryState.mode === m;
-        el.classList.toggle('active', on);
-        el.setAttribute('aria-pressed', String(on));
-    });
-    const lab = document.getElementById('entry-auto-label');
-    if (lab) lab.textContent = EntryState.mode === 'glad' ? '순서 자동' : '자동 매치';
-    renderEntry();
-}
-
 function entryReset() {
     EntryState.matches = [];
-    EntryState.orders = [[], []];
     EntryState.sel = [null, null];
     renderEntry();
 }
 
-// 선수 한 명 누르기. 1:1 대진에서는 양쪽에서 하나씩 고르면 매치가 되고,
-// 검투사에서는 누른 순서가 곧 출전 순서다.
+// 선수 한 명 누르기. 양쪽에서 하나씩 고르면 대진이 하나 추가된다.
 function entryTogglePlayer(side, pid) {
-    if (EntryState.mode === 'glad') {
-        const order = EntryState.orders[side];
-        const at = order.indexOf(pid);
-        if (at >= 0) order.splice(at, 1);
-        else order.push(pid);
-        renderEntry();
-        entryRefreshProbs();
-        return;
-    }
     EntryState.sel[side] = EntryState.sel[side] === pid ? null : pid;
     const [a, b] = EntryState.sel;
     if (a && b) {
@@ -284,36 +254,19 @@ function entryRemoveMatch(i) {
     renderEntry();
 }
 
-function entryMoveOrder(side, i, d) {
-    const order = EntryState.orders[side];
-    const j = i + d;
-    if (j < 0 || j >= order.length) return;
-    [order[i], order[j]] = [order[j], order[i]];
-    renderEntry();
-}
-
-// 자동 채우기. 1:1은 같은 티어끼리 짝지어 주고, 검투사는 약한 순서(티어 아래쪽)부터
-// 내보내는 흔한 편성을 기본값으로 깐다 - 어차피 손으로 바꿀 수 있는 출발점이다.
+// 자동 채우기: 같은 티어로 나올 수 있는 짝을 '전부' 올린다.
+// 한쪽 잭이 1명이고 상대 잭이 2명이면 후보는 두 개다 - 하나만 골라 주면 그건 이미
+// 남이 정한 편성이다. 다 올려두고 손으로 추려 내는 게 이 판의 순서다.
+// (수술대의 '동일티어전체', ONE K의 '동일티어만'이 같은 생각이다. ONE K는 한 선수가
+//  최대 5경기까지 들어갈 수 있게 두는데, 대학대전에서 한 명이 여러 판 뛰기 때문이다.)
 function entryAutoFill() {
     const A = entryRoster(EntryState.teams[0]);
     const B = entryRoster(EntryState.teams[1]);
     if (!A.length || !B.length) return;
-    if (EntryState.mode === 'glad') {
-        EntryState.orders = [A.slice().reverse().map(p => p.pid), B.slice().reverse().map(p => p.pid)];
-        renderEntry();
-        entryRefreshProbs();
-        return;
-    }
-    // 같은 티어끼리만 짝짓는다. 한쪽에만 있는 티어는 아예 대진을 만들지 않는다 -
-    // 티어가 다른 사람을 억지로 붙이면 그건 편성이 아니라 그냥 남는 사람 처리다.
     const byTier = {};
     B.forEach(b => (byTier[String(b.t)] || (byTier[String(b.t)] = [])).push(b));
     const out = [];
-    A.forEach(a => {
-        const pool = byTier[String(a.t)];
-        if (!pool || !pool.length) return;
-        out.push({ a: a.pid, b: pool.shift().pid });
-    });
+    A.forEach(a => (byTier[String(a.t)] || []).forEach(b => out.push({ a: a.pid, b: b.pid })));
     EntryState.matches = out;
     EntryState.sel = [null, null];
     renderEntry();
@@ -322,9 +275,7 @@ function entryAutoFill() {
 
 // 화면에 올라온 선수들의 맞대결을 받아 온 뒤 확률만 다시 그린다.
 async function entryRefreshProbs() {
-    const pids = EntryState.mode === 'glad'
-        ? [...EntryState.orders[0], ...EntryState.orders[1]]
-        : EntryState.matches.flatMap(m => [m.a, m.b]);
+    const pids = EntryState.matches.flatMap(m => [m.a, m.b]);
     if (!pids.length) return;
     await entryLoadH2h(pids);
     renderEntryResult();
@@ -344,43 +295,16 @@ function entryScoreDist(ps) {
     return dist;
 }
 
-// 검투사: 이긴 사람이 남고 진 팀이 다음 선수를 낸다. 한쪽이 선수를 다 쓰면 끝.
-// 상태 (i, j, who) = A의 다음 주자 i, B의 다음 주자 j, 지금 무대에 선 쪽.
-// 재귀가 겹치므로 메모로 접는다. 반환: A가 최종 승리할 확률 + 예상 진행.
-function entryGladSim(aOrder, bOrder) {
-    const memo = new Map();
-    function win(i, j, stageSide, stagePid) {
-        if (i >= aOrder.length) return 0;      // A가 더 낼 사람이 없다
-        if (j >= bOrder.length) return 1;
-        const key = `${i}|${j}|${stageSide}|${stagePid}`;
-        if (memo.has(key)) return memo.get(key);
-        const aPid = stageSide === 0 ? stagePid : aOrder[i];
-        const bPid = stageSide === 1 ? stagePid : bOrder[j];
-        const wp = entryWinProb(aPid, bPid);
-        const p = wp ? wp.p : 0.5;
-        // A가 이기면 B가 다음 사람을 내고(j+1), A는 무대에 남는다
-        const v = p * win(i, j + 1, 0, aPid) + (1 - p) * win(i + 1, j, 1, bPid);
-        memo.set(key, v);
-        return v;
-    }
-    if (!aOrder.length || !bOrder.length) return null;
-    const first = entryWinProb(aOrder[0], bOrder[0]);
-    const p0 = first ? first.p : 0.5;
-    const pa = p0 * win(0, 1, 0, aOrder[0]) + (1 - p0) * win(1, 0, 1, bOrder[0]);
-    return { a: pa, b: 1 - pa };
-}
-
 // ---------------------------------------------------------------------------
 // 그리기
 // ---------------------------------------------------------------------------
-function entryPlayerChipHtml(side, p, opts) {
-    const o = opts || {};
+// 명단 칩. 대진에 이미 몇 번 올라간 선수인지 숫자로 보여 준다 - 한 선수가 여러 판
+// 뛰는 게 정상이라(대학대전이 그렇다) '중복'이 아니라 '몇 경기'로 읽혀야 한다.
+function entryPlayerChipHtml(side, p) {
     const sel = EntryState.sel[side] === p.pid;
-    const order = EntryState.orders[side].indexOf(p.pid);
-    const picked = EntryState.mode === 'glad' ? order >= 0 : sel;
-    const badge = EntryState.mode === 'glad' && order >= 0
-        ? `<span class="entry-chip-order">${order + 1}</span>` : '';
-    return `<button type="button" class="entry-chip${picked ? ' picked' : ''}"
+    const used = EntryState.matches.filter(m => (side === 0 ? m.a : m.b) === p.pid).length;
+    const badge = used ? `<span class="entry-chip-order">${used}</span>` : '';
+    return `<button type="button" class="entry-chip${sel ? ' picked' : ''}"
             onclick="entryTogglePlayer(${side},'${jsAttr(p.pid)}')">
         ${badge}
         ${avatarHtml(p.s || '', 'entry-chip-avatar')}
@@ -440,69 +364,48 @@ function entryMatchRowHtml(m, i) {
     </div>`;
 }
 
-function entryGladRowHtml(side, pid, i) {
-    const p = entryPlayers()[pid];
-    if (!p) return '';
-    return `<div class="entry-order-row">
-        <span class="entry-order-no">${i + 1}</span>
-        ${avatarHtml(p.s || '', 'entry-match-avatar')}
-        <span class="entry-match-name">${escapeHTML(p.n)}</span>
-        ${p.r ? raceBadgeHtml(p.r) : ''}
-        <span class="entry-chip-tier">${escapeHTML(tierLabel(p.t))}</span>
-        <span class="entry-order-move">
-            <button type="button" onclick="entryMoveOrder(${side},${i},-1)" aria-label="위로">▲</button>
-            <button type="button" onclick="entryMoveOrder(${side},${i},1)" aria-label="아래로">▼</button>
-        </span>
-    </div>`;
-}
-
 function renderEntryResult() {
     const box = document.getElementById('entry-result');
     if (!box) return;
     const [ta, tb] = EntryState.teams;
     if (!ta || !tb) { box.innerHTML = '<div class="entry-empty">양쪽 소속을 고르면 결과가 나옵니다.</div>'; return; }
 
-    if (EntryState.mode === 'glad') {
-        const [oa, ob] = EntryState.orders;
-        if (!oa.length || !ob.length) {
-            box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 눌러 출전 순서를 정하세요.<br>또는 <b>순서 자동</b>으로 한 번에 채웁니다.</div>';
-            return;
-        }
-        const sim = entryGladSim(oa, ob);
-        box.innerHTML = `
-            <div class="entry-summary">
-                <div class="entry-summary-head">검투사 승리 확률</div>
-                ${sim ? entryProbBarHtml(sim.a) : ''}
-                <div class="entry-summary-names"><span>${escapeHTML(ta)}</span><span>${escapeHTML(tb)}</span></div>
-                <div class="entry-summary-note">이긴 선수가 무대에 남고 진 팀이 다음 주자를 냅니다. 한쪽이 선수를 다 쓰면 끝납니다.</div>
-            </div>
-            <div class="entry-orders">
-                ${[0, 1].map(side => `<div class="entry-order-col">
-                    <div class="entry-order-head">${escapeHTML(EntryState.teams[side])} · ${EntryState.orders[side].length}명</div>
-                    ${EntryState.orders[side].map((pid, i) => entryGladRowHtml(side, pid, i)).join('')}
-                </div>`).join('')}
-            </div>`;
-        return;
-    }
-
     if (!EntryState.matches.length) {
-        box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>또는 <b>자동 매치</b>로 한 번에 채웁니다.</div>';
+        box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>또는 <b>후보 전부</b>로 같은 티어 조합을 모두 올립니다.</div>';
         return;
     }
+    // 후보를 다 올려둔 단계에서는 스코어 분포가 의미 없다(한 선수가 여러 줄에 들어가
+    // 있으니 그건 아직 편성이 아니다). 양쪽 모두 한 번씩만 나올 때 비로소 '엔트리'라
+    // 보고 매치 승리 확률을 낸다.
+    const players = entryPlayers();
+    const countA = {}; const countB = {};
+    EntryState.matches.forEach(m => { countA[m.a] = (countA[m.a] || 0) + 1; countB[m.b] = (countB[m.b] || 0) + 1; });
+    const dupA = Object.values(countA).filter(v => v > 1).length;
+    const dupB = Object.values(countB).filter(v => v > 1).length;
+    const settled = !dupA && !dupB;
+
     const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
-    const dist = entryScoreDist(ps);
     const n = ps.length;
-    const expected = ps.reduce((s, p) => s + p, 0);
-    const pWin = dist.reduce((s, v, k) => s + (k > n - k ? v : 0), 0);
-    const top = dist.map((v, k) => [k, v]).sort((x, y) => y[1] - x[1]).slice(0, 3);
-    box.innerHTML = `
-        <div class="entry-summary">
+    let head;
+    if (settled) {
+        const dist = entryScoreDist(ps);
+        const expected = ps.reduce((sum, p) => sum + p, 0);
+        const pWin = dist.reduce((sum, v, k) => sum + (k > n - k ? v : 0), 0);
+        const top = dist.map((v, k) => [k, v]).sort((x, y) => y[1] - x[1]).slice(0, 3);
+        head = `<div class="entry-summary">
             <div class="entry-summary-head">매치 승리 확률</div>
             ${entryProbBarHtml(pWin)}
             <div class="entry-summary-names"><span>${escapeHTML(ta)}</span><span>${escapeHTML(tb)}</span></div>
-            <div class="entry-summary-note">예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)} · 가장 잦은 결과 ${top.map(([k, v]) => `<b>${k}:${n - k}</b> ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
-        </div>
-        <div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`;
+            <div class="entry-summary-note">${n}경기 · 예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)} · 가장 잦은 결과 ${top.map(([k, v]) => `<b>${k}:${n - k}</b> ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+        </div>`;
+    } else {
+        head = `<div class="entry-summary">
+            <div class="entry-summary-head">후보 ${n}개</div>
+            <div class="entry-summary-note">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. 한 선수가 여러 줄에 들어가 있으면 아직 고르는 중입니다 - × 로 추려 양쪽이 한 번씩만 남으면 매치 승리 확률과 예상 스코어가 나옵니다.</div>
+        </div>`;
+    }
+    box.innerHTML = head
+        + `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`;
 }
 
 function renderEntry() {
@@ -558,13 +461,6 @@ function entryDrawAvatar(ctx, img, name, x, y, d) {
 function entryPosterRows() {
     const players = entryPlayers();
     const withProb = EntryState.posterProb;
-    if (EntryState.mode === 'glad') {
-        const [oa, ob] = EntryState.orders;
-        const n = Math.max(oa.length, ob.length);
-        return Array.from({ length: n }, (_, i) => ({
-            a: players[oa[i]] || null, b: players[ob[i]] || null, p: null,
-        }));
-    }
     return EntryState.matches.map(m => {
         const wp = withProb ? entryWinProb(m.a, m.b) : null;
         return { a: players[m.a] || null, b: players[m.b] || null, p: wp ? wp.p : null };
@@ -615,7 +511,7 @@ async function entrySavePoster() {
     ctx.fillText('VS', W / 2, 126);
     ctx.fillStyle = 'rgba(255,255,255,.6)';
     ctx.font = '600 20px Pretendard, sans-serif';
-    ctx.fillText(EntryState.mode === 'glad' ? '검투사 · 출전 순서' : `1:1 대진 · ${rows.length}경기`, W / 2, 170);
+    ctx.fillText(`${rows.length}경기`, W / 2, 170);
 
     rows.forEach((r, i) => {
         const y = HEAD + i * ROW;
