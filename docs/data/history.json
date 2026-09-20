@@ -384,6 +384,90 @@
       ],
       "youtube": "https://youtu.be/Spuu2WhQub0?si=jxD6KTXOMDAZu2yF",
       "image": ""
+    },
+    {
+      "id": "h-mu9904ch",
+      "date": "2025-05-13",
+      "type": "event",
+      "title": "스승의 날 CK",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/8sURAdwGFo0?si=YkYVd8nNjiVUTStP",
+      "image": ""
+    },
+    {
+      "id": "h-mu992sj2",
+      "date": "2025-05-24",
+      "type": "broadcast",
+      "title": "암앵돌풍 더블 데이트",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "앵지",
+        "김성대",
+        "이유란"
+      ],
+      "youtube": "https://youtu.be/AX-tgeFqvDA?si=_BdQRrdMbsvNvbhb",
+      "image": ""
+    },
+    {
+      "id": "h-mu994xxs",
+      "date": "2025-06-14",
+      "type": "broadcast",
+      "title": "김윤환을 이겨라",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "졈니",
+        "주하랑"
+      ],
+      "youtube": "https://youtu.be/QxK7-EhVt_g?si=EUNuc-uZCZeOBYJ_",
+      "image": ""
+    },
+    {
+      "id": "h-mu9966nb",
+      "date": "2025-06-15",
+      "type": "event",
+      "title": "시빌워",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/gQVfZQTCOqE?si=vWp_8zcDFuhx3kdC",
+      "image": ""
+    },
+    {
+      "id": "h-mu997bk0",
+      "date": "2025-06-21",
+      "type": "broadcast",
+      "title": "최가네 불편한스타",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/BU9IED2ksD4?si=qydXYIIXaEQazP9u",
+      "image": "",
+      "ord": 1
+    },
+    {
+      "id": "h-mu998czs",
+      "date": "2025-06-21",
+      "type": "broadcast",
+      "title": "암점 종겜대전",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "김윤중"
+      ],
+      "youtube": "https://youtu.be/ZIn-AR71uYw?si=wF9_izpMhYw1MbIa",
+      "image": "",
+      "ord": 0
+    },
+    {
+      "id": "h-mu99d7s4",
+      "date": "2025-07-13",
+      "type": "match",
+      "title": "시조새배 JPL 시즌2 3위",
+      "desc": "2025-03-08 ~ 2025-07-16",
+      "members": [],
+      "youtube": "https://youtu.be/CmCAu1Z-xTM?si=RRtJwvQ5TPq_Hf_h",
+      "image": ""
     }
   ],
   "overrides": {
