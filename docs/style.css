@@ -6099,7 +6099,12 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 
 .entry-modebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .entry-modebar-right { display: flex; align-items: center; gap: 4px; }
-.entry-modebar-hint { flex: 1 1 200px; min-width: 0; font-size: var(--fs-badge-sm); font-weight: 500; color: var(--color-text-faint); }
+.entry-target-field { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-faint); }
+.entry-target {
+    width: 48px; height: 28px; padding: 0 6px; border: 0; background: var(--color-bg-subtle);
+    color: var(--color-text-main); clip-path: var(--cut-3);
+    font-family: inherit; font-size: var(--fs-meta); font-weight: 700; text-align: center;
+}
 .entry-auto {
     display: inline-flex; align-items: center; min-height: 28px; padding: 0 14px; border: 0;
     background: var(--navy); color: var(--navy-on-text); clip-path: var(--cut-5);

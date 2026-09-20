@@ -93,10 +93,13 @@
             </div>
         </div>
         <div class="entry-modebar">
-            <div class="entry-modebar-hint">같은 티어로 나올 수 있는 조합을 모두 올린 뒤 추려 냅니다.</div>
+            <label class="entry-target-field">경기 수
+                <input type="number" id="entry-target" class="entry-target" min="1" max="31" step="2" value="9" onchange="entrySetTarget(this.value)" aria-label="채워야 하는 경기 수">
+            </label>
             <div class="entry-modebar-right">
                 <button type="button" class="text-action" onclick="entrySwapTeams()"><span>좌우 바꾸기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
-                <button type="button" class="entry-auto" onclick="entryAutoFill()">후보 전부</button>
+                <button type="button" class="text-action" onclick="entryAllCandidates()"><span>후보 전부</span></button>
+                <button type="button" class="entry-auto" onclick="entryAutoFill()">엔트리 짜기</button>
             </div>
         </div>
         <div class="entry-layout">

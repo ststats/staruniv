@@ -31,6 +31,19 @@ const ENTRY_H2H_PRIOR = 10;
 // 맞대결을 셀 때 이 날짜 이후만 본다(너무 옛날 천적 관계까지 끌고 오지 않게).
 const ENTRY_H2H_DAYS = 730;
 const ENTRY_POSTER_W = 1080;      // 저장되는 포스터 가로(px)
+// 대학대전은 경기 수가 정해져 있다(9경기 5선승이 흔하다). 동일 티어로 각자 한 번씩만
+// 짝지으면 그 수가 안 채워지는 일이 잦은데, 그때는 채워진 만큼 두고 한 번 더 돌려
+// 중복으로 나머지를 메운다.
+const ENTRY_TARGET_DEFAULT = 9;
+// 후보를 늘어놓는 차례. 티어 사다리 순서(갓이 맨 위)가 아니라 대학대전에서 경기를
+// 올리는 차례를 따른다 - 숫자 티어가 앞이고, 카드 티어는 뒤에 붙는다.
+const ENTRY_TIER_SEQ = ['1', '2', '3', '4', '5', '6', '7', '8',
+    '갓', '킹', '잭', '조커', '스페이드', '0', '베이비'];
+
+function entrySeqIndex(tier) {
+    const i = ENTRY_TIER_SEQ.indexOf(String(tier));
+    return i < 0 ? ENTRY_TIER_SEQ.length : i;
+}
 
 const EntryState = {
     index: null,
@@ -40,6 +53,7 @@ const EntryState = {
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     h2h: {},                 // "a|b" -> {w, l}  (받아온 맞대결)
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
+    target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
     // 포스터에 승률을 찍을지. 기본은 끔 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
     // 물건이라 밖으로 돌아다닌다. 거기에 실제 선수 승부 예측을 박아 두면 성격이
     // 달라지므로, 예측은 화면 안에서만 보고 포스터에는 일부러 안 넣는다.
@@ -254,23 +268,78 @@ function entryRemoveMatch(i) {
     renderEntry();
 }
 
-// 자동 채우기: 같은 티어로 나올 수 있는 짝을 '전부' 올린다.
-// 한쪽 잭이 1명이고 상대 잭이 2명이면 후보는 두 개다 - 하나만 골라 주면 그건 이미
-// 남이 정한 편성이다. 다 올려두고 손으로 추려 내는 게 이 판의 순서다.
-// (수술대의 '동일티어전체', ONE K의 '동일티어만'이 같은 생각이다. ONE K는 한 선수가
-//  최대 5경기까지 들어갈 수 있게 두는데, 대학대전에서 한 명이 여러 판 뛰기 때문이다.)
-function entryAutoFill() {
+// 같은 티어로 나올 수 있는 짝을 전부 올린다. 한쪽 잭이 1명이고 상대 잭이 2명이면
+// 후보는 두 개다 - 하나만 골라 주면 그건 이미 남이 정한 편성이라, 다 올려두고
+// 손으로 추려 내게 둔다. (수술대의 '동일티어전체'가 같은 생각이다)
+function entrySameTierPairs() {
     const A = entryRoster(EntryState.teams[0]);
     const B = entryRoster(EntryState.teams[1]);
-    if (!A.length || !B.length) return;
+    if (!A.length || !B.length) return [];
     const byTier = {};
     B.forEach(b => (byTier[String(b.t)] || (byTier[String(b.t)] = [])).push(b));
     const out = [];
     A.forEach(a => (byTier[String(a.t)] || []).forEach(b => out.push({ a: a.pid, b: b.pid })));
+    // 경기를 올리는 차례대로 세운다(ENTRY_TIER_SEQ). 같은 티어 안에서는 티어 안 순위 순.
+    const players = entryPlayers();
+    out.sort((x, y) => {
+        const px = players[x.a]; const py = players[y.a];
+        return entrySeqIndex(px.t) - entrySeqIndex(py.t)
+            || (px.k || 99) - (py.k || 99)
+            || (players[x.b].k || 99) - (players[y.b].k || 99);
+    });
+    return out;
+}
+
+function entryAllCandidates() {
+    EntryState.matches = entrySameTierPairs();
+    EntryState.sel = [null, null];
+    renderEntry();
+    entryRefreshProbs();
+}
+
+// 경기 수에 맞춰 엔트리를 짠다.
+// 1차 - 같은 티어끼리, 양쪽 모두 한 번씩만. 9경기짜리인데 여기서 4개밖에 안 나오는
+//       일이 흔하다. 그래도 그 4개는 그대로 간다.
+// 2차 - 모자란 자리를 한 번 더 돌려 채운다. 이번엔 중복을 허용하되, 지금까지 적게
+//       나온 선수부터 뽑아 한 사람에게 몰리지 않게 한다(실제로는 핀볼로 뽑는 자리다).
+function entryAutoFill() {
+    const all = entrySameTierPairs();
+    if (!all.length) return;
+    const target = EntryState.target;
+    const usedA = new Set(); const usedB = new Set();
+    const out = [];
+    all.forEach(m => {
+        if (out.length >= target || usedA.has(m.a) || usedB.has(m.b)) return;
+        usedA.add(m.a); usedB.add(m.b);
+        out.push(m);
+    });
+    // 2차: 남은 자리를 중복으로 메운다
+    const taken = new Set(out.map(m => `${m.a}|${m.b}`));
+    const count = {};
+    out.forEach(m => { count[m.a] = (count[m.a] || 0) + 1; count[m.b] = (count[m.b] || 0) + 1; });
+    while (out.length < target) {
+        const rest = all.filter(m => !taken.has(`${m.a}|${m.b}`));
+        if (!rest.length) break;                 // 같은 티어로 더 만들 짝이 없다
+        rest.sort((x, y) => ((count[x.a] || 0) + (count[x.b] || 0)) - ((count[y.a] || 0) + (count[y.b] || 0)));
+        const pick = rest[0];
+        taken.add(`${pick.a}|${pick.b}`);
+        count[pick.a] = (count[pick.a] || 0) + 1;
+        count[pick.b] = (count[pick.b] || 0) + 1;
+        out.push(pick);
+    }
+    const order = new Map(all.map((m, i) => [`${m.a}|${m.b}`, i]));
+    out.sort((x, y) => order.get(`${x.a}|${x.b}`) - order.get(`${y.a}|${y.b}`));
     EntryState.matches = out;
     EntryState.sel = [null, null];
     renderEntry();
     entryRefreshProbs();
+}
+
+function entrySetTarget(n) {
+    EntryState.target = Math.max(1, Math.min(31, Number(n) || ENTRY_TARGET_DEFAULT));
+    const el = document.getElementById('entry-target');
+    if (el && Number(el.value) !== EntryState.target) el.value = EntryState.target;
+    renderEntryResult();
 }
 
 // 화면에 올라온 선수들의 맞대결을 받아 온 뒤 확률만 다시 그린다.
@@ -374,20 +443,14 @@ function renderEntryResult() {
         box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>또는 <b>후보 전부</b>로 같은 티어 조합을 모두 올립니다.</div>';
         return;
     }
-    // 후보를 다 올려둔 단계에서는 스코어 분포가 의미 없다(한 선수가 여러 줄에 들어가
-    // 있으니 그건 아직 편성이 아니다). 양쪽 모두 한 번씩만 나올 때 비로소 '엔트리'라
-    // 보고 매치 승리 확률을 낸다.
-    const players = entryPlayers();
-    const countA = {}; const countB = {};
-    EntryState.matches.forEach(m => { countA[m.a] = (countA[m.a] || 0) + 1; countB[m.b] = (countB[m.b] || 0) + 1; });
-    const dupA = Object.values(countA).filter(v => v > 1).length;
-    const dupB = Object.values(countB).filter(v => v > 1).length;
-    const settled = !dupA && !dupB;
-
+    // 경기 수를 넘어가면 아직 '후보를 늘어놓은' 상태로 본다. 그 수로 스코어 분포를
+    // 내 봐야 뜻이 없다. 경기 수 안으로 추려지면 그때부터 엔트리로 보고 확률을 낸다.
+    // (중복으로 채운 자리는 정상이다 - 9경기를 같은 티어로 다 못 채우면 그렇게 메운다)
     const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
     const n = ps.length;
+    const target = EntryState.target;
     let head;
-    if (settled) {
+    if (n <= target) {
         const dist = entryScoreDist(ps);
         const expected = ps.reduce((sum, p) => sum + p, 0);
         const pWin = dist.reduce((sum, v, k) => sum + (k > n - k ? v : 0), 0);
@@ -396,12 +459,12 @@ function renderEntryResult() {
             <div class="entry-summary-head">매치 승리 확률</div>
             ${entryProbBarHtml(pWin)}
             <div class="entry-summary-names"><span>${escapeHTML(ta)}</span><span>${escapeHTML(tb)}</span></div>
-            <div class="entry-summary-note">${n}경기 · 예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)} · 가장 잦은 결과 ${top.map(([k, v]) => `<b>${k}:${n - k}</b> ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+            <div class="entry-summary-note">${n}경기${n < target ? ` <b>(${target}경기 중 ${target - n}칸 빔)</b>` : ''} · 예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)} · 가장 잦은 결과 ${top.map(([k, v]) => `<b>${k}:${n - k}</b> ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
         </div>`;
     } else {
         head = `<div class="entry-summary">
             <div class="entry-summary-head">후보 ${n}개</div>
-            <div class="entry-summary-note">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. 한 선수가 여러 줄에 들어가 있으면 아직 고르는 중입니다 - × 로 추려 양쪽이 한 번씩만 남으면 매치 승리 확률과 예상 스코어가 나옵니다.</div>
+            <div class="entry-summary-note">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. × 로 ${target}경기 안으로 추리면 매치 승리 확률과 예상 스코어가 나옵니다.</div>
         </div>`;
     }
     box.innerHTML = head
