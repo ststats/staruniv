@@ -1138,6 +1138,53 @@
       ],
       "youtube": "https://youtu.be/uxMhoaZMNx4?si=uF184J6ZcqIDBw3b",
       "image": ""
+    },
+    {
+      "id": "h-mu9i65gw",
+      "date": "2026-02-13",
+      "type": "broadcast",
+      "title": "설특집 츠캄요리사",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "지동원",
+        "주하랑",
+        "소주양",
+        "치리",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/BYfilwm-Sdk?si=KEwfIOeO-T8Y-k37",
+      "image": ""
+    },
+    {
+      "id": "h-mu9if3lm",
+      "date": "2026-03-14",
+      "type": "match",
+      "title": "정선숲퍼컵 8강",
+      "desc": "2026-02-24 ~ 2026-03-21",
+      "members": [
+        "김윤환",
+        "이경민",
+        "조일장",
+        "황병영",
+        "박준오",
+        "박수범",
+        "배성흠",
+        "지동원",
+        "파도튜브",
+        "수입뿌드",
+        "토마토",
+        "햇살",
+        "소주양",
+        "주하랑",
+        "치리",
+        "임조이",
+        "먼진",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/qZoD_Fp2D88?si=fkmQYGMVNUDScdtW",
+      "image": ""
     }
   ],
   "overrides": {
