@@ -572,6 +572,111 @@
       ],
       "youtube": "https://youtu.be/5AeDjMWIvXA?si=Dithcaebgf7hsm14",
       "image": ""
+    },
+    {
+      "id": "h-mu9dnn6x",
+      "date": "2025-08-09",
+      "type": "event",
+      "title": "코치CK",
+      "desc": "VS 이노대 왁싱 벌칙빵",
+      "members": [
+        "박준오",
+        "이경민",
+        "황병영",
+        "지동원",
+        "김윤환",
+        "정윤종",
+        "조일장"
+      ],
+      "youtube": "https://youtu.be/6UlIfeJHLO0?si=OsTggefmpd4tWqis",
+      "image": ""
+    },
+    {
+      "id": "h-mu9dok0t",
+      "date": "2025-08-10",
+      "type": "broadcast",
+      "title": "왁싱 벌칙",
+      "desc": "",
+      "members": [
+        "김윤환"
+      ],
+      "youtube": "https://youtu.be/f-lyC6eoVeE?si=x7045AJbN4CAIqHn",
+      "image": ""
+    },
+    {
+      "id": "h-mu9dt2z5",
+      "date": "2025-08-13",
+      "type": "broadcast",
+      "title": "츠캄 시즌3 MT",
+      "desc": "2025-08-13 ~ 2025-08-15",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "조일장",
+        "황병영",
+        "지동원",
+        "수입뿌드",
+        "다예",
+        "토마토",
+        "두디",
+        "햇살",
+        "주하랑",
+        "치리",
+        "임조이",
+        "막내현진",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/Srssj7p8d-I?si=_jTK7k_WR7u6lArA",
+      "image": ""
+    },
+    {
+      "id": "h-mu9e0jur",
+      "date": "2025-08-16",
+      "type": "event",
+      "title": "한중전",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "지동원"
+      ],
+      "youtube": "https://youtu.be/cRy4TzENFwY?si=vOBUr1fxCHh0bvDr",
+      "image": ""
+    },
+    {
+      "id": "h-mu9e7706",
+      "date": "2025-08-20",
+      "type": "broadcast",
+      "title": "종아리 신길동짬뽕 벌칙",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "김성대"
+      ],
+      "youtube": "https://youtu.be/a5rnB4twtZ4?si=pGWVfg22hQWloWwR",
+      "image": "",
+      "ord": 1
+    },
+    {
+      "id": "h-mu9e9qsx",
+      "date": "2025-08-20",
+      "type": "broadcast",
+      "title": "츠캄 VS 이노대 종겜대전",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "박준오",
+        "지동원",
+        "주하랑",
+        "치리",
+        "모리"
+      ],
+      "youtube": "https://youtu.be/7avx-ZE_scU?si=7MC9BwHmwc1hq5lV",
+      "image": "",
+      "ord": 0
     }
   ],
   "overrides": {
