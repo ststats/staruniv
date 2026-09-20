@@ -672,11 +672,182 @@
         "지동원",
         "주하랑",
         "치리",
-        "모리"
+        "모리",
+        "김성대",
+        "임진묵",
+        "윤수철",
+        "비타밍",
+        "연수",
+        "림예이"
       ],
       "youtube": "https://youtu.be/7avx-ZE_scU?si=7MC9BwHmwc1hq5lV",
       "image": "",
       "ord": 0
+    },
+    {
+      "id": "h-mu9ed46i",
+      "date": "2025-08-31",
+      "type": "broadcast",
+      "title": "토스반 갈먹CK",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "정윤종",
+        "지동원",
+        "토마토",
+        "주하랑",
+        "막내현진",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/HAA9zs3tkBA?si=qgyznNWi_I2rNGQE",
+      "image": ""
+    },
+    {
+      "id": "h-mu9efdqr",
+      "date": "2025-09-03",
+      "type": "broadcast",
+      "title": "빠지 여행",
+      "desc": "2025-09-03 ~ 2025-09-04",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "조일장",
+        "황병영",
+        "박준오",
+        "지동원",
+        "수입뿌드",
+        "다예",
+        "토마토",
+        "햇살",
+        "두디",
+        "주하랑",
+        "치리",
+        "임조이",
+        "모리",
+        "막내현진",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/jZGLTrGajsE?si=Y7U6zbXjlsA-3qN-",
+      "image": ""
+    },
+    {
+      "id": "h-mu9eo8el",
+      "date": "2025-09-06",
+      "type": "broadcast",
+      "title": "저그반 흉가CK",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "조일장",
+        "박준오",
+        "다예",
+        "두디",
+        "치리",
+        "임조이",
+        "지동원",
+        "란란"
+      ],
+      "youtube": "https://youtu.be/-AZXMFTLKIg?si=jN18PGNEg3nKJDiZ",
+      "image": ""
+    },
+    {
+      "id": "h-mu9epsve",
+      "date": "2025-09-10",
+      "type": "broadcast",
+      "title": "조살포차",
+      "desc": "",
+      "members": [
+        "임조이",
+        "김윤환",
+        "정윤종",
+        "박준오",
+        "치리"
+      ],
+      "youtube": "https://youtu.be/35xGr9CFrQ4?si=0N2okdym_9eOaaa6",
+      "image": ""
+    },
+    {
+      "id": "h-mu9eslf0",
+      "date": "2025-09-15",
+      "type": "broadcast",
+      "title": "메이드 카페 벌칙",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "조일장",
+        "지동원"
+      ],
+      "youtube": "https://youtu.be/QZTeMHnq3Xs?si=QWyeluR8h9INnGho",
+      "image": ""
+    },
+    {
+      "id": "h-mu9evd06",
+      "date": "2025-09-18",
+      "type": "broadcast",
+      "title": "츠캄 스타마블",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "지동원",
+        "토마토",
+        "두디"
+      ],
+      "youtube": "https://youtu.be/qc69GYL9Wes?si=X-Vnk9qwgyzkAw_8",
+      "image": ""
+    },
+    {
+      "id": "h-mu9f2l1w",
+      "date": "2025-09-30",
+      "type": "event",
+      "title": "시빌워",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "박준오",
+        "조일장",
+        "황병영",
+        "토마토",
+        "다예",
+        "햇살",
+        "두디",
+        "주하랑",
+        "소주양",
+        "임조이",
+        "치리",
+        "모리",
+        "막내현진",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/GiiMTw8Kn0Y?si=FFvGGaNhZLlEtTH5",
+      "image": ""
+    },
+    {
+      "id": "h-mu9f4ro7",
+      "date": "2025-10-04",
+      "type": "broadcast",
+      "title": "24시간 벌칙 방송",
+      "desc": "시빌워 벌칙",
+      "members": [
+        "김윤환",
+        "정윤종"
+      ],
+      "youtube": "https://youtu.be/wZxsNY9Y7W8?si=-UkHMmUFIVQTdwh9",
+      "image": ""
+    },
+    {
+      "id": "h-mu9f8gwk",
+      "date": "2025-10-29",
+      "type": "match",
+      "title": "스타대학리그 조별예선 탈락",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/D1MW4zeQokI?si=L4MqZCiVwqBiovxq",
+      "image": "",
+      "ord": 1
     }
   ],
   "overrides": {
@@ -951,7 +1122,8 @@
         "두디(선수)",
         "모리(선수)",
         "막내현진(선수)"
-      ]
+      ],
+      "ord": 0
     },
     "auto-join-2025-11-03": {
       "title": "",
