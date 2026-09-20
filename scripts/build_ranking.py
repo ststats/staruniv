@@ -91,6 +91,8 @@ from scipy.optimize import minimize
 
 SRC_PATH = os.path.join('data', 'eloboard.json')
 INDEX_PATH = os.path.join('docs', 'data', 'h2h', 'index.json')
+# 티어별 승급일이 들어 있는 원본. 월별 그래프에서 '그 달의 티어'를 되살리는 데 쓴다.
+DB_PATH = os.path.join('data', 'db.json')
 # 레이팅 변화 그래프용. 분석 탭에서만 읽으므로 index.json과 따로 둔다(티어표만 보러 온
 # 사람이 받지 않게).
 HISTORY_PATH = os.path.join('docs', 'data', 'h2h', 'rating.json')
@@ -158,6 +160,78 @@ def tier_of(entry):
     return t if t in TIER_ORDER else UNRANKED
 
 
+def load_ladders(path, players):
+    """db.json의 'N티어 승급' 날짜로 선수별 티어 사다리를 만든다.
+
+    월별 그래프는 지금까지 모든 과거 달에 '오늘의 티어'를 붙여 계산했다. 작년에
+    8티어였던 사람의 작년 점수를 지금 7티어 기준선으로 재던 셈이라, 승급한 사람의
+    선이 과거까지 통째로 들려 올라갔다. 승급일이 있으면 그 달의 티어로 되돌릴 수 있다.
+
+    원본이 깨끗하지 않아 두 부류는 아예 손대지 않고 오늘의 티어를 그대로 쓴다:
+      - 날짜순으로 티어가 도로 내려가는 사다리(강등이거나 오기, 54명)
+      - 사다리 마지막 티어가 지금 티어와 다른 사람(기록 안 된 승급이 있다, 47명)
+    둘 다 '언제 바뀌었는지'를 알 수 없어서, 고치려 들면 오히려 없는 정보를 지어낸다.
+
+    반환: 선수id -> [(날짜, 티어), ...] (날짜 오름차순). 여기 없으면 오늘 티어를 쓴다.
+    """
+    if not os.path.exists(path):
+        print(f'   ℹ️ {path} 가 없어 월별 그래프는 오늘 티어를 그대로 씁니다.')
+        return {}
+    rows = (load_json(path) or {}).get('tierMembers') or []
+    cols = [(str(i), f'{i}티어 승급') for i in range(9)]
+    out = {}
+    skipped_order = skipped_mismatch = 0
+    for m in rows:
+        pid = str(m.get('ELO ID') or '').strip()
+        entry = players.get(pid)
+        if not pid or entry is None:
+            continue
+        events = []
+        for tier, col in cols:
+            day = str(m.get(col) or '').strip()[:10]
+            if not day:
+                continue
+            try:
+                dt.date.fromisoformat(day)
+            except ValueError:
+                continue
+            events.append((day, tier))
+        if not events:
+            continue
+        # 같은 날 두 티어가 적힌 경우가 있다(티어표 첫 등재분). 더 센 쪽을 남긴다.
+        events.sort(key=lambda e: (e[0], int(e[1])))
+        merged = []
+        for day, tier in events:
+            if merged and merged[-1][0] == day:
+                continue
+            merged.append((day, tier))
+        nums = [int(t) for _, t in merged]
+        if nums != sorted(nums, reverse=True):
+            skipped_order += 1
+            continue
+        if merged[-1][1] != tier_of(entry):
+            skipped_mismatch += 1
+            continue
+        out[pid] = merged
+    print(f'   승급일 사다리 {len(out):,}명 사용 '
+          f'(티어가 도로 내려감 {skipped_order}명 · 지금 티어와 어긋남 {skipped_mismatch}명 제외)')
+    return out
+
+
+def tier_at(pid, day, ladders, players):
+    """day 시점의 티어. 사다리가 없으면 오늘 티어를 그대로 쓴다."""
+    lad = ladders.get(pid)
+    if not lad:
+        return tier_of(players.get(pid))
+    iso = day.isoformat()
+    tier = lad[0][1]        # 첫 등재 전이면 그때 티어로 본다
+    for d, t in lad:
+        if d > iso:
+            break
+        tier = t
+    return tier
+
+
 def build_pairs(rows, cats, today):
     """경기 행을 (승자, 패자) 쌍별 가중치 합으로 접는다.
 
@@ -222,17 +296,18 @@ def ranking_scores(theta, wi, li, ww, lam):
     return theta - SE_PENALTY / np.sqrt(prec)
 
 
-def solve_at(rows, cats, as_of, players, t_pos, n_tiers):
+def solve_at(rows, cats, as_of, players, t_pos, n_tiers, ladders):
     """as_of 시점까지의 경기만으로 한 번 맞춘다. 반환: (선수id -> 점수) 사전.
 
-    최근 가중치의 기준일도 as_of로 잡는다 - 그래야 '그때 기준의 실력'이 나온다.
+    최근 가중치의 기준일도 as_of로 잡고, 티어 기준선도 그 시점의 티어로 붙인다 -
+    그래야 '그때 기준의 실력'이 나온다.
     """
     wi, li, ww, order, wsum, last_day = build_pairs(rows, cats, as_of)
     if not len(ww):
         return {}
     n = len(order)
-    tier_idx = np.fromiter(
-        (t_pos[tier_of(players.get(pid))] for pid in order), dtype=np.int64, count=n)
+    tiers_then = [tier_at(pid, as_of, ladders, players) for pid in order]
+    tier_idx = np.fromiter((t_pos[t] for t in tiers_then), dtype=np.int64, count=n)
     unranked = tier_idx == t_pos[UNRANKED]
     thin = unranked & (wsum < MIN_UNRANKED_GAMES)
     keep = ~(thin[wi] | thin[li])
@@ -244,8 +319,7 @@ def solve_at(rows, cats, as_of, players, t_pos, n_tiers):
     cutoff = (as_of - dt.timedelta(days=RECENT_DAYS)).isoformat()
     out = {}
     for k, pid in enumerate(order):
-        entry = players.get(pid)
-        if entry is None or tier_of(entry) == UNRANKED:
+        if players.get(pid) is None or tiers_then[k] == UNRANKED:
             continue
         if last_day.get(k, '') < cutoff:
             continue
@@ -266,7 +340,7 @@ def month_ends(last_day, count):
     return list(reversed(out))
 
 
-def build_history(rows, cats, players, t_pos, n_tiers, last_day):
+def build_history(rows, cats, players, t_pos, n_tiers, last_day, ladders):
     """달마다 그 시점까지의 경기로 다시 맞춰 '그때의 점수'를 모은다.
 
     한 번 맞추는 데 1초 남짓이라 18개월이면 40초쯤 걸린다. 매일 도는 빌드에서
@@ -281,7 +355,7 @@ def build_history(rows, cats, players, t_pos, n_tiers, last_day):
         cut = bisect.bisect_right(days, end.isoformat())
         if cut < 100:
             continue
-        scores = solve_at(dated[:cut], cats, end, players, t_pos, n_tiers)
+        scores = solve_at(dated[:cut], cats, end, players, t_pos, n_tiers, ladders)
         keys.append(end.strftime('%Y-%m'))
         for pid, sc in scores.items():
             series.setdefault(pid, {})[end.strftime('%Y-%m')] = sc
@@ -333,6 +407,7 @@ def main():
     ap = argparse.ArgumentParser(description='티어 안 순위(티어랭킹) 계산')
     ap.add_argument('--src', default=SRC_PATH, help=f'전적 아카이브 (기본 {SRC_PATH})')
     ap.add_argument('--index', default=INDEX_PATH, help=f'상대전적 index.json (기본 {INDEX_PATH})')
+    ap.add_argument('--db', default=DB_PATH, help=f'승급일이 든 db.json (기본 {DB_PATH})')
     ap.add_argument('--dry-run', action='store_true', help='파일에 쓰지 않고 결과만 찍는다')
     ap.add_argument('--top', type=int, default=0, help='티어별 상위 N명을 찍어본다')
     ap.add_argument('--no-history', action='store_true',
@@ -495,7 +570,8 @@ def main():
     os.replace(tmp, args.index)
 
     if not args.no_history:
-        months, series = build_history(rows, cats, players, t_pos, len(tiers), today)
+        ladders = load_ladders(args.db, players)
+        months, series = build_history(rows, cats, players, t_pos, len(tiers), today, ladders)
         payload = {'asOf': today.isoformat(), 'months': months, 'players': series}
         tmp = HISTORY_PATH + '.tmp'
         with io.open(tmp, 'w', encoding='utf-8') as f:
