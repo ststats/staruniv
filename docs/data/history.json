@@ -979,17 +979,27 @@
       "image": ""
     },
     {
-      "id": "h-mu9gtenk",
-      "date": "2025-12-11",
+      "id": "h-mu9gyb17",
+      "date": "2025-12-20",
       "type": "broadcast",
-      "title": "암학동",
+      "title": "츠캄 VS 이노대 운동회",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/UCrGE9QhfYE?si=VHiARUMtaMNYCxde",
+      "image": ""
+    },
+    {
+      "id": "h-mu9h2ke4",
+      "date": "2025-12-27",
+      "type": "broadcast",
+      "title": "SOOP 스트리머 대상 시상식",
       "desc": "",
       "members": [
         "김윤환",
-        "이제동",
-        "김학수"
+        "이경민",
+        "정윤"
       ],
-      "youtube": "https://youtu.be/Gh6yFG51fpI?si=AhxWIDZIBIV58cEB",
+      "youtube": "https://youtu.be/4gQHhD040Mw?si=7DZa8S6ZjhRU48QH",
       "image": ""
     }
   ],
@@ -1208,7 +1218,8 @@
       "members": [
         "황병영(코치)",
         "지동원(코치)"
-      ]
+      ],
+      "hidden": false
     },
     "auto-join-2025-07-27": {
       "title": "진땅콩 재입단",
