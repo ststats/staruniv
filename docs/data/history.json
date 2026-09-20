@@ -598,7 +598,9 @@
       "title": "왁싱 벌칙",
       "desc": "",
       "members": [
-        "김윤환"
+        "김윤환",
+        "지동원",
+        "김성대"
       ],
       "youtube": "https://youtu.be/f-lyC6eoVeE?si=x7045AJbN4CAIqHn",
       "image": ""
@@ -833,7 +835,20 @@
       "desc": "시빌워 벌칙",
       "members": [
         "김윤환",
-        "정윤종"
+        "이경민",
+        "정윤종",
+        "조일장",
+        "지동원",
+        "다예",
+        "두디",
+        "주하랑",
+        "치리",
+        "막내현진",
+        "진땅콩",
+        "흑운장",
+        "카히리",
+        "기뉴다",
+        "늑대채린"
       ],
       "youtube": "https://youtu.be/wZxsNY9Y7W8?si=-UkHMmUFIVQTdwh9",
       "image": ""
@@ -895,7 +910,17 @@
         "이경민",
         "정윤종",
         "지동원",
-        "수입뿌드"
+        "수입뿌드",
+        "클템",
+        "란란",
+        "해기",
+        "치리",
+        "진땅콩",
+        "소주양",
+        "토마토",
+        "다예",
+        "주하랑",
+        "임조이"
       ],
       "youtube": "https://youtu.be/04S2P1IumIk?si=LarKpGMCIbVT2lSs",
       "image": ""
@@ -925,6 +950,46 @@
         "다뉴"
       ],
       "youtube": "",
+      "image": ""
+    },
+    {
+      "id": "h-mu9goxx0",
+      "date": "2025-11-11",
+      "type": "broadcast",
+      "title": "성심당 오픈런",
+      "desc": "할없사 벌칙",
+      "members": [
+        "김윤환",
+        "파도튜브",
+        "주하랑",
+        "햇살",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/E5pXHOBM_ts?si=rbaKfK3noD31DV24",
+      "image": ""
+    },
+    {
+      "id": "h-mu9gs0ua",
+      "date": "2025-12-04",
+      "type": "broadcast",
+      "title": "노량진 합방",
+      "desc": "홍어 벌칙",
+      "members": [],
+      "youtube": "https://youtu.be/DnU0wyfRktE?si=Aa-fxiCKrOp3-H5u",
+      "image": ""
+    },
+    {
+      "id": "h-mu9gtenk",
+      "date": "2025-12-11",
+      "type": "broadcast",
+      "title": "암학동",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이제동",
+        "김학수"
+      ],
+      "youtube": "https://youtu.be/Gh6yFG51fpI?si=AhxWIDZIBIV58cEB",
       "image": ""
     }
   ],
