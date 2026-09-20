@@ -1186,7 +1186,8 @@
         "진땅콩"
       ],
       "youtube": "https://youtu.be/qZoD_Fp2D88?si=fkmQYGMVNUDScdtW",
-      "image": ""
+      "image": "",
+      "ord": 1
     },
     {
       "id": "h-mu9ihl5y",
@@ -2146,7 +2147,8 @@
         "조일장(코치)",
         "황병영(코치)",
         "수입뿌드(코치)"
-      ]
+      ],
+      "ord": 0
     },
     "auto-join-2026-03-16": {
       "title": "",
@@ -2179,7 +2181,7 @@
     "auto-join-2026-03-26": {
       "title": "사테, 찌킹 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/jA7znOqF12E?si=yKsnBnZvPXDndwCK",
       "image": "",
       "members": [
         "사테(코치)",
