@@ -786,7 +786,7 @@
       "id": "h-mu9evd06",
       "date": "2025-09-18",
       "type": "broadcast",
-      "title": "츠캄 스타마블",
+      "title": "스타마블",
       "desc": "",
       "members": [
         "김윤환",
@@ -842,12 +842,47 @@
       "id": "h-mu9f8gwk",
       "date": "2025-10-29",
       "type": "match",
-      "title": "스타대학리그 조별예선 탈락",
-      "desc": "",
-      "members": [],
+      "title": "SOOP 스타대학리그 2025 조별예선 탈락",
+      "desc": "2025-10-26  ~ 2025-11-23",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "조일장",
+        "황병영",
+        "박준오",
+        "수입뿌드",
+        "토마토",
+        "다예",
+        "햇살",
+        "두디",
+        "주하랑",
+        "소주양",
+        "치리",
+        "임조이",
+        "모리",
+        "막내현진",
+        "진땅콩"
+      ],
       "youtube": "https://youtu.be/D1MW4zeQokI?si=L4MqZCiVwqBiovxq",
       "image": "",
       "ord": 1
+    },
+    {
+      "id": "h-mu9fh32l",
+      "date": "2025-10-30",
+      "type": "broadcast",
+      "title": "알탕즈 시즌2",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "정윤종",
+        "황병영",
+        "지동원",
+        "수입뿌드"
+      ],
+      "youtube": "https://youtu.be/OmUfq2iCKuk?si=yOSyiHl3iu4jilSW",
+      "image": ""
     }
   ],
   "overrides": {
