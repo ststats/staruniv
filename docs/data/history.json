@@ -32,7 +32,8 @@
         "한쪼니",
         "몽군",
         "모리",
-        "강덕구"
+        "강덕구",
+        "클템"
       ],
       "youtube": "https://youtu.be/Wee70wXys_c?si=5ZijExlkYo-_xEzz",
       "image": "",
@@ -144,11 +145,11 @@
         "김윤환",
         "이경민",
         "몽군",
+        "정윤종",
         "주서리",
         "김성대",
         "지동원",
         "이유란",
-        "정윤종",
         "효짱"
       ],
       "youtube": "https://youtu.be/Qk8H63liFII?si=HsEqv3OkKr31R3zY",
@@ -365,7 +366,14 @@
       "type": "match",
       "title": "츠캄 JPL2 첫 경기",
       "desc": "",
-      "members": [],
+      "members": [
+        "다예",
+        "졈니",
+        "한쪼니",
+        "모리",
+        "몽군",
+        "앵지"
+      ],
       "youtube": "https://youtu.be/jcVVnj3vGwE?si=xOvWEfitfeBz6mod",
       "image": ""
     },
@@ -391,7 +399,14 @@
       "type": "event",
       "title": "스승의 날 CK",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "수입뿌드",
+        "정윤종",
+        "몽군",
+        "이경민",
+        "박준오"
+      ],
       "youtube": "https://youtu.be/8sURAdwGFo0?si=YkYVd8nNjiVUTStP",
       "image": ""
     },
@@ -418,8 +433,14 @@
       "desc": "",
       "members": [
         "김윤환",
+        "주하랑",
         "졈니",
-        "주하랑"
+        "임조이",
+        "다예",
+        "수입뿌드",
+        "오리3",
+        "히엉",
+        "귀요민정"
       ],
       "youtube": "https://youtu.be/QxK7-EhVt_g?si=EUNuc-uZCZeOBYJ_",
       "image": ""
@@ -430,7 +451,24 @@
       "type": "event",
       "title": "시빌워",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "박준오",
+        "수입뿌드",
+        "세나",
+        "토마토",
+        "앵지",
+        "임조이",
+        "효짱",
+        "모리",
+        "치리",
+        "막내현진",
+        "한조니",
+        "다예",
+        "오리3"
+      ],
       "youtube": "https://youtu.be/gQVfZQTCOqE?si=vWp_8zcDFuhx3kdC",
       "image": ""
     },
@@ -440,7 +478,15 @@
       "type": "broadcast",
       "title": "최가네 불편한스타",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "김윤중",
+        "란란",
+        "로링",
+        "이지각",
+        "유은",
+        "두돈반"
+      ],
       "youtube": "https://youtu.be/BU9IED2ksD4?si=qydXYIIXaEQazP9u",
       "image": "",
       "ord": 1
@@ -467,6 +513,18 @@
       "desc": "2025-03-08 ~ 2025-07-16",
       "members": [],
       "youtube": "https://youtu.be/CmCAu1Z-xTM?si=RRtJwvQ5TPq_Hf_h",
+      "image": ""
+    },
+    {
+      "id": "h-mu9cq534",
+      "date": "2025-01-18",
+      "type": "broadcast",
+      "title": "세나 결혼",
+      "desc": "",
+      "members": [
+        "세나"
+      ],
+      "youtube": "https://youtu.be/QhxOsoXCH5A?si=vPWjznJFxB36QCpJ",
       "image": ""
     }
   ],
