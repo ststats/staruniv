@@ -854,11 +854,42 @@ function bootPage(init, opts) {
 // 문구는 우리가 적는 고정 텍스트고, 그리기도 textContent로 하므로 HTML이 섞일 일이 없다.
 let helpSeq = 0;
 
-function helpBadgeHtml(text) {
+// 설명은 { title, lead, rows: [[이름, 값], ...], note } 꼴로 적는다. 줄글 하나를
+// 통으로 넘겨도 되지만(옛 호출), 항목을 나눠 두면 상자가 표처럼 읽혀서 훨씬 빨리 훑힌다.
+// 내용은 JSON으로 data-help에 싣고 열 때 DOM으로 짠다 - 문자열을 innerHTML로 꽂지 않는다.
+function helpBadgeHtml(help) {
     const uid = `help-${++helpSeq}`;
+    const payload = typeof help === 'string' ? { lead: help } : (help || {});
     return `<span class="help-pop"><button type="button" class="help-btn" id="${uid}"
             aria-expanded="false" aria-label="설명 보기"
-            data-help="${escapeHTML(text)}" onclick="toggleHelp(this)"><i class="i-info" aria-hidden="true"></i></button></span>`;
+            data-help="${escapeHTML(JSON.stringify(payload))}" onclick="toggleHelp(this)"><i class="i-info" aria-hidden="true"></i></button></span>`;
+}
+
+function helpEl(tag, cls, text) {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined && text !== null && text !== '') el.textContent = text;
+    return el;
+}
+
+// 상자 내용을 다시 그린다. 옛 호출이 남아 있을 수 있어 JSON이 아니면 줄글로 본다.
+function helpFill(box, raw) {
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { data = { lead: raw || '' }; }
+    if (!data || typeof data !== 'object') data = { lead: String(raw || '') };
+    box.textContent = '';
+    if (data.title) box.appendChild(helpEl('div', 'help-head', data.title));
+    if (data.lead) box.appendChild(helpEl('p', 'help-lead', data.lead));
+    if (Array.isArray(data.rows) && data.rows.length) {
+        const dl = helpEl('dl', 'help-rows');
+        data.rows.forEach(pair => {
+            if (!Array.isArray(pair)) return;
+            dl.appendChild(helpEl('dt', null, pair[0]));
+            dl.appendChild(helpEl('dd', null, pair[1]));
+        });
+        box.appendChild(dl);
+    }
+    if (data.note) box.appendChild(helpEl('p', 'help-note', data.note));
 }
 
 function helpBox() {
@@ -887,7 +918,7 @@ function toggleHelp(btn) {
     closeAllHelp();
     if (wasOpen) return;                       // 같은 단추를 다시 누르면 닫기만 한다
 
-    box.textContent = btn.dataset.help || '';
+    helpFill(box, btn.dataset.help || '');
     box.dataset.owner = btn.id;
     box.hidden = false;
     btn.setAttribute('aria-expanded', 'true');
@@ -917,13 +948,18 @@ window.addEventListener('scroll', () => closeAllHelp(), { passive: true });
 window.addEventListener('resize', () => closeAllHelp());
 
 // 티어랭킹 뱃지 옆 설명. 계산 방식은 scripts/build_ranking.py에 자세히 적어뒀다.
-const RANK_HELP = '스타대학이 전적 데이터로 매긴 자체 랭킹입니다.\n\n'
-    + '티어는 티어표를 그대로 쓰고, 순위는 같은 티어 안에서만 매깁니다.\n'
-    + '최근 경기일수록 무겁게 봅니다 (반감기 4개월).\n'
-    + '판 수가 적으면 보수적으로 잡습니다.\n\n'
-    + '형식 비중\n'
-    + '개인·대학대회 › 대학대전 › 미니대전 › 프로리그·CK › 스폰\n\n'
-    + '최근 1년 10판 미만이거나 휴면이면 기록 없음.';
+const RANK_HELP = {
+    title: '티어 랭킹',
+    lead: '스타대학이 전적으로 매긴 자체 랭킹입니다.',
+    rows: [
+        ['티어', '티어표 그대로'],
+        ['순위', '같은 티어 안에서만'],
+        ['최근 경기', '무겁게 (반감기 4개월)'],
+        ['적은 표본', '보수적으로'],
+        ['형식 비중', '대회 › 대학대전 › 미니대전 › 리그 › 스폰'],
+    ],
+    note: "최근 1년 10판 미만이거나 휴면이면 '기록 없음'입니다.",
+};
 
 // 티어 랭킹 뱃지: '갓티어 · 3위/16명'. 순위는 scripts/build_ranking.py가 계산해
 // docs/data/h2h/index.json에 적어 둔 것을 그대로 쓴다(선수별 k, 티어별 인원 ranking.tierCounts).
