@@ -6068,146 +6068,67 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 
 /* ---------------------------------------------------------------------------
    도구 > 엔트리
-   명단 두 칸 + 결과 한 칸. 좁은 화면에서는 세로로 쌓되 명단 칸은 스크롤을 달아
-   "고른다 -> 결과를 본다"가 한 화면 안에서 끝나게 한다.
+   크기·글자·노치는 전부 기존 부품에서 가져온다(.h2h-input, .h2h-suggest,
+   .h2h-rival, .h2h-score, .text-action, .news-load-more, .h2h-empty).
+   여기는 배치와, 기존에 없는 '두 선수가 마주 보는 카드' 한 가지만 적는다.
    --------------------------------------------------------------------------- */
-.entry-actions { display: flex; gap: 6px; align-items: center; }
-/* 포스터에 승률을 넣을지 고르는 토글. 기본은 꺼짐 - 포스터는 밖으로 돌아다니는
-   물건이라 예측을 기본으로 박아 내보내지 않는다(page-entry.js의 posterProb 참고). */
-.entry-toggle[aria-pressed="true"] { color: var(--color-primary); }
-.entry-toggle[aria-pressed="true"]::before { content: "✓ "; }
+/* 대진표가 넓은 쪽, 선수 고르기가 좁은 쪽 - 짜고 있는 결과를 보면서 옆에서 사람을 넣는다 */
+.entry-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-block-gap); align-items: start; }
+.entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; margin-left: auto; }
+.entry-actions .text-action[aria-pressed="true"] { color: var(--panel-accent); }
+.entry-settings { display: grid; grid-template-columns: 90px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: var(--space-block-gap); }
 
-/* 소속 고르기: 영상 탭의 채널 칩과 같은 결(카드 바탕 + 노치, 고르면 남색). */
-.entry-teams { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-.entry-team-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.entry-team-tag {
-    flex: none; display: grid; place-items: center; width: 18px; height: 18px;
-    background: var(--navy); color: var(--navy-on-text); clip-path: var(--cut-4);
-    font-size: var(--fs-badge-sm); font-weight: 800;
-}
-.entry-team-tag-b { background: var(--color-text-sub); }
-.entry-team-chips { display: flex; flex: 1 1 auto; gap: 5px; min-width: 0; overflow-x: auto; padding-bottom: 2px; }
-.entry-team-chip {
-    flex: none; height: 26px; padding: 0 10px; border: 0;
-    background: var(--color-bg-subtle); color: var(--color-text-sub); clip-path: var(--cut-4);
-    font-family: inherit; font-size: var(--fs-badge-sm); font-weight: 600; white-space: nowrap;
-    transition: background .15s, color .15s;
-}
-.entry-team-chip:hover:not(.active):not(:disabled) { background: var(--color-row-hover); }
-.entry-team-chip.active { background: var(--select-on-light); color: #fff; font-weight: 700; }
-.entry-team-chip:disabled { opacity: .35; }
+.entry-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.entry-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+/* 검색 추천 상자를 떠 있는 팝업이 아니라 제자리 목록으로 쓴다 */
+.h2h-suggest.entry-list { position: static; max-height: 460px; box-shadow: none; }
+.entry-list .h2h-suggest-item { min-width: 0; }
+/* 칸이 좁을 때는 소속이 먼저 줄어들고 이름은 끝까지 남긴다 */
+.entry-list .h2h-suggest-name { flex: 0 1 auto; min-width: 2.5em; overflow: hidden; text-overflow: ellipsis; }
+.entry-list .h2h-suggest-team { flex: 1 1 0; min-width: 0; }
+.entry-list .h2h-suggest-item.is-picked { background: var(--select-on-light); }
+.entry-list .h2h-suggest-item.is-picked .h2h-suggest-name,
+.entry-list .h2h-suggest-item.is-picked .h2h-suggest-team,
+.entry-list .h2h-suggest-item.is-picked .h2h-suggest-count { color: #fff; }
 
-/* 도구 줄: 조용한 알약 한 줄로 모은다. 눈에 띄는 건 '후보 뽑기' 하나면 된다. */
-.entry-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
-.entry-tool-btn {
-    height: 30px; padding: 0 12px; border: 0;
-    background: var(--color-bg-subtle); color: var(--color-text-sub); clip-path: var(--cut-4);
-    font-family: inherit; font-size: var(--fs-meta); font-weight: 700;
-}
-.entry-tool-btn:hover { background: var(--color-row-hover); color: var(--color-text-main); }
-.entry-tool-main { background: var(--navy); color: var(--navy-on-text); }
-.entry-tool-main:hover { background: var(--color-primary); color: #fff; }
-.entry-tool-sep { width: 1px; height: 18px; margin: 0 2px; background: var(--color-border); }
-.entry-tool-field { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-faint); }
-.entry-label {
-    width: 72px; height: 28px; padding: 0 8px; border: 0; background: var(--color-bg-subtle);
-    color: var(--color-text-main); clip-path: var(--cut-3);
-    font-family: inherit; font-size: var(--fs-meta); font-weight: 700;
-}
-.entry-label::placeholder { color: var(--color-text-faint); font-weight: 500; }
-.entry-target {
-    width: 48px; height: 28px; padding: 0 6px; border: 0; background: var(--color-bg-subtle);
-    color: var(--color-text-main); clip-path: var(--cut-3);
-    font-family: inherit; font-size: var(--fs-meta); font-weight: 700; text-align: center;
-}
+.entry-hint { margin: 0 0 8px; font-size: var(--fs-meta); color: var(--color-text-sub); }
+.entry-score { margin-bottom: 8px; }
+.entry-matches { display: flex; flex-direction: column; gap: 8px; }
 
-.entry-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: start; }
-.entry-rosters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.entry-col { background: var(--color-card); clip-path: var(--cut-8); overflow: hidden; }
-.entry-col-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; background: var(--navy); color: var(--navy-on-text); }
-.entry-col-name { font-size: var(--fs-meta); font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.entry-col-count { flex: none; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--navy-on-muted); }
-/* 검색이 이 판의 주 입력이다(소속 칩은 명단을 빨리 부르는 필터일 뿐). 그만큼 크게 둔다. */
-.entry-col-search { position: relative; padding: 10px 10px 2px; }
-.entry-col-search .i-search {
-    position: absolute; top: 22px; left: 20px; width: 13px; height: 13px;
-    background-color: var(--color-text-faint);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='7' cy='7' r='5' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3Cpath d='M11 11l4 4' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='7' cy='7' r='5' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3Cpath d='M11 11l4 4' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
-    pointer-events: none;
-}
-.entry-search-input {
-    width: 100%; height: 38px; padding: 0 32px 0 32px; border: 0;
-    background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-5);
-    font-family: inherit; font-size: var(--fs-body); font-weight: 600;
-}
-.entry-search-input:focus { background: var(--color-row-hover); outline: 2px solid var(--color-primary); outline-offset: -2px; }
-.entry-search-input::placeholder { color: var(--color-text-faint); font-weight: 500; }
-.entry-search-input::-webkit-search-cancel-button { display: none; }
-.entry-search-clear {
-    position: absolute; top: 10px; right: 10px; width: 30px; height: 38px; padding: 0; border: 0;
-    background: transparent; color: var(--color-text-faint); font-size: 17px; line-height: 1;
-}
-.entry-search-clear:hover { color: var(--color-lose); }
-.entry-chip-team { flex: none; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-faint); }
-.entry-chip.picked .entry-chip-team { color: rgba(255,255,255,.75); }
-.entry-col-body { display: flex; flex-direction: column; gap: 4px; max-height: 520px; padding: 8px; overflow-y: auto; }
-.entry-chip {
-    position: relative; display: flex; align-items: center; gap: 6px; width: 100%;
-    padding: 6px 8px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
-    clip-path: var(--cut-4); font-family: inherit; font-size: var(--fs-meta); font-weight: 600; text-align: left;
-}
-.entry-chip:hover { background: var(--color-row-hover); }
-.entry-chip.picked { background: var(--select-on-light); color: #fff; }
-.entry-chip.picked .entry-chip-tier { color: rgba(255,255,255,.75); }
-.entry-chip-avatar { flex: none; width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
-.entry-chip-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.entry-chip-tier { flex: none; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-faint); }
-.entry-chip-order {
-    flex: none; display: grid; place-items: center; width: 18px; height: 18px;
-    background: var(--navy); color: var(--navy-on-text); clip-path: var(--cut-3);
-    font-size: var(--fs-badge-sm); font-weight: 800;
-}
-.entry-chip.picked .entry-chip-order { background: #fff; color: var(--navy); }
-
-.entry-result { display: flex; flex-direction: column; gap: 10px; }
-.entry-empty { padding: 28px 16px; background: var(--color-card); clip-path: var(--cut-8); color: var(--color-text-faint); font-size: var(--fs-meta); font-weight: 600; line-height: 1.7; text-align: center; }
-.entry-summary { padding: 14px 16px; background: var(--color-card); clip-path: var(--cut-8); }
-.entry-summary-head { margin-bottom: 8px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-faint); }
-.entry-summary-names { display: flex; justify-content: space-between; margin-top: 6px; font-size: var(--fs-meta); font-weight: 700; }
-.entry-summary-note { margin-top: 8px; font-size: var(--fs-badge-sm); font-weight: 500; line-height: 1.6; color: var(--color-text-faint); }
-
-.entry-prob { display: flex; align-items: center; gap: 8px; }
-.entry-prob-num { flex: none; min-width: 48px; font-size: var(--fs-meta); font-weight: 800; font-variant-numeric: tabular-nums; }
-.entry-prob-a { text-align: left; color: var(--color-primary); }
-.entry-prob-b { text-align: right; color: var(--color-text-sub); }
-.entry-prob-bar { position: relative; flex: 1 1 auto; height: 8px; background: var(--color-donut-track); overflow: hidden; }
-.entry-prob-bar i { display: block; height: 100%; background: var(--color-primary); }
-
-.entry-matches { display: flex; flex-direction: column; gap: 6px; }
-.entry-match { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 1.1fr) minmax(0, 1fr); gap: 8px; align-items: center; padding: 10px 28px 10px 12px; background: var(--color-card); clip-path: var(--cut-7); }
-.entry-match-no { position: absolute; top: 4px; left: 12px; font-size: 9px; font-weight: 700; color: var(--color-text-faint); }
-.entry-match-del { position: absolute; top: 6px; right: 8px; width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: var(--color-text-faint); font-size: 15px; line-height: 1; }
+/* 대진 카드: 동티어 맞대결 카드(.h2h-rival)와 같은 바탕·노치·여백. 사진·이름·승패·막대도
+   그 카드의 클래스를 그대로 쓴다. 기존에 없는 건 '양쪽이 마주 보는' 배치뿐이다. */
+.entry-match { padding: 10px 12px; background: var(--color-card); clip-path: var(--cut-6); }
+.entry-match-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.entry-match-no { font-size: var(--fs-meta); font-weight: 700; color: var(--color-text-sub); }
+.entry-match-del { padding: 0 2px; border: 0; background: transparent; color: var(--color-text-faint); font-size: var(--fs-meta); line-height: 1; }
 .entry-match-del:hover { color: var(--color-lose); }
-.entry-match-side { display: flex; align-items: center; gap: 6px; min-width: 0; padding-top: 6px; }
-.entry-match-side-b { justify-content: flex-end; }
-.entry-match-avatar { flex: none; width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
-.entry-match-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-meta); font-weight: 700; }
-.entry-match-mid { display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 6px; }
-.entry-h2h { font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-sub); }
-.entry-h2h-none { color: var(--color-text-faint); font-weight: 500; }
+.entry-match-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.entry-match-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.entry-match-side.is-b { justify-content: flex-end; }
+.entry-match .h2h-rival-avatar { flex: none; }
+/* 가져다 쓴 .h2h-rival-* 는 원래 카드의 칸 번호(grid-column/row)를 달고 있다 - 여기선 풀어 준다 */
+.entry-match .h2h-rival-rec { grid-column: auto; grid-row: auto; justify-self: center; }
+.entry-match .h2h-rival-name { grid-column: auto; grid-row: auto; }
+.entry-match .h2h-rival-avatar { grid-column: auto; grid-row: auto; }
+/* 상대전적 추천 목록은 휴대폰에서 오른쪽 끝(판 수)을 숨기는데, 엔트리에선 그 자리가
+   티어·출전 경기 수라 꼭 보여야 한다 */
+.entry-list .h2h-suggest-count { display: inline; }
+.entry-list .h2h-suggest-count.is-used { color: var(--color-primary); font-weight: 700; }
+.entry-list .h2h-suggest-item.is-picked .h2h-suggest-count.is-used { color: #fff; }
+.entry-match .h2h-rival-bar { margin-top: 8px; }
+.entry-match-none { color: var(--color-text-faint); }
+.entry-match-sim { margin-top: 6px; font-size: var(--fs-meta); color: var(--color-text-sub); text-align: center; }
+.news-load-more:disabled { cursor: default; color: var(--color-text-faint); background: var(--color-card); }
 
 @media (max-width: 991.98px) {
     .entry-layout { grid-template-columns: minmax(0, 1fr); }
+    /* 휴대폰에서는 고르는 칸이 먼저 - 사람부터 넣어야 대진표가 생긴다 */
+    .entry-picker { order: -1; }
 }
 @media (max-width: 575.98px) {
-    .entry-col-body { max-height: 320px; }
-    /* 칸이 좁아 이름이 '이...'로 잘렸다. 두 줄로 흘려서 이름을 살린다 -
-       검색 결과에서는 소속이 같이 붙어 한 줄에 다 안 들어간다. */
-    .entry-chip { flex-wrap: wrap; row-gap: 2px; }
-    .entry-chip-name { flex: 1 1 100%; order: -1; padding-left: 28px; }
-    .entry-chip-avatar { position: absolute; top: 6px; left: 8px; }
-    .entry-chip-order { position: absolute; top: 6px; right: 8px; }
-    .entry-match { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 10px 28px 10px 12px; }
-    .entry-match-side-b { justify-content: flex-start; }
+    .entry-settings { grid-template-columns: 70px minmax(0, 1fr) minmax(0, 1fr); }
+    .h2h-suggest.entry-list { max-height: 300px; }
+    .entry-list .h2h-suggest-team { display: none; }
+    .entry-match-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .entry-match .h2h-rival-rec { grid-column: 1 / -1; grid-row: 2; }
 }

@@ -53,6 +53,7 @@ const EntryState = {
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
     labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
+    simulated: false,        // '시뮬 돌리기'를 눌렀나. 예상 승률은 그때만 보여 준다
     h2h: {},                 // "a|b" -> {w, l}  (받아온 맞대결)
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
@@ -68,8 +69,10 @@ const EntryState = {
 async function entryEnsureLoaded() {
     if (EntryState.index) return EntryState.index;
     if (!EntryState.loading) {
-        const box = document.getElementById('entry-rosters');
-        if (box) box.innerHTML = '<div class="entry-empty">명단을 불러오는 중...</div>';
+        ['a', 'b'].forEach(k => {
+            const box = document.getElementById(`entry-body-${k}`);
+            if (box) box.innerHTML = '<div class="h2h-suggest-empty">명단을 불러오는 중...</div>';
+        });
         EntryState.loading = fetch(ENTRY_INDEX_URL, { cache: 'no-cache' })
             .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
             .then(data => { EntryState.index = data; return data; })
@@ -81,8 +84,10 @@ async function entryEnsureLoaded() {
         entryInitTeams();
         renderEntry();
     } catch (e) {
-        const box = document.getElementById('entry-rosters');
-        if (box) box.innerHTML = '<div class="entry-empty">명단을 불러오지 못했습니다.</div>';
+        ['a', 'b'].forEach(k => {
+            const box = document.getElementById(`entry-body-${k}`);
+            if (box) box.innerHTML = '<div class="h2h-suggest-empty">명단을 불러오지 못했습니다.</div>';
+        });
     }
     return EntryState.index;
 }
@@ -216,28 +221,24 @@ function entryInitTeams() {
     renderEntryTeamChips();
 }
 
-// 소속 칩 두 줄. 반대쪽이 이미 고른 소속은 눌러도 소용없으니 흐리게 두고 막는다.
+// 소속 고르기. 열네 개를 칩으로 늘어놓으면 줄이 옆으로 흘러 고르기 나쁘다 -
+// 참고한 네 사이트가 전부 드롭다운을 쓰는 이유다. 반대쪽이 고른 소속은 막는다.
 function renderEntryTeamChips() {
     const list = entryTeamList();
     [0, 1].forEach(side => {
-        const box = document.getElementById(side === 0 ? 'entry-chips-a' : 'entry-chips-b');
-        if (!box) return;
-        box.innerHTML = list.map(t => {
-            const on = EntryState.teams[side] === t;
-            const taken = EntryState.teams[1 - side] === t;
-            return `<button type="button" class="entry-team-chip${on ? ' active' : ''}"
-                ${taken ? 'disabled' : ''} aria-pressed="${on}"
-                onclick="entryPickTeam(${side},'${jsAttr(t)}')">${escapeHTML(t)}</button>`;
-        }).join('');
-        // 고른 칩이 줄 밖으로 밀려 있으면(소속이 열네 개라 휴대폰에서는 흔하다) 끌어와 보여준다
-        const on = box.querySelector('.entry-team-chip.active');
-        if (on) box.scrollTo({ left: Math.max(0, on.offsetLeft - 12), behavior: 'smooth' });
+        const el = document.getElementById(side === 0 ? 'entry-team-a' : 'entry-team-b');
+        if (!el) return;
+        el.innerHTML = '<option value="">전체</option>'
+            + list.map(t => {
+                const taken = EntryState.teams[1 - side] === t;
+                return `<option value="${escapeHTML(t)}"${taken ? ' disabled' : ''}>${escapeHTML(t)}</option>`;
+            }).join('');
+        el.value = EntryState.teams[side] || '';
     });
 }
 
 function entryPickTeam(side, team) {
-    // 이미 고른 칩을 또 누르면 해제
-    EntryState.teams[side] = (EntryState.teams[side] === team) ? null : (team || null);
+    EntryState.teams[side] = team || null;
     EntryState.sel = [null, null];
     EntryState.matches = [];
     renderEntryTeamChips();
@@ -255,6 +256,7 @@ function entrySwapTeams() {
 function entryReset() {
     EntryState.matches = [];
     EntryState.sel = [null, null];
+    EntryState.simulated = false;
     renderEntry();
 }
 
@@ -265,6 +267,7 @@ function entryTogglePlayer(side, pid) {
     if (a && b) {
         EntryState.matches.push({ a, b });
         EntryState.sel = [null, null];
+        EntryState.simulated = false;
     }
     renderEntry();
     entryRefreshProbs();
@@ -272,6 +275,13 @@ function entryTogglePlayer(side, pid) {
 
 function entryRemoveMatch(i) {
     EntryState.matches.splice(i, 1);
+    EntryState.simulated = false;      // 대진이 바뀌면 돌려둔 결과는 더 이상 그 대진이 아니다
+    renderEntry();
+}
+
+function entryRunSim() {
+    if (!EntryState.matches.length) return;
+    EntryState.simulated = !EntryState.simulated;
     renderEntry();
 }
 
@@ -310,6 +320,7 @@ function entryAutoFill() {
     if (!all.length) return;
     EntryState.matches = all;
     EntryState.sel = [null, null];
+    EntryState.simulated = false;
     renderEntry();
     entryRefreshProbs();
 }
@@ -366,98 +377,94 @@ function entrySearch(q) {
         .slice(0, ENTRY_SEARCH_MAX);
 }
 
+// 검색어가 바뀌어도 칸을 통째로 다시 그리지 않는다. 그리면 <input>이 새로 만들어져
+// 한글 조합이 그 자리에서 끊긴다('ㅇ'만 남고 사라지는 증상). 목록과 머릿수만 갈아 끼운다.
 function entrySetQuery(side, value) {
     EntryState.query[side] = value;
-    renderEntryRosters();
-}
-
-function entryClearQuery(side) {
-    EntryState.query[side] = '';
-    renderEntryRosters();
-    const el = document.getElementById(side === 0 ? 'entry-q-a' : 'entry-q-b');
-    if (el) { el.value = ''; el.focus(); }
+    renderEntryColBody(side);
 }
 
 // ---------------------------------------------------------------------------
 // 그리기
+// 엔트리 전용 크기를 따로 두지 않는다. 사이트에 이미 같은 역할의 부품이 있어서
+// 그 클래스를 그대로 쓴다 - 검색창·소속 고르기는 분석 탭 검색(.h2h-input), 선수
+// 목록은 상대전적 검색 추천(.h2h-suggest-item), 대진 카드는 동티어 맞대결 카드
+// (.h2h-rival)의 치수, 시뮬 결과는 상대전적 머리 스코어판(.h2h-score)이다.
 // ---------------------------------------------------------------------------
-// 명단 칩. 대진에 이미 몇 번 올라간 선수인지 숫자로 보여 준다 - 한 선수가 여러 판
-// 뛰는 게 정상이라(대학대전이 그렇다) '중복'이 아니라 '몇 경기'로 읽혀야 한다.
-function entryPlayerChipHtml(side, p, showTeam) {
-    const sel = EntryState.sel[side] === p.pid;
+
+// 선수 한 줄(상대전적 검색 추천과 같은 줄). 오른쪽 끝은 티어인데, 이미 대진에 들어간
+// 선수는 그 자리에 몇 경기인지를 대신 적는다(칸이 좁아 둘 다 적으면 이름이 잘린다).
+function entryPlayerItemHtml(side, p, showTeam) {
+    const picked = EntryState.sel[side] === p.pid;
     const used = EntryState.matches.filter(m => (side === 0 ? m.a : m.b) === p.pid).length;
-    const badge = used ? `<span class="entry-chip-order">${used}</span>` : '';
-    // 검색 결과에서는 소속도 같이 보여 준다 - 씬 전체를 뒤지므로 어느 대학인지가 중요하다
-    const team = showTeam && p.tm ? `<span class="entry-chip-team">${escapeHTML(p.tm)}</span>` : '';
-    return `<button type="button" class="entry-chip${sel ? ' picked' : ''}"
+    const team = showTeam && p.tm ? `<span class="h2h-suggest-team">${escapeHTML(p.tm)}</span>` : '';
+    return `<button type="button" class="h2h-suggest-item${picked ? ' is-picked' : ''}" aria-pressed="${picked}"
             onclick="entryTogglePlayer(${side},'${jsAttr(p.pid)}')">
-        ${badge}
-        ${avatarHtml(p.s || '', 'entry-chip-avatar')}
-        <span class="entry-chip-name">${escapeHTML(p.n)}</span>
+        ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
+        <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
         ${p.r ? raceBadgeHtml(p.r) : ''}
         ${team}
-        <span class="entry-chip-tier">${escapeHTML(tierLabel(p.t))}</span>
+        <span class="h2h-suggest-count${used ? ' is-used' : ''}">${used ? `${used}경기` : escapeHTML(tierLabel(p.t))}</span>
     </button>`;
 }
 
+// 한쪽 목록만 갈아 끼운다. 검색창·소속 고르기는 tools.html에 고정으로 있어서 절대
+// 다시 그리지 않는다 - 다시 그리면 <input>이 새로 생겨 한글 조합이 끊긴다.
+function renderEntryColBody(side) {
+    const key = side === 0 ? 'a' : 'b';
+    const body = document.getElementById(`entry-body-${key}`);
+    if (!body) return;
+    const team = EntryState.teams[side];
+    const q = EntryState.query[side];
+    const searching = !!String(q || '').trim();
+    const list = searching ? entrySearch(q) : entryRoster(team);
+    const label = searching ? '검색 결과' : (team || '전체');
+    body.innerHTML = `<div class="h2h-suggest-head">${escapeHTML(label)} ${list.length.toLocaleString('ko-KR')}명</div>`
+        + (list.length
+            ? list.map(p => entryPlayerItemHtml(side, p, searching || !team)).join('')
+            : `<div class="h2h-suggest-empty">${searching ? '찾는 선수가 없습니다.' : '명단이 비어 있습니다.'}</div>`);
+}
+
 function renderEntryRosters() {
-    const box = document.getElementById('entry-rosters');
-    if (!box) return;
-    if (!EntryState.index) { box.innerHTML = '<div class="entry-empty">명단을 불러오는 중...</div>'; return; }
-    box.innerHTML = [0, 1].map(side => {
-        const team = EntryState.teams[side];
-        const q = EntryState.query[side];
-        const searching = !!String(q || '').trim();
-        const list = searching ? entrySearch(q) : entryRoster(team);
-        const head = `${side === 0 ? 'A' : 'B'} · ${escapeHTML(searching ? '검색' : (team || '전체'))}`;
-        const empty = searching ? '찾는 선수가 없습니다.' : '명단이 비어 있습니다.';
-        return `<div class="entry-col">
-            <div class="entry-col-head"><span class="entry-col-name">${head}</span><span class="entry-col-count">${list.length}명</span></div>
-            <div class="entry-col-search">
-                <span class="i-search" aria-hidden="true"></span>
-                <input type="search" id="entry-q-${side === 0 ? 'a' : 'b'}" class="entry-search-input"
-                    placeholder="선수 이름으로 찾기" aria-label="${side === 0 ? '왼쪽' : '오른쪽'} 선수 검색"
-                    value="${escapeHTML(q || '')}" oninput="entrySetQuery(${side}, this.value)">
-                ${searching ? `<button type="button" class="entry-search-clear" onclick="entryClearQuery(${side})" aria-label="검색어 지우기">×</button>` : ''}
-            </div>
-            <div class="entry-col-body">${list.length
-                ? list.map(p => entryPlayerChipHtml(side, p, searching || !team)).join('')
-                : `<div class="entry-empty">${empty}</div>`}</div>
-        </div>`;
-    }).join('');
+    [0, 1].forEach(renderEntryColBody);
 }
 
-function entryProbBarHtml(pa) {
-    const a = Math.round(pa * 1000) / 10;
-    return `<div class="entry-prob">
-        <span class="entry-prob-num entry-prob-a">${a.toFixed(1)}%</span>
-        <span class="entry-prob-bar"><i style="width:${a}%"></i></span>
-        <span class="entry-prob-num entry-prob-b">${(100 - a).toFixed(1)}%</span>
-    </div>`;
-}
-
+// 대진 카드 한 장. 동티어 맞대결 카드(.h2h-rival)와 같은 치수를 쓴다.
+// 가운데 주인공은 맞대결 전적이고, 막대도 그 전적의 승률이다. 예상 승률은
+// '시뮬 돌리기'를 눌렀을 때만 맨 아래 한 줄로 붙는다.
 function entryMatchRowHtml(m, i) {
     const players = entryPlayers();
     const a = players[m.a]; const b = players[m.b];
     if (!a || !b) return '';
     const wp = entryWinProb(m.a, m.b);
-    const h2h = wp && wp.n
-        ? `<span class="entry-h2h">${winLoseText(wp.w, wp.l)}</span>`
-        : '<span class="entry-h2h entry-h2h-none">맞대결 없음</span>';
+    const has = !!(wp && wp.n);
+    const pct = has ? (wp.w / wp.n) * 100 : 0;
+    const rec = has
+        ? `${winLoseText(wp.w, wp.l)}<span class="h2h-rate-sub"> · ${Math.round(pct * 10) / 10}%</span>`
+        : '<span class="entry-match-none">맞대결 없음</span>';
+    const sim = (EntryState.simulated && wp)
+        ? `<div class="entry-match-sim">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</div>`
+        : '';
     return `<div class="entry-match">
-        <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="이 대진 빼기">×</button>
-        <div class="entry-match-no">${i + 1}경기</div>
-        <div class="entry-match-side">
-            ${avatarHtml(a.s || '', 'entry-match-avatar')}
-            <span class="entry-match-name">${escapeHTML(a.n)}</span>
-            ${a.r ? raceBadgeHtml(a.r) : ''}
+        <div class="entry-match-top">
+            <span class="entry-match-no">${i + 1}경기 · ${escapeHTML(tierLabel(a.t))}</span>
+            <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="${i + 1}경기 빼기">✕</button>
         </div>
-        <div class="entry-match-mid">${wp ? entryProbBarHtml(wp.p) : ''}${h2h}</div>
-        <div class="entry-match-side entry-match-side-b">
-            ${b.r ? raceBadgeHtml(b.r) : ''}
-            <span class="entry-match-name">${escapeHTML(b.n)}</span>
-            ${avatarHtml(b.s || '', 'entry-match-avatar')}
+        <div class="entry-match-row">
+            <div class="entry-match-side">
+                ${avatarHtml(a.s || '', 'h2h-rival-avatar')}
+                <span class="h2h-rival-name">${escapeHTML(a.n)}</span>
+                ${a.r ? raceBadgeHtml(a.r) : ''}
+            </div>
+            <div class="h2h-rival-rec entry-match-rec">${rec}</div>
+            <div class="entry-match-side is-b">
+                ${b.r ? raceBadgeHtml(b.r) : ''}
+                <span class="h2h-rival-name">${escapeHTML(b.n)}</span>
+                ${avatarHtml(b.s || '', 'h2h-rival-avatar')}
+            </div>
         </div>
+        <span class="h2h-rival-bar${has ? '' : ' is-empty'}"><span style="width:${pct}%"></span></span>
+        ${sim}
     </div>`;
 }
 
@@ -481,7 +488,7 @@ function entrySideName(side) {
     if (typed) return typed;
     const mine = entryDerivedName(side);
     if (mine && mine !== entryDerivedName(1 - side)) return mine;
-    return mine && !EntryState.teams[side] ? (side === 0 ? 'A팀' : 'B팀') : (mine || (side === 0 ? 'A팀' : 'B팀'));
+    return side === 0 ? 'A팀' : 'B팀';
 }
 
 function entrySetLabel(side, value) {
@@ -489,38 +496,60 @@ function entrySetLabel(side, value) {
     renderEntryResult();
 }
 
+// 시뮬 결과는 상대전적 머리 스코어판(.h2h-score)과 같은 모양으로 낸다.
+function entrySimScoreHtml(ps) {
+    const n = ps.length;
+    const dist = entryScoreDist(ps);
+    const expected = ps.reduce((sum, p) => sum + p, 0);
+    const pWin = dist.reduce((sum, v, k) => sum + (k > n - k ? v : 0), 0);
+    const top = dist.map((v, k) => [k, v]).sort((x, y) => y[1] - x[1]).slice(0, 3);
+    const pa = Math.round(pWin * 1000) / 10;
+    return `<div class="h2h-score entry-score">
+        <div class="h2h-score-side">
+            <div class="h2h-score-name">${escapeHTML(entrySideName(0))}</div>
+            <div class="h2h-score-num is-a">${pa.toFixed(1)}%</div>
+        </div>
+        <div class="h2h-score-mid">
+            <div class="h2h-score-rate">예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)}</div>
+            <div class="h2h-score-bar"><span style="width:${pa}%"></span></div>
+            <div class="h2h-score-total">자주 나올 결과 ${top.map(([k, v]) => `${k}:${n - k} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+        </div>
+        <div class="h2h-score-side">
+            <div class="h2h-score-name">${escapeHTML(entrySideName(1))}</div>
+            <div class="h2h-score-num is-b">${(100 - pa).toFixed(1)}%</div>
+        </div>
+    </div>`;
+}
+
 function renderEntryResult() {
     const box = document.getElementById('entry-result');
     if (!box) return;
-    if (!EntryState.matches.length) {
-        box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>소속을 고르면 명단이 한 번에 뜨고, 아니면 이름으로 찾아 넣으면 됩니다.</div>';
+    const n = EntryState.matches.length;
+    const target = EntryState.target;
+    const count = document.getElementById('entry-count');
+    if (count) count.textContent = `${n}경기`;
+
+    if (!n) {
+        box.innerHTML = `<div class="h2h-empty">
+            <div class="h2h-empty-title">아직 대진이 없습니다</div>
+            <div class="h2h-empty-sub">양쪽에서 선수를 하나씩 누르거나, 같은 티어 후보 뽑기를 누르세요</div>
+        </div>`;
         return;
     }
-    // 경기 수보다 많으면 아직 후보를 늘어놓은 상태다. 그 수로 스코어 분포를 내 봐야
-    // 뜻이 없다. × 로 경기 수만큼 추리면 그게 곧 엔트리이고, 그때 확률이 나온다.
+
     const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
-    const n = ps.length;
-    const target = EntryState.target;
-    let head;
-    if (n <= target) {
-        const dist = entryScoreDist(ps);
-        const expected = ps.reduce((sum, p) => sum + p, 0);
-        const pWin = dist.reduce((sum, v, k) => sum + (k > n - k ? v : 0), 0);
-        const top = dist.map((v, k) => [k, v]).sort((x, y) => y[1] - x[1]).slice(0, 3);
-        head = `<div class="entry-summary">
-            <div class="entry-summary-head">매치 승리 확률</div>
-            ${entryProbBarHtml(pWin)}
-            <div class="entry-summary-names"><span>${escapeHTML(entrySideName(0))}</span><span>${escapeHTML(entrySideName(1))}</span></div>
-            <div class="entry-summary-note">${n}경기${n < target ? ` <b>(${target}경기 중 ${target - n}칸 빔)</b>` : ''} · 예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)} · 가장 잦은 결과 ${top.map(([k, v]) => `<b>${k}:${n - k}</b> ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+    const over = n - target;
+    const hint = over > 0
+        ? `같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${over}개를 걷어 내세요.`
+        : (over < 0 ? `${target}경기 중 ${-over}칸이 비었습니다.` : '');
+    const top = (EntryState.simulated && n <= target) ? entrySimScoreHtml(ps) : '';
+    const simLabel = EntryState.simulated ? '예상 승률 숨기기' : '시뮬 돌리기';
+    box.innerHTML = top
+        + (hint ? `<p class="entry-hint">${hint}</p>` : '')
+        + `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`
+        + `<div class="news-load-more-wrap">
+            <button type="button" class="news-load-more" ${n <= target ? '' : 'disabled'} onclick="entryRunSim()">${n <= target ? simLabel : `${target}경기로 추리면 시뮬을 돌릴 수 있습니다`}</button>
         </div>`;
-    } else {
-        head = `<div class="entry-summary">
-            <div class="entry-summary-head">후보 ${n}개 · ${target}경기</div>
-            <div class="entry-summary-note">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. × 로 ${n - target}개를 걷어 내면 매치 승리 확률과 예상 스코어가 나옵니다.</div>
-        </div>`;
-    }
-    box.innerHTML = head
-        + `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`;
 }
 
 function renderEntry() {
@@ -577,8 +606,13 @@ function entryPosterRows() {
     const players = entryPlayers();
     const withProb = EntryState.posterProb;
     return EntryState.matches.map(m => {
-        const wp = withProb ? entryWinProb(m.a, m.b) : null;
-        return { a: players[m.a] || null, b: players[m.b] || null, p: wp ? wp.p : null };
+        const wp = entryWinProb(m.a, m.b);
+        return {
+            a: players[m.a] || null,
+            b: players[m.b] || null,
+            p: (withProb && wp) ? wp.p : null,
+            h2h: (wp && wp.n) ? `${wp.w}승 ${wp.l}패` : '',
+        };
     });
 }
 
@@ -592,9 +626,11 @@ async function entrySavePoster() {
     const ta = entrySideName(0); const tb = entrySideName(1);
     const rows = entryPosterRows();
     if (!rows.length) { alert('대진을 먼저 만들어 주세요.'); return; }
+    // 맞대결을 아직 안 받았으면 먼저 받는다(포스터의 가운데 칸이 그 값이다)
+    await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
 
     const W = ENTRY_POSTER_W;
-    const PAD = 56, HEAD = 210, ROW = 108, FOOT = 74;
+    const PAD = 56, HEAD = 210, ROW = 124, FOOT = 74;
     const H = HEAD + rows.length * ROW + FOOT;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
@@ -643,22 +679,28 @@ async function entrySavePoster() {
         ctx.textAlign = 'right';
         ctx.fillText(r.b ? r.b.n : '-', W - PAD - D - 18, cy + 10);
 
+        // 가운데는 맞대결 전적이 주인공이다. 티어는 그 위에 작게, 예상 승률은
+        // '포스터에 승률'을 켰을 때만 맨 아래 막대로 붙는다.
         ctx.textAlign = 'center';
-        if (r.p === null) {
-            // 승률을 안 찍을 때는 티어를 가운데 둔다. 양쪽 티어가 같으면 한 번만 적는다.
-            const ta2 = r.a ? tierLabel(r.a.t) : '';
-            const tb2 = r.b ? tierLabel(r.b.t) : '';
-            ctx.fillStyle = SUB;
-            ctx.font = '700 22px Pretendard, sans-serif';
-            ctx.fillText(ta2 && ta2 === tb2 ? ta2 : [ta2, tb2].filter(Boolean).join('  ·  ') || `${i + 1}`, W / 2, cy + 9);
-        } else {
+        const ta2 = r.a ? tierLabel(r.a.t) : '';
+        const tb2 = r.b ? tierLabel(r.b.t) : '';
+        const tierText = ta2 && ta2 === tb2 ? ta2 : [ta2, tb2].filter(Boolean).join(' · ');
+        const hasProb = r.p !== null;
+        const midY = hasProb ? cy - 12 : cy - 2;
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 17px Pretendard, sans-serif';
+        ctx.fillText(tierText || `${i + 1}경기`, W / 2, midY - 16);
+        ctx.fillStyle = r.h2h ? TEXT : '#cbd5e1';
+        ctx.font = '800 26px Pretendard, sans-serif';
+        ctx.fillText(r.h2h || '맞대결 없음', W / 2, midY + 12);
+        if (hasProb) {
             const pa = Math.round(r.p * 1000) / 10;
-            const BW = 210, BH = 12, bx = W / 2 - BW / 2, by = cy + 8;
+            const BW = 210, BH = 10, bx = W / 2 - BW / 2, by = cy + 22;
             ctx.fillStyle = '#e2e8f0'; ctx.fillRect(bx, by, BW, BH);
             ctx.fillStyle = '#1f6fff'; ctx.fillRect(bx, by, BW * (pa / 100), BH);
-            ctx.fillStyle = TEXT;
-            ctx.font = '700 22px Pretendard, sans-serif';
-            ctx.fillText(`${pa.toFixed(0)}%  :  ${(100 - pa).toFixed(0)}%`, W / 2, cy - 8);
+            ctx.fillStyle = SUB;
+            ctx.font = '700 16px Pretendard, sans-serif';
+            ctx.fillText(`${pa.toFixed(0)}% : ${(100 - pa).toFixed(0)}%`, W / 2, by - 4);
         }
     });
 
