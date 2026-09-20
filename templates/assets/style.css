@@ -3575,8 +3575,9 @@ body.media-lightbox-open { overflow: hidden; }
    차지해서 뺐다. 닫기 버튼만 우상단에 얹는다. */
 .profile-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; padding: 0; background-size: 12px; }
 .profile-modal-identity { display: flex; align-items: center; gap: 18px; }
-/* 사진을 이름+뱃지 줄 높이에 맞춰 줄인다 - 모달이 세로로 길어지는 주범이었다 */
-.profile-modal-identity .profile-avatar { width: 48px; height: 48px; margin: 0; }
+/* 사진 높이를 오른쪽 글자 덩어리(이름 26px/1.2 + 여백 12px + 뱃지 줄)에 맞춘다.
+   그 덩어리가 이미 64px쯤이라, 여기까지는 키워도 모달이 세로로 안 길어진다. */
+.profile-modal-identity .profile-avatar { width: 64px; height: 64px; margin: 0; }
 .profile-modal-identity-text { min-width: 0; padding-right: 34px; }
 .profile-modal-name { margin: 0 0 12px; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -.03em; overflow-wrap: anywhere; }
 .profile-dialog .profile-modal-body { padding: 22px 24px 24px; }
@@ -3610,8 +3611,11 @@ body.media-lightbox-open { overflow: hidden; }
 .home-preview-link { position: absolute; inset: 0; z-index: 1; }
 .home-carousel-preview:hover { background: var(--panel-control-hover, rgba(255,255,255,.16)); }
 
-.profile-modal-shortcuts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
-.profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 38px; padding: 9px 10px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-6); text-decoration: none; font-size: var(--fs-meta); font-weight: 700; }
+.profile-modal-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+/* 바로가기는 바로 위 지표 상자(.profile-modal-metric)와 같은 짜임이어야 한다 -
+   좌우 패딩 14px, 노치 --cut-7, 본문 글자 크기. 예전엔 패딩 10px에 11px 글자라
+   라벨 시작점이 위 상자보다 4px 왼쪽으로 튀어나오고 혼자 작아 보였다. */
+.profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 12px 14px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-7); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }
 .profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
 /* 방송국은 사이트 밖으로 나가는 링크라 안쪽 바로가기 두 개와 줄을 나눈다 */
@@ -3622,7 +3626,7 @@ body.media-lightbox-open { overflow: hidden; }
     .profile-modal-hero { padding: 16px 18px 20px; }
     .profile-dialog .profile-modal-body { padding: 20px 18px; }
     .profile-modal-identity { gap: 14px; }
-    .profile-modal-identity .profile-avatar { width: 44px; height: 44px; }
+    .profile-modal-identity .profile-avatar { width: 58px; height: 58px; }
     .profile-modal-metric { padding: 12px; }
 }
 @media (pointer: coarse) { .profile-modal-close { width: 44px; height: 44px; } }
