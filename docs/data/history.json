@@ -974,7 +974,20 @@
       "type": "broadcast",
       "title": "노량진 합방",
       "desc": "홍어 벌칙",
-      "members": [],
+      "members": [
+        "김윤환",
+        "조일장",
+        "황병영",
+        "박준오",
+        "지동원",
+        "파도튜브",
+        "수입뿌드",
+        "소주양",
+        "주하랑",
+        "치리",
+        "임조이",
+        "진땅콩"
+      ],
       "youtube": "https://youtu.be/DnU0wyfRktE?si=Aa-fxiCKrOp3-H5u",
       "image": ""
     },
@@ -984,7 +997,23 @@
       "type": "broadcast",
       "title": "츠캄 VS 이노대 운동회",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "정윤종",
+        "박준오",
+        "지동원",
+        "파도튜브",
+        "수입뿌드",
+        "토마토",
+        "다예",
+        "햇살",
+        "주하랑",
+        "소주양",
+        "치리",
+        "막내현진",
+        "진땅콩",
+        "박쭈이"
+      ],
       "youtube": "https://youtu.be/UCrGE9QhfYE?si=VHiARUMtaMNYCxde",
       "image": ""
     },
@@ -997,9 +1026,116 @@
       "members": [
         "김윤환",
         "이경민",
-        "정윤"
+        "정윤종"
       ],
       "youtube": "https://youtu.be/4gQHhD040Mw?si=7DZa8S6ZjhRU48QH",
+      "image": ""
+    },
+    {
+      "id": "h-mu9hhn45",
+      "date": "2026-01-01",
+      "type": "broadcast",
+      "title": "72시간 노방종",
+      "desc": "2026-01-01 ~ 2026-01-03",
+      "members": [
+        "토마토",
+        "다예",
+        "햇살",
+        "주하랑",
+        "소주양",
+        "치리",
+        "임조이",
+        "진땅콩",
+        "박쭈이"
+      ],
+      "youtube": "https://youtu.be/S0lgphpmiGg?si=gLsbG5goDV3LNmGU",
+      "image": ""
+    },
+    {
+      "id": "h-mu9hksk4",
+      "date": "2026-01-15",
+      "type": "broadcast",
+      "title": "이경민 생일 술먹방",
+      "desc": "",
+      "members": [
+        "이경민",
+        "김윤환",
+        "토마토",
+        "주하랑",
+        "치리",
+        "진땅콩"
+      ],
+      "youtube": "https://youtu.be/UcHyZ9K4koA?si=fTxULwaAnYQDM8kS",
+      "image": ""
+    },
+    {
+      "id": "h-mu9hnthn",
+      "date": "2026-01-13",
+      "type": "broadcast",
+      "title": "목욕탕 컨텐츠",
+      "desc": "",
+      "members": [
+        "진땅콩",
+        "토마토",
+        "다예",
+        "햇살",
+        "주하랑",
+        "소주양",
+        "치리",
+        "임조이",
+        "박쭈이",
+        "수입뿌드"
+      ],
+      "youtube": "https://youtu.be/gR6GSy-Ys-s?si=pPPp8NgPFIK2zAyL",
+      "image": ""
+    },
+    {
+      "id": "h-mu9hsvmy",
+      "date": "2026-01-24",
+      "type": "broadcast",
+      "title": "흑스타즈 VS 암카데미",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "수입뿌드",
+        "토마토",
+        "임조이",
+        "진땅콩",
+        "흑운장",
+        "몽군",
+        "뚜미",
+        "갱이다",
+        "링가"
+      ],
+      "youtube": "https://youtu.be/rU2lJVrB2rI?si=C4ZApvJ-ZJ8hZYjz",
+      "image": ""
+    },
+    {
+      "id": "h-mu9hyaaw",
+      "date": "2026-01-31",
+      "type": "broadcast",
+      "title": "붕어빵 카페",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "조일장",
+        "황병영",
+        "박준오",
+        "박수범",
+        "배성흠",
+        "지동원",
+        "파도튜브",
+        "수입뿌드",
+        "토마토",
+        "햇살",
+        "소주양",
+        "주하랑",
+        "치리",
+        "임조이",
+        "먼진"
+      ],
+      "youtube": "https://youtu.be/uxMhoaZMNx4?si=uF184J6ZcqIDBw3b",
       "image": ""
     }
   ],
