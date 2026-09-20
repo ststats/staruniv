@@ -29,6 +29,7 @@ build_h2h.py가 index.json을 만든 뒤에 돌린다(그 파일을 읽어서 �
     미분류도 좁은 prior(σ=0.5)      스페이드 - 0티어 = -232점   ← 완전히 뒤집힘
     미분류 prior 풀기(σ=3.0)        스페이드 - 0티어 =  -52점
     + 3판 미만 미분류를 다리에서 뺌   스페이드 - 0티어 =   -4점   ← 채택
+    + m을 긴 창(2년)으로 따로 맞춤     스페이드 - 0티어 =  +24점   ← 지금 (아래 [두 반감기])
     미분류 경기를 아예 뺌            스페이드 - 0티어 =  +74점   (다리가 2,009경기뿐이라 튄다)
 
 그래서 미분류는 (1) prior를 넓게 풀어 각자 자유롭게 두고, (2) 가중 3판도 안 둔 사람의
@@ -47,8 +48,16 @@ build_h2h.py가 index.json을 만든 뒤에 돌린다(그 파일을 읽어서 �
     가운데에 놓이게 한다(예전 레이팅이 몇 판 안 한 사람 때문에 이상해졌던 자리다).
 
 순위를 티어 안에서만 매기므로, 두 군의 절대 높이에 오차가 남아도 순위에는 영향이 없다.
-(그 오차 때문에 전체 통합 순위는 내보내지 않는다 - 다리가 2,009경기뿐이라 카드군과
-숫자군의 경계는 믿을 만하지 않다)
+(그래도 전체 통합 순위는 내보내지 않는다 - 다리가 2,009경기뿐이라 카드군과 숫자군의
+경계는 여전히 ±1칸 남짓 흔들린다)
+
+[두 반감기 - m과 δ는 변하는 속도가 다르다]
+개인 폼에 맞춰 반감기를 짧게 잡았더니 티어 사이를 잇는 경기가 같이 깎여 나갔다.
+다리가 되는 경기는 대부분 옛날 것이라(스페이드 vs 0티어는 통산 1,204경기인데 최근
+1년에 17경기뿐이다) 120일을 걸면 그 17경기가 두 군의 높이를 혼자 정해 버린다.
+그래서 m은 긴 창(2년)으로, δ는 짧은 창(4개월)으로 따로 맞춘다. 자세한 수치는
+HALF_LIFE_TIER_DAYS 주석에 적어뒀다. 이 2단을 넣고서야 티어 기준선 15칸이 처음으로
+한 번도 안 뒤집히고 갓 -> 베이비까지 순서대로 섰다.
 
 [순위는 θ가 아니라 '보수 추정'으로 매긴다 - 여기서도 한 번 틀렸다]
 처음엔 θ 순서 그대로 줄을 세웠더니 스페이드티어 1위가 최근 1년에 2판 둔 사람이었다.
@@ -65,7 +74,8 @@ build_h2h.py가 index.json을 만든 뒤에 돌린다(그 파일을 읽어서 �
 
 [경기 가중치]
 형식마다 중요도가 다르고(개인대회=대학대회 > 대학대전 > 미니대전 > 프로리그=CK > 스폰),
-오래된 경기는 지금 실력을 덜 말해준다(반감기 4개월). 두 가중치를 곱해 경기마다 붙인다.
+오래된 경기는 지금 실력을 덜 말해준다(반감기는 폼 4개월 / 티어 간격 2년, 아래 참고).
+두 가중치를 곱해 경기마다 붙인다.
 스폰은 전체의 73%라 가중치를 0.15까지 낮춰도 여전히 가장 큰 덩어리지만, 그대로 두면
 사실상 스폰 랭킹이 되므로 이 정도는 눌러야 한다.
 
@@ -128,7 +138,29 @@ DEFAULT_CAT_WEIGHT = 0.15
 #   지평180일 - 90일 .6700 · 120일 .6699 · 180일 .6707 · 365일 .6712
 # 짧을수록 잘 맞히지만 표본이 얇아져 표준오차가 커진다(365일 0.195 → 180일 0.254 →
 # 120일 0.288 → 90일 0.316). 120일은 예측이 가장 좋으면서 90일만큼 출렁이지 않는다.
-HALF_LIFE_DAYS = 120.0      # 최근 가중치 반감기(4개월)
+HALF_LIFE_DAYS = 120.0      # 개인 폼(δ) 반감기(4개월)
+
+# 티어 기준선(m)은 개인 폼과 변하는 속도가 다르다. 티어 사다리의 간격은 구조적인
+# 값이라 천천히 변하는데, 반감기를 개인 폼에 맞춰 짧게 잡으면 티어 사이를 잇는
+# 경기가 같이 깎여 나간다. 카드군(갓~스페이드)과 숫자군(0~베이비)을 잇는 경기는
+# 통산 2,009개뿐이고 그나마 대부분 옛날 것이라, 120일을 걸면 다리 가중합이
+# 56.6 -> 4.7로 무너지고 두 군의 상대 높이가 통째로 흔들렸다:
+#
+#   반감기   다리 가중합      스페이드-0티어   간격 불확실성(1시그마)
+#    365일   56.6 (0.243%)        -7.1점           ±1.13칸
+#    180일   11.6 (0.101%)       -36.8점           ±2.16칸
+#    120일    4.7 (0.062%)      -116.9점           ±2.98칸
+#
+# 그래서 m은 긴 창으로, δ는 짧은 창으로 따로 맞춘다(2단). 맞대결 실측값
+# (스페이드 vs 0티어 1,204경기 54.1% = 약 +28점)과 견주면 m의 창이 이렇게 나왔다:
+#
+#   m=365/δ=120  로그손실 0.6701   스페이드-0티어  -7.1점
+#   m=730/δ=120  로그손실 0.6702                 +24.1점   <- 채택
+#   m=감쇠없음    로그손실 0.6700                 +43.0점
+#
+# 예측력은 셋이 사실상 같고(단일 365일 0.6723보다 전부 낫다), 다리만 m=730이
+# 실측에 제일 가깝다. 단일 120일(0.6691)보다 0.0011 손해지만 그 값어치가 있다.
+HALF_LIFE_TIER_DAYS = 730.0  # 티어 기준선(m) 반감기(2년)
 RECENT_DAYS = 365           # 순위를 매길 때 보는 최근 기간
 MIN_RECENT_GAMES = 10       # 이 기간에 이보다 적게 뒀으면 순위에서 빼고 '기록 없음'
 # 순위 점수에서 표준오차를 몇 배 빼는가. 1.0이면 '한 시그마 보수적으로'다.
@@ -237,8 +269,11 @@ def tier_at(pid, day, ladders, players):
 def build_pairs(rows, cats, today):
     """경기 행을 (승자, 패자) 쌍별 가중치 합으로 접는다.
 
-    반환: (승자 인덱스 배열, 패자 인덱스 배열, 가중치 배열, 선수id 목록,
-           선수별 가중 경기 수, 선수별 최근 경기일)
+    반감기가 둘이라 가중치도 둘을 한 번에 만든다(같은 쌍 목록을 공유해야 하므로
+    두 번 돌지 않는다). ww는 개인 폼용(짧은 창), ww_tier는 티어 간격용(긴 창)이다.
+
+    반환: (승자 인덱스, 패자 인덱스, 폼 가중치, 티어 가중치, 선수id 목록,
+           선수별 가중 경기 수(폼/티어), 선수별 최근 경기일)
     """
     cat_w = [CAT_WEIGHT.get(c, DEFAULT_CAT_WEIGHT) for c in cats]
     pair_w = {}
@@ -265,26 +300,84 @@ def build_pairs(rows, cats, today):
         age = (today - day).days
         if age < 0:
             age = 0
-        w = 0.5 ** (age / HALF_LIFE_DAYS)
-        w *= cat_w[cat] if isinstance(cat, int) and 0 <= cat < len(cat_w) else DEFAULT_CAT_WEIGHT
-        if w <= 0:
+        cw = cat_w[cat] if isinstance(cat, int) and 0 <= cat < len(cat_w) else DEFAULT_CAT_WEIGHT
+        w = cw * 0.5 ** (age / HALF_LIFE_DAYS)
+        wt = cw * 0.5 ** (age / HALF_LIFE_TIER_DAYS)
+        if w <= 0 and wt <= 0:
             continue
         i, j = node(win), node(lose)
-        pair_w[(i, j)] = pair_w.get((i, j), 0.0) + w
+        cur = pair_w.get((i, j))
+        if cur is None:
+            pair_w[(i, j)] = [w, wt]
+        else:
+            cur[0] += w
+            cur[1] += wt
         for n in (i, j):
-            weight_sum[n] = weight_sum.get(n, 0.0) + w
+            s = weight_sum.get(n)
+            if s is None:
+                weight_sum[n] = [w, wt]
+            else:
+                s[0] += w
+                s[1] += wt
             if str(date) > last_day.get(n, ''):
                 last_day[n] = str(date)
 
     keys = list(pair_w.keys())
     wi = np.fromiter((k[0] for k in keys), dtype=np.int64, count=len(keys))
     li = np.fromiter((k[1] for k in keys), dtype=np.int64, count=len(keys))
-    ww = np.fromiter((pair_w[k] for k in keys), dtype=np.float64, count=len(keys))
+    ww = np.fromiter((pair_w[k][0] for k in keys), dtype=np.float64, count=len(keys))
+    ww_tier = np.fromiter((pair_w[k][1] for k in keys), dtype=np.float64, count=len(keys))
     n = len(order)
     wsum = np.zeros(n)
+    wsum_tier = np.zeros(n)
     for k, v in weight_sum.items():
-        wsum[k] = v
-    return wi, li, ww, order, wsum, last_day
+        wsum[k], wsum_tier[k] = v
+    return wi, li, ww, ww_tier, order, wsum, wsum_tier, last_day
+
+
+def fit_delta(wi, li, ww, tier_idx, lam, n_players, m):
+    """티어 기준선 m을 고정한 채 티어 안 편차 δ만 맞춘다(2단 중 2단).
+
+    m은 긴 창에서 이미 정해졌으므로 여기서는 건드리지 않는다. 같은 볼록 문제에서
+    m 블록만 빠진 꼴이라 수렴은 더 쉽다.
+    """
+    base = m[tier_idx]
+
+    def fun_grad(delta):
+        theta = base + delta
+        d = np.clip(theta[wi] - theta[li], -60, 60)
+        f = float(np.sum(ww * np.logaddexp(0.0, -d)) + 0.5 * np.sum(lam * delta ** 2))
+        resid = ww / (1.0 + np.exp(d))
+        g = np.zeros(n_players)
+        np.add.at(g, wi, -resid)
+        np.add.at(g, li, resid)
+        return f, g + lam * delta
+
+    res = minimize(fun_grad, np.zeros(n_players), jac=True, method='L-BFGS-B',
+                   options={'maxiter': 20000, 'maxfun': 40000, 'ftol': 1e-14, 'gtol': 1e-9})
+    if not res.success:
+        print(f'   ⚠️ δ 최적화가 수렴했다고 보고하지 않았습니다: {res.message}')
+    return res.x
+
+
+def solve_two_stage(wi, li, ww, ww_tier, tier_idx, lam, n, n_tiers, wsum, wsum_tier):
+    """1단으로 티어 간격 m(긴 창), 2단으로 개인 폼 δ(짧은 창)를 맞춘다.
+
+    반환: (theta, score, keep) - keep은 짧은 창 기준으로 살아남은 쌍 마스크다.
+    """
+    unranked = lam < 1.0 / SIGMA_DELTA ** 2      # prior가 넓으면 미분류
+    # 판 적은 미분류는 두 단 모두에서 다리로 쓰지 않는다. 다만 문턱을 각자의 창으로
+    # 재야 한다 - 긴 창에서는 충분히 둔 사람이 짧은 창에서만 얇아지는 일이 흔하다.
+    thin_t = unranked & (wsum_tier < MIN_UNRANKED_GAMES)
+    keep_t = ~(thin_t[wi] | thin_t[li])
+    m, _ = fit(wi[keep_t], li[keep_t], ww_tier[keep_t], tier_idx, lam, n, n_tiers)
+
+    thin = unranked & (wsum < MIN_UNRANKED_GAMES)
+    keep = ~(thin[wi] | thin[li])
+    delta = fit_delta(wi[keep], li[keep], ww[keep], tier_idx, lam, n, m)
+    theta = m[tier_idx] + delta
+    score = ranking_scores(theta, wi[keep], li[keep], ww[keep], lam)
+    return theta, score, keep, m
 
 
 def ranking_scores(theta, wi, li, ww, lam):
@@ -304,19 +397,16 @@ def solve_at(rows, cats, as_of, players, t_pos, n_tiers, ladders):
     최근 가중치의 기준일도 as_of로 잡고, 티어 기준선도 그 시점의 티어로 붙인다 -
     그래야 '그때 기준의 실력'이 나온다.
     """
-    wi, li, ww, order, wsum, last_day = build_pairs(rows, cats, as_of)
+    wi, li, ww, ww_tier, order, wsum, wsum_tier, last_day = build_pairs(rows, cats, as_of)
     if not len(ww):
         return {}
     n = len(order)
     tiers_then = [tier_at(pid, as_of, ladders, players) for pid in order]
     tier_idx = np.fromiter((t_pos[t] for t in tiers_then), dtype=np.int64, count=n)
     unranked = tier_idx == t_pos[UNRANKED]
-    thin = unranked & (wsum < MIN_UNRANKED_GAMES)
-    keep = ~(thin[wi] | thin[li])
     lam = np.where(unranked, 1.0 / SIGMA_UNRANKED ** 2, 1.0 / SIGMA_DELTA ** 2)
-    m, delta = fit(wi[keep], li[keep], ww[keep], tier_idx, lam, n, n_tiers)
-    theta = m[tier_idx] + delta
-    score = ranking_scores(theta, wi[keep], li[keep], ww[keep], lam)
+    _theta, score, _keep, _m = solve_two_stage(
+        wi, li, ww, ww_tier, tier_idx, lam, n, n_tiers, wsum, wsum_tier)
 
     cutoff = (as_of - dt.timedelta(days=RECENT_DAYS)).isoformat()
     out = {}
@@ -433,7 +523,7 @@ def main():
     # 최근 가중치가 통째로 깎여서, 코드를 안 고쳤는데 순위가 흔들린다.
     today = max(dt.date.fromisoformat(str(r[1])[:10]) for r in rows if len(r) > 1)
 
-    wi, li, ww, order, wsum, last_day = build_pairs(rows, cats, today)
+    wi, li, ww, ww_tier, order, wsum, wsum_tier, last_day = build_pairs(rows, cats, today)
     n = len(order)
 
     tiers = TIER_ORDER + [UNRANKED]
@@ -444,18 +534,14 @@ def main():
     # 미분류 중 판 수가 너무 적은 사람의 경기는 뺀다. 실력 위치를 모르는 사람을
     # 티어 사이의 다리로 쓰면 없는 정보를 지어내게 된다(맨 위 주석의 표 참고).
     unranked = tier_idx == t_pos[UNRANKED]
-    thin = unranked & (wsum < MIN_UNRANKED_GAMES)
-    keep = ~(thin[wi] | thin[li])
+    lam = np.where(unranked, 1.0 / SIGMA_UNRANKED ** 2, 1.0 / SIGMA_DELTA ** 2)
+
+    # 1단 티어 간격(긴 창) -> 2단 개인 폼(짧은 창). 표준오차는 짧은 창 기준이다 -
+    # '지금 이 선수를 얼마나 아는가'를 재는 값이라 폼과 같은 창이어야 한다.
+    theta, score, keep, m = solve_two_stage(
+        wi, li, ww, ww_tier, tier_idx, lam, n, len(tiers), wsum, wsum_tier)
     dropped_pairs = int((~keep).sum())
     wi, li, ww = wi[keep], li[keep], ww[keep]
-
-    lam = np.where(unranked, 1.0 / SIGMA_UNRANKED ** 2, 1.0 / SIGMA_DELTA ** 2)
-    m, delta = fit(wi, li, ww, tier_idx, lam, n, len(tiers))
-    theta = m[tier_idx] + delta
-
-    # 추정의 표준오차. 로지스틱 로그가능도의 대각 헤시안이 prior 정밀도 + Σ w·p(1-p)다.
-    # 많이 둘수록 커지고(=확신), 표준오차는 그 역제곱근이다.
-    score = ranking_scores(theta, wi, li, ww, lam)
 
     # 최근 RECENT_DAYS 안에 실제로 몇 판 뒀는지(가중치 없는 날것). 눈에 보이는 문턱이라
     # 가중치가 아니라 판 수 그대로 센다.
@@ -513,6 +599,7 @@ def main():
     index['ranking'] = {
         'asOf': today.isoformat(),
         'halfLifeDays': int(HALF_LIFE_DAYS),
+        'halfLifeTierDays': int(HALF_LIFE_TIER_DAYS),
         'recentDays': RECENT_DAYS,
         'minRecentGames': MIN_RECENT_GAMES,
         # 티어별 순위 인원. 뱃지의 '3위/16명'에서 분모로 쓴다.
@@ -525,7 +612,8 @@ def main():
     print(f'✅ 티어랭킹: {total:,}명 순위 매김 '
           f'(휴면 {skipped_dormant:,}명 · 최근 {RECENT_DAYS}일 경기 없음 {skipped_recent:,}명 · '
           f'{MIN_RECENT_GAMES}판 미만 {skipped_thin:,}명)')
-    print(f'   기준일 {today} · 반감기 {int(HALF_LIFE_DAYS)}일 · 쌍 {len(ww):,}개'
+    print(f'   기준일 {today} · 반감기 폼 {int(HALF_LIFE_DAYS)}일 / 티어 {int(HALF_LIFE_TIER_DAYS)}일'
+          f' · 쌍 {len(ww):,}개'
           f' (판 적은 미분류 제외 {dropped_pairs:,}쌍)')
     print('   티어 기준선(높을수록 강함):')
     for t in TIER_ORDER:
