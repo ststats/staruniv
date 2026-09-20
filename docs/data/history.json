@@ -1195,6 +1195,46 @@
       "members": [],
       "youtube": "https://youtu.be/02Hk3X6p23g?si=6xch0tyeGM32nPXB",
       "image": ""
+    },
+    {
+      "id": "h-mu9inpdm",
+      "date": "2026-04-04",
+      "type": "broadcast",
+      "title": "츠캄 VS JSA 스보라",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/EonP6znz-x8?si=DSqx2pXyIHJ5kbOk",
+      "image": ""
+    },
+    {
+      "id": "h-mu9ipode",
+      "date": "2026-04-17",
+      "type": "event",
+      "title": "수장CK",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/-o4QGWh178g?si=dD6GehkDgf0w3nIC",
+      "image": ""
+    },
+    {
+      "id": "h-mu9irslm",
+      "date": "2026-04-25",
+      "type": "event",
+      "title": "츠캄 VS 뉴캣슬 대학대전",
+      "desc": "빌드실명제 도입 후 첫 재판",
+      "members": [],
+      "youtube": "https://youtu.be/xmZxsrwz8cY?si=ap1JIBpDJUZzu7eQ",
+      "image": ""
+    },
+    {
+      "id": "h-mu9ityp6",
+      "date": "2026-04-29",
+      "type": "broadcast",
+      "title": "츠캄 시즌4 MT",
+      "desc": "2026-04-29 ~ 2026-04-30",
+      "members": [],
+      "youtube": "https://youtu.be/pKWjscMNR5I?si=dbUJWDBXYCERHb1o",
+      "image": ""
     }
   ],
   "overrides": {
