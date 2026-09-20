@@ -4,7 +4,7 @@ const ANALYSIS_FORM_COUNT = 10;        // '최근 10경기'
 const ANALYSIS_CHART_MONTHS = 18;      // 월별 그래프에 보여줄 최근 개월 수
 const ANALYSIS_RATE_MIN = 5;           // 월별 승률 선을 그릴 최소 표본(이 미만인 달은 선을 끊는다)
 const ANALYSIS_MAP_STEP = 8;           // '맵별 전적' 한 번에 보여줄 개수(4열 x 2줄)
-const ANALYSIS_RIVAL_STEP = 8;         // '동티어 전적' 한 번에 보여줄 상대 수
+const ANALYSIS_RIVAL_STEP = 8;         // '동티어 맞대결' 한 번에 보여줄 상대 수
 const ANALYSIS_CAT_PER_PAGE = 3;       // '형식별 전적' 한 화면에 보여줄 도넛 수
 
 
@@ -521,7 +521,7 @@ function analysisRatingHtml(pid) {
 }
 
 // ---------------------------------------------------------------------------
-// 맵별 전적 · 동티어 전적 (둘 다 8개씩 + 더 보기)
+// 맵별 전적 · 동티어 맞대결 (둘 다 8개씩 + 더 보기)
 // ---------------------------------------------------------------------------
 function analysisShowMoreMaps() {
     AnalysisState.mapShown += ANALYSIS_MAP_STEP;
@@ -580,7 +580,7 @@ function analysisRivalHtml(rows, myTier) {
     // 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rivals)을 쓴다 - 누르면 그 선수로 넘어간다.
     return `
         <div class="section-title section-title-spaced" data-en="SAME TIER">
-            <span class="section-title-label">동티어 전적</span>
+            <span class="section-title-label">동티어 맞대결</span>
             <span class="title-count">${escapeHTML(tierLabel(myTier))} · ${all.length}명</span>
         </div>
         <div class="h2h-rivals">

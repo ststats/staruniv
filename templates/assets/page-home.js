@@ -22,30 +22,31 @@ function formatLiveElapsed(broadStart) {
 
 let homeCarouselIndex = 0;
 
+// 미리보기 칸을 통째로 누르면 그 페이지로 간다. 안의 줄들은 읽기 전용이라
+// 투명한 링크 하나로 덮는 게 가장 간단하다(영상 장은 재생 아이콘이 그 역할을 한다).
+function homePreviewLinkHtml(href, label) {
+    return `<a class="home-preview-link" href="${href}" aria-label="${escapeHTML(label)}"></a>`;
+}
+
 async function fetchHomePreviewData(path) {
     const res = await fetch(path, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`미리보기 데이터를 불러오지 못했습니다: ${path}`);
     return res.json();
 }
 
-async function renderHomeRecordsPreview(box) {
-    box.innerHTML = '<div class="home-preview-label">RECORDS ARCHIVE</div><div class="home-preview-loading">전체 전적을 불러오는 중...</div>';
-    try {
-        const [tier, archive] = await Promise.all([
-            fetchHomePreviewData('data/tier_members.json'),
-            fetchHomePreviewData('data/h2h/index.json'),
-        ]);
-        if (!Array.isArray(tier.members) || !archive.players || !Number.isFinite(archive.count)) throw new Error('잘못된 집계 데이터');
-        const excluded = new Set(['FA', '휴면', '미분류']);
-        const teams = new Set(tier.members.map(m => String(m.team || '').trim()).filter(t => t && !excluded.has(t.toUpperCase())));
-        // 티어표 밖 상대 선수까지 포함하되 같은 선수 ID는 한 번만 센다.
-        const players = new Set([...Object.keys(archive.players), ...Object.keys(archive.others || {})]);
-        const rows = [['대학 수', teams.size, '개'], ['누적 선수', players.size, '명'], ['누적 경기', archive.count, '경기']];
-        box.innerHTML = '<div class="home-preview-label">RECORDS ARCHIVE</div>' + rows.map(([label, count, unit]) =>
-            `<div class="home-preview-row"><span>${label}</span><b>${count.toLocaleString('ko-KR')}${unit}</b></div>`).join('');
-    } catch (e) {
-        box.innerHTML = '<div class="home-preview-label">RECORDS ARCHIVE</div><div class="home-preview-loading">전체 전적을 불러오지 못했습니다.</div>';
-    }
+// 캄몬스타즈 전적만 센다. 스타대학 전체 집계를 보여주려고 tier_members.json과
+// h2h/index.json(125KB)을 따로 받던 것을 걷어냈다 - SiteData는 어차피 받아둔 것이라
+// 홈이 추가로 받는 파일이 없어진다.
+function renderHomeRecordsPreview(box) {
+    const rows = [
+        ['누적 인원', (SiteData.members || []).length, '명'],
+        ['누적 매치', (SiteData.matches || []).length, '경기'],
+        ['누적 세트', (SiteData.rounds || []).length, '세트'],
+    ];
+    box.innerHTML = '<div class="home-preview-label">RECORDS</div>'
+        + rows.map(([label, count, unit]) =>
+            `<div class="home-preview-row"><span>${label}</span><b>${count.toLocaleString('ko-KR')}${unit}</b></div>`).join('')
+        + homePreviewLinkHtml('records/', '전적 보기');
 }
 
 function renderHomeVideoPreview(box) {
@@ -66,7 +67,8 @@ async function renderTodaySchedulePreview(box) {
         box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div>' +
             (todayEvents.length
                 ? todayEvents.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><span class="home-preview-description">${escapeHTML(ev.desc || '')}</span></div>`).join('')
-                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다.</div>');
+                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다.</div>')
+            + homePreviewLinkHtml('schedule/', '일정 보기');
     } catch (e) {
         box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다.</div>';
     }

@@ -1311,7 +1311,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .mv-chip-avatar,
 .news-post-avatar,
 .player-avatar-sm,
-.selection-layout > .avatar-bar .avatar-select-fallback,
 .tier-card-avatar {
     border-radius: 50%;
 }
@@ -1673,9 +1672,12 @@ a.btn-view-all {
     color: var(--panel-muted);
     font-size: 12px;
 }
+/* 멤버 줄은 왼쪽에 종족 뱃지(노치 박스 20px)가 서므로, '이전 멤버' 줄의 아이콘도
+   같은 모양·같은 크기로 맞춘다. 예전엔 여기만 동그라미라 줄이 어긋나 보였다. */
 .selection-layout > .avatar-bar .avatar-select-fallback {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    clip-path: var(--cut-5);
 }
 .selection-layout > .tier-bar {
     grid-column: 1;
@@ -1843,8 +1845,8 @@ a.btn-view-all {
         width: 100%;
     }
     .selection-layout > .avatar-bar .avatar-select-fallback {
-        width: 21px;
-        height: 21px;
+        width: 20px;
+        height: 20px;
     }
     .selection-layout > .avatar-bar::before { display: none; }
     .selection-layout > .avatar-bar:not(.is-closed) .avatar-bar-pick svg {
@@ -3060,6 +3062,24 @@ html[data-theme="dark"] .cal-longterm-bar {
     gap: 6px;
     margin-top: 10px;
 }
+/* 접어둔 이름을 여는 칸. 나머지 인원의 프로필을 겹쳐 보여준다(history.js). */
+.hist-chips-rest { display: contents; }
+.hist-chip-more { border: 0; cursor: pointer; }
+.hist-chip-more:hover { background: var(--color-row-hover); color: var(--color-primary); }
+.hist-stack { display: inline-flex; flex: none; }
+.hist-stack-face {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-placeholder-bg);
+    box-shadow: 0 0 0 2px var(--color-bg-subtle);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+}
+.hist-stack-face + .hist-stack-face { margin-left: -9px; }
+
 .hist-chip {
     display: inline-flex;
     align-items: center;
@@ -3555,9 +3575,9 @@ body.media-lightbox-open { overflow: hidden; }
    차지해서 뺐다. 닫기 버튼만 우상단에 얹는다. */
 .profile-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; padding: 0; background-size: 12px; }
 .profile-modal-identity { display: flex; align-items: center; gap: 18px; }
-.profile-modal-identity .profile-avatar { width: 76px; height: 76px; margin: 0; }
+/* 사진을 이름+뱃지 줄 높이에 맞춰 줄인다 - 모달이 세로로 길어지는 주범이었다 */
+.profile-modal-identity .profile-avatar { width: 48px; height: 48px; margin: 0; }
 .profile-modal-identity-text { min-width: 0; padding-right: 34px; }
-.profile-modal-affiliation { color: var(--navy-on-muted); font-size: var(--fs-meta); margin-bottom: 4px; }
 .profile-modal-name { margin: 0 0 12px; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -.03em; overflow-wrap: anywhere; }
 .profile-dialog .profile-modal-body { padding: 22px 24px 24px; }
 .profile-modal-section { margin-bottom: 14px; font-size: 13px; }
@@ -3586,18 +3606,23 @@ body.media-lightbox-open { overflow: hidden; }
 /* 3개(티어표 분석·개인 전적·SOOP 방송국)까지 한 줄로 - flex라 숨김([hidden])인
    링크는 레이아웃에서 완전히 빠지고 남은 것들이 폭을 나눠 가진다(grid처럼 빈 칸이
    안 남는다). 세 개가 다 보일 때를 기준으로 글자를 줄였다. */
+/* 미리보기 칸 전체를 덮는 투명 링크 (page-home.js의 homePreviewLinkHtml) */
+.home-preview-link { position: absolute; inset: 0; z-index: 1; }
+.home-carousel-preview:hover { background: var(--panel-control-hover, rgba(255,255,255,.16)); }
+
 .profile-modal-shortcuts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
 .profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 38px; padding: 9px 10px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-6); text-decoration: none; font-size: var(--fs-meta); font-weight: 700; }
 .profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
-.profile-modal-station { background: var(--navy); color: var(--navy-on-text); }
+/* 방송국은 사이트 밖으로 나가는 링크라 안쪽 바로가기 두 개와 줄을 나눈다 */
+.profile-modal-station { flex: 1 1 100%; background: var(--navy); color: var(--navy-on-text); }
 .profile-modal-station:hover { background: var(--color-primary); color: #fff; }
 .profile-modal-link[hidden], .profile-modal-days[hidden] { display: none; }
 @media (max-width: 380px) {
     .profile-modal-hero { padding: 16px 18px 20px; }
     .profile-dialog .profile-modal-body { padding: 20px 18px; }
     .profile-modal-identity { gap: 14px; }
-    .profile-modal-identity .profile-avatar { width: 64px; height: 64px; }
+    .profile-modal-identity .profile-avatar { width: 44px; height: 44px; }
     .profile-modal-metric { padding: 12px; }
 }
 @media (pointer: coarse) { .profile-modal-close { width: 44px; height: 44px; } }
@@ -4484,7 +4509,7 @@ body.media-lightbox-open { overflow: hidden; }
     height: 6px;
 }
 
-/* 자주 만난 상대 · 동티어 전적: 맵 카드와 같은 짜임(이름 / 승-패 · 승률 / 승률 막대)에
+/* 자주 만난 상대 · 동티어 맞대결: 맵 카드와 같은 짜임(이름 / 승-패 · 승률 / 승률 막대)에
    프로필 사진을 왼쪽 끝에 두 줄에 걸쳐 세운다. */
 .h2h-rival {
     display: grid;
@@ -5577,14 +5602,14 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     color: var(--select-on-light);
 }
 
+/* 게임 화면은 그 자체로 한 덩어리라 노치나 테두리를 두르지 않는다 -
+   모서리를 깎으면 게임 화면 귀퉁이가 잘려 나간다. */
 .rider-stage {
     position: relative;
     margin-bottom: var(--space-page-bottom);
     background: #15201f;
-    border: 1px solid var(--color-border);
     overflow: hidden;
     height: min(860px, max(420px, calc(100dvh - 64px - var(--space-page-bottom))));
-    clip-path: var(--cut-14);
 }
 .rider-stage iframe {
     display: block;

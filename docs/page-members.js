@@ -181,7 +181,6 @@ function openMemberProfile(name) {
 
     const active = isActiveMember(m);
     const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : (m['퇴단일'] || null)) : null;
-    document.getElementById('mp-affiliation').textContent = active ? '캄몬스타즈' : '이전 멤버';
     document.getElementById('mp-period').textContent = m['입단일']
         ? m['입단일'] + ' ~ ' + (active ? '현재' : (m['퇴단일'] || '-')) : '-';
     const daysEl = document.getElementById('mp-days');

@@ -122,6 +122,40 @@ function histFormatMember(name, note) {
 }
 
 // 멤버 칩: 이름이 멤버 시트에 있으면 프로필 사진을 붙이고, 괄호 설명이 있으면 이름 뒤에 같이 보여준다.
+// 한 항목에 이름이 수십 개 붙는 날이 있다(단체 입단 등). 다섯까지만 펼쳐 두고
+// 나머지는 겹친 프로필 사진 + '+N명' 한 칸으로 접는다 - 누르면 펼쳐진다.
+const HIST_CHIP_VISIBLE = 5;
+const HIST_STACK_FACES = 3;      // '+N명' 칸에 겹쳐 보일 사진 수
+
+function histAvatarSrc(entry, members, avatarUrlFn) {
+    const name = typeof entry === 'string' ? entry : (entry && entry.name) || '';
+    const m = (members || []).find(x => x['이름'] === name);
+    return m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
+}
+
+function histMoreChipHtml(rest, members, avatarUrlFn, key) {
+    const faces = rest.slice(0, HIST_STACK_FACES).map(e => {
+        const url = histAvatarSrc(e, members, avatarUrlFn);
+        return url
+            ? `<img class="hist-stack-face" src="${histEscape(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-stack-face',textContent:'👤'}))">`
+            : `<span class="hist-stack-face">👤</span>`;
+    }).join('');
+    return `<button type="button" class="hist-chip hist-chip-more" data-hist-more="${key}"
+                onclick="histToggleMembers('${key}')" aria-expanded="false">
+                <span class="hist-stack">${faces}</span>
+                <span class="hist-chip-name">+${rest.length}명</span>
+            </button>`;
+}
+
+// 접어둔 이름을 펼친다. 한 번 펼치면 다시 접지 않는다 - 접을 일이 거의 없고,
+// 토글로 두면 눌렀다 닫히는 실수가 잦다.
+function histToggleMembers(key) {
+    const rest = document.querySelector(`[data-hist-rest="${key}"]`);
+    const btn = document.querySelector(`[data-hist-more="${key}"]`);
+    if (rest) rest.hidden = false;
+    if (btn) btn.remove();
+}
+
 function histMemberChipHtml(entry, members, avatarUrlFn) {
     const { name, note } = histParseMember(entry);
     const m = (members || []).find(x => x['이름'] === name);
@@ -175,8 +209,18 @@ function histItemHtml(item, opts) {
                 ${yt ? '<span class="hist-play" aria-hidden="true"></span>' : ''}
             </button>` : '';
     const members = (item.members || []).filter(Boolean);
-    const chips = members.length
-        ? `<div class="hist-chips">${members.map(n => histMemberChipHtml(n, opts.members, opts.avatarUrl)).join('')}</div>` : '';
+    const chip = n => histMemberChipHtml(n, opts.members, opts.avatarUrl);
+    let chips = '';
+    // 한 명만 숨기는 접기는 손해다 - '+1명' 칸이 이름 칸만큼 자리를 먹으면서 클릭만 늘어난다.
+    if (members.length && members.length <= HIST_CHIP_VISIBLE + 1) {
+        chips = `<div class="hist-chips">${members.map(chip).join('')}</div>`;
+    } else if (members.length) {
+        const shown = members.slice(0, HIST_CHIP_VISIBLE);
+        const rest = members.slice(HIST_CHIP_VISIBLE);
+        chips = `<div class="hist-chips">${shown.map(chip).join('')}`
+            + `<span class="hist-chips-rest" data-hist-rest="${key}" hidden>${rest.map(chip).join('')}</span>`
+            + `${histMoreChipHtml(rest, opts.members, opts.avatarUrl, key)}</div>`;
+    }
     const adminBar = opts.admin ? `
             <div class="hist-admin-bar">
                 <span class="hist-move">
