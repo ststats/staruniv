@@ -42,6 +42,10 @@ const EntryState = {
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     h2h: {},                 // "a|b" -> {w, l}  (받아온 맞대결)
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
+    // 포스터에 승률을 찍을지. 기본은 끔 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
+    // 물건이라 밖으로 돌아다닌다. 거기에 실제 선수 승부 예측을 박아 두면 성격이
+    // 달라지므로, 예측은 화면 안에서만 보고 포스터에는 일부러 안 넣는다.
+    posterProb: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -545,6 +549,7 @@ function entryDrawAvatar(ctx, img, name, x, y, d) {
 
 function entryPosterRows() {
     const players = entryPlayers();
+    const withProb = EntryState.posterProb;
     if (EntryState.mode === 'glad') {
         const [oa, ob] = EntryState.orders;
         const n = Math.max(oa.length, ob.length);
@@ -553,9 +558,18 @@ function entryPosterRows() {
         }));
     }
     return EntryState.matches.map(m => {
-        const wp = entryWinProb(m.a, m.b);
+        const wp = withProb ? entryWinProb(m.a, m.b) : null;
         return { a: players[m.a] || null, b: players[m.b] || null, p: wp ? wp.p : null };
     });
+}
+
+function entryTogglePosterProb() {
+    EntryState.posterProb = !EntryState.posterProb;
+    const el = document.getElementById('entry-poster-prob');
+    if (el) {
+        el.classList.toggle('on', EntryState.posterProb);
+        el.setAttribute('aria-pressed', String(EntryState.posterProb));
+    }
 }
 
 async function entrySavePoster() {
@@ -615,9 +629,12 @@ async function entrySavePoster() {
 
         ctx.textAlign = 'center';
         if (r.p === null) {
+            // 승률을 안 찍을 때는 티어를 가운데 둔다. 양쪽 티어가 같으면 한 번만 적는다.
+            const ta2 = r.a ? tierLabel(r.a.t) : '';
+            const tb2 = r.b ? tierLabel(r.b.t) : '';
             ctx.fillStyle = SUB;
-            ctx.font = '700 24px Pretendard, sans-serif';
-            ctx.fillText(`${i + 1}`, W / 2, cy + 9);
+            ctx.font = '700 22px Pretendard, sans-serif';
+            ctx.fillText(ta2 && ta2 === tb2 ? ta2 : [ta2, tb2].filter(Boolean).join('  ·  ') || `${i + 1}`, W / 2, cy + 9);
         } else {
             const pa = Math.round(r.p * 1000) / 10;
             const BW = 210, BH = 12, bx = W / 2 - BW / 2, by = cy + 8;
@@ -634,7 +651,7 @@ async function entrySavePoster() {
     ctx.fillStyle = SUB;
     ctx.font = '600 19px Pretendard, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('스타대학 자체 레이팅 기준 · 참고용', PAD, fy + 44);
+    ctx.fillText(EntryState.posterProb ? '스타대학 자체 레이팅 기준 예측 · 참고용' : '스타대학 · STARUNIV', PAD, fy + 44);
     ctx.textAlign = 'right';
     const asOf = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.asOf) || '';
     ctx.fillText(asOf, W - PAD, fy + 44);
