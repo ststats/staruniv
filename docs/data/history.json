@@ -1310,7 +1310,7 @@
       "id": "h-mu9jh0en",
       "date": "2026-06-03",
       "type": "broadcast",
-      "title": "스타합숙소",
+      "title": "캄몬합숙소",
       "desc": "2026-06-03 ~2026-06-07",
       "members": [],
       "youtube": "https://youtu.be/Cem7EYHDWOo?si=yh2vR4K0muN_iifa",
@@ -1354,6 +1354,156 @@
         "토마토"
       ],
       "youtube": "https://youtu.be/lY599_tJkrw?si=-F0J4piqgsp-dpdw",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jo7j8",
+      "date": "2026-07-04",
+      "type": "match",
+      "title": "뉴캄옥션 족암새퉤퉤퉤 결승",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "철구",
+        "시조새",
+        "비타밍",
+        "최세상",
+        "갱이다"
+      ],
+      "youtube": "https://youtu.be/5DvgTwZHEuY?si=iuHZj7feh2crqpeM",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jpx62",
+      "date": "2026-07-09",
+      "type": "broadcast",
+      "title": "낭니 오프교육",
+      "desc": "스승의 날 CK 공약",
+      "members": [
+        "낭니",
+        "김윤환"
+      ],
+      "youtube": "https://youtu.be/Ock1jKfcRao?si=ZXbgmTuvujgRGo2u",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jrrwk",
+      "date": "2026-07-11",
+      "type": "broadcast",
+      "title": "현실종겜",
+      "desc": "스승의 날 CK 공약",
+      "members": [
+        "주하랑",
+        "김윤환",
+        "김민철",
+        "먼진"
+      ],
+      "youtube": "https://youtu.be/PduVMpDwUrc?si=rbtqhCit57DanC1G",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jth29",
+      "date": "2026-07-13",
+      "type": "broadcast",
+      "title": "테란반 글램핑",
+      "desc": "스승의 날 CK 공약",
+      "members": [
+        "지두두"
+      ],
+      "youtube": "",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jus0b",
+      "date": "2026-07-14",
+      "type": "event",
+      "title": "시빌워",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/orATQAOCpw4?si=nhJPf3BUu-yXMUOv",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jw6h6",
+      "date": "2026-07-24",
+      "type": "broadcast",
+      "title": "힐링캠프",
+      "desc": "스승의 날 CK 공약",
+      "members": [
+        "토마토",
+        "김윤환",
+        "박준오",
+        "임조이",
+        "치리"
+      ],
+      "youtube": "https://youtu.be/5q7lh3qpRbk?si=C2JDCekFZnbpFDU0",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jyba3",
+      "date": "2026-07-30",
+      "type": "broadcast",
+      "title": "캄몬합숙소",
+      "desc": "2026-07-30 ~ 2026-8-01",
+      "members": [],
+      "youtube": "https://youtu.be/OP30_xl0d9o?si=vxZLPbTqOaL5uwAK",
+      "image": ""
+    },
+    {
+      "id": "h-mu9k2fbq",
+      "date": "2026-08-04",
+      "type": "broadcast",
+      "title": "캄몬합숙소",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/6j-dyjeCt8Q?si=KbUkO5tXv6Ef3v9o",
+      "image": ""
+    },
+    {
+      "id": "h-mu9k532w",
+      "date": "2026-08-24",
+      "type": "broadcast",
+      "title": "족구 스트리머 팀대전",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/q-b2uOhwZD8?si=ULWsWsygz_iiOkiH",
+      "image": ""
+    },
+    {
+      "id": "h-mu9k7eql",
+      "date": "2026-09-04",
+      "type": "match",
+      "title": "K-중만컵 8강",
+      "desc": "2026-08-02 ~ 2026-09-19",
+      "members": [],
+      "youtube": "https://youtu.be/7xSMbE_Uix8?si=u27nOn5kmY9JGDPS",
+      "image": "",
+      "ord": 1
+    },
+    {
+      "id": "h-mu9k8vio",
+      "date": "2026-09-05",
+      "type": "broadcast",
+      "title": "을왕리 야방",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/61m0pUKxtXo?si=U6FwCc18lsbHVe2P",
+      "image": ""
+    },
+    {
+      "id": "h-mu9ka45l",
+      "date": "2026-09-07",
+      "type": "broadcast",
+      "title": "할업사 낚시",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "김민철",
+        "토마토",
+        "먼진",
+        "주하랑"
+      ],
+      "youtube": "https://youtu.be/kHzcykL7FIo?si=tOuz1Urz4vD9vKnD",
       "image": ""
     }
   ],
@@ -1824,7 +1974,8 @@
         "박수범(코치)",
         "찌킹(선수)",
         "치리(선수)"
-      ]
+      ],
+      "ord": 0
     },
     "auto-join-2024-10-30": {
       "title": "",
