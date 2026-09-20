@@ -1235,6 +1235,126 @@
       "members": [],
       "youtube": "https://youtu.be/pKWjscMNR5I?si=dbUJWDBXYCERHb1o",
       "image": ""
+    },
+    {
+      "id": "h-mu9j1izt",
+      "date": "2026-05-07",
+      "type": "founding",
+      "title": "대학명 '캄몬스타즈'로 변경",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/MriCJCTlD3U?si=wZme0j45D6ipyr2R",
+      "image": ""
+    },
+    {
+      "id": "h-mu9j38op",
+      "date": "2026-05-09",
+      "type": "broadcast",
+      "title": "24시간 벌칙 방송",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/k64EXRqIgTU?si=IYC9YvCUd2lF0huK",
+      "image": ""
+    },
+    {
+      "id": "h-mu9j5r41",
+      "date": "2026-05-13",
+      "type": "event",
+      "title": "스승의 날 CK",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/4EMk8X6ZZAE?si=efFeO8BO9TNfIOVP",
+      "image": ""
+    },
+    {
+      "id": "h-mu9j73j6",
+      "date": "2026-05-14",
+      "type": "broadcast",
+      "title": "스승의 날 합방",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/FepZ8svCDq0?si=DtU8aED0twN49t_8",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jb2mz",
+      "date": "2026-05-20",
+      "type": "broadcast",
+      "title": "흉가 벌칙",
+      "desc": "캄몬 VS 엠비대 대학대전",
+      "members": [],
+      "youtube": "https://youtu.be/FJbb5-cX3Rs?si=MAoaV7_kuvx3PxpZ",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jdg60",
+      "date": "2026-06-01",
+      "type": "match",
+      "title": "스타워즈 4강",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/NeqyY8yGTp4?si=jgbNoN6yHrVt_m1W",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jepkk",
+      "date": "2026-06-02",
+      "type": "event",
+      "title": "캄몬 VS 씨나인 스타워즈 나락전",
+      "desc": "갯벌스타",
+      "members": [],
+      "youtube": "https://youtu.be/ycD_eTwxDN4?si=XrIByji41EyPhntm",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jh0en",
+      "date": "2026-06-03",
+      "type": "broadcast",
+      "title": "스타합숙소",
+      "desc": "2026-06-03 ~2026-06-07",
+      "members": [],
+      "youtube": "https://youtu.be/Cem7EYHDWOo?si=yh2vR4K0muN_iifa",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jib1s",
+      "date": "2026-06-13",
+      "type": "event",
+      "title": "김윤환 생일 대학대전",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/XJR01anzzI0?si=_cvhBev1SsLfqRTh",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jjrw7",
+      "date": "2026-06-18",
+      "type": "event",
+      "title": "촌캉스",
+      "desc": "스승의 날 CK 공약",
+      "members": [
+        "지두두",
+        "김윤환",
+        "지동원",
+        "소주양"
+      ],
+      "youtube": "https://youtu.be/ybyzIJgwn8E?si=451K37WwlQoxGBRn",
+      "image": ""
+    },
+    {
+      "id": "h-mu9jlo59",
+      "date": "2026-06-27",
+      "type": "broadcast",
+      "title": "놀이공원",
+      "desc": "스승의 날 CK 공약",
+      "members": [
+        "비타밍",
+        "김윤환",
+        "지동원",
+        "토마토"
+      ],
+      "youtube": "https://youtu.be/lY599_tJkrw?si=-F0J4piqgsp-dpdw",
+      "image": ""
     }
   ],
   "overrides": {
@@ -1641,7 +1761,7 @@
     "auto-leave-2026-05-04": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/zZt3lmoEiSQ?si=ByFNYMfAeAQDDjzH",
       "image": "",
       "members": [
         "이경민(감독)"
@@ -1668,7 +1788,7 @@
     "auto-leave-2026-06-28": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/KE_vKv-5w0s?si=MQ8roCCyAjOYnq81",
       "image": "",
       "members": [
         "파도튜브(코치)",
