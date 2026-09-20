@@ -191,25 +191,38 @@ async function entryLoadH2h(pids) {
 // 조작
 // ---------------------------------------------------------------------------
 function entryInitTeams() {
+    // 처음 들어오면 캄몬스타즈를 왼쪽에 올려 둔다 - 우리 사이트니까.
+    const list = entryTeamList();
+    if (!EntryState.teams[0] && list.includes('캄몬스타즈')) EntryState.teams[0] = '캄몬스타즈';
+    renderEntryTeamChips();
+}
+
+// 소속 칩 두 줄. 반대쪽이 이미 고른 소속은 눌러도 소용없으니 흐리게 두고 막는다.
+function renderEntryTeamChips() {
     const list = entryTeamList();
     [0, 1].forEach(side => {
-        const el = document.getElementById(side === 0 ? 'entry-team-a' : 'entry-team-b');
-        if (!el) return;
-        el.innerHTML = `<option value="">소속 선택</option>`
-            + list.map(t => `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`).join('');
-        if (EntryState.teams[side]) el.value = EntryState.teams[side];
+        const box = document.getElementById(side === 0 ? 'entry-chips-a' : 'entry-chips-b');
+        if (!box) return;
+        box.innerHTML = list.map(t => {
+            const on = EntryState.teams[side] === t;
+            const taken = EntryState.teams[1 - side] === t;
+            return `<button type="button" class="entry-team-chip${on ? ' active' : ''}"
+                ${taken ? 'disabled' : ''} aria-pressed="${on}"
+                onclick="entryPickTeam(${side},'${jsAttr(t)}')">${escapeHTML(t)}</button>`;
+        }).join('');
+        // 고른 칩이 줄 밖으로 밀려 있으면(소속이 열네 개라 휴대폰에서는 흔하다) 끌어와 보여준다
+        const on = box.querySelector('.entry-team-chip.active');
+        if (on) box.scrollTo({ left: Math.max(0, on.offsetLeft - 12), behavior: 'smooth' });
     });
-    // 처음 들어오면 캄몬스타즈를 왼쪽에 올려 둔다 - 우리 사이트니까.
-    if (!EntryState.teams[0] && list.includes('캄몬스타즈')) entryPickTeam(0, '캄몬스타즈');
 }
 
 function entryPickTeam(side, team) {
-    EntryState.teams[side] = team || null;
+    // 이미 고른 칩을 또 누르면 해제
+    EntryState.teams[side] = (EntryState.teams[side] === team) ? null : (team || null);
     EntryState.sel = [null, null];
     EntryState.matches = [];
     EntryState.orders = [[], []];
-    const el = document.getElementById(side === 0 ? 'entry-team-a' : 'entry-team-b');
-    if (el && el.value !== (team || '')) el.value = team || '';
+    renderEntryTeamChips();
     renderEntry();
 }
 
@@ -218,11 +231,7 @@ function entrySwapTeams() {
     EntryState.orders.reverse();
     EntryState.matches = EntryState.matches.map(m => ({ a: m.b, b: m.a }));
     EntryState.sel.reverse();
-    entryInitTeams();
-    [0, 1].forEach(side => {
-        const el = document.getElementById(side === 0 ? 'entry-team-a' : 'entry-team-b');
-        if (el) el.value = EntryState.teams[side] || '';
-    });
+    renderEntryTeamChips();
     renderEntry();
 }
 
@@ -295,16 +304,15 @@ function entryAutoFill() {
         entryRefreshProbs();
         return;
     }
-    const used = new Set();
+    // 같은 티어끼리만 짝짓는다. 한쪽에만 있는 티어는 아예 대진을 만들지 않는다 -
+    // 티어가 다른 사람을 억지로 붙이면 그건 편성이 아니라 그냥 남는 사람 처리다.
+    const byTier = {};
+    B.forEach(b => (byTier[String(b.t)] || (byTier[String(b.t)] = [])).push(b));
     const out = [];
     A.forEach(a => {
-        // 같은 티어 우선, 없으면 티어 거리가 가장 가까운 사람
-        const cands = B.filter(b => !used.has(b.pid));
-        if (!cands.length) return;
-        cands.sort((x, y) => Math.abs(tierIndex(x.t) - tierIndex(a.t)) - Math.abs(tierIndex(y.t) - tierIndex(a.t)));
-        const pick = cands[0];
-        used.add(pick.pid);
-        out.push({ a: a.pid, b: pick.pid });
+        const pool = byTier[String(a.t)];
+        if (!pool || !pool.length) return;
+        out.push({ a: a.pid, b: pool.shift().pid });
     });
     EntryState.matches = out;
     EntryState.sel = [null, null];
@@ -566,10 +574,7 @@ function entryPosterRows() {
 function entryTogglePosterProb() {
     EntryState.posterProb = !EntryState.posterProb;
     const el = document.getElementById('entry-poster-prob');
-    if (el) {
-        el.classList.toggle('on', EntryState.posterProb);
-        el.setAttribute('aria-pressed', String(EntryState.posterProb));
-    }
+    if (el) el.setAttribute('aria-pressed', String(EntryState.posterProb));
 }
 
 async function entrySavePoster() {

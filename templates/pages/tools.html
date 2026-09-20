@@ -76,21 +76,31 @@
             <span class="section-title-label">엔트리</span>
             <span class="entry-actions">
                 <button type="button" class="text-action" id="entry-reset" onclick="entryReset()"><span>초기화</span></button>
-                <button type="button" class="entry-toggle" id="entry-poster-prob" aria-pressed="false" onclick="entryTogglePosterProb()" title="포스터에 승률을 함께 찍습니다">포스터에 승률</button>
+                <button type="button" class="text-action entry-toggle" id="entry-poster-prob" aria-pressed="false" onclick="entryTogglePosterProb()" title="포스터에 승률을 함께 찍습니다"><span>포스터에 승률</span></button>
                 <button type="button" class="text-action" id="entry-save" onclick="entrySavePoster()"><span>포스터 저장</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
             </span>
         </div>
-        <div class="entry-bar">
-            <select class="entry-team-select" id="entry-team-a" aria-label="왼쪽 소속" onchange="entryPickTeam(0,this.value)"></select>
-            <button type="button" class="entry-swap" onclick="entrySwapTeams()" aria-label="좌우 바꾸기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
-            <select class="entry-team-select" id="entry-team-b" aria-label="오른쪽 소속" onchange="entryPickTeam(1,this.value)"></select>
+        {#- 소속 고르기: 사이트 어디에도 <select>를 안 쓴다(영상 탭의 채널 칩, 멀티뷰어의
+            멤버 칩과 같은 결). 위아래 두 줄로 A/B를 고르고, 줄은 옆으로 스크롤된다. #}
+        <div class="entry-teams">
+            <div class="entry-team-row">
+                <span class="entry-team-tag">A</span>
+                <div class="entry-team-chips tab-scroll" id="entry-chips-a" role="group" aria-label="왼쪽 소속"></div>
+            </div>
+            <div class="entry-team-row">
+                <span class="entry-team-tag entry-team-tag-b">B</span>
+                <div class="entry-team-chips tab-scroll" id="entry-chips-b" role="group" aria-label="오른쪽 소속"></div>
+            </div>
         </div>
         <div class="entry-modebar">
             <div class="filter-nav entry-mode" role="group" aria-label="대전 방식">
                 <button type="button" class="filter-item active" id="entry-mode-normal" aria-pressed="true" onclick="entrySetMode('normal')">1:1 대진</button>
                 <button type="button" class="filter-item" id="entry-mode-glad" aria-pressed="false" onclick="entrySetMode('glad')">검투사</button>
             </div>
-            <button type="button" class="entry-auto" onclick="entryAutoFill()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="entry-auto-label">자동 매치</span></button>
+            <div class="entry-modebar-right">
+                <button type="button" class="text-action" onclick="entrySwapTeams()"><span>좌우 바꾸기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
+                <button type="button" class="entry-auto" onclick="entryAutoFill()"><span id="entry-auto-label">자동 매치</span></button>
+            </div>
         </div>
         <div class="entry-layout">
             <div class="entry-rosters" id="entry-rosters"></div>
