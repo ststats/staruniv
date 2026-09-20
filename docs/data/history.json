@@ -99,7 +99,21 @@
       "type": "broadcast",
       "title": "첫 MT",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "이경민",
+        "몽군",
+        "수입뿌드",
+        "디임",
+        "졈니",
+        "앵지",
+        "토마토",
+        "임조이",
+        "효짱",
+        "한쪼니",
+        "모리",
+        "치리"
+      ],
       "youtube": "https://youtu.be/_1FjsDpUf0s?si=i3-F8UKCQIa1izlq",
       "image": ""
     },
@@ -130,11 +144,12 @@
         "김윤환",
         "이경민",
         "몽군",
-        "서리",
+        "주서리",
         "김성대",
         "지동원",
         "이유란",
-        "정윤종"
+        "정윤종",
+        "효짱"
       ],
       "youtube": "https://youtu.be/Qk8H63liFII?si=HsEqv3OkKr31R3zY",
       "image": ""
@@ -199,6 +214,96 @@
         "임조이"
       ],
       "youtube": "https://youtu.be/sveWh1Abl2o?si=TK4p--0s77oBWxGv",
+      "image": ""
+    },
+    {
+      "id": "h-mu97ug6f",
+      "date": "2025-01-15",
+      "type": "broadcast",
+      "title": "이경민 생일 술먹방",
+      "desc": "",
+      "members": [
+        "이경민",
+        "김윤환",
+        "정윤종",
+        "수입뿌드"
+      ],
+      "youtube": "https://youtu.be/8n_Rcmhzvvo?si=e5q__N4TiBeRIfrI",
+      "image": ""
+    },
+    {
+      "id": "h-mu982lgs",
+      "date": "2025-01-30",
+      "type": "broadcast",
+      "title": "설특집 전부치기",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "정윤종",
+        "앵지",
+        "임조이",
+        "효짱",
+        "한쪼니",
+        "모리",
+        "세나"
+      ],
+      "youtube": "https://youtu.be/NMpN0UPAzBY?si=BxOjIhRd8lv7osn2",
+      "image": ""
+    },
+    {
+      "id": "h-mu9843mu",
+      "date": "2025-02-04",
+      "type": "broadcast",
+      "title": "세모카세",
+      "desc": "",
+      "members": [
+        "세나",
+        "김윤환",
+        "이경민",
+        "정윤종"
+      ],
+      "youtube": "https://youtu.be/dQ-QcUegmWw?si=kdjPApe9ciP8L1om",
+      "image": ""
+    },
+    {
+      "id": "h-mu988mlu",
+      "date": "2025-02-06",
+      "type": "broadcast",
+      "title": "쪼징어게임2",
+      "desc": "",
+      "members": [
+        "한쪼니",
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "수입뿌드"
+      ],
+      "youtube": "https://youtu.be/9qq7ANI1r_M?si=pBmSaMNB6xcbMjj8",
+      "image": ""
+    },
+    {
+      "id": "h-mu98fmbs",
+      "date": "2025-02-07",
+      "type": "broadcast",
+      "title": "츠캄 MT",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "몽군",
+        "박준오",
+        "수입뿌드",
+        "앵지",
+        "토마토",
+        "임조이",
+        "효짱",
+        "한쪼니",
+        "모리",
+        "치리",
+        "세나"
+      ],
+      "youtube": "https://youtu.be/-Avr1XBR9lk?si=sDOp3H2hgjJwaK63",
       "image": ""
     }
   ],
