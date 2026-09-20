@@ -285,7 +285,7 @@
       "id": "h-mu98fmbs",
       "date": "2025-02-07",
       "type": "broadcast",
-      "title": "츠캄 MT",
+      "title": "MT",
       "desc": "",
       "members": [
         "김윤환",
@@ -304,6 +304,85 @@
         "세나"
       ],
       "youtube": "https://youtu.be/-Avr1XBR9lk?si=sDOp3H2hgjJwaK63",
+      "image": ""
+    },
+    {
+      "id": "h-mu98j6m9",
+      "date": "2025-02-17",
+      "type": "broadcast",
+      "title": "연봉협상",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "몽군",
+        "박준오",
+        "수입뿌드",
+        "졈니",
+        "앵지",
+        "토마토",
+        "임조이",
+        "효짱",
+        "한쪼니",
+        "모리",
+        "치리",
+        "세나"
+      ],
+      "youtube": "https://youtu.be/a3nEBqT1kG4?si=n7q96x0WlLc4wH8K",
+      "image": ""
+    },
+    {
+      "id": "h-mu98ni4c",
+      "date": "2025-02-25",
+      "type": "broadcast",
+      "title": "JPL2 프로필 촬영",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "몽군",
+        "박준오",
+        "수입뿌드",
+        "졈니",
+        "앵지",
+        "토마토",
+        "임조이",
+        "효짱",
+        "한쪼니",
+        "모리",
+        "치리",
+        "세나",
+        "진땅콩 T"
+      ],
+      "youtube": "https://youtu.be/LKhQyF5PJ1U?si=3pvyRkCQnjtGqsHT",
+      "image": ""
+    },
+    {
+      "id": "h-mu98qalt",
+      "date": "2025-03-13",
+      "type": "match",
+      "title": "츠캄 JPL2 첫 경기",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/jcVVnj3vGwE?si=xOvWEfitfeBz6mod",
+      "image": ""
+    },
+    {
+      "id": "h-mu98xwft",
+      "date": "2025-03-21",
+      "type": "broadcast",
+      "title": "코치진 술먹방",
+      "desc": "",
+      "members": [
+        "김윤환",
+        "이경민",
+        "정윤종",
+        "몽군",
+        "수입뿌드"
+      ],
+      "youtube": "https://youtu.be/Spuu2WhQub0?si=jxD6KTXOMDAZu2yF",
       "image": ""
     }
   ],
