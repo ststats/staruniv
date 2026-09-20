@@ -93,6 +93,10 @@
             </div>
         </div>
         <div class="entry-modebar">
+            <label class="entry-target-field">이름
+                <input type="text" id="entry-label-a" class="entry-label" maxlength="14" placeholder="A" onchange="entrySetLabel(0,this.value)" oninput="entrySetLabel(0,this.value)" aria-label="왼쪽 진영 이름">
+                <input type="text" id="entry-label-b" class="entry-label" maxlength="14" placeholder="B" onchange="entrySetLabel(1,this.value)" oninput="entrySetLabel(1,this.value)" aria-label="오른쪽 진영 이름">
+            </label>
             <label class="entry-target-field">경기 수
                 <input type="number" id="entry-target" class="entry-target" min="1" max="31" step="2" value="9" onchange="entrySetTarget(this.value)" aria-label="채워야 하는 경기 수">
             </label>

@@ -51,6 +51,8 @@ const EntryState = {
     teams: [null, null],     // 소속 이름
     matches: [],             // [{a, b}]  a/b는 선수 id
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
+    query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
+    labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
     h2h: {},                 // "a|b" -> {w, l}  (받아온 맞대결)
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
@@ -364,21 +366,59 @@ function entryScoreDist(ps) {
     return dist;
 }
 
+// 검색은 소속 안이 아니라 씬 전체를 뒤진다. 여기서 짜는 게 늘 대학대전인 것도 아니고
+// (개인대회·이벤트전·용병전도 있다) 엔트리에는 소속 밖 선수도 들어간다. 무엇보다
+// 엔트리를 짤 땐 이미 누굴 넣을지 알고 있어서 찍는 게 빠르다. 그래서 소속 칩은
+// 명단을 빨리 불러오는 지름길일 뿐, 반드시 골라야 하는 게 아니다.
+// 별명(en)도 같이 본다 - 본명과 방송 닉네임이 갈리는 선수가 많다.
+const ENTRY_SEARCH_MAX = 40;
+
+function entrySearch(q) {
+    const key = String(q || '').trim().toLowerCase();
+    if (!key) return [];
+    const players = entryPlayers();
+    return Object.entries(players)
+        .filter(([, p]) => {
+            if (String(p.tm || '').trim() === ENTRY_DORMANT) return false;
+            return [p.n, p.en, p.tm].filter(Boolean)
+                .some(v => String(v).toLowerCase().includes(key));
+        })
+        .map(([pid, p]) => ({ pid, ...p }))
+        .sort((a, b) => entrySeqIndex(a.t) - entrySeqIndex(b.t) || (a.k || 99) - (b.k || 99)
+            || String(a.n).localeCompare(String(b.n), 'ko'))
+        .slice(0, ENTRY_SEARCH_MAX);
+}
+
+function entrySetQuery(side, value) {
+    EntryState.query[side] = value;
+    renderEntryRosters();
+}
+
+function entryClearQuery(side) {
+    EntryState.query[side] = '';
+    renderEntryRosters();
+    const el = document.getElementById(side === 0 ? 'entry-q-a' : 'entry-q-b');
+    if (el) { el.value = ''; el.focus(); }
+}
+
 // ---------------------------------------------------------------------------
 // 그리기
 // ---------------------------------------------------------------------------
 // 명단 칩. 대진에 이미 몇 번 올라간 선수인지 숫자로 보여 준다 - 한 선수가 여러 판
 // 뛰는 게 정상이라(대학대전이 그렇다) '중복'이 아니라 '몇 경기'로 읽혀야 한다.
-function entryPlayerChipHtml(side, p) {
+function entryPlayerChipHtml(side, p, showTeam) {
     const sel = EntryState.sel[side] === p.pid;
     const used = EntryState.matches.filter(m => (side === 0 ? m.a : m.b) === p.pid).length;
     const badge = used ? `<span class="entry-chip-order">${used}</span>` : '';
+    // 검색 결과에서는 소속도 같이 보여 준다 - 씬 전체를 뒤지므로 어느 대학인지가 중요하다
+    const team = showTeam && p.tm ? `<span class="entry-chip-team">${escapeHTML(p.tm)}</span>` : '';
     return `<button type="button" class="entry-chip${sel ? ' picked' : ''}"
             onclick="entryTogglePlayer(${side},'${jsAttr(p.pid)}')">
         ${badge}
         ${avatarHtml(p.s || '', 'entry-chip-avatar')}
         <span class="entry-chip-name">${escapeHTML(p.n)}</span>
         ${p.r ? raceBadgeHtml(p.r) : ''}
+        ${team}
         <span class="entry-chip-tier">${escapeHTML(tierLabel(p.t))}</span>
     </button>`;
 }
@@ -389,12 +429,25 @@ function renderEntryRosters() {
     if (!EntryState.index) { box.innerHTML = '<div class="entry-empty">명단을 불러오는 중...</div>'; return; }
     box.innerHTML = [0, 1].map(side => {
         const team = EntryState.teams[side];
-        const list = entryRoster(team);
+        const q = EntryState.query[side];
+        const searching = !!String(q || '').trim();
+        const list = searching ? entrySearch(q) : entryRoster(team);
+        const head = searching
+            ? `검색 결과` : escapeHTML(team || '소속을 고르세요');
+        const empty = searching
+            ? '찾는 선수가 없습니다.'
+            : '위에서 소속을 고르거나 이름으로 찾으세요.';
         return `<div class="entry-col">
-            <div class="entry-col-head"><span class="entry-col-name">${escapeHTML(team || '소속을 고르세요')}</span><span class="entry-col-count">${list.length}명</span></div>
+            <div class="entry-col-head"><span class="entry-col-name">${head}</span><span class="entry-col-count">${list.length}명</span></div>
+            <div class="entry-col-search">
+                <input type="search" id="entry-q-${side === 0 ? 'a' : 'b'}" class="entry-search-input"
+                    placeholder="이름·대학으로 검색" aria-label="${side === 0 ? '왼쪽' : '오른쪽'} 선수 검색"
+                    value="${escapeHTML(q || '')}" oninput="entrySetQuery(${side}, this.value)">
+                ${searching ? `<button type="button" class="entry-search-clear" onclick="entryClearQuery(${side})" aria-label="검색어 지우기">×</button>` : ''}
+            </div>
             <div class="entry-col-body">${list.length
-                ? list.map(p => entryPlayerChipHtml(side, p)).join('')
-                : '<div class="entry-empty">위에서 소속을 고르면 명단이 나옵니다.</div>'}</div>
+                ? list.map(p => entryPlayerChipHtml(side, p, searching)).join('')
+                : `<div class="entry-empty">${empty}</div>`}</div>
         </div>`;
     }).join('');
 }
@@ -433,14 +486,39 @@ function entryMatchRowHtml(m, i) {
     </div>`;
 }
 
+// 한쪽의 이름. 직접 적은 게 있으면 그것, 없으면 고른 소속, 그것도 없으면 그 칸에
+// 올라온 선수들의 소속 중 가장 많은 것을 쓴다(용병 한둘이 섞여도 팀 이름은 그대로).
+// 양쪽이 같은 이름으로 떨어지면(둘 다 FA인 개인전 같은 경우) A팀/B팀으로 돌린다.
+function entryDerivedName(side) {
+    if (EntryState.teams[side]) return EntryState.teams[side];
+    const players = entryPlayers();
+    const count = {};
+    EntryState.matches.forEach(m => {
+        const p = players[side === 0 ? m.a : m.b];
+        const t = p && String(p.tm || '').trim();
+        if (t) count[t] = (count[t] || 0) + 1;
+    });
+    return Object.keys(count).sort((a, b) => count[b] - count[a])[0] || '';
+}
+
+function entrySideName(side) {
+    const typed = String(EntryState.labels[side] || '').trim();
+    if (typed) return typed;
+    const mine = entryDerivedName(side);
+    if (mine && mine !== entryDerivedName(1 - side)) return mine;
+    return mine && !EntryState.teams[side] ? (side === 0 ? 'A팀' : 'B팀') : (mine || (side === 0 ? 'A팀' : 'B팀'));
+}
+
+function entrySetLabel(side, value) {
+    EntryState.labels[side] = value;
+    renderEntryResult();
+}
+
 function renderEntryResult() {
     const box = document.getElementById('entry-result');
     if (!box) return;
-    const [ta, tb] = EntryState.teams;
-    if (!ta || !tb) { box.innerHTML = '<div class="entry-empty">양쪽 소속을 고르면 결과가 나옵니다.</div>'; return; }
-
     if (!EntryState.matches.length) {
-        box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>또는 <b>후보 전부</b>로 같은 티어 조합을 모두 올립니다.</div>';
+        box.innerHTML = '<div class="entry-empty">양쪽에서 선수를 하나씩 누르면 대진이 추가됩니다.<br>소속을 고르면 명단이 한 번에 뜨고, 아니면 이름으로 찾아 넣으면 됩니다.</div>';
         return;
     }
     // 경기 수를 넘어가면 아직 '후보를 늘어놓은' 상태로 본다. 그 수로 스코어 분포를
@@ -458,7 +536,7 @@ function renderEntryResult() {
         head = `<div class="entry-summary">
             <div class="entry-summary-head">매치 승리 확률</div>
             ${entryProbBarHtml(pWin)}
-            <div class="entry-summary-names"><span>${escapeHTML(ta)}</span><span>${escapeHTML(tb)}</span></div>
+            <div class="entry-summary-names"><span>${escapeHTML(entrySideName(0))}</span><span>${escapeHTML(entrySideName(1))}</span></div>
             <div class="entry-summary-note">${n}경기${n < target ? ` <b>(${target}경기 중 ${target - n}칸 빔)</b>` : ''} · 예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)} · 가장 잦은 결과 ${top.map(([k, v]) => `<b>${k}:${n - k}</b> ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
         </div>`;
     } else {
@@ -537,9 +615,9 @@ function entryTogglePosterProb() {
 }
 
 async function entrySavePoster() {
-    const [ta, tb] = EntryState.teams;
+    const ta = entrySideName(0); const tb = entrySideName(1);
     const rows = entryPosterRows();
-    if (!ta || !tb || !rows.length) { alert('양쪽 소속을 고르고 대진을 먼저 채워 주세요.'); return; }
+    if (!rows.length) { alert('대진을 먼저 만들어 주세요.'); return; }
 
     const W = ENTRY_POSTER_W;
     const PAD = 56, HEAD = 210, ROW = 108, FOOT = 74;

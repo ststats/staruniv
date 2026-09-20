@@ -6100,6 +6100,12 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-modebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .entry-modebar-right { display: flex; align-items: center; gap: 4px; }
 .entry-target-field { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-faint); }
+.entry-label {
+    width: 72px; height: 28px; padding: 0 8px; border: 0; background: var(--color-bg-subtle);
+    color: var(--color-text-main); clip-path: var(--cut-3);
+    font-family: inherit; font-size: var(--fs-meta); font-weight: 700;
+}
+.entry-label::placeholder { color: var(--color-text-faint); font-weight: 500; }
 .entry-target {
     width: 48px; height: 28px; padding: 0 6px; border: 0; background: var(--color-bg-subtle);
     color: var(--color-text-main); clip-path: var(--cut-3);
@@ -6118,6 +6124,21 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-col-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: var(--navy); color: var(--navy-on-text); }
 .entry-col-name { font-size: var(--fs-meta); font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entry-col-count { flex: none; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--navy-on-muted); }
+.entry-col-search { position: relative; padding: 8px 8px 0; }
+.entry-search-input {
+    width: 100%; height: 30px; padding: 0 26px 0 10px; border: 0;
+    background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-4);
+    font-family: inherit; font-size: var(--fs-meta); font-weight: 600;
+}
+.entry-search-input::placeholder { color: var(--color-text-faint); font-weight: 500; }
+.entry-search-input::-webkit-search-cancel-button { display: none; }
+.entry-search-clear {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 30px; padding: 0; border: 0;
+    background: transparent; color: var(--color-text-faint); font-size: 15px; line-height: 1;
+}
+.entry-search-clear:hover { color: var(--color-lose); }
+.entry-chip-team { flex: none; font-size: var(--fs-badge-sm); font-weight: 600; color: var(--color-text-faint); }
+.entry-chip.picked .entry-chip-team { color: rgba(255,255,255,.75); }
 .entry-col-body { display: flex; flex-direction: column; gap: 4px; max-height: 520px; padding: 8px; overflow-y: auto; }
 .entry-chip {
     position: relative; display: flex; align-items: center; gap: 6px; width: 100%;
@@ -6169,6 +6190,12 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 }
 @media (max-width: 575.98px) {
     .entry-col-body { max-height: 320px; }
+    /* 칸이 좁아 이름이 '이...'로 잘렸다. 두 줄로 흘려서 이름을 살린다 -
+       검색 결과에서는 소속이 같이 붙어 한 줄에 다 안 들어간다. */
+    .entry-chip { flex-wrap: wrap; row-gap: 2px; }
+    .entry-chip-name { flex: 1 1 100%; order: -1; padding-left: 28px; }
+    .entry-chip-avatar { position: absolute; top: 6px; left: 8px; }
+    .entry-chip-order { position: absolute; top: 6px; right: 8px; }
     .entry-match { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 10px 28px 10px 12px; }
     .entry-match-side-b { justify-content: flex-start; }
 }
