@@ -9,6 +9,7 @@
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
             <div class="sub-tab active" id="tab-tools-multiviewer" role="tab" tabindex="0" aria-selected="true" onclick="switchToolsView('multiviewer')">멀티뷰어</div>
+            <div class="sub-tab" id="tab-tools-entry" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('entry')">엔트리</div>
             <div class="sub-tab" id="tab-tools-rider" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('rider')">캄몬라이더</div>
             <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('external')">외부도구</div>
         </div>
@@ -66,7 +67,37 @@
         </div>
     </div>
 
-    {#- 2. 캄몬라이더 뷰
+    {#- 2. 엔트리 뷰
+        대학대전 엔트리를 짜 보는 판. 선수 명단·티어·레이팅은 상대전적 index.json 하나에 다
+        들어 있어서(이름·종족·티어·소속·숲ID·순위·레이팅 + 티어별 기준선) 이 탭을 처음 열 때
+        그 파일만 한 번 받는다. 맞대결 기록은 고른 선수의 샤드만 그때그때 더 받는다. #}
+    <div id="view-tools-entry" class="d-none">
+        <div class="section-title has-actions" data-en="ENTRY">
+            <span class="section-title-label">엔트리</span>
+            <span class="entry-actions">
+                <button type="button" class="text-action" id="entry-reset" onclick="entryReset()"><span>초기화</span></button>
+                <button type="button" class="text-action" id="entry-save" onclick="entrySavePoster()"><span>포스터 저장</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
+            </span>
+        </div>
+        <div class="entry-bar">
+            <select class="entry-team-select" id="entry-team-a" aria-label="왼쪽 소속" onchange="entryPickTeam(0,this.value)"></select>
+            <button type="button" class="entry-swap" onclick="entrySwapTeams()" aria-label="좌우 바꾸기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
+            <select class="entry-team-select" id="entry-team-b" aria-label="오른쪽 소속" onchange="entryPickTeam(1,this.value)"></select>
+        </div>
+        <div class="entry-modebar">
+            <div class="filter-nav entry-mode" role="group" aria-label="대전 방식">
+                <button type="button" class="filter-item active" id="entry-mode-normal" aria-pressed="true" onclick="entrySetMode('normal')">1:1 대진</button>
+                <button type="button" class="filter-item" id="entry-mode-glad" aria-pressed="false" onclick="entrySetMode('glad')">검투사</button>
+            </div>
+            <button type="button" class="entry-auto" onclick="entryAutoFill()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="entry-auto-label">자동 매치</span></button>
+        </div>
+        <div class="entry-layout">
+            <div class="entry-rosters" id="entry-rosters"></div>
+            <div class="entry-result" id="entry-result"></div>
+        </div>
+    </div>
+
+    {#- 3. 캄몬라이더 뷰
         자체 제작 레이싱 게임(docs/calmmon-rider.html)을 그대로 끼워 넣는다. 게임은 스타일/스크립트/
         스프라이트 이미지까지 전부 들어있는 완전한 단독 페이지라, 사이트 CSS와 섞이지 않게 iframe으로
         띄우는 게 제일 안전하다(게임을 새 버전으로 갈아끼울 때도 그 파일만 덮어쓰면 끝).
@@ -86,7 +117,7 @@
         </div>
     </div>
 
-    <!-- 3. 외부도구 뷰 (도구/사이트로 구분) -->
+    <!-- 4. 외부도구 뷰 (도구/사이트로 구분) -->
     <div id="view-tools-external" class="d-none">
         <div class="section-title" data-en="TOOLS"><span class="section-title-label">도구</span></div>
         <div class="tool-grid" id="tools-grid-extTools"></div>
@@ -102,4 +133,5 @@
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('soop.js') }}"></script>
 <script src="{{ asset_url('page-tools.js') }}"></script>
+<script src="{{ asset_url('page-entry.js') }}"></script>
 {% endblock %}

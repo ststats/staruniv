@@ -6,6 +6,7 @@
 
 const TOOLS_TABS = {
     multiviewer: ['tab-tools-multiviewer', 'view-tools-multiviewer'],
+    entry: ['tab-tools-entry', 'view-tools-entry'],
     rider: ['tab-tools-rider', 'view-tools-rider'],
     external: ['tab-tools-external', 'view-tools-external'],
 };
@@ -125,6 +126,8 @@ function switchToolsView(viewType, skipHashUpdate) {
     } else if (wasRider) {
         riderSuspend();
     }
+    // 엔트리는 index.json(135KB)을 받아야 그릴 수 있다. 이 탭을 실제로 열 때 한 번만 받는다.
+    if (viewType === 'entry' && typeof entryEnsureLoaded === 'function') entryEnsureLoaded();
     if (!skipHashUpdate) updateToolsHash();
 }
 

@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=df3827bef1">
+    <link rel="stylesheet" href="style.css?v=e4a124abec">
     <meta name="site-data-version" content="f8745ef991">
 </head>
 <body><header class="top-navbar">
@@ -60,6 +60,7 @@
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
             <div class="sub-tab active" id="tab-tools-multiviewer" role="tab" tabindex="0" aria-selected="true" onclick="switchToolsView('multiviewer')">멀티뷰어</div>
+            <div class="sub-tab" id="tab-tools-entry" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('entry')">엔트리</div>
             <div class="sub-tab" id="tab-tools-rider" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('rider')">캄몬라이더</div>
             <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" onclick="switchToolsView('external')">외부도구</div>
         </div>
@@ -113,6 +114,31 @@
         </div>
         </div>
     </div>
+    <div id="view-tools-entry" class="d-none">
+        <div class="section-title has-actions" data-en="ENTRY">
+            <span class="section-title-label">엔트리</span>
+            <span class="entry-actions">
+                <button type="button" class="text-action" id="entry-reset" onclick="entryReset()"><span>초기화</span></button>
+                <button type="button" class="text-action" id="entry-save" onclick="entrySavePoster()"><span>포스터 저장</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
+            </span>
+        </div>
+        <div class="entry-bar">
+            <select class="entry-team-select" id="entry-team-a" aria-label="왼쪽 소속" onchange="entryPickTeam(0,this.value)"></select>
+            <button type="button" class="entry-swap" onclick="entrySwapTeams()" aria-label="좌우 바꾸기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
+            <select class="entry-team-select" id="entry-team-b" aria-label="오른쪽 소속" onchange="entryPickTeam(1,this.value)"></select>
+        </div>
+        <div class="entry-modebar">
+            <div class="filter-nav entry-mode" role="group" aria-label="대전 방식">
+                <button type="button" class="filter-item active" id="entry-mode-normal" aria-pressed="true" onclick="entrySetMode('normal')">1:1 대진</button>
+                <button type="button" class="filter-item" id="entry-mode-glad" aria-pressed="false" onclick="entrySetMode('glad')">검투사</button>
+            </div>
+            <button type="button" class="entry-auto" onclick="entryAutoFill()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="entry-auto-label">자동 매치</span></button>
+        </div>
+        <div class="entry-layout">
+            <div class="entry-rosters" id="entry-rosters"></div>
+            <div class="entry-result" id="entry-result"></div>
+        </div>
+    </div>
     <div id="view-tools-rider" class="d-none">
         <div class="section-title has-actions" data-en="CALMMON RIDER">
             <span class="section-title-label">캄몬라이더</span>
@@ -126,7 +152,7 @@
         </div>
     </div>
 
-    <!-- 3. 외부도구 뷰 (도구/사이트로 구분) -->
+    <!-- 4. 외부도구 뷰 (도구/사이트로 구분) -->
     <div id="view-tools-external" class="d-none">
         <div class="section-title" data-en="TOOLS"><span class="section-title-label">도구</span></div>
         <div class="tool-grid" id="tools-grid-extTools"></div>
@@ -145,7 +171,8 @@
 <script src="mv-shared.js?v=095cbe3ddb"></script>
 <script src="core.js?v=bcdad8866d"></script>
 <script src="soop.js?v=68531e35cd"></script>
-<script src="page-tools.js?v=97e60c5cbb"></script>
+<script src="page-tools.js?v=3c82d190b3"></script>
+<script src="page-entry.js?v=a967aa0026"></script>
 
 </body>
 </html>
