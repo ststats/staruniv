@@ -1185,6 +1185,16 @@
       ],
       "youtube": "https://youtu.be/qZoD_Fp2D88?si=fkmQYGMVNUDScdtW",
       "image": ""
+    },
+    {
+      "id": "h-mu9ihl5y",
+      "date": "2026-03-26",
+      "type": "broadcast",
+      "title": "츠캄 VS JSA 풋살",
+      "desc": "",
+      "members": [],
+      "youtube": "https://youtu.be/02Hk3X6p23g?si=6xch0tyeGM32nPXB",
+      "image": ""
     }
   ],
   "overrides": {
@@ -1504,7 +1514,7 @@
     "auto-leave-2026-01-14": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/ThscazOdcqY?si=-CPOe5vVTWfst7Ll",
       "image": "",
       "members": [
         "정윤종(전력분석관)"
