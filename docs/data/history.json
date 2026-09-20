@@ -1041,12 +1041,14 @@
         "토마토",
         "다예",
         "햇살",
+        "치리",
         "주하랑",
         "소주양",
-        "치리",
         "임조이",
         "진땅콩",
-        "박쭈이"
+        "박쭈이",
+        "지동원",
+        "수입뿌드"
       ],
       "youtube": "https://youtu.be/S0lgphpmiGg?si=gLsbG5goDV3LNmGU",
       "image": ""
@@ -1061,8 +1063,8 @@
         "이경민",
         "김윤환",
         "토마토",
-        "주하랑",
         "치리",
+        "주하랑",
         "진땅콩"
       ],
       "youtube": "https://youtu.be/UcHyZ9K4koA?si=fTxULwaAnYQDM8kS",
@@ -1079,9 +1081,9 @@
         "토마토",
         "다예",
         "햇살",
+        "치리",
         "주하랑",
         "소주양",
-        "치리",
         "임조이",
         "박쭈이",
         "수입뿌드"
@@ -1119,14 +1121,6 @@
       "members": [
         "김윤환",
         "이경민",
-        "조일장",
-        "황병영",
-        "박준오",
-        "박수범",
-        "배성흠",
-        "지동원",
-        "파도튜브",
-        "수입뿌드",
         "토마토",
         "햇살",
         "소주양",
@@ -1134,7 +1128,15 @@
         "치리",
         "임조이",
         "먼진",
-        "진땅콩"
+        "진땅콩",
+        "조일장",
+        "황병영",
+        "박준오",
+        "박수범",
+        "배성흠",
+        "지동원",
+        "파도튜브",
+        "수입뿌드"
       ],
       "youtube": "https://youtu.be/uxMhoaZMNx4?si=uF184J6ZcqIDBw3b",
       "image": ""
@@ -1148,11 +1150,11 @@
       "members": [
         "김윤환",
         "이경민",
-        "지동원",
         "주하랑",
         "소주양",
         "치리",
-        "진땅콩"
+        "진땅콩",
+        "지동원"
       ],
       "youtube": "https://youtu.be/BYfilwm-Sdk?si=KEwfIOeO-T8Y-k37",
       "image": ""
@@ -1192,7 +1194,20 @@
       "type": "broadcast",
       "title": "츠캄 VS JSA 풋살",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "박준오",
+        "사테",
+        "지동원",
+        "배성흠",
+        "파도튜브",
+        "지두두",
+        "찌킹",
+        "먼진",
+        "정영재",
+        "김성대",
+        "시조새"
+      ],
       "youtube": "https://youtu.be/02Hk3X6p23g?si=6xch0tyeGM32nPXB",
       "image": ""
     },
@@ -1202,7 +1217,19 @@
       "type": "broadcast",
       "title": "츠캄 VS JSA 스보라",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "토마토",
+        "찌킹",
+        "주하랑",
+        "소주양",
+        "먼진",
+        "아리송이",
+        "박수범",
+        "지동원",
+        "배성흠",
+        "시조새"
+      ],
       "youtube": "https://youtu.be/EonP6znz-x8?si=DSqx2pXyIHJ5kbOk",
       "image": ""
     },
@@ -1212,7 +1239,16 @@
       "type": "event",
       "title": "수장CK",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "이경민",
+        "철구",
+        "김봉준",
+        "시조새",
+        "기뉴다",
+        "흑운장",
+        "전태규"
+      ],
       "youtube": "https://youtu.be/-o4QGWh178g?si=dD6GehkDgf0w3nIC",
       "image": ""
     },
@@ -1222,7 +1258,20 @@
       "type": "event",
       "title": "츠캄 VS 뉴캣슬 대학대전",
       "desc": "빌드실명제 도입 후 첫 재판",
-      "members": [],
+      "members": [
+        "먼진",
+        "박준오",
+        "임조이",
+        "김윤환",
+        "아리송이",
+        "이경민",
+        "찌킹",
+        "배성흠",
+        "소주양",
+        "사테",
+        "진땅콩",
+        "파도튜브"
+      ],
       "youtube": "https://youtu.be/xmZxsrwz8cY?si=ap1JIBpDJUZzu7eQ",
       "image": ""
     },
@@ -1232,7 +1281,29 @@
       "type": "broadcast",
       "title": "츠캄 시즌4 MT",
       "desc": "2026-04-29 ~ 2026-04-30",
-      "members": [],
+      "members": [
+        "김윤환",
+        "이경민",
+        "토마토",
+        "지두두",
+        "햇살",
+        "찌킹",
+        "치리",
+        "주하랑",
+        "소주양",
+        "임조이",
+        "비타밍",
+        "아리송이",
+        "먼진",
+        "진땅콩",
+        "낭니",
+        "박준오",
+        "사테",
+        "박수범",
+        "지동원",
+        "배성흠",
+        "파도튜브"
+      ],
       "youtube": "https://youtu.be/pKWjscMNR5I?si=dbUJWDBXYCERHb1o",
       "image": ""
     },
@@ -1252,7 +1323,18 @@
       "type": "broadcast",
       "title": "24시간 벌칙 방송",
       "desc": "",
-      "members": [],
+      "members": [
+        "김윤환",
+        "지두두",
+        "찌킹",
+        "소주양",
+        "비타밍",
+        "아리송이",
+        "사테",
+        "지동원",
+        "배성흠",
+        "파도튜브"
+      ],
       "youtube": "https://youtu.be/k64EXRqIgTU?si=IYC9YvCUd2lF0huK",
       "image": ""
     },
@@ -1333,7 +1415,7 @@
         "박수범",
         "지동원",
         "배성흠",
-        "피도튜브",
+        "파도튜브",
         "토마토",
         "지두두",
         "햇살",
@@ -1420,7 +1502,7 @@
         "아리송이",
         "토마토",
         "찌킹",
-        "임조"
+        "임조이"
       ],
       "youtube": "https://youtu.be/XJR01anzzI0?si=_cvhBev1SsLfqRTh",
       "image": ""
@@ -1615,8 +1697,8 @@
       "members": [
         "김윤환",
         "박준오",
-        "왜냐맨",
         "배성흠",
+        "왜냐맨",
         "지두두",
         "주하랑",
         "먼진",
@@ -1638,9 +1720,9 @@
         "박준오",
         "사테",
         "박수범",
-        "왜냐맨",
         "지동원",
         "배성흠",
+        "왜냐맨",
         "남덕선",
         "토마토",
         "지두두",
@@ -1701,8 +1783,8 @@
         "남덕선",
         "지두두",
         "햇살",
-        "소주양",
         "주하랑",
+        "소주양",
         "임조이",
         "비타밍",
         "아리송이",
@@ -1721,7 +1803,7 @@
     "auto-join-2024-07-09": {
       "title": "디임, 졈니 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/nAMxXANHrjs?si=O787Qr8QklH0kUML",
       "image": "",
       "members": [
         "디임(선수)",
@@ -1731,7 +1813,7 @@
     "auto-join-2024-07-12": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/XP1lPYf3jOk?si=_hGKxpheNekRV2dC",
       "image": "",
       "members": [
         "앵지(선수)"
@@ -1740,7 +1822,7 @@
     "auto-join-2024-07-17": {
       "title": "토마토, 임조이 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/8-LAzyp5JOM?si=Fce3Auv_uiULABPh",
       "image": "",
       "members": [
         "토마토(선수)",
@@ -1761,7 +1843,7 @@
       "ord": 1,
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/Nac05jgNv1M?si=QvVK-eaD6AdwSwNn",
       "image": "",
       "members": [
         "킹지(유스)"
@@ -1770,7 +1852,7 @@
     "auto-join-2024-08-07": {
       "title": "효짱, 한쪼니 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/PMIdwfge8j8?si=WDDKK5pzfLlK2nRk",
       "image": "",
       "members": [
         "효짱(유스)",
@@ -1780,7 +1862,7 @@
     "auto-join-2024-08-17": {
       "title": "몽군, 모리 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/rPbrRLr25a8?si=WKGzSoBfKWMOx78a",
       "image": "",
       "members": [
         "몽군(코치)",
@@ -1790,7 +1872,7 @@
     "auto-join-2024-08-19": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/1tT5UDqj_Cg?si=WIxY6_KaYp8VgEz_",
       "image": "",
       "members": [
         "치리(선수)"
@@ -1818,7 +1900,7 @@
     "auto-join-2024-09-30": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/53BKLNYmSNs?si=IbyaIMM_DsY8FgzJ",
       "image": "",
       "members": [
         "수입뿌드(코치)"
@@ -1827,7 +1909,7 @@
     "auto-join-2024-10-18": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/84yuQx7bSDA?si=SAhFIyz4dbDmQIW-",
       "image": "",
       "members": [
         "박준오(코치)"
@@ -1845,7 +1927,7 @@
     "auto-join-2024-11-02": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/TIuSsn_Ip5g?si=pq3z3tIdFO829KQT",
       "image": "",
       "members": [
         "세나(선수)"
@@ -1863,7 +1945,7 @@
     "auto-join-2025-02-21": {
       "title": "진땅콩, 송혜림 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/_E9hH_ZPXAw?si=QXTjtN16YjxKHZF0",
       "image": "",
       "members": [
         "진땅콩 T(인턴)",
@@ -1873,7 +1955,7 @@
     "auto-join-2025-02-28": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/XsD-pqt3Nho?si=RWABoa2YSlyoiWFI",
       "image": "",
       "members": [
         "다예(선수)"
@@ -1882,7 +1964,7 @@
     "auto-join-2025-03-06": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/t95Kc97OrqQ?si=oyyGaezIfPDvjAbs",
       "image": "",
       "members": [
         "막내현진(유스)"
@@ -1909,7 +1991,7 @@
     "auto-leave-2025-07-14": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/oP1yt9WV6tc?si=9apXLfTXTupZSsAc",
       "image": "",
       "members": [
         "몽군(코치)",
@@ -1923,13 +2005,12 @@
     "auto-join-2025-07-26": {
       "title": "황병영, 지동원 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/X2v4tFliNLQ?si=FMCi4y-_5oJLaLnI",
       "image": "",
       "members": [
         "황병영(코치)",
         "지동원(코치)"
-      ],
-      "hidden": false
+      ]
     },
     "auto-join-2025-07-27": {
       "title": "진땅콩 재입단",
@@ -1943,7 +2024,7 @@
     "auto-join-2025-08-04": {
       "title": "조일장, 두디 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/KtZ4re55JpI?si=w9U9Fbr0Ommn_DHK",
       "image": "",
       "members": [
         "조일장(코치)",
@@ -1953,7 +2034,7 @@
     "auto-join-2025-08-05": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/SoaXJEvurPQ?si=Scu69Z5AFBn47It6",
       "image": "",
       "members": [
         "주하랑(선수)"
@@ -1962,7 +2043,7 @@
     "auto-join-2025-08-07": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/wJUy2V_phes?si=nqboL3KL4wMiiBK-",
       "image": "",
       "members": [
         "햇살(선수)"
@@ -1971,23 +2052,23 @@
     "auto-join-2025-09-24": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/BROa1Ow9K68?si=CuaP_VpeG-aGwtOr",
       "image": "",
       "members": [
         "소주양(선수)"
       ]
     },
     "auto-leave-2025-10-29": {
+      "ord": 0,
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/u8akmF-WyJ0?si=xfij8_i9ihplSoB9",
       "image": "",
       "members": [
         "두디(선수)",
         "모리(선수)",
         "막내현진(선수)"
-      ],
-      "ord": 0
+      ]
     },
     "auto-join-2025-11-03": {
       "title": "",
@@ -2001,7 +2082,7 @@
     "auto-join-2025-11-15": {
       "title": "연또, 박쭈이, 정유랭 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/3nt_3kiQM30?si=Zf00wVSrr7u-nuAc",
       "image": "",
       "members": [
         "연또(인턴)",
@@ -2048,7 +2129,7 @@
     "auto-join-2026-01-17": {
       "title": "배성흠, 박수범, 먼진 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/c7MKzCW4TVw?si=NmNNGmEwGk6Yc_nB",
       "image": "",
       "members": [
         "배성흠(코치)",
@@ -2070,7 +2151,7 @@
     "auto-join-2026-03-16": {
       "title": "",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/ts2d7YEBykQ?si=Is1TJ_E8rPGsHIYd",
       "image": "",
       "members": [
         "비타밍(선수)"
@@ -2079,7 +2160,7 @@
     "auto-join-2026-03-19": {
       "title": "지두두, 아리송이 입단",
       "desc": "",
-      "youtube": "",
+      "youtube": "https://youtu.be/vN-MN3XFGk8?si=_DED5oARG5E9AMYD",
       "image": "",
       "members": [
         "지두두(선수)",
