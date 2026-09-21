@@ -53,7 +53,8 @@ const EntryState = {
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
     labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
-    period: 'all',           // 맞대결 기간(ENTRY_PERIODS)
+    period: '90',            // 맞대결 기간(ENTRY_PERIODS). 기본은 최근 90일 - 옛날 천적
+                             // 관계보다 지금 폼이 엔트리를 짜는 데 쓸모 있다.
     rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
     h2hCache: {},            // "기간|a|b" -> {w, l}
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
@@ -198,6 +199,13 @@ async function entryLoadH2h(pids) {
     await Promise.all([...new Set(pids)].filter(pid => !EntryState.rows[pid]).map(async pid => {
         try { EntryState.rows[pid] = await entryLoadPlayerRows(pid); } catch (e) { EntryState.rows[pid] = []; }
     }));
+}
+
+// '최근 90일 전적'처럼 전적 위에 작게 적을 이름
+function entryPeriodLabel() {
+    if (EntryState.period === 'all') return '통산 전적';
+    const found = ENTRY_PERIODS.find(([k]) => k === EntryState.period);
+    return `${found ? found[1] : '최근'} 전적`;
 }
 
 function entrySinceKey() {
@@ -486,9 +494,10 @@ function entryMatchRowHtml(m, i) {
     const has = !!(wp && wp.n);
     const pct = has ? (wp.w / wp.n) * 100 : 0;
     // 상대전적 스코어판과 같은 규칙으로 왼쪽 수는 승리 색, 오른쪽 수는 패배 색
-    const rec = has
-        ? `<span class="entry-vs-num is-a">${wp.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${wp.l}</span>`
-        : '<span class="entry-match-none">맞대결 없음</span>';
+    const rec = `<span class="entry-rec-label">${escapeHTML(entryPeriodLabel())}</span>`
+        + (has
+            ? `<span class="entry-rec-nums"><span class="entry-vs-num is-a">${wp.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${wp.l}</span></span>`
+            : '<span class="entry-match-none">맞대결 없음</span>');
     const sim = wp
         ? `<div class="entry-match-sim">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</div>`
         : '';
@@ -710,7 +719,7 @@ async function entrySavePoster() {
     ctx.fillText('VS', W / 2, 126);
     ctx.fillStyle = 'rgba(255,255,255,.6)';
     ctx.font = '600 20px Pretendard, sans-serif';
-    ctx.fillText(`${rows.length}경기`, W / 2, 170);
+    ctx.fillText(`${rows.length}경기 · ${entryPeriodLabel()}`, W / 2, 170);
 
     rows.forEach((r, i) => {
         const y = HEAD + i * ROW;
