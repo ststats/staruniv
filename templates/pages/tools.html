@@ -81,7 +81,6 @@
                     <span class="section-title-label">대진표</span>
                     <span class="title-count" id="entry-count">0경기</span>
                     <span class="entry-actions">
-                        <button type="button" class="text-action entry-action-main" onclick="entryAutoFill()">같은 티어 후보 뽑기</button>
                         <button type="button" class="text-action" onclick="entrySwapTeams()">진영 교체</button>
                         <button type="button" class="text-action" onclick="entryReset()">비우기</button>
                         <button type="button" class="text-action" id="entry-poster-prob" aria-pressed="false" onclick="entryTogglePosterProb()" title="포스터에 예상 승률을 함께 찍습니다">포스터에 승률</button>
@@ -107,7 +106,12 @@
             </div>
 
             <div class="entry-picker">
-                <div class="section-title" data-en="PLAYERS"><span class="section-title-label">선수 고르기</span></div>
+                <div class="section-title has-actions" data-en="PLAYERS">
+                    <span class="section-title-label">선수 고르기</span>
+                    <span class="entry-actions">
+                        <button type="button" class="text-action" onclick="entryAutoFill()">같은 티어 후보 뽑기</button>
+                    </span>
+                </div>
                 <div class="entry-sides">
                     {%- for side, key, name in [(0, 'a', 'A'), (1, 'b', 'B')] %}
                     <div class="entry-side">

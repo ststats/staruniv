@@ -444,23 +444,26 @@ function entrySetQuery(side, value) {
 // ---------------------------------------------------------------------------
 
 // 종족·티어 뱃지는 사이트 공용(.tag-badge)을 그대로 쓴다.
-function entryBadgesHtml(p) {
-    return `${p.r ? raceBadgeHtml(p.r) : ''}`
-        + `${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}`;
+function entryRaceBadgeHtml(p) { return p.r ? raceBadgeHtml(p.r) : ''; }
+
+function entryTierBadgeHtml(p) {
+    return (p.t !== undefined && p.t !== '')
+        ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : '';
 }
 
+function entryBadgesHtml(p) { return entryRaceBadgeHtml(p) + entryTierBadgeHtml(p); }
+
 // 선수 한 줄. 프로필 사진은 넣지 않는다 - 이름 길이가 제각각이라 사진까지 붙이면
-// 뱃지 줄이 들쭉날쭉해진다. 오른쪽 끝에는 이미 대진에 들어간 횟수만 적는다.
+// 뱃지 줄이 들쭉날쭉해진다. 종족은 이름 왼쪽에, 티어는 줄 오른쪽 끝에 맞춘다.
 function entryPlayerItemHtml(side, p, showTeam) {
     const picked = EntryState.sel[side] === p.pid;
-    const used = EntryState.matches.filter(m => (side === 0 ? m.a : m.b) === p.pid).length;
     const team = showTeam && p.tm ? `<span class="h2h-suggest-team">${escapeHTML(p.tm)}</span>` : '';
     return `<button type="button" class="h2h-suggest-item${picked ? ' is-picked' : ''}" aria-pressed="${picked}"
             onclick="entryTogglePlayer(${side},'${jsAttr(p.pid)}')">
+        ${entryRaceBadgeHtml(p)}
         <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
-        ${entryBadgesHtml(p)}
         ${team}
-        ${used ? `<span class="h2h-suggest-count is-used">×${used}</span>` : ''}
+        ${entryTierBadgeHtml(p)}
     </button>`;
 }
 
