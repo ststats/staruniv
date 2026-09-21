@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>어드민 - 스타대학</title>
+<link rel="icon" type="image/webp" href="images/파비콘.webp">
+
+<!--
+    이 관리자 페이지는 사이트가 실제로 쓰는 style.css / calendar.js / holidays.json을
+    그대로 링크해서 씁니다(복사본 아님) - 그래서 사이트 디자인이 바뀌면 이 페이지도
+    자동으로 같이 바뀝니다. 사이트 본편(index.html)과 동일한 상단바 + 페이지 전환
+    구조(.top-navbar/.page-section, switchPage)를 그대로 재사용해서, 나중에 다른
+    탭(홈/멤버/전적/방송통계/도구)에도 각자의 관리 기능을 이어서 채워 넣을 수 있게
+    했습니다. 일정·메뉴 노출·도구 링크를 관리하며, 멤버·전적·방송통계 편집은 제공하지 않습니다.
+    공개 데이터는 토큰 없이 조회하고, 저장하려면 GitHub 연동이 필요합니다.
+      1) calendar.json / nav.json / tools.json 불러오기·저장하기
+      2) 일정 추가/수정/삭제 및 캘린더 이미지 생성
+       (calendar.js의 calRenderTodaySchedules/calRenderSelectedDateSchedules가
+        각 카드를 만들 때 window.calCardExtra가 있으면 그 결과를 카드 안에
+        추가로 넣어주도록 훅이 나 있어서, calendar.js 자체는 손대지 않고
+        이 파일에서만 편집 버튼을 끼워넣습니다.)
+-->
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=88ab67acba">
+<script>
+    try {
+        const theme = localStorage.getItem('staruniv-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.bsTheme = theme;
+    } catch (_) {}
+</script>
+<!-- html2canvas: 저장 시 "오늘의 일정"+"이달의 일정" 캡처용 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+}
+.admin-layout {
+    display: flex;
+    gap: var(--space-block-gap);
+    align-items: flex-start;
+    width: 100%;
+    min-width: 0;
+}
+.admin-main {
+    flex: 1 1 700px;
+    min-width: 0;
+    width: auto;
+    order: 0;
+}
+.admin-main .cal-main-layout {
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.admin-main .cal-calendar-area {
+    min-width: 0;
+}
+.admin-main > .cal-today-card-wrapper {
+    margin-bottom: var(--space-block-gap);
+}
+.admin-side {
+    min-width: 0;
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-stack-gap);
+    order: 1;
+}
+/* 연혁 편집 폼은 목록이 길어서, 사이트의 선택 사이드바처럼 화면에 붙여 따라다니게 한다.
+   (일정 탭은 달력 높이가 화면과 비슷해 굳이 붙일 필요가 없어 그대로 둔다) */
+#admin-view-history .admin-side {
+    position: sticky;
+    top: var(--sidebar-top, 84px);
+    max-height: calc(100vh - var(--sidebar-top, 84px) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+@media (max-width: 888px) {
+    #admin-view-history .admin-side {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+}
+@media (max-width: 888px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+    .admin-side,
+    .admin-main {
+        width: 100%;
+        flex: none;
+    }
+}
+
+.admin-token-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.admin-header-action {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+}
+.admin-token-bar input {
+    min-width: 0;
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 0;
+    background: var(--color-card);
+    color: var(--color-text-main);
+    font-size: var(--fs-body);
+    font-family: inherit;
+}
+.admin-token-bar input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.btn-solid {
+    height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+.btn-solid:hover {
+    opacity: 0.85;
+}
+.btn-solid:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-solid-dark {
+    background: #141821;
+    color: #fff;
+}
+.btn-solid-primary {
+    background: var(--color-primary);
+    color: #fff;
+}
+.btn-solid-light {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-main);
+}
+
+.admin-form-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.admin-form-row input,
+.admin-form-row select,
+.admin-form-row textarea {
+    min-width: 0;
+    width: 100%;
+    padding: 0 12px;
+    height: 42px;
+    border: 1px solid var(--color-border);
+    border-radius: 0;
+    font-size: var(--fs-body);
+    font-family: inherit;
+    box-sizing: border-box;
+    background: var(--color-card);
+    color: var(--color-text-main);
+}
+.admin-form-row select {
+    flex: 1 1 50%;
+    width: auto;
+    min-width: 0;
+}
+.admin-form-row textarea {
+    flex: 1 1 50%;
+    padding: 10px 12px;
+    resize: none;
+    overflow: hidden;
+    line-height: 1.2;
+    height: 42px;
+    min-width: 0;
+}
+.admin-form-row input:focus,
+.admin-form-row textarea:focus,
+.admin-form-row select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-tint);
+}
+.admin-submit-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: var(--fs-body);
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s;
+}
+.admin-submit-btn:hover {
+    background: #1c63e0;
+}
+.admin-form-title {
+    font-size: var(--fs-subheading);
+    font-weight: 800;
+    color: var(--color-text-main);
+    margin-bottom: 10px;
+}
+.cal-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.cal-card-actions button {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.cal-card-actions .edit-btn {
+    color: var(--color-primary);
+}
+.cal-card-actions .edit-btn:hover {
+    text-decoration: underline;
+}
+.cal-card-actions .delete-btn {
+    color: var(--color-lose);
+}
+.cal-card-actions .delete-btn:hover {
+    text-decoration: underline;
+}
+
+.admin-tool-row .edit-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+}
+.admin-tool-row .edit-btn:hover {
+    text-decoration: underline;
+}
+.admin-tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.admin-tool-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+.admin-tool-row img {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.admin-tool-info {
+    min-width: 0;
+    flex: 1;
+}
+.admin-tool-name {
+    font-weight: 800;
+    font-size: var(--fs-body);
+    color: var(--color-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.admin-tool-url {
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.admin-tool-detail {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+.admin-tool-row .delete-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-lose);
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+}
+.admin-tool-row .delete-btn:hover {
+    text-decoration: underline;
+}
+.admin-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.admin-nav-row {
+    cursor: pointer;
+    margin: 0;
+}
+.admin-nav-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+.admin-nav-state {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-text-faint);
+    flex-shrink: 0;
+}
+.admin-nav-row.is-on .admin-nav-state {
+    color: var(--color-primary);
+}
+.admin-nav-row.is-off {
+    opacity: 0.55;
+}
+.admin-offair-block {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-bg-subtle);
+}
+.admin-offair-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.admin-offair-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.admin-offair-item:hover {
+    background: var(--color-row-hover);
+}
+.admin-offair-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+.admin-offair-item img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-bg-subtle);
+    flex-shrink: 0;
+}
+.admin-offair-item span {
+    font-size: var(--fs-body);
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+@media (max-width: 767.98px) {
+    .admin-nav-toggle {
+        display: flex;
+    }
+}
+
+/* ----- 연혁 편집 ----- */
+.admin-hist-list .hist-admin-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--color-border);
+}
+.admin-hist-list .hist-admin-bar .edit-btn,
+.admin-hist-list .hist-admin-bar .delete-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 4px;
+    cursor: pointer;
+}
+.admin-hist-list .hist-admin-bar .edit-btn { color: var(--color-primary); margin-left: auto; }
+.admin-hist-list .hist-move { display: inline-flex; gap: 2px; }
+.admin-hist-list .hist-move button {
+    width: 22px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    font-size: 9px;
+    line-height: 1;
+    color: var(--color-text-sub);
+    cursor: pointer;
+}
+.admin-hist-list .hist-move button:hover:not(:disabled) { color: var(--color-primary); border-color: var(--color-primary); }
+.admin-hist-list .hist-move button:disabled { opacity: 0.35; cursor: default; }
+.admin-hist-list .hist-admin-bar .delete-btn { color: var(--color-lose); }
+.hist-auto {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+    background: var(--color-bg-subtle);
+}
+.hist-auto.is-hidden { color: var(--color-lose); }
+.hist-item.is-editing .hist-card { box-shadow: inset 0 0 0 2px var(--color-primary); }
+.admin-hist-form .admin-form-row textarea { height: 84px; overflow: auto; flex: 1 1 100%; }
+.admin-hist-form .admin-form-row input[type="file"] { padding: 9px 12px; }
+.admin-hist-note { margin: -2px 0 10px; font-size: 11px; color: var(--color-text-sub); line-height: 1.5; }
+.admin-hist-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; min-height: 0; }
+.admin-hist-preview {
+    position: relative;
+    margin: 0 0 10px;
+    aspect-ratio: 16 / 9;
+    background: var(--color-bg-subtle);
+    overflow: hidden;
+}
+.admin-hist-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.admin-hist-preview span {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+}
+.admin-hist-preview button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: 0;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+}
+.admin-video-row img.admin-video-thumb { width: 64px; height: 36px; border-radius: 0; object-fit: cover; clip-path: var(--cut-4); background: var(--color-bg-subtle); }
+.admin-video-row img.admin-video-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.admin-video-row .admin-video-avatar-empty { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; }
+.admin-video-row .admin-video-state { flex: none; font-size: 11px; color: var(--color-text-sub); white-space: nowrap; }
+.admin-video-row .admin-video-state.is-wait { color: var(--color-badge-format); }
+.admin-video-row .admin-tool-info { flex: 1; min-width: 0; }
+.admin-video-row .admin-tool-name, .admin-video-row .admin-tool-url { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.admin-video-move { display: inline-flex; flex: none; flex-direction: column; }
+.admin-video-move button { width: 20px; height: 14px; padding: 0; border: 0; background: none; font-size: 9px; line-height: 1; color: var(--color-text-sub); }
+.admin-video-move button:hover:not(:disabled) { color: var(--color-primary); }
+.admin-video-move button:disabled { opacity: 0.3; }
+.admin-cancel-btn { background: var(--color-text-faint); }
+.admin-cancel-btn:hover { background: var(--color-text-sub); }
+.admin-ranking-group { margin-bottom:24px; }
+.admin-ranking-table-wrap { overflow-x:auto; overflow-y:hidden; background:var(--color-card); clip-path:var(--cut-12); -webkit-overflow-scrolling:touch; }
+.admin-ranking-table { width:100%; min-width:650px; table-layout:fixed; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+.admin-ranking-table th, .admin-ranking-table td { padding:11px 8px; border-bottom:1px solid var(--panel-line); text-align:left; white-space:nowrap; vertical-align:middle; overflow:hidden; text-overflow:ellipsis; }
+.admin-ranking-table th { background:var(--color-head-bg); background-image:var(--navy-pattern); color:var(--color-head-text); font-size:11px; font-weight:800; }
+.admin-ranking-table th:nth-child(1),.admin-ranking-table td:nth-child(1) { width:7%; text-align:center; }
+.admin-ranking-table th:nth-child(2),.admin-ranking-table td:nth-child(2) { width:21%; }
+.admin-ranking-table th:nth-child(3),.admin-ranking-table td:nth-child(3) { width:25%; }
+.admin-ranking-table th:nth-child(4),.admin-ranking-table td:nth-child(4) { width:14%; text-align:right; }
+.admin-ranking-table th:nth-child(5),.admin-ranking-table td:nth-child(5) { width:17%; text-align:right; }
+.admin-ranking-table th:nth-child(6),.admin-ranking-table td:nth-child(6) { width:16%; text-align:center; }
+.admin-ranking-note { font-size:12px; color:var(--color-text-sub); line-height:1.8; margin-bottom:20px; }
+.admin-ranking-method { margin-bottom:20px; padding:16px 20px; background:var(--color-card); clip-path:var(--cut-10); font-size:13px; line-height:1.8; }
+.admin-ranking-method summary { cursor:pointer; font-weight:800; color:var(--color-text-main); }
+.admin-ranking-method summary:focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; }
+.admin-ranking-method h2 { margin:20px 0 8px; font-size:14px; font-weight:800; }
+.admin-ranking-method p { margin:8px 0; }
+.admin-ranking-formula { padding:12px 14px; background:var(--color-bg-subtle); clip-path:var(--cut-5); overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.admin-ranking-toolbar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 18px; }
+.admin-ranking-period { border:0; background:var(--color-bg-subtle); color:var(--color-text-sub); padding:7px 11px; font:inherit; font-size:12px; font-weight:700; clip-path:var(--cut-5); }
+.admin-ranking-period.is-active { background:var(--select-on-light); color:#fff; }
+.admin-ranking-rank-col { text-align:center; font-size:12px; font-weight:800; color:var(--color-text-sub); font-variant-numeric:tabular-nums; }
+.admin-ranking-table tr[data-top="true"] .admin-ranking-rank-col { color:var(--color-primary); }
+.admin-ranking-player { display:flex; flex-direction:column; align-items:flex-start; min-width:0; gap:5px; }
+.admin-ranking-player-main { display:flex; align-items:center; min-width:0; max-width:100%; gap:5px; }
+.admin-ranking-player-name { min-width:0; max-width:100%; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ranking-player-meta { display:flex; align-items:center; min-width:0; max-width:100%; gap:4px; }
+.admin-ranking-player-meta .tag-badge { flex:none; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ranking-record,.admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap { white-space:nowrap; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
+.admin-ranking-delta.is-promote { font-weight:800; color:var(--color-primary); }
+.admin-ranking-gap.is-mismatch { font-weight:800; color:var(--color-primary); }
+@media (max-width:767.98px) {
+    .admin-ranking-table { min-width:610px; font-size:11px; }
+    .admin-ranking-table th,.admin-ranking-table td { padding:9px 6px; }
+    .admin-ranking-table th { font-size:10px; }
+    .admin-ranking-player { gap:4px; }
+    .admin-ranking-rank-col { font-size:10px; }
+    .admin-ranking-player-main { gap:4px; }
+    .admin-ranking-player-meta { gap:3px; }
+    .admin-ranking-player-meta .tag-badge { font-size:9px; padding:2px 4px; }
+}
+@media (max-width:389.98px) {
+    .admin-ranking-table { min-width:590px; font-size:10px; }
+    .admin-ranking-table th,.admin-ranking-table td { padding:8px 4px; }
+    .admin-ranking-table th { font-size:9px; }
+    .admin-ranking-player-meta .tag-badge { font-size:8px; padding:2px 3px; }
+}
+.admin-hero-list { display:grid; gap:10px; }
+.admin-hero-row { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; align-items:center; }
+.admin-hero-row label { font-size:12px; font-weight:800; color:var(--color-text-sub); }
+.admin-hero-row input { width:100%; min-width:0; }
+@media (max-width:575.98px) { .admin-hero-row { grid-template-columns:1fr; gap:5px; } }
+
+</style>
+</head>
+<body>
+
+<!-- GNB - 사이트 본편(index.html)과 완전히 동일한 상단바 마크업/클래스 -->
+<div class="top-navbar">
+    <div class="navbar-inner container">
+        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        <button type="button" class="nav-drawer-btn admin-nav-toggle" aria-label="관리 메뉴 열기" aria-expanded="false" aria-controls="mainMenu" onclick="toggleAdminMenu(this)"><span></span><span></span><span></span></button>
+        <div class="nav-menu" id="mainMenu">
+            <a class="nav-item active" data-page="home" onclick="switchPage('home')">홈</a>
+            <a class="nav-item" data-page="schedule" onclick="switchPage('schedule')">일정</a>
+            <a class="nav-item" data-page="members" onclick="switchPage('members')">멤버</a>
+            <a class="nav-item" data-page="records" onclick="switchPage('records')">전적</a>
+            <a class="nav-item" data-page="tier" onclick="switchPage('tier')">티어표</a>
+            <a class="nav-item" data-page="video" onclick="switchPage('video')">영상</a>
+            <a class="nav-item" data-page="stats" onclick="switchPage('stats')">방송통계</a>
+            <a class="nav-item" data-page="tools" onclick="switchPage('tools')">도구</a>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="테마 선택">
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="setAdminTheme('light')">☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="setAdminTheme('dark')">◐</button>
+        </div>
+    </div>
+</div>
+
+<!-- 기존 관리 기능과 아직 제공하지 않는 편집 기능을 구분한다. -->
+<div id="page-admin-home" class="page-section active">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · HOME">
+            <h1 class="page-header-title">홈 관리</h1>
+            <p class="page-header-subtitle">GitHub 연동과 사이트 메뉴 노출을 관리합니다.</p>
+            <button id="saveNavBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveNavToGithub()">저장</button>
+        </div>
+    </div>
+    <div class="container">
+
+    <div class="section-title"><span class="section-title-label">GitHub 연동</span></div>
+    <div class="clean-card p-4 mb-4">
+        <div class="admin-token-bar">
+            <input type="password" id="githubToken" placeholder="GitHub 토큰 입력">
+            <button class="btn-solid btn-solid-dark" onclick="saveTokenLocally()">연동</button>
+            <button class="btn-solid btn-solid-light" onclick="clearGithubToken()">연동 해제</button>
+        </div>
+        <div class="text-secondary mt-2" style="font-size:11px;">
+            여기서 한 번 연동해두면 일정/도구 등 다른 메뉴에서도 같은 연동 상태로 저장할 수 있습니다.
+            보안을 위해 토큰은 이 브라우저 탭 안에만 보관되며, 탭을 닫으면 자동으로 지워집니다.
+        </div>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">페이지 히어로 설명</span></div>
+    <div class="clean-card p-4 mb-4">
+        <div id="heroDescriptionList" class="admin-hero-list"></div>
+        <div class="text-secondary mt-2" style="font-size:11px;">각 페이지 상단 히어로의 한 줄 설명입니다. 홈은 일정·전적·영상 캐러셀 문구를 각각 수정할 수 있습니다.</div>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">상단바 메뉴</span></div>
+    <div class="clean-card p-4">
+        <div id="navToggleList" class="admin-nav-list"></div>
+        <div class="text-secondary mt-2" style="font-size:11px;">
+            끈 메뉴는 사이트 상단바에서 사라집니다. 페이지 자체는 그대로 남아 있어 주소로는 계속 열 수 있고,
+            저장하면 방문자에게 바로 반영되고, 다음 배포 때 HTML에도 함께 반영됩니다.
+        </div>
+    </div>
+    </div>
+</div>
+
+<div id="page-schedule" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · SCHEDULE">
+            <h1 class="page-header-title">일정 관리</h1>
+            <p class="page-header-subtitle">일정·휴방과 연혁을 편집한 뒤 저장해주세요.</p>
+            <button id="saveAllBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveAllToGithub()">저장</button>
+            <button id="saveHistoryBtn" class="btn-solid btn-solid-primary admin-header-action" style="display:none;" onclick="saveHistoryToGithub()">연혁 저장</button>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="admin-tab-calendar" role="tab" tabindex="0" aria-selected="true" onclick="switchAdminScheduleView('calendar')">일정</div>
+            <div class="sub-tab" id="admin-tab-history" role="tab" tabindex="0" aria-selected="false" onclick="switchAdminScheduleView('history')">연혁</div>
+        </div>
+    </div>
+    <div class="container">
+
+    <div class="admin-layout" id="admin-view-calendar">
+        <!-- 왼쪽: 오늘의 일정 + 이달의 일정 (저장 때 이미지로 캡처하는 두 칸). 화면 폭과 상관없이
+             항상 이 순서로 위아래에 둔다 - 캡처 이미지와 같은 모양이라 편집하면서 결과를 바로 본다 -->
+        <div class="admin-main" id="captureArea">
+            <div id="captureToday" class="cal-today-card-wrapper">
+                <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
+                <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
+                    <div class="cal-day-card-date" id="todayDateLabel"></div>
+                    <div class="cal-today-list scroll-area" id="todayList"></div>
+                </div>
+            </div>
+            <div class="cal-app-root">
+                <div class="cal-main-layout">
+                    <section class="cal-calendar-area" id="captureMonth" style="width: 100%;">
+                        <div class="section-title" data-en="MONTHLY SCHEDULE">
+                            <span class="section-title-label">이달의 일정</span>
+                        </div>
+                        <div class="clean-card cal-card p-0">
+                    <div class="cal-month-bar hatch">
+                        <div class="cal-month-id">
+                            <div class="cal-month-year" id="monthYear">&nbsp;</div>
+                            <div class="cal-month-name" id="monthName">&nbsp;</div>
+                        </div>
+                        <div class="cal-nav-group">
+                            <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                            <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        </div>
+                    </div>
+                            <div class="cal-calendar-inner scroll-area">
+                                <div class="cal-calendar-scroll-content">
+                                    <div class="cal-weekdays">
+                                        <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+                                    </div>
+                                    <div class="cal-days-grid" id="daysGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 선택한 날짜 일정 + 일정 편집 폼 (전부 어드민 전용) -->
+        <aside class="admin-side">
+            <div class="cal-selected-card-wrapper">
+                <div class="section-title" id="selectedListTitle" data-en="SELECTED"><span class="section-title-label">선택한 날짜 일정</span></div>
+                <div class="clean-card p-4 cal-day-card">
+                    <div class="cal-day-card-date" id="selectedDateLabel"></div>
+                    <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title"><span class="section-title-label" id="formTitle">[날짜선택] 일정 추가</span></div>
+                <div class="clean-card p-4">
+                    <input type="hidden" id="editEventId" value="">
+                    <div class="admin-form-row">
+                        <input type="date" id="inputStartDate">
+                        <span style="align-self:center; color:var(--color-text-sub); font-size:var(--fs-body);">~</span>
+                        <input type="date" id="inputEndDate">
+                    </div>
+                    <div class="text-secondary mb-2" style="font-size:11px;">종료일을 지정하지 않으면 하루짜리 일정으로 등록됩니다.</div>
+                    <div class="admin-form-row">
+                        <input type="text" id="inputTime" placeholder="시간 (예: 19:00, 선택)">
+                        <input type="text" id="inputPerson" placeholder="타이틀">
+                    </div>
+                    <div class="admin-form-row">
+                        <select id="inputColor">
+                            <option value="#ff2538">🔴 빨강</option>
+                            <option value="#ff7a00">🟠 주황</option>
+                            <option value="#f5b800">🟡 노랑</option>
+                            <option value="#16c75b" selected>🟢 초록</option>
+                            <option value="#1677ff">🔵 파랑</option>
+                            <option value="#4f46e5">🟤 남색</option>
+                            <option value="#a855f7">🟣 보라</option>
+                            <option value="#9aa6ba">⚪ 연한 회색</option>
+                            <option value="#6b7280">⚫ 진한 회색</option>
+                            <option value="#111318">⚫ 검은색</option>
+                        </select>
+                        <textarea id="inputDesc" placeholder="간략내용 (줄바꿈 가능)"></textarea>
+                    </div>
+                    <div class="admin-form-row">
+                        <input type="text" id="inputDetail" placeholder="상세내용 (오늘의 일정에만 표시)">
+                    </div>
+                    <button class="admin-submit-btn" id="submitBtn" onclick="addOrUpdateSchedule()">일정 반영하기</button>
+
+                    <!-- 휴방 멤버 선택 - 위 일정 폼과는 별개로, 지금 선택된 날짜(캘린더에서
+                         클릭한 날짜)에 대해 체크한 멤버가 그 날 휴방자로 기록된다.
+                         "저장" 버튼은 상단의 저장 버튼(saveAllToGithub) 하나로 통일 -
+                         체크박스를 누르는 즉시 calOffAir가 메모리에서 갱신되고,
+                         상단 저장을 누르면 일정이랑 같이 한 번에 커밋된다. -->
+                    <div class="admin-offair-block">
+                        <div class="section-title-sm" style="margin-bottom:10px;">휴방 멤버 선택 - <span id="offairDateLabel">날짜를 선택하세요</span></div>
+                        <div class="admin-offair-list scroll-area" id="offairMemberList">
+                            <div class="text-center text-muted py-3" style="font-size:var(--fs-body);">멤버 정보를 불러오는 중...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 연혁: 왼쪽은 사이트와 같은 타임라인(수정/숨기기 버튼 포함), 오른쪽은 편집 폼 -->
+    <div class="admin-layout" id="admin-view-history" style="display:none;">
+        <div class="admin-main">
+            <div id="adminHistoryList" class="admin-hist-list"><div class="hist-empty">불러오는 중...</div></div>
+        </div>
+        <aside class="admin-side">
+            <div>
+                <div class="section-title"><span class="section-title-label" id="histFormTitle">연혁 추가</span></div>
+                <div class="clean-card p-4 admin-hist-form">
+                    <p class="admin-hist-note" id="histFormNote">입단·퇴단은 멤버 시트에서 자동으로 들어옵니다. 여기서는 창단·대회·방송 같은 나머지를 추가하거나, 자동 항목에 설명·사진·영상을 덧붙일 수 있습니다.</p>
+                    <div class="admin-form-row">
+                        <input type="date" id="histDate">
+                        <select id="histType">
+                            <option value="founding">창단</option>
+                            <option value="match">대회</option>
+                            <option value="broadcast">방송</option>
+                            <option value="event" selected>경기</option>
+                            <option value="join">입단</option>
+                            <option value="leave">퇴단</option>
+                        </select>
+                    </div>
+                    <div class="admin-form-row"><input type="text" id="histTitle" placeholder="제목 (예: 대학대전 우승)" maxlength="60"></div>
+                    <div class="admin-form-row"><textarea id="histDesc" placeholder="설명 (선택, 줄바꿈 가능)" maxlength="400"></textarea></div>
+                    <div class="admin-form-row">
+                        <input type="text" id="histMembers" list="histMemberNames" placeholder="멤버 (쉼표로 구분, 괄호 안은 설명 - 예: 토마토(선수), 임조이(코치))" oninput="renderHistMemberChips()">
+                        <datalist id="histMemberNames"></datalist>
+                    </div>
+                    <div class="admin-hist-chips" id="histMemberChips"></div>
+                    <div class="admin-form-row"><input type="url" id="histYoutube" placeholder="유튜브 링크 (선택)" oninput="renderHistPreview()"></div>
+                    <div class="admin-form-row"><input type="file" id="histImage" accept="image/jpeg,image/png,image/webp" onchange="onHistImagePicked(this)"></div>
+                    <p class="admin-hist-note">사진이 없으면 유튜브 썸네일이 대신 들어갑니다. 사진은 가로 1280px로 줄여 저장합니다.</p>
+                    <div class="admin-hist-preview" id="histPreview" style="display:none;"></div>
+                    <button class="admin-submit-btn" id="histSubmitBtn" onclick="applyHistoryForm()">반영하기</button>
+                    <button class="admin-submit-btn admin-cancel-btn" id="histCancelBtn" style="display:none;" onclick="resetHistoryForm()">수정 취소</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    </div>
+</div>
+
+<div id="page-members" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · ROSTER"><h1 class="page-header-title">멤버 관리</h1><p class="page-header-subtitle">이 페이지의 편집 기능은 아직 제공하지 않습니다.</p></div>
+    </div>
+    <div class="container">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+    </div>
+</div>
+
+<div id="page-records" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · RECORDS"><h1 class="page-header-title">전적 관리</h1><p class="page-header-subtitle">이 페이지의 편집 기능은 아직 제공하지 않습니다.</p></div>
+    </div>
+    <div class="container">
+    <div class="clean-card text-center text-muted py-5" style="font-size:var(--fs-body);">준비 중입니다.</div>
+    </div>
+</div>
+
+<div id="page-tier" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · TIER RANKING"><h1 class="page-header-title">티어 랭킹</h1><p class="page-header-subtitle">경기 기록으로 계산한 우리 티어별 랭킹을 확인합니다.</p></div>
+    </div>
+    <div class="container">
+        <div class="admin-ranking-toolbar" id="admin-ranking-periods" aria-label="전적 기간 필터">
+            <button type="button" class="admin-ranking-period is-active" data-period="all" onclick="setAdminRankingPeriod('all')">전체</button>
+            <button type="button" class="admin-ranking-period" data-period="365" onclick="setAdminRankingPeriod('365')">최근 1년</button>
+            <button type="button" class="admin-ranking-period" data-period="90" onclick="setAdminRankingPeriod('90')">90일</button>
+            <button type="button" class="admin-ranking-period" data-period="30" onclick="setAdminRankingPeriod('30')">30일</button>
+        </div>
+        <p id="admin-ranking-note" class="admin-ranking-note"></p>
+        <details class="admin-ranking-method">
+            <summary>레이팅 계산식 · 산정 기준</summary>
+            <h2>최종 레이팅</h2>
+            <div class="admin-ranking-formula">
+                <div><strong>레이팅 = 1500 + (400 / ln 10) × (θ − SE)</strong></div>
+            </div>
+            <p>θ는 경기 기록으로 추정한 실력, SE는 그 추정의 불확실성입니다. 기록이 적어 불확실성이 크면 레이팅이 더 보수적으로 계산됩니다. 같은 티어 안에서 레이팅이 높은 순서로 순위를 매깁니다.</p>
+            <h2>경기 반영 비중</h2>
+            <div class="admin-ranking-formula">경기 가중치 w = 형식 가중치 × 0.5<sup>경과 일수 / 365</sup></div>
+            <p>개인대회·대학대회 <strong>1.0</strong> · 대학대전 <strong>0.8</strong> · 미니대전 <strong>0.6</strong> · 프로리그·CK <strong>0.4</strong> · 스폰·기타 <strong>0.15</strong></p>
+            <p>기준일에서 365일 전 경기는 같은 형식의 최신 경기 대비 절반을 반영합니다. 기준일은 수집된 마지막 경기일이며, 오래된 경기도 가중치를 줄여 계산에 포함합니다.</p>
+            <h2>실력과 불확실성 계산</h2>
+            <div class="admin-ranking-formula">
+                <div>θ = 티어 기준선 m + 선수별 편차 δ</div>
+                <div>예상 승률 p = 1 / (1 + exp(−(θ − 상대 θ)))</div>
+                <div>SE = 1 / √(λ + Σ w × p × (1 − p))</div>
+            </div>
+            <p>실제 승패에 맞도록 가중 로지스틱 모형으로 m과 δ를 함께 추정합니다. 기록이 적은 선수의 편차가 과하게 커지지 않도록 제약을 두며, λ는 티어가 있는 선수는 4, 미분류 선수는 1/9입니다. SE는 선수별 대각 곡률을 이용한 근사값입니다.</p>
+            <p>미분류 선수도 상대 전적으로 활용하지만, 가중 경기 수가 3 미만인 미분류 선수가 포함된 경기는 적합에서 제외합니다. 티어 기준선은 이름이 있는 15개 티어의 평균이 0이 되도록 맞춥니다.</p>
+            <h2>순위와 그래프</h2>
+            <p>순위에는 분류된 티어가 있고 휴면이 아니며 최근 365일에 10경기 이상 치른 선수만 포함합니다. 그래프는 각 월말까지의 기록으로 같은 레이팅 공식을 다시 계산하고, 마지막 달은 기준일까지 반영합니다. 그래프에는 순위 제외 선수도 기록이 있으면 점수가 나타날 수 있습니다. 서로 다른 티어의 점수를 직접 비교하는 용도로는 사용하지 않습니다.</p>
+        </details>
+        <div id="admin-ranking-results" aria-live="polite"><div class="clean-card p-4">랭킹을 불러오는 중입니다.</div></div>
+    </div>
+</div>
+
+<div id="page-video" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · VIDEO">
+            <h1 class="page-header-title">영상 관리</h1>
+            <p class="page-header-subtitle">팬튜브 채널과 보자 추천 영상을 관리합니다.</p>
+            <button id="saveVideoBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveVideoConfigToGithub()">저장</button>
+        </div>
+    </div>
+    <div class="container">
+
+    <div class="section-title"><span class="section-title-label">팬튜브 채널</span><span class="title-count" id="videoChannelCount"></span></div>
+    <div class="clean-card p-4 mb-4">
+        <p class="admin-hist-note">채널을 등록하고 저장하면 GitHub Actions가 곧 최신 영상을 불러옵니다(그 뒤로는 3시간마다 자동). 칩은 이 순서대로 보입니다.</p>
+        <div id="videoChannelList" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="text" id="videoChannelUrl" placeholder="채널 주소 (예: https://www.youtube.com/@handle 또는 @handle)">
+            <input type="text" id="videoChannelName" placeholder="표시 이름 (선택, 비우면 채널 이름)" maxlength="30">
+        </div>
+        <button id="videoChannelSubmit" class="admin-submit-btn" onclick="applyVideoChannelForm()">추가하기</button>
+        <button id="videoChannelCancel" class="admin-submit-btn admin-cancel-btn" style="display:none;" onclick="resetVideoChannelForm()">수정 취소</button>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">영상 숨기기</span><span class="title-count" id="videoHiddenCount"></span></div>
+    <div class="clean-card p-4 mb-4">
+        <p class="admin-hist-note">사이트 팬튜브 목록에서 빼고 싶은 영상을 고릅니다. 지워지는 게 아니라 안 보이게만 하며, 언제든 되돌릴 수 있습니다.</p>
+        <div id="videoHiddenList" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="text" id="videoHideSearch" placeholder="제목으로 찾기 (비우면 최신 영상)" oninput="renderVideoHideSearch()">
+            <input type="text" id="videoHideUrl" placeholder="유튜브 링크로 바로 숨기기 (선택)">
+        </div>
+        <button class="admin-submit-btn" onclick="hideVideoByUrl()">링크로 숨기기</button>
+        <div id="videoHideList" class="admin-tool-list" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">보자 (추천 영상)</span><span class="title-count" id="videoPickCount"></span></div>
+    <div class="clean-card p-4">
+        <p class="admin-hist-note">위에 있을수록 먼저 보입니다. 제목을 비우면 유튜브 제목을 그대로 씁니다
+            (숲 VOD는 제목을 가져올 수 없어 직접 적어주세요).
+            분류를 적으면 사이트에서 같은 분류끼리 묶이고 그 이름으로 제목줄이 생깁니다(비우면 제목줄 없이 맨 위에).
+            영문 라벨은 제목줄 위에 작게 붙는 글자로, 같은 분류의 영상에 자동으로 함께 적용됩니다.</p>
+        <div id="videoPickList" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="url" id="videoPickUrl" placeholder="유튜브 링크 (영상 · 쇼츠) 또는 숲 VOD 링크">
+            <input type="text" id="videoPickTitle" placeholder="제목 (선택)" maxlength="80">
+        </div>
+        <div class="admin-form-row">
+            <input type="text" id="videoPickGroup" list="videoPickGroups" placeholder="분류 (선택, 예: 명경기 모음)" maxlength="30" oninput="fillPickGroupEn()">
+            <datalist id="videoPickGroups"></datalist>
+            <input type="text" id="videoPickGroupEn" placeholder="분류 영문 라벨 (선택, 예: BEST MATCHES)" maxlength="30">
+        </div>
+        <div class="admin-form-row"><textarea id="videoPickNote" placeholder="한 줄 설명 (선택, 예: 역대급 역전승)" maxlength="200"></textarea></div>
+        <button id="videoPickSubmit" class="admin-submit-btn" onclick="applyVideoPickForm()">추가하기</button>
+        <button id="videoPickCancel" class="admin-submit-btn admin-cancel-btn" style="display:none;" onclick="resetVideoPickForm()">수정 취소</button>
+    </div>
+    </div>
+</div>
+
+<div id="page-stats" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · ANALYTICS">
+            <h1 class="page-header-title">방송통계 관리</h1>
+            <p class="page-header-subtitle">방송통계 페이지에 보여줄 지표 탭을 고릅니다.</p>
+            <button id="saveStatsTabsBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveNavToGithub('saveStatsTabsBtn')">저장</button>
+        </div>
+    </div>
+    <div class="container">
+
+    <div class="section-title"><span class="section-title-label">지표 탭</span></div>
+    <div class="clean-card p-4">
+        <div id="statsTabList" class="admin-nav-list"></div>
+        <div class="text-secondary mt-2" style="font-size:11px;">
+            끈 탭은 방송통계 페이지의 탭 줄에서 사라지고, 그 지표를 보던 주소로 들어와도 남아 있는 탭으로 넘어갑니다.
+            저장하면 방문자에게 바로 반영되고, 다음 배포 때 HTML에도 함께 반영됩니다.
+            (상단바 메뉴 설정과 같은 파일에 저장되므로, 홈 관리에서 바꾼 메뉴 설정도 같이 저장됩니다)
+        </div>
+    </div>
+    </div>
+</div>
+
+<div id="page-tools" class="page-section">
+    <div class="page-header">
+        <div class="page-header-main" data-label="ADMIN · TOOLS">
+            <h1 class="page-header-title">도구 관리</h1>
+            <p class="page-header-subtitle">외부 도구와 사이트의 링크 및 순서를 관리합니다.</p>
+            <button id="saveToolsBtn" class="btn-solid btn-solid-primary admin-header-action" onclick="saveToolsToGithub()">저장</button>
+        </div>
+    </div>
+    <div class="container">
+
+    <div class="section-title"><span class="section-title-label">외부 도구</span></div>
+    <div class="clean-card p-4 mb-4">
+        <div id="tools-list-extTools" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="text" id="toolNameInput-extTools" placeholder="이름 (예: 혹시)">
+            <input type="text" id="toolUrlInput-extTools" placeholder="URL (예: https://calm-hoxy.vercel.app/)">
+        </div>
+        <button id="toolSubmit-extTools" class="admin-submit-btn" onclick="addTool('extTools')">추가하기</button>
+        <button id="toolCancel-extTools" class="admin-submit-btn" style="display:none;" onclick="cancelToolEdit('extTools')">수정 취소</button>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">외부 사이트</span></div>
+    <div class="clean-card p-4">
+        <div id="tools-list-extSites" class="admin-tool-list"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+            <input type="text" id="toolNameInput-extSites" placeholder="이름 (예: 스대게)">
+            <input type="text" id="toolUrlInput-extSites" placeholder="URL (예: https://ygosu.com/board/pan_monstarz)">
+        </div>
+        <button id="toolSubmit-extSites" class="admin-submit-btn" onclick="addTool('extSites')">추가하기</button>
+        <button id="toolCancel-extSites" class="admin-submit-btn" style="display:none;" onclick="cancelToolEdit('extSites')">수정 취소</button>
+    </div>
+    </div>
+</div>
+
+<!-- 사이트가 실제로 쓰는 캘린더·연혁 로직을 그대로 가져다 쓴다 (복사본 아님) -->
+<script src="calendar.js?v=b8ae2f4fb6"></script>
+<script src="media-lightbox.js?v=93e2c5177c"></script>
+<script src="history.js?v=f5d11d4d80"></script>
+
+<script>
+    // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
+    const VALID_PAGE_IDS = ['home', 'schedule', 'members', 'records', 'tier', 'video', 'stats', 'tools'];
+    function setAdminTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.bsTheme = theme;
+        try { localStorage.setItem('staruniv-theme', theme); } catch (_) {}
+        document.querySelectorAll('[data-theme-choice]').forEach(button => {
+            const selected = button.dataset.themeChoice === theme;
+            button.classList.toggle('active', selected);
+            button.setAttribute('aria-pressed', String(selected));
+        });
+    }
+    setAdminTheme(document.documentElement.dataset.theme || 'light');
+    function switchPage(pageId) {
+        if (!VALID_PAGE_IDS.includes(pageId)) return;
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('#mainMenu .nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(pageId === 'home' ? 'page-admin-home' : 'page-' + pageId).classList.add('active');
+        const targetNav = document.querySelector(`#mainMenu .nav-item[data-page="${pageId}"]`);
+        if (targetNav) targetNav.classList.add('active');
+        const bar = document.querySelector('.top-navbar');
+        if (bar) bar.classList.remove('menu-open');
+        const toggle = document.querySelector('.admin-nav-toggle');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        if (pageId === 'tier') loadAdminRanking();
+    }
+
+    const ADMIN_RANKING_TIERS = ['갓', '킹', '잭', '조커', '스페이드', '0', '1', '2', '3', '4', '5', '6', '7', '8', '베이비'];
+    const adminRanking = { data: null, loading: false, period: 'all', rows: {}, shards: {} };
+    function adminRankingTierLabel(tier) { return /^\d+$/.test(tier) ? `${tier}티어` : tier; }
+    function adminRaceBadge(race) {
+        const r = String(race || '').toUpperCase();
+        return ['T','Z','P'].includes(r) ? `<span class="tag-badge race-badge race-${r}">${r}</span>` : '';
+    }
+    function adminTeamBadge(team) {
+        return team ? `<span class="tag-badge team-badge">${escapeHTML(team)}</span>` : '';
+    }
+    function adminRankingShardOf(pid) {
+        const bounds = (adminRanking.data && adminRanking.data.shardBounds) || [];
+        const n = Number(pid); let found = bounds.length ? bounds[0] : pid;
+        for (const b of bounds) { if (b > n) break; found = b; }
+        return found;
+    }
+    async function adminRankingLoadShard(bound) {
+        if (!adminRanking.shards[bound]) adminRanking.shards[bound] = fetch(`data/h2h/p/${bound}.json`, {cache:'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+        return adminRanking.shards[bound];
+    }
+    async function adminRankingEnsureRows(players) {
+        if (adminRanking.period === 'all') return;
+        const key = adminRanking.period;
+        await Promise.all(players.filter(p => !(p.periodStats && Array.isArray(p.periodStats[key]))).map(async p => {
+            if (adminRanking.rows[p.pid]) return;
+            const d = await adminRankingLoadShard(adminRankingShardOf(p.pid));
+            adminRanking.rows[p.pid] = Array.isArray(d[p.pid]) ? d[p.pid] : [];
+        }));
+    }
+    function adminRankingRecord(p) {
+        if (adminRanking.period === 'all') return {m:Number(p.m)||0,w:Number(p.w)||0};
+        const compact = p.periodStats && p.periodStats[adminRanking.period];
+        if (Array.isArray(compact)) return {m:Number(compact[0])||0,w:Number(compact[1])||0};
+        const days = Number(adminRanking.period);
+        const asOf = new Date(((adminRanking.data.ranking||{}).asOf || new Date().toISOString().slice(0,10)) + 'T00:00:00');
+        const cutoff = new Date(asOf); cutoff.setDate(cutoff.getDate() - days + 1);
+        let m=0,w=0;
+        for (const row of (adminRanking.rows[p.pid] || [])) {
+            const d = new Date(String(row[0]) + 'T00:00:00');
+            if (d >= cutoff && d <= asOf) { m++; if (Number(row[2]) === 1) w++; }
+        }
+        return {m,w};
+    }
+    async function loadAdminRanking() {
+        if (adminRanking.data || adminRanking.loading) return;
+        adminRanking.loading = true;
+        const root = document.getElementById('admin-ranking-results');
+        root.innerHTML = '<div class="clean-card p-4">랭킹을 불러오는 중입니다.</div>';
+        try {
+            const response = await fetch('data/h2h/index.json', { cache: 'no-cache' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (!data.players || !data.ranking) throw new Error('랭킹 데이터 없음');
+            adminRanking.data = data;
+            await renderAdminRanking();
+        } catch (error) {
+            root.innerHTML = '<div class="clean-card p-4">랭킹을 불러오지 못했습니다. <button type="button" class="admin-submit-btn" onclick="loadAdminRanking()">다시 시도</button></div>';
+            console.error('티어 랭킹 로드 실패:', error);
+        } finally { adminRanking.loading = false; }
+    }
+    async function setAdminRankingPeriod(period) {
+        adminRanking.period = period;
+        document.querySelectorAll('.admin-ranking-period').forEach(b => b.classList.toggle('is-active', b.dataset.period === period));
+        await renderAdminRanking();
+    }
+    async function renderAdminRanking() {
+        const data = adminRanking.data; if (!data) return;
+        const ranked = Object.entries(data.players).map(([pid,p]) => ({pid,...p})).filter(p => Number.isInteger(p.k) && p.k > 0 && ADMIN_RANKING_TIERS.includes(String(p.t)));
+        const root = document.getElementById('admin-ranking-results');
+        if (adminRanking.period !== 'all') root.innerHTML = '<div class="clean-card p-4">기간 전적을 계산하는 중입니다.</div>';
+        await adminRankingEnsureRows(ranked);
+        const meta = data.ranking;
+        const periodLabel = ({all:'전체',365:'최근 1년',90:'최근 90일',30:'최근 30일'})[adminRanking.period] || '전체';
+        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 전적/승률은 ${periodLabel} 기준입니다. 레이팅 편차는 보정 전 레이팅과 현재 티어 기준선의 차이이며 +50 이상이면 강조합니다. 티어 괴리는 데이터 적합 티어와 현재 티어의 단계 차이입니다.`;
+        const tiers = ADMIN_RANKING_TIERS.filter(t => ranked.some(p => String(p.t) === t));
+        const html = tiers.map(t => {
+            const players = ranked.filter(p => String(p.t) === t).sort((a,b) => a.k-b.k);
+            if (!players.length) return '';
+            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>이름</th><th>${periodLabel} 전적</th><th>레이팅</th><th>레이팅 편차</th><th>티어 괴리</th></tr></thead><tbody>${players.map(p => {
+                const rec=adminRankingRecord(p), loss=Math.max(0,rec.m-rec.w), winRate=rec.m>0?(rec.w/rec.m*100).toFixed(1)+'%':'—';
+                const gap=Number(p.tierGap), hasGap=Number.isInteger(gap), mismatch=hasGap&&gap!==0;
+                const gapText=!hasGap?'—':(!mismatch?'일치':`${Math.abs(gap)}단계${gap>0?'↑':'↓'}`);
+                const tierBase=Number(meta.tierLevels && meta.tierLevels[String(p.t)]), raw=Number(p.rawRating);
+                const delta=Number.isFinite(raw)&&Number.isFinite(tierBase)?raw-tierBase:null, promote=delta!==null&&delta>=50;
+                const deltaText=delta===null?'—':`${delta>=0?'+':''}${delta.toFixed(1)}`;
+                return `<tr data-top="${p.k<=3}"><td data-label="순위" class="admin-ranking-rank-col">${p.k}위</td><td data-label="이름"><div class="admin-ranking-player"><div class="admin-ranking-player-main"><span class="admin-ranking-player-name">${escapeHTML(p.n||'—')}</span></div><div class="admin-ranking-player-meta">${adminRaceBadge(p.r)}${adminTeamBadge(p.tm||'')}</div></div></td><td data-label="${periodLabel} 전적" class="admin-ranking-record">${rec.w}승 ${loss}패 · ${winRate}</td><td data-label="레이팅" class="admin-ranking-rating">${Number.isFinite(p.rating)?p.rating.toFixed(1):'—'}</td><td data-label="레이팅 편차" class="admin-ranking-delta${promote?' is-promote':''}">${deltaText}</td><td data-label="티어 괴리" class="admin-ranking-gap${mismatch?' is-mismatch':''}">${gapText}</td></tr>`;
+            }).join('')}</tbody></table></div></section>`;
+        }).join('');
+        root.innerHTML = html || '<div class="clean-card p-4">등록된 티어 랭킹이 없습니다.</div>';
+    }
+
+    function toggleAdminMenu(button) {
+        const bar = document.querySelector('.top-navbar');
+        if (!bar) return;
+        button.setAttribute('aria-expanded', String(bar.classList.toggle('menu-open')));
+    }
+
+    // ===== 여기서부터는 어드민 전용: GitHub 로드/저장 + 일정 추가/수정/삭제 =====
+    const REPO_OWNER = 'ststats';
+    const REPO_NAME = 'staruniv';
+    const DATA_FILE_PATH = 'docs/data/calendar.json';
+    async function checkedGithubJson(response) {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(`GitHub 요청 실패 (HTTP ${response.status}): ${data.message || '권한과 저장소 상태를 확인해주세요.'}`);
+        return data;
+    }
+
+    const escapeHTML = calEscapeHTML; // calendar.js가 이미 이스케이프 함수를 갖고 있어 그대로 재사용
+
+    // 휴방 멤버 체크박스에 사진+이름을 보여주기 위한 멤버 목록 - 사이트 본편(index.html)의
+    // app.js와 달리 이 어드민 페이지는 멤버 데이터를 안 쓰고 있었어서, 휴방 기능을 위해
+    // 여기서도 같은 site_data.json을 불러온다.
+    let dbMembers = [];
+    const loadMembersData = async () => {
+        try {
+            const res = await fetch('data/site_data.json', { cache: 'no-cache' });
+            if (res.ok) dbMembers = (await res.json()).members || [];
+        } catch (e) {
+            console.error('멤버 데이터를 불러오지 못했습니다:', e);
+        }
+    };
+    // app.js의 getProfileImgUrl과 동일한 URL 규칙 (여기선 이 기능 하나만 쓰므로 통째로
+    // 가져오는 대신 URL 생성 로직만 그대로 복제)
+    function getProfileImgUrl(soopId) {
+        if (!soopId) return null;
+        const id = String(soopId).trim().toLowerCase();
+        if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
+        const prefix = id.substring(0, 2);
+        return `https://stimg.sooplive.com/LOGO/${prefix}/${id}/m/${id}.webp`;
+    }
+
+    // ===== GitHub 토큰 보관 =====
+    // [보안] 예전엔 localStorage에 저장해서 브라우저를 껐다 켜도 계속 남았고, 같은 도메인(공개 사이트)
+    // 페이지에서 스크립트 삽입이 한 번이라도 성공하면 그 토큰을 읽어갈 수 있었다. 이제 sessionStorage에
+    // 보관한다: 이 탭 안에서만 유효하고 탭을 닫으면 사라지며, 다른 탭(공개 사이트 포함)에서는 읽을 수 없다.
+    // 예전 방식으로 localStorage에 남아 있던 토큰은 처음 한 번 옮긴 뒤 localStorage에서 지운다.
+    const ADMIN_TOKEN_KEY = 'gh_token';
+    const adminTokenStore = {
+        get() {
+            try { return sessionStorage.getItem(ADMIN_TOKEN_KEY) || ''; } catch (e) { return ''; }
+        },
+        set(token) {
+            try { sessionStorage.setItem(ADMIN_TOKEN_KEY, token); } catch (e) { /* 저장 불가 환경 */ }
+        },
+        clear() {
+            try { sessionStorage.removeItem(ADMIN_TOKEN_KEY); } catch (e) { /* 무시 */ }
+            try { localStorage.removeItem(ADMIN_TOKEN_KEY); } catch (e) { /* 무시 */ }
+        },
+        migrateLegacy() {
+            try {
+                const legacy = localStorage.getItem(ADMIN_TOKEN_KEY);
+                if (!legacy) return;
+                if (!sessionStorage.getItem(ADMIN_TOKEN_KEY)) sessionStorage.setItem(ADMIN_TOKEN_KEY, legacy);
+                localStorage.removeItem(ADMIN_TOKEN_KEY);
+            } catch (e) { /* 무시 */ }
+        },
+    };
+
+    const saveTokenLocally = async () => {
+        const token = document.getElementById('githubToken').value.trim();
+        if (!token) return alert('토큰을 입력해주세요.');
+        adminTokenStore.set(token);
+        const loaded = await Promise.all([loadDataFromGithub(), loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub(), loadVideoConfigFromGithub()]);
+        if (loaded.every(Boolean)) alert('연동 및 데이터 불러오기가 완료되었습니다. 토큰은 이 탭에만 보관됩니다.');
+    };
+
+    const clearGithubToken = () => {
+        adminTokenStore.clear();
+        document.getElementById('githubToken').value = '';
+        alert('연동이 해제되었습니다. 이 브라우저에 저장된 토큰을 모두 지웠습니다.');
+    };
+
+    let calendarLoaded = false;
+    const loadDataFromGithub = async () => {
+        const token = document.getElementById('githubToken').value;
+        calendarLoaded = false;
+        try {
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_FILE_PATH}` : 'data/calendar.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+                calEvents = calMigrateData(parsed);
+                calOffAir = parsed.offAir || {};
+            } else throw new Error(`일정 불러오기 실패 (HTTP ${res.status})`);
+            calendarLoaded = true;
+            calRenderCalendar();
+            renderOffAirCheckboxList();
+            return true;
+        } catch (e) {
+            console.error(e);
+            alert(e.message + '\n현재 화면의 데이터로 저장하지 않습니다. 연동을 확인해주세요.');
+            return false;
+        }
+    };
+
+    const IMG_FILE_PATH = 'docs/data/calendar.png';
+
+    // 화면을 이동시키지 않고 복제본만 캡처한다. 모바일에서도 7요일 전체를 담는다.
+    async function captureCalendarImage() {
+        if (typeof html2canvas !== 'function') throw new Error('이미지 캡처 라이브러리를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        await document.fonts.ready;
+        const wrapper = document.createElement('div');
+        wrapper.id = 'page-schedule'; // 일정 카드의 공통 스코프를 복제본에도 적용
+        const background = getComputedStyle(document.body).backgroundColor;
+        Object.assign(wrapper.style, {
+            position: 'absolute', left: '-10000px', top: '0',
+            width: '836px', padding: '16px', boxSizing: 'border-box',
+            background, color: getComputedStyle(document.body).color,
+        });
+        // 오늘의 일정과 이달의 일정이 왼쪽 열(#captureArea)에 위아래로 붙어 있어서 열 하나만 복제한다.
+        const clone = document.getElementById('captureArea').cloneNode(true);
+        clone.removeAttribute('id');
+        clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        Object.assign(clone.style, { width: '804px', maxWidth: 'none', minWidth: '0', flex: 'none' });
+        clone.querySelectorAll('.cal-calendar-inner').forEach(el => { el.style.overflow = 'visible'; });
+        // 캡처 중 이미지 로딩 실패가 저장 전체를 오래 막지 않게 한다.
+        clone.querySelectorAll('img').forEach(img => { img.loading = 'eager'; });
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+        try {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            const canvas = await html2canvas(wrapper, {
+                scale: 2, useCORS: true, imageTimeout: 5000,
+                backgroundColor: background, width: 836,
+                windowWidth: 1280, scrollX: 0, scrollY: 0,
+            });
+            return canvas.toDataURL('image/png').split(',')[1];
+        } finally {
+            wrapper.remove();
+        }
+    }
+
+    const saveAllToGithub = async () => {
+        const token = document.getElementById('githubToken').value;
+        if (!token) return alert('GitHub 토큰을 먼저 입력하고 연동해주세요!');
+        if (!calendarLoaded) return alert('일정을 불러오지 못했습니다. 먼저 연동을 다시 확인해주세요.');
+
+        const saveBtn = document.getElementById('saveAllBtn');
+        saveBtn.innerText = '저장중...';
+        saveBtn.disabled = true;
+
+        try {
+            const jsonContent = JSON.stringify({ events: calEvents, offAir: calOffAir }, null, 2);
+
+            const base64Image = await captureCalendarImage();
+
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+            const repoRes = await fetch(repoUrl, { headers });
+            if (!repoRes.ok) throw new Error('저장소 정보를 불러올 수 없습니다.');
+            const defaultBranch = (await repoRes.json()).default_branch || 'main';
+
+            const refRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { headers });
+            const latestCommitSha = (await checkedGithubJson(refRes)).object.sha;
+
+            const jsonBlobRes = await fetch(`${repoUrl}/git/blobs`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ content: jsonContent, encoding: 'utf-8' })
+            });
+            const jsonBlobSha = (await checkedGithubJson(jsonBlobRes)).sha;
+
+            const imgBlobRes = await fetch(`${repoUrl}/git/blobs`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ content: base64Image, encoding: 'base64' })
+            });
+            const imgBlobSha = (await checkedGithubJson(imgBlobRes)).sha;
+
+            const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
+            const baseTreeSha = (await checkedGithubJson(commitRes)).tree.sha;
+
+            const treeRes = await fetch(`${repoUrl}/git/trees`, {
+                method: 'POST', headers,
+                body: JSON.stringify({
+                    base_tree: baseTreeSha,
+                    tree: [
+                        { path: DATA_FILE_PATH, mode: '100644', type: 'blob', sha: jsonBlobSha },
+                        { path: IMG_FILE_PATH, mode: '100644', type: 'blob', sha: imgBlobSha }
+                    ]
+                })
+            });
+            const newTreeSha = (await checkedGithubJson(treeRes)).sha;
+
+            const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ message: '✅ 캘린더 데이터 + 이미지 업데이트', tree: newTreeSha, parents: [latestCommitSha] })
+            });
+            const newCommitSha = (await checkedGithubJson(newCommitRes)).sha;
+
+            const updateRefRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, {
+                method: 'PATCH', headers,
+                body: JSON.stringify({ sha: newCommitSha })
+            });
+            if (!updateRefRes.ok) throw new Error('브랜치 업데이트 실패');
+
+            alert('✅ 데이터와 이미지가 성공적으로 저장되었습니다!');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            saveBtn.innerText = '저장';
+            saveBtn.disabled = false;
+        }
+    };
+
+    // ----- 일정 추가/수정/삭제 -----
+    // 하루짜리든 기간(장기)이든 calEvents 배열 하나에 완전히 같은 방식으로 저장한다.
+    // 종료일을 비워두면 시작일과 같은 값으로 채워져서 자동으로 하루짜리 일정이 된다.
+    const clearForm = () => {
+        document.getElementById('editEventId').value = '';
+        document.getElementById('inputTime').value = '';
+        document.getElementById('inputPerson').value = '';
+        document.getElementById('inputDesc').value = '';
+        document.getElementById('inputDesc').style.height = '42px';
+        document.getElementById('inputDetail').value = '';
+        document.getElementById('inputColor').value = '#16c75b';
+        document.getElementById('inputStartDate').value = calSelectedDateStr || '';
+        document.getElementById('inputEndDate').value = '';
+    };
+
+    const cancelEdit = () => {
+        clearForm();
+        document.getElementById('formTitle').innerText = `[${calSelectedDateStr || '날짜선택'}] 일정 추가`;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = '일정 반영하기';
+        submitBtn.style.background = '';
+    };
+
+    const addOrUpdateSchedule = () => {
+        const startDate = document.getElementById('inputStartDate').value || calSelectedDateStr;
+        if (!startDate) return alert('날짜를 먼저 클릭하거나 시작일을 선택해주세요!');
+        const endDate = document.getElementById('inputEndDate').value || startDate;
+        if (endDate < startDate) return alert('종료일은 시작일보다 빠를 수 없습니다.');
+
+        const time = document.getElementById('inputTime').value.trim();
+        const person = document.getElementById('inputPerson').value.trim();
+        const desc = document.getElementById('inputDesc').value.trim();
+        const detail = document.getElementById('inputDetail').value.trim();
+        const color = document.getElementById('inputColor').value;
+        const editId = document.getElementById('editEventId').value;
+
+        if (!desc && !time && !person) return alert('입력된 내용이 없습니다.');
+
+        if (editId) {
+            const item = calEvents.find(e => String(e.id) === String(editId));
+            if (item) Object.assign(item, { startDate, endDate, time, person, desc, detail, color });
+        } else {
+            calEvents.push({ id: Date.now(), startDate, endDate, time, person, desc, detail, color });
+        }
+
+        calRenderCalendar();
+        cancelEdit();
+    };
+
+    const enterEditMode = (id) => {
+        const item = calEvents.find(e => String(e.id) === String(id));
+        if (!item) return;
+
+        document.getElementById('editEventId').value = item.id;
+        document.getElementById('inputStartDate').value = item.startDate;
+        document.getElementById('inputEndDate').value = (item.endDate && item.endDate !== item.startDate) ? item.endDate : '';
+        document.getElementById('inputTime').value = item.time || '';
+        document.getElementById('inputPerson').value = item.person || '';
+
+        const inputDesc = document.getElementById('inputDesc');
+        inputDesc.value = item.desc || '';
+        inputDesc.style.height = '42px';
+        inputDesc.style.height = inputDesc.scrollHeight + 'px';
+
+        document.getElementById('inputDetail').value = item.detail || '';
+        document.getElementById('inputColor').value = item.color || '#16c75b';
+
+        const rangeLabel = (item.endDate && item.endDate !== item.startDate) ? `${item.startDate} ~ ${item.endDate}` : item.startDate;
+        document.getElementById('formTitle').innerText = `✏️ [${rangeLabel}] 일정 수정`;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = '수정 완료하기';
+        submitBtn.style.background = 'var(--color-lose)';
+    };
+
+    const deleteSchedule = (id) => {
+        if (!confirm('일정을 삭제하시겠습니까?')) return;
+        if (document.getElementById('editEventId').value == id) cancelEdit();
+
+        calEvents = calEvents.filter(e => e.id !== id);
+        calRenderCalendar();
+    };
+
+    // calendar.js의 오늘의 일정/선택한 날짜 카드 렌더링에 [수정]/[삭제] 버튼을 끼워넣는 훅.
+    // "오늘의 일정" 카드는 사이트처럼 읽기 전용으로 두고, "선택한 날짜" 카드에만 버튼을 붙인다.
+    window.calCardExtra = (item, dateStr, type) => {
+        if (type !== 'selected') return '';
+        return `<div class="cal-card-actions">
+            <button class="edit-btn" onclick="enterEditMode(${item.id})">수정</button>
+            <button class="delete-btn" onclick="deleteSchedule(${item.id})">삭제</button>
+        </div>`;
+    };
+
+    // 날짜를 새로 클릭하면(다른 날짜로 이동) 편집 중이던 폼은 초기화하고, 클릭한 날짜를
+    // 새 일정의 시작일로 편하게 채워준다.
+    window.calOnDateSelect = (dateStr) => {
+        cancelEdit();
+        document.getElementById('inputStartDate').value = dateStr;
+        renderOffAirCheckboxList();
+    };
+
+    const inputDescEl = document.getElementById('inputDesc');
+    inputDescEl.addEventListener('input', function() {
+        this.style.height = '42px';
+        this.style.height = this.scrollHeight + 'px';
+    });
+
+    // ----- 휴방 멤버 선택 (calOffAir - calendar.js가 들고 있는 날짜별 휴방 멤버 맵) -----
+    // 체크박스를 누르면 그 자리에서 바로 calOffAir를 갱신하고(별도 저장 버튼 없음),
+    // 상단의 "저장" 버튼(saveAllToGithub)을 누르면 일정이랑 한 커밋에 같이 반영된다.
+    // 사이트 app.js의 isActiveMember와 동일한 기준(퇴단일 필드가 비어있어야 활동중) -
+    // 이전 멤버까지 섞여 나오면 목록이 쓸데없이 길어지고 헷갈리니 여기서도 걸러낸다.
+    function isActiveMember(m) {
+        return !m['퇴단일'] || String(m['퇴단일']).trim() === '';
+    }
+
+    function renderOffAirCheckboxList() {
+        const listEl = document.getElementById('offairMemberList');
+        const labelEl = document.getElementById('offairDateLabel');
+        if (labelEl) labelEl.innerText = calSelectedDateStr || '날짜를 선택하세요';
+        if (!listEl) return;
+
+        const activeMembers = dbMembers.filter(isActiveMember);
+        if (!activeMembers.length) {
+            listEl.innerHTML = `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">멤버 정보를 불러오지 못했습니다.</div>`;
+            return;
+        }
+        const checkedIds = new Set(calOffAirForDate(calSelectedDateStr));
+        listEl.innerHTML = activeMembers.map(m => {
+            const soopId = m['SOOP ID'];
+            const name = m['이름'] || soopId;
+            const imgUrl = getProfileImgUrl(soopId);
+            const imgHtml = imgUrl
+                ? `<img src="${imgUrl}" alt="" onerror="this.style.visibility='hidden';">`
+                : `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--color-bg-subtle);flex-shrink:0;">👤</span>`;
+            return `
+                <label class="admin-offair-item">
+                    <input type="checkbox" data-soop-id="${escapeHTML(soopId)}" ${checkedIds.has(soopId) ? 'checked' : ''} onchange="toggleOffAirMember(this)">
+                    ${imgHtml}
+                    <span>${escapeHTML(name)}</span>
+                </label>`;
+        }).join('');
+    }
+
+    function toggleOffAirMember(checkbox) {
+        if (!calSelectedDateStr) { checkbox.checked = false; return alert('먼저 캘린더에서 날짜를 선택해주세요.'); }
+        const soopId = checkbox.getAttribute('data-soop-id');
+        const current = new Set(calOffAirForDate(calSelectedDateStr));
+        if (checkbox.checked) current.add(soopId); else current.delete(soopId);
+        // 아무도 없는 날짜 키는 지워서 저장 데이터가 계속 불어나지 않게 한다.
+        if (current.size) calOffAir[calSelectedDateStr] = [...current];
+        else delete calOffAir[calSelectedDateStr];
+        // 오늘/선택한 날짜 카드에 붙는 휴방 칩 미리보기도 바로 갱신
+        calRenderTodaySchedules();
+        calRenderSelectedDateSchedules();
+    }
+
+    // 어드민에서도 사이트와 동일하게 오늘의 일정/선택한 날짜 일정 카드 아래에
+    // 휴방 칩을 미리 보여준다 (실제 렌더링 로직은 사이트 쪽 app.js의 것과 동일).
+    window.calOffAirExtra = (dateStr, type) => {
+        const soopIds = calOffAirForDate(dateStr);
+        if (!soopIds.length) return '';
+        const chips = soopIds.map(soopId => {
+            const m = dbMembers.find(x => x['SOOP ID'] === soopId);
+            const name = m ? m['이름'] : soopId;
+            const imgUrl = getProfileImgUrl(soopId);
+            const avatarHtml = imgUrl
+                ? `<img class="cal-offair-avatar" src="${imgUrl}" alt="" onerror="this.style.visibility='hidden';">`
+                : `<span class="cal-offair-avatar" style="display:inline-flex;align-items:center;justify-content:center;">👤</span>`;
+            return `<div class="cal-offair-chip">${avatarHtml}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
+        }).join('');
+        const label = '휴방';
+        return `<div class="cal-offair-section"><div class="cal-offair-label">${label}</div><div class="cal-offair-chips">${chips}</div></div>`;
+    };
+
+    // ----- 상단바 메뉴 표시/숨김 (docs/data/nav.json) -----
+    // [구조] 사이트의 상단 메뉴는 빌드 타임에 HTML로 박힌다(build_html.py가 이 파일을 읽어
+    // 숨길 항목에 hidden을 붙인다). 그래서 여기서 고치는 건 "빌드가 읽는 설정 파일"이고,
+    // core.js가 페이지를 열 때 같은 파일을 한 번 더 읽어 반영하므로 다음 배포를 기다리지
+    // 않아도 방문자에게 즉시 적용된다.
+    // [주의] 아래 목록은 build_html.py의 PAGES에서 '홈'을 뺀 것과 같아야 한다(홈은 왼쪽
+    // 로고가 대신하므로 메뉴에 없다). 메뉴를 새로 추가하면 여기도 한 줄 추가한다.
+    const NAV_FILE_PATH = 'docs/data/nav.json';
+    const NAV_PAGES = [
+        { id: 'schedule', label: '일정' },
+        { id: 'members', label: '멤버' },
+        { id: 'records', label: '전적' },
+        { id: 'tier', label: '티어표' },
+        { id: 'video', label: '영상' },
+        { id: 'stats', label: '방송통계' },
+        { id: 'tools', label: '도구' },
+    ];
+    let navHidden = new Set();
+    let navLoaded = false;
+    const HERO_PAGES = [
+        { id: 'homeSchedule', label: '홈 · 일정' },
+        { id: 'homeRecords', label: '홈 · 전적' },
+        { id: 'homeVideo', label: '홈 · 영상' },
+        ...NAV_PAGES,
+    ];
+    let heroDescriptions = {};
+
+
+    // 방송통계 페이지의 지표 탭. 사이트 쪽 templates/pages/stats.html의 data-metric 값과 같아야 한다.
+    const STATS_TABS = [
+        { id: 'balloons', label: '별풍선' },
+        { id: 'broadcast_seconds', label: '방송시간' },
+        { id: 'cumulative_viewers', label: '누적시청자' },
+        { id: 'sponsor', label: '스폰판수' },
+    ];
+    let statsTabsHidden = new Set();
+
+    function renderNavAdmin() {
+        const list = document.getElementById('navToggleList');
+        if (!list) return;
+        const rows = NAV_PAGES.map(page => {
+            const on = !navHidden.has(page.id);
+            return `
+                <label class="admin-tool-row admin-nav-row ${on ? 'is-on' : 'is-off'}">
+                    <input type="checkbox" ${on ? 'checked' : ''} ${navLoaded ? '' : 'disabled'} onchange="toggleNavItem('${page.id}', this.checked)">
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(page.label)}</div>
+                        <div class="admin-tool-url">/${escapeHTML(page.id)}/</div>
+                    </div>
+                    <span class="admin-nav-state">${on ? '표시' : '숨김'}</span>
+                </label>`;
+        }).join('');
+        const notice = navLoaded ? '' : `<div class="text-center text-muted py-2" style="font-size:11px;">GitHub 연동 후 불러옵니다.</div>`;
+        list.innerHTML = rows + notice;
+        renderStatsTabsAdmin();
+        renderHeroDescriptionsAdmin();
+    }
+
+    function renderHeroDescriptionsAdmin() {
+        const root = document.getElementById('heroDescriptionList');
+        if (!root) return;
+        root.innerHTML = HERO_PAGES.map(page => `<div class="admin-hero-row"><label for="hero-desc-${page.id}">${escapeHTML(page.label)}</label><input class="h2h-input" id="hero-desc-${page.id}" type="text" maxlength="160" ${navLoaded ? '' : 'disabled'} value="${escapeHTML(heroDescriptions[page.id] || '')}" placeholder="비우면 현재 기본 문구 사용" oninput="heroDescriptions['${page.id}']=this.value"></div>`).join('');
+    }
+
+    function renderStatsTabsAdmin() {
+        const list = document.getElementById('statsTabList');
+        if (!list) return;
+        const rows = STATS_TABS.map(tab => {
+            const on = !statsTabsHidden.has(tab.id);
+            return `
+                <label class="admin-tool-row admin-nav-row ${on ? 'is-on' : 'is-off'}">
+                    <input type="checkbox" ${on ? 'checked' : ''} ${navLoaded ? '' : 'disabled'} onchange="toggleStatsTab('${tab.id}', this.checked)">
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(tab.label)}</div>
+                        <div class="admin-tool-url">?view=${escapeHTML(tab.id)}</div>
+                    </div>
+                    <span class="admin-nav-state">${on ? '표시' : '숨김'}</span>
+                </label>`;
+        }).join('');
+        const notice = navLoaded ? '' : `<div class="text-center text-muted py-2" style="font-size:11px;">GitHub 연동 후 불러옵니다.</div>`;
+        list.innerHTML = rows + notice;
+    }
+
+    const toggleStatsTab = (id, visible) => {
+        if (!navLoaded) return;
+        if (visible) statsTabsHidden.delete(id);
+        else statsTabsHidden.add(id);
+        renderStatsTabsAdmin();
+    };
+
+    const toggleNavItem = (id, visible) => {
+        if (!navLoaded) return;
+        if (visible) navHidden.delete(id);
+        else navHidden.add(id);
+        renderNavAdmin();
+    };
+
+    const loadNavFromGithub = async () => {
+        const token = adminTokenStore.get();
+        navLoaded = false;
+        try {
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${NAV_FILE_PATH}` : 'data/nav.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+                navHidden = new Set((Array.isArray(parsed.hidden) ? parsed.hidden : []).map(String));
+                statsTabsHidden = new Set((Array.isArray(parsed.statsTabs) ? parsed.statsTabs : []).map(String));
+                heroDescriptions = (parsed.heroDescriptions && typeof parsed.heroDescriptions === 'object') ? parsed.heroDescriptions : {};
+                navLoaded = true;
+            } else if (res.status === 404) {
+                // 아직 파일이 없는 저장소 - "아무것도 숨기지 않음"에서 시작해 첫 저장 때 만든다.
+                navHidden = new Set();
+                statsTabsHidden = new Set();
+                heroDescriptions = {};
+                navLoaded = true;
+            } else {
+                navLoaded = false;
+                throw new Error(`메뉴 설정 불러오기 실패 (HTTP ${res.status})`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderNavAdmin();
+        return navLoaded;
+    };
+
+    // 상단바 메뉴와 방송통계 지표 탭은 한 파일(nav.json)에 같이 들어간다. 그래서 두 페이지의
+    // 저장 버튼이 이 함수를 같이 쓴다 - 어느 쪽에서 눌렀는지만 btnId로 받는다.
+    const saveNavToGithub = async (btnId) => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 관리의 GitHub 연동에서 할 수 있습니다)');
+        if (!navLoaded) return alert('메뉴 설정을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+        if (navHidden.size >= NAV_PAGES.length) return alert('메뉴를 전부 숨길 수는 없습니다. 하나 이상은 남겨주세요.');
+        if (statsTabsHidden.size >= STATS_TABS.length) return alert('방송통계 지표 탭을 전부 숨길 수는 없습니다. 하나 이상은 남겨주세요.');
+
+        const btn = document.getElementById(btnId || 'saveNavBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+            // 파일이 이미 있으면 sha가 있어야 덮어쓰기가 되고, 없으면(404) sha 없이 새로 만든다.
+            const existing = await fetch(`${repoUrl}/contents/${NAV_FILE_PATH}`, { headers });
+            let sha;
+            if (existing.ok) sha = (await existing.json()).sha;
+            else if (existing.status !== 404) throw new Error(`최신 메뉴 설정 확인 실패 (HTTP ${existing.status})`);
+
+            // 순서는 NAV_PAGES를 따라 정렬해 둔다 - 저장할 때마다 순서가 뒤바뀌면 실제로
+            // 바뀐 게 없는데도 커밋 차이가 생긴다.
+            const payload = {
+                hidden: NAV_PAGES.map(p => p.id).filter(id => navHidden.has(id)),
+                statsTabs: STATS_TABS.map(t => t.id).filter(id => statsTabsHidden.has(id)),
+                heroDescriptions: Object.fromEntries(HERO_PAGES.map(p => [p.id, String(heroDescriptions[p.id] || '').trim()]).filter(([,v]) => v)),
+            };
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2) + '\n')));
+            const putRes = await fetch(`${repoUrl}/contents/${NAV_FILE_PATH}`, {
+                method: 'PUT', headers,
+                body: JSON.stringify({ message: '🧭 메뉴 · 방송통계 탭 표시 설정 업데이트', content, ...(sha ? { sha } : {}) })
+            });
+            if (!putRes.ok) {
+                const detail = await putRes.json().catch(() => ({}));
+                throw new Error(`메뉴 설정 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
+            }
+
+            alert('✅ 메뉴 · 방송통계 탭 설정이 저장되었습니다!');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '저장';
+            btn.disabled = false;
+        }
+    };
+
+    // ----- 도구 관리 (docs/data/tools.json) -----
+    // 캘린더와 달리 이미지 캡처가 없어서 GitHub Contents API의 단순 PUT(생성/수정 겸용)만
+    // 쓰면 충분하다. 토큰은 홈 메뉴에서 이미 연동한 걸(adminTokenStore, sessionStorage) 그대로 쓴다.
+    const TOOLS_FILE_PATH = 'docs/data/tools.json';
+    const TOOL_SECTION_KEYS = ['extTools', 'extSites'];
+    let toolsData = {
+        extTools: { title: '외부 도구', items: [] },
+        extSites: { title: '외부 사이트', items: [] },
+    };
+    let editingTool = null;
+    let toolsLoaded = false;
+
+    function cancelToolEdit(key) {
+        if (editingTool && editingTool.key !== key) return;
+        editingTool = null;
+        document.getElementById('toolNameInput-' + key).value = '';
+        document.getElementById('toolUrlInput-' + key).value = '';
+        document.getElementById('toolSubmit-' + key).innerText = '추가하기';
+        document.getElementById('toolCancel-' + key).style.display = 'none';
+    }
+
+    function editTool(key, idx) {
+        if (editingTool) cancelToolEdit(editingTool.key);
+        const item = toolsData[key]?.items?.[idx];
+        if (!item) return;
+        editingTool = { key, idx };
+        document.getElementById('toolNameInput-' + key).value = item.name || '';
+        document.getElementById('toolUrlInput-' + key).value = item.url || '';
+        document.getElementById('toolSubmit-' + key).innerText = '수정 반영하기';
+        document.getElementById('toolCancel-' + key).style.display = '';
+        document.getElementById('toolNameInput-' + key).focus();
+    }
+
+    function renderToolsAdmin() {
+        TOOL_SECTION_KEYS.forEach(key => {
+            const list = document.getElementById('tools-list-' + key);
+            if (!list) return;
+            const items = (toolsData[key] && toolsData[key].items) || [];
+            // t.favicon이 직접 지정돼 있으면(네이버 사다리처럼 구글 서비스로는
+            // 안 뜨는 경우를 위한 수동 지정) 그 값을 그대로 쓰고, 없으면 기존대로
+            // 구글의 s2/favicons를 쓴다 (app.js의 도구 탭 카드와 동일한 우선순위).
+            list.innerHTML = items.length ? items.map((t, i) => `
+                <div class="admin-tool-row">
+                    <img src="${t.favicon ? escapeHTML(t.favicon) : `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(t.url)}`}" alt="" onerror="this.style.display='none';">
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(t.name)}</div>
+                        <div class="admin-tool-url">${escapeHTML(t.url)}</div>
+                    </div>
+                    <button class="edit-btn" onclick="editTool('${key}', ${i})">수정</button>
+                    <button class="delete-btn" onclick="deleteTool('${key}', ${i})">삭제</button>
+                </div>
+            `).join('') : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">등록된 도구가 없습니다.</div>`;
+        });
+    }
+
+    const addTool = (key) => {
+        const nameInput = document.getElementById('toolNameInput-' + key);
+        const urlInput = document.getElementById('toolUrlInput-' + key);
+        const name = nameInput.value.trim();
+        let url = urlInput.value.trim();
+        if (!name || !url) return alert('이름과 URL을 모두 입력해주세요.');
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+        if (!toolsLoaded) return alert('GitHub에서 도구 목록을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
+        if (!toolsData[key]) toolsData[key] = { title: key, items: [] };
+        if (editingTool?.key === key) {
+            // favicon 등 URL/이름 이외의 기존 속성은 유지한다.
+            Object.assign(toolsData[key].items[editingTool.idx], { name, url });
+        } else {
+            toolsData[key].items.push({ name, url });
+        }
+        cancelToolEdit(key);
+        renderToolsAdmin();
+    };
+
+    const deleteTool = (key, idx) => {
+        if (!confirm('이 도구를 삭제하시겠습니까?')) return;
+        if (!toolsLoaded) return alert('GitHub에서 도구 목록을 먼저 불러와주세요.');
+        if (editingTool?.key === key) cancelToolEdit(key);
+        toolsData[key].items.splice(idx, 1);
+        renderToolsAdmin();
+    };
+
+    const loadToolsFromGithub = async () => {
+        const token = adminTokenStore.get();
+        toolsLoaded = false;
+        try {
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${TOOLS_FILE_PATH}` : 'data/tools.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                toolsData = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+                toolsLoaded = true;
+            } else {
+                toolsLoaded = false;
+                throw new Error(`도구 목록 불러오기 실패 (HTTP ${res.status})`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderToolsAdmin();
+        return toolsLoaded;
+    };
+
+    const saveToolsToGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 메뉴에서 연동할 수 있습니다)');
+        if (!toolsLoaded) return alert('도구 목록을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+
+        const btn = document.getElementById('saveToolsBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+            // 이미 파일이 있으면 sha가 있어야 덮어쓰기가 되고, 처음 저장하는 거면 sha 없이 새로 만든다.
+            let sha;
+            const existing = await fetch(`${repoUrl}/contents/${TOOLS_FILE_PATH}`, { headers });
+            if (!existing.ok) throw new Error(`최신 도구 목록 확인 실패 (HTTP ${existing.status})`);
+            sha = (await existing.json()).sha;
+
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(toolsData, null, 2))));
+            const body = { message: '🔧 도구 목록 업데이트', content, ...(sha ? { sha } : {}) };
+            const putRes = await fetch(`${repoUrl}/contents/${TOOLS_FILE_PATH}`, {
+                method: 'PUT', headers, body: JSON.stringify(body)
+            });
+            if (!putRes.ok) {
+                const detail = await putRes.json().catch(() => ({}));
+                throw new Error(`도구 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
+            }
+
+            alert('✅ 도구 목록이 저장되었습니다!');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '저장';
+            btn.disabled = false;
+        }
+    };
+
+    // ===== 연혁 (docs/data/history.json + docs/data/history/*.jpg) =====
+    // 목록 그리기·자동 항목 만들기는 사이트와 같은 history.js를 쓴다.
+    const HISTORY_FILE_PATH = 'docs/data/history.json';
+    let historyData = { items: [], overrides: {} };
+    let historyLoaded = false;
+    let histEditingId = null;        // 수정 중인 항목 id (자동 항목이면 auto-...)
+    let histPendingImage = null;     // 이번 폼에서 고른 사진 { path, base64, dataUrl }
+    let histFormImage = '';          // 폼에 걸린 사진 경로(기존 값)
+    const histPendingUploads = {};   // 저장 때 같이 올릴 사진 { 'docs/data/history/x.jpg': base64 }
+
+    function switchAdminScheduleView(view) {
+        const history = view === 'history';
+        document.getElementById('admin-view-calendar').style.display = history ? 'none' : '';
+        document.getElementById('admin-view-history').style.display = history ? '' : 'none';
+        document.getElementById('saveAllBtn').style.display = history ? 'none' : '';
+        document.getElementById('saveHistoryBtn').style.display = history ? '' : 'none';
+        [['admin-tab-calendar', !history], ['admin-tab-history', history]].forEach(([id, on]) => {
+            const tab = document.getElementById(id);
+            tab.classList.toggle('active', on);
+            tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        if (history) renderHistoryAdmin();
+    }
+
+    const loadHistoryFromGithub = async () => {
+        const token = adminTokenStore.get();
+        historyLoaded = false;
+        try {
+            const res = await fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${HISTORY_FILE_PATH}` : 'data/history.json', {
+                headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+            });
+            if (res.status === 404) {
+                historyData = { items: [], overrides: {} };   // 처음 저장하는 경우
+            } else if (res.ok) {
+                const data = await res.json();
+                historyData = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+            } else throw new Error(`연혁 불러오기 실패 (HTTP ${res.status})`);
+            historyData.items = Array.isArray(historyData.items) ? historyData.items : [];
+            historyData.overrides = historyData.overrides || {};
+            historyLoaded = true;
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderHistoryAdmin();
+        return historyLoaded;
+    };
+
+    // 저장 전에 올린 사진은 아직 저장소에 없으니 미리보기는 메모리의 dataURL로 보여준다.
+    function histPreviewItems() {
+        const items = histMergeItems(historyData, dbMembers, true);
+        return items.map(it => {
+            const pending = it.image && histPendingUploads['docs/' + it.image];
+            return pending ? { ...it, _dataUrl: 'data:image/jpeg;base64,' + pending } : it;
+        });
+    }
+
+    function renderHistoryAdmin() {
+        const list = document.getElementById('adminHistoryList');
+        if (!list) return;
+        const items = histPreviewItems();
+        histRegisterItems(items);
+        list.innerHTML = histTimelineHtml(items, { members: dbMembers, avatarUrl: getProfileImgUrl, admin: true });
+        // 아직 올리지 않은 사진은 경로 대신 메모리 사진으로 바꿔 끼운다
+        items.filter(it => it._dataUrl).forEach(it => {
+            const img = list.querySelector(`[data-hist-id="${CSS.escape(it.id)}"] .hist-media img`);
+            if (img) img.src = it._dataUrl;
+        });
+        if (histEditingId) list.querySelector(`[data-hist-id="${CSS.escape(histEditingId)}"]`)?.classList.add('is-editing');
+        const names = document.getElementById('histMemberNames');
+        if (names && !names.children.length) names.innerHTML = dbMembers.map(m => `<option value="${escapeHTML(m['이름'])}">`).join('');
+    }
+
+    function histFormMembers() {
+        return document.getElementById('histMembers').value.split(',')
+            .map(x => {
+                const { name, note } = histParseMember(x);
+                return name ? histFormatMember(name, note) : '';
+            })
+            .filter(Boolean);
+    }
+
+    function renderHistMemberChips() {
+        const box = document.getElementById('histMemberChips');
+        box.innerHTML = histFormMembers().map(n => histMemberChipHtml(n, dbMembers, getProfileImgUrl)).join('');
+    }
+
+    function renderHistPreview() {
+        const box = document.getElementById('histPreview');
+        const yt = histYoutubeId(document.getElementById('histYoutube').value);
+        let src = '', label = '';
+        if (histPendingImage) { src = histPendingImage.dataUrl; label = '새 사진'; }
+        else if (histSafeImage(histFormImage)) {
+            const pending = histPendingUploads['docs/' + histFormImage];
+            src = pending ? 'data:image/jpeg;base64,' + pending : histFormImage; label = '사진';
+        } else if (yt) { src = `https://i.ytimg.com/vi/${yt}/hqdefault.jpg`; label = '유튜브 썸네일'; }
+        box.style.display = src ? '' : 'none';
+        box.innerHTML = src ? `<img src="${escapeHTML(src)}" alt=""><span>${label}</span>${label !== '유튜브 썸네일' ? '<button type="button" onclick="removeHistImage()">사진 빼기</button>' : ''}` : '';
+    }
+
+    function removeHistImage() {
+        histPendingImage = null;
+        histFormImage = '';
+        document.getElementById('histImage').value = '';
+        renderHistPreview();
+    }
+
+    // 사진은 가로 1280px 이하 JPEG로 줄인다(휴대폰 원본 사진은 수 MB라 저장소와 페이지가 무거워진다).
+    function onHistImagePicked(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(1, 1280 / img.width);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                histPendingImage = { dataUrl, base64: dataUrl.split(',')[1] };
+                renderHistPreview();
+            };
+            img.onerror = () => alert('사진을 읽지 못했습니다. JPG/PNG/WEBP 파일인지 확인해주세요.');
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function resetHistoryForm() {
+        histEditingId = null;
+        histPendingImage = null;
+        histFormImage = '';
+        ['histDate', 'histTitle', 'histDesc', 'histMembers', 'histYoutube', 'histImage'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('histType').value = 'event';
+        ['histDate', 'histType'].forEach(id => { document.getElementById(id).disabled = false; });
+        document.getElementById('histFormTitle').innerText = '연혁 추가';
+        document.getElementById('histSubmitBtn').innerText = '반영하기';
+        document.getElementById('histCancelBtn').style.display = 'none';
+        renderHistMemberChips();
+        renderHistPreview();
+        renderHistoryAdmin();
+    }
+
+    function histAdminEdit(id) {
+        const item = histMergeItems(historyData, dbMembers, true).find(it => it.id === id);
+        if (!item) return;
+        resetHistoryForm();
+        histEditingId = id;
+        document.getElementById('histDate').value = item.date;
+        document.getElementById('histType').value = item.type;
+        document.getElementById('histTitle').value = item.auto ? ((historyData.overrides[id] || {}).title || '') : (item.title || '');
+        document.getElementById('histTitle').placeholder = item.auto ? `제목 (비우면 "${item.title}")` : '제목 (예: 대학대전 우승)';
+        document.getElementById('histDesc').value = item.desc || '';
+        // 자동 항목(입단·퇴단)은 이름 뒤에 빈 괄호를 붙여 둔다 - 괄호 안만 고쳐 설명을 달 수 있다.
+        document.getElementById('histMembers').value = (item.members || [])
+            .map(e => (item.auto && !/\(/.test(e) ? e + '()' : e)).join(', ');
+        document.getElementById('histYoutube').value = item.youtube || '';
+        histFormImage = item.image || '';
+        // 자동 항목의 날짜·종류는 멤버 시트가 정한다(멤버 칸은 괄호 설명을 달 수 있게 열어 둔다)
+        ['histDate', 'histType'].forEach(f => { document.getElementById(f).disabled = !!item.auto; });
+        document.getElementById('histFormTitle').innerText = item.auto ? '자동 항목 꾸미기' : '연혁 수정';
+        document.getElementById('histSubmitBtn').innerText = '수정 반영하기';
+        document.getElementById('histCancelBtn').style.display = '';
+        renderHistMemberChips();
+        renderHistPreview();
+        renderHistoryAdmin();
+        document.getElementById('histTitle').focus();
+    }
+
+    // 같은 날 안에서 위/아래로 옮긴다. 옮긴 날의 항목 전체에 순서(ord)를 다시 매겨 저장한다
+    // (자동 항목은 overrides에, 직접 추가한 항목은 그 항목에 들어간다).
+    function histAdminMove(id, dir) {
+        const items = histMergeItems(historyData, dbMembers, true);
+        const item = items.find(it => it.id === id);
+        if (!item) return;
+        const group = items.filter(it => it.date === item.date);
+        const from = group.findIndex(it => it.id === id);
+        const to = from + dir;
+        if (to < 0 || to >= group.length) return;
+        [group[from], group[to]] = [group[to], group[from]];
+        group.forEach((it, idx) => histSetOrder(it.id, idx));
+        renderHistoryAdmin();
+    }
+
+    function histSetOrder(id, ord) {
+        if (id.startsWith('auto-')) historyData.overrides[id] = { ...(historyData.overrides[id] || {}), ord };
+        else {
+            const item = historyData.items.find(it => it.id === id);
+            if (item) item.ord = ord;
+        }
+    }
+
+    function histAdminRemove(id) {
+        if (id.startsWith('auto-')) {
+            const o = historyData.overrides[id] || {};
+            o.hidden = !o.hidden;
+            historyData.overrides[id] = o;
+        } else {
+            if (!confirm('이 연혁을 삭제할까요? (저장해야 반영됩니다)')) return;
+            historyData.items = historyData.items.filter(it => it.id !== id);
+            if (histEditingId === id) { resetHistoryForm(); return; }
+        }
+        renderHistoryAdmin();
+    }
+
+    function applyHistoryForm() {
+        const date = document.getElementById('histDate').value;
+        const type = document.getElementById('histType').value;
+        const title = document.getElementById('histTitle').value.trim();
+        const desc = document.getElementById('histDesc').value.trim();
+        const youtube = document.getElementById('histYoutube').value.trim();
+        const isAuto = !!(histEditingId && histEditingId.startsWith('auto-'));
+        if (!isAuto && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return alert('날짜를 선택해주세요.');
+        if (!isAuto && !title) return alert('제목을 입력해주세요.');
+        if (youtube && !histYoutubeId(youtube)) return alert('유튜브 링크 형식이 아닙니다. (youtube.com/watch?v=... 또는 youtu.be/...)');
+
+        const id = histEditingId || `h-${Date.now().toString(36)}`;
+        let image = histFormImage;
+        if (histPendingImage) {
+            image = `data/history/${id}-${Date.now().toString(36)}.jpg`;
+            histPendingUploads['docs/' + image] = histPendingImage.base64;
+        }
+        if (isAuto) {
+            const prev = historyData.overrides[id] || {};
+            historyData.overrides[id] = {
+                ...(prev.hidden ? { hidden: true } : {}),
+                ...(Number.isFinite(prev.ord) ? { ord: prev.ord } : {}),
+                title, desc, youtube, image,
+                members: histFormMembers().filter(e => /\(.+\)/.test(e)),   // 설명이 달린 것만 남긴다
+            };
+        } else {
+            const prev = historyData.items.find(it => it.id === id);
+            const item = { id, date, type, title, desc, members: histFormMembers(), youtube, image,
+                ...(prev && Number.isFinite(prev.ord) ? { ord: prev.ord } : {}) };
+            const idx = historyData.items.findIndex(it => it.id === id);
+            if (idx >= 0) historyData.items[idx] = item; else historyData.items.push(item);
+        }
+        resetHistoryForm();
+    }
+
+    const saveHistoryToGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 메뉴에서 연동할 수 있습니다)');
+        if (!historyLoaded) return alert('연혁을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+        const btn = document.getElementById('saveHistoryBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            // 쓰이지 않게 된(삭제·교체된) 새 사진은 올리지 않는다
+            const used = new Set([
+                ...historyData.items.map(it => it.image),
+                ...Object.values(historyData.overrides).map(o => o.image),
+            ].filter(Boolean).map(p => 'docs/' + p));
+            const uploads = Object.entries(histPendingUploads).filter(([path]) => used.has(path));
+
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+            const repoRes = await fetch(repoUrl, { headers });
+            if (!repoRes.ok) throw new Error('저장소 정보를 불러올 수 없습니다.');
+            const defaultBranch = (await repoRes.json()).default_branch || 'main';
+            const refRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { headers });
+            const latestCommitSha = (await checkedGithubJson(refRes)).object.sha;
+            const commitRes = await fetch(`${repoUrl}/git/commits/${latestCommitSha}`, { headers });
+            const baseTreeSha = (await checkedGithubJson(commitRes)).tree.sha;
+
+            // 사진과 history.json을 커밋 하나로 올린다 - 중간에 실패해도 사진만 올라가고 목록은 옛날인 상태가 남지 않는다
+            const blob = async (content, encoding) => (await checkedGithubJson(await fetch(`${repoUrl}/git/blobs`, {
+                method: 'POST', headers, body: JSON.stringify({ content, encoding })
+            }))).sha;
+            const tree = [{ path: HISTORY_FILE_PATH, mode: '100644', type: 'blob', sha: await blob(JSON.stringify(historyData, null, 2), 'utf-8') }];
+            for (const [path, base64] of uploads) tree.push({ path, mode: '100644', type: 'blob', sha: await blob(base64, 'base64') });
+
+            const treeRes = await fetch(`${repoUrl}/git/trees`, { method: 'POST', headers, body: JSON.stringify({ base_tree: baseTreeSha, tree }) });
+            const newTreeSha = (await checkedGithubJson(treeRes)).sha;
+            const newCommitRes = await fetch(`${repoUrl}/git/commits`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ message: `📜 연혁 업데이트${uploads.length ? ` (사진 ${uploads.length}장)` : ''}`, tree: newTreeSha, parents: [latestCommitSha] })
+            });
+            const newCommitSha = (await checkedGithubJson(newCommitRes)).sha;
+            const updateRefRes = await fetch(`${repoUrl}/git/refs/heads/${defaultBranch}`, { method: 'PATCH', headers, body: JSON.stringify({ sha: newCommitSha }) });
+            if (!updateRefRes.ok) throw new Error('브랜치 업데이트 실패');
+
+            uploads.forEach(([path]) => { delete histPendingUploads[path]; });
+            alert('✅ 연혁이 저장되었습니다!');
+            renderHistoryAdmin();
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '연혁 저장';
+            btn.disabled = false;
+        }
+    };
+
+    // ===== 영상 관리 (docs/data/video_channels.json) =====
+    // 여기서는 "무엇을 모을지"만 저장한다. 실제 영상 목록(docs/data/videos.json)은
+    // scripts/sync_videos.py가 GitHub Actions에서 유튜브 RSS로 만든다(이 파일이 바뀌면 바로, 그 뒤 3시간마다).
+    const VIDEO_CONFIG_PATH = 'docs/data/video_channels.json';
+    let videoConfig = { channels: [], picks: [], hidden: [] };   // hidden: 숨길 영상 id
+    let videoSynced = { channels: {}, videos: [], picks: [] };   // 사이트에 올라가 있는 videos.json(상태 표시용)
+    let videoConfigLoaded = false;
+    let videoEditingChannel = -1;
+    let videoEditingPick = -1;
+
+    const videoIdFromUrl = url => {
+        const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+        return m ? m[1] : '';
+    };
+
+    // 숲(SOOP) VOD 주소 → VOD 번호. vod.sooplive.co.kr/player/<번호>, 예전 afreecatv 주소도 받는다.
+    const soopVodNoFromUrl = url => {
+        const u = String(url || '');
+        if (!/https?:\/\/[\w.-]*(sooplive\.(co\.kr|com)|afreecatv\.com)\//i.test(u)) return '';
+        const m = u.match(/\/(?:player|video|PLAYER\/STATION)\/(\d{1,20})/i);
+        return m ? m[1] : '';
+    };
+
+    // 보자 목록에서 항목 하나를 가리키는 키(유튜브는 영상 id, 숲은 'soop:<번호>').
+    const pickKeyFromUrl = url => {
+        const vid = videoIdFromUrl(url);
+        if (vid) return vid;
+        const no = soopVodNoFromUrl(url);
+        return no ? `soop:${no}` : '';
+    };
+
+    // @handle · youtube.com/@handle · /channel/UC... · /c/이름 · /user/이름 을 받아 https://www.youtube.com/... 로 맞춘다
+    const normalizeChannelUrl = input => {
+        let v = String(input || '').trim();
+        if (!v) return '';
+        if (/^@[\w.\-가-힣]+$/.test(v)) return 'https://www.youtube.com/' + v;
+        if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+        let u;
+        try { u = new URL(v); } catch (_) { return ''; }
+        if (!/(^|\.)youtube\.com$/i.test(u.hostname)) return '';
+        const m = decodeURIComponent(u.pathname).match(/^\/(@[^/]+|channel\/UC[\w-]{22}|c\/[^/]+|user\/[^/]+)/);
+        return m ? 'https://www.youtube.com/' + m[1] : '';
+    };
+
+    const moveVideoItem = (list, idx, dir) => {
+        const to = idx + dir;
+        if (to < 0 || to >= list.length) return;
+        [list[idx], list[to]] = [list[to], list[idx]];
+    };
+
+    const videoMoveButtons = (kind, i, len) => `
+        <span class="admin-video-move">
+            <button type="button" aria-label="위로" ${i === 0 ? 'disabled' : ''} onclick="moveVideoRow('${kind}', ${i}, -1)">▲</button>
+            <button type="button" aria-label="아래로" ${i === len - 1 ? 'disabled' : ''} onclick="moveVideoRow('${kind}', ${i}, 1)">▼</button>
+        </span>`;
+
+    function renderVideoAdmin() {
+        const chList = document.getElementById('videoChannelList');
+        const pickList = document.getElementById('videoPickList');
+        if (!chList || !pickList) return;
+        const channels = videoConfig.channels || [];
+        const picks = videoConfig.picks || [];
+        const empty = text => `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">${videoConfigLoaded ? text : 'GitHub 연동 후 불러옵니다.'}</div>`;
+
+        chList.innerHTML = channels.length ? channels.map((ch, i) => {
+            const synced = (videoSynced.channels || {})[ch.url];
+            const count = synced ? (videoSynced.videos || []).filter(v => v.channel === ch.url).length : 0;
+            const name = ch.name || (synced && synced.title) || '';
+            const thumb = synced && /^https:\/\//.test(synced.thumb || '') ? synced.thumb : '';
+            const avatar = thumb
+                ? `<img class="admin-video-avatar" src="${escapeHTML(thumb)}" alt="">`
+                : `<span class="admin-video-avatar-empty">${escapeHTML((name || '?').slice(0, 1))}</span>`;
+            const state = synced ? `<span class="admin-video-state">영상 ${count}개</span>` : '<span class="admin-video-state is-wait">동기화 대기</span>';
+            return `
+                <div class="admin-tool-row admin-video-row">
+                    ${videoMoveButtons('channel', i, channels.length)}
+                    ${avatar}
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(name || '(이름은 동기화 후 채워집니다)')}</div>
+                        <div class="admin-tool-url">${escapeHTML(ch.url)}</div>
+                    </div>
+                    ${state}
+                    <button class="edit-btn" onclick="editVideoChannel(${i})">수정</button>
+                    <button class="delete-btn" onclick="deleteVideoChannel(${i})">삭제</button>
+                </div>`;
+        }).join('') : empty('등록된 채널이 없습니다.');
+
+        pickList.innerHTML = picks.length ? picks.map((p, i) => {
+            const key = pickKeyFromUrl(p.url);
+            const synced = (videoSynced.picks || []).find(x => x.id === key);
+            const title = p.title || (synced && synced.oembedTitle) || '';
+            const group = [p.group && `📂 ${p.group}`, p.groupEn].filter(Boolean).join(' ');
+            const sub = [group, p.addedAt, synced && synced.author, p.note].filter(Boolean).join(' · ');
+            // 숲 VOD는 썸네일 주소를 동기화 뒤에야 알 수 있다(그 전까지는 글자 판).
+            const thumbSrc = key.startsWith('soop:')
+                ? (synced && /^https:\/\//.test(synced.thumb || '') ? synced.thumb : '')
+                : `https://i.ytimg.com/vi/${key}/mqdefault.jpg`;
+            return `
+                <div class="admin-tool-row admin-video-row">
+                    ${videoMoveButtons('pick', i, picks.length)}
+                    ${thumbSrc ? `<img class="admin-video-thumb" src="${escapeHTML(thumbSrc)}" alt="">`
+                               : '<span class="admin-video-avatar-empty">숲</span>'}
+                    <div class="admin-tool-info">
+                        <div class="admin-tool-name">${escapeHTML(title || p.url)}</div>
+                        <div class="admin-tool-url">${escapeHTML(sub || p.url)}</div>
+                    </div>
+                    ${synced ? '' : '<span class="admin-video-state is-wait">동기화 대기</span>'}
+                    <button class="edit-btn" onclick="editVideoPick(${i})">수정</button>
+                    <button class="delete-btn" onclick="deleteVideoPick(${i})">삭제</button>
+                </div>`;
+        }).join('') : empty('추천 영상이 없습니다.');
+
+        renderVideoHidden();
+        renderVideoHideSearch();
+        document.getElementById('videoChannelCount').textContent = channels.length ? `${channels.length}개` : '';
+        document.getElementById('videoPickCount').textContent = picks.length ? `${picks.length}개` : '';
+        const groupList = document.getElementById('videoPickGroups');
+        if (groupList) {
+            const names = [...new Set(picks.map(p => (p.group || '').trim()).filter(Boolean))];
+            groupList.innerHTML = names.map(n => `<option value="${escapeHTML(n)}">`).join('');
+        }
+    }
+
+    // ----- 영상 숨기기 -----
+    const videoHiddenSet = () => new Set(videoConfig.hidden || []);
+
+    function videoRowHtml(v, hidden) {
+        const title = v.title || v.id;
+        const ch = (videoSynced.channels || {})[v.channel];
+        const sub = [ch && (ch.name || ch.title), (v.published || '').slice(0, 10).replace(/-/g, '.'),
+                     v.views ? `조회수 ${Number(v.views).toLocaleString('ko-KR')}` : '', v.short ? '쇼츠' : '']
+                    .filter(Boolean).join(' · ');
+        return `
+            <div class="admin-tool-row admin-video-row">
+                <img class="admin-video-thumb" src="https://i.ytimg.com/vi/${escapeHTML(v.id)}/mqdefault.jpg" alt="">
+                <div class="admin-tool-info">
+                    <div class="admin-tool-name">${escapeHTML(title)}</div>
+                    <div class="admin-tool-url">${escapeHTML(sub)}</div>
+                </div>
+                <a class="edit-btn" href="https://www.youtube.com/watch?v=${escapeHTML(v.id)}" target="_blank" rel="noopener">보기</a>
+                ${hidden
+                    ? `<button class="edit-btn" onclick="unhideVideo('${escapeHTML(v.id)}')">다시 보이기</button>`
+                    : `<button class="delete-btn" onclick="hideVideo('${escapeHTML(v.id)}')">숨기기</button>`}
+            </div>`;
+    }
+
+    function renderVideoHidden() {
+        const box = document.getElementById('videoHiddenList');
+        if (!box) return;
+        const ids = videoConfig.hidden || [];
+        const byId = new Map((videoSynced.videos || []).map(v => [v.id, v]));
+        box.innerHTML = ids.length
+            ? ids.map(id => videoRowHtml(byId.get(id) || { id, title: '(목록에 없는 영상)' }, true)).join('')
+            : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">${videoConfigLoaded ? '숨긴 영상이 없습니다.' : 'GitHub 연동 후 불러옵니다.'}</div>`;
+        document.getElementById('videoHiddenCount').textContent = ids.length ? `${ids.length}개` : '';
+    }
+
+    // 검색 결과(또는 최신 영상) 30개까지. 이미 숨긴 것은 위 목록에 있으니 여기서는 뺀다.
+    function renderVideoHideSearch() {
+        const box = document.getElementById('videoHideList');
+        if (!box) return;
+        const q = (document.getElementById('videoHideSearch').value || '').trim().toLowerCase();
+        const hidden = videoHiddenSet();
+        const list = (videoSynced.videos || [])
+            .filter(v => !hidden.has(v.id))
+            .filter(v => !q || String(v.title || '').toLowerCase().includes(q))
+            .slice(0, 30);
+        box.innerHTML = list.length
+            ? list.map(v => videoRowHtml(v, false)).join('')
+            : `<div class="text-center text-muted py-3" style="font-size:var(--fs-body);">${(videoSynced.videos || []).length ? '찾는 영상이 없습니다.' : '아직 불러온 영상이 없습니다(영상 갱신 후 표시됩니다).'}</div>`;
+    }
+
+    const hideVideo = id => {
+        if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요.');
+        if (!videoConfig.hidden.includes(id)) videoConfig.hidden.unshift(id);
+        renderVideoAdmin();
+    };
+
+    const unhideVideo = id => {
+        videoConfig.hidden = (videoConfig.hidden || []).filter(x => x !== id);
+        renderVideoAdmin();
+    };
+
+    const hideVideoByUrl = () => {
+        const input = document.getElementById('videoHideUrl');
+        const id = videoIdFromUrl(input.value);
+        if (!id) return alert('유튜브 영상 링크를 확인해주세요. (watch · youtu.be · shorts 주소)');
+        input.value = '';
+        hideVideo(id);
+    };
+
+    const moveVideoRow = (kind, idx, dir) => {
+        if (!videoConfigLoaded) return;
+        if (kind === 'channel') { resetVideoChannelForm(); moveVideoItem(videoConfig.channels, idx, dir); }
+        else { resetVideoPickForm(); moveVideoItem(videoConfig.picks, idx, dir); }
+        renderVideoAdmin();
+    };
+
+    function resetVideoChannelForm() {
+        videoEditingChannel = -1;
+        document.getElementById('videoChannelUrl').value = '';
+        document.getElementById('videoChannelName').value = '';
+        document.getElementById('videoChannelSubmit').innerText = '추가하기';
+        document.getElementById('videoChannelCancel').style.display = 'none';
+    }
+
+    const editVideoChannel = idx => {
+        const ch = videoConfig.channels[idx];
+        if (!ch) return;
+        videoEditingChannel = idx;
+        document.getElementById('videoChannelUrl').value = ch.url || '';
+        document.getElementById('videoChannelName').value = ch.name || '';
+        document.getElementById('videoChannelSubmit').innerText = '수정 반영하기';
+        document.getElementById('videoChannelCancel').style.display = '';
+        document.getElementById('videoChannelUrl').focus();
+    };
+
+    const applyVideoChannelForm = () => {
+        if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
+        const url = normalizeChannelUrl(document.getElementById('videoChannelUrl').value);
+        if (!url) return alert('유튜브 채널 주소를 확인해주세요. (예: https://www.youtube.com/@handle)');
+        const name = document.getElementById('videoChannelName').value.trim();
+        const dup = videoConfig.channels.findIndex(ch => ch.url.toLowerCase() === url.toLowerCase());
+        if (dup >= 0 && dup !== videoEditingChannel) return alert('이미 등록된 채널입니다.');
+        const item = { url, ...(name ? { name } : {}) };
+        if (videoEditingChannel >= 0) videoConfig.channels[videoEditingChannel] = item;
+        else videoConfig.channels.push(item);
+        resetVideoChannelForm();
+        renderVideoAdmin();
+    };
+
+    const deleteVideoChannel = idx => {
+        if (!confirm('이 채널을 삭제하시겠습니까? 저장하면 이 채널의 영상도 목록에서 빠집니다.')) return;
+        resetVideoChannelForm();
+        videoConfig.channels.splice(idx, 1);
+        renderVideoAdmin();
+    };
+
+    function resetVideoPickForm() {
+        videoEditingPick = -1;
+        ['videoPickUrl', 'videoPickTitle', 'videoPickGroup', 'videoPickGroupEn', 'videoPickNote'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('videoPickSubmit').innerText = '추가하기';
+        document.getElementById('videoPickCancel').style.display = 'none';
+    }
+
+    const editVideoPick = idx => {
+        const p = videoConfig.picks[idx];
+        if (!p) return;
+        videoEditingPick = idx;
+        document.getElementById('videoPickUrl').value = p.url || '';
+        document.getElementById('videoPickTitle').value = p.title || '';
+        document.getElementById('videoPickGroup').value = p.group || '';
+        document.getElementById('videoPickGroupEn').value = p.groupEn || '';
+        document.getElementById('videoPickNote').value = p.note || '';
+        document.getElementById('videoPickSubmit').innerText = '수정 반영하기';
+        document.getElementById('videoPickCancel').style.display = '';
+        document.getElementById('videoPickUrl').focus();
+    };
+
+    // 이미 있는 분류를 적으면 그 분류의 영문 라벨을 자동으로 채워준다(비워둔 칸일 때만).
+    const fillPickGroupEn = () => {
+        const box = document.getElementById('videoPickGroupEn');
+        if (!box || box.value.trim()) return;
+        const group = document.getElementById('videoPickGroup').value.trim();
+        const found = (videoConfig.picks || []).find(p => (p.group || '').trim() === group && (p.groupEn || '').trim());
+        if (group && found) box.value = found.groupEn;
+    };
+
+    const applyVideoPickForm = () => {
+        if (!videoConfigLoaded) return alert('GitHub에서 영상 설정을 먼저 불러와주세요. 연동 상태를 확인해주세요.');
+        const raw = document.getElementById('videoPickUrl').value;
+        const id = videoIdFromUrl(raw);
+        const soopNo = id ? '' : soopVodNoFromUrl(raw);
+        if (!id && !soopNo) return alert('영상 링크를 확인해주세요.\n유튜브(watch · youtu.be · shorts) 또는 숲 VOD(vod.sooplive.co.kr/player/번호) 주소를 넣어주세요.');
+        const key = id || `soop:${soopNo}`;
+        const dup = videoConfig.picks.findIndex(p => pickKeyFromUrl(p.url) === key);
+        if (dup >= 0 && dup !== videoEditingPick) return alert('이미 추가된 영상입니다.');
+        const title = document.getElementById('videoPickTitle').value.trim();
+        const group = document.getElementById('videoPickGroup').value.trim();
+        const groupEn = document.getElementById('videoPickGroupEn').value.trim();
+        const note = document.getElementById('videoPickNote').value.trim();
+        const prev = videoEditingPick >= 0 ? videoConfig.picks[videoEditingPick] : null;
+        const t = new Date();
+        const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+        const url = id ? `https://www.youtube.com/watch?v=${id}` : `https://vod.sooplive.co.kr/player/${soopNo}`;
+        const item = { url, title, group, groupEn, note, addedAt: (prev && prev.addedAt) || today };
+        if (prev) {
+            videoConfig.picks[videoEditingPick] = item;
+        } else if (group) {
+            // 같은 분류가 이미 있으면 그 묶음 끝에 붙인다(사이트에서 흩어지지 않게)
+            const last = videoConfig.picks.map(p => (p.group || '').trim()).lastIndexOf(group);
+            videoConfig.picks.splice(last >= 0 ? last + 1 : videoConfig.picks.length, 0, item);
+        } else {
+            videoConfig.picks.unshift(item);   // 분류 없는 영상은 맨 위
+        }
+        // 영문 라벨은 분류에 딸린 값이라, 같은 분류의 다른 영상에도 같이 적용한다
+        // (하나만 다르면 사이트에서 어느 쪽이 나올지 헷갈린다).
+        if (group) {
+            videoConfig.picks.forEach(p => {
+                if ((p.group || '').trim() === group) p.groupEn = groupEn;
+            });
+        }
+        resetVideoPickForm();
+        renderVideoAdmin();
+    };
+
+    const deleteVideoPick = idx => {
+        if (!confirm('이 추천 영상을 삭제하시겠습니까?')) return;
+        resetVideoPickForm();
+        videoConfig.picks.splice(idx, 1);
+        renderVideoAdmin();
+    };
+
+    const loadVideoConfigFromGithub = async () => {
+        const token = adminTokenStore.get();
+        videoConfigLoaded = false;
+        try {
+            const [res, syncedRes] = await Promise.all([
+                fetch(token ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${VIDEO_CONFIG_PATH}` : 'data/video_channels.json', {
+                    headers: token ? { Authorization: `token ${token}` } : {}, cache: 'no-cache'
+                }),
+                fetch('data/videos.json', { cache: 'no-cache' }).catch(() => null),
+            ]);
+            if (syncedRes && syncedRes.ok) videoSynced = await syncedRes.json().catch(() => videoSynced);
+            if (res.ok) {
+                const data = await res.json();
+                const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
+                videoConfig = {
+                    channels: Array.isArray(parsed.channels) ? parsed.channels.filter(ch => ch && ch.url) : [],
+                    picks: Array.isArray(parsed.picks) ? parsed.picks.filter(p => p && p.url) : [],
+                    hidden: (Array.isArray(parsed.hidden) ? parsed.hidden : []).filter(id => /^[A-Za-z0-9_-]{11}$/.test(id)),
+                };
+                videoConfigLoaded = true;
+            } else if (res.status === 404) {
+                videoConfig = { channels: [], picks: [], hidden: [] };
+                videoConfigLoaded = true;
+            } else {
+                throw new Error(`영상 설정 불러오기 실패 (HTTP ${res.status})`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+        renderVideoAdmin();
+        return videoConfigLoaded;
+    };
+
+    const saveVideoConfigToGithub = async () => {
+        const token = adminTokenStore.get();
+        if (!token) return alert('GitHub 토큰을 먼저 연동해주세요! (홈 메뉴에서 연동할 수 있습니다)');
+        if (!videoConfigLoaded) return alert('영상 설정을 불러오지 못했습니다. GitHub 연동을 다시 확인해주세요.');
+        const btn = document.getElementById('saveVideoBtn');
+        btn.innerText = '저장중...';
+        btn.disabled = true;
+        try {
+            const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+            const repoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+            const existing = await fetch(`${repoUrl}/contents/${VIDEO_CONFIG_PATH}`, { headers });
+            let sha;
+            if (existing.ok) sha = (await existing.json()).sha;
+            else if (existing.status !== 404) throw new Error(`최신 영상 설정 확인 실패 (HTTP ${existing.status})`);
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(videoConfig, null, 2) + '\n')));
+            const putRes = await fetch(`${repoUrl}/contents/${VIDEO_CONFIG_PATH}`, {
+                method: 'PUT', headers,
+                body: JSON.stringify({ message: '📺 영상 채널 · 추천 영상 업데이트', content, ...(sha ? { sha } : {}) })
+            });
+            if (!putRes.ok) {
+                const detail = await putRes.json().catch(() => ({}));
+                throw new Error(`영상 설정 저장 실패 (HTTP ${putRes.status}): ${detail.message || 'GitHub 권한과 브랜치 상태를 확인해주세요.'}`);
+            }
+            alert('✅ 영상 설정이 저장되었습니다! 몇 분 안에 영상 목록이 갱신됩니다.');
+        } catch (error) {
+            console.error(error);
+            alert('저장 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            btn.innerText = '저장';
+            btn.disabled = false;
+        }
+    };
+
+    const init = async () => {
+        await Promise.all([loadPublicHolidays(), loadMembersData()]);
+
+        const today = new Date();
+        const todayStr = calGetFormatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        calSelectDate(todayStr);
+
+        adminTokenStore.migrateLegacy();
+        const savedToken = adminTokenStore.get();
+        if (savedToken) {
+            document.getElementById('githubToken').value = savedToken;
+        }
+        await loadDataFromGithub();
+        // calOffAir(휴방 데이터)가 이제 막 로드됐을 수 있으니, 위 calSelectDate 때
+        // 그렸던(비어있었을 수 있는) 체크박스 상태를 실제 데이터로 다시 맞춘다.
+        renderOffAirCheckboxList();
+        renderNavAdmin();
+        await Promise.all([loadToolsFromGithub(), loadNavFromGithub(), loadHistoryFromGithub(), loadVideoConfigFromGithub()]);
+    };
+
+    init();
+</script>
+</body>
+</html>
