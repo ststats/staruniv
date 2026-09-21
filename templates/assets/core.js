@@ -818,6 +818,22 @@ async function applyNavVisibility() {
         }
         // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 파일에서 끈다. 빌드 때 이미 hidden이
         // 붙어 있지만, 어드민에서 방금 저장한 걸 다음 빌드까지 기다리지 않고 바로 반영한다.
+        const heroDescriptions = (data.heroDescriptions && typeof data.heroDescriptions === 'object') ? data.heroDescriptions : {};
+        // 홈 캐러셀은 히어로가 셋이라 각 문구를 별도 키로 바꾼다.
+        document.querySelectorAll('[data-hero-description]').forEach(subtitle => {
+            const heroText = String(heroDescriptions[subtitle.dataset.heroDescription] || '').trim();
+            if (heroText) subtitle.textContent = heroText;
+        });
+        const activePage = document.querySelector('.top-navbar .nav-item.active[data-page]')?.dataset.page
+            || ({'schedule':'schedule','members':'members','records':'records','tier':'tier','video':'video','stats':'stats','tools':'tools'}[location.pathname.split('/').filter(Boolean).pop()] || '');
+        const heroText = String(heroDescriptions[activePage] || '').trim();
+        if (heroText) {
+            const subtitle = document.querySelector('.page-section.active .page-header-subtitle:not([data-hero-description])');
+            if (subtitle) {
+                if (subtitle.id === 'tier-subtitle' && subtitle.firstChild) subtitle.firstChild.nodeValue = heroText + ' 출처 : ';
+                else subtitle.textContent = heroText;
+            }
+        }
         HiddenStatsTabs = new Set((Array.isArray(data.statsTabs) ? data.statsTabs : []).map(String));
         document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]').forEach(el => {
             el.hidden = HiddenStatsTabs.has(el.dataset.metric);

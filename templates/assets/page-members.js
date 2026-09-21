@@ -138,8 +138,11 @@ function renderMembersPage() {
 
     // 이전 멤버는 다른 직책 그룹과 같은 제목(인원 배지 포함)을 먼저 보여주고, 카드 목록만 접어 둔다.
     if (formerMembers.length > 0) {
-        const sortedFormer = [...formerMembers].sort((a, b) =>
-            tierIndex(a['티어']) - tierIndex(b['티어']) || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
+        const sortedFormer = [...formerMembers].sort((a, b) => {
+            const ad = String(a['퇴단일'] || '');
+            const bd = String(b['퇴단일'] || '');
+            return bd.localeCompare(ad) || String(a['이름']).localeCompare(String(b['이름']), 'ko');
+        });
         html += `
             <div class="section-title" data-en="FORMER">
                 <span class="section-title-label">이전 멤버</span>

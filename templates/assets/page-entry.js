@@ -63,6 +63,7 @@ const EntryState = {
     // 포스터에는 예상 승률을 넣지 않는다 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
     // 물건이라 밖으로 돌아다닌다. 예측은 화면 안에서만 본다.
     posterProb: false,
+    autoTiers: new Set(),       // 자동매칭에 포함할 티어
 };
 
 // ---------------------------------------------------------------------------
@@ -281,6 +282,7 @@ function entryPickTeam(side, team) {
     EntryState.sel[side] = null;
     renderEntryTeamChips();
     renderEntry();
+    if (!document.getElementById('entry-auto-tier-picker')?.classList.contains('d-none')) renderEntryAutoTierPicker();
 }
 
 function entrySwapTeams() {
@@ -340,18 +342,74 @@ function entrySameTierPairs() {
 // 편성이다. 상대 5티어가 셋이면 그 셋과 붙는 경우가 전부 올라와야 하고, 한 선수가
 // 여러 줄에 있는 것도 그대로 둔다(9칸을 같은 티어로 다 못 채우면 그렇게 메운다).
 // 여기서 사람이 × 로 추려 경기 수만큼 남기면 그게 곧 엔트리다.
-function entryAutoFill() {
+function entryAutoTierChoices() {
+    const a = new Set(entryRoster(EntryState.teams[0]).map(p => String(p.t || '')).filter(Boolean));
+    const b = new Set(entryRoster(EntryState.teams[1]).map(p => String(p.t || '')).filter(Boolean));
+    return ENTRY_TIER_SEQ.filter(t => a.has(t) && b.has(t));
+}
+
+function renderEntryAutoTierPicker() {
+    const root = document.getElementById('entry-auto-tier-list');
+    if (!root) return;
+    const tiers = entryAutoTierChoices();
+    for (const t of [...EntryState.autoTiers]) if (!tiers.includes(t)) EntryState.autoTiers.delete(t);
+    root.innerHTML = tiers.length ? tiers.map(t => {
+        const on = EntryState.autoTiers.has(t);
+        return `<button type="button" class="entry-auto-tier-chip${on ? ' is-active' : ''}" aria-pressed="${on}" onclick="entryToggleAutoTier('${jsAttr(t)}')">${escapeHTML(tierLabel(t))}</button>`;
+    }).join('') : '<span class="entry-auto-tier-empty">양쪽 소속에 공통으로 있는 티어가 없습니다.</span>';
+}
+
+function entryToggleAutoTierPicker() {
     if (!EntryState.teams[0] || !EntryState.teams[1]) {
-        alert('후보를 뽑으려면 양쪽 소속을 골라 주세요. 소속 없이도 검색해서 직접 넣을 수 있습니다.');
+        alert('자동매칭을 하려면 양쪽 소속을 먼저 골라 주세요.');
         return;
     }
-    const all = entrySameTierPairs();
-    if (!all.length) return;
+    const box = document.getElementById('entry-auto-tier-picker');
+    const btn = document.getElementById('entry-auto-btn');
+    if (!box) return;
+    const opening = box.classList.contains('d-none');
+    box.classList.toggle('d-none', !opening);
+    if (btn) btn.setAttribute('aria-expanded', String(opening));
+    if (opening) renderEntryAutoTierPicker();
+}
+
+function entryToggleAutoTier(tier) {
+    if (EntryState.autoTiers.has(tier)) EntryState.autoTiers.delete(tier);
+    else EntryState.autoTiers.add(tier);
+    renderEntryAutoTierPicker();
+}
+
+function entrySelectAllAutoTiers() {
+    const tiers = entryAutoTierChoices();
+    const allOn = tiers.length && tiers.every(t => EntryState.autoTiers.has(t));
+    EntryState.autoTiers = new Set(allOn ? [] : tiers);
+    renderEntryAutoTierPicker();
+}
+
+function entryAutoFillSelectedTiers() {
+    if (!EntryState.autoTiers.size) {
+        alert('자동매칭에 사용할 티어를 하나 이상 선택해 주세요.');
+        return;
+    }
+    const players = entryPlayers();
+    const all = entrySameTierPairs().filter(m => {
+        const tier = players[m.a] && String(players[m.a].t || '');
+        return EntryState.autoTiers.has(tier);
+    });
+    if (!all.length) {
+        alert('선택한 티어에서 만들 수 있는 대진이 없습니다.');
+        return;
+    }
     EntryState.matches = all;
     EntryState.sel = [null, null];
+    document.getElementById('entry-auto-tier-picker')?.classList.add('d-none');
+    document.getElementById('entry-auto-btn')?.setAttribute('aria-expanded', 'false');
     renderEntry();
     entryRefreshProbs();
 }
+
+// 기존 외부 호출 호환: 이제 자동매칭 버튼은 티어 선택창을 먼저 연다.
+function entryAutoFill() { entryToggleAutoTierPicker(); }
 
 function entrySetTarget(n) {
     EntryState.target = Math.max(1, Math.min(31, Number(n) || ENTRY_TARGET_DEFAULT));

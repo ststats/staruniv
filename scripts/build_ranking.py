@@ -608,12 +608,39 @@ def main():
 
     # 다시 돌릴 때 옛 순위가 남지 않게, 이번에 순위를 못 받은 사람은 지운다.
     ranked_ids = {pid for lst in ranked.values() for _s, pid in lst}
+
+    # 어드민 랭킹의 기간 필터가 선수 샤드 100여 개를 매번 내려받지 않도록,
+    # 순위에 오른 선수만 최근 1년/90일/30일 전적을 index.json에 아주 작게 같이 넣는다.
+    # 값은 [경기수, 승수]. 전체 전적은 기존 m/w 필드를 그대로 쓴다.
+    period_days = (365, 90, 30)
+    cutoffs = {days: today - dt.timedelta(days=days - 1) for days in period_days}
+    period_stats = {pid: {days: [0, 0] for days in period_days} for pid in ranked_ids}
+    for r in rows:
+        if len(r) < 6:
+            continue
+        _, date, win, lose, _map, _cat = r[:6]
+        try:
+            day = dt.date.fromisoformat(str(date)[:10])
+        except ValueError:
+            continue
+        for pid, won in ((str(win), True), (str(lose), False)):
+            if pid not in period_stats:
+                continue
+            for days in period_days:
+                if day >= cutoffs[days] and day <= today:
+                    period_stats[pid][days][0] += 1
+                    if won:
+                        period_stats[pid][days][1] += 1
+
     for pid, entry in players.items():
         entry.pop('rankScore', None)
-        if pid not in ranked_ids:
+        if pid in ranked_ids:
+            entry['periodStats'] = {str(days): period_stats[pid][days] for days in period_days}
+        else:
             entry.pop('k', None)
             entry.pop('rawRating', None)
             entry.pop('rating', None)
+            entry.pop('periodStats', None)
 
     index['ranking'] = {
         'asOf': today.isoformat(),

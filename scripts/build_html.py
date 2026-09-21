@@ -340,11 +340,15 @@ def main():
         print("ℹ️ members 시트를 못 읽어 tier_members.json은 건너뜁니다(티어표는 예전 파일/시너지로 동작).")
 
     copy_static_assets()
-    # 독립 관리자/멀티뷰어도 일반 페이지와 같은 자산 버전을 사용한다.
-    # 오래 캐시된 CSS/캘린더 스크립트가 새 HTML과 섞이지 않도록 한다.
+    # 독립 관리자/멀티뷰어도 docs를 직접 원본으로 두지 않는다.
+    # templates/standalone을 소스로 관리하고 빌드 때 docs로 복사한 뒤 자산 버전을 붙인다.
+    standalone_src_dir = os.path.join(TEMPLATE_DIR, 'standalone')
     for filename in ('admin.html', 'multiview.html'):
+        source = os.path.join(standalone_src_dir, filename)
         standalone = os.path.join(OUT_DIR, filename)
-        if not os.path.isfile(standalone):
+        if os.path.isfile(source):
+            shutil.copyfile(source, standalone)
+        elif not os.path.isfile(standalone):
             continue
         # 손으로 관리하는 파일이라 원래 줄바꿈 형식(CRLF)을 지킨다. 기본 모드로 읽고 쓰면
         # CRLF가 LF로 바뀌어, 캐시 해시 한 줄만 바뀌어도 파일 전체가 바뀐 것으로 커밋된다.

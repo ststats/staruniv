@@ -113,8 +113,16 @@
                 <div class="section-title has-actions" data-en="PLAYERS">
                     <span class="section-title-label">선수 고르기</span>
                     <span class="entry-actions">
-                        <button type="button" class="text-action" onclick="entryAutoFill()">자동매칭</button>
+                        <button type="button" class="text-action" id="entry-auto-btn" onclick="entryToggleAutoTierPicker()" aria-expanded="false" aria-controls="entry-auto-tier-picker">자동매칭</button>
                     </span>
+                </div>
+                <div class="entry-auto-tier-picker d-none" id="entry-auto-tier-picker">
+                    <div class="entry-auto-tier-head">
+                        <span>자동매칭 티어 선택</span>
+                        <button type="button" class="text-action" onclick="entrySelectAllAutoTiers()">전체</button>
+                    </div>
+                    <div class="entry-auto-tier-list" id="entry-auto-tier-list"></div>
+                    <button type="button" class="btn-solid btn-solid-primary entry-auto-apply" onclick="entryAutoFillSelectedTiers()">선택 티어로 자동매칭</button>
                 </div>
                 <div class="entry-sides">
                     {%- for side, key, name in [(0, 'a', 'A'), (1, 'b', 'B')] %}
