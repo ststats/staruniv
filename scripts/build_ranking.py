@@ -658,6 +658,22 @@ def main():
             entry.pop('rating', None)
             entry.pop('periodStats', None)
 
+    # 사람이 매긴 실제 티어와 전적 데이터가 가리키는 적합 티어의 차이를 저장한다.
+    # 어드민 '티어 괴리' 표시는 이 값을 사용하고, 실제 순위는 기존처럼 현재 티어 안에서만 매긴다.
+    levels = np.array([m[t_pos[t]] for t in TIER_ORDER])
+    pos = {pid: k for k, pid in enumerate(order)}
+    for t, lst in ranked.items():
+        for _score, pid in lst:
+            k = pos[pid]
+            fit_t = TIER_ORDER[int(np.argmin(np.abs(levels - theta[k])))]
+            gap = TIER_ORDER.index(t) - TIER_ORDER.index(fit_t)
+            players[pid]['dataTier'] = fit_t
+            players[pid]['tierGap'] = int(gap)
+    for pid, entry in players.items():
+        if pid not in ranked_ids:
+            entry.pop('dataTier', None)
+            entry.pop('tierGap', None)
+
     index['ranking'] = {
         'asOf': today.isoformat(),
         'halfLifeDays': int(HALF_LIFE_DAYS),

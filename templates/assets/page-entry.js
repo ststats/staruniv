@@ -771,11 +771,15 @@ function entryPlayerItemHtml(side, p, showTeam) {
     </button>`;
 }
 
-function entrySetMatchMap(index, value) {
+function entrySetMatchMap(index, value, commit) {
     const m = EntryState.matches[index];
     if (!m) return;
     m.map = String(value || '').trim();
-    renderEntryResult();
+    // 입력 중에는 DOM을 갈아끼우지 않는다. blur/change 시에만 승률/분석을 다시 계산한다.
+    if (commit) {
+        renderEntryResult();
+        entryRefreshProbs();
+    }
 }
 
 function entryToggleAnalysis(index) {
@@ -830,12 +834,6 @@ function entryMatchRowHtml(m, i) {
             <span class="entry-match-no">${i + 1}경기</span>
             <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="${i + 1}경기 빼기">✕</button>
         </div>
-        <div class="entry-match-maprow">
-            <div class="entry-match-mapfield h2h-slot-inner">
-                <label class="h2h-slot-label" for="entry-map-${i}">맵</label>
-                <input type="text" class="h2h-input" id="entry-map-${i}" list="entry-map-options" placeholder="맵 선택 또는 직접 입력" value="${escapeHTML(mapValue)}" oninput="entrySetMatchMap(${i}, this.value)">
-            </div>
-        </div>
         <div class="entry-match-row">
             <div class="entry-match-side">
                 ${avatarHtml(a.s || '', 'h2h-rival-avatar')}
@@ -854,9 +852,16 @@ function entryMatchRowHtml(m, i) {
             </div>
         </div>
         <span class="h2h-rival-bar${has ? '' : ' is-empty'}"><span style="width:${pct}%"></span></span>
-        <div class="entry-match-sim">
-            ${probText}
-            <button type="button" class="entry-analysis-toggle" aria-expanded="${m.open ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">${m.open ? '분석 접기' : '분석 펼치기'}</button>
+        <div class="entry-match-sim">${probText}</div>
+        <div class="entry-match-actions">
+            <label class="entry-map-control" for="entry-map-${i}">
+                <span class="entry-action-label">맵 선택</span>
+                <input type="text" class="entry-map-input" id="entry-map-${i}" list="entry-map-options" placeholder="맵 선택 또는 입력" value="${escapeHTML(mapValue)}"
+                    oninput="entrySetMatchMap(${i}, this.value, false)" onchange="entrySetMatchMap(${i}, this.value, true)" onblur="entrySetMatchMap(${i}, this.value, true)">
+            </label>
+            <button type="button" class="entry-analysis-toggle news-load-more" aria-expanded="${m.open ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">
+                <span>${m.open ? '분석 접기' : '상세 분석'}</span>${chevronDownSvg(10, ` class="chevron-rotatable${m.open ? ' is-open' : ''}"`)}
+            </button>
         </div>
         ${analysis}
     </div>`;
