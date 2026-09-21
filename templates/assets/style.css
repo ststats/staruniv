@@ -6159,16 +6159,15 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-vs-num.is-a { color: var(--color-win); }
 .entry-vs-num.is-b { color: var(--color-lose); }
 .entry-vs { font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .1em; color: var(--color-text-faint); }
-/* 엔트리 카드 하단 컨트롤: 왼쪽 맵 선택 / 오른쪽 상세 분석 */
-.entry-match-sim { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px; font-size:var(--fs-meta); color:var(--color-text-sub); text-align:center; }
-.entry-match-probval { min-width:0; white-space:nowrap; }
-.entry-match-actions { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; margin-top:8px; align-items:stretch; }
-.entry-map-control { display:flex; align-items:center; min-width:0; min-height:44px; padding:0 12px; gap:8px; background:var(--color-card); clip-path:var(--cut-8); color:var(--color-text-sub); }
-.entry-action-label { flex:none; font-size:11px; font-weight:800; color:var(--color-text-sub); white-space:nowrap; }
-.entry-map-input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--color-text-main); font:inherit; font-size:12px; font-weight:700; text-align:right; }
-.entry-map-input::placeholder { color:var(--color-text-faint); font-weight:600; }
+/* 엔트리 카드 하단: 왼쪽 맵 / 가운데 예상승률 / 오른쪽 상세 */
+.entry-match-footer { display:grid; grid-template-columns:minmax(82px,.8fr) minmax(130px,1.4fr) minmax(58px,.55fr); gap:6px; margin-top:8px; align-items:center; }
+.entry-match-sim { display:flex; align-items:center; justify-content:center; min-width:0; min-height:30px; margin:0; padding:0 4px; font-size:var(--fs-meta); color:var(--color-text-sub); text-align:center; }
+.entry-match-probval { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entry-map-control { position:relative; display:flex; align-items:center; min-width:0; height:30px; margin:0; background:var(--color-card); clip-path:var(--cut-5); }\n.entry-map-control::after { content:"⌄"; position:absolute; right:7px; top:50%; transform:translateY(-55%); pointer-events:none; font-size:10px; font-weight:900; color:var(--color-text-sub); }
+.entry-map-select { appearance:none; -webkit-appearance:none; width:100%; min-width:0; height:30px; padding:0 22px 0 8px; border:0; outline:0; background:transparent; color:var(--color-text-main); font:inherit; font-size:10px; font-weight:800; cursor:pointer; text-overflow:ellipsis; }
 .entry-map-control:focus-within { background:var(--color-row-hover); }
-.entry-analysis-toggle.news-load-more { width:100%; min-height:44px; padding:0 12px; margin:0; cursor:pointer; }
+.entry-analysis-toggle { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:0; height:30px; padding:0 8px; border:0; background:var(--color-card); clip-path:var(--cut-5); color:var(--color-text-sub); font:inherit; font-size:10px; font-weight:800; cursor:pointer; white-space:nowrap; }
+.entry-analysis-toggle:hover { background:var(--color-row-hover); color:var(--color-text-main); }
 .entry-analysis-toggle .chevron-rotatable { transition:transform .2s; }
 .entry-analysis-toggle .chevron-rotatable.is-open { transform:rotate(180deg); }
 
@@ -6214,11 +6213,10 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     .entry-vs-num { font-size: 17px; }
     .entry-rec-nums { gap: 5px; }
     .entry-rec-label { letter-spacing: 0; }
-    .entry-match-actions { grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr); gap:6px; }
-    .entry-map-control { padding:0 9px; gap:5px; }
-    .entry-action-label { font-size:9px; }
-    .entry-map-input { font-size:10px; }
-    .entry-analysis-toggle.news-load-more { padding:0 8px; font-size:10px; }
+    .entry-match-footer { grid-template-columns:minmax(72px,.78fr) minmax(116px,1.45fr) minmax(50px,.52fr); gap:4px; }
+    .entry-map-select { padding-left:6px; padding-right:18px; font-size:9px; }
+    .entry-match-sim { padding:0 2px; font-size:9px; }
+    .entry-analysis-toggle { padding:0 5px; font-size:9px; gap:3px; }
     .entry-analysis-head { align-items:flex-start; }
     .entry-analysis-grid { grid-template-columns:1fr; }
     .entry-analysis-total { white-space:normal; text-align:right; }

@@ -555,8 +555,13 @@ function entryTogglePlayer(side, pid) {
 }
 
 function entryRemoveMatch(i) {
+    const prev = EntryState.analysisOpen || {};
     EntryState.matches.splice(i, 1);
-    const next = {}; EntryState.matches.forEach((m, idx) => { next[idx] = Boolean(m.open); });
+    const next = {};
+    EntryState.matches.forEach((m, idx) => {
+        const oldIdx = idx >= i ? idx + 1 : idx;
+        if (prev[oldIdx]) next[idx] = true;
+    });
     EntryState.analysisOpen = next;
     renderEntry();
 }
@@ -706,7 +711,7 @@ function entrySeriesSim(ps, games) {
         scores.push([a, b, v]);
     });
     scores.sort((x, y) => y[2] - x[2]);
-    return { need, pA, pB, eA, eB, top: scores.slice(0, 3), filled: games - Math.min(ps.length, games) };
+    return { need, pA, pB, eA, eB, top: scores.slice(0, 2), filled: games - Math.min(ps.length, games) };
 }
 
 // 검색은 소속 안이 아니라 씬 전체를 뒤진다. 여기서 짜는 게 늘 대학대전인 것도 아니고
@@ -783,10 +788,35 @@ function entrySetMatchMap(index, value, commit) {
 }
 
 function entryToggleAnalysis(index) {
-    const m = EntryState.matches[index];
-    if (!m) return;
-    m.open = !m.open;
+    if (!EntryState.matches[index]) return;
+    EntryState.analysisOpen[index] = !EntryState.analysisOpen[index];
     renderEntryResult();
+}
+
+function entrySetMatchMapFromSelect(index, select) {
+    if (!select) return;
+    const value = String(select.value || '').trim();
+    if (value === '__custom__') {
+        const custom = window.prompt('맵 이름을 입력하세요.', '') || '';
+        if (!custom.trim()) { renderEntryResult(); return; }
+        entrySetMatchMap(index, custom.trim(), true);
+        return;
+    }
+    entrySetMatchMap(index, value, true);
+}
+
+function entryMapSelectOptions(current) {
+    const cur = entryMapName(current);
+    const list = entryMapList();
+    const hasCurrent = cur && list.some(name => entryNormalizeMapName(name) === entryNormalizeMapName(cur));
+    const opts = ['<option value="">맵 선택</option>'];
+    list.forEach(name => {
+        const selected = cur && entryNormalizeMapName(name) === entryNormalizeMapName(cur) ? ' selected' : '';
+        opts.push(`<option value="${escapeHTML(name)}"${selected}>${escapeHTML(name)}</option>`);
+    });
+    if (cur && !hasCurrent) opts.push(`<option value="${escapeHTML(cur)}" selected>${escapeHTML(cur)}</option>`);
+    opts.push('<option value="__custom__">직접 입력…</option>');
+    return opts.join('');
 }
 
 // 한쪽 목록만 갈아 끼운다. 검색창·소속 고르기는 tools.html에 고정으로 있어서 절대
@@ -828,8 +858,9 @@ function entryMatchRowHtml(m, i) {
         ? `<span class="entry-match-probval">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</span>`
         : '<span class="entry-match-probval">예상 승률을 계산할 수 없습니다.</span>';
     const mapValue = entryMapName(m.map);
-    const analysis = (wp && m.open) ? entryAnalysisHtml(m, wp) : '';
-    return `<div class="entry-match${m.open ? ' is-open' : ''}">
+    const isOpen = Boolean(EntryState.analysisOpen[i]);
+    const analysis = (wp && isOpen) ? entryAnalysisHtml(m, wp) : '';
+    return `<div class="entry-match${isOpen ? ' is-open' : ''}">
         <div class="entry-match-top">
             <span class="entry-match-no">${i + 1}경기</span>
             <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="${i + 1}경기 빼기">✕</button>
@@ -852,15 +883,15 @@ function entryMatchRowHtml(m, i) {
             </div>
         </div>
         <span class="h2h-rival-bar${has ? '' : ' is-empty'}"><span style="width:${pct}%"></span></span>
-        <div class="entry-match-sim">${probText}</div>
-        <div class="entry-match-actions">
+        <div class="entry-match-footer">
             <label class="entry-map-control" for="entry-map-${i}">
-                <span class="entry-action-label">맵 선택</span>
-                <input type="text" class="entry-map-input" id="entry-map-${i}" list="entry-map-options" placeholder="맵 선택 또는 입력" value="${escapeHTML(mapValue)}"
-                    oninput="entrySetMatchMap(${i}, this.value, false)" onchange="entrySetMatchMap(${i}, this.value, true)" onblur="entrySetMatchMap(${i}, this.value, true)">
+                <select class="entry-map-select" id="entry-map-${i}" aria-label="${i + 1}경기 맵 선택" onchange="entrySetMatchMapFromSelect(${i}, this)">
+                    ${entryMapSelectOptions(mapValue)}
+                </select>
             </label>
-            <button type="button" class="entry-analysis-toggle news-load-more" aria-expanded="${m.open ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">
-                <span>${m.open ? '분석 접기' : '상세 분석'}</span>${chevronDownSvg(10, ` class="chevron-rotatable${m.open ? ' is-open' : ''}"`)}
+            <div class="entry-match-sim">${probText}</div>
+            <button type="button" class="entry-analysis-toggle" aria-expanded="${isOpen ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">
+                <span>${isOpen ? '접기' : '상세'}</span>${chevronDownSvg(9, ` class="chevron-rotatable${isOpen ? ' is-open' : ''}"`)}
             </button>
         </div>
         ${analysis}
@@ -937,8 +968,8 @@ function entrySummaryHtml(ps) {
         <div class="entry-sum-mid">
             <div class="entry-sum-rate">${target}경기 ${sim.need}선승 · 예상 ${sim.eA.toFixed(1)} : ${sim.eB.toFixed(1)}</div>
             <div class="h2h-score-bar"><span style="width:${bar}%"></span></div>
-            <div class="entry-sum-sub">자주 나올 결과 ${sim.top.map(([a, b, v]) => `${a}:${b} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
-            ${sim.filled ? `<div class="entry-sum-sub">남은 ${sim.filled}경기는 핀볼로 채운다고 보고 계산</div>` : ''}
+            <div class="entry-sum-sub">예상 결과 ${sim.top.map(([a, b, v]) => `${a}:${b} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+            ${sim.filled ? `<div class="entry-sum-sub">남은 경기는 핀볼로 채우고 계산</div>` : ''}
         </div>
         <div class="entry-sum-side">
             <div class="entry-sum-name">${escapeHTML(entrySideName(1))}</div>
