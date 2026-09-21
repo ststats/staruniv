@@ -886,8 +886,11 @@ function entryMatchRowHtml(m, i) {
     const a = players[m.a]; const b = players[m.b];
     if (!a || !b) return '';
     const wp = entryWinProb(m.a, m.b, m.map);
-    const has = !!(wp && wp.n);
-    const pct = has ? (wp.w / wp.n) * 100 : 0;
+    // 막대는 화면에 표시하는 원시 승/패와 같은 분모를 써야 한다.
+    // wp.n은 최근가중 유효 경기수라 raw 승수(w)와 섞으면 100%를 넘을 수 있다.
+    const rawTotal = wp ? (Number(wp.w || 0) + Number(wp.l || 0)) : 0;
+    const has = rawTotal > 0;
+    const pct = has ? (Number(wp.w || 0) / rawTotal) * 100 : 0;
     const rec = `<span class="entry-rec-label">${escapeHTML(entryPeriodLabel())}</span>`
         + (has
             ? `<span class="entry-rec-nums"><span class="entry-vs-num is-a">${wp.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${wp.l}</span></span>`
