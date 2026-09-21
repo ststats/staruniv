@@ -464,12 +464,16 @@ function raceBadgeHtml(race) {
     return `<span class="tag-badge${raceBadgeClass(race)}">${escapeHTML(raceShortLabel(race))}</span>`;
 }
 
+// 이름 자체가 길어 '티어'를 붙이면 뱃지가 너무 길어지는 티어. '스페이드티어'는 여섯 자라
+// 좁은 칸에서 줄바꿈되거나 이름을 밀어낸다 - 이런 티어는 이름만 적는다.
+const TIER_NO_SUFFIX = new Set(['스페이드']);
+
 // 티어 표기(예: "3티어")를 멤버 카드/모달/개인전적 프로필에서 동일하게 사용
 function tierLabel(tier) {
     const raw = (tier === undefined || tier === null) ? '' : String(tier).trim();
     // 비어 있거나 '체크'면 아직 티어를 안 매긴 사람이다 - 둘 다 '미분류'로 적는다.
     if (!raw || TIER_UNRANKED.has(raw)) return '미분류';
-    return `${raw}티어`;
+    return TIER_NO_SUFFIX.has(raw) ? raw : `${raw}티어`;
 }
 
 function tierBadgeHtml(tier) {
