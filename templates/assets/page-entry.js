@@ -28,8 +28,8 @@ const ENTRY_DORMANT = '휴면';
 // 맞대결을 레이팅과 섞을 때의 '가상 판 수'. 실제 맞대결이 이만큼 쌓여야 반반이 된다.
 // 10으로 두면 3판짜리 맞대결은 23%만 반영되고, 30판이면 75%가 반영된다.
 const ENTRY_H2H_PRIOR = 10;
-// 맞대결을 셀 때 이 날짜 이후만 본다(너무 옛날 천적 관계까지 끌고 오지 않게).
-const ENTRY_H2H_DAYS = 730;
+// 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
+const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
 const ENTRY_POSTER_W = 1080;      // 저장되는 포스터 가로(px)
 // 대학대전은 경기 수가 정해져 있다(9경기 5선승이 흔하다). 동일 티어로 각자 한 번씩만
 // 짝지으면 그 수가 안 채워지는 일이 잦은데, 그때는 채워진 만큼 두고 한 번 더 돌려
@@ -54,7 +54,9 @@ const EntryState = {
     query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
     labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
     simulated: false,        // '시뮬 돌리기'를 눌렀나. 예상 승률은 그때만 보여 준다
-    h2h: {},                 // "a|b" -> {w, l}  (받아온 맞대결)
+    period: 'all',           // 맞대결 기간(ENTRY_PERIODS)
+    rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
+    h2hCache: {},            // "기간|a|b" -> {w, l}
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
     // 포스터에 승률을 찍을지. 기본은 끔 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
@@ -82,6 +84,7 @@ async function entryEnsureLoaded() {
     try {
         await EntryState.loading;
         entryInitTeams();
+        renderEntryPeriod();
         renderEntry();
     } catch (e) {
         ['a', 'b'].forEach(k => {
@@ -157,7 +160,7 @@ function entryWinProb(aPid, bPid) {
     const rb = entryRating(players[bPid]);
     if (!ra || !rb) return null;
     const base = entryEloProb(ra.value, rb.value);
-    const rec = EntryState.h2h[entryH2hKey(aPid, bPid)];
+    const rec = entryH2hRec(aPid, bPid);
     const n = rec ? rec.w + rec.l : 0;
     if (!n) return { p: base, base, n: 0, w: 0, l: 0, exact: ra.exact && rb.exact };
     const obs = rec.w / n;
@@ -191,24 +194,49 @@ async function entryLoadPlayerRows(pid) {
     return Array.isArray(data[pid]) ? data[pid] : [];
 }
 
-// 고른 선수들의 맞대결을 한 번에 받아 EntryState.h2h에 채운다.
+// 고른 선수들의 경기 행을 받아 둔다. 맞대결은 기간이 바뀔 때마다 여기서 다시 센다.
 async function entryLoadH2h(pids) {
-    const since = new Date(Date.now() - ENTRY_H2H_DAYS * 86400000);
-    const sinceKey = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, '0')}-${String(since.getDate()).padStart(2, '0')}`;
-    await Promise.all([...new Set(pids)].map(async pid => {
-        let rows;
-        try { rows = await entryLoadPlayerRows(pid); } catch (e) { return; }
-        const tally = {};
-        (rows || []).forEach(r => {
-            if (String(r[0]) < sinceKey) return;
-            const opp = String(r[1]);
-            (tally[opp] || (tally[opp] = [0, 0]))[r[2] ? 0 : 1] += 1;
-        });
-        Object.entries(tally).forEach(([opp, [w, l]]) => {
-            EntryState.h2h[entryH2hKey(pid, opp)] = { w, l };
-            EntryState.h2h[entryH2hKey(opp, pid)] = { w: l, l: w };
-        });
+    await Promise.all([...new Set(pids)].filter(pid => !EntryState.rows[pid]).map(async pid => {
+        try { EntryState.rows[pid] = await entryLoadPlayerRows(pid); } catch (e) { EntryState.rows[pid] = []; }
     }));
+}
+
+function entrySinceKey() {
+    if (EntryState.period === 'all') return '';
+    const d = new Date(Date.now() - Number(EntryState.period) * 86400000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// a가 b를 상대로 고른 기간 안에 몇 승 몇 패인가. 한쪽 행만 있어도 뒤집어 센다.
+function entryH2hRec(a, b) {
+    const key = `${EntryState.period}|${a}|${b}`;
+    if (EntryState.h2hCache[key]) return EntryState.h2hCache[key];
+    const since = entrySinceKey();
+    let w = 0; let l = 0;
+    let rows = EntryState.rows[a];
+    let flip = false;
+    if (!rows) { rows = EntryState.rows[b]; flip = true; }
+    if (!rows) return null;
+    const opp = String(flip ? a : b);
+    rows.forEach(r => {
+        if (String(r[1]) !== opp || (since && String(r[0]) < since)) return;
+        if (r[2]) w += 1; else l += 1;
+    });
+    const rec = flip ? { w: l, l: w } : { w, l };
+    EntryState.h2hCache[key] = rec;
+    return rec;
+}
+
+function entrySetPeriod(period) {
+    EntryState.period = period;
+    renderEntryPeriod();
+    renderEntryResult();
+}
+
+function renderEntryPeriod() {
+    const box = document.getElementById('entry-period');
+    if (!box) return;
+    box.innerHTML = `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="맞대결 기간">${ENTRY_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${EntryState.period === key ? ' active' : ''}" aria-pressed="${EntryState.period === key}" onclick="entrySetPeriod('${key}')">${label}</button>`).join('')}</div></div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -343,15 +371,39 @@ async function entryRefreshProbs() {
 // ---------------------------------------------------------------------------
 // 시뮬레이션
 // ---------------------------------------------------------------------------
-// 1:1 대진: 세트가 서로 독립이라고 보고 이긴 판 수의 분포를 접는다(푸아송 이항).
-function entryScoreDist(ps) {
-    let dist = [1];
-    ps.forEach(p => {
-        const next = new Array(dist.length + 1).fill(0);
-        dist.forEach((v, k) => { next[k] += v * (1 - p); next[k + 1] += v * p; });
-        dist = next;
+// N경기 선승제(9경기면 5선승)를 순서대로 굴린다. 한쪽이 선승 수에 닿으면 거기서 끝이라
+// 결과는 5:0 ~ 5:4 꼴로 나온다. 골라 둔 대진이 경기 수보다 적으면(9경기에 7개) 남은
+// 자리는 핀볼로 기존 대진 중 하나가 다시 나온다고 보고, 그 자리 승률은 골라 둔 대진의
+// 평균으로 둔다.
+function entrySeriesSim(ps, games) {
+    const need = Math.floor(games / 2) + 1;
+    const avg = ps.length ? ps.reduce((sum, p) => sum + p, 0) / ps.length : 0.5;
+    const seq = Array.from({ length: games }, (_, i) => (i < ps.length ? ps[i] : avg));
+    let live = new Map([['0|0', 1]]);
+    const done = new Map();
+    seq.forEach(p => {
+        const next = new Map();
+        live.forEach((v, key) => {
+            const [a, b] = key.split('|').map(Number);
+            [[a + 1, b, v * p], [a, b + 1, v * (1 - p)]].forEach(([x, y, q]) => {
+                const k = `${x}|${y}`;
+                const bag = (x >= need || y >= need) ? done : next;
+                bag.set(k, (bag.get(k) || 0) + q);
+            });
+        });
+        live = next;
     });
-    return dist;
+    live.forEach((v, k) => done.set(k, (done.get(k) || 0) + v));   // 짝수 경기에서 비긴 경우
+    let pA = 0; let pB = 0; let eA = 0; let eB = 0;
+    const scores = [];
+    done.forEach((v, k) => {
+        const [a, b] = k.split('|').map(Number);
+        if (a >= need) pA += v; else if (b >= need) pB += v;
+        eA += a * v; eB += b * v;
+        scores.push([a, b, v]);
+    });
+    scores.sort((x, y) => y[2] - x[2]);
+    return { need, pA, pB, eA, eB, top: scores.slice(0, 3), filled: games - Math.min(ps.length, games) };
 }
 
 // 검색은 소속 안이 아니라 씬 전체를 뒤진다. 여기서 짜는 게 늘 대학대전인 것도 아니고
@@ -439,8 +491,9 @@ function entryMatchRowHtml(m, i) {
     const wp = entryWinProb(m.a, m.b);
     const has = !!(wp && wp.n);
     const pct = has ? (wp.w / wp.n) * 100 : 0;
+    // 상대전적 스코어판과 같은 규칙으로 왼쪽 수는 승리 색, 오른쪽 수는 패배 색
     const rec = has
-        ? `${winLoseText(wp.w, wp.l)}<span class="h2h-rate-sub"> · ${Math.round(pct * 10) / 10}%</span>`
+        ? `<span class="entry-vs-num is-a">${wp.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${wp.l}</span>`
         : '<span class="entry-match-none">맞대결 없음</span>';
     const sim = (EntryState.simulated && wp)
         ? `<div class="entry-match-sim">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</div>`
@@ -498,25 +551,24 @@ function entrySetLabel(side, value) {
 
 // 시뮬 결과는 상대전적 머리 스코어판(.h2h-score)과 같은 모양으로 낸다.
 function entrySimScoreHtml(ps) {
-    const n = ps.length;
-    const dist = entryScoreDist(ps);
-    const expected = ps.reduce((sum, p) => sum + p, 0);
-    const pWin = dist.reduce((sum, v, k) => sum + (k > n - k ? v : 0), 0);
-    const top = dist.map((v, k) => [k, v]).sort((x, y) => y[1] - x[1]).slice(0, 3);
-    const pa = Math.round(pWin * 1000) / 10;
+    const games = EntryState.target;
+    const sim = entrySeriesSim(ps, games);
+    const pa = Math.round(sim.pA * 1000) / 10;
+    const pb = Math.round(sim.pB * 1000) / 10;
     return `<div class="h2h-score entry-score">
         <div class="h2h-score-side">
             <div class="h2h-score-name">${escapeHTML(entrySideName(0))}</div>
             <div class="h2h-score-num is-a">${pa.toFixed(1)}%</div>
         </div>
         <div class="h2h-score-mid">
-            <div class="h2h-score-rate">예상 스코어 ${expected.toFixed(1)} : ${(n - expected).toFixed(1)}</div>
-            <div class="h2h-score-bar"><span style="width:${pa}%"></span></div>
-            <div class="h2h-score-total">자주 나올 결과 ${top.map(([k, v]) => `${k}:${n - k} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+            <div class="h2h-score-rate">${games}경기 ${sim.need}선승 · 예상 ${sim.eA.toFixed(1)} : ${sim.eB.toFixed(1)}</div>
+            <div class="h2h-score-bar"><span style="width:${sim.pA + sim.pB ? (sim.pA / (sim.pA + sim.pB)) * 100 : 50}%"></span></div>
+            <div class="h2h-score-total">자주 나올 결과 ${sim.top.map(([a, b, v]) => `${a}:${b} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+            ${sim.filled ? `<div class="h2h-score-total">남은 ${sim.filled}경기는 핀볼로 채운다고 보고(고른 대진 평균) 계산했습니다</div>` : ''}
         </div>
         <div class="h2h-score-side">
             <div class="h2h-score-name">${escapeHTML(entrySideName(1))}</div>
-            <div class="h2h-score-num is-b">${(100 - pa).toFixed(1)}%</div>
+            <div class="h2h-score-num is-b">${pb.toFixed(1)}%</div>
         </div>
     </div>`;
 }
@@ -541,7 +593,7 @@ function renderEntryResult() {
     const over = n - target;
     const hint = over > 0
         ? `같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${over}개를 걷어 내세요.`
-        : (over < 0 ? `${target}경기 중 ${-over}칸이 비었습니다.` : '');
+        : (over < 0 ? `${target}경기 중 ${n}경기를 골랐습니다. 남은 ${-over}경기는 핀볼로 채운다고 보고 계산합니다.` : '');
     const top = (EntryState.simulated && n <= target) ? entrySimScoreHtml(ps) : '';
     const simLabel = EntryState.simulated ? '예상 승률 숨기기' : '시뮬 돌리기';
     box.innerHTML = top
@@ -611,7 +663,7 @@ function entryPosterRows() {
             a: players[m.a] || null,
             b: players[m.b] || null,
             p: (withProb && wp) ? wp.p : null,
-            h2h: (wp && wp.n) ? `${wp.w}승 ${wp.l}패` : '',
+            h2h: (wp && wp.n) ? [wp.w, wp.l] : null,
         };
     });
 }
@@ -690,9 +742,33 @@ async function entrySavePoster() {
         ctx.fillStyle = '#94a3b8';
         ctx.font = '600 17px Pretendard, sans-serif';
         ctx.fillText(tierText || `${i + 1}경기`, W / 2, midY - 16);
-        ctx.fillStyle = r.h2h ? TEXT : '#cbd5e1';
-        ctx.font = '800 26px Pretendard, sans-serif';
-        ctx.fillText(r.h2h || '맞대결 없음', W / 2, midY + 12);
+        if (r.h2h) {
+            // '14 VS 11' - 왼쪽 수는 승리 색, 오른쪽 수는 패배 색(사이트 스코어판과 같다)
+            const [hw, hl] = r.h2h;
+            ctx.font = '800 30px Pretendard, sans-serif';
+            const wA = ctx.measureText(String(hw)).width;
+            ctx.font = '700 16px Pretendard, sans-serif';
+            const wV = ctx.measureText('VS').width;
+            const gap = 12;
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#1f6fff';
+            ctx.font = '800 30px Pretendard, sans-serif';
+            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, midY + 14);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 16px Pretendard, sans-serif';
+            ctx.fillText('VS', W / 2, midY + 10);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#f03e3e';
+            ctx.font = '800 30px Pretendard, sans-serif';
+            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, midY + 14);
+            ctx.textAlign = 'center';
+            void wA;
+        } else {
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '700 22px Pretendard, sans-serif';
+            ctx.fillText('맞대결 없음', W / 2, midY + 12);
+        }
         if (hasProb) {
             const pa = Math.round(r.p * 1000) / 10;
             const BW = 210, BH = 10, bx = W / 2 - BW / 2, by = cy + 22;

@@ -6117,6 +6117,12 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-list .h2h-suggest-item.is-picked .h2h-suggest-count.is-used { color: #fff; }
 .entry-match .h2h-rival-bar { margin-top: 8px; }
 .entry-match-none { color: var(--color-text-faint); }
+/* '14 VS 11' - 상대전적 스코어판(.h2h-score-num)의 색 규칙을 카드 크기로 줄였다 */
+.entry-match .entry-match-rec { display: inline-flex; align-items: baseline; gap: 8px; }
+.entry-vs-num { font-family: "Pretendard", sans-serif; font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.entry-vs-num.is-a { color: var(--color-win); }
+.entry-vs-num.is-b { color: var(--color-lose); }
+.entry-vs { font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .1em; color: var(--color-text-faint); }
 .entry-match-sim { margin-top: 6px; font-size: var(--fs-meta); color: var(--color-text-sub); text-align: center; }
 .news-load-more:disabled { cursor: default; color: var(--color-text-faint); background: var(--color-card); }
 
