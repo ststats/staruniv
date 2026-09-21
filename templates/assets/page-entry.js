@@ -65,6 +65,8 @@ const EntryState = {
     posterProb: false,
     autoTiers: new Set(),       // 자동매칭에 포함할 티어
     analysisOpen: {},           // 경기별 상세 분석 펼침 상태
+    mapPickerOpen: null,        // 열려 있는 경기별 맵 선택창
+    mapPickerAll: {},           // 경기별 전체 맵 목록 펼침 여부
 };
 
 // ---------------------------------------------------------------------------
@@ -156,6 +158,17 @@ function entryMapList() {
     return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'ko'));
 }
 
+function entryRecentMapList() {
+    const maps = entryMapDict();
+    const raw = (EntryState.index && EntryState.index.recentMaps) || [];
+    const names = raw.map(item => {
+        const id = Array.isArray(item) ? item[0] : item;
+        return entryMapName(id);
+    }).filter(Boolean);
+    if (names.length) return [...new Set(names)];
+    return entryMapList();
+}
+
 function renderEntryMapDatalist() {
     const list = document.getElementById('entry-map-options');
     if (!list) return;
@@ -235,6 +248,11 @@ function entrySampleLabel(n) {
     if (count < ENTRY_ANALYSIS_SMALL_SAMPLE) return '표본 적음';
     if (count < ENTRY_ANALYSIS_GOOD_SAMPLE) return '표본 보통';
     return '표본 충분';
+}
+
+function entryRaceLabel(code) {
+    const key = String(code || '').toUpperCase();
+    return ({ T:'테란', Z:'저그', P:'프로토스' })[key] || key || '미상';
 }
 
 function entrySmoothedRate(rec, priorRate, priorN) {
@@ -455,7 +473,7 @@ function entryAnalysisHtml(match, wp) {
         const side = strongest[1] > 0 ? a.n : b.n;
         summary = `${strongest[0]} 데이터가 ${side} 쪽으로 가장 크게 보정했습니다.`;
     }
-    const raceDetail = `${escapeHTML(a.n)} vs ${raceLabel(b.r)} ${entryRecordText(raceA.w, raceA.l)} · ${escapeHTML(b.n)} vs ${raceLabel(a.r)} ${entryRecordText(raceB.w, raceB.l)} · ${entrySampleLabel(raceN)}`;
+    const raceDetail = `${escapeHTML(a.n)} vs ${entryRaceLabel(b.r)} ${entryRecordText(raceA.w, raceA.l)} · ${escapeHTML(b.n)} vs ${entryRaceLabel(a.r)} ${entryRecordText(raceB.w, raceB.l)} · ${entrySampleLabel(raceN)}`;
     const mapDetail = mapName
         ? `${escapeHTML(mapName)} · ${escapeHTML(a.n)} ${entryRecordText(mapA.w, mapA.l)} · ${escapeHTML(b.n)} ${entryRecordText(mapB.w, mapB.l)} · ${entrySampleLabel(mapN)}`
         : '세트 맵을 선택하면 맵 성적을 반영합니다.';
@@ -539,6 +557,8 @@ function entryReset() {
     EntryState.matches = [];
     EntryState.sel = [null, null];
     EntryState.analysisOpen = {};
+    EntryState.mapPickerOpen = null;
+    EntryState.mapPickerAll = {};
     renderEntry();
 }
 
@@ -780,8 +800,8 @@ function entrySetMatchMap(index, value, commit) {
     const m = EntryState.matches[index];
     if (!m) return;
     m.map = String(value || '').trim();
-    // 입력 중에는 DOM을 갈아끼우지 않는다. blur/change 시에만 승률/분석을 다시 계산한다.
     if (commit) {
+        EntryState.mapPickerOpen = null;
         renderEntryResult();
         entryRefreshProbs();
     }
@@ -790,33 +810,51 @@ function entrySetMatchMap(index, value, commit) {
 function entryToggleAnalysis(index) {
     if (!EntryState.matches[index]) return;
     EntryState.analysisOpen[index] = !EntryState.analysisOpen[index];
+    EntryState.mapPickerOpen = null;
     renderEntryResult();
 }
 
-function entrySetMatchMapFromSelect(index, select) {
-    if (!select) return;
-    const value = String(select.value || '').trim();
-    if (value === '__custom__') {
-        const custom = window.prompt('맵 이름을 입력하세요.', '') || '';
-        if (!custom.trim()) { renderEntryResult(); return; }
-        entrySetMatchMap(index, custom.trim(), true);
-        return;
-    }
+function entryToggleMapPicker(index) {
+    if (!EntryState.matches[index]) return;
+    EntryState.mapPickerOpen = EntryState.mapPickerOpen === index ? null : index;
+    renderEntryResult();
+}
+
+function entryToggleAllMaps(index) {
+    EntryState.mapPickerAll[index] = !EntryState.mapPickerAll[index];
+    renderEntryResult();
+}
+
+function entryChooseMap(index, value) {
     entrySetMatchMap(index, value, true);
 }
 
-function entryMapSelectOptions(current) {
-    const cur = entryMapName(current);
-    const list = entryMapList();
-    const hasCurrent = cur && list.some(name => entryNormalizeMapName(name) === entryNormalizeMapName(cur));
-    const opts = ['<option value="">맵 선택</option>'];
-    list.forEach(name => {
-        const selected = cur && entryNormalizeMapName(name) === entryNormalizeMapName(cur) ? ' selected' : '';
-        opts.push(`<option value="${escapeHTML(name)}"${selected}>${escapeHTML(name)}</option>`);
-    });
-    if (cur && !hasCurrent) opts.push(`<option value="${escapeHTML(cur)}" selected>${escapeHTML(cur)}</option>`);
-    opts.push('<option value="__custom__">직접 입력…</option>');
-    return opts.join('');
+function entryChooseCustomMap(index) {
+    const current = entryMapName(EntryState.matches[index]?.map || '');
+    const custom = window.prompt('맵 이름을 입력하세요.', current) || '';
+    if (!custom.trim()) return;
+    entrySetMatchMap(index, custom.trim(), true);
+}
+
+function entryMapPickerHtml(index, current) {
+    const recent = entryRecentMapList();
+    const all = entryMapList();
+    const showAll = Boolean(EntryState.mapPickerAll[index]);
+    const primary = recent.slice(0, 8);
+    const chosen = entryMapName(current);
+    const list = showAll ? all : primary;
+    const buttons = list.map(name => {
+        const picked = chosen && entryNormalizeMapName(chosen) === entryNormalizeMapName(name);
+        return `<button type="button" class="entry-map-option${picked ? ' is-picked' : ''}" onclick="entryChooseMap(${index}, '${jsAttr(name)}')">${escapeHTML(name)}</button>`;
+    }).join('');
+    return `<div class="entry-map-popover">
+        <div class="entry-map-popover-head"><strong>${showAll ? '전체 맵' : '최근 많이 하는 맵'}</strong><span>${showAll ? all.length : Math.min(primary.length, all.length)}개</span></div>
+        <div class="entry-map-options">${buttons || '<span class="entry-map-empty">맵 정보가 없습니다.</span>'}</div>
+        <div class="entry-map-popover-actions">
+            <button type="button" onclick="entryToggleAllMaps(${index})">${showAll ? '최근 맵만' : '전체 맵 보기'}</button>
+            <button type="button" onclick="entryChooseCustomMap(${index})">직접 입력</button>
+        </div>
+    </div>`;
 }
 
 // 한쪽 목록만 갈아 끼운다. 검색창·소속 고르기는 tools.html에 고정으로 있어서 절대
@@ -884,16 +922,17 @@ function entryMatchRowHtml(m, i) {
         </div>
         <span class="h2h-rival-bar${has ? '' : ' is-empty'}"><span style="width:${pct}%"></span></span>
         <div class="entry-match-footer">
-            <label class="entry-map-control" for="entry-map-${i}">
-                <select class="entry-map-select" id="entry-map-${i}" aria-label="${i + 1}경기 맵 선택" onchange="entrySetMatchMapFromSelect(${i}, this)">
-                    ${entryMapSelectOptions(mapValue)}
-                </select>
-            </label>
+            <div class="entry-map-control${EntryState.mapPickerOpen === i ? ' is-open' : ''}">
+                <button type="button" class="entry-map-trigger" aria-expanded="${EntryState.mapPickerOpen === i ? 'true' : 'false'}" onclick="entryToggleMapPicker(${i})">
+                    <span>${escapeHTML(mapValue || '맵 선택')}</span>${chevronDownSvg(9, ` class="chevron-rotatable${EntryState.mapPickerOpen === i ? ' is-open' : ''}"`)}
+                </button>
+            </div>
             <div class="entry-match-sim">${probText}</div>
             <button type="button" class="entry-analysis-toggle" aria-expanded="${isOpen ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">
-                <span>${isOpen ? '접기' : '상세'}</span>${chevronDownSvg(9, ` class="chevron-rotatable${isOpen ? ' is-open' : ''}"`)}
+                <span>${isOpen ? '접기' : '분석'}</span>${chevronDownSvg(9, ` class="chevron-rotatable${isOpen ? ' is-open' : ''}"`)}
             </button>
         </div>
+        ${EntryState.mapPickerOpen === i ? entryMapPickerHtml(i, mapValue) : ''}
         ${analysis}
     </div>`;
 }
@@ -1199,7 +1238,7 @@ async function entrySavePoster() {
         if (r.map) {
             ctx.fillStyle = SUB;
             ctx.font = '700 18px Pretendard, sans-serif';
-            ctx.fillText(`맵 · ${r.map}`, W / 2, cy - 34);
+            ctx.fillText(String(r.map), W / 2, cy - 42);
         }
         if (r.h2h) {
             const [hw, hl] = r.h2h;
@@ -1226,7 +1265,7 @@ async function entrySavePoster() {
         if (r.all && EntryState.period !== 'all') {
             ctx.fillStyle = '#9aa5b4';
             ctx.font = '700 19px Pretendard, sans-serif';
-            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, cy + 38);
+            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, cy + 42);
         }
 
         if (r.p !== null) {

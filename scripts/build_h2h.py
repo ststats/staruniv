@@ -38,6 +38,8 @@
 """
 
 import argparse
+from collections import Counter
+from datetime import datetime, timedelta
 import json
 import os
 import re
@@ -254,6 +256,31 @@ def main():
     maps = store.get('maps') or {}
     cats = store.get('cats') or []
 
+    # 엔트리 맵 선택창용: 최신 90일 경기에서 많이 쓰인 맵 순서를 index에 같이 싣는다.
+    # 전체 맵 사전은 그대로 두고, 첫 화면에는 이 순서의 상위 맵만 보여준다.
+    latest_date = None
+    for r in rows:
+        if len(r) < 5 or not r[1]:
+            continue
+        try:
+            d = datetime.strptime(str(r[1])[:10], '%Y-%m-%d').date()
+        except ValueError:
+            continue
+        latest_date = d if latest_date is None or d > latest_date else latest_date
+    recent_map_counts = Counter()
+    if latest_date:
+        cutoff = latest_date - timedelta(days=90)
+        for r in rows:
+            if len(r) < 5 or not r[4] or not r[1]:
+                continue
+            try:
+                d = datetime.strptime(str(r[1])[:10], '%Y-%m-%d').date()
+            except ValueError:
+                continue
+            if d >= cutoff:
+                recent_map_counts[str(r[4])] += 1
+    recent_maps = [[mid, count] for mid, count in recent_map_counts.most_common()]
+
     tier_date, tier_members = resolve_tier_members(args.offline)
     alias = load_json(ALIAS_PATH, {})           # { 시너지 닉네임: eloboard 이름 }
     linked, missing = link_tier_players(players, tier_members, alias)
@@ -345,6 +372,7 @@ def main():
         'catOrder': [CAT_LABELS.get(c, c) for c in CAT_LABELS if CAT_LABELS.get(c, c) in
                      {CAT_LABELS.get(x, x or '기타') for x in cats}],
         'maps': maps,
+        'recentMaps': recent_maps,
         'players': index_players,
         'others': others,
         'otherRaces': {str(pid): info[1] for pid, info in players.items()
