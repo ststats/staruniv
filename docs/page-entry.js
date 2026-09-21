@@ -64,6 +64,7 @@ const EntryState = {
     // 물건이라 밖으로 돌아다닌다. 예측은 화면 안에서만 본다.
     posterProb: false,
     autoTiers: new Set(),       // 자동매칭에 포함할 티어
+    analysisOpen: {},           // 경기별 상세 분석 펼침 상태
 };
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,7 @@ async function entryEnsureLoaded() {
     try {
         await EntryState.loading;
         entryInitTeams();
+        renderEntryMapDatalist();
         renderEntryPeriod();
         renderEntry();
     } catch (e) {
@@ -134,6 +136,32 @@ function entryTierLevels() {
     return (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.tierLevels) || {};
 }
 
+function entryMapDict() {
+    return (EntryState.index && EntryState.index.maps) || {};
+}
+
+function entryMapName(idOrName) {
+    const maps = entryMapDict();
+    if (idOrName === undefined || idOrName === null || idOrName === '') return '';
+    if (Object.prototype.hasOwnProperty.call(maps, String(idOrName))) return String(maps[String(idOrName)] || '').trim();
+    return String(idOrName || '').trim();
+}
+
+function entryNormalizeMapName(value) {
+    return entryMapName(value).replace(/\s+/g, '').trim().toLowerCase();
+}
+
+function entryMapList() {
+    const names = Object.values(entryMapDict()).map(v => String(v || '').trim()).filter(Boolean);
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'ko'));
+}
+
+function renderEntryMapDatalist() {
+    const list = document.getElementById('entry-map-options');
+    if (!list) return;
+    list.innerHTML = entryMapList().map(name => `<option value="${escapeHTML(name)}"></option>`).join('');
+}
+
 // 선수 한 명의 레이팅. 없으면 티어 기준선 -> 그것도 없으면 사다리 한가운데.
 function entryRating(p) {
     if (!p) return null;
@@ -153,20 +181,127 @@ function entryEloProb(ra, rb) {
 
 function entryH2hKey(a, b) { return `${a}|${b}`; }
 
-// 맞대결을 레이팅 쪽으로 끌어당겨 섞는다. 판 수가 적으면 거의 레이팅 그대로 둔다.
-// (맨 위 주석 참고 - 2승 0패를 그대로 믿으면 표본이 얇은 쪽이 과대평가된다)
-function entryWinProb(aPid, bPid) {
+// 예측승률은 레이팅을 중심값으로 두고, 최근 데이터가 충분할 때만 맞대결/종족전/맵으로
+// 조금씩 움직인다. 조건부 전적은 선수 전체 폼 대비 얼마나 더 잘/못했는지를 보므로
+// 레이팅에 이미 반영된 '선수 자체의 강함'을 이중 계산하지 않는다.
+const ENTRY_FORM_HALF_LIFE = 90;
+const ENTRY_RACE_PRIOR = 14;
+const ENTRY_MAP_PRIOR = 18;
+const ENTRY_MAX_H2H_ADJ = 0.08;
+const ENTRY_MAX_RACE_ADJ = 0.05;
+const ENTRY_MAX_MAP_ADJ = 0.05;
+const ENTRY_ANALYSIS_SMALL_SAMPLE = 5;
+const ENTRY_ANALYSIS_GOOD_SAMPLE = 12;
+
+function entryClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function entryAdjLabel(v) {
+    const pp = v * 100;
+    return `${pp >= 0 ? '+' : ''}${pp.toFixed(1)}%p`;
+}
+function entryRowAgeDays(dateText) {
+    const d = new Date(`${dateText}T00:00:00`);
+    if (!Number.isFinite(d.getTime())) return 0;
+    return Math.max(0, (Date.now() - d.getTime()) / 86400000);
+}
+function entryRecentWeight(dateText) {
+    return Math.pow(0.5, entryRowAgeDays(dateText) / ENTRY_FORM_HALF_LIFE);
+}
+function entryWeightedRecord(pid, predicate, period) {
+    const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
+    let w = 0, l = 0, rw = 0, rl = 0;
+    rows.forEach(r => {
+        if (predicate && !predicate(r)) return;
+        const weight = entryRecentWeight(r[0]);
+        if (Number(r[2]) === 1) { w += weight; rw += 1; }
+        else { l += weight; rl += 1; }
+    });
+    return { w, l, m: w + l, rawW: rw, rawL: rl, rawM: rw + rl };
+}
+function entryWeightedH2hRecord(aPid, bPid, period) {
+    const rows = entryRowsInPeriod(EntryState.rows[aPid] || [], period);
+    let w = 0, l = 0, rawW = 0, rawL = 0;
+    rows.forEach(r => {
+        if (String(r[1]) !== String(bPid)) return;
+        const weight = entryRecentWeight(r[0]);
+        if (Number(r[2]) === 1) { w += weight; rawW += 1; }
+        else { l += weight; rawL += 1; }
+    });
+    return { w, l, m: w + l, rawW, rawL, rawM: rawW + rawL };
+}
+
+function entrySampleLabel(n) {
+    const count = Number(n) || 0;
+    if (!count) return '표본 없음';
+    if (count < ENTRY_ANALYSIS_SMALL_SAMPLE) return '표본 적음';
+    if (count < ENTRY_ANALYSIS_GOOD_SAMPLE) return '표본 보통';
+    return '표본 충분';
+}
+
+function entrySmoothedRate(rec, priorRate, priorN) {
+    const n = rec ? rec.m : 0;
+    return (n + priorN) > 0 ? ((rec ? rec.w : 0) + priorRate * priorN) / (n + priorN) : priorRate;
+}
+function entryConditionalEdge(pid, predicate, period, priorN) {
+    const overall = entryWeightedRecord(pid, null, period);
+    const baseRate = overall.m ? overall.w / overall.m : 0.5;
+    const specific = entryWeightedRecord(pid, predicate, period);
+    const rate = entrySmoothedRate(specific, baseRate, priorN);
+    return { edge: rate - baseRate, rate, baseRate, specific, overall };
+}
+
+function entryWinProb(aPid, bPid, mapName) {
     const players = entryPlayers();
-    const ra = entryRating(players[aPid]);
-    const rb = entryRating(players[bPid]);
+    const a = players[aPid], b = players[bPid];
+    const ra = entryRating(a);
+    const rb = entryRating(b);
     if (!ra || !rb) return null;
+
     const base = entryEloProb(ra.value, rb.value);
-    const rec = entryH2hRec(aPid, bPid);
-    const n = rec ? rec.w + rec.l : 0;
-    if (!n) return { p: base, base, n: 0, w: 0, l: 0, exact: ra.exact && rb.exact };
-    const obs = rec.w / n;
-    const k = n / (n + ENTRY_H2H_PRIOR);            // 맞대결을 얼마나 믿을지
-    return { p: base * (1 - k) + obs * k, base, n, w: rec.w, l: rec.l, exact: ra.exact && rb.exact };
+    let p = base;
+    const factors = [];
+
+    // 1) 직접 맞대결: 레이팅 승률을 prior로 삼아 작은 표본을 자동으로 수축한다.
+    const rec = entryWeightedH2hRecord(aPid, bPid, EntryState.period);
+    const n = rec.m;
+    let h2hAdj = 0;
+    if (n) {
+        const smoothed = (rec.w + ENTRY_H2H_PRIOR * base) / (n + ENTRY_H2H_PRIOR);
+        h2hAdj = entryClamp(smoothed - base, -ENTRY_MAX_H2H_ADJ, ENTRY_MAX_H2H_ADJ);
+        p += h2hAdj;
+    }
+    factors.push({ key:'h2h', adj:h2hAdj, n, w:rec.w, l:rec.l, rawW:rec.rawW, rawL:rec.rawL, rawM:rec.rawM });
+
+    // 2) 종족전: 각 선수가 '평소 승률 대비 해당 종족에게 얼마나 더 강한지'를 양쪽에서 비교.
+    let raceAdj = 0, raceA = null, raceB = null;
+    if (a && b && a.r && b.r) {
+        raceA = entryConditionalEdge(aPid, row => {
+            const opp = players[row[1]]; return opp && String(opp.r || '') === String(b.r || '');
+        }, EntryState.period, ENTRY_RACE_PRIOR);
+        raceB = entryConditionalEdge(bPid, row => {
+            const opp = players[row[1]]; return opp && String(opp.r || '') === String(a.r || '');
+        }, EntryState.period, ENTRY_RACE_PRIOR);
+        raceAdj = entryClamp((raceA.edge - raceB.edge) * 0.5, -ENTRY_MAX_RACE_ADJ, ENTRY_MAX_RACE_ADJ);
+        p += raceAdj;
+    }
+    factors.push({ key:'race', adj:raceAdj, a:raceA, b:raceB });
+
+    // 3) 선택 맵: 개인 맵 성적도 '평소 폼 대비 맵 특화 성적'만 보정한다.
+    const normalizedMap = entryNormalizeMapName(mapName);
+    let mapAdj = 0, mapA = null, mapB = null;
+    if (normalizedMap) {
+        mapA = entryConditionalEdge(aPid, row => entryNormalizeMapName(row[3]) === normalizedMap, EntryState.period, ENTRY_MAP_PRIOR);
+        mapB = entryConditionalEdge(bPid, row => entryNormalizeMapName(row[3]) === normalizedMap, EntryState.period, ENTRY_MAP_PRIOR);
+        mapAdj = entryClamp((mapA.edge - mapB.edge) * 0.5, -ENTRY_MAX_MAP_ADJ, ENTRY_MAX_MAP_ADJ);
+        p += mapAdj;
+    }
+    factors.push({ key:'map', adj:mapAdj, a:mapA, b:mapB, map:entryMapName(mapName) });
+
+    // 극단값은 피한다. 화면에서 98:2 같은 과신을 보여주는 것보다 90:10 상한이 낫다.
+    p = entryClamp(p, 0.10, 0.90);
+    return {
+        p, base, n, w:rec.rawW, l:rec.rawL, exact:ra.exact && rb.exact,
+        factors, h2hAdj, raceAdj, mapAdj
+    };
 }
 
 // 경기 기록은 선수 id 구간별로 쪼개진 샤드에 들어 있다(docs/data/h2h/p/<경계>.json).
@@ -237,6 +372,113 @@ function entryH2hRec(a, b, period) {
     return rec;
 }
 
+function entryPeriodCutoff(period) {
+    const per = period || EntryState.period;
+    if (per === 'all') return '';
+    return entrySinceKey(per);
+}
+
+function entryRowsInPeriod(rows, period) {
+    const since = entryPeriodCutoff(period);
+    return (rows || []).filter(r => !since || String(r[0]) >= since);
+}
+
+function entryRecordText(w, l) {
+    const n = w + l;
+    return n ? `${w}승 ${l}패 · ${(w / n * 100).toFixed(1)}%` : '전적 없음';
+}
+
+function entryRaceRecord(pid, oppRace, period) {
+    const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
+    let w = 0; let l = 0;
+    rows.forEach(r => {
+        const opp = entryPlayers()[r[1]];
+        if (!opp || String(opp.r || '') !== String(oppRace || '')) return;
+        if (Number(r[2]) === 1) w += 1; else l += 1;
+    });
+    return { w, l, m: w + l };
+}
+
+function entryMapRecord(pid, mapName, period) {
+    const key = entryNormalizeMapName(mapName);
+    if (!key) return { w: 0, l: 0, m: 0 };
+    const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
+    let w = 0; let l = 0;
+    rows.forEach(r => {
+        if (entryNormalizeMapName(r[3]) !== key) return;
+        if (Number(r[2]) === 1) w += 1; else l += 1;
+    });
+    return { w, l, m: w + l };
+}
+
+function entryMapH2hRec(a, b, mapName, period) {
+    const key = entryNormalizeMapName(mapName);
+    if (!key) return { w: 0, l: 0, m: 0 };
+    const rows = entryRowsInPeriod(EntryState.rows[a] || [], period);
+    let w = 0; let l = 0;
+    rows.forEach(r => {
+        if (String(r[1]) !== String(b) || entryNormalizeMapName(r[3]) !== key) return;
+        if (Number(r[2]) === 1) w += 1; else l += 1;
+    });
+    return { w, l, m: w + l };
+}
+
+function entryAnalysisStat(label, adj, detail, sampleClass) {
+    const cls = adj > 0.0005 ? ' is-a' : adj < -0.0005 ? ' is-b' : '';
+    return `<div class="entry-analysis-stat${sampleClass ? ` ${sampleClass}` : ''}">
+        <div class="entry-analysis-stat-head"><span>${label}</span><strong class="entry-analysis-adj${cls}">${entryAdjLabel(adj || 0)}</strong></div>
+        <div class="entry-analysis-stat-detail">${detail}</div>
+    </div>`;
+}
+
+function entryAnalysisHtml(match, wp) {
+    const players = entryPlayers();
+    const a = players[match.a]; const b = players[match.b];
+    if (!a || !b || !wp) return '';
+    const ra = entryRating(a);
+    const rb = entryRating(b);
+    const base = wp.base ?? 0.5;
+    const mapName = entryMapName(match.map);
+    const raceA = entryRaceRecord(match.a, b.r, EntryState.period);
+    const raceB = entryRaceRecord(match.b, a.r, EntryState.period);
+    const raceN = Math.min(raceA.m, raceB.m);
+    const mapA = mapName ? entryMapRecord(match.a, mapName, EntryState.period) : {w:0,l:0,m:0};
+    const mapB = mapName ? entryMapRecord(match.b, mapName, EntryState.period) : {w:0,l:0,m:0};
+    const mapN = Math.min(mapA.m, mapB.m);
+    const h2hN = wp.w + wp.l;
+    const totalAdj = wp.p - base;
+    const strongest = [
+        ['맞대결', wp.h2hAdj || 0], ['종족전', wp.raceAdj || 0], ['맵', wp.mapAdj || 0]
+    ].sort((x,y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
+    let summary = '레이팅 차이가 예측의 중심입니다.';
+    if (strongest && Math.abs(strongest[1]) >= 0.008) {
+        const side = strongest[1] > 0 ? a.n : b.n;
+        summary = `${strongest[0]} 데이터가 ${side} 쪽으로 가장 크게 보정했습니다.`;
+    }
+    const raceDetail = `${escapeHTML(a.n)} vs ${raceLabel(b.r)} ${entryRecordText(raceA.w, raceA.l)} · ${escapeHTML(b.n)} vs ${raceLabel(a.r)} ${entryRecordText(raceB.w, raceB.l)} · ${entrySampleLabel(raceN)}`;
+    const mapDetail = mapName
+        ? `${escapeHTML(mapName)} · ${escapeHTML(a.n)} ${entryRecordText(mapA.w, mapA.l)} · ${escapeHTML(b.n)} ${entryRecordText(mapB.w, mapB.l)} · ${entrySampleLabel(mapN)}`
+        : '세트 맵을 선택하면 맵 성적을 반영합니다.';
+    const h2hDetail = h2hN
+        ? `${entryPeriodLabel()} ${wp.w}승 ${wp.l}패 · ${entrySampleLabel(h2hN)}`
+        : '맞대결 표본 없음';
+    const ratingDetail = `${escapeHTML(a.n)} ${ra ? ra.value.toFixed(0) : '—'} · ${escapeHTML(b.n)} ${rb ? rb.value.toFixed(0) : '—'} · 최근 90일 가중`;
+    return `<div class="entry-analysis-panel">
+        <div class="entry-analysis-head">
+            <div><span class="entry-analysis-eyebrow">WIN PROBABILITY</span><strong>${escapeHTML(a.n)} ${(wp.p*100).toFixed(1)}%</strong><span class="entry-analysis-vs">${escapeHTML(b.n)} ${((1-wp.p)*100).toFixed(1)}%</span></div>
+            <span class="entry-analysis-total">기본 ${(base*100).toFixed(1)}% → ${entryAdjLabel(totalAdj)}</span>
+        </div>
+        <p class="entry-analysis-summary">${summary}</p>
+        <div class="entry-analysis-grid">
+            ${entryAnalysisStat('기본 레이팅', 0, ratingDetail)}
+            ${entryAnalysisStat('맞대결', wp.h2hAdj || 0, h2hDetail, h2hN && h2hN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
+            ${entryAnalysisStat('종족전', wp.raceAdj || 0, raceDetail, raceN && raceN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
+            ${entryAnalysisStat('선택 맵', wp.mapAdj || 0, mapDetail, mapN && mapN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
+        </div>
+        <div class="entry-analysis-foot">최근 경기에 90일 반감기를 적용하고, 표본이 적은 항목은 자동으로 약하게 반영합니다.</div>
+    </div>`;
+}
+
 function entrySetPeriod(period) {
     EntryState.period = period;
     renderEntryPeriod();
@@ -287,7 +529,7 @@ function entryPickTeam(side, team) {
 
 function entrySwapTeams() {
     EntryState.teams.reverse();
-    EntryState.matches = EntryState.matches.map(m => ({ a: m.b, b: m.a }));
+    EntryState.matches = EntryState.matches.map(m => ({ ...m, a: m.b, b: m.a }));
     EntryState.sel.reverse();
     renderEntryTeamChips();
     renderEntry();
@@ -296,6 +538,7 @@ function entrySwapTeams() {
 function entryReset() {
     EntryState.matches = [];
     EntryState.sel = [null, null];
+    EntryState.analysisOpen = {};
     renderEntry();
 }
 
@@ -304,7 +547,7 @@ function entryTogglePlayer(side, pid) {
     EntryState.sel[side] = EntryState.sel[side] === pid ? null : pid;
     const [a, b] = EntryState.sel;
     if (a && b) {
-        EntryState.matches.push({ a, b });
+        EntryState.matches.push({ a, b, map: '' });
         EntryState.sel = [null, null];
     }
     renderEntry();
@@ -313,6 +556,8 @@ function entryTogglePlayer(side, pid) {
 
 function entryRemoveMatch(i) {
     EntryState.matches.splice(i, 1);
+    const next = {}; EntryState.matches.forEach((m, idx) => { next[idx] = Boolean(m.open); });
+    EntryState.analysisOpen = next;
     renderEntry();
 }
 
@@ -326,7 +571,7 @@ function entrySameTierPairs() {
     const byTier = {};
     B.forEach(b => (byTier[String(b.t)] || (byTier[String(b.t)] = [])).push(b));
     const out = [];
-    A.forEach(a => (byTier[String(a.t)] || []).forEach(b => out.push({ a: a.pid, b: b.pid })));
+    A.forEach(a => (byTier[String(a.t)] || []).forEach(b => out.push({ a: a.pid, b: b.pid, map: '' })));
     // 경기를 올리는 차례대로 세운다(ENTRY_TIER_SEQ). 같은 티어 안에서는 티어 안 순위 순.
     const players = entryPlayers();
     out.sort((x, y) => {
@@ -400,7 +645,7 @@ function entryAutoFillSelectedTiers() {
         alert('선택한 티어에서 만들 수 있는 대진이 없습니다.');
         return;
     }
-    EntryState.matches = all;
+    EntryState.matches = all.map(m => ({ ...m, map: m.map || '' }));
     EntryState.sel = [null, null];
     document.getElementById('entry-auto-tier-picker')?.classList.add('d-none');
     document.getElementById('entry-auto-btn')?.setAttribute('aria-expanded', 'false');
@@ -526,6 +771,20 @@ function entryPlayerItemHtml(side, p, showTeam) {
     </button>`;
 }
 
+function entrySetMatchMap(index, value) {
+    const m = EntryState.matches[index];
+    if (!m) return;
+    m.map = String(value || '').trim();
+    renderEntryResult();
+}
+
+function entryToggleAnalysis(index) {
+    const m = EntryState.matches[index];
+    if (!m) return;
+    m.open = !m.open;
+    renderEntryResult();
+}
+
 // 한쪽 목록만 갈아 끼운다. 검색창·소속 고르기는 tools.html에 고정으로 있어서 절대
 // 다시 그리지 않는다 - 다시 그리면 <input>이 새로 생겨 한글 조합이 끊긴다.
 function renderEntryColBody(side) {
@@ -554,21 +813,28 @@ function entryMatchRowHtml(m, i) {
     const players = entryPlayers();
     const a = players[m.a]; const b = players[m.b];
     if (!a || !b) return '';
-    const wp = entryWinProb(m.a, m.b);
+    const wp = entryWinProb(m.a, m.b, m.map);
     const has = !!(wp && wp.n);
     const pct = has ? (wp.w / wp.n) * 100 : 0;
-    // 상대전적 스코어판과 같은 규칙으로 왼쪽 수는 승리 색, 오른쪽 수는 패배 색
     const rec = `<span class="entry-rec-label">${escapeHTML(entryPeriodLabel())}</span>`
         + (has
             ? `<span class="entry-rec-nums"><span class="entry-vs-num is-a">${wp.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${wp.l}</span></span>`
             : '<span class="entry-match-none">맞대결 없음</span>');
-    const sim = wp
-        ? `<div class="entry-match-sim">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</div>`
-        : '';
-    return `<div class="entry-match">
+    const probText = wp
+        ? `<span class="entry-match-probval">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</span>`
+        : '<span class="entry-match-probval">예상 승률을 계산할 수 없습니다.</span>';
+    const mapValue = entryMapName(m.map);
+    const analysis = (wp && m.open) ? entryAnalysisHtml(m, wp) : '';
+    return `<div class="entry-match${m.open ? ' is-open' : ''}">
         <div class="entry-match-top">
             <span class="entry-match-no">${i + 1}경기</span>
             <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="${i + 1}경기 빼기">✕</button>
+        </div>
+        <div class="entry-match-maprow">
+            <div class="entry-match-mapfield h2h-slot-inner">
+                <label class="h2h-slot-label" for="entry-map-${i}">맵</label>
+                <input type="text" class="h2h-input" id="entry-map-${i}" list="entry-map-options" placeholder="맵 선택 또는 직접 입력" value="${escapeHTML(mapValue)}" oninput="entrySetMatchMap(${i}, this.value)">
+            </div>
         </div>
         <div class="entry-match-row">
             <div class="entry-match-side">
@@ -588,7 +854,11 @@ function entryMatchRowHtml(m, i) {
             </div>
         </div>
         <span class="h2h-rival-bar${has ? '' : ' is-empty'}"><span style="width:${pct}%"></span></span>
-        ${sim}
+        <div class="entry-match-sim">
+            ${probText}
+            <button type="button" class="entry-analysis-toggle" aria-expanded="${m.open ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">${m.open ? '분석 접기' : '분석 펼치기'}</button>
+        </div>
+        ${analysis}
     </div>`;
 }
 
@@ -676,7 +946,7 @@ function renderEntryResult() {
     const n = EntryState.matches.length;
     const count = document.getElementById('entry-count');
     if (count) count.textContent = `${n}경기`;
-    const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
+    const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b, m.map); return w ? w.p : 0.5; });
     const sum = document.getElementById('entry-summary');
     if (sum) sum.innerHTML = entrySummaryHtml(ps);
     const box = document.getElementById('entry-result');
@@ -798,7 +1068,7 @@ function entryPosterRows() {
     const players = entryPlayers();
     const withProb = EntryState.posterProb;
     return EntryState.matches.map(m => {
-        const wp = entryWinProb(m.a, m.b);
+        const wp = entryWinProb(m.a, m.b, m.map);
         const face = p => (p ? {
             n: p.n,
             s: p.s || '',
@@ -810,6 +1080,7 @@ function entryPosterRows() {
             b: face(players[m.b]),
             p: (withProb && wp) ? wp.p : null,
             h2h: (wp && wp.n) ? [wp.w, wp.l] : null,
+            map: entryMapName(m.map),
             // 고른 기간에 맞대결이 없을 수 있어서 통산도 같이 싣는다(참고용)
             all: (() => { const r = entryH2hRec(m.a, m.b, 'all'); return (r && r.w + r.l) ? [r.w, r.l] : null; })(),
         };
@@ -827,7 +1098,7 @@ async function entrySavePoster() {
     const W = ENTRY_POSTER_W;
     // 공유해서 보는 그림이라 휴대폰에서 줄어들어도 읽혀야 한다 - 글자를 넉넉히 키운다
     const PAD = 64, HEAD = 246, FOOT = 86;
-    const ROW = EntryState.posterProb ? 172 : 148;
+    const ROW = EntryState.posterProb ? 184 : 164;
     const H = HEAD + rows.length * ROW + FOOT;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
@@ -887,8 +1158,13 @@ async function entrySavePoster() {
         ctx.fillText(r.b ? r.b.n : '-', nameXb, cy - 6);
         if (r.b) entryDrawBadgeRow(ctx, r.b, nameXb, cy + 8, BADGE, 'right');
 
-        // 가운데: 맞대결 스코어(크게) / 통산 / 예상 승률
+        // 가운데: 맵 / 맞대결 스코어(크게) / 통산 / 예상 승률
         ctx.textAlign = 'center';
+        if (r.map) {
+            ctx.fillStyle = SUB;
+            ctx.font = '700 18px Pretendard, sans-serif';
+            ctx.fillText(`맵 · ${r.map}`, W / 2, cy - 34);
+        }
         if (r.h2h) {
             const [hw, hl] = r.h2h;
             ctx.font = '700 22px Pretendard, sans-serif';
