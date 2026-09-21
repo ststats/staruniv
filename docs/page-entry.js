@@ -576,7 +576,7 @@ function entrySimScoreHtml(ps) {
             <div class="h2h-score-rate">${games}경기 ${sim.need}선승 · 예상 ${sim.eA.toFixed(1)} : ${sim.eB.toFixed(1)}</div>
             <div class="h2h-score-bar"><span style="width:${sim.pA + sim.pB ? (sim.pA / (sim.pA + sim.pB)) * 100 : 50}%"></span></div>
             <div class="h2h-score-total">자주 나올 결과 ${sim.top.map(([a, b, v]) => `${a}:${b} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
-            ${sim.filled ? `<div class="h2h-score-total">남은 ${sim.filled}경기는 핀볼로 채운다고 보고(고른 대진 평균) 계산했습니다</div>` : ''}
+            ${sim.filled ? `<div class="h2h-score-total">남은 ${sim.filled}경기는 핀볼로 채운다고 보고 계산</div>` : ''}
         </div>
         <div class="h2h-score-side">
             <div class="h2h-score-name">${escapeHTML(entrySideName(1))}</div>
@@ -603,9 +603,10 @@ function renderEntryResult() {
 
     const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
     const over = n - target;
+    // 모자란 경우의 안내는 스코어판 안에 한 번만 적는다(예전엔 바탕에도 같은 말이 또 나왔다)
     const hint = over > 0
         ? `같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${over}개를 걷어 내세요.`
-        : (over < 0 ? `${target}경기 중 ${n}경기를 골랐습니다. 남은 ${-over}경기는 핀볼로 채운다고 보고 계산합니다.` : '');
+        : '';
     // 예상 승률은 늘 보여 준다. 다만 후보가 경기 수보다 많으면 아직 편성이 아니라
     // 매치 전체 승률(스코어판)은 내지 않는다.
     const top = n <= target ? entrySimScoreHtml(ps) : '';

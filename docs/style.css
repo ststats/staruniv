@@ -6096,7 +6096,13 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-list .h2h-suggest-item.is-picked .h2h-suggest-team { color: #fff; }
 
 .entry-hint { margin: 0 0 8px; font-size: var(--fs-meta); color: var(--color-text-sub); }
-.entry-score { margin-bottom: 8px; }
+/* 상대전적 머리 스코어판은 한 화면에 하나 뜨는 크기라 여기서는 줄여 쓴다 */
+.entry-score { margin-bottom: 8px; padding: 14px 16px; gap: 10px; }
+.entry-score .h2h-score-num { font-size: 26px; }
+.entry-score .h2h-score-name { font-size: var(--fs-meta); }
+.entry-score .h2h-score-rate { font-size: var(--fs-meta); }
+.entry-score .h2h-score-bar { height: 6px; margin: 6px 0; }
+.entry-score .h2h-score-total { font-size: var(--fs-badge-sm); line-height: 1.5; }
 .entry-matches { display: flex; flex-direction: column; gap: 8px; }
 
 /* 대진 카드: 동티어 맞대결 카드(.h2h-rival)와 같은 바탕·노치·여백. 사진·이름·승패·막대도
