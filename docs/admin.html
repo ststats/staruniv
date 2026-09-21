@@ -24,11 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<<<<<<< HEAD
-<link rel="stylesheet" href="style.css?v=88ab67acba">
-=======
-<link rel="stylesheet" href="style.css?v=88ab67acba">
->>>>>>> 11c6d59 (엔트리: 요약을 늘 네이비 박스로 · 기간 칩은 그 밑 · 소속 바꿔도 대진 유지)
+<link rel="stylesheet" href="style.css?v=4b8123810a">
 <script>
     try {
         const theme = localStorage.getItem('staruniv-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -510,6 +506,20 @@ body {
 .admin-ranking-method h2 { margin:20px 0 8px; font-size:14px; font-weight:800; }
 .admin-ranking-method p { margin:8px 0; }
 .admin-ranking-formula { padding:12px 14px; background:var(--color-bg-subtle); clip-path:var(--cut-5); overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.admin-ranking-toolbar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 18px; }
+.admin-ranking-period { border:0; background:var(--color-bg-subtle); color:var(--color-text-sub); padding:7px 11px; font:inherit; font-size:12px; font-weight:700; clip-path:var(--cut-5); }
+.admin-ranking-period.is-active { background:var(--select-on-light); color:#fff; }
+.admin-ranking-player { display:flex; align-items:center; gap:5px; min-width:180px; }
+.admin-ranking-player-name { font-weight:800; }
+.admin-ranking-player .tag-badge { flex:none; }
+.admin-ranking-delta { font-variant-numeric:tabular-nums; }
+.admin-ranking-delta.is-outlier { font-weight:800; color:var(--color-primary); }
+.admin-hero-list { display:grid; gap:10px; }
+.admin-hero-row { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; align-items:center; }
+.admin-hero-row label { font-size:12px; font-weight:800; color:var(--color-text-sub); }
+.admin-hero-row input { width:100%; min-width:0; }
+@media (max-width:575.98px) { .admin-hero-row { grid-template-columns:1fr; gap:5px; } }
+
 </style>
 </head>
 <body>
@@ -558,6 +568,12 @@ body {
             여기서 한 번 연동해두면 일정/도구 등 다른 메뉴에서도 같은 연동 상태로 저장할 수 있습니다.
             보안을 위해 토큰은 이 브라우저 탭 안에만 보관되며, 탭을 닫으면 자동으로 지워집니다.
         </div>
+    </div>
+
+    <div class="section-title"><span class="section-title-label">페이지 히어로 설명</span></div>
+    <div class="clean-card p-4 mb-4">
+        <div id="heroDescriptionList" class="admin-hero-list"></div>
+        <div class="text-secondary mt-2" style="font-size:11px;">각 페이지 상단 히어로의 한 줄 설명입니다. 홈은 일정·전적·영상 캐러셀 문구를 각각 수정할 수 있습니다.</div>
     </div>
 
     <div class="section-title"><span class="section-title-label">상단바 메뉴</span></div>
@@ -753,15 +769,20 @@ body {
         <div class="page-header-main" data-label="ADMIN · TIER RANKING"><h1 class="page-header-title">티어 랭킹</h1><p class="page-header-subtitle">경기 기록으로 계산한 우리 티어별 랭킹을 확인합니다.</p></div>
     </div>
     <div class="container">
+        <div class="admin-ranking-toolbar" id="admin-ranking-periods" aria-label="전적 기간 필터">
+            <button type="button" class="admin-ranking-period is-active" data-period="all" onclick="setAdminRankingPeriod('all')">전체</button>
+            <button type="button" class="admin-ranking-period" data-period="365" onclick="setAdminRankingPeriod('365')">최근 1년</button>
+            <button type="button" class="admin-ranking-period" data-period="90" onclick="setAdminRankingPeriod('90')">90일</button>
+            <button type="button" class="admin-ranking-period" data-period="30" onclick="setAdminRankingPeriod('30')">30일</button>
+        </div>
         <p id="admin-ranking-note" class="admin-ranking-note"></p>
         <details class="admin-ranking-method">
             <summary>레이팅 계산식 · 산정 기준</summary>
             <h2>최종 레이팅</h2>
             <div class="admin-ranking-formula">
-                <div>보정 전 점수 = 1500 + (400 / ln 10) × θ</div>
                 <div><strong>레이팅 = 1500 + (400 / ln 10) × (θ − SE)</strong></div>
             </div>
-            <p>θ는 경기 기록으로 추정한 실력, SE는 그 추정의 불확실성입니다. 400 / ln 10은 약 173.718입니다. 기록이 적어 불확실성이 크면 차감 폭도 커집니다. 같은 티어 안에서 레이팅이 높은 순서로 순위를 매기며, 표시만 소수점 한 자리로 반올림합니다.</p>
+            <p>θ는 경기 기록으로 추정한 실력, SE는 그 추정의 불확실성입니다. 기록이 적어 불확실성이 크면 레이팅이 더 보수적으로 계산됩니다. 같은 티어 안에서 레이팅이 높은 순서로 순위를 매깁니다.</p>
             <h2>경기 반영 비중</h2>
             <div class="admin-ranking-formula">경기 가중치 w = 형식 가중치 × 0.5<sup>경과 일수 / 365</sup></div>
             <p>개인대회·대학대회 <strong>1.0</strong> · 대학대전 <strong>0.8</strong> · 미니대전 <strong>0.6</strong> · 프로리그·CK <strong>0.4</strong> · 스폰·기타 <strong>0.15</strong></p>
@@ -897,7 +918,7 @@ body {
 <!-- 사이트가 실제로 쓰는 캘린더·연혁 로직을 그대로 가져다 쓴다 (복사본 아님) -->
 <script src="calendar.js?v=b8ae2f4fb6"></script>
 <script src="media-lightbox.js?v=93e2c5177c"></script>
-<script src="history.js?v=f5d11d4d80"></script>
+<script src="history.js?v=e1e92518d8"></script>
 
 <script>
     // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
@@ -929,8 +950,48 @@ body {
     }
 
     const ADMIN_RANKING_TIERS = ['갓', '킹', '잭', '조커', '스페이드', '0', '1', '2', '3', '4', '5', '6', '7', '8', '베이비'];
-    const adminRanking = { data: null, loading: false };
+    const adminRanking = { data: null, loading: false, period: 'all', rows: {}, shards: {} };
     function adminRankingTierLabel(tier) { return /^\d+$/.test(tier) ? `${tier}티어` : tier; }
+    function adminRaceBadge(race) {
+        const r = String(race || '').toUpperCase();
+        return ['T','Z','P'].includes(r) ? `<span class="tag-badge race-badge race-${r}">${r}</span>` : '';
+    }
+    function adminTeamBadge(team) {
+        return team ? `<span class="tag-badge team-badge">${escapeHTML(team)}</span>` : '';
+    }
+    function adminRankingShardOf(pid) {
+        const bounds = (adminRanking.data && adminRanking.data.shardBounds) || [];
+        const n = Number(pid); let found = bounds.length ? bounds[0] : pid;
+        for (const b of bounds) { if (b > n) break; found = b; }
+        return found;
+    }
+    async function adminRankingLoadShard(bound) {
+        if (!adminRanking.shards[bound]) adminRanking.shards[bound] = fetch(`data/h2h/p/${bound}.json`, {cache:'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+        return adminRanking.shards[bound];
+    }
+    async function adminRankingEnsureRows(players) {
+        if (adminRanking.period === 'all') return;
+        const key = adminRanking.period;
+        await Promise.all(players.filter(p => !(p.periodStats && Array.isArray(p.periodStats[key]))).map(async p => {
+            if (adminRanking.rows[p.pid]) return;
+            const d = await adminRankingLoadShard(adminRankingShardOf(p.pid));
+            adminRanking.rows[p.pid] = Array.isArray(d[p.pid]) ? d[p.pid] : [];
+        }));
+    }
+    function adminRankingRecord(p) {
+        if (adminRanking.period === 'all') return {m:Number(p.m)||0,w:Number(p.w)||0};
+        const compact = p.periodStats && p.periodStats[adminRanking.period];
+        if (Array.isArray(compact)) return {m:Number(compact[0])||0,w:Number(compact[1])||0};
+        const days = Number(adminRanking.period);
+        const asOf = new Date(((adminRanking.data.ranking||{}).asOf || new Date().toISOString().slice(0,10)) + 'T00:00:00');
+        const cutoff = new Date(asOf); cutoff.setDate(cutoff.getDate() - days + 1);
+        let m=0,w=0;
+        for (const row of (adminRanking.rows[p.pid] || [])) {
+            const d = new Date(String(row[0]) + 'T00:00:00');
+            if (d >= cutoff && d <= asOf) { m++; if (Number(row[2]) === 1) w++; }
+        }
+        return {m,w};
+    }
     async function loadAdminRanking() {
         if (adminRanking.data || adminRanking.loading) return;
         adminRanking.loading = true;
@@ -942,25 +1003,36 @@ body {
             const data = await response.json();
             if (!data.players || !data.ranking) throw new Error('랭킹 데이터 없음');
             adminRanking.data = data;
-            renderAdminRanking();
+            await renderAdminRanking();
         } catch (error) {
             root.innerHTML = '<div class="clean-card p-4">랭킹을 불러오지 못했습니다. <button type="button" class="admin-submit-btn" onclick="loadAdminRanking()">다시 시도</button></div>';
             console.error('티어 랭킹 로드 실패:', error);
         } finally { adminRanking.loading = false; }
     }
-    function renderAdminRanking() {
-        const data = adminRanking.data;
-        if (!data) return;
-        const ranked = Object.values(data.players).filter(p => Number.isInteger(p.k) && p.k > 0 && ADMIN_RANKING_TIERS.includes(String(p.t)));
-        const meta = data.ranking;
+    async function setAdminRankingPeriod(period) {
+        adminRanking.period = period;
+        document.querySelectorAll('.admin-ranking-period').forEach(b => b.classList.toggle('is-active', b.dataset.period === period));
+        await renderAdminRanking();
+    }
+    async function renderAdminRanking() {
+        const data = adminRanking.data; if (!data) return;
+        const ranked = Object.entries(data.players).map(([pid,p]) => ({pid,...p})).filter(p => Number.isInteger(p.k) && p.k > 0 && ADMIN_RANKING_TIERS.includes(String(p.t)));
+        const root = document.getElementById('admin-ranking-results');
+        if (adminRanking.period !== 'all') root.innerHTML = '<div class="clean-card p-4">기간 전적을 계산하는 중입니다.</div>';
+        await adminRankingEnsureRows(ranked);
+        const meta = data.ranking, levels = meta.tierLevels || {};
+        const periodLabel = ({all:'전체',365:'최근 1년',90:'최근 90일',30:'최근 30일'})[adminRanking.period] || '전체';
+        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 순위와 레이팅은 기존 산정 기준을 유지하고, 전적/승률만 ${periodLabel} 기준으로 표시합니다. 티어 편차는 현재 레이팅과 해당 티어 기준선의 차이이며 ±100 이상이면 강조합니다.`;
         const tiers = ADMIN_RANKING_TIERS.filter(t => ranked.some(p => String(p.t) === t));
-        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 같은 티어 안에서의 순위입니다. 경기 형식·최근성·표본 수를 반영하며, 휴면 선수와 최근 ${meta.recentDays}일 ${meta.minRecentGames}경기 미만 선수는 순위에서 제외합니다. 보정 전 점수는 추정 실력이며, 레이팅은 불확실성까지 반영한 최종 점수입니다. 순위는 반올림 전 레이팅 기준이며, 서로 다른 티어의 점수는 직접 비교하지 않습니다. 전적과 승률은 수집된 전체 기간 기준입니다.`;
         const html = tiers.map(t => {
-            const players = ranked.filter(p => String(p.t) === t).sort((a, b) => a.k - b.k);
+            const players = ranked.filter(p => String(p.t) === t).sort((a,b) => a.k-b.k);
             if (!players.length) return '';
-            return `<section class="admin-ranking-group"><div class="section-title"><span class="section-title-label">${adminRankingTierLabel(t)} · ${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th scope="col">순위</th><th scope="col">선수</th><th scope="col">종족</th><th scope="col">소속</th><th scope="col">보정 전 점수</th><th scope="col">레이팅</th><th scope="col">전체 전적</th><th scope="col">승률</th></tr></thead><tbody>${players.map(p => `<tr data-top="${p.k <= 3}"><td>${p.k}<small>위</small></td><td>${escapeHTML(p.n || '—')}</td><td>${escapeHTML(p.r || '—')}</td><td>${escapeHTML(p.tm || '무소속')}</td><td>${Number.isFinite(p.rawRating) ? p.rawRating.toFixed(1) : '—'}</td><td>${Number.isFinite(p.rating) ? p.rating.toFixed(1) : '—'}</td><td>${Number(p.w) || 0}승 ${Math.max(0, (Number(p.m) || 0) - (Number(p.w) || 0))}패</td><td>${p.m > 0 ? (p.w / p.m * 100).toFixed(1) + '%' : '—'}</td></tr>`).join('')}</tbody></table></div></section>`;
+            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>선수</th><th>레이팅</th><th>티어 편차</th><th>${periodLabel} 전적</th><th>승률</th></tr></thead><tbody>${players.map(p => {
+                const rec=adminRankingRecord(p), loss=Math.max(0,rec.m-rec.w), base=Number(levels[String(p.t)]), delta=Number.isFinite(p.rating)&&Number.isFinite(base)?p.rating-base:null, out=delta!==null&&Math.abs(delta)>=100;
+                return `<tr data-top="${p.k<=3}"><td>${p.k}<small>위</small></td><td><div class="admin-ranking-player"><span class="admin-ranking-player-name">${escapeHTML(p.n||'—')}</span>${adminRaceBadge(p.r)}${adminTeamBadge(p.tm||'')}</div></td><td>${Number.isFinite(p.rating)?p.rating.toFixed(1):'—'}</td><td class="admin-ranking-delta${out?' is-outlier':''}">${delta===null?'—':`${delta>=0?'+':''}${delta.toFixed(1)}${out?(delta>0?' ↑':' ↓'):''}`}</td><td>${rec.w}승 ${loss}패</td><td>${rec.m>0?(rec.w/rec.m*100).toFixed(1)+'%':'—'}</td></tr>`;
+            }).join('')}</tbody></table></div></section>`;
         }).join('');
-        document.getElementById('admin-ranking-results').innerHTML = html || '<div class="clean-card p-4">등록된 티어 랭킹이 없습니다.</div>';
+        root.innerHTML = html || '<div class="clean-card p-4">등록된 티어 랭킹이 없습니다.</div>';
     }
 
     function toggleAdminMenu(button) {
@@ -1372,6 +1444,14 @@ body {
     ];
     let navHidden = new Set();
     let navLoaded = false;
+    const HERO_PAGES = [
+        { id: 'homeSchedule', label: '홈 · 일정' },
+        { id: 'homeRecords', label: '홈 · 전적' },
+        { id: 'homeVideo', label: '홈 · 영상' },
+        ...NAV_PAGES,
+    ];
+    let heroDescriptions = {};
+
 
     // 방송통계 페이지의 지표 탭. 사이트 쪽 templates/pages/stats.html의 data-metric 값과 같아야 한다.
     const STATS_TABS = [
@@ -1400,6 +1480,13 @@ body {
         const notice = navLoaded ? '' : `<div class="text-center text-muted py-2" style="font-size:11px;">GitHub 연동 후 불러옵니다.</div>`;
         list.innerHTML = rows + notice;
         renderStatsTabsAdmin();
+        renderHeroDescriptionsAdmin();
+    }
+
+    function renderHeroDescriptionsAdmin() {
+        const root = document.getElementById('heroDescriptionList');
+        if (!root) return;
+        root.innerHTML = HERO_PAGES.map(page => `<div class="admin-hero-row"><label for="hero-desc-${page.id}">${escapeHTML(page.label)}</label><input class="h2h-input" id="hero-desc-${page.id}" type="text" maxlength="160" ${navLoaded ? '' : 'disabled'} value="${escapeHTML(heroDescriptions[page.id] || '')}" placeholder="비우면 현재 기본 문구 사용" oninput="heroDescriptions['${page.id}']=this.value"></div>`).join('');
     }
 
     function renderStatsTabsAdmin() {
@@ -1447,11 +1534,13 @@ body {
                 const parsed = token ? JSON.parse(decodeURIComponent(escape(atob(data.content)))) : data;
                 navHidden = new Set((Array.isArray(parsed.hidden) ? parsed.hidden : []).map(String));
                 statsTabsHidden = new Set((Array.isArray(parsed.statsTabs) ? parsed.statsTabs : []).map(String));
+                heroDescriptions = (parsed.heroDescriptions && typeof parsed.heroDescriptions === 'object') ? parsed.heroDescriptions : {};
                 navLoaded = true;
             } else if (res.status === 404) {
                 // 아직 파일이 없는 저장소 - "아무것도 숨기지 않음"에서 시작해 첫 저장 때 만든다.
                 navHidden = new Set();
                 statsTabsHidden = new Set();
+                heroDescriptions = {};
                 navLoaded = true;
             } else {
                 navLoaded = false;
@@ -1492,6 +1581,7 @@ body {
             const payload = {
                 hidden: NAV_PAGES.map(p => p.id).filter(id => navHidden.has(id)),
                 statsTabs: STATS_TABS.map(t => t.id).filter(id => statsTabsHidden.has(id)),
+                heroDescriptions: Object.fromEntries(HERO_PAGES.map(p => [p.id, String(heroDescriptions[p.id] || '').trim()]).filter(([,v]) => v)),
             };
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2) + '\n')));
             const putRes = await fetch(`${repoUrl}/contents/${NAV_FILE_PATH}`, {
