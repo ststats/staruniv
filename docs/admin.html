@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=c21dd191ff">
+<link rel="stylesheet" href="style.css?v=56a2774831">
 <script>
     try {
         const theme = localStorage.getItem('staruniv-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -520,8 +520,11 @@ body {
 .admin-ranking-player-meta { display:flex; align-items:center; min-width:0; max-width:100%; gap:4px; }
 .admin-ranking-player-meta .tag-badge { flex:none; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .admin-ranking-record,.admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap { white-space:nowrap; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
+.admin-ranking-record { display:flex; flex-direction:column; align-items:flex-start; gap:2px; line-height:1.15; }
+.admin-ranking-record-rate { color:var(--color-text-sub); font-size:10px; font-weight:700; }
 .admin-ranking-delta.is-promote { font-weight:800; color:var(--color-primary); }
 .admin-ranking-gap.is-mismatch { font-weight:800; color:var(--color-primary); }
+.admin-head-short { display:none; }
 @media (max-width:767.98px) {
     .admin-ranking-table { min-width:610px; font-size:11px; }
     .admin-ranking-table th,.admin-ranking-table td { padding:9px 6px; }
@@ -543,6 +546,31 @@ body {
 .admin-hero-row label { font-size:12px; font-weight:800; color:var(--color-text-sub); }
 .admin-hero-row input { width:100%; min-width:0; }
 @media (max-width:575.98px) { .admin-hero-row { grid-template-columns:1fr; gap:5px; } }
+
+
+.admin-head-short { display:none; }
+@media (max-width:575.98px) {
+    .admin-ranking-table { table-layout:fixed; width:100%; min-width:0; }
+    .admin-ranking-table th,.admin-ranking-table td { padding:7px 2px; }
+    .admin-ranking-table th { font-size:8px; }
+    .admin-ranking-table td { font-size:9px; }
+    .admin-ranking-table th:nth-child(1),.admin-ranking-table td:nth-child(1) { width:9%; }
+    .admin-ranking-table th:nth-child(2),.admin-ranking-table td:nth-child(2) { width:25%; }
+    .admin-ranking-table th:nth-child(3),.admin-ranking-table td:nth-child(3) { width:20%; }
+    .admin-ranking-table th:nth-child(4),.admin-ranking-table td:nth-child(4) { width:15%; }
+    .admin-ranking-table th:nth-child(5),.admin-ranking-table td:nth-child(5) { width:16%; }
+    .admin-ranking-table th:nth-child(6),.admin-ranking-table td:nth-child(6) { width:15%; }
+    .admin-head-long { display:none; }
+    .admin-head-short { display:inline; }
+    .admin-ranking-record { gap:1px; }
+    .admin-ranking-record-rate { font-size:8px; }
+    .admin-ranking-player { gap:2px; }
+    .admin-ranking-player-name { font-size:9px; }
+    .admin-ranking-player-meta { gap:2px; }
+    .admin-ranking-player-meta .tag-badge { max-width:46px; font-size:7px; padding:1px 2px; }
+    .admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap,.admin-ranking-rank-col { font-size:8px; }
+}
+@media (max-width:319px) { .admin-ranking-table { min-width:282px; } }
 
 </style>
 </head>
@@ -1051,14 +1079,14 @@ body {
         const html = tiers.map(t => {
             const players = ranked.filter(p => String(p.t) === t).sort((a,b) => a.k-b.k);
             if (!players.length) return '';
-            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>이름</th><th>${periodLabel} 전적</th><th>레이팅</th><th>레이팅 편차</th><th>티어 괴리</th></tr></thead><tbody>${players.map(p => {
+            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>이름</th><th><span class="admin-head-long">${periodLabel} 전적</span><span class="admin-head-short">전적</span></th><th>레이팅</th><th><span class="admin-head-long">레이팅 편차</span><span class="admin-head-short">편차</span></th><th><span class="admin-head-long">티어 괴리</span><span class="admin-head-short">괴리</span></th></tr></thead><tbody>${players.map(p => {
                 const rec=adminRankingRecord(p), loss=Math.max(0,rec.m-rec.w), winRate=rec.m>0?(rec.w/rec.m*100).toFixed(1)+'%':'—';
                 const gap=Number(p.tierGap), hasGap=Number.isInteger(gap), mismatch=hasGap&&gap!==0;
                 const gapText=!hasGap?'—':(!mismatch?'일치':`${Math.abs(gap)}단계${gap>0?'↑':'↓'}`);
                 const tierBase=Number(meta.tierLevels && meta.tierLevels[String(p.t)]), raw=Number(p.rawRating);
                 const delta=Number.isFinite(raw)&&Number.isFinite(tierBase)?raw-tierBase:null, promote=delta!==null&&delta>=50;
                 const deltaText=delta===null?'—':`${delta>=0?'+':''}${delta.toFixed(1)}`;
-                return `<tr data-top="${p.k<=3}"><td data-label="순위" class="admin-ranking-rank-col">${p.k}위</td><td data-label="이름"><div class="admin-ranking-player"><div class="admin-ranking-player-main"><span class="admin-ranking-player-name">${escapeHTML(p.n||'—')}</span></div><div class="admin-ranking-player-meta">${adminRaceBadge(p.r)}${adminTeamBadge(p.tm||'')}</div></div></td><td data-label="${periodLabel} 전적" class="admin-ranking-record">${rec.w}승 ${loss}패 · ${winRate}</td><td data-label="레이팅" class="admin-ranking-rating">${Number.isFinite(p.rating)?p.rating.toFixed(1):'—'}</td><td data-label="레이팅 편차" class="admin-ranking-delta${promote?' is-promote':''}">${deltaText}</td><td data-label="티어 괴리" class="admin-ranking-gap${mismatch?' is-mismatch':''}">${gapText}</td></tr>`;
+                return `<tr data-top="${p.k<=3}"><td data-label="순위" class="admin-ranking-rank-col">${p.k}위</td><td data-label="이름"><div class="admin-ranking-player"><div class="admin-ranking-player-main"><span class="admin-ranking-player-name">${escapeHTML(p.n||'—')}</span></div><div class="admin-ranking-player-meta">${adminRaceBadge(p.r)}${adminTeamBadge(p.tm||'')}</div></div></td><td data-label="${periodLabel} 전적" class="admin-ranking-record"><span>${rec.w}승 ${loss}패</span><span class="admin-ranking-record-rate">${winRate}</span></td><td data-label="레이팅" class="admin-ranking-rating">${Number.isFinite(p.rating)?p.rating.toFixed(1):'—'}</td><td data-label="레이팅 편차" class="admin-ranking-delta${promote?' is-promote':''}">${deltaText}</td><td data-label="티어 괴리" class="admin-ranking-gap${mismatch?' is-mismatch':''}">${gapText}</td></tr>`;
             }).join('')}</tbody></table></div></section>`;
         }).join('');
         root.innerHTML = html || '<div class="clean-card p-4">등록된 티어 랭킹이 없습니다.</div>';
