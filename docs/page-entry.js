@@ -53,7 +53,6 @@ const EntryState = {
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
     labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
-    simulated: false,        // '시뮬 돌리기'를 눌렀나. 예상 승률은 그때만 보여 준다
     period: 'all',           // 맞대결 기간(ENTRY_PERIODS)
     rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
     h2hCache: {},            // "기간|a|b" -> {w, l}
@@ -284,7 +283,6 @@ function entrySwapTeams() {
 function entryReset() {
     EntryState.matches = [];
     EntryState.sel = [null, null];
-    EntryState.simulated = false;
     renderEntry();
 }
 
@@ -295,7 +293,6 @@ function entryTogglePlayer(side, pid) {
     if (a && b) {
         EntryState.matches.push({ a, b });
         EntryState.sel = [null, null];
-        EntryState.simulated = false;
     }
     renderEntry();
     entryRefreshProbs();
@@ -303,13 +300,6 @@ function entryTogglePlayer(side, pid) {
 
 function entryRemoveMatch(i) {
     EntryState.matches.splice(i, 1);
-    EntryState.simulated = false;      // 대진이 바뀌면 돌려둔 결과는 더 이상 그 대진이 아니다
-    renderEntry();
-}
-
-function entryRunSim() {
-    if (!EntryState.matches.length) return;
-    EntryState.simulated = !EntryState.simulated;
     renderEntry();
 }
 
@@ -348,7 +338,6 @@ function entryAutoFill() {
     if (!all.length) return;
     EntryState.matches = all;
     EntryState.sel = [null, null];
-    EntryState.simulated = false;
     renderEntry();
     entryRefreshProbs();
 }
@@ -444,19 +433,24 @@ function entrySetQuery(side, value) {
 // (.h2h-rival)의 치수, 시뮬 결과는 상대전적 머리 스코어판(.h2h-score)이다.
 // ---------------------------------------------------------------------------
 
-// 선수 한 줄(상대전적 검색 추천과 같은 줄). 오른쪽 끝은 티어인데, 이미 대진에 들어간
-// 선수는 그 자리에 몇 경기인지를 대신 적는다(칸이 좁아 둘 다 적으면 이름이 잘린다).
+// 종족·티어 뱃지는 사이트 공용(.tag-badge)을 그대로 쓴다.
+function entryBadgesHtml(p) {
+    return `${p.r ? raceBadgeHtml(p.r) : ''}`
+        + `${p.t !== undefined && p.t !== '' ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : ''}`;
+}
+
+// 선수 한 줄. 프로필 사진은 넣지 않는다 - 이름 길이가 제각각이라 사진까지 붙이면
+// 뱃지 줄이 들쭉날쭉해진다. 오른쪽 끝에는 이미 대진에 들어간 횟수만 적는다.
 function entryPlayerItemHtml(side, p, showTeam) {
     const picked = EntryState.sel[side] === p.pid;
     const used = EntryState.matches.filter(m => (side === 0 ? m.a : m.b) === p.pid).length;
     const team = showTeam && p.tm ? `<span class="h2h-suggest-team">${escapeHTML(p.tm)}</span>` : '';
     return `<button type="button" class="h2h-suggest-item${picked ? ' is-picked' : ''}" aria-pressed="${picked}"
             onclick="entryTogglePlayer(${side},'${jsAttr(p.pid)}')">
-        ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
         <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
-        ${p.r ? raceBadgeHtml(p.r) : ''}
+        ${entryBadgesHtml(p)}
         ${team}
-        <span class="h2h-suggest-count${used ? ' is-used' : ''}">${used ? `${used}경기` : escapeHTML(tierLabel(p.t))}</span>
+        ${used ? `<span class="h2h-suggest-count is-used">×${used}</span>` : ''}
     </button>`;
 }
 
@@ -495,24 +489,28 @@ function entryMatchRowHtml(m, i) {
     const rec = has
         ? `<span class="entry-vs-num is-a">${wp.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${wp.l}</span>`
         : '<span class="entry-match-none">맞대결 없음</span>';
-    const sim = (EntryState.simulated && wp)
+    const sim = wp
         ? `<div class="entry-match-sim">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</div>`
         : '';
     return `<div class="entry-match">
         <div class="entry-match-top">
-            <span class="entry-match-no">${i + 1}경기 · ${escapeHTML(tierLabel(a.t))}</span>
+            <span class="entry-match-no">${i + 1}경기</span>
             <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="${i + 1}경기 빼기">✕</button>
         </div>
         <div class="entry-match-row">
             <div class="entry-match-side">
                 ${avatarHtml(a.s || '', 'h2h-rival-avatar')}
-                <span class="h2h-rival-name">${escapeHTML(a.n)}</span>
-                ${a.r ? raceBadgeHtml(a.r) : ''}
+                <span class="entry-match-who">
+                    <span class="h2h-rival-name">${escapeHTML(a.n)}</span>
+                    <span class="entry-match-badges">${entryBadgesHtml(a)}</span>
+                </span>
             </div>
             <div class="h2h-rival-rec entry-match-rec">${rec}</div>
             <div class="entry-match-side is-b">
-                ${b.r ? raceBadgeHtml(b.r) : ''}
-                <span class="h2h-rival-name">${escapeHTML(b.n)}</span>
+                <span class="entry-match-who">
+                    <span class="h2h-rival-name">${escapeHTML(b.n)}</span>
+                    <span class="entry-match-badges">${entryBadgesHtml(b)}</span>
+                </span>
                 ${avatarHtml(b.s || '', 'h2h-rival-avatar')}
             </div>
         </div>
@@ -594,14 +592,12 @@ function renderEntryResult() {
     const hint = over > 0
         ? `같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${over}개를 걷어 내세요.`
         : (over < 0 ? `${target}경기 중 ${n}경기를 골랐습니다. 남은 ${-over}경기는 핀볼로 채운다고 보고 계산합니다.` : '');
-    const top = (EntryState.simulated && n <= target) ? entrySimScoreHtml(ps) : '';
-    const simLabel = EntryState.simulated ? '예상 승률 숨기기' : '시뮬 돌리기';
+    // 예상 승률은 늘 보여 준다. 다만 후보가 경기 수보다 많으면 아직 편성이 아니라
+    // 매치 전체 승률(스코어판)은 내지 않는다.
+    const top = n <= target ? entrySimScoreHtml(ps) : '';
     box.innerHTML = top
         + (hint ? `<p class="entry-hint">${hint}</p>` : '')
-        + `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`
-        + `<div class="news-load-more-wrap">
-            <button type="button" class="news-load-more" ${n <= target ? '' : 'disabled'} onclick="entryRunSim()">${n <= target ? simLabel : `${target}경기로 추리면 시뮬을 돌릴 수 있습니다`}</button>
-        </div>`;
+        + `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`;
 }
 
 function renderEntry() {

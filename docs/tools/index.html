@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=3fc0c61994">
+    <link rel="stylesheet" href="style.css?v=38eeab2409">
     <meta name="site-data-version" content="f8745ef991">
 </head>
 <body><header class="top-navbar">
@@ -121,6 +121,7 @@
                     <span class="section-title-label">대진표</span>
                     <span class="title-count" id="entry-count">0경기</span>
                     <span class="entry-actions">
+                        <button type="button" class="text-action entry-action-main" onclick="entryAutoFill()">같은 티어 후보 뽑기</button>
                         <button type="button" class="text-action" onclick="entrySwapTeams()">진영 교체</button>
                         <button type="button" class="text-action" onclick="entryReset()">비우기</button>
                         <button type="button" class="text-action" id="entry-poster-prob" aria-pressed="false" onclick="entryTogglePosterProb()" title="포스터에 예상 승률을 함께 찍습니다">포스터에 승률</button>
@@ -173,9 +174,6 @@
                         <div class="h2h-suggest entry-list" id="entry-body-b"></div>
                     </div>
                 </div>
-                <div class="news-load-more-wrap">
-                    <button type="button" class="news-load-more" onclick="entryAutoFill()">같은 티어 후보 뽑기</button>
-                </div>
             </div>
         </div>
     </div>
@@ -212,7 +210,7 @@
 <script src="core.js?v=bcdad8866d"></script>
 <script src="soop.js?v=68531e35cd"></script>
 <script src="page-tools.js?v=3c82d190b3"></script>
-<script src="page-entry.js?v=ccb3a09a74"></script>
+<script src="page-entry.js?v=d99f8ccf71"></script>
 
 </body>
 </html>

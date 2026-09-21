@@ -6083,6 +6083,10 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 /* 검색 추천 상자를 떠 있는 팝업이 아니라 제자리 목록으로 쓴다 */
 .h2h-suggest.entry-list { position: static; max-height: 460px; box-shadow: none; }
 .entry-list .h2h-suggest-item { min-width: 0; }
+/* 뱃지가 이름 뒤에 바로 붙게 - 오른쪽 끝(출전 횟수)만 밀어 둔다 */
+.entry-list .h2h-suggest-item .tag-badge { flex: none; }
+.entry-list .h2h-suggest-name { flex: 1 1 auto; }
+.entry-action-main { color: var(--panel-accent); }
 /* 칸이 좁을 때는 소속이 먼저 줄어들고 이름은 끝까지 남긴다 */
 .entry-list .h2h-suggest-name { flex: 0 1 auto; min-width: 2.5em; overflow: hidden; text-overflow: ellipsis; }
 .entry-list .h2h-suggest-team { flex: 1 1 0; min-width: 0; }
@@ -6105,6 +6109,13 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-match-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
 .entry-match-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .entry-match-side.is-b { justify-content: flex-end; }
+/* 이름과 뱃지를 두 줄로 나눈다 - 한 줄에 다 넣으면 좁은 칸에서 이름이 잘리고
+   티어 뱃지가 '2티/어'로 줄바꿈된다 */
+.entry-match-who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.entry-match-who .h2h-rival-name { overflow: hidden; text-overflow: ellipsis; }
+.entry-match-badges { display: flex; gap: 3px; }
+.entry-match-side.is-b .entry-match-who { align-items: flex-end; }
+.entry-match .tag-badge { flex: none; white-space: nowrap; }
 .entry-match .h2h-rival-avatar { flex: none; }
 /* 가져다 쓴 .h2h-rival-* 는 원래 카드의 칸 번호(grid-column/row)를 달고 있다 - 여기선 풀어 준다 */
 .entry-match .h2h-rival-rec { grid-column: auto; grid-row: auto; justify-self: center; }
