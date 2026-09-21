@@ -492,13 +492,19 @@ body {
 .admin-cancel-btn { background: var(--color-text-faint); }
 .admin-cancel-btn:hover { background: var(--color-text-sub); }
 .admin-ranking-group { margin-bottom:24px; }
-.admin-ranking-table-wrap { overflow-x:auto; background:var(--color-card); clip-path:var(--cut-12); }
-.admin-ranking-table { width:100%; min-width:720px; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
-.admin-ranking-table th, .admin-ranking-table td { padding:13px 16px; border-bottom:1px solid var(--panel-line); text-align:left; white-space:nowrap; }
-.admin-ranking-table th { background:var(--color-bg-subtle); color:var(--color-text-sub); font-size:11px; }
-.admin-ranking-table td:first-child { width:70px; font-weight:800; }
+.admin-ranking-table-wrap { overflow:visible; background:var(--color-card); clip-path:var(--cut-12); }
+.admin-ranking-table { width:100%; min-width:0; table-layout:fixed; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+.admin-ranking-table th, .admin-ranking-table td { padding:11px 10px; border-bottom:1px solid var(--panel-line); text-align:left; white-space:normal; overflow-wrap:anywhere; vertical-align:middle; }
+.admin-ranking-table th { background:var(--color-head-bg); background-image:var(--navy-pattern); color:var(--color-head-text); font-size:11px; font-weight:800; }
+.admin-ranking-table th:nth-child(1),.admin-ranking-table td:nth-child(1) { width:8%; }
+.admin-ranking-table th:nth-child(2),.admin-ranking-table td:nth-child(2) { width:20%; }
+.admin-ranking-table th:nth-child(3),.admin-ranking-table td:nth-child(3) { width:15%; }
+.admin-ranking-table th:nth-child(4),.admin-ranking-table td:nth-child(4) { width:14%; }
+.admin-ranking-table th:nth-child(5),.admin-ranking-table td:nth-child(5) { width:15%; }
+.admin-ranking-table th:nth-child(6),.admin-ranking-table td:nth-child(6) { width:16%; }
+.admin-ranking-table th:nth-child(7),.admin-ranking-table td:nth-child(7) { width:12%; }
+.admin-ranking-table td:first-child { font-weight:800; }
 .admin-ranking-table tr[data-top="true"] td:first-child { color:var(--color-primary); }
-.admin-ranking-table td:nth-child(2) { font-weight:700; }
 .admin-ranking-note { font-size:12px; color:var(--color-text-sub); line-height:1.8; margin-bottom:20px; }
 .admin-ranking-method { margin-bottom:20px; padding:16px 20px; background:var(--color-card); clip-path:var(--cut-10); font-size:13px; line-height:1.8; }
 .admin-ranking-method summary { cursor:pointer; font-weight:800; color:var(--color-text-main); }
@@ -509,11 +515,24 @@ body {
 .admin-ranking-toolbar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 18px; }
 .admin-ranking-period { border:0; background:var(--color-bg-subtle); color:var(--color-text-sub); padding:7px 11px; font:inherit; font-size:12px; font-weight:700; clip-path:var(--cut-5); }
 .admin-ranking-period.is-active { background:var(--select-on-light); color:#fff; }
-.admin-ranking-player { display:flex; align-items:center; gap:5px; min-width:180px; }
-.admin-ranking-player-name { font-weight:800; }
+.admin-ranking-player { display:flex; align-items:center; min-width:0; gap:5px; }
+.admin-ranking-player-name { min-width:0; font-weight:800; overflow-wrap:anywhere; }
 .admin-ranking-player .tag-badge { flex:none; }
-.admin-ranking-delta { font-variant-numeric:tabular-nums; }
-.admin-ranking-delta.is-outlier { font-weight:800; color:var(--color-primary); }
+.admin-ranking-team { min-width:0; }
+.admin-ranking-team .tag-badge { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ranking-gap { font-variant-numeric:tabular-nums; }
+.admin-ranking-gap.is-mismatch { font-weight:800; color:var(--color-primary); }
+@media (max-width:767.98px) {
+    .admin-ranking-table,.admin-ranking-table tbody { display:block; width:100%; }
+    .admin-ranking-table thead { display:none; }
+    .admin-ranking-table tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; padding:7px 10px; border-bottom:1px solid var(--panel-line); }
+    .admin-ranking-table tbody tr:last-child { border-bottom:0; }
+    .admin-ranking-table td,.admin-ranking-table td:nth-child(n) { display:flex; align-items:center; justify-content:space-between; gap:8px; width:auto; min-width:0; padding:7px 5px; border:0; text-align:right; overflow-wrap:anywhere; }
+    .admin-ranking-table td::before { content:attr(data-label); flex:none; color:var(--color-text-faint); font-size:10px; font-weight:700; text-align:left; }
+    .admin-ranking-table td[data-field="player"],.admin-ranking-table td[data-field="team"] { grid-column:1 / -1; justify-content:flex-start; text-align:left; }
+    .admin-ranking-table td[data-field="player"]::before,.admin-ranking-table td[data-field="team"]::before { width:42px; }
+    .admin-ranking-player,.admin-ranking-team { flex:1; }
+}
 .admin-hero-list { display:grid; gap:10px; }
 .admin-hero-row { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; align-items:center; }
 .admin-hero-row label { font-size:12px; font-weight:800; color:var(--color-text-sub); }
@@ -1020,16 +1039,17 @@ body {
         const root = document.getElementById('admin-ranking-results');
         if (adminRanking.period !== 'all') root.innerHTML = '<div class="clean-card p-4">기간 전적을 계산하는 중입니다.</div>';
         await adminRankingEnsureRows(ranked);
-        const meta = data.ranking, levels = meta.tierLevels || {};
+        const meta = data.ranking;
         const periodLabel = ({all:'전체',365:'최근 1년',90:'최근 90일',30:'최근 30일'})[adminRanking.period] || '전체';
-        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 순위와 레이팅은 기존 산정 기준을 유지하고, 전적/승률만 ${periodLabel} 기준으로 표시합니다. 티어 편차는 현재 레이팅과 해당 티어 기준선의 차이이며 ±100 이상이면 강조합니다.`;
+        document.getElementById('admin-ranking-note').textContent = `기준일 ${meta.asOf || '—'} · 순위와 레이팅은 기존 산정 기준을 유지하고, 전적/승률만 ${periodLabel} 기준으로 표시합니다. 티어 괴리는 최근 전적·상대 강도·티어 기준선을 반영한 데이터 적합 티어와 현재 티어의 차이입니다.`;
         const tiers = ADMIN_RANKING_TIERS.filter(t => ranked.some(p => String(p.t) === t));
         const html = tiers.map(t => {
             const players = ranked.filter(p => String(p.t) === t).sort((a,b) => a.k-b.k);
             if (!players.length) return '';
-            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>선수</th><th>레이팅</th><th>티어 편차</th><th>${periodLabel} 전적</th><th>승률</th></tr></thead><tbody>${players.map(p => {
-                const rec=adminRankingRecord(p), loss=Math.max(0,rec.m-rec.w), base=Number(levels[String(p.t)]), delta=Number.isFinite(p.rating)&&Number.isFinite(base)?p.rating-base:null, out=delta!==null&&Math.abs(delta)>=100;
-                return `<tr data-top="${p.k<=3}"><td>${p.k}<small>위</small></td><td><div class="admin-ranking-player"><span class="admin-ranking-player-name">${escapeHTML(p.n||'—')}</span>${adminRaceBadge(p.r)}${adminTeamBadge(p.tm||'')}</div></td><td>${Number.isFinite(p.rating)?p.rating.toFixed(1):'—'}</td><td class="admin-ranking-delta${out?' is-outlier':''}">${delta===null?'—':`${delta>=0?'+':''}${delta.toFixed(1)}${out?(delta>0?' ↑':' ↓'):''}`}</td><td>${rec.w}승 ${loss}패</td><td>${rec.m>0?(rec.w/rec.m*100).toFixed(1)+'%':'—'}</td></tr>`;
+            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>선수</th><th>소속</th><th>레이팅</th><th>티어 괴리</th><th>${periodLabel} 전적</th><th>승률</th></tr></thead><tbody>${players.map(p => {
+                const rec=adminRankingRecord(p), loss=Math.max(0,rec.m-rec.w), gap=Number(p.tierGap), hasGap=Number.isInteger(gap), mismatch=hasGap&&gap!==0, dataTier=String(p.dataTier||p.t||'');
+                const gapText=!hasGap?'—':(!mismatch?'일치':`데이터 ${escapeHTML(adminRankingTierLabel(dataTier))} ${gap>0?'↑':'↓'}${Math.abs(gap)}단계`);
+                return `<tr data-top="${p.k<=3}"><td data-label="순위">${p.k}<small>위</small></td><td data-label="선수" data-field="player"><div class="admin-ranking-player">${adminRaceBadge(p.r)}<span class="admin-ranking-player-name">${escapeHTML(p.n||'—')}</span></div></td><td data-label="소속" data-field="team"><div class="admin-ranking-team">${adminTeamBadge(p.tm||'') || '—'}</div></td><td data-label="레이팅">${Number.isFinite(p.rating)?p.rating.toFixed(1):'—'}</td><td data-label="티어 괴리" class="admin-ranking-gap${mismatch?' is-mismatch':''}">${gapText}</td><td data-label="${periodLabel} 전적">${rec.w}승 ${loss}패</td><td data-label="승률">${rec.m>0?(rec.w/rec.m*100).toFixed(1)+'%':'—'}</td></tr>`;
             }).join('')}</tbody></table></div></section>`;
         }).join('');
         root.innerHTML = html || '<div class="clean-card p-4">등록된 티어 랭킹이 없습니다.</div>';

@@ -666,10 +666,8 @@ def main():
         if t in tier_sizes:
             print(f'     {t:>4}티어 {tier_sizes[t]:4d}명  {m[t_pos[t]] * SCORE_SCALE + SCORE_BASE:7.1f}')
 
-    # 사람이 매긴 티어와 데이터가 가리키는 티어가 다른 사람을 알려준다.
-    # 갓·킹은 '지금 실력 상위 N명'이 아니라 '대회에 올라간 명단'이라 어긋남이 많다
-    # (실측: 킹 51.9% · 갓 37.5% vs 잭 3.4% · 1티어 0%). 순위는 사람이 매긴 티어
-    # 안에서 그대로 매기고, 이 목록은 티어표를 갱신할 때 참고하라고 로그로만 남긴다.
+    # 사람이 매긴 실제 티어와 전적 데이터가 가리키는 적합 티어를 각 선수 데이터에도 저장한다.
+    # 어드민의 '티어 괴리' 열은 이 값을 그대로 사용한다. 순위 자체는 기존처럼 실제 티어 안에서만 매긴다.
     levels = np.array([m[t_pos[t]] for t in TIER_ORDER])
     pos = {pid: k for k, pid in enumerate(order)}
     off = []
@@ -677,9 +675,17 @@ def main():
         for _s, pid in lst:
             k = pos[pid]
             fit_t = TIER_ORDER[int(np.argmin(np.abs(levels - theta[k])))]
-            if fit_t != t:
-                off.append((TIER_ORDER.index(t) - TIER_ORDER.index(fit_t),
-                            players[pid].get('n', pid), t, fit_t))
+            gap = TIER_ORDER.index(t) - TIER_ORDER.index(fit_t)
+            players[pid]['dataTier'] = fit_t
+            players[pid]['tierGap'] = int(gap)
+            if gap != 0:
+                off.append((gap, players[pid].get('n', pid), t, fit_t))
+    # 다시 빌드할 때 순위 대상에서 빠진 선수에게 옛 괴리값이 남지 않게 정리한다.
+    for pid, entry in players.items():
+        if pid not in ranked_ids:
+            entry.pop('dataTier', None)
+            entry.pop('tierGap', None)
+
     if off:
         off.sort(key=lambda x: -abs(x[0]))
         print(f'   ℹ️ 사람이 매긴 티어와 데이터가 어긋난 선수 {len(off)}명 (상위 10명):')
