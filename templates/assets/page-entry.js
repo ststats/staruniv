@@ -208,17 +208,19 @@ function entryPeriodLabel() {
     return `${found ? found[1] : '최근'} 전적`;
 }
 
-function entrySinceKey() {
-    if (EntryState.period === 'all') return '';
-    const d = new Date(Date.now() - Number(EntryState.period) * 86400000);
+function entrySinceKey(period) {
+    const per = period || EntryState.period;
+    if (per === 'all') return '';
+    const d = new Date(Date.now() - Number(per) * 86400000);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // a가 b를 상대로 고른 기간 안에 몇 승 몇 패인가. 한쪽 행만 있어도 뒤집어 센다.
-function entryH2hRec(a, b) {
-    const key = `${EntryState.period}|${a}|${b}`;
+function entryH2hRec(a, b, period) {
+    const per = period || EntryState.period;
+    const key = `${per}|${a}|${b}`;
     if (EntryState.h2hCache[key]) return EntryState.h2hCache[key];
-    const since = entrySinceKey();
+    const since = per === 'all' ? '' : entrySinceKey(per);
     let w = 0; let l = 0;
     let rows = EntryState.rows[a];
     let flip = false;
@@ -669,6 +671,8 @@ function entryPosterRows() {
             b: players[m.b] || null,
             p: (withProb && wp) ? wp.p : null,
             h2h: (wp && wp.n) ? [wp.w, wp.l] : null,
+            // 고른 기간에 맞대결이 없을 수 있어서 통산도 같이 싣는다(참고용)
+            all: (() => { const r = entryH2hRec(m.a, m.b, 'all'); return (r && r.w + r.l) ? [r.w, r.l] : null; })(),
         };
     });
 }
@@ -687,7 +691,7 @@ async function entrySavePoster() {
     await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
 
     const W = ENTRY_POSTER_W;
-    const PAD = 56, HEAD = 210, ROW = 124, FOOT = 74;
+    const PAD = 56, HEAD = 210, ROW = 134, FOOT = 74;
     const H = HEAD + rows.length * ROW + FOOT;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
@@ -736,52 +740,56 @@ async function entrySavePoster() {
         ctx.textAlign = 'right';
         ctx.fillText(r.b ? r.b.n : '-', W - PAD - D - 18, cy + 10);
 
-        // 가운데는 맞대결 전적이 주인공이다. 티어는 그 위에 작게, 예상 승률은
-        // '포스터에 승률'을 켰을 때만 맨 아래 막대로 붙는다.
+        // 가운데: 티어(작게) / 고른 기간 맞대결(크게) / 통산(작게, 참고용).
+        // 예상 승률은 '포스터에 승률'을 켰을 때만 맨 아래 막대로 붙는다.
         ctx.textAlign = 'center';
         const ta2 = r.a ? tierLabel(r.a.t) : '';
         const tb2 = r.b ? tierLabel(r.b.t) : '';
         const tierText = ta2 && ta2 === tb2 ? ta2 : [ta2, tb2].filter(Boolean).join(' · ');
         const hasProb = r.p !== null;
-        const midY = hasProb ? cy - 12 : cy - 2;
+        const shift = hasProb ? 0 : 12;          // 승률을 안 찍으면 가운데로 내려 붙인다
         ctx.fillStyle = '#94a3b8';
-        ctx.font = '600 17px Pretendard, sans-serif';
-        ctx.fillText(tierText || `${i + 1}경기`, W / 2, midY - 16);
+        ctx.font = '600 16px Pretendard, sans-serif';
+        ctx.fillText(tierText || `${i + 1}경기`, W / 2, cy - 40 + shift);
+
         if (r.h2h) {
             // '14 VS 11' - 왼쪽 수는 승리 색, 오른쪽 수는 패배 색(사이트 스코어판과 같다)
             const [hw, hl] = r.h2h;
-            ctx.font = '800 30px Pretendard, sans-serif';
-            const wA = ctx.measureText(String(hw)).width;
             ctx.font = '700 16px Pretendard, sans-serif';
             const wV = ctx.measureText('VS').width;
             const gap = 12;
+            ctx.font = '800 30px Pretendard, sans-serif';
             ctx.textAlign = 'right';
             ctx.fillStyle = '#1f6fff';
-            ctx.font = '800 30px Pretendard, sans-serif';
-            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, midY + 14);
+            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, cy - 8 + shift);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#f03e3e';
+            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, cy - 8 + shift);
             ctx.textAlign = 'center';
             ctx.fillStyle = '#94a3b8';
             ctx.font = '700 16px Pretendard, sans-serif';
-            ctx.fillText('VS', W / 2, midY + 10);
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#f03e3e';
-            ctx.font = '800 30px Pretendard, sans-serif';
-            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, midY + 14);
-            ctx.textAlign = 'center';
-            void wA;
+            ctx.fillText('VS', W / 2, cy - 12 + shift);
         } else {
             ctx.fillStyle = '#cbd5e1';
             ctx.font = '700 22px Pretendard, sans-serif';
-            ctx.fillText('맞대결 없음', W / 2, midY + 12);
+            ctx.fillText('맞대결 없음', W / 2, cy - 8 + shift);
         }
+
+        // 통산은 고른 기간이 통산이 아닐 때만 덧붙인다(같은 값을 두 번 적지 않게)
+        if (r.all && EntryState.period !== 'all') {
+            ctx.fillStyle = '#a0aab8';
+            ctx.font = '600 16px Pretendard, sans-serif';
+            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, cy + 14 + shift);
+        }
+
         if (hasProb) {
             const pa = Math.round(r.p * 1000) / 10;
-            const BW = 210, BH = 10, bx = W / 2 - BW / 2, by = cy + 22;
+            const BW = 200, BH = 8, bx = W / 2 - BW / 2, by = cy + 40;
             ctx.fillStyle = '#e2e8f0'; ctx.fillRect(bx, by, BW, BH);
             ctx.fillStyle = '#1f6fff'; ctx.fillRect(bx, by, BW * (pa / 100), BH);
             ctx.fillStyle = SUB;
-            ctx.font = '700 16px Pretendard, sans-serif';
-            ctx.fillText(`${pa.toFixed(0)}% : ${(100 - pa).toFixed(0)}%`, W / 2, by - 4);
+            ctx.font = '700 15px Pretendard, sans-serif';
+            ctx.fillText(`예상 ${pa.toFixed(0)}% : ${(100 - pa).toFixed(0)}%`, W / 2, by - 6);
         }
     });
 
