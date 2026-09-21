@@ -6175,6 +6175,9 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-map-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; max-height:154px; overflow:auto; }
 .entry-map-option { min-width:0; height:28px; padding:0 7px; border:0; background:var(--color-card); clip-path:var(--cut-4); color:var(--color-text-sub); font:inherit; font-size:10px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
 .entry-map-option:hover, .entry-map-option.is-picked { background:var(--color-primary); color:#fff; }
+/* 라이트 모드의 맵 선택은 사이트 본문 헤더와 같은 네이비로 통일 */
+html:not([data-theme="dark"]) .entry-map-option:hover,
+html:not([data-theme="dark"]) .entry-map-option.is-picked { background:var(--navy); color:#fff; }
 .entry-map-empty { grid-column:1/-1; padding:8px; text-align:center; font-size:10px; color:var(--color-text-faint); }
 .entry-map-popover-actions { display:flex; justify-content:flex-end; gap:5px; margin-top:6px; }
 .entry-map-popover-actions button { height:26px; padding:0 8px; border:0; background:var(--color-card); clip-path:var(--cut-4); color:var(--color-text-sub); font:inherit; font-size:9px; font-weight:800; cursor:pointer; }
@@ -6197,6 +6200,17 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-analysis-adj.is-a { color:var(--color-primary); }
 .entry-analysis-adj.is-b { color:var(--color-lose); }
 .entry-analysis-stat-detail { min-width:0; font-size:10px; line-height:1.45; color:var(--color-text-sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* 종족전/선택맵은 정보량이 길어서 두 줄까지 보여준다. */
+.entry-analysis-stat:nth-child(3) .entry-analysis-stat-detail,
+.entry-analysis-stat:nth-child(4) .entry-analysis-stat-detail {
+    display:-webkit-box;
+    overflow:hidden;
+    white-space:normal;
+    text-overflow:clip;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    line-clamp:2;
+}
 .entry-analysis-foot { padding:0 12px 9px; font-size:9px; line-height:1.45; color:var(--color-text-faint); }
 .news-load-more:disabled { cursor: default; color: var(--color-text-faint); background: var(--color-card); }
 
