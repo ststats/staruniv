@@ -589,7 +589,7 @@ function entrySummaryHtml(ps) {
     if (n > target) {
         return `<div class="h2h-empty entry-summary">
             <div class="h2h-empty-title">후보 ${n}개</div>
-            <div class="h2h-empty-sub">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${n - target}개를 걷어 내세요.</div>
+            <div class="h2h-empty-sub">${target}경기에 맞추려면 ${n - target}개를 빼세요</div>
         </div>`;
     }
     const sim = entrySeriesSim(ps, target);
