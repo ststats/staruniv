@@ -60,9 +60,6 @@ const EntryState = {
     h2hCache: {},            // "기간|a|b" -> {w, l}
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
-    // 포스터에는 예상 승률을 넣지 않는다 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
-    // 물건이라 밖으로 돌아다닌다. 예측은 화면 안에서만 본다.
-    posterProb: false,
     autoTiers: new Set(),       // 자동매칭에 포함할 티어
     analysisOpen: {},           // 경기별 상세 분석 펼침 상태
     mapPickerOpen: null,        // 열려 있는 경기별 맵 선택창
@@ -1144,9 +1141,8 @@ function entryDrawAvatar(ctx, img, name, x, y, d) {
 
 function entryPosterRows() {
     const players = entryPlayers();
-    const withProb = EntryState.posterProb;
     return EntryState.matches.map(m => {
-        const wp = entryWinProb(m.a, m.b, m.map);
+        const h2h = entryH2hRec(m.a, m.b, EntryState.period);
         const face = p => (p ? {
             n: p.n,
             s: p.s || '',
@@ -1156,8 +1152,7 @@ function entryPosterRows() {
         return {
             a: face(players[m.a]),
             b: face(players[m.b]),
-            p: (withProb && wp) ? wp.p : null,
-            h2h: (wp && wp.n) ? [wp.w, wp.l] : null,
+            h2h: (h2h && (h2h.w + h2h.l)) ? [h2h.w, h2h.l] : null,
             map: entryMapName(m.map),
             // 고른 기간에 맞대결이 없을 수 있어서 통산도 같이 싣는다(참고용)
             all: (() => { const r = entryH2hRec(m.a, m.b, 'all'); return (r && r.w + r.l) ? [r.w, r.l] : null; })(),
@@ -1176,7 +1171,7 @@ async function entrySavePoster() {
     const W = ENTRY_POSTER_W;
     // 공유해서 보는 그림이라 휴대폰에서 줄어들어도 읽혀야 한다 - 글자를 넉넉히 키운다
     const PAD = 64, HEAD = 246, FOOT = 86;
-    const ROW = EntryState.posterProb ? 184 : 164;
+    const ROW = 164;
     const H = HEAD + rows.length * ROW + FOOT;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
@@ -1236,12 +1231,18 @@ async function entrySavePoster() {
         ctx.fillText(r.b ? r.b.n : '-', nameXb, cy - 6);
         if (r.b) entryDrawBadgeRow(ctx, r.b, nameXb, cy + 8, BADGE, 'right');
 
-        // 가운데: 맵 / 맞대결 스코어(크게) / 통산 / 예상 승률
+        // 가운데: 맵 / 맞대결 스코어 / 통산전적 3줄만 사용한다.
+        // middle baseline + 대칭 좌표로 실제 글자 박스 기준 위/아래 여백도 균형을 맞춘다.
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const mapY = cy - 48;
+        const scoreY = cy;
+        const allY = cy + 48;
+
         if (r.map) {
             ctx.fillStyle = SUB;
             ctx.font = '700 18px Pretendard, sans-serif';
-            ctx.fillText(String(r.map), W / 2, cy - 42);
+            ctx.fillText(String(r.map), W / 2, mapY);
         }
         if (r.h2h) {
             const [hw, hl] = r.h2h;
@@ -1251,32 +1252,27 @@ async function entrySavePoster() {
             ctx.font = '800 58px Pretendard, sans-serif';
             ctx.textAlign = 'right';
             ctx.fillStyle = '#1f6fff';
-            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, cy + 10);
+            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, scoreY);
             ctx.textAlign = 'left';
             ctx.fillStyle = '#f03e3e';
-            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, cy + 10);
+            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, scoreY);
             ctx.textAlign = 'center';
             ctx.fillStyle = '#9aa5b4';
             ctx.font = '700 22px Pretendard, sans-serif';
-            ctx.fillText('vs', W / 2, cy + 2);
+            ctx.fillText('vs', W / 2, scoreY);
         } else {
             ctx.fillStyle = '#c3ccd8';
             ctx.font = '700 28px Pretendard, sans-serif';
-            ctx.fillText('맞대결 없음', W / 2, cy + 4);
+            ctx.fillText('맞대결 없음', W / 2, scoreY);
         }
 
         if (r.all && EntryState.period !== 'all') {
             ctx.fillStyle = '#9aa5b4';
             ctx.font = '700 19px Pretendard, sans-serif';
-            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, cy + 42);
+            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, allY);
         }
 
-        if (r.p !== null) {
-            const pa = Math.round(r.p * 1000) / 10;
-            ctx.fillStyle = SUB;
-            ctx.font = '700 19px Pretendard, sans-serif';
-            ctx.fillText(`예상 ${pa.toFixed(0)}% : ${(100 - pa).toFixed(0)}%`, W / 2, cy + 64);
-        }
+        ctx.textBaseline = 'alphabetic';
     });
 
     const fy = HEAD + rows.length * ROW;
@@ -1284,7 +1280,7 @@ async function entrySavePoster() {
     ctx.fillStyle = SUB;
     ctx.font = '700 21px Pretendard, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`스타대학 · ${entryPeriodLabel()} 기준${EntryState.posterProb ? ' · 예상 승률은 참고용' : ''}`, PAD, fy + 52);
+    ctx.fillText(`스타대학 · ${entryPeriodLabel()} 기준`, PAD, fy + 52);
     ctx.textAlign = 'right';
     ctx.fillText(`${rows.length}경기`, W - PAD, fy + 52);
 
