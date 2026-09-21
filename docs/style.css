@@ -6075,7 +6075,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 /* 대진표가 넓은 쪽, 선수 고르기가 좁은 쪽 - 짜고 있는 결과를 보면서 옆에서 사람을 넣는다 */
 .entry-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-block-gap); align-items: start; }
 .entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; margin-left: auto; }
-.entry-actions .text-action[aria-pressed="true"] { color: var(--panel-accent); }
 .entry-settings { display: grid; grid-template-columns: 90px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: var(--space-block-gap); }
 
 .entry-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -6095,14 +6094,23 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-list .h2h-suggest-item.is-picked .h2h-suggest-name,
 .entry-list .h2h-suggest-item.is-picked .h2h-suggest-team { color: #fff; }
 
-.entry-hint { margin: 0 0 8px; font-size: var(--fs-meta); color: var(--color-text-sub); }
-/* 상대전적 머리 스코어판은 한 화면에 하나 뜨는 크기라 여기서는 줄여 쓴다 */
-.entry-score { margin-bottom: 8px; padding: 14px 16px; gap: 10px; }
-.entry-score .h2h-score-num { font-size: 26px; }
-.entry-score .h2h-score-name { font-size: var(--fs-meta); }
-.entry-score .h2h-score-rate { font-size: var(--fs-meta); }
-.entry-score .h2h-score-bar { height: 6px; margin: 6px 0; }
-.entry-score .h2h-score-total { font-size: var(--fs-badge-sm); line-height: 1.5; }
+/* 대진표 위 네이비 박스: 상대전적 빈 화면(.h2h-empty)의 크기·바탕을 그대로 쓰고,
+   매치 예상일 때만 안을 세 칸(왼쪽 승률 / 가운데 설명 / 오른쪽 승률)으로 나눈다 */
+.entry-summary { margin-bottom: 10px; }
+.entry-summary.is-score {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: center; gap: 12px;
+}
+.entry-sum-side { min-width: 0; }
+.entry-sum-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--fs-meta); font-weight: 700; color: var(--navy-on-muted); }
+.entry-sum-num { font-family: "Pretendard", sans-serif; font-size: 30px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.entry-sum-num.is-a { color: #6ea8ff; }
+.entry-sum-num.is-b { color: #ff7b7b; }
+.entry-sum-mid { min-width: 0; }
+.entry-sum-rate { font-size: var(--fs-meta); font-weight: 700; color: var(--navy-on-text); }
+.entry-summary .h2h-score-bar { height: 6px; margin: 8px 0 6px; }
+.entry-sum-sub { font-size: var(--fs-badge-sm); line-height: 1.55; color: var(--navy-on-muted); }
+#entry-period { margin-bottom: 10px; }
 .entry-matches { display: flex; flex-direction: column; gap: 8px; }
 
 /* 대진 카드: 동티어 맞대결 카드(.h2h-rival)와 같은 바탕·노치·여백. 사진·이름·승패·막대도

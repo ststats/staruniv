@@ -30,7 +30,7 @@ const ENTRY_DORMANT = '휴면';
 const ENTRY_H2H_PRIOR = 10;
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
 const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
-const ENTRY_POSTER_W = 1080;      // 저장되는 포스터 가로(px)
+const ENTRY_POSTER_W = 1200;      // 저장되는 포스터 가로(px)
 // 대학대전은 경기 수가 정해져 있다(9경기 5선승이 흔하다). 동일 티어로 각자 한 번씩만
 // 짝지으면 그 수가 안 채워지는 일이 잦은데, 그때는 채워진 만큼 두고 한 번 더 돌려
 // 중복으로 나머지를 메운다.
@@ -60,9 +60,8 @@ const EntryState = {
     h2hCache: {},            // "기간|a|b" -> {w, l}
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
-    // 포스터에 승률을 찍을지. 기본은 끔 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
-    // 물건이라 밖으로 돌아다닌다. 거기에 실제 선수 승부 예측을 박아 두면 성격이
-    // 달라지므로, 예측은 화면 안에서만 보고 포스터에는 일부러 안 넣는다.
+    // 포스터에는 예상 승률을 넣지 않는다 - 포스터는 '엔트리가 이렇게 나왔다'를 알리는
+    // 물건이라 밖으로 돌아다닌다. 예측은 화면 안에서만 본다.
     posterProb: false,
 };
 
@@ -275,10 +274,11 @@ function renderEntryTeamChips() {
     });
 }
 
+// 소속을 바꿔도 이미 짠 대진은 지우지 않는다 - 소속 고르기는 아래 명단을 걸러 보는
+// 필터일 뿐이고, 다른 대학 선수를 섞어 넣는 경우도 흔하다.
 function entryPickTeam(side, team) {
     EntryState.teams[side] = team || null;
-    EntryState.sel = [null, null];
-    EntryState.matches = [];
+    EntryState.sel[side] = null;
     renderEntryTeamChips();
     renderEntry();
 }
@@ -538,7 +538,8 @@ function entryMatchRowHtml(m, i) {
 // 올라온 선수들의 소속 중 가장 많은 것을 쓴다(용병 한둘이 섞여도 팀 이름은 그대로).
 // 양쪽이 같은 이름으로 떨어지면(둘 다 FA인 개인전 같은 경우) A팀/B팀으로 돌린다.
 function entryDerivedName(side) {
-    if (EntryState.teams[side]) return EntryState.teams[side];
+    // 소속 고르기는 명단 필터라, 대진이 있으면 거기 올라간 선수들의 소속을 먼저 본다
+    // (케이대로 짜 둔 뒤 필터를 JSA로 바꿔도 이름이 'JSA'가 되면 안 된다)
     const players = entryPlayers();
     const count = {};
     EntryState.matches.forEach(m => {
@@ -546,7 +547,7 @@ function entryDerivedName(side) {
         const t = p && String(p.tm || '').trim();
         if (t) count[t] = (count[t] || 0) + 1;
     });
-    return Object.keys(count).sort((a, b) => count[b] - count[a])[0] || '';
+    return Object.keys(count).sort((a, b) => count[b] - count[a])[0] || EntryState.teams[side] || '';
 }
 
 function entrySideName(side) {
@@ -574,58 +575,56 @@ function entrySetLabel(side, value) {
     renderEntryResult();
 }
 
-// 시뮬 결과는 상대전적 머리 스코어판(.h2h-score)과 같은 모양으로 낸다.
-function entrySimScoreHtml(ps) {
-    const games = EntryState.target;
-    const sim = entrySeriesSim(ps, games);
+// 대진표 위의 네이비 박스. 상대전적 빈 화면(.h2h-empty)과 같은 크기·바탕이고,
+// 어떤 상태에서도 이 박스 하나가 뜬다(빈 대진 / 후보가 많음 / 매치 예상).
+function entrySummaryHtml(ps) {
+    const n = EntryState.matches.length;
+    const target = EntryState.target;
+    if (!n) {
+        return `<div class="h2h-empty entry-summary">
+            <div class="h2h-empty-title">아직 대진이 없습니다</div>
+            <div class="h2h-empty-sub">양쪽에서 선수를 하나씩 누르거나 자동매칭을 누르세요</div>
+        </div>`;
+    }
+    if (n > target) {
+        return `<div class="h2h-empty entry-summary">
+            <div class="h2h-empty-title">후보 ${n}개</div>
+            <div class="h2h-empty-sub">같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${n - target}개를 걷어 내세요.</div>
+        </div>`;
+    }
+    const sim = entrySeriesSim(ps, target);
     const pa = Math.round(sim.pA * 1000) / 10;
     const pb = Math.round(sim.pB * 1000) / 10;
-    return `<div class="h2h-score entry-score">
-        <div class="h2h-score-side">
-            <div class="h2h-score-name">${escapeHTML(entrySideName(0))}</div>
-            <div class="h2h-score-num is-a">${pa.toFixed(1)}%</div>
+    const bar = sim.pA + sim.pB ? (sim.pA / (sim.pA + sim.pB)) * 100 : 50;
+    return `<div class="h2h-empty entry-summary is-score">
+        <div class="entry-sum-side">
+            <div class="entry-sum-name">${escapeHTML(entrySideName(0))}</div>
+            <div class="entry-sum-num is-a">${pa.toFixed(1)}%</div>
         </div>
-        <div class="h2h-score-mid">
-            <div class="h2h-score-rate">${games}경기 ${sim.need}선승 · 예상 ${sim.eA.toFixed(1)} : ${sim.eB.toFixed(1)}</div>
-            <div class="h2h-score-bar"><span style="width:${sim.pA + sim.pB ? (sim.pA / (sim.pA + sim.pB)) * 100 : 50}%"></span></div>
-            <div class="h2h-score-total">자주 나올 결과 ${sim.top.map(([a, b, v]) => `${a}:${b} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
-            ${sim.filled ? `<div class="h2h-score-total">남은 ${sim.filled}경기는 핀볼로 채운다고 보고 계산</div>` : ''}
+        <div class="entry-sum-mid">
+            <div class="entry-sum-rate">${target}경기 ${sim.need}선승 · 예상 ${sim.eA.toFixed(1)} : ${sim.eB.toFixed(1)}</div>
+            <div class="h2h-score-bar"><span style="width:${bar}%"></span></div>
+            <div class="entry-sum-sub">자주 나올 결과 ${sim.top.map(([a, b, v]) => `${a}:${b} ${(v * 100).toFixed(0)}%`).join(' · ')}</div>
+            ${sim.filled ? `<div class="entry-sum-sub">남은 ${sim.filled}경기는 핀볼로 채운다고 보고 계산</div>` : ''}
         </div>
-        <div class="h2h-score-side">
-            <div class="h2h-score-name">${escapeHTML(entrySideName(1))}</div>
-            <div class="h2h-score-num is-b">${pb.toFixed(1)}%</div>
+        <div class="entry-sum-side">
+            <div class="entry-sum-name">${escapeHTML(entrySideName(1))}</div>
+            <div class="entry-sum-num is-b">${pb.toFixed(1)}%</div>
         </div>
     </div>`;
 }
 
 function renderEntryResult() {
-    const box = document.getElementById('entry-result');
-    if (!box) return;
     const n = EntryState.matches.length;
-    const target = EntryState.target;
     const count = document.getElementById('entry-count');
     if (count) count.textContent = `${n}경기`;
-
-    if (!n) {
-        box.innerHTML = `<div class="h2h-empty">
-            <div class="h2h-empty-title">아직 대진이 없습니다</div>
-            <div class="h2h-empty-sub">양쪽에서 선수를 하나씩 누르거나, 같은 티어 후보 뽑기를 누르세요</div>
-        </div>`;
-        return;
-    }
-
     const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b); return w ? w.p : 0.5; });
-    const over = n - target;
-    // 모자란 경우의 안내는 스코어판 안에 한 번만 적는다(예전엔 바탕에도 같은 말이 또 나왔다)
-    const hint = over > 0
-        ? `같은 티어로 나올 수 있는 조합을 모두 올렸습니다. ${target}경기에 맞추려면 ${over}개를 걷어 내세요.`
+    const sum = document.getElementById('entry-summary');
+    if (sum) sum.innerHTML = entrySummaryHtml(ps);
+    const box = document.getElementById('entry-result');
+    if (box) box.innerHTML = n
+        ? `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`
         : '';
-    // 예상 승률은 늘 보여 준다. 다만 후보가 경기 수보다 많으면 아직 편성이 아니라
-    // 매치 전체 승률(스코어판)은 내지 않는다.
-    const top = n <= target ? entrySimScoreHtml(ps) : '';
-    box.innerHTML = top
-        + (hint ? `<p class="entry-hint">${hint}</p>` : '')
-        + `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`;
 }
 
 function renderEntry() {
@@ -651,6 +650,65 @@ function entryLoadImage(url) {
         im.onerror = () => resolve(null);
         im.src = url;
     });
+}
+
+// 뱃지 색. style.css의 --color-race-* / --color-tier-badge 와 같은 값이다.
+const ENTRY_RACE_COLOR = { T: '#1976d2', Z: '#7b1fa2', P: '#f57f17' };
+const ENTRY_RACE_TEXT = { T: '#ffffff', Z: '#ffffff', P: '#141821' };
+const ENTRY_TIER_BG = '#1c3563';
+
+// 사이트의 .tag-badge를 캔버스로 옮긴 것 - 노치 깎은 바탕에 글자를 가운데 둔다.
+// 반환값은 그린 뱃지의 폭(다음 뱃지를 이어 붙일 때 쓴다).
+function entryDrawBadge(ctx, text, x, y, h, bg, fg, fixedW) {
+    const label = String(text || '');
+    if (!label) return 0;
+    const fontSize = Math.round(h * 0.6);
+    ctx.save();
+    ctx.font = `800 ${fontSize}px Pretendard, sans-serif`;
+    const w = fixedW || Math.max(h, Math.ceil(ctx.measureText(label).width) + h * 0.7);
+    const cut = Math.round(h * 0.25);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w - cut, y);
+    ctx.lineTo(x + w, y + cut);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.fillStyle = fg;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + w / 2, y + h / 2 + 1);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+    return w;
+}
+
+// 종족 뱃지는 사이트에서 정사각형이다(글자 한 자).
+function entryDrawRaceBadge(ctx, letter, x, y, size) {
+    const bg = ENTRY_RACE_COLOR[letter];
+    if (!bg) return 0;
+    return entryDrawBadge(ctx, letter, x, y, size, bg, ENTRY_RACE_TEXT[letter] || '#fff', size);
+}
+
+function entryDrawTierBadge(ctx, label, x, y, h) {
+    return entryDrawBadge(ctx, label, x, y, h, ENTRY_TIER_BG, '#ffffff');
+}
+
+// 종족 + 티어 뱃지를 나란히. align이 'right'면 오른쪽 끝(x)에 맞춰 왼쪽으로 쌓는다.
+function entryDrawBadgeRow(ctx, p, x, y, h, align) {
+    const gap = 6;
+    const raceW = ENTRY_RACE_COLOR[p.r] ? h : 0;
+    ctx.save();
+    ctx.font = `800 ${Math.round(h * 0.6)}px Pretendard, sans-serif`;
+    const tierW = p.t ? Math.max(h, Math.ceil(ctx.measureText(p.t).width) + h * 0.7) : 0;
+    ctx.restore();
+    const total = raceW + (raceW && tierW ? gap : 0) + tierW;
+    let cur = align === 'right' ? x - total : x;
+    if (raceW) { entryDrawRaceBadge(ctx, p.r, cur, y, h); cur += raceW + gap; }
+    if (tierW) entryDrawTierBadge(ctx, p.t, cur, y, h);
+    return total;
 }
 
 function entryInitialColor(name) {
@@ -700,11 +758,6 @@ function entryPosterRows() {
     });
 }
 
-function entryTogglePosterProb() {
-    EntryState.posterProb = !EntryState.posterProb;
-    const el = document.getElementById('entry-poster-prob');
-    if (el) el.setAttribute('aria-pressed', String(EntryState.posterProb));
-}
 
 async function entrySavePoster() {
     const ta = entrySideName(0); const tb = entrySideName(1);
@@ -714,7 +767,9 @@ async function entrySavePoster() {
     await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
 
     const W = ENTRY_POSTER_W;
-    const PAD = 56, HEAD = 210, ROW = 134, FOOT = 74;
+    // 공유해서 보는 그림이라 휴대폰에서 줄어들어도 읽혀야 한다 - 글자를 넉넉히 키운다
+    const PAD = 64, HEAD = 246, FOOT = 86;
+    const ROW = EntryState.posterProb ? 172 : 148;
     const H = HEAD + rows.length * ROW + FOOT;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
@@ -732,111 +787,94 @@ async function entrySavePoster() {
 
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = 'rgba(255,255,255,.55)';
-    ctx.font = '700 20px Pretendard, sans-serif';
+    ctx.font = '700 22px Pretendard, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('STARUNIV · ENTRY', PAD, 62);
+    ctx.fillText('STARUNIV · ENTRY', PAD, 70);
     ctx.fillStyle = '#fff';
-    ctx.font = '800 54px Pretendard, sans-serif';
-    ctx.fillText(ta, PAD, 130);
+    ctx.font = '800 64px Pretendard, sans-serif';
+    ctx.fillText(ta, PAD, 152);
     ctx.textAlign = 'right';
-    ctx.fillText(tb, W - PAD, 130);
+    ctx.fillText(tb, W - PAD, 152);
     ctx.textAlign = 'center';
     ctx.fillStyle = GOLD;
-    ctx.font = '800 40px Pretendard, sans-serif';
-    ctx.fillText('VS', W / 2, 126);
-    ctx.fillStyle = 'rgba(255,255,255,.6)';
-    ctx.font = '600 20px Pretendard, sans-serif';
-    ctx.fillText(entryPosterNote(), W / 2, 170);
+    ctx.font = '800 46px Pretendard, sans-serif';
+    ctx.fillText('VS', W / 2, 146);
+    ctx.fillStyle = 'rgba(255,255,255,.72)';
+    ctx.font = '700 24px Pretendard, sans-serif';
+    ctx.fillText(entryPosterNote(), W / 2, 196);
 
     rows.forEach((r, i) => {
         const y = HEAD + i * ROW;
         if (i % 2 === 1) { ctx.fillStyle = '#f5f7fb'; ctx.fillRect(0, y, W, ROW); }
         const cy = y + ROW / 2;
-        const D = 56;
+        const D = 68;
         entryDrawAvatar(ctx, imgs[i * 2], r.a && r.a.n, PAD, cy - D / 2, D);
         entryDrawAvatar(ctx, imgs[i * 2 + 1], r.b && r.b.n, W - PAD - D, cy - D / 2, D);
 
-        // 이름 위에 종족 한 글자, 아래에 티어 - 실제 엔트리 확정표가 쓰는 짜임이다
-        const nameX = PAD + D + 18;
+        const BADGE = 26;
+        const nameX = PAD + D + 20;
+        const nameXb = W - PAD - D - 20;
+
+        // 왼쪽: 이름 / 그 아래 종족 뱃지 + 티어
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '700 16px Pretendard, sans-serif';
-        ctx.fillText(r.a ? r.a.r : '', nameX, cy - 16);
         ctx.fillStyle = TEXT;
-        ctx.font = '700 28px Pretendard, sans-serif';
-        ctx.fillText(r.a ? r.a.n : '-', nameX, cy + 12);
-        ctx.fillStyle = GOLD;
-        ctx.font = '700 15px Pretendard, sans-serif';
-        ctx.fillText(r.a ? r.a.t : '', nameX, cy + 34);
+        ctx.font = '700 34px Pretendard, sans-serif';
+        ctx.fillText(r.a ? r.a.n : '-', nameX, cy - 6);
+        if (r.a) entryDrawBadgeRow(ctx, r.a, nameX, cy + 8, BADGE, 'left');
 
-        const nameXb = W - PAD - D - 18;
+        // 오른쪽: 거울 배치
         ctx.textAlign = 'right';
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '700 16px Pretendard, sans-serif';
-        ctx.fillText(r.b ? r.b.r : '', nameXb, cy - 16);
         ctx.fillStyle = TEXT;
-        ctx.font = '700 28px Pretendard, sans-serif';
-        ctx.fillText(r.b ? r.b.n : '-', nameXb, cy + 12);
-        ctx.fillStyle = GOLD;
-        ctx.font = '700 15px Pretendard, sans-serif';
-        ctx.fillText(r.b ? r.b.t : '', nameXb, cy + 34);
+        ctx.font = '700 34px Pretendard, sans-serif';
+        ctx.fillText(r.b ? r.b.n : '-', nameXb, cy - 6);
+        if (r.b) entryDrawBadgeRow(ctx, r.b, nameXb, cy + 8, BADGE, 'right');
 
-        // 가운데: SET 번호 / 고른 기간 맞대결(크게) / 통산(작게, 참고용)
+        // 가운데: 맞대결 스코어(크게) / 통산 / 예상 승률
         ctx.textAlign = 'center';
-        const hasProb = r.p !== null;
-        const shift = hasProb ? 0 : 12;
-        ctx.fillStyle = '#b6c0cf';
-        ctx.font = '700 15px Pretendard, sans-serif';
-        ctx.fillText(`SET ${i + 1}`, W / 2, cy - 40 + shift);
-
         if (r.h2h) {
             const [hw, hl] = r.h2h;
-            ctx.font = '700 16px Pretendard, sans-serif';
-            const wV = ctx.measureText('VS').width;
-            const gap = 12;
-            ctx.font = '800 30px Pretendard, sans-serif';
+            ctx.font = '700 22px Pretendard, sans-serif';
+            const wV = ctx.measureText('vs').width;
+            const gap = 18;
+            ctx.font = '800 58px Pretendard, sans-serif';
             ctx.textAlign = 'right';
             ctx.fillStyle = '#1f6fff';
-            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, cy - 8 + shift);
+            ctx.fillText(String(hw), W / 2 - wV / 2 - gap, cy + 10);
             ctx.textAlign = 'left';
             ctx.fillStyle = '#f03e3e';
-            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, cy - 8 + shift);
+            ctx.fillText(String(hl), W / 2 + wV / 2 + gap, cy + 10);
             ctx.textAlign = 'center';
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '700 16px Pretendard, sans-serif';
-            ctx.fillText('VS', W / 2, cy - 12 + shift);
-        } else {
-            ctx.fillStyle = '#cbd5e1';
+            ctx.fillStyle = '#9aa5b4';
             ctx.font = '700 22px Pretendard, sans-serif';
-            ctx.fillText('맞대결 없음', W / 2, cy - 8 + shift);
+            ctx.fillText('vs', W / 2, cy + 2);
+        } else {
+            ctx.fillStyle = '#c3ccd8';
+            ctx.font = '700 28px Pretendard, sans-serif';
+            ctx.fillText('맞대결 없음', W / 2, cy + 4);
         }
 
         if (r.all && EntryState.period !== 'all') {
-            ctx.fillStyle = '#a0aab8';
-            ctx.font = '600 16px Pretendard, sans-serif';
-            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, cy + 14 + shift);
+            ctx.fillStyle = '#9aa5b4';
+            ctx.font = '700 19px Pretendard, sans-serif';
+            ctx.fillText(`통산 ${r.all[0]} : ${r.all[1]}`, W / 2, cy + 38);
         }
 
-        if (hasProb) {
+        if (r.p !== null) {
             const pa = Math.round(r.p * 1000) / 10;
-            const BW = 200, BH = 8, bx = W / 2 - BW / 2, by = cy + 40;
-            ctx.fillStyle = '#e2e8f0'; ctx.fillRect(bx, by, BW, BH);
-            ctx.fillStyle = '#1f6fff'; ctx.fillRect(bx, by, BW * (pa / 100), BH);
             ctx.fillStyle = SUB;
-            ctx.font = '700 15px Pretendard, sans-serif';
-            ctx.fillText(`예상 ${pa.toFixed(0)}% : ${(100 - pa).toFixed(0)}%`, W / 2, by - 6);
+            ctx.font = '700 19px Pretendard, sans-serif';
+            ctx.fillText(`예상 ${pa.toFixed(0)}% : ${(100 - pa).toFixed(0)}%`, W / 2, cy + 64);
         }
     });
 
     const fy = HEAD + rows.length * ROW;
     ctx.fillStyle = '#eef1f6'; ctx.fillRect(0, fy, W, FOOT);
     ctx.fillStyle = SUB;
-    ctx.font = '600 19px Pretendard, sans-serif';
+    ctx.font = '700 21px Pretendard, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`스타대학 · ${entryPeriodLabel()} 기준${EntryState.posterProb ? ' · 예상 승률은 참고용' : ''}`, PAD, fy + 44);
+    ctx.fillText(`스타대학 · ${entryPeriodLabel()} 기준${EntryState.posterProb ? ' · 예상 승률은 참고용' : ''}`, PAD, fy + 52);
     ctx.textAlign = 'right';
-    const asOf = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.asOf) || '';
-    ctx.fillText(asOf, W - PAD, fy + 44);
+    ctx.fillText(`${rows.length}경기`, W - PAD, fy + 52);
 
     let url;
     try { url = cv.toDataURL('image/png'); }

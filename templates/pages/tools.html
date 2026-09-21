@@ -83,11 +83,9 @@
                     <span class="entry-actions">
                         <button type="button" class="text-action" onclick="entrySwapTeams()">진영 교체</button>
                         <button type="button" class="text-action" onclick="entryReset()">비우기</button>
-                        <button type="button" class="text-action" id="entry-poster-prob" aria-pressed="false" onclick="entryTogglePosterProb()" title="포스터에 예상 승률을 함께 찍습니다">포스터에 승률</button>
                         <button type="button" class="text-action" onclick="entrySavePoster()">포스터 저장 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
                     </span>
                 </div>
-                <div id="entry-period"></div>
                 <div class="entry-settings">
                     <div class="h2h-slot-inner">
                         <label class="h2h-slot-label" for="entry-target">경기 수</label>
@@ -106,6 +104,8 @@
                         <input type="text" class="h2h-input" id="entry-label-b" maxlength="14" placeholder="소속 이름으로 자동" oninput="entrySetLabel(1, this.value)">
                     </div>
                 </div>
+                <div id="entry-summary"></div>
+                <div id="entry-period"></div>
                 <div id="entry-result"></div>
             </div>
 
@@ -113,7 +113,7 @@
                 <div class="section-title has-actions" data-en="PLAYERS">
                     <span class="section-title-label">선수 고르기</span>
                     <span class="entry-actions">
-                        <button type="button" class="text-action" onclick="entryAutoFill()">같은 티어 후보 뽑기</button>
+                        <button type="button" class="text-action" onclick="entryAutoFill()">자동매칭</button>
                     </span>
                 </div>
                 <div class="entry-sides">
