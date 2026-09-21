@@ -53,6 +53,7 @@ const EntryState = {
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
     query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
     labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
+    note: '',                // 포스터 제목(예: '결승전 · 2026-09-21'). 비우면 오늘 날짜
     period: '90',            // 맞대결 기간(ENTRY_PERIODS). 기본은 최근 90일 - 옛날 천적
                              // 관계보다 지금 폼이 엔트리를 짜는 데 쓸모 있다.
     rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
@@ -556,6 +557,18 @@ function entrySideName(side) {
     return side === 0 ? 'A팀' : 'B팀';
 }
 
+function entrySetNote(value) {
+    EntryState.note = value;
+}
+
+// 포스터 머리에 적을 한 줄. 안 적었으면 오늘 날짜만 적는다.
+function entryPosterNote() {
+    const typed = String(EntryState.note || '').trim();
+    if (typed) return typed;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function entrySetLabel(side, value) {
     EntryState.labels[side] = value;
     renderEntryResult();
@@ -670,9 +683,15 @@ function entryPosterRows() {
     const withProb = EntryState.posterProb;
     return EntryState.matches.map(m => {
         const wp = entryWinProb(m.a, m.b);
+        const face = p => (p ? {
+            n: p.n,
+            s: p.s || '',
+            r: raceShortLabel(p.r),          // 'T' / 'Z' / 'P'
+            t: tierLabel(p.t),
+        } : null);
         return {
-            a: players[m.a] || null,
-            b: players[m.b] || null,
+            a: face(players[m.a]),
+            b: face(players[m.b]),
             p: (withProb && wp) ? wp.p : null,
             h2h: (wp && wp.n) ? [wp.w, wp.l] : null,
             // 고른 기간에 맞대결이 없을 수 있어서 통산도 같이 싣는다(참고용)
@@ -727,7 +746,7 @@ async function entrySavePoster() {
     ctx.fillText('VS', W / 2, 126);
     ctx.fillStyle = 'rgba(255,255,255,.6)';
     ctx.font = '600 20px Pretendard, sans-serif';
-    ctx.fillText(`${rows.length}경기 · ${entryPeriodLabel()}`, W / 2, 170);
+    ctx.fillText(entryPosterNote(), W / 2, 170);
 
     rows.forEach((r, i) => {
         const y = HEAD + i * ROW;
@@ -737,27 +756,40 @@ async function entrySavePoster() {
         entryDrawAvatar(ctx, imgs[i * 2], r.a && r.a.n, PAD, cy - D / 2, D);
         entryDrawAvatar(ctx, imgs[i * 2 + 1], r.b && r.b.n, W - PAD - D, cy - D / 2, D);
 
+        // 이름 위에 종족 한 글자, 아래에 티어 - 실제 엔트리 확정표가 쓰는 짜임이다
+        const nameX = PAD + D + 18;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '700 16px Pretendard, sans-serif';
+        ctx.fillText(r.a ? r.a.r : '', nameX, cy - 16);
         ctx.fillStyle = TEXT;
         ctx.font = '700 28px Pretendard, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(r.a ? r.a.n : '-', PAD + D + 18, cy + 10);
-        ctx.textAlign = 'right';
-        ctx.fillText(r.b ? r.b.n : '-', W - PAD - D - 18, cy + 10);
+        ctx.fillText(r.a ? r.a.n : '-', nameX, cy + 12);
+        ctx.fillStyle = GOLD;
+        ctx.font = '700 15px Pretendard, sans-serif';
+        ctx.fillText(r.a ? r.a.t : '', nameX, cy + 34);
 
-        // 가운데: 티어(작게) / 고른 기간 맞대결(크게) / 통산(작게, 참고용).
-        // 예상 승률은 '포스터에 승률'을 켰을 때만 맨 아래 막대로 붙는다.
-        ctx.textAlign = 'center';
-        const ta2 = r.a ? tierLabel(r.a.t) : '';
-        const tb2 = r.b ? tierLabel(r.b.t) : '';
-        const tierText = ta2 && ta2 === tb2 ? ta2 : [ta2, tb2].filter(Boolean).join(' · ');
-        const hasProb = r.p !== null;
-        const shift = hasProb ? 0 : 12;          // 승률을 안 찍으면 가운데로 내려 붙인다
+        const nameXb = W - PAD - D - 18;
+        ctx.textAlign = 'right';
         ctx.fillStyle = '#94a3b8';
-        ctx.font = '600 16px Pretendard, sans-serif';
-        ctx.fillText(tierText || `${i + 1}경기`, W / 2, cy - 40 + shift);
+        ctx.font = '700 16px Pretendard, sans-serif';
+        ctx.fillText(r.b ? r.b.r : '', nameXb, cy - 16);
+        ctx.fillStyle = TEXT;
+        ctx.font = '700 28px Pretendard, sans-serif';
+        ctx.fillText(r.b ? r.b.n : '-', nameXb, cy + 12);
+        ctx.fillStyle = GOLD;
+        ctx.font = '700 15px Pretendard, sans-serif';
+        ctx.fillText(r.b ? r.b.t : '', nameXb, cy + 34);
+
+        // 가운데: SET 번호 / 고른 기간 맞대결(크게) / 통산(작게, 참고용)
+        ctx.textAlign = 'center';
+        const hasProb = r.p !== null;
+        const shift = hasProb ? 0 : 12;
+        ctx.fillStyle = '#b6c0cf';
+        ctx.font = '700 15px Pretendard, sans-serif';
+        ctx.fillText(`SET ${i + 1}`, W / 2, cy - 40 + shift);
 
         if (r.h2h) {
-            // '14 VS 11' - 왼쪽 수는 승리 색, 오른쪽 수는 패배 색(사이트 스코어판과 같다)
             const [hw, hl] = r.h2h;
             ctx.font = '700 16px Pretendard, sans-serif';
             const wV = ctx.measureText('VS').width;
@@ -779,7 +811,6 @@ async function entrySavePoster() {
             ctx.fillText('맞대결 없음', W / 2, cy - 8 + shift);
         }
 
-        // 통산은 고른 기간이 통산이 아닐 때만 덧붙인다(같은 값을 두 번 적지 않게)
         if (r.all && EntryState.period !== 'all') {
             ctx.fillStyle = '#a0aab8';
             ctx.font = '600 16px Pretendard, sans-serif';
@@ -802,7 +833,7 @@ async function entrySavePoster() {
     ctx.fillStyle = SUB;
     ctx.font = '600 19px Pretendard, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(EntryState.posterProb ? '스타대학 자체 레이팅 기준 예측 · 참고용' : '스타대학 · STARUNIV', PAD, fy + 44);
+    ctx.fillText(`스타대학 · ${entryPeriodLabel()} 기준${EntryState.posterProb ? ' · 예상 승률은 참고용' : ''}`, PAD, fy + 44);
     ctx.textAlign = 'right';
     const asOf = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.asOf) || '';
     ctx.fillText(asOf, W - PAD, fy + 44);

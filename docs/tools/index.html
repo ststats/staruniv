@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=bd37796bd6">
+    <link rel="stylesheet" href="style.css?v=4944b8e7db">
     <meta name="site-data-version" content="f8745ef991">
 </head>
 <body><header class="top-navbar">
@@ -133,6 +133,10 @@
                         <label class="h2h-slot-label" for="entry-target">경기 수</label>
                         <input type="number" class="h2h-input" id="entry-target" min="1" max="31" step="2" value="9" onchange="entrySetTarget(this.value)">
                     </div>
+                    <div class="h2h-slot-inner entry-note-field">
+                        <label class="h2h-slot-label" for="entry-note">포스터 제목</label>
+                        <input type="text" class="h2h-input" id="entry-note" maxlength="40" placeholder="예: 결승전 · 오늘 날짜" oninput="entrySetNote(this.value)">
+                    </div>
                     <div class="h2h-slot-inner">
                         <label class="h2h-slot-label" for="entry-label-a">A 이름</label>
                         <input type="text" class="h2h-input" id="entry-label-a" maxlength="14" placeholder="소속 이름으로 자동" oninput="entrySetLabel(0, this.value)">
@@ -214,7 +218,7 @@
 <script src="core.js?v=a047234531"></script>
 <script src="soop.js?v=68531e35cd"></script>
 <script src="page-tools.js?v=3c82d190b3"></script>
-<script src="page-entry.js?v=f2381d0b9c"></script>
+<script src="page-entry.js?v=d2c55c8527"></script>
 
 </body>
 </html>
