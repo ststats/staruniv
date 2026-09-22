@@ -5,7 +5,6 @@ name: Update Site
 #   2) Supabase → data/db.json + data/eloboard.json 캐시
 #   3) eloboard 최신분 → Supabase elo_* 증분 저장
 #      + Supabase에서 만든 캐시로 상대전적/티어랭킹을 계산한다
-#      (Supabase가 없을 때만 기존 JSON-only ELO 동기화로 fallback)
 #   4) 통계 산출 + docs/ 페이지 빌드 (data/db.json이 있을 때만)
 #   5) 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링 → docs/data/calendar.png)
 #   6) 바뀐 것만 한 번에 커밋
@@ -37,11 +36,6 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    env:
-      # Supabase Secret이 있으면 Supabase를 원본으로 사용하고, 없을 때만 기존 Google Sheet로 fallback.
-      HAS_SUPABASE: ${{ secrets.SUPABASE_DB_URL != '' }}
-      HAS_SHEET: ${{ secrets.GOOGLE_SHEET_ID != '' && secrets.GOOGLE_CREDENTIALS_JSON != '' }}
-
     steps:
     - name: 저장소 체크아웃
       uses: actions/checkout@v4
@@ -66,6 +60,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Supabase 연결 확인
+      env:
+        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      run: |
+        if [ -z "$SUPABASE_DB_URL" ]; then
+          echo "❌ SUPABASE_DB_URL Secret이 없습니다. 이제 운영 데이터 원본은 Supabase만 사용합니다."
+          exit 1
+        fi
+        echo "✅ Supabase 연결 정보 확인"
+
     # 남의 서버를 읽는 일이라 실패해도 DB/사이트 빌드는 계속 진행한다.
     - name: 유튜브 영상 목록 갱신
       continue-on-error: true
@@ -81,14 +85,12 @@ jobs:
 
     # 핵심 운영 데이터의 원본은 Supabase. 기존 Python/JS 호환을 위해 db.json을 재생성한다.
     - name: Supabase에서 핵심 데이터 받기
-      if: env.HAS_SUPABASE == 'true'
       env:
         SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       run: python scripts/export_supabase.py
 
     # ELO도 Supabase가 원본이다. data/eloboard.json은 build_h2h/build_ranking용 임시 캐시다.
     - name: Supabase에서 ELO 캐시 만들기
-      if: env.HAS_SUPABASE == 'true'
       env:
         SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       run: python scripts/export_elo_supabase.py
@@ -96,32 +98,10 @@ jobs:
     # 방금 DB에서 만든 캐시를 기준으로 eloboard 최신분만 읽고, 바뀐 경기만 Supabase에 UPSERT한다.
     # API가 일시적으로 실패해도 위에서 만든 DB 스냅샷으로 사이트는 계속 빌드된다.
     - name: ELO 최신분을 Supabase에 증분 저장
-      if: env.HAS_SUPABASE == 'true'
       continue-on-error: true
       env:
         SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       run: python scripts/sync_eloboard.py
-
-    # Supabase를 아직 쓰지 않는 저장소를 위한 기존 방식.
-    - name: ELO JSON 증분 수집 (Supabase 없을 때 fallback)
-      if: env.HAS_SUPABASE != 'true'
-      continue-on-error: true
-      run: |
-        if [ ! -f data/eloboard.json ]; then
-          echo "ℹ️ Supabase도 기존 ELO 캐시도 없어 전적 단계를 건너뜁니다."
-          exit 0
-        fi
-        python scripts/sync_eloboard.py
-
-    # 아직 Supabase를 연결하지 않은 동안에는 기존 Google Sheet를 그대로 쓴다.
-    # 전환 후에도 Google Secret을 바로 지울 필요는 없다. Supabase가 있으면 이 단계는 자동으로 건너뛴다.
-    - name: 구글 시트에서 최신 데이터 받기 (fallback)
-      if: env.HAS_SUPABASE != 'true' && env.HAS_SHEET == 'true'
-      continue-on-error: true
-      env:
-        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-      run: python scripts/update_data.py
 
     # 상대전적 파일은 Supabase에서 만든 ELO 캐시와 data/db.json의 멤버 명단을 사용한다.
     - name: 상대전적 파일 만들기
@@ -147,10 +127,6 @@ jobs:
 
     - name: 통계 산출 및 웹페이지 빌드
       run: |
-        if [ ! -f data/db.json ]; then
-          echo "ℹ️ data/db.json 이 없어 통계·빌드를 건너뜁니다(시트를 아직 연결하지 않은 저장소)."
-          exit 0
-        fi
         python scripts/generate_stats.py
         python scripts/build_html.py
 

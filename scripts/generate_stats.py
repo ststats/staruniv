@@ -44,7 +44,7 @@ def write_json_atomic(path, obj, **dump_kwargs):
     os.replace(tmp_path, path)
 
 
-# 눈에 안 보이는데 값은 들어있는 문자들. 시트를 복사·붙여넣기 하다 보면 섞여 들어오는데,
+# 눈에 안 보이는데 값은 들어있는 문자들. 외부 데이터를 복사·붙여넣기 하다 보면 섞여 들어오는데,
 # 빈칸처럼 보이지만 비교(== 'T' 등)에는 걸리지 않아 조용히 통계에서 빠지거나 경고만 울린다.
 # 폭 없는 공백(200B~200D), 단어 결합자(2060), BOM(FEFF), 줄바꿈 없는 공백(00A0) 등.
 INVISIBLE_CHARS = r'[\u200b-\u200d\u2060\ufeff\u00a0\u180e]'
@@ -52,7 +52,7 @@ INVISIBLE_CHARS = r'[\u200b-\u200d\u2060\ufeff\u00a0\u180e]'
 
 def clean_str_col(df, col):
     """문자열로 정확히 비교(== '승' 등)하는 컬럼은 양 끝 공백과 보이지 않는 문자를 제거해둔다.
-    시트 셀에 실수로 공백이 붙으면('승 ') 비교가 조용히 실패해서 그 경기가
+    원본 값에 실수로 공백이 붙으면('승 ') 비교가 조용히 실패해서 그 경기가
     승패 집계에서 통째로 빠지는 사고로 이어질 수 있다. 보이지 않는 문자만 들어있는 칸은
     빈칸으로 정리되므로, 그런 칸이 '이상한 값'으로 경고에 잡히지도 않는다.
     (결측값은 원래 객체(None/NaN) 그대로 두고, 나머지만 문자열로 바꿔 정리한다.)"""
@@ -137,7 +137,7 @@ def load_frames():
     try:
         db, linked_matches, linked_rounds = load_linked_db('data/db.json')
     except FileNotFoundError:
-        print("❌ data/db.json 파일을 찾을 수 없습니다. update_data.py를 먼저 실행하세요.")
+        print("❌ data/db.json 파일을 찾을 수 없습니다. export_supabase.py를 먼저 실행하세요.")
         sys.exit(1)
     except ValueError as e:  # json.JSONDecodeError 포함
         print(f"❌ data/db.json을 읽는 중 오류가 발생했습니다: {e}")
@@ -151,9 +151,9 @@ def load_frames():
     # 필수 컬럼이 없으면 아래에서 pandas KeyError로 알아보기 힘들게 죽는 대신,
     # 여기서 미리 원인을 명확히 알려주고 중단한다.
     missing = [
-        ("'매치 목록' 시트", [c for c in REQUIRED_MATCH_COLS if c not in df_matches.columns]),
-        ("'매치 전적' 시트", [c for c in REQUIRED_ROUND_COLS if c not in df_rounds.columns]),
-        ("'설정' 시트", [c for c in REQUIRED_SETTINGS_COLS if c not in df_settings.columns]),
+        ("matches 테이블", [c for c in REQUIRED_MATCH_COLS if c not in df_matches.columns]),
+        ("rounds 테이블", [c for c in REQUIRED_ROUND_COLS if c not in df_rounds.columns]),
+        ("settings 테이블", [c for c in REQUIRED_SETTINGS_COLS if c not in df_settings.columns]),
     ]
     if any(cols for _, cols in missing):
         for label, cols in missing:
@@ -161,12 +161,12 @@ def load_frames():
                 print(f"❌ {label}에 필요한 컬럼이 없습니다: {cols}")
         sys.exit(1)
 
-    warn_invalid_values(df_matches, '형식', FORMATS, "'매치 목록' 시트")
-    warn_invalid_values(df_rounds, '형식', FORMATS, "'매치 전적' 시트")
-    warn_invalid_values(df_matches, '최종 결과', RESULT_VALUES, "'매치 목록' 시트")
-    warn_invalid_values(df_rounds, '결과', RESULT_VALUES, "'매치 전적' 시트")
-    warn_invalid_dates(df_matches, '날짜', "'매치 목록' 시트")
-    warn_invalid_dates(df_rounds, '날짜', "'매치 전적' 시트")
+    warn_invalid_values(df_matches, '형식', FORMATS, "matches 테이블")
+    warn_invalid_values(df_rounds, '형식', FORMATS, "rounds 테이블")
+    warn_invalid_values(df_matches, '최종 결과', RESULT_VALUES, "matches 테이블")
+    warn_invalid_values(df_rounds, '결과', RESULT_VALUES, "rounds 테이블")
+    warn_invalid_dates(df_matches, '날짜', "matches 테이블")
+    warn_invalid_dates(df_rounds, '날짜', "rounds 테이블")
 
     for col in ['결과', '형식', '세트', '라운드', '우리 선수', '상대 선수', '상대 종족', '맵']:
         clean_str_col(df_rounds, col)
@@ -177,7 +177,7 @@ def load_frames():
     df_settings['날짜'] = pd.to_datetime(df_settings['날짜'], errors='coerce')
     bad_settings = df_settings['날짜'].isna().sum()
     if bad_settings:
-        print(f"⚠️ '설정' 시트에 날짜 형식이 잘못된 행이 {bad_settings}개 있습니다. 확인이 필요합니다.")
+        print(f"⚠️ settings 테이블에 날짜 형식이 잘못된 행이 {bad_settings}개 있습니다. 확인이 필요합니다.")
     df_settings = df_settings.dropna(subset=['날짜']).sort_values('날짜')
     df_matches['날짜'] = pd.to_datetime(df_matches['날짜'], errors='coerce')
     df_rounds['날짜'] = pd.to_datetime(df_rounds['날짜'], errors='coerce')
@@ -189,8 +189,8 @@ def load_frames():
 
 
 def build_team_sort_key(df_teams):
-    """'팀 목록' 시트(창단일 포함)를 상대팀 정렬에 쓴다. 컬럼: 팀/설립자/창단일/해체일/비고/우승.
-    이 시트에 없는 팀이나 창단일이 비어/이상한 값이면 날짜 미상으로 취급해 맨 위로 보낸다.
+    """teams 테이블(창단일 포함)을 상대팀 정렬에 쓴다. 컬럼: 팀/설립자/창단일/해체일/비고/우승.
+    이 테이블에 없는 팀이나 창단일이 비어/이상한 값이면 날짜 미상으로 취급해 맨 위로 보낸다.
     '내전'(자체 스크림)은 팀 목록에 없는 대신 캄몬스타즈 창단일을 그대로 쓴다."""
     team_founded = {}
     if '팀' in df_teams.columns and '창단일' in df_teams.columns:
@@ -249,7 +249,7 @@ def assign_seasons(dates, df_settings):
 
 
 def _iter_season_frames(df, seasons):
-    """("전체", 원본) 다음에 설정 시트 순서대로 (시즌, 그 시즌 행만) 을 돌려준다.
+    """("전체", 원본) 다음에 settings 테이블 순서대로 (시즌, 그 시즌 행만) 을 돌려준다.
     읽기만 하므로 copy()는 하지 않는다(불리언 인덱싱 결과는 이미 새 DataFrame이다)."""
     for season in seasons:
         yield season, (df if season == TOTAL_SEASON else df[df['시즌'] == season])

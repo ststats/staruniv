@@ -6,25 +6,29 @@ GitHub Pages(`docs/`)로 배포되고, GitHub Actions가 주기적으로 데이�
 ## 데이터 흐름
 
 ```
-구글 시트 ────────┐
-eloboard.co.kr ───┼──> data/*.json (원본) ──> scripts/*.py ──> docs/*.html, docs/data/*.json
-유튜브 RSS/API ────┘                                                  (GitHub Pages 배포물)
+Supabase ─────────┐
+eloboard.co.kr ───┼──> data/*.json (빌드 캐시) ──> scripts/*.py ──> docs/*.html, docs/data/*.json
+유튜브 RSS/API ────┘                                                       (GitHub Pages 배포물)
 ```
 
-1. **구글 시트 → `data/db.json`** ([scripts/update_data.py](scripts/update_data.py)) - 설정/팀/멤버/매치/라운드/티어멤버 시트를 통합
-2. **eloboard 전적 → `data/eloboard.json`** ([scripts/sync_eloboard.py](scripts/sync_eloboard.py)) - 최초 1회 전체 수집, 이후 증분(매일 몇십 건)
-3. **상대전적 파일 생성** ([scripts/build_h2h.py](scripts/build_h2h.py)) - `docs/data/h2h/`로 선수 단위 분리(아래 참고)
-5. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
-6. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
-7. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
-8. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 `admin.html`을 렌더링해 `docs/data/calendar.png` 생성
+1. **Supabase → `data/db.json`** ([scripts/export_supabase.py](scripts/export_supabase.py)) - 설정/팀/멤버/매치/라운드/티어멤버를 빌드용 JSON으로 내보냄
+2. **Supabase ELO → `data/eloboard.json`** ([scripts/export_elo_supabase.py](scripts/export_elo_supabase.py)) - ELO 원본을 빌드용 캐시로 내보냄
+3. **eloboard 최신 전적 → Supabase** ([scripts/sync_eloboard.py](scripts/sync_eloboard.py)) - 새 경기만 `elo_*` 테이블에 증분 저장
+4. **상대전적 파일 생성** ([scripts/build_h2h.py](scripts/build_h2h.py)) - `docs/data/h2h/`로 선수 단위 분리
+5. **티어랭킹 계산** ([scripts/build_ranking.py](scripts/build_ranking.py))
+6. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
+7. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
+8. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
+9. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 `admin.html`을 렌더링해 `docs/data/calendar.png` 생성
 
-전체 순서와 실패 시 동작은 [.github/workflows/update.yml](.github/workflows/update.yml) 참고(각 단계가 독립적이라 하나가 실패해도 나머지는 진행됨).
+운영 데이터의 원본은 Supabase입니다. `data/db.json`과 `data/eloboard.json`은 기존 계산/빌드 코드와의 호환을 위한 캐시입니다.
+
+전체 순서와 실패 시 동작은 [.github/workflows/update.yml](.github/workflows/update.yml) 참고.
 
 ## 디렉터리 구조
 
 ```
-data/            원본 데이터(db.json, eloboard.json 등) - 비공개 산출물, docs/보다 상위 소스
+data/            빌드 캐시(db.json, eloboard.json 등) - 원본은 Supabase
 docs/            GitHub Pages 배포 루트(빌드 결과물 + 정적 자산)
 templates/       Jinja2 템플릿 + 프론트엔드 자산 원본(build_html.py가 docs/로 복사)
 scripts/         파이썬 파이프라인 스크립트
@@ -40,13 +44,15 @@ pip install -r requirements.txt
 npm install   # capture.js(Puppeteer)용
 ```
 
-구글 시트 연동은 `GOOGLE_CREDENTIALS_JSON`, `GOOGLE_SHEET_ID` 환경변수가 있어야 동작합니다. 없어도
-저장소에 이미 있는 `data/db.json`으로 아래 단계는 그대로 돌릴 수 있습니다.
+로컬에서 최신 운영 데이터로 빌드하려면 먼저 `SUPABASE_DB_URL` 환경변수를 설정합니다.
 
 ```bash
-python scripts/build_h2h.py          # data/eloboard.json + data/db.json -> docs/data/h2h/
-python scripts/generate_stats.py     # data/db.json -> data/render_stats.json
-python scripts/build_html.py         # -> docs/*.html
+python scripts/export_supabase.py      # Supabase -> data/db.json
+python scripts/export_elo_supabase.py  # Supabase ELO -> data/eloboard.json
+python scripts/build_h2h.py            # -> docs/data/h2h/
+python scripts/build_ranking.py
+python scripts/generate_stats.py       # -> data/render_stats.json
+python scripts/build_html.py           # -> docs/*.html
 ```
 
 로컬에서 결과를 보려면 `docs/`를 정적 서버로 띄우면 됩니다(`python -m http.server --directory docs`).
@@ -63,9 +69,9 @@ python scripts/build_html.py         # -> docs/*.html
 ## 유지보수
 
 ### git 히스토리 정리 (수동)
-`data/eloboard.json`과 `docs/data/h2h/**`가 매일 자동 커밋되면서 `.git` 저장소 용량이
-계속 늘어납니다. `git count-objects -vH`로 확인해서 부담스러워지면(반기~연 1회 정도)
-Actions 탭에서 **Squash Git History** 워크플로를 손으로 실행하세요. 이전 커밋 이력을
+`data/eloboard.json`은 이제 Git에서 추적하지 않지만 `docs/data/h2h/**` 같은 생성물이 계속
+커밋되므로 장기간 운영하면 `.git` 저장소가 커질 수 있습니다. `git count-objects -vH`로
+확인해서 부담스러워지면 Actions 탭에서 **Squash Git History** 워크플로를 손으로 실행하세요. 이전 커밋 이력을
 전부 지우고 현재 상태를 커밋 1개로 압축하는 **되돌릴 수 없는 작업**이라 자동 스케줄로
 돌리지 않고, 실수 방지를 위해 `SQUASH`를 직접 입력해야 실행됩니다. 자세한 내용은
 [.github/workflows/squash-history.yml](.github/workflows/squash-history.yml) 참고.
@@ -89,6 +95,6 @@ Actions 탭에서 **Squash Git History** 워크플로를 손으로 실행하세�
 | 이름 | 필수 | 용도 |
 |---|---|---|
 | `GH_TOKEN` | 권장 | 커밋 push, admin.html의 GitHub API 최신 일정 조회용 PAT |
-| `GOOGLE_SHEET_ID`, `GOOGLE_CREDENTIALS_JSON` | 선택 | 구글 시트 연동(둘 다 있어야 동작) |
+| `SUPABASE_DB_URL` | **필수** | 운영 데이터 및 ELO 원본 PostgreSQL 연결 문자열 |
 | `YOUTUBE_API_KEY` | 선택 | 없으면 RSS로 최신 15개만 수집 |
 | `SITE_URL` | 선택 | 배포 주소가 기본값(`https://ststats.github.io/staruniv`)과 다르면 지정 |

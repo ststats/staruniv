@@ -135,13 +135,13 @@ def http_json(url):
 DB_PATH = os.path.join('data', 'db.json')
 
 
-def sheet_tier_members():
-    """구글시트 members 시트(= 티어표 원본)에서 명단을 읽는다.
+def db_tier_members():
+    """Supabase에서 export된 db.json의 tierMembers 명단을 읽는다.
     시너지 명단과 달리 휴면·FA까지 다 들어 있어서, 상대전적에서 찾을 수 있는 선수가 훨씬 많다.
     돌려주는 모양은 fetch_tier_members()와 같다."""
     db = load_json(DB_PATH, {})
     out = []
-    # gspread가 "0"을 int 0으로 바꿔 넘겨주므로 `x or ''`로 읽으면 0티어가 사라진다.
+    # 0 같은 값도 빈 값으로 취급하지 않도록 None만 빈 문자열로 바꾼다.
     def cell(row, key):
         v = row.get(key)
         return '' if v is None else str(v).strip()
@@ -163,7 +163,7 @@ def sheet_tier_members():
 
 
 def fetch_tier_members():
-    """(예비) 시너지가 매일 공개하는 명단. 시트를 아직 안 채운 저장소에서만 쓴다."""
+    """(예비) 시너지가 매일 공개하는 명단. Supabase 티어 명단이 비어 있을 때만 쓴다."""
     with urllib.request.urlopen(f'{SYNERGY_BASE}/data/dates.js', timeout=30) as res:
         text = res.read().decode('utf-8')
     m = re.search(r'window\.AVAILABLE_DATES\s*=\s*(\[[^\]]*\])', text)
@@ -198,16 +198,16 @@ def write_json(path, data):
 
 
 def resolve_tier_members(offline):
-    """티어표 명단을 구한다. 구글시트 우선, 없으면 시너지로 물러난다. 돌려주는 값: (tier_date, tier_members)."""
+    """티어표 명단을 구한다. Supabase(db.json) 우선, 없으면 시너지로 물러난다. 돌려주는 값: (tier_date, tier_members)."""
     if offline:
         return '', []
-    tier_members = sheet_tier_members()
+    tier_members = db_tier_members()
     if tier_members:
-        print(f'  명단: 구글시트 members 시트 {len(tier_members):,}명')
+        print(f'  명단: Supabase tier_members {len(tier_members):,}명')
         return '', tier_members
-    try:                                     # 시트가 아직 없는 저장소 - 예전처럼 시너지에서
+    try:                                     # DB 명단이 비어 있으면 예전처럼 시너지에서
         tier_date, tier_members = fetch_tier_members()
-        print(f'  명단: 시너지 {len(tier_members):,}명 (구글시트 members 시트가 비어 있음)')
+        print(f'  명단: 시너지 {len(tier_members):,}명 (Supabase tier_members가 비어 있음)')
         return tier_date, tier_members
     except Exception as e:                    # 명단을 못 받아도 파일은 만든다(이름만으로)
         print(f'⚠️ 명단을 받지 못했습니다({e}). 이름/종족만으로 만듭니다.')
@@ -297,7 +297,7 @@ def main():
         if not players:
             print('   → 아카이브에 선수가 없습니다. scripts/sync_eloboard.py 가 제대로 받았는지 먼저 확인해주세요.')
         elif not tier_members:
-            print('   → 명단이 비어 있습니다. 구글시트 members 시트와 data/db.json 을 확인해주세요.')
+            print('   → 명단이 비어 있습니다. Supabase tier_members와 data/db.json 을 확인해주세요.')
         else:
             print('   → 양쪽 다 있는데 하나도 안 맞습니다. 명단의 ELO ID가 비어 있다면')
             print('      docs/data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 몇 명 적어주세요.')

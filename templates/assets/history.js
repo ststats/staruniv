@@ -2,7 +2,7 @@
  * 연혁: 일정 페이지 '연혁' 탭과 관리자 페이지가 같이 쓴다. (core.js 없이도 돌아가야 한다 - admin.html은 core.js를 안 싣는다. 팝업은 media-lightbox.js)
  *
  * 항목은 두 종류다.
- *   - 자동 항목: 멤버 시트의 입단일/퇴단일에서 날짜별로 묶어 만든다. 시트만 고치면 따라온다.
+ *   - 자동 항목: 멤버 데이터의 입단일/퇴단일에서 날짜별로 묶어 만든다. Supabase 멤버 데이터를 고치면 따라온다.
  *     관리자가 제목·설명·사진·유튜브를 덧붙이거나 숨길 수 있고, 그 값은 overrides[자동 id]에 저장된다.
  *   - 수동 항목: 관리자가 직접 추가한 창단·대회·방송 등. items 배열에 저장된다.
  *
@@ -49,7 +49,7 @@ function histThumbUrl(item) {
     return yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : '';
 }
 
-// 멤버 시트에서 입단/퇴단 자동 항목을 만든다. 같은 날 같은 종류는 한 항목으로 묶는다.
+// 멤버 데이터에서 입단/퇴단 자동 항목을 만든다. 같은 날 같은 종류는 한 항목으로 묶는다.
 function histAutoItems(members) {
     const groups = new Map();
     (members || []).forEach(m => {
@@ -73,8 +73,8 @@ function histMergeItems(data, members, includeHidden) {
     const overrides = (data && data.overrides) || {};
     const auto = histAutoItems(members).map(item => {
         const o = overrides[item.id] || {};
-        // 멤버는 시트가 정한다. 관리자가 붙인 괄호 설명만 이름을 맞춰 다시 붙인다
-        // (시트에서 사람이 늘거나 빠져도 설명이 엉뚱한 사람에게 붙지 않는다).
+        // 멤버는 DB가 정한다. 관리자가 붙인 괄호 설명만 이름을 맞춰 다시 붙인다
+        // (DB에서 사람이 늘거나 빠져도 설명이 엉뚱한 사람에게 붙지 않는다).
         const notes = new Map((Array.isArray(o.members) ? o.members : []).map(e => {
             const p = histParseMember(e);
             return [p.name, p.note];
@@ -108,8 +108,8 @@ function histTypeOrder(type) {
 }
 
 // "토마토(선수)" → { name: '토마토', note: '선수' }. 괄호가 없으면 설명은 빈 값이다.
-// 설명은 관리자가 직접 적는 값이다(예전처럼 멤버 시트의 직책을 자동으로 붙이지 않는다 - 그 날의
-// 역할이 시트의 현재 직책과 다를 수 있어서 자동으로 붙이면 오히려 틀린 말이 된다).
+// 설명은 관리자가 직접 적는 값이다(예전처럼 멤버 데이터의 직책을 자동으로 붙이지 않는다 - 그 날의
+// 역할이 DB의 현재 직책과 다를 수 있어서 자동으로 붙이면 오히려 틀린 말이 된다).
 function histParseMember(entry) {
     const s = String(entry || '').trim();
     const m = s.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
@@ -121,7 +121,7 @@ function histFormatMember(name, note) {
     return note ? `${name}(${note})` : name;
 }
 
-// 멤버 칩: 이름이 멤버 시트에 있으면 프로필 사진을 붙이고, 괄호 설명이 있으면 이름 뒤에 같이 보여준다.
+// 멤버 칩: 이름이 멤버 데이터에 있으면 프로필 사진을 붙이고, 괄호 설명이 있으면 이름 뒤에 같이 보여준다.
 // 한 항목에 이름이 수십 개 붙는 날이 있다(단체 입단 등). 다섯까지만 펼쳐 두고
 // 나머지는 겹친 프로필 사진 + '+N명' 한 칸으로 접는다 - 누르면 펼쳐진다.
 const HIST_CHIP_VISIBLE = 5;

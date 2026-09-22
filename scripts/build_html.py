@@ -47,9 +47,9 @@ PAGES = [
     ('schedule', '일정', '일정', '캄몬스타즈의 다가올 일정과 지나간 일정입니다.'),
     ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다.'),
     ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.'),
-    # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다. 명단은 시너지가
-    # 매일 만들어 공개하는 것을 page-tier.js가 그대로 읽고(우리 db.json과 무관),
-    # 방송 중 여부는 시너지 워커에서 받아온다. 그래서 이 빌드 스크립트가 넘겨줄 데이터는 없다.
+    # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다. 명단은 Supabase에서
+    # export된 db.json의 tierMembers를 docs/data/tier_members.json으로 구워두고 page-tier.js가 읽는다.
+    # 방송 중 여부는 시너지 워커에서 받아온다.
     ('tier', '티어표', '티어표', '스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다.'),
     # 영상은 어드민이 등록한 유튜브 채널의 최신 영상(data/videos.json, scripts/sync_videos.py)을 브라우저가 직접 읽는다.
     ('video', '영상', '영상', '캄몬스타즈 팬 유튜브 채널의 최신 영상과 추천 영상입니다.'),
@@ -79,10 +79,9 @@ _URI_COMPONENT_SAFE = "!'()*"
 
 
 def cell(row, key):
-    """시트 한 칸을 문자열로 읽는다.
-    gspread가 "0"처럼 숫자로 보이는 칸을 int로 바꿔주기 때문에, 흔히 쓰는
-    `str(row.get(k, '') or '')`는 0티어를 빈 값(=미분류)으로 만들어버린다.
-    None만 빈 값으로 보고 나머지는 그대로 문자열로 만든다."""
+    """DB에서 export된 한 칸을 문자열로 읽는다.
+    0 같은 유효한 값이 빈 값으로 바뀌지 않도록 None만 빈 문자열로 보고
+    나머지는 그대로 문자열로 만든다."""
     v = row.get(key)
     return '' if v is None else str(v).strip()
 
@@ -128,7 +127,7 @@ def load_nav_config():
 # ---------------------------------------------------------------------------
 # 사이트는 정적 페이지라, 브라우저가 받아 그리는 데이터는 누구나 그대로 내려받을 수 있다.
 # 그래서 "화면에 안 쓰는 값은 아예 안 내보낸다"가 유일한 가리기 방법이다.
-# (시트와 data/db.json에는 그대로 남아 있고, 배포 폴더로만 안 나간다)
+# (Supabase와 data/db.json에는 그대로 남아 있고, 배포 폴더로만 안 나간다)
 SITE_MEMBER_FIELDS = ['이름', 'SOOP ID', '생년월일', '성별', '종족', '티어', '직책', '입단일', '퇴단일', 'MBTI']
 SITE_MATCH_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '방식', '최종 결과', '세트 결과', '_match_key']
 SITE_ROUND_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '세트', '라운드',
@@ -137,13 +136,13 @@ SITE_PLAYER_STAT_FIELDS = ['이름', '대회 전적', '대학 전적', '미니 �
                            '테란전 전적', '저그전 전적', '프로토스전 전적', '상대전적']
 
 
-# 티어표(스타 커뮤니티 전체 명단)에 내보낼 값. 시트에는 생년월일·성별도 있지만
+# 티어표(스타 커뮤니티 전체 명단)에 내보낼 값. DB에는 생년월일·성별도 있지만
 # 화면에 안 쓰는 값이라 배포본에는 넣지 않는다.
 TIER_HIDDEN_TEAMS = {'휴면'}
 
 
 def build_tier_members(rows):
-    """구글시트 members 시트 → 티어표가 읽을 명단.
+    """Supabase tier_members → 티어표가 읽을 명단.
     소속이 '휴면'인 사람과 SOOP 아이디가 없는 사람은 뺀다(방송 상태를 물을 수 없다)."""
     out, skipped = [], 0
     seen = set()
@@ -283,7 +282,7 @@ def main():
     sorted_members = sort_members(db_data.get('members', []))
 
     # 최신 경기가 위로 오도록 역순 정렬 (팀 경기, 개인 라운드 경기)
-    # (같은 날짜끼리는 시트 입력 순서가 유지된다 - sorted는 reverse=True여도 안정 정렬)
+    # (같은 날짜끼리는 원본 입력 순서가 유지된다 - sorted는 reverse=True여도 안정 정렬)
     matches_list = sorted(linked_matches, key=lambda x: str(x.get('날짜', '')), reverse=True)
     rounds_list = sorted(linked_rounds, key=lambda x: str(x.get('날짜', '')), reverse=True)
 
@@ -292,7 +291,7 @@ def main():
     # (초기 HTML 용량이 데이터량과 무관하게 항상 일정하게 유지됨)
     # 버전(해시)을 index.html에 넣어야 하므로 템플릿 렌더링보다 먼저 직렬화한다.
     # 배포 폴더(docs/)에 올라가는 JSON은 인터넷에 그대로 공개된다. 그래서 화면에 실제로 쓰는
-    # 칸만 골라 담는다 - 시트에는 있지만 사이트가 안 쓰는 칸(펀딩·지원금·사비 같은 금액, 도전미션,
+    # 칸만 골라 담는다 - DB에는 있지만 사이트가 안 쓰는 칸(펀딩·지원금·사비 같은 금액, 도전미션,
     # 라운드별 종족·티어 등)은 여기서 걸러진다. 화면에 새 칸을 쓰기 시작하면 여기 목록에 추가한다.
     site_data = {
         'members': [pick(m, SITE_MEMBER_FIELDS) for m in sorted_members],
@@ -326,8 +325,8 @@ def main():
     write_text_atomic(site_data_path, site_data_text)
     print(f"✅ site_data.json 저장 완료 ({os.path.getsize(site_data_path) / 1024:.1f} KB)")
 
-    # 티어표 명단. 예전에는 브라우저가 시너지(ststats)에서 직접 받아갔는데, 이제 시트가
-    # 원본이라 여기서 파일로 구워둔다(외부 사이트가 죽어도 티어표는 그대로 뜬다).
+    # 티어표 명단. Supabase에서 export된 tierMembers를 여기서 정적 파일로 구워둔다.
+    # 외부 시너지 명단은 DB 명단이 비어 있을 때만 예비 경로로 사용한다.
     tier_members, tier_skipped = build_tier_members(db_data.get('tierMembers', []))
     if tier_members:
         tier_path = os.path.join(OUT_DIR, 'data', 'tier_members.json')
@@ -337,7 +336,7 @@ def main():
         print(f"✅ tier_members.json 저장 완료 ({len(tier_members):,}명"
               f"{f' · 제외 {tier_skipped}명' if tier_skipped else ''})")
     else:
-        print("ℹ️ members 시트를 못 읽어 tier_members.json은 건너뜁니다(티어표는 예전 파일/시너지로 동작).")
+        print("ℹ️ tierMembers 데이터가 비어 있어 tier_members.json은 건너뜁니다(티어표는 예전 파일/시너지로 동작).")
 
     copy_static_assets()
     # 독립 관리자/멀티뷰어도 docs를 직접 원본으로 두지 않는다.

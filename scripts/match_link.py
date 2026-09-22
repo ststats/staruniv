@@ -1,24 +1,24 @@
 """
-'매치 목록'과 '매치 전적(라운드)' 시트를 서로 연결한다. 각 매치/라운드에 같은
+Supabase의 matches와 rounds 데이터를 서로 연결한다. 각 매치/라운드에 같은
 '_match_key'를 붙여서, 같은 날 같은 상대와 여러 번 붙어도 라운드가 섞이지 않게 한다.
 
 [연결 방식]
-1) 기본 - '매치 번호' 컬럼(시트 1열)을 그대로 신뢰해서 연결한다.
+1) 기본 - '매치 번호' 컬럼(원본 컬럼)을 그대로 신뢰해서 연결한다.
    번호 매김이 두 가지일 수 있어 자동으로 가려낸다:
-     - 전체 통짜 번호(1, 2, 3... 시트 전체에서 유일) -> 번호만으로 연결.
+     - 전체 통짜 번호(1, 2, 3... 전체 데이터에서 유일) -> 번호만으로 연결.
        날짜나 상대팀을 잘못 적어도 번호만 맞으면 정확히 붙는다.
      - 날짜별 회차(날마다 1부터 다시 시작) -> (날짜, 상대팀, 번호)로 연결.
    '매치 목록'의 번호가 전부 유일하면 전자, 겹치는 번호가 있으면 후자로 판단한다.
 2) 대체 - 번호 칸이 비어 있는 줄(컬럼 추가 이전의 과거 데이터)만 예전 추론 방식을 쓴다.
-   시트에 적힌 순서를 보고, 같은 (날짜, 상대팀) 안에서 '세트' 값이 이미 나왔던 값으로
+   원본에 적힌 순서를 보고, 같은 (날짜, 상대팀) 안에서 '세트' 값이 이미 나왔던 값으로
    되돌아가면 새 경기로 판단한다. ('라운드' 번호 리셋만으로 판단하면 안 된다 - 같은 경기
    안에서 2세트/슈에로 넘어갈 때도 라운드가 1라부터 다시 시작하기 때문. 세트 값이 아예
    없는 더 옛날 데이터를 위해서만 라운드 번호 리셋을 본다.)
 
-* '형식'은 '매치 전적' 시트에 자체 컬럼으로 들어오므로 값이 있으면 그대로 신뢰한다.
+* '형식'은 rounds 데이터에 자체 컬럼으로 들어오므로 값이 있으면 그대로 신뢰한다.
   매치에서 가져와 채우는 건 값이 비어 있는 과거 데이터용 대체 수단이다.
 
-* '내전'(상대팀이 우리 크루 자체인 스크림) 라운드는 시트에 세트당 한 줄만 기록된다
+* '내전'(상대팀이 우리 크루 자체인 스크림) 라운드는 원본 데이터에 세트당 한 줄만 기록된다
   (예: A가 이겼다는 관점으로 '우리 선수'=A, '상대 선수'=B). 이 한 줄만 가지고 개인 통계를
   집계하면 진 쪽(B)은 자기 이름으로 이 세트가 전혀 집계되지 않는다(개인 승패, 종족전,
   맵 전적, 최근 전적 모두 누락). 그래서 내전 라운드마다 '우리 선수'/'상대 선수'를 뒤집고
@@ -28,7 +28,7 @@
   미러 라운드의 '상대 종족'은 원래 '우리 선수'의 종족을 멤버 목록에서 찾아 채운다.
 
 [리팩토링 메모]
-- 예전에는 매치 번호 컬럼이 없어서 시트 입력 순서만으로 회차를 추론했다. 이제 시트에
+- 예전에는 매치 번호 컬럼이 없어서 원본 입력 순서만으로 회차를 추론했다. 이제 시트에
   정식 번호가 생겼으므로 그 값을 1순위로 쓰고, 추론 로직은 번호가 빈 과거 줄에만 적용한다.
 - generate_stats.py와 build_html.py가 똑같은 db.json으로 link_rounds_to_matches를 각자
   한 번씩 돌리던 중복을 없애기 위해 load_linked_db()를 둔다. db.json 원본 바이트의 해시를
@@ -60,13 +60,13 @@ def _extract_round_num(round_str):
         return None
 
 
-# 멤버 시트의 '종족'(전체 단어) -> 라운드 시트가 쓰는 코드. 순서가 곧 우선순위다
+# members 데이터의 '종족'(전체 단어) -> rounds 데이터가 쓰는 코드. 순서가 곧 우선순위다
 # (app.js의 raceShortLabel과 동일한 규칙: 먼저 포함되는 단어가 이긴다).
 _RACE_CODES = (('테란', 'T'), ('저그', 'Z'), ('프로토스', 'P'))
 
 
 def _race_to_code(race_full):
-    """멤버 시트의 '종족'(테란/저그/프로토스 전체 단어)을 라운드 시트가 쓰는
+    """members 데이터의 '종족'(테란/저그/프로토스 전체 단어)을 rounds 데이터가 쓰는
     'T'/'Z'/'P' 코드로 변환한다 (app.js의 raceShortLabel과 동일한 규칙)."""
     race_full = str(race_full or '')
     for word, code in _RACE_CODES:
@@ -111,13 +111,13 @@ def _build_mirrored_rounds(rounds, members):
     return mirrors
 
 
-# '매치 번호' 컬럼 이름 후보. 시트에서 실제로 쓰는 이름 하나만 있으면 된다
+# '매치 번호' 컬럼 이름 후보. 원본에서 실제로 쓰는 이름 하나만 있으면 된다
 # (띄어쓰기/표기가 조금 달라도 붙도록 몇 가지를 함께 둔다).
 MATCH_NO_COLUMNS = ('매치 번호', '매치번호', '매치 No', '매치No', '경기 번호', '경기번호', '번호')
 
-# '라운드' 컬럼 이름 후보. 시트 헤더에 오타('라운이드')가 있어도 화면에 라운드가
+# '라운드' 컬럼 이름 후보. 원본 컬럼명에 오타('라운이드')가 있어도 화면에 라운드가
 # 안 나오는 사고로 이어지지 않도록 후보를 몇 개 두고, 표준 이름('라운드')으로 옮겨 담는다.
-# (표준 이름이 아니면 빌드 로그에 경고를 남기니, 시트 헤더를 고치는 편이 낫다.)
+# (표준 이름이 아니면 빌드 로그에 경고를 남기니, 원본 컬럼명을 고치는 편이 낫다.)
 ROUND_COLUMN = '라운드'
 ROUND_COLUMN_CANDIDATES = ('라운드', '라운이드', '라운 드', '라운드수', '라운')
 
@@ -145,13 +145,13 @@ def _normalize_round_column(rounds):
     if found and found != ROUND_COLUMN:
         for r in rounds:
             r.setdefault(ROUND_COLUMN, r.get(found))
-        print(f"⚠️ '매치 전적' 시트의 라운드 컬럼 이름이 '{found}'입니다. "
+        print(f"⚠️ rounds 데이터의 라운드 컬럼 이름이 '{found}'입니다. "
               f"'{ROUND_COLUMN}'로 고쳐주세요(지금은 코드가 대신 맞춰 넣었습니다).")
     return found
 
 
 def _match_no(row, column):
-    """매치 번호를 문자열로 정규화한다. 시트에서 숫자로 읽히면 1과 1.0이 섞일 수 있어
+    """매치 번호를 문자열로 정규화한다. 원본에서 숫자로 읽히면 1과 1.0이 섞일 수 있어
     정수로 떨어지는 값은 정수 표기로 통일한다. 빈 칸이면 ''."""
     if not column:
         return ''
@@ -179,7 +179,7 @@ class _SequenceState:
 
 
 class _RoundSequencer:
-    """라운드를 시트 순서대로 하나씩 넣으면 그 라운드가 속한 매치 순번을 돌려준다."""
+    """라운드를 원본 순서대로 하나씩 넣으면 그 라운드가 속한 매치 순번을 돌려준다."""
 
     def __init__(self):
         self._states = {}
@@ -227,7 +227,7 @@ def link_rounds_to_matches(matches, rounds, members=None):
     round_no_col = _find_match_no_column(rounds)
     _normalize_round_column(rounds)
 
-    # 번호 매김 방식 판별: '매치 목록'의 번호가 전부 유일하면 시트 전체 통짜 번호,
+    # 번호 매김 방식 판별: matches의 번호가 전부 유일하면 전체 통짜 번호,
     # 같은 번호가 여러 줄에 있으면 날짜별로 다시 시작하는 회차 번호로 본다.
     match_nos = [_match_no(m, match_no_col) for m in matches]
     filled_nos = [n for n in match_nos if n]
@@ -263,7 +263,7 @@ def link_rounds_to_matches(matches, rounds, members=None):
         if no:
             m_key = numbered_key(r, no)
         else:
-            # 번호가 빈 과거 데이터: 시트 순서 기반 추론으로 대체
+            # 번호가 빈 과거 데이터: 원본 순서 기반 추론으로 대체
             rounds_without_no += 1
             key = (r.get('날짜'), r.get('상대팀'))
             set_name = str(r.get('세트') or '').strip()
@@ -295,17 +295,17 @@ def link_rounds_to_matches(matches, rounds, members=None):
 
 def _report_linking(match_no_col, round_no_col, global_numbering, matches, rounds,
                     match_by_key, rounds_without_no, match_nos, format_conflicts=()):
-    """연결이 어떻게 됐는지 빌드 로그에 남긴다. 시트에 오타가 나면 조용히 빠지는 대신
+    """연결이 어떻게 됐는지 빌드 로그에 남긴다. 원본 데이터에 오타가 나면 조용히 빠지는 대신
     여기서 바로 드러나게 하는 것이 목적이다."""
     if not match_no_col:
-        print("ℹ️ '매치 목록'에 매치 번호 컬럼이 없어 예전 방식(시트 순서 추론)으로 연결합니다.")
+        print("ℹ️ '매치 목록'에 매치 번호 컬럼이 없어 예전 방식(원본 순서 추론)으로 연결합니다.")
         return
 
-    mode = '시트 전체 통짜 번호' if global_numbering else '날짜별 회차 번호'
+    mode = '전체 통짜 번호' if global_numbering else '날짜별 회차 번호'
     print(f"ℹ️ 매치 번호('{match_no_col}')로 연결합니다 - {mode}")
 
     if not round_no_col:
-        print("⚠️ '매치 전적' 시트에는 매치 번호 컬럼이 없습니다. 라운드는 예전 방식으로 연결됩니다.")
+        print("⚠️ rounds 데이터에는 매치 번호 컬럼이 없습니다. 라운드는 예전 방식으로 연결됩니다.")
     elif rounds_without_no:
         print(f"⚠️ '매치 전적' {rounds_without_no}행에 매치 번호가 비어 있어 그 행만 예전 방식으로 연결했습니다.")
 
@@ -324,7 +324,7 @@ def _report_linking(match_no_col, round_no_col, global_numbering, matches, round
         print(f"⚠️ 대응하는 매치를 찾지 못한 라운드가 {sum(orphans.values())}행 있습니다(번호 오타일 수 있음). "
               f"예시: {[f'{k} x{v}' for k, v in sample]}")
 
-    # 매치와 라운드의 '형식'이 서로 다른 경우 - 한쪽이 오타이므로 시트를 고쳐야 한다.
+    # 매치와 라운드의 '형식'이 서로 다른 경우 - 한쪽이 오타이므로 원본 데이터를 고쳐야 한다.
     if format_conflicts:
         by_match = {}
         for m_key, match, match_fmt, round_fmt in format_conflicts:

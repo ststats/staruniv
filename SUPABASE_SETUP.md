@@ -1,6 +1,6 @@
 # StarUniv Supabase 1차 이전
 
-현재 사이트의 화면/통계 코드는 그대로 두고, 데이터 원본만 Google Sheets에서 Supabase로 바꾸는 단계입니다.
+현재 사이트의 화면/통계 코드는 그대로 두고, 운영 데이터 원본은 Supabase만 사용합니다.
 커뮤니티/로그인은 아직 추가하지 않습니다.
 
 ## 1. Supabase 프로젝트 만들기
@@ -80,8 +80,8 @@ python scripts/build_html.py
 
 - `SUPABASE_DB_URL`
 
-`update.yml`은 이 Secret이 있으면 Supabase에서 `data/db.json`을 만들고, 없으면 기존 Google Sheet 방식을 그대로 사용합니다.
-전환이 확인되기 전까지 Google 관련 Secret을 삭제할 필요가 없습니다.
+`update.yml`은 `SUPABASE_DB_URL`을 필수로 사용합니다. Secret이 없으면 데이터가 오래된 상태로 배포되는 대신 작업을 즉시 실패시킵니다.
+이전 Google 연동용 Secret과 서비스 계정 키는 제거해도 됩니다.
 
 ## 7. ELO는 2차로 이전
 

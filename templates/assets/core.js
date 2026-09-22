@@ -18,7 +18,7 @@
 // 1. 공용 유틸
 // =====================================================================
 
-// 구글시트 원본 텍스트를 innerHTML에 꽂을 때 깨지거나 마크업이 섞이지 않도록 이스케이프
+// 외부/DB 원본 텍스트를 innerHTML에 꽂을 때 깨지거나 마크업이 섞이지 않도록 이스케이프
 // (mv-shared.js가 이 이름을 그대로 호출하므로 이름/동작을 바꾸면 안 된다)
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
@@ -368,7 +368,7 @@ function resultBadgeHtml(resText) {
     if (res === '승') return '<span class="match-badge badge-win" title="승">W</span>';
     if (res === '무' || res === '무승부') return '<span class="match-badge badge-draw" title="무">D</span>';
     if (res === '패') return '<span class="match-badge badge-lose" title="패">L</span>';
-    // 시트에 결과가 아직 안 적혔거나 오타인 경기. 예전에는 무조건 '패'로 나와서
+    // DB에 결과가 아직 안 적혔거나 오타인 경기. 예전에는 무조건 '패'로 나와서
     // 집계(승패 계산에서는 빠진다)와 화면이 어긋났다.
     return '<span class="match-badge badge-draw" title="결과 미기재">-</span>';
 }
@@ -438,7 +438,7 @@ function teamCellInnerHtml(teamName) {
 }
 
 const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
-// 시트에서 '체크'는 아직 티어를 매기지 않은 사람이다 - 화면에서는 미분류로 다룬다.
+// DB에서 '체크'는 아직 티어를 매기지 않은 사람이다 - 화면에서는 미분류로 다룬다.
 const TIER_UNRANKED = new Set(['체크', '미분류']);
 
 function tierIndex(tier) {
