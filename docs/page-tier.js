@@ -1,7 +1,7 @@
 /**
  * 티어표 페이지 - 스타 커뮤니티 전체 명단을 티어별로, 티어 안에서는 종족별로 보여준다.
  *
- * 명단은 우리 구글시트(members 시트)에서 온다. 빌드가 docs/data/tier_members.json으로
+ * 명단은 Supabase의 tier_members에서 온다. 빌드가 docs/data/tier_members.json으로
  * 구워두고 여기서는 그 파일만 읽는다. 예전에는 시너지(ststats)가 매일 올리는 명단을
  * 브라우저가 직접 받아갔는데, 그 명단은 소속이 있는 사람만 담겨 있어서 FA·휴면 선수는
  * 상대전적에서 찾을 수 없었다. 파일이 아직 없는 저장소에서는 예전처럼 시너지로 물러난다.
@@ -64,8 +64,8 @@ function switchTierView(view) {
 // ---------------------------------------------------------------------------
 // 데이터
 // ---------------------------------------------------------------------------
-// 빌드가 구워둔 우리 명단(구글시트 members 시트). 없으면 null을 돌려준다.
-async function fetchSheetTierMembers() {
+// 빌드가 구워둔 Supabase 티어 명단. 없으면 null을 돌려준다.
+async function fetchTierMembers() {
     const res = await fetch('data/tier_members.json', { cache: 'no-cache' });
     if (!res.ok) return null;
     const data = await res.json();
@@ -90,7 +90,7 @@ async function fetchAllSynergyMembers() {
     if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
     const data = await dataRes.json();
 
-    // 팀 값이 비어 있는 사람은 뺀다. 다만 조용히 버리지는 않는다 - 시트에서 팀 셀이
+    // 팀 값이 비어 있는 사람은 뺀다. 다만 조용히 버리지는 않는다 - DB에서 소속 값이
     // 실수로 지워지면 그 사람이 아무 흔적 없이 사라져서 원인을 찾기가 매우 어려워진다.
     // 콘솔에 남겨두면 "쟤 왜 없지?" 할 때 F12 한 번으로 답이 나온다.
     const noTeam = [];
@@ -112,7 +112,7 @@ async function fetchAllSynergyMembers() {
 // ---------------------------------------------------------------------------
 function tierGroupKey(member) {
     const raw = (member.tier === null || member.tier === undefined) ? '' : String(member.tier).trim();
-    // 시트의 '체크'는 아직 티어를 안 매긴 사람이라 미분류 묶음으로 보낸다(맨 뒤에 온다).
+    // DB의 '체크'는 아직 티어를 안 매긴 사람이라 미분류 묶음으로 보낸다(맨 뒤에 온다).
     if (!raw || TIER_UNRANKED.has(raw)) return '미분류';
     return raw;
 }
@@ -726,7 +726,7 @@ function applyLiveToCards(setChanged) {
 // ---------------------------------------------------------------------------
 // 시작
 // ---------------------------------------------------------------------------
-// 티어표는 site_data.json(우리 팀 멤버·경기 기록)을 쓰지 않는다 - 명단은 구글시트에서
+// 티어표는 site_data.json(우리 팀 멤버·경기 기록)을 쓰지 않는다 - 명단은 Supabase에서
 // 구워둔 tier_members.json이다. 그래서 그 파일을 기다리지 않고 바로 시작한다.
 bootPage(async () => {
     const root = document.getElementById('tier-root');
@@ -736,8 +736,8 @@ bootPage(async () => {
 
     let payload;
     try {
-        // 우리 시트 명단이 먼저, 그 파일이 아직 없으면 예전처럼 시너지 명단으로 채운다.
-        payload = await fetchSheetTierMembers();
+        // Supabase 명단이 먼저, 그 파일이 아직 없으면 예전처럼 시너지 명단으로 채운다.
+        payload = await fetchTierMembers();
         if (!payload) payload = await fetchAllSynergyMembers();
     } catch (e) {
         console.error('티어 명단을 불러오지 못했습니다:', e);

@@ -753,7 +753,7 @@ body {
             <div>
                 <div class="section-title"><span class="section-title-label" id="histFormTitle">연혁 추가</span></div>
                 <div class="clean-card p-4 admin-hist-form">
-                    <p class="admin-hist-note" id="histFormNote">입단·퇴단은 멤버 시트에서 자동으로 들어옵니다. 여기서는 창단·대회·방송 같은 나머지를 추가하거나, 자동 항목에 설명·사진·영상을 덧붙일 수 있습니다.</p>
+                    <p class="admin-hist-note" id="histFormNote">입단·퇴단은 Supabase 멤버 데이터에서 자동으로 들어옵니다. 여기서는 창단·대회·방송 같은 나머지를 추가하거나, 자동 항목에 설명·사진·영상을 덧붙일 수 있습니다.</p>
                     <div class="admin-form-row">
                         <input type="date" id="histDate">
                         <select id="histType">
@@ -957,7 +957,7 @@ body {
 <!-- 사이트가 실제로 쓰는 캘린더·연혁 로직을 그대로 가져다 쓴다 (복사본 아님) -->
 <script src="calendar.js?v=b8ae2f4fb6"></script>
 <script src="media-lightbox.js?v=93e2c5177c"></script>
-<script src="history.js?v=e1e92518d8"></script>
+<script src="history.js?v=6ffb8d1858"></script>
 
 <script>
     // ===== 상단바 페이지 전환 (사이트 본편 app.js의 switchPage를 어드민에 맞게 단순화) =====
@@ -1951,7 +1951,7 @@ body {
             .map(e => (item.auto && !/\(/.test(e) ? e + '()' : e)).join(', ');
         document.getElementById('histYoutube').value = item.youtube || '';
         histFormImage = item.image || '';
-        // 자동 항목의 날짜·종류는 멤버 시트가 정한다(멤버 칸은 괄호 설명을 달 수 있게 열어 둔다)
+        // 자동 항목의 날짜·종류는 Supabase 멤버 데이터가 정한다(멤버 칸은 괄호 설명을 달 수 있게 열어 둔다)
         ['histDate', 'histType'].forEach(f => { document.getElementById(f).disabled = !!item.auto; });
         document.getElementById('histFormTitle').innerText = item.auto ? '자동 항목 꾸미기' : '연혁 수정';
         document.getElementById('histSubmitBtn').innerText = '수정 반영하기';

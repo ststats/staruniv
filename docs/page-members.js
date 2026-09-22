@@ -62,7 +62,7 @@ function memberRaceEdgeClass(m) {
 }
 
 // [리디자인] 섹션 제목 위에 붙는 라틴 라벨. 직책 이름에 대응하는 영문을 여기서만 정한다.
-// 시트에 없는 직책이 들어오면 ROSTER로 떨어진다.
+// DB에 없는 직책이 들어오면 ROSTER로 떨어진다.
 const ROLE_EN = { '감독': 'HEAD COACH', '코치': 'COACH', '선수': 'PLAYER', '매니저': 'MANAGER' };
 
 // (예전의 opts.collapseId 분기는 어디서도 쓰이지 않던 죽은 코드라 제거했다)
@@ -77,7 +77,7 @@ function renderMemberGroup(title, members) {
 }
 
 // [리디자인] 머리 오른쪽 ACTIVE / ON AIR 칸을 채운다.
-// ACTIVE는 시트만 보면 바로 나오고, ON AIR는 홈 화면과 같은 실시간 조회(checkIsLiveRealtime)를
+// ACTIVE는 DB 데이터만 보면 바로 나오고, ON AIR는 홈 화면과 같은 실시간 조회(checkIsLiveRealtime)를
 // 쓴다. 조회가 실패하면 '-'를 그대로 두고 조용히 넘어간다 - 숫자 하나 때문에 페이지가
 // 멈추면 안 된다.
 function renderMemberHeadCounts(activeMembers) {
