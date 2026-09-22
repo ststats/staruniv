@@ -221,6 +221,10 @@ const SiteData = {
     playersStats: [],
 };
 
+// 페이지 초기화는 데이터 요청 실패 뒤에도 계속되어야 한다. 화면이 빈 데이터와 요청 실패를
+// 구분할 수 있도록 결과 상태만 따로 남긴다(기존 SiteData 배열 사용 방식은 유지한다).
+const SiteDataLoad = { status: 'idle', error: null };
+
 const asArray = v => (Array.isArray(v) ? v : []);
 
 // [캐시] 예전엔 매번 no-store로 받아서 브라우저 캐시를 전혀 못 썼다. 빌드가 index.html에 넣어준
@@ -236,17 +240,21 @@ function siteDataRequest() {
 }
 
 async function loadSiteData() {
+    SiteDataLoad.status = 'loading';
+    SiteDataLoad.error = null;
     try {
         const { url, cache } = siteDataRequest();
         const res = await fetch(url, { cache });
-        if (res.ok) {
-            const data = await res.json();
-            SiteData.members = asArray(data && data.members);
-            SiteData.matches = asArray(data && data.matches);
-            SiteData.rounds = asArray(data && data.rounds);
-            SiteData.playersStats = asArray(data && data.playersStats);
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        SiteData.members = asArray(data && data.members);
+        SiteData.matches = asArray(data && data.matches);
+        SiteData.rounds = asArray(data && data.rounds);
+        SiteData.playersStats = asArray(data && data.playersStats);
+        SiteDataLoad.status = 'loaded';
     } catch (e) {
+        SiteDataLoad.status = 'error';
+        SiteDataLoad.error = e;
         console.error('사이트 데이터를 불러오지 못했습니다:', e);
     }
 }

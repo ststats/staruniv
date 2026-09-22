@@ -213,24 +213,58 @@ function liveCardHtml({ member: m, live }) {
 
 async function renderLiveBroadcasts() {
     const container = document.getElementById('home-live-broadcast');
-    if (!container) return;
-    const noLiveHtml = emptyStateHtml('현재 방송 중인 멤버가 없습니다.');
+    const state = document.getElementById('home-live-state');
+    const stateText = document.getElementById('home-live-state-text');
+    const grid = document.getElementById('home-live-grid');
+    if (!container || !state || !stateText || !grid) return;
+
+    const setState = (name, text, liveHtml) => {
+        const hasLive = typeof liveHtml === 'string';
+        container.dataset.state = name;
+        container.setAttribute('aria-busy', name === 'loading' ? 'true' : 'false');
+        stateText.textContent = text || '';
+        state.hidden = hasLive && !text;
+        grid.hidden = !hasLive;
+        if (hasLive) grid.innerHTML = liveHtml;
+        else if (grid.childElementCount) grid.replaceChildren();
+    };
+
+    setState('loading', '방송 상태 확인 중...');
+    if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
+        setState('error', '멤버 정보를 불러오지 못해 방송 상태를 확인할 수 없습니다.');
+        return;
+    }
+
     const activeMembers = activeMembersWithSoopId();
 
     if (activeMembers.length === 0) {
-        container.innerHTML = noLiveHtml;
+        setState('empty', '현재 방송 중인 멤버가 없습니다.');
         return;
     }
-    container.innerHTML = emptyStateHtml('방송 상태 확인 중...');
 
     const settled = await Promise.allSettled(
-        activeMembers.map(m => checkIsLiveRealtime(m['SOOP ID']).then(live => ({ member: m, live })))
+        activeMembers.map(m => getLiveRealtimeStatus(m['SOOP ID']).then(result => ({ member: m, ...result })))
     );
-    const liveList = settled.filter(r => r.status === 'fulfilled' && r.value.live).map(r => r.value);
+    const results = settled.filter(r => r.status === 'fulfilled').map(r => r.value);
+    const successCount = results.filter(r => r.ok).length;
+    const failedCount = activeMembers.length - successCount;
+    const liveList = results.filter(r => r.ok && r.live);
 
-    container.innerHTML = liveList.length
-        ? `<div class="live-broadcast-grid">${liveList.map(liveCardHtml).join('')}</div>`
-        : noLiveHtml;
+    if (successCount === 0) {
+        setState('error', '방송 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+    }
+    if (liveList.length) {
+        const note = failedCount ? `일부 멤버(${failedCount}명)의 방송 상태를 확인하지 못했습니다.` : '';
+        setState(failedCount ? 'partial' : 'live', note, liveList.map(liveCardHtml).join(''));
+        return;
+    }
+    setState(
+        failedCount ? 'partial' : 'empty',
+        failedCount
+            ? `확인된 방송은 없습니다. 일부 멤버(${failedCount}명)의 상태를 확인하지 못했습니다.`
+            : '현재 방송 중인 멤버가 없습니다.'
+    );
 }
 
 // SOOP 채널 게시판 API를 브라우저에서 직접 fetch한다 (방송중 체크와 같은 방식).

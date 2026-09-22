@@ -1972,6 +1972,28 @@ a.btn-view-all {
     gap: var(--space-compact-gap);
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
+.home-live-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 58px;
+    padding: var(--space-card-pad-y) var(--space-card-pad-x);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    text-align: center;
+}
+.home-live-state[hidden],
+.live-broadcast-grid[hidden] {
+    display: none;
+}
+.home-live-broadcast[data-state="partial"] .home-live-state {
+    min-height: auto;
+    justify-content: flex-start;
+    padding: 0 0 var(--space-inline-gap);
+    font-size: var(--fs-meta);
+    text-align: left;
+}
 .live-broadcast-card:hover { transform: translateY(-3px); }
 .live-broadcast-card {
     overflow: hidden;

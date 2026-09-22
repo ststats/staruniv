@@ -6,17 +6,23 @@
 // 참고 프로젝트(ststats)의 개인페이지 패턴 그대로: bjapi.afreecatv.com을
 // 브라우저에서 직접 fetch한다 (CORS 허용됨). 활성 멤버가 소수라 페이지 로드
 // 시점에 병렬로 바로 체크한다 - 그래서 워크플로를 몇 분마다 돌릴 필요가 없다.
-async function checkIsLiveRealtime(soopId) {
+async function getLiveRealtimeStatus(soopId) {
     try {
-        const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000); // 30초 (실시간성 유지 위해 짧게)
-        if (!data || !data.broad) return null;
-        return {
+        const data = await cachedFetchJson(`https://bjapi.afreecatv.com/api/${soopId}/station`, 30000); // 30초 캐시
+        const live = data && data.broad ? {
             broad: data.broad,
             broadStart: (data.station && data.station.broad_start) || null,
-        };
+        } : null;
+        return { ok: true, live };
     } catch (e) {
-        return null;
+        return { ok: false, live: null, error: e };
     }
+}
+
+// 기존 홈 외 호출부는 방송 객체/null 규약을 그대로 사용한다.
+async function checkIsLiveRealtime(soopId) {
+    const result = await getLiveRealtimeStatus(soopId);
+    return result.ok ? result.live : null;
 }
 
 // 공지 카드에 필요한 표시용 필드를 게시글 한 개에서 뽑는다(홈 최근 공지/지난 글 리스트 공용).
