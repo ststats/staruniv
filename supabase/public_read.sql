@@ -53,3 +53,9 @@ revoke all on public.history_entries from anon;
 grant select (id, entry_kind, event_date, event_type, title, description, members, youtube_url, image_path, sort_order, hidden) on public.history_entries to anon;
 drop policy if exists "public_read_history_entries" on public.history_entries;
 create policy "public_read_history_entries" on public.history_entries for select to anon using (true);
+
+-- 도구 > 외부도구 공개 읽기
+revoke all on public.external_tools from anon;
+grant select (id,category,name,url,favicon,source_order,active) on public.external_tools to anon;
+drop policy if exists public_read_external_tools on public.external_tools;
+create policy public_read_external_tools on public.external_tools for select to anon using (active=true);

@@ -181,3 +181,10 @@ grant execute on function public.admin_save_match(jsonb, jsonb) to authenticated
 -- insert into public.admin_users (user_id, role)
 -- select id, 'owner' from auth.users where email = 'YOUR_ADMIN_EMAIL@example.com'
 -- on conflict (user_id) do update set role = excluded.role, is_active = true;
+
+-- 도구 > 외부도구 관리자 CRUD
+drop policy if exists admins_all_external_tools on public.external_tools;
+create policy admins_all_external_tools on public.external_tools for all to authenticated
+using (public.is_admin()) with check (public.is_admin());
+grant select,insert,update,delete on public.external_tools to authenticated;
+grant usage,select on sequence public.external_tools_id_seq to authenticated;

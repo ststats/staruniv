@@ -1,6 +1,7 @@
 """영상 탭 데이터: 어드민이 등록한 유튜브 채널의 최신 영상을 RSS로 모아 docs/data/videos.json에 쌓는다.
 
-[입력] docs/data/video_channels.json (어드민 '영상 관리'에서 편집)
+[원본] Supabase video_channels / video_picks / videos (SUPABASE_DB_URL이 있을 때)
+[장애 fallback] docs/data/video_channels.json + docs/data/videos.json
     { "channels": [ { "url": "https://www.youtube.com/@handle", "name": "표시 이름(선택)" } ],
       "picks":    [ { "url": "https://youtu.be/... 또는 https://vod.sooplive.co.kr/player/<번호>",
                       "title": "(선택, 숲 VOD는 적어주는 게 좋다)", "note": "한 줄 설명",
@@ -45,6 +46,7 @@ import xml.etree.ElementTree as ET
 
 CONFIG_PATH = os.path.join('docs', 'data', 'video_channels.json')
 OUT_PATH = os.path.join('docs', 'data', 'videos.json')
+SUPABASE_DB_URL = os.environ.get('SUPABASE_DB_URL', '').strip()
 MAX_VIDEOS = 3000          # 보관 상한(오래된 것부터 버린다). 1건 약 200바이트라 3천 건이면 0.6MB
 
 # 유튜브 Data API (선택). 키가 없으면 아래 RSS 방식으로 돈다.
@@ -123,6 +125,74 @@ def write_atomic(path, data):
         json.dump(data, f, ensure_ascii=False, indent=1)
         f.write('\n')
     os.replace(tmp, path)
+
+
+def load_supabase_state():
+    """Supabase를 영상 탭의 원본으로 사용한다. 연결 정보가 없으면 기존 JSON 모드로 돌아간다."""
+    if not SUPABASE_DB_URL:
+        return None, None
+    try:
+        import psycopg
+        with psycopg.connect(SUPABASE_DB_URL) as conn, conn.cursor() as cur:
+            cur.execute("select channel_url,display_name,source_order,channel_id,title,thumb,uploads,active from public.video_channels order by source_order")
+            channel_rows = cur.fetchall()
+            cur.execute("select id,channel_url,title,published,thumb,views,short,hidden from public.videos order by published desc nulls last limit %s", (MAX_VIDEOS,))
+            video_rows = cur.fetchall()
+            cur.execute("select id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order from public.video_picks order by source_order")
+            pick_rows = cur.fetchall()
+    except Exception as e:
+        print(f'  ⚠️ Supabase 영상 원본을 읽지 못해 JSON fallback을 사용합니다: {e}')
+        return None, None
+
+    config = {'channels': [], 'picks': [], 'hidden': []}
+    out = {'channels': {}, 'videos': [], 'picks': []}
+    for url, display_name, order, cid, title, thumb, uploads, active in channel_rows:
+        if active:
+            config['channels'].append({'url': url, 'name': display_name or '', 'source_order': order})
+        out['channels'][url] = {'id': cid or '', 'title': title or '', 'thumb': thumb or '', 'url': url, 'uploads': uploads or '', 'name': display_name or title or ''}
+    for vid, url, title, published, thumb, views, short, hidden in video_rows:
+        row = {'id': vid, 'channel': url or '', 'title': title or '', 'published': published.isoformat() if published else '', 'thumb': thumb or '', 'views': int(views or 0), 'short': bool(short)}
+        if hidden:
+            row['hidden'] = True; config['hidden'].append(vid)
+        out['videos'].append(row)
+    for vid, kind, title, note, group_name, group_en, added_at, author, thumb, short, hidden, order in pick_rows:
+        url = f'https://vod.sooplive.co.kr/player/{str(vid)[5:]}' if str(vid).startswith('soop:') else f'https://youtu.be/{vid}'
+        config['picks'].append({'url': url, 'title': title or '', 'note': note or '', 'group': group_name or '', 'groupEn': group_en or '', 'addedAt': added_at.isoformat() if added_at else '', 'source_order': order})
+        row = {'id': vid, 'kind': kind or ('soop' if str(vid).startswith('soop:') else 'youtube'), 'title': title or '', 'note': note or '', 'group': group_name or '', 'groupEn': group_en or '', 'addedAt': added_at.isoformat() if added_at else '', 'author': author or '', 'thumb': thumb or '', 'short': bool(short), 'source_order': order}
+        if hidden:
+            row['hidden'] = True; config['hidden'].append(vid)
+        out['picks'].append(row)
+    return config, out
+
+
+def save_supabase_state(channels, videos, picks):
+    """동기화 결과를 Supabase에 UPSERT한다. 정적 videos.json은 장애 대비 스냅샷으로도 계속 남긴다."""
+    if not SUPABASE_DB_URL:
+        return
+    import psycopg
+    with psycopg.connect(SUPABASE_DB_URL) as conn, conn.cursor() as cur:
+        for url, info in channels.items():
+            cur.execute("""
+                update public.video_channels set channel_id=%s,title=%s,thumb=%s,uploads=%s,updated_at=now()
+                where channel_url=%s
+            """, (info.get('id') or None, info.get('title') or None, info.get('thumb') or None, info.get('uploads') or None, url))
+        for v in videos:
+            cur.execute("""
+                insert into public.videos(id,channel_url,title,published,thumb,views,short,hidden,updated_at)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,now())
+                on conflict(id) do update set channel_url=excluded.channel_url,title=excluded.title,published=excluded.published,
+                  thumb=excluded.thumb,views=excluded.views,short=excluded.short,hidden=excluded.hidden,updated_at=now()
+            """, (v.get('id'), v.get('channel') or None, v.get('title') or '', v.get('published') or None, v.get('thumb') or None, int(v.get('views') or 0), bool(v.get('short')), bool(v.get('hidden'))))
+        for i, p in enumerate(picks, 1):
+            order = int(p.get('source_order') or i)
+            cur.execute("""
+                insert into public.video_picks(id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order,updated_at)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
+                on conflict(id) do update set kind=excluded.kind,title=excluded.title,note=excluded.note,group_name=excluded.group_name,
+                  group_en=excluded.group_en,added_at=excluded.added_at,author=excluded.author,thumb=excluded.thumb,short=excluded.short,
+                  hidden=excluded.hidden,source_order=excluded.source_order,updated_at=now()
+            """, (p.get('id'), p.get('kind') or 'youtube', p.get('title') or '', p.get('note') or None, p.get('group') or None, p.get('groupEn') or None, p.get('addedAt') or None, p.get('author') or None, p.get('thumb') or None, bool(p.get('short')), bool(p.get('hidden')), order))
+        conn.commit()
 
 
 def video_id(url):
@@ -389,8 +459,12 @@ def main():
         print(f'▶ 유튜브 API 키로 받습니다{" (전체 다시 받기)" if full else ""}')
     else:
         print('▶ API 키가 없어 RSS로 받습니다 (채널당 최신 15개)')
-    config = load_json(CONFIG_PATH, {'channels': [], 'picks': []})
-    out = load_json(OUT_PATH, {'channels': {}, 'videos': [], 'picks': []})
+    config, out = load_supabase_state()
+    if config is None:
+        config = load_json(CONFIG_PATH, {'channels': [], 'picks': []})
+        out = load_json(OUT_PATH, {'channels': {}, 'videos': [], 'picks': []})
+    else:
+        print('▶ 영상 채널/추천/숨김 설정은 Supabase 원본을 사용합니다.')
     known_channels = out.get('channels', {})
     videos = {v['id']: v for v in out.get('videos', []) if v.get('id')}
 
@@ -477,6 +551,7 @@ def main():
             # 분류 제목 위에 붙는 작은 영문 라벨(선택).
             'groupEn': str(p.get('groupEn', '')).strip(),
             'addedAt': str(p.get('addedAt', '')).strip(),
+            'source_order': p.get('source_order'),
         })
 
     # 어드민에서 감춘 영상은 목록에서 빼지 않고 표시만 해 둔다(되돌리기가 바로 되도록).
@@ -500,11 +575,14 @@ def main():
     }
     # 내용이 그대로면 시각만 바뀐 커밋이 매번 생기지 않게 파일을 건드리지 않는다
     same = {k: v for k, v in out.items() if k != 'updatedAt'} == {k: v for k, v in result.items() if k != 'updatedAt'}
+    if SUPABASE_DB_URL:
+        save_supabase_state(channels, kept, picks)
+        print(f'✅ Supabase videos 갱신: 채널 {len(channels)}개, 영상 {len(kept)}개, 보자 {len(picks)}개')
     if same:
-        print('ℹ️ 바뀐 영상이 없습니다.')
+        print('ℹ️ fallback videos.json 내용은 바뀌지 않았습니다.')
         return
     write_atomic(OUT_PATH, result)
-    print(f'✅ {OUT_PATH}: 채널 {len(channels)}개, 영상 {len(kept)}개, 보자 {len(picks)}개')
+    print(f'✅ fallback {OUT_PATH}: 채널 {len(channels)}개, 영상 {len(kept)}개, 보자 {len(picks)}개')
 
 
 if __name__ == '__main__':

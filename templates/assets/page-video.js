@@ -2,8 +2,9 @@
  * 영상 페이지: 팬튜브(등록 채널 최신 영상) + 보자(어드민 추천). (core.js → media-lightbox.js → 이 파일)
  * URL: /video/ (팬튜브), /video/?view=pick (보자), 채널 필터는 ?ch=<채널 번호>
  *
- * 데이터는 data/videos.json 하나다. scripts/sync_videos.py가 GitHub Actions에서 주기적으로
- * 유튜브에서 받아 쌓는다(API 키가 있으면 과거 영상까지, 없으면 RSS 최신 15개). 형식은 그 파일 머리 주석 참고.
+ * 운영 데이터는 Supabase(video_channels/videos/video_picks)를 우선 읽는다.
+ * scripts/sync_videos.py가 GitHub Actions에서 유튜브 영상을 Supabase에 주기적으로 갱신한다.
+ * 마이그레이션 전/장애 시에만 data/videos.json을 fallback으로 읽는다.
  * hidden이 붙은 영상은 어드민이 감춘 것이라 화면에서 뺀다. 카드에 영상 길이는 표시하지 않는다.
  *
  * '보자'에는 유튜브 말고 숲(SOOP) VOD도 올릴 수 있다. 그런 항목은 id가 'soop:<번호>'이고
@@ -303,7 +304,44 @@ function switchVideoView(view) {
     updateVideoUrl();
 }
 
+async function loadVideoDataFromSupabase() {
+    const client = publicSupabaseClient();
+    if (!client) return null;
+    const [chRes, videoRes, pickRes] = await Promise.all([
+        client.from('video_channels').select('channel_url,channel_id,title,display_name,thumb,uploads,source_order,active').eq('active', true).order('source_order'),
+        client.from('videos').select('id,channel_url,title,published,thumb,views,short,hidden').order('published', {ascending:false}).limit(3000),
+        client.from('video_picks').select('id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order').order('source_order')
+    ]);
+    const error = chRes.error || videoRes.error || pickRes.error;
+    if (error) throw error;
+    const channels = {};
+    (chRes.data || []).forEach(ch => {
+        channels[ch.channel_url] = {
+            id: ch.channel_id || '', title: ch.title || '', name: ch.display_name || ch.title || '',
+            thumb: ch.thumb || '', url: ch.channel_url, uploads: ch.uploads || ''
+        };
+    });
+    return {
+        updatedAt: '',
+        channels,
+        videos: (videoRes.data || []).filter(v => !!channels[v.channel_url]).map(v => ({
+            id:v.id, channel:v.channel_url, title:v.title, published:v.published, thumb:v.thumb,
+            views:Number(v.views)||0, short:!!v.short, hidden:!!v.hidden
+        })),
+        picks: (pickRes.data || []).map(v => ({
+            id:v.id, kind:v.kind, title:v.title, note:v.note || '', group:v.group_name || '', groupEn:v.group_en || '',
+            addedAt:v.added_at || '', author:v.author || '', thumb:v.thumb || '', short:!!v.short, hidden:!!v.hidden
+        }))
+    };
+}
+
 async function loadVideoData() {
+    try {
+        const direct = await loadVideoDataFromSupabase();
+        if (direct) return direct;
+    } catch (e) {
+        console.warn('Supabase 영상 조회 실패, 정적 fallback 사용:', e);
+    }
     try {
         const res = await fetch(VIDEO_DATA_URL, { cache: 'no-cache' });
         if (res.ok) return await res.json();
@@ -313,7 +351,7 @@ async function loadVideoData() {
     return { channels: {}, videos: [], picks: [] };
 }
 
-// 영상 페이지도 site_data.json을 쓰지 않는다(데이터는 videos.json 하나뿐).
+// 영상 페이지는 Supabase를 우선 읽고 videos.json은 fallback으로만 쓴다.
 bootPage(async () => {
     const data = await loadVideoData();
     VideoState.data = {
