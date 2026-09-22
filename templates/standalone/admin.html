@@ -54,13 +54,16 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       <button data-panel="matches">전적</button>
       <button data-panel="tier">티어 명단</button>
       <button data-panel="settings">시즌 설정</button>
+      <button data-panel="schedule">일정/휴방</button>
+      <button data-panel="navigation">메뉴 설정</button>
+      <button data-panel="history">연혁/미디어</button>
       <button data-panel="elo">ELO 조회</button>
     </nav>
     <div>
       <section id="panel-dashboard" class="admin-panel active">
         <div class="admin-section-title"><div><h2>대시보드</h2><p>현재 Supabase 원본 데이터 개수입니다.</p></div><button class="admin-btn" onclick="AdminApp.loadDashboard()">새로고침</button></div>
         <div id="dashboardKpis" class="admin-kpi-grid"></div>
-        <div class="admin-card" style="margin-top:12px"><b>사이트 반영</b><p class="admin-note" style="margin:6px 0 0">이 화면에서 저장하면 Supabase에는 즉시 반영됩니다. 공개 사이트의 정적 JSON/HTML은 다음 GitHub Actions <b>Update Site</b> 실행 때 갱신됩니다.</p></div>
+        <div class="admin-card" style="margin-top:12px"><b>사이트 반영</b><p class="admin-note" style="margin:6px 0 0">이 화면에서 저장하면 Supabase에 즉시 반영되고, 공개 사이트도 다음 조회부터 같은 데이터를 직접 읽습니다. GitHub Actions 재빌드는 필요하지 않습니다.</p></div>
       </section>
 
       <section id="panel-members" class="admin-panel">
@@ -90,6 +93,27 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       <section id="panel-settings" class="admin-panel">
         <div class="admin-section-title"><div><h2>시즌 설정</h2><p>현재 db.json의 settings 순서를 그대로 관리합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editSetting()">+ 새 설정</button></div>
         <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>순서</th><th>시즌</th><th>시작일</th><th></th></tr></thead><tbody id="settingRows"></tbody></table></div><div id="settingEditor" class="admin-editor admin-card hidden"></div></div>
+      </section>
+
+      <section id="panel-schedule" class="admin-panel">
+        <div class="admin-section-title"><div><h2>일정 · 휴방 관리</h2><p>저장 즉시 Supabase에 반영되고 공개 사이트가 직접 읽습니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editSchedule()">+ 새 일정</button></div>
+        <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>날짜</th><th>시간</th><th>사람/제목</th><th>내용</th><th>색상</th><th></th></tr></thead><tbody id="scheduleRows"></tbody></table></div><div id="scheduleEditor" class="admin-editor admin-card hidden"></div></div>
+        <div class="admin-card" style="margin-top:12px"><div class="admin-section-title"><div><h2>휴방</h2><p>날짜별 SOOP ID를 등록합니다.</p></div></div><form onsubmit="return AdminApp.saveOffAir(event)" class="admin-toolbar"><input id="o_date" type="date" class="admin-input" required><input id="o_soop" class="admin-input admin-search" placeholder="SOOP ID" required><button class="admin-btn primary">추가</button></form><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>날짜</th><th>SOOP ID</th><th></th></tr></thead><tbody id="offAirRows"></tbody></table></div></div>
+      </section>
+
+      <section id="panel-navigation" class="admin-panel">
+        <div class="admin-section-title"><div><h2>메뉴 · 표시 설정</h2><p>기존 nav.json 대신 Supabase site_config를 직접 수정합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.saveNavigation()">저장</button></div>
+        <div class="admin-card"><h3>상단 메뉴</h3><div class="admin-form-grid">
+          <label class="admin-field"><span>일정</span><input type="checkbox" data-nav-key="schedule"></label><label class="admin-field"><span>멤버</span><input type="checkbox" data-nav-key="members"></label><label class="admin-field"><span>전적</span><input type="checkbox" data-nav-key="records"></label><label class="admin-field"><span>티어표</span><input type="checkbox" data-nav-key="tier"></label><label class="admin-field"><span>영상</span><input type="checkbox" data-nav-key="video"></label><label class="admin-field"><span>방송통계</span><input type="checkbox" data-nav-key="stats"></label><label class="admin-field"><span>도구</span><input type="checkbox" data-nav-key="tools"></label>
+        </div></div>
+        <div class="admin-card" style="margin-top:12px"><h3>방송통계 지표</h3><div class="admin-form-grid"><label class="admin-field"><span>별풍선</span><input type="checkbox" data-stat-key="balloons"></label><label class="admin-field"><span>방송시간</span><input type="checkbox" data-stat-key="broadcast_seconds"></label><label class="admin-field"><span>누적시청자</span><input type="checkbox" data-stat-key="cumulative_viewers"></label><label class="admin-field"><span>스폰판수</span><input type="checkbox" data-stat-key="sponsor"></label></div></div>
+        <div class="admin-card" style="margin-top:12px"><div class="admin-field"><label>히어로 설명 JSON</label><textarea id="heroDescriptionsJson" class="admin-input" rows="9" spellcheck="false"></textarea></div></div>
+      </section>
+
+
+      <section id="panel-history" class="admin-panel">
+        <div class="admin-section-title"><div><h2>연혁 · 미디어</h2><p>연혁 텍스트/영상 URL은 DB, 업로드 이미지는 Supabase Storage에 저장합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editHistory()">+ 새 연혁</button></div>
+        <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류</th><th>날짜</th><th>분류</th><th>제목</th><th>영상</th><th>이미지</th><th></th></tr></thead><tbody id="historyRows"></tbody></table></div><div id="historyEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-elo" class="admin-panel">

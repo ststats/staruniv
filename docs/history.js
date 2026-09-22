@@ -12,7 +12,7 @@
  *   image는 저장소 안 경로(data/history/xxx.jpg)다. 사진이 없고 유튜브 링크가 있으면 유튜브 썸네일을 쓴다.
  */
 
-const HISTORY_DATA_URL = 'data/history.json';
+const HISTORY_DATA_URL = 'data/history.json'; // migration 전/장애 시 fallback only
 
 // 종류: 라벨과 점/배지 색 이름(CSS .hist-type-*)
 const HISTORY_TYPES = {
@@ -39,7 +39,13 @@ function histYoutubeId(url) {
 // 사진 경로는 저장소 안 상대 경로만 받는다(외부 주소나 javascript: 같은 값이 섞여도 쓰지 않는다).
 function histSafeImage(path) {
     const s = String(path || '').trim();
-    return /^data\/history\/[\w.-]+\.(jpe?g|png|webp)$/i.test(s) ? s : '';
+    if (/^data\/history\/[\w.-]+\.(jpe?g|png|webp)$/i.test(s)) return s;
+    if (/^history\/[\w.-]+\.(jpe?g|png|webp|gif)$/i.test(s)) {
+        if (typeof contentMediaPublicUrl === 'function') return contentMediaPublicUrl(s);
+        const base = String(window.STARUNIV_SUPABASE_CONFIG?.url || '').replace(/\/$/, '');
+        return base ? `${base}/storage/v1/object/public/staruniv-media/${s.split('/').map(encodeURIComponent).join('/')}` : '';
+    }
+    return /^https:\/\//i.test(s) ? s : '';
 }
 
 function histThumbUrl(item) {
@@ -267,10 +273,27 @@ function histOpenMedia(id) {
 
 async function histLoadData() {
     try {
+        const client = (typeof publicSupabaseClient === 'function') ? publicSupabaseClient() : null;
+        if (client) {
+            const { data, error } = await client.from('history_entries')
+                .select('id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden')
+                .order('event_date', { ascending: false, nullsFirst: false });
+            if (error) throw error;
+            const out = { items: [], overrides: {} };
+            (data || []).forEach(r => {
+                const value = { title:r.title||'', desc:r.description||'', members:Array.isArray(r.members)?r.members:[], youtube:r.youtube_url||'', image:r.image_path||'', hidden:!!r.hidden };
+                if (Number.isFinite(r.sort_order)) value.ord = r.sort_order;
+                if (r.entry_kind === 'override') out.overrides[r.id] = value;
+                else out.items.push({ id:r.id, date:String(r.event_date||''), type:r.event_type||'event', ...value });
+            });
+            return out;
+        }
+    } catch (e) {
+        console.warn('Supabase 연혁 조회 실패 - 정적 history.json으로 fallback합니다:', e);
+    }
+    try {
         const res = await fetch(HISTORY_DATA_URL, { cache: 'no-cache' });
         if (res.ok) return await res.json();
-    } catch (e) {
-        console.error('연혁을 불러오지 못했습니다:', e);
-    }
+    } catch (e) { console.error('연혁 fallback도 불러오지 못했습니다:', e); }
     return { items: [], overrides: {} };
 }

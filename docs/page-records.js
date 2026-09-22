@@ -427,18 +427,26 @@ function statFor(getText, format) {
 // 카드는 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rival)이다 - 이름 / 전적 /
 // 승률 막대 짜임이 똑같고, 프로필 사진 자리에 팀 로고가 들어간다.
 function readOpponentRows() {
-    if (RecordsState.oppRows) return RecordsState.oppRows;
-    RecordsState.oppRows = [...document.querySelectorAll('#view-team-stat tbody tr.team-row-clickable')]
-        .map(tr => {
-            const td = [...tr.querySelectorAll('td')];
-            return {
-                team: tr.dataset.team || '',
-                stats: Object.fromEntries(FORMAT_KEYS.map((f, i) => [f, (td[i + 1] || {}).textContent || ''])),
-            };
-        });
-    return RecordsState.oppRows;
+    // 예전에는 build_html.py가 HTML에 구워 둔 상대 전적 숫자를 다시 읽었다.
+    // 이제 Supabase에서 받은 SiteData.matches가 원본이므로 여기서 즉시 집계한다.
+    const byTeam = new Map();
+    SiteData.matches.forEach(m => {
+        const team = String(m['상대팀'] || '').trim();
+        const fmt = String(m['형식'] || '').trim();
+        const result = String(m['최종 결과'] || '').trim();
+        if (!team || !FORMAT_KEYS.includes(fmt) || (result !== '승' && result !== '패')) return;
+        if (!byTeam.has(team)) byTeam.set(team, Object.fromEntries(FORMAT_KEYS.map(f => [f, { w: 0, l: 0 }])));
+        const rec = byTeam.get(team)[fmt];
+        result === '승' ? rec.w++ : rec.l++;
+    });
+    return [...byTeam.entries()].map(([team, counts]) => ({
+        team,
+        stats: Object.fromEntries(FORMAT_KEYS.map(f => {
+            const r = counts[f];
+            return [f, (r.w + r.l) ? `${r.w}승 ${r.l}패 (${(r.w / (r.w + r.l) * 100).toFixed(1)}%)` : '-'];
+        }))
+    }));
 }
-
 function setTeamOppFormat(format) {
     RecordsState.oppFormat = format;
     renderOpponentTable();

@@ -30,11 +30,7 @@ from match_link import load_linked_db
 TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
 OUT_DIR = 'docs'
-# 상단 메뉴에서 숨길 항목 목록. 어드민 페이지(admin.html)가 GitHub에 직접 써서 고친다.
-# 빌드가 이 파일을 읽는 이유: 숨긴 메뉴를 HTML에 처음부터 hidden으로 내보내면, 페이지를
-# 열 때 잠깐 보였다가 사라지는 깜빡임이 없다. core.js도 런타임에 같은 파일을 다시 읽어
-# 반영하므로(다음 빌드를 기다리지 않아도 즉시 적용), 두 경로가 항상 같은 결론에 도달한다.
-NAV_FILE = os.path.join(OUT_DIR, 'data', 'nav.json')
+# 메뉴/방송통계 표시 설정은 이제 Supabase site_config에서 런타임에 직접 읽는다.
 
 # ----- 페이지 구성 -----
 # [구조 변경] 예전엔 index.html 하나(SPA)였다. 이제 메뉴마다 실제 페이지를 만든다:
@@ -106,20 +102,8 @@ def team_logo_src(team_name):
 
 
 def load_nav_config():
-    """어드민이 관리하는 표시/숨김 설정(docs/data/nav.json)을 읽어
-    (숨길 메뉴 id, 숨길 방송통계 지표 탭) 두 집합으로 돌려준다.
-    파일이 없거나 깨져 있으면 "아무것도 숨기지 않음"으로 돌아간다 - 메뉴가 사라지는 쪽보다
-    다 보이는 쪽이 안전한 실패다."""
-    try:
-        with open(NAV_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except (FileNotFoundError, ValueError) as e:
-        if not isinstance(e, FileNotFoundError):
-            print(f"⚠️ {NAV_FILE} 을 읽을 수 없어 메뉴를 모두 표시합니다: {e}")
-        return set(), set()
-    ids = {str(x) for x in data.get('hidden', []) if isinstance(x, (str, int))}
-    tabs = {str(x) for x in data.get('statsTabs', []) if isinstance(x, (str, int))}
-    return ids, tabs
+    """런타임 Supabase 설정을 사용하므로 빌드 시에는 모두 표시한다."""
+    return set(), set()
 
 
 # ---------------------------------------------------------------------------
@@ -195,12 +179,12 @@ def page_context(page_id, title, description, hidden_nav_ids=frozenset(), hidden
         # 상단 메뉴에서 '홈'은 뺀다 - 왼쪽 로고가 홈 링크라(base.html) 중복이고, 메뉴 칸도
         # 아낀다. 홈 페이지 자체는 PAGES에 그대로 있으니 계속 생성된다.
         # 숨긴 메뉴도 마크업에는 남기고 hidden 속성만 붙인다 - core.js가 런타임에
-        # nav.json을 다시 읽어 다시 보이게 할 수 있어야 하기 때문(지워버리면 불가능).
+        # Supabase 설정으로 런타임에 바로 숨기거나 다시 표시할 수 있어야 하기 때문(지워버리면 불가능).
         'nav_items': [{'id': pid, 'label': label, 'href': page_url_path(pid) or './',
                        'hidden': pid in hidden_nav_ids}
                       for pid, label, _, _ in PAGES if pid != 'home'],
         # 방송통계 지표 탭도 메뉴와 같은 방식이다: 마크업에는 남기고 hidden만 붙인다
-        # (core.js가 런타임에 nav.json을 다시 읽어 되살릴 수 있어야 한다).
+        # (core.js가 런타임에 Supabase 설정을 읽어 되살릴 수 있어야 한다).
         'hidden_stats_tabs': hidden_stats_tabs,
     }
 

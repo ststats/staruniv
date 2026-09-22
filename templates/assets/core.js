@@ -219,6 +219,7 @@ const SiteData = {
     matches: [],
     rounds: [],
     playersStats: [],
+    teamLogos: {},
 };
 
 // 페이지 초기화는 데이터 요청 실패 뒤에도 계속되어야 한다. 화면이 빈 데이터와 요청 실패를
@@ -239,18 +240,152 @@ function siteDataRequest() {
         : { url: 'data/site_data.json', cache: 'no-cache' };
 }
 
+function publicSupabaseClient() {
+    if (window.StarUnivSupabaseClient) return window.StarUnivSupabaseClient;
+    const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
+    if (!cfg.url || !cfg.key || !window.supabase || typeof window.supabase.createClient !== 'function') return null;
+    window.StarUnivSupabaseClient = window.supabase.createClient(cfg.url, cfg.key, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+    return window.StarUnivSupabaseClient;
+}
+
+const DIRECT_ROLE_ORDER = { '감독': 1, '코치': 2, '선수': 3 };
+const DIRECT_TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
+const DIRECT_FORMATS = ['대회', '대학', '미니', 'CK'];
+
+function directText(v) { return v === null || v === undefined ? '' : String(v).trim(); }
+function directMemberSort(a, b) {
+    const ar = DIRECT_ROLE_ORDER[a['직책']] || 99, br = DIRECT_ROLE_ORDER[b['직책']] || 99;
+    if (ar !== br) return ar - br;
+    const at = DIRECT_TIER_ORDER.indexOf(String(a['티어'] || ''));
+    const bt = DIRECT_TIER_ORDER.indexOf(String(b['티어'] || ''));
+    return (at < 0 ? 999 : at) - (bt < 0 ? 999 : bt);
+}
+function directRaceCode(v) {
+    const s = directText(v).toUpperCase();
+    if (s === 'T' || s.includes('테란')) return 'T';
+    if (s === 'Z' || s.includes('저그')) return 'Z';
+    if (s === 'P' || s.includes('프로토스')) return 'P';
+    return '';
+}
+function directFlipResult(v) { const s = directText(v); return s === '승' ? '패' : (s === '패' ? '승' : s); }
+function directWlText(w, l) {
+    const total = w + l;
+    return total ? `${w}승 ${l}패 (${(w / total * 100).toFixed(1)}%)` : '-';
+}
+function buildDirectPlayerStats(rounds) {
+    const byPlayer = new Map();
+    const ensure = name => {
+        if (!byPlayer.has(name)) byPlayer.set(name, { name, formats: new Map(), races: new Map() });
+        return byPlayer.get(name);
+    };
+    rounds.forEach(r => {
+        const name = directText(r['우리 선수']);
+        const result = directText(r['결과']);
+        if (!name || (result !== '승' && result !== '패')) return;
+        const p = ensure(name);
+        const fmt = directText(r['형식']);
+        if (DIRECT_FORMATS.includes(fmt)) {
+            const rec = p.formats.get(fmt) || { w: 0, l: 0 };
+            result === '승' ? rec.w++ : rec.l++;
+            p.formats.set(fmt, rec);
+        }
+        const race = directRaceCode(r['_opponent_race']);
+        if (race) {
+            const rec = p.races.get(race) || { w: 0, l: 0 };
+            result === '승' ? rec.w++ : rec.l++;
+            p.races.set(race, rec);
+        }
+    });
+    return [...byPlayer.values()].map(p => {
+        const out = { '이름': p.name };
+        DIRECT_FORMATS.forEach(fmt => {
+            const rec = p.formats.get(fmt) || { w: 0, l: 0 };
+            out[`${fmt} 전적`] = directWlText(rec.w, rec.l);
+        });
+        [['T','테란전'],['Z','저그전'],['P','프로토스전']].forEach(([race, label]) => {
+            const rec = p.races.get(race) || { w: 0, l: 0 };
+            out[`${label} 전적`] = directWlText(rec.w, rec.l);
+        });
+        return out;
+    });
+}
+
+async function loadSiteDataFromSupabase() {
+    const client = publicSupabaseClient();
+    if (!client) throw new Error('Supabase browser client is not configured');
+    const [memberRes, teamRes, matchRes, roundRes] = await Promise.all([
+        client.from('members')
+            .select('source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path')
+            .order('source_order'),
+        client.from('teams').select('team_name,logo_path').order('source_order'),
+        client.from('matches')
+            .select('source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result')
+            .order('match_date', { ascending: false }).order('source_order', { ascending: false }),
+        client.from('rounds')
+            .select('source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name')
+            .order('match_date', { ascending: false }).order('source_order', { ascending: false })
+    ]);
+    const error = memberRes.error || teamRes.error || matchRes.error || roundRes.error;
+    if (error) throw error;
+
+    const members = asArray(memberRes.data).map(r => ({
+        '이름': directText(r.nickname), 'SOOP ID': directText(r.soop_id), '생년월일': directText(r.birth_date),
+        '성별': directText(r.gender), '종족': directText(r.race), '티어': directText(r.tier), '직책': directText(r.role),
+        '입단일': directText(r.joined_date), '퇴단일': directText(r.left_date), 'MBTI': directText(r.mbti), '프로필 이미지': directText(r.avatar_path)
+    })).sort(directMemberSort);
+
+    const matches = asArray(matchRes.data).map(r => ({
+        '매치 번호': r.match_no, '날짜': directText(r.match_date), '상대팀': directText(r.opponent_team),
+        '형식': directText(r.match_format), '방식': directText(r.method), '최종 결과': directText(r.final_result),
+        '세트 결과': directText(r.set_result), '_match_key': `match:${r.match_no}`
+    }));
+
+    const rounds = asArray(roundRes.data).map(r => ({
+        '매치 번호': r.match_no, '날짜': directText(r.match_date), '상대팀': directText(r.opponent_team),
+        '형식': directText(r.match_format), '세트': directText(r.set_name), '라운드': directText(r.round_name),
+        '우리 선수': directText(r.our_player), '결과': directText(r.result), '상대 선수': directText(r.opponent_player),
+        '맵': directText(r.map_name), '_match_key': `match:${r.match_no}`, '_opponent_race': directText(r.opponent_race)
+    }));
+
+    const raceByName = new Map(members.map(m => [directText(m['이름']), directRaceCode(m['종족'])]));
+    const mirrors = rounds.filter(r => directText(r['상대팀']) === '내전' && r['우리 선수'] && r['상대 선수']).map(r => ({
+        ...r,
+        '우리 선수': r['상대 선수'],
+        '상대 선수': r['우리 선수'],
+        '결과': directFlipResult(r['결과']),
+        '_opponent_race': raceByName.get(r['우리 선수']) || '',
+        '_mirrored': true,
+    }));
+    const allRounds = rounds.concat(mirrors);
+    const teamLogos = Object.fromEntries(asArray(teamRes.data).filter(r=>r.team_name&&r.logo_path).map(r=>[directText(r.team_name), directText(r.logo_path)]));
+    return { members, matches, rounds: allRounds, playersStats: buildDirectPlayerStats(allRounds), teamLogos };
+}
+
+async function loadSiteDataFromStaticFallback() {
+    const { url, cache } = siteDataRequest();
+    const res = await fetch(url, { cache });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+}
+
 async function loadSiteData() {
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        const { url, cache } = siteDataRequest();
-        const res = await fetch(url, { cache });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        let data;
+        try {
+            data = await loadSiteDataFromSupabase();
+        } catch (directError) {
+            console.warn('Supabase 직접 조회 실패 - 정적 데이터로 fallback합니다:', directError);
+            data = await loadSiteDataFromStaticFallback();
+        }
         SiteData.members = asArray(data && data.members);
         SiteData.matches = asArray(data && data.matches);
         SiteData.rounds = asArray(data && data.rounds);
         SiteData.playersStats = asArray(data && data.playersStats);
+        SiteData.teamLogos = (data && data.teamLogos && typeof data.teamLogos === 'object') ? data.teamLogos : {};
         SiteDataLoad.status = 'loaded';
     } catch (e) {
         SiteDataLoad.status = 'error';
@@ -387,11 +522,22 @@ function isValidSoopId(soopId) {
     return !!soopId && SOOP_ID_PATTERN.test(String(soopId).trim());
 }
 
+function contentMediaPublicUrl(path) {
+    const p = String(path || '').trim().replace(/^\/+/, '');
+    if (!p) return '';
+    if (/^https:\/\//i.test(p)) return p;
+    const base = String(window.STARUNIV_SUPABASE_CONFIG?.url || '').replace(/\/$/, '');
+    if (!base) return '';
+    return `${base}/storage/v1/object/public/staruniv-media/${p.split('/').map(encodeURIComponent).join('/')}`;
+}
+
 function getProfileImgUrl(soopId) {
     if (!soopId) return null;
     const id = String(soopId).trim().toLowerCase();
-    // SOOP 아이디는 영문/숫자/일부 특수문자만 쓰이므로, 형식이 이상한 값은 URL/속성에 꽂지 않고 무시
     if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
+    const member = SiteData.members.find(m => String(m['SOOP ID'] || '').trim().toLowerCase() === id);
+    const custom = contentMediaPublicUrl(member && member['프로필 이미지']);
+    if (custom) return custom;
     const prefix = id.substring(0, 2);
     return `https://stimg.sooplive.com/LOGO/${prefix}/${id}/m/${id}.webp`;
 }
@@ -435,9 +581,9 @@ function teamLogoHtml(teamName, sizePx) {
     if (!name) return '';
     const fileName = (name === '내전') ? '캄몬스타즈' : name;
     const size = sizePx || 16;
-    // 팀 이름을 onerror 안의 JS 문자열로 직접 꽂지 않고 data 속성으로 넘긴다(이스케이프 문제 원천 차단).
-    // 크기는 대체 배지(teamLogoFallback)가 그대로 물려받아야 해서 인라인으로 둔다.
-    return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
+    const custom = contentMediaPublicUrl(SiteData.teamLogos && SiteData.teamLogos[name]);
+    const src = custom || `images/${encodeURIComponent(fileName)}.webp`;
+    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
@@ -799,7 +945,7 @@ const PageState = {
 };
 
 // ---------------------------------------------------------------------------
-// 상단 메뉴 표시/숨김 (docs/data/nav.json - 어드민 페이지에서 관리)
+// 상단 메뉴 표시/숨김 (Supabase site_config/nav - 어드민 페이지에서 관리)
 // ---------------------------------------------------------------------------
 // 메뉴는 빌드 타임에 HTML로 박히므로(build_html.py가 nav.json을 읽어 hidden을 붙인다)
 // 평소엔 이 함수가 할 일이 없다. 이 함수가 필요한 이유는 어드민에서 저장한 직후다 -
@@ -812,9 +958,17 @@ const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
 
 async function applyNavVisibility() {
     try {
-        const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
-        if (!res.ok) return;
-        const data = await res.json();
+        let data = null;
+        const client = publicSupabaseClient();
+        if (client) {
+            const { data: row, error } = await client.from('site_config').select('config_value').eq('config_key', 'nav').maybeSingle();
+            if (error) throw error;
+            data = row?.config_value || {};
+        } else {
+            const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
+            if (!res.ok) return;
+            data = await res.json();
+        }
         if (!data || typeof data !== 'object') return;
         if (Array.isArray(data.hidden)) {
             const hidden = new Set(data.hidden.map(String));

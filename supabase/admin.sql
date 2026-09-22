@@ -46,7 +46,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['settings','teams','members','matches','rounds','tier_members']
+  foreach t in array array['settings','teams','members','matches','rounds','tier_members','calendar_events','calendar_off_air','site_config','history_entries']
   loop
     execute format('drop policy if exists %I on public.%I', 'admins_all_' || t, t);
     execute format(
@@ -58,7 +58,7 @@ begin
 end $$;
 
 grant select, insert, update, delete on public.settings, public.teams, public.members,
-  public.matches, public.rounds, public.tier_members to authenticated;
+  public.matches, public.rounds, public.tier_members, public.calendar_events, public.calendar_off_air, public.site_config, public.history_entries to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 
 -- ELO 원본은 관리자 화면에서는 조회만 허용한다.

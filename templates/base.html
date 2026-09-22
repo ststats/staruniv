@@ -28,11 +28,15 @@
         document.documentElement.dataset.navPending = '';
         window.setTimeout(() => delete document.documentElement.dataset.navPending, 4000);
     </script>
-    {#- nav.json을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다. 빌드 때 이미 숨김이 반영돼
+    {#- Supabase 메뉴 설정을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다. 빌드 때 이미 숨김이 반영돼
         있지만, 어드민에서 방금 저장한 경우에는 이 파일이 빌드보다 최신이라 잠깐 보였다가
         사라지는 깜빡임이 생긴다. 자리(높이)는 유지하면서 보이지만 않게 한다. #}
     <style>html[data-nav-pending] #mainMenu,
            html[data-nav-pending] #synergy-metric-filter { visibility: hidden; }</style>
+    {#- 공개 사이트도 운영 데이터는 Supabase에서 직접 읽는다. publishable key는 브라우저 공개용이고,
+        실제 공개 범위는 RLS + 컬럼 권한으로 제한한다. 정적 JSON은 장애 시 fallback으로만 남긴다. #}
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     {%- block head_scripts %}{% endblock %}
     <link rel="icon" type="image/webp" href="images/파비콘.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -66,8 +70,8 @@
         </button>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
             {%- for nav in nav_items %}
-            {#- 숨긴 메뉴(어드민에서 관리, docs/data/nav.json)는 지우지 않고 hidden만 붙인다.
-                core.js가 런타임에 같은 파일을 다시 읽어 켜고 끌 수 있어야 하기 때문이다. #}
+            {#- 숨긴 메뉴(어드민에서 관리, Supabase site_config/nav)는 지우지 않고 hidden만 붙인다.
+                core.js가 런타임에 Supabase 설정을 읽어 켜고 끌 수 있어야 하기 때문이다. #}
             <a class="nav-item{% if nav.id == page_id %} active{% endif %}" href="{{ nav.href }}" data-page="{{ nav.id }}"{% if nav.hidden %} hidden{% endif %}{% if nav.id == page_id %} aria-current="page"{% endif %}>{{ nav.label }}</a>
             {%- endfor %}
         </nav>

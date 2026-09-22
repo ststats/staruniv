@@ -17,7 +17,8 @@ create table if not exists public.teams (
   founded_date date,
   disbanded_date date,
   note text,
-  championship text
+  championship text,
+  logo_path text
 );
 create index if not exists teams_team_name_idx on public.teams (team_name);
 
@@ -41,7 +42,8 @@ create table if not exists public.members (
   role text,
   joined_date date,
   left_date date,
-  mbti text
+  mbti text,
+  avatar_path text
 );
 create index if not exists members_name_idx on public.members (name);
 create index if not exists members_nickname_idx on public.members (nickname);
@@ -167,3 +169,54 @@ alter table public.elo_categories enable row level security;
 alter table public.elo_maps enable row level security;
 alter table public.elo_players enable row level security;
 alter table public.elo_matches enable row level security;
+
+-- 실시간 일정/휴방/사이트 표시 설정. 기존 calendar.json/nav.json의 운영 데이터를 Supabase로 이동한다.
+create table if not exists public.calendar_events (
+  id bigint primary key,
+  source_order integer not null unique,
+  start_date date not null,
+  end_date date not null,
+  event_time text,
+  person text not null default '',
+  description text,
+  detail text,
+  color text
+);
+create index if not exists calendar_events_date_idx on public.calendar_events (start_date, end_date);
+
+create table if not exists public.calendar_off_air (
+  off_date date not null,
+  soop_id text not null,
+  source_order integer not null default 0,
+  primary key (off_date, soop_id)
+);
+create index if not exists calendar_off_air_date_idx on public.calendar_off_air (off_date, source_order);
+
+create table if not exists public.site_config (
+  config_key text primary key,
+  config_value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.calendar_events enable row level security;
+alter table public.calendar_off_air enable row level security;
+alter table public.site_config enable row level security;
+-- 운영자가 수정하는 연혁 메타데이터. 사진 파일은 Storage(staruniv-media)에 두고 image_path만 저장한다.
+create table if not exists public.history_entries (
+  id text primary key,
+  entry_kind text not null default 'manual' check (entry_kind in ('manual','override')),
+  event_date date,
+  event_type text,
+  title text,
+  description text,
+  members jsonb not null default '[]'::jsonb,
+  youtube_url text,
+  image_path text,
+  sort_order integer,
+  hidden boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+create index if not exists history_entries_date_idx on public.history_entries (event_date desc);
+
+alter table public.history_entries enable row level security;
+

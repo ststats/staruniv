@@ -57,9 +57,17 @@ async function renderTodaySchedulePreview(box) {
     if (!box) return;
     box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중...</div>';
     try {
-        const res = await fetch('data/calendar.json', { cache: 'no-cache' });
-        const data = res.ok ? await res.json() : {};
-        const events = Array.isArray(data.events) ? data.events : [];
+        let events = [];
+        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+        if (client) {
+            const { data, error } = await client.from('calendar_events').select('start_date,end_date,event_time,person,description').order('source_order');
+            if (error) throw error;
+            events = (data || []).map(r => ({ startDate:r.start_date, endDate:r.end_date || r.start_date, time:r.event_time || '', person:r.person || '', desc:r.description || '' }));
+        } else {
+            const res = await fetch('data/calendar.json', { cache: 'no-cache' });
+            const data = res.ok ? await res.json() : {};
+            events = Array.isArray(data.events) ? data.events : [];
+        }
         const now = new Date();
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const todayEvents = events.filter(ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate));

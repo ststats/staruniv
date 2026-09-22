@@ -25,10 +25,8 @@
     //           detail(상세내용, 선택), color }
     // 하루짜리 일정은 startDate === endDate 인 항목일 뿐, 기간 일정과 데이터/렌더링 방식이 동일하다.
     let calEvents = [];
-    // calendar.json/holidays.json은 관리자 페이지가 GitHub에 바로 저장하는 파일이라 빌드 버전을
-    // 붙일 수 없다. no-store(매번 전체 다운로드) 대신 no-cache로 받아, 바뀌지 않았으면 서버가
-    // 304(본문 없음)로 답해 전송량이 거의 없고, 바뀌었으면 즉시 새 내용을 받는다.
-    const CAL_DATA_URL = 'data/calendar.json';
+    // 일정/휴방 운영 데이터는 Supabase를 직접 읽는다. 정적 calendar.json은 마이그레이션 전/장애 시 fallback만 사용한다.
+    const CAL_FALLBACK_URL = 'data/calendar.json';
 
     // 날짜별 휴방 멤버 목록 - { "YYYY-MM-DD": ["soopId1", "soopId2"] } 형태.
     // 휴방은 시간/제목이 있는 "일정"이 아니라 그날의 멤버 상태라 calEvents와 별개로 관리한다.
@@ -197,18 +195,31 @@
     };
 
     const calLoadPublicData = async () => {
+        await loadPublicHolidays();
         try {
-            const [scheduleRes] = await Promise.all([
-                fetch(CAL_DATA_URL, { cache: 'no-cache' }),
-                loadPublicHolidays(),
+            const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+            if (!client) throw new Error('Supabase browser client is not configured');
+            const [eventRes, offRes] = await Promise.all([
+                client.from('calendar_events').select('id,source_order,start_date,end_date,event_time,person,description,detail,color').order('source_order'),
+                client.from('calendar_off_air').select('off_date,soop_id,source_order').order('off_date').order('source_order'),
             ]);
-            if (scheduleRes.ok) {
-                const parsed = await scheduleRes.json();
-                calEvents = calMigrateData(parsed);
-                calOffAir = (parsed && parsed.offAir) || {};
-            }
+            if (eventRes.error || offRes.error) throw eventRes.error || offRes.error;
+            calEvents = (eventRes.data || []).map(r => ({
+                id: r.id, startDate: r.start_date, endDate: r.end_date || r.start_date, time: r.event_time || '',
+                person: r.person || '', desc: r.description || '', detail: r.detail || '', color: r.color || ''
+            }));
+            calOffAir = {};
+            (offRes.data || []).forEach(r => { (calOffAir[r.off_date] ||= []).push(r.soop_id); });
         } catch (e) {
-            console.error(e);
+            console.warn('Supabase 일정 직접 조회 실패 - 정적 calendar.json fallback:', e);
+            try {
+                const scheduleRes = await fetch(CAL_FALLBACK_URL, { cache: 'no-cache' });
+                if (scheduleRes.ok) {
+                    const parsed = await scheduleRes.json();
+                    calEvents = calMigrateData(parsed);
+                    calOffAir = (parsed && parsed.offAir) || {};
+                }
+            } catch (fallbackError) { console.error(fallbackError); }
         }
         calRenderCalendar();
     };

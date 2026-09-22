@@ -66,12 +66,32 @@ function switchTierView(view) {
 // ---------------------------------------------------------------------------
 // 빌드가 구워둔 Supabase 티어 명단. 없으면 null을 돌려준다.
 async function fetchTierMembers() {
-    const res = await fetch('data/tier_members.json', { cache: 'no-cache' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const members = asArray(data && data.members).filter(m => m && isValidSoopId(m.id));
-    if (!members.length) return null;
-    return { date: '', updatedAt: (data && data.updatedAt) || '', members };
+    try {
+        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+        if (!client) throw new Error('Supabase browser client is not configured');
+        const { data, error } = await client.from('tier_members')
+            .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
+            .order('source_order');
+        if (error) throw error;
+        const members = asArray(data).map(r => ({
+            id: String(r.soop_id || '').trim(),
+            nickname: String(r.nickname || '').trim(),
+            team: String(r.affiliation || '').trim(),
+            tier: r.tier == null ? '' : String(r.tier).trim(),
+            race: String(r.race || '').trim(),
+        })).filter(m => m && isValidSoopId(m.id) && m.nickname && !TIER_HIDDEN_TEAMS.has(m.team));
+        if (!members.length) return null;
+        const updatedAt = asArray(data).map(r => String(r.modified_at || '')).filter(Boolean).sort().pop() || '';
+        return { date: '', updatedAt, members };
+    } catch (e) {
+        console.warn('[티어표] Supabase 직접 조회 실패 - 정적 파일로 fallback:', e);
+        const res = await fetch('data/tier_members.json', { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const members = asArray(data && data.members).filter(m => m && isValidSoopId(m.id));
+        if (!members.length) return null;
+        return { date: '', updatedAt: (data && data.updatedAt) || '', members };
+    }
 }
 
 async function fetchAllSynergyMembers() {
