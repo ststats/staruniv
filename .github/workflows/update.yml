@@ -4,7 +4,7 @@ name: Update Site
 #   1) 유튜브 → 영상 목록 (docs/data/videos.json)                 - 키 있으면 전체, 없으면 RSS 15개
 #   2) eloboard 전적 증분 → 상대전적 파일 (docs/data/h2h/)        - 시트·외부 키 불필요
 #      + 티어 안 순위(티어랭킹)를 계산해 같은 index.json에 적어 넣는다
-#   3) 구글 시트 → data/db.json                                   - 시트 시크릿이 있을 때만
+#   3) Supabase → data/db.json (없으면 Google Sheet fallback)
 #   4) 통계 산출 + docs/ 페이지 빌드 (data/db.json이 있을 때만)
 #   5) 캘린더 이미지 캡처 (admin.html을 헤드리스 브라우저로 렌더링 → docs/data/calendar.png)
 #   6) 바뀐 것만 한 번에 커밋
@@ -40,7 +40,8 @@ jobs:
   update:
     runs-on: ubuntu-latest
     env:
-      # 시트 시크릿이 둘 다 있을 때만 시트 단계를 돈다.
+      # Supabase Secret이 있으면 Supabase를 원본으로 사용하고, 없을 때만 기존 Google Sheet로 fallback.
+      HAS_SUPABASE: ${{ secrets.SUPABASE_DB_URL != '' }}
       HAS_SHEET: ${{ secrets.GOOGLE_SHEET_ID != '' && secrets.GOOGLE_CREDENTIALS_JSON != '' }}
 
     steps:
@@ -98,11 +99,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # 시트 시크릿이 없는 저장소에서는 이 단계를 건너뛴다(영상·전적만으로도 사이트는 돈다).
-    # 시트가 잠깐 안 되더라도 아래 빌드와 커밋은 그대로 진행한다 - 그때는 저장소에
-    # 이미 들어있는 data/db.json으로 빌드한다.
-    - name: 구글 시트에서 최신 데이터 받기
-      if: env.HAS_SHEET == 'true'
+    # Supabase가 연결된 뒤에는 여기서 data/db.json을 재생성한다.
+    # 실패 시 기존 저장소의 db.json을 유지하므로 사이트 빌드는 계속 진행된다.
+    - name: Supabase에서 최신 데이터 받기
+      if: env.HAS_SUPABASE == 'true'
+      continue-on-error: true
+      env:
+        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      run: python scripts/export_supabase.py
+
+    # 아직 Supabase를 연결하지 않은 동안에는 기존 Google Sheet를 그대로 쓴다.
+    # 전환 후에도 Google Secret을 바로 지울 필요는 없다. Supabase가 있으면 이 단계는 자동으로 건너뛴다.
+    - name: 구글 시트에서 최신 데이터 받기 (fallback)
+      if: env.HAS_SUPABASE != 'true' && env.HAS_SHEET == 'true'
       continue-on-error: true
       env:
         GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
