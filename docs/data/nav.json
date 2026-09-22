@@ -3,10 +3,5 @@
   "statsTabs": [
     "balloons"
   ],
-  "heroDescriptions": {
-    "homeSchedule": "캄몬스타즈의 일정을 한곳에서 확인하세요.",
-    "homeRecords": "캄몬스타즈의 모든 전적을 저장합니다.",
-    "homeVideo": "캄몬스타즈를 재생하세요.",
-    "video": "캄몬스타즈 팬 유튜브 채널의 영상과 추천 영상입니다."
-  }
+  "heroDescriptions": {}
 }
