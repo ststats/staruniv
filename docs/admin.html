@@ -493,14 +493,12 @@ body {
 .admin-cancel-btn:hover { background: var(--color-text-sub); }
 .admin-ranking-group { margin-bottom:24px; }
 .admin-ranking-table-wrap { overflow-x:visible; overflow-y:hidden; background:var(--color-card); clip-path:var(--cut-12); }
-.admin-ranking-table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
-.admin-ranking-table col.col-rank { width:7%; }
-.admin-ranking-table col.col-player { width:26%; }
-.admin-ranking-table col.col-record { width:22%; }
-.admin-ranking-table col.col-rating { width:13%; }
-.admin-ranking-table col.col-delta { width:15%; }
-.admin-ranking-table col.col-gap { width:17%; }
-.admin-ranking-table th, .admin-ranking-table td { padding:11px 8px; border-bottom:1px solid var(--panel-line); vertical-align:middle; white-space:nowrap; min-width:0; overflow:hidden; }
+ .admin-ranking-table { width:100%; table-layout:auto; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+.admin-ranking-table th:nth-child(1), .admin-ranking-table td:nth-child(1),
+.admin-ranking-table th:nth-child(4), .admin-ranking-table td:nth-child(4),
+.admin-ranking-table th:nth-child(5), .admin-ranking-table td:nth-child(5),
+.admin-ranking-table th:nth-child(6), .admin-ranking-table td:nth-child(6) { width:1%; white-space:nowrap; }
+.admin-ranking-table th, .admin-ranking-table td { padding:11px 8px; border-bottom:1px solid var(--panel-line); vertical-align:middle; white-space:nowrap; min-width:0; }
 .admin-ranking-table th { background:var(--color-head-bg); background-image:var(--navy-pattern); color:var(--color-head-text); font-size:11px; font-weight:800; text-align:left; }
 .admin-ranking-table th:nth-child(1), .admin-ranking-table td:nth-child(1) { text-align:center; }
 .admin-ranking-table th:nth-child(4), .admin-ranking-table td:nth-child(4), .admin-ranking-table th:nth-child(5), .admin-ranking-table td:nth-child(5) { text-align:right; }
@@ -521,7 +519,8 @@ body {
 .admin-ranking-player-main,.admin-ranking-player-name { min-width:0; max-width:100%; }
 .admin-ranking-player-name { display:block; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .admin-ranking-player-meta { display:flex; align-items:center; min-width:0; max-width:100%; gap:4px; overflow:hidden; }
-.admin-ranking-player-meta .tag-badge { flex:0 1 auto; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-ranking-player-meta .tag-badge { flex:0 0 auto; max-width:none; }
+.admin-ranking-player-meta .tag-badge.race-badge { flex:0 0 auto; }
 .admin-ranking-record-inner { display:flex; flex-direction:column; align-items:flex-start; gap:3px; line-height:1.15; min-width:0; }
 .admin-ranking-record-main, .admin-ranking-record-rate, .admin-ranking-rating, .admin-ranking-delta, .admin-ranking-gap { white-space:nowrap; font-variant-numeric:tabular-nums; }
 .admin-ranking-record-main { font-weight:700; }
@@ -531,36 +530,28 @@ body {
 .admin-head-short { display:none; }
 
 @media (max-width:767.98px) {
-    .admin-ranking-table { font-size:10px; }
+    .admin-ranking-table { font-size:12px; }
     .admin-ranking-table th,.admin-ranking-table td { padding:8px 4px; }
-    .admin-ranking-table th { font-size:9px; }
+    .admin-ranking-table th { font-size:10px; }
     .admin-head-long { display:none; }
     .admin-head-short { display:inline; }
     .admin-ranking-player { gap:3px; }
-    .admin-ranking-player-name { font-size:10px; }
-    .admin-ranking-player-meta { gap:2px; }
-    .admin-ranking-player-meta .tag-badge { font-size:8px; padding:1px 3px; }
+    .admin-ranking-player-name { font-size:12px; }
+    .admin-ranking-player-meta { gap:3px; }
     .admin-ranking-record-inner { gap:2px; }
-    .admin-ranking-record-rate { font-size:8px; }
-    .admin-ranking-rank-col,.admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap { font-size:9px; }
+    .admin-ranking-record-rate { font-size:10px; }
+    .admin-ranking-rank-col,.admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap { font-size:11px; }
 }
 @media (max-width:430px) {
-    .admin-ranking-table col.col-rank { width:8%; }
-    .admin-ranking-table col.col-player { width:27%; }
-    .admin-ranking-table col.col-record { width:22%; }
-    .admin-ranking-table col.col-rating { width:13%; }
-    .admin-ranking-table col.col-delta { width:14%; }
-    .admin-ranking-table col.col-gap { width:16%; }
     .admin-ranking-table th,.admin-ranking-table td { padding:7px 2px; }
-    .admin-ranking-table th { font-size:8px; letter-spacing:-0.02em; }
-    .admin-ranking-rank-col,.admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap { font-size:8px; }
-    .admin-ranking-player-name,.admin-ranking-record-main { font-size:9px; }
-    .admin-ranking-player-meta .tag-badge { font-size:7px; padding:1px 2px; }
-    .admin-ranking-record-rate { font-size:7px; }
+    .admin-ranking-table th { font-size:9px; letter-spacing:-0.02em; }
+    .admin-ranking-rank-col,.admin-ranking-rating,.admin-ranking-delta,.admin-ranking-gap { font-size:10px; }
+    .admin-ranking-player-name,.admin-ranking-record-main { font-size:11px; }
+    .admin-ranking-record-rate { font-size:9px; }
 }
-@media (max-width:319px) {
+@media (max-width:300px) {
     .admin-ranking-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .admin-ranking-table { min-width:300px; }
+    .admin-ranking-table { min-width:286px; }
 }
 .admin-hero-list { display:grid; gap:10px; }
 .admin-hero-row { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; align-items:center; }
@@ -1075,7 +1066,7 @@ body {
         const html = tiers.map(t => {
             const players = ranked.filter(p => String(p.t) === t).sort((a,b) => a.k-b.k);
             if (!players.length) return '';
-            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><colgroup><col class="col-rank"><col class="col-player"><col class="col-record"><col class="col-rating"><col class="col-delta"><col class="col-gap"></colgroup><thead><tr><th>순위</th><th>이름</th><th><span class="admin-head-long">${periodLabel} 전적</span><span class="admin-head-short">전적</span></th><th>레이팅</th><th><span class="admin-head-long">레이팅 편차</span><span class="admin-head-short">편차</span></th><th><span class="admin-head-long">티어 괴리</span><span class="admin-head-short">괴리</span></th></tr></thead><tbody>${players.map(p => {
+            return `<section class="admin-ranking-group"><div class="section-title" data-en="RANKING"><span class="section-title-label">${adminRankingTierLabel(t)}</span><span class="title-count">${players.length}명</span></div><div class="admin-ranking-table-wrap"><table class="admin-ranking-table" aria-label="${adminRankingTierLabel(t)} 랭킹"><thead><tr><th>순위</th><th>이름</th><th><span class="admin-head-long">${periodLabel} 전적</span><span class="admin-head-short">전적</span></th><th>레이팅</th><th><span class="admin-head-long">레이팅 편차</span><span class="admin-head-short">편차</span></th><th><span class="admin-head-long">티어 괴리</span><span class="admin-head-short">괴리</span></th></tr></thead><tbody>${players.map(p => {
                 const rec=adminRankingRecord(p), loss=Math.max(0,rec.m-rec.w), winRate=rec.m>0?(rec.w/rec.m*100).toFixed(1)+'%':'—';
                 const gap=Number(p.tierGap), hasGap=Number.isInteger(gap), mismatch=hasGap&&gap!==0;
                 const gapText=!hasGap?'—':(!mismatch?'일치':`${Math.abs(gap)}단계${gap>0?'↑':'↓'}`);
