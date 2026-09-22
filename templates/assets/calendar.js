@@ -123,7 +123,7 @@
         const personHtml = personText ? `<span class="cal-event-person">${calEscapeHTML(personText)}</span>` : '';
         const descHtml = descText ? `<div class="cal-event-desc">${calEscapeHTML(descText)}</div>` : '';
         const barStyle = bar
-            ? `margin-left:${bar.bleedLeft}; margin-right:${bar.bleedRight}; padding-left:${bar.padLeft}; padding-right:${bar.padRight}; border-radius:${bar.radius}; `
+            ? `--bar-bleed-left:${bar.bleedLeft}; --bar-bleed-right:${bar.bleedRight}; --bar-pad-left:${bar.padLeft}; --bar-pad-right:${bar.padRight}; --bar-radius:${bar.radius}; `
             : '';
         return `
             <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}--ev-color: ${color};${calEventColorVars(color)}">

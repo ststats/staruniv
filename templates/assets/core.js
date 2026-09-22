@@ -560,12 +560,7 @@ function profileAvatarInnerHtml(soopId) {
 function teamLogoFallback(imgEl, teamName) {
     const initial = String(teamName || '').trim().charAt(0) || '?';
     const span = document.createElement('span');
-    span.className = 'team-logo-fallback';
-    const w = imgEl.style.width, h = imgEl.style.height;
-    if (w) span.style.width = w;
-    if (h) span.style.height = h;
-    const sizeNum = parseInt(w, 10);
-    if (sizeNum) span.style.fontSize = Math.max(8, Math.round(sizeNum * 0.5)) + 'px';
+    span.className = imgEl.className.replace(/\bteam-logo-icon\b/, 'team-logo-fallback');
     span.textContent = initial;
     imgEl.replaceWith(span);
 }
@@ -583,12 +578,12 @@ function teamLogoHtml(teamName, sizePx) {
     const size = sizePx || 16;
     const custom = contentMediaPublicUrl(SiteData.teamLogos && SiteData.teamLogos[name]);
     const src = custom || `images/${encodeURIComponent(fileName)}.webp`;
-    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
+    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon team-logo-size-${size}" loading="lazy" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
 function teamCellInnerHtml(teamName) {
-    return `<span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
+    return `<span class="team-cell">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
 }
 
 const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];

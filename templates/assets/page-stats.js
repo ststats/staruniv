@@ -103,7 +103,7 @@ function synergyRowHtml(m, idx) {
         <tr>
             <td class="text-center colw-20 text-nowrap"><span class="synergy-rank">${rank}</span></td>
             <td class="text-center colw-40">
-                <span class="d-flex align-items-center justify-content-center gap-2 min-w-0">
+                <span class="team-cell min-w-0">
                     ${avatarHtml(ours['SOOP ID'], 'player-avatar-sm')}
                     <span class="fw-bold ellipsis-text text-nowrap">${escapeHTML(name)}</span>
                 </span>

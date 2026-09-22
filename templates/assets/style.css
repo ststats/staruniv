@@ -119,18 +119,11 @@
     --radius-card: 0px;
     --shadow-card: none;
     --shadow-card-hover: 0 10px 22px rgba(24, 63, 130, 0.13);
-    /* 오른쪽 위를 N px 잘라낸 모서리. 카드 14 · 사이드바 줄 7 · 배지와 버튼 4~8 · 작은 칩 3 */
-    --cut-2: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
-    --cut-3: polygon(0 0, calc(100% - 3px) 0, 100% 3px, 100% 100%, 0 100%);
-    --cut-4: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-    --cut-5: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-    --cut-6: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    --cut-7: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
-    --cut-8: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-    --cut-9: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
-    --cut-10: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
-    --cut-12: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
-    --cut-14: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    /* 오른쪽 위 notch는 역할별 네 단계만 사용한다. */
+    --notch-xs: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    --notch-sm: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    --notch-md: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    --notch-lg: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
 
     /* 크기: 상단바 · 선택 바 · 스크롤바 · 목록 높이 */
     --scroll-gutter: 10px;
@@ -253,23 +246,11 @@ html[data-theme="dark"] {
 /* =============================================================================
    2. 기본 요소 · 부트스트랩 보정
    ============================================================================= */
-html {
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
-}
-
 body {
+    overflow-y: scroll;
     font-family: "Pretendard", sans-serif;
     color: var(--color-text-main);
     background: var(--color-bg);
-}
-
-/* 부트스트랩은 모달을 열 때 본문에 스크롤바 폭만큼 padding-right를 넣는다(스크롤바가 사라지는
-   브라우저 보정). 우리는 html에 scrollbar-gutter로 그 자리를 늘 비워두기 때문에 보정이 필요 없고,
-   그대로 두면 모달을 열 때마다 페이지가 왼쪽으로 한 번 밀린다. */
-body.modal-open {
-    overflow-y: visible !important;
-    padding-right: 0 !important;
 }
 
 a {
@@ -371,7 +352,7 @@ a {
     overflow: hidden;
     border-radius: 0;
     border: 0;
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 
 .modal-header {
@@ -413,7 +394,7 @@ a {
 .modal-dialog.modal-w-550 { max-width: 550px; }
 .modal-dialog.modal-w-600 { max-width: 600px; }
 
-.btn { border-radius: 0 !important; }
+.btn { border-radius: 0; }
 
 .btn-close { border-radius: 0; }
 
@@ -479,7 +460,7 @@ a {
     letter-spacing: 0.02em;
     color: var(--color-text-sub);
 }
-.nav-menu .nav-item[hidden] { display: none !important; }
+.nav-menu .nav-item[hidden] { display: none; }
 .nav-menu .nav-item:last-child { margin-right: 0; }
 .nav-menu .nav-item.active::after {
     content: "";
@@ -520,7 +501,7 @@ a {
     overflow: visible;
     align-items: stretch;
     max-width: 100%;
-    clip-path: var(--cut-9);
+    clip-path: var(--notch-md);
 }
 
 .sub-tab {
@@ -533,14 +514,14 @@ a {
     font-size: 13px;
     font-weight: 600;
     justify-content: center;
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
     background: var(--panel-control);
     color: var(--color-text-sub);
 }
 .sub-tab.active {
     border: 1px solid var(--color-primary);
     font-weight: 700;
-    clip-path: var(--cut-7);
+    clip-path: var(--notch-sm);
 }
 .sub-tab.active:hover { background: var(--color-primary); }
 .sub-tab:hover {
@@ -703,7 +684,7 @@ a {
     justify-content: center;
     flex: 0 0 auto;
     margin-left: auto;
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
     min-height: 20px;
     padding: 0 8px;
     font-family: "Pretendard", sans-serif;
@@ -737,7 +718,7 @@ a {
     display: inline-flex;
     align-items: center;
     padding: 2px;
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     background: var(--color-bg-subtle);
 }
 .theme-toggle:hover { color: var(--panel-text); }
@@ -749,7 +730,7 @@ a {
     border: 0;
     background: transparent;
     font-size: 13px;
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
     color: var(--color-text-sub);
 }
 
@@ -776,7 +757,7 @@ a {
     align-items: center;
     justify-content: center;
     gap: 3px;
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
 }
 .nav-drawer-btn span {
     display: block;
@@ -859,15 +840,15 @@ a {
 
 @media (min-width: 1200px) {
     .container {
-        padding-left: 40px !important;
-        padding-right: 40px !important;
+        padding-left: 40px;
+        padding-right: 40px;
     }
 }
 
 @media (max-width: 767.98px) {
     .container {
-        padding-left: 18px !important;
-        padding-right: 18px !important;
+        padding-left: 18px;
+        padding-right: 18px;
     }
 
     .theme-toggle button {
@@ -907,7 +888,7 @@ a {
     height: 20px;
     padding: 0 8px;
     font-size: var(--fs-badge);
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
 }
 .tag-badge.race-badge {
     padding: 0;
@@ -941,7 +922,7 @@ a {
     font-weight: 800;
     line-height: 1;
     color: #fff;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
     width: 34px;
     height: 18px;
     font-size: var(--fs-badge-sm);
@@ -1081,8 +1062,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         line-height: 16px;
     }
     .stat-table .match-badge { font-size: 9px; }
-    .stat-table .team-logo-icon,
-    .stat-table .team-logo-fallback { width: 14px !important; height: 14px !important; }
+    .stat-table .team-logo-icon[class],
+    .stat-table .team-logo-fallback[class] { width: 14px; height: 14px; }
     .stat-table .player-avatar-sm { width: 16px; height: 16px; font-size: 8px; }
     .stat-table .set-detail-table td { padding: 5px 4px; }
 
@@ -1099,10 +1080,10 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         font-weight: 500;
         color: var(--color-text-muted);
     }
-    .stat-table .cell-subline .team-logo-icon,
-    .stat-table .cell-subline .team-logo-fallback { width: 11px !important; height: 11px !important; }
+    .stat-table .cell-subline .team-logo-icon[class],
+    .stat-table .cell-subline .team-logo-fallback[class] { width: 11px; height: 11px; }
     /* 로고와 팀 이름 사이는 붙여 둔다(부트스트랩 gap-2는 8px라 한 덩어리로 안 보였다) */
-    .stat-table .cell-subline > span { gap: 3px !important; }
+    .stat-table .cell-subline > .team-cell { gap: 3px; }
 
     /* 좁은 화면: 숫자만 한 단계 작게 남기고 승률 줄은 뺀다 */
     .wl-short-num { font-size: 12px; }
@@ -1166,6 +1147,16 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     margin-right: 4px;
     flex-shrink: 0;
     vertical-align: middle;
+}
+.team-logo-size-16 { width: 16px; height: 16px; font-size: 8px; }
+.team-logo-size-20 { width: 20px; height: 20px; font-size: 10px; }
+.team-logo-size-26 { width: 26px; height: 26px; font-size: 13px; }
+.team-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
 }
 /* 팀 전적 모달 제목의 'vs 로고 팀이름' - 텍스트/이미지가 섞여 있어 각자 다른 간격으로
    벌어져 보였다. 셋을 하나의 flex 줄로 묶어 간격·높이를 gap 하나로만 맞춘다. */
@@ -1284,7 +1275,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .donut-sub { font-size: var(--fs-body); }
 
 .team-row-clickable { transition: background 0.1s; }
-.team-row-clickable:hover { background: var(--color-row-hover) !important; }
+.team-row-clickable:hover > * { background-color: var(--color-row-hover); }
 .team-row-clickable:hover .ext-arrow { color: var(--color-primary); }
 
 .fs-body { font-size: var(--fs-body); }
@@ -1314,7 +1305,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .soop-logo-icon,
 .team-logo-fallback {
     border-radius: 0;
-    clip-path: var(--cut-3);
+    clip-path: var(--notch-xs);
 }
 /* 사람 아바타는 원형. 사진이 없을 때 쓰는 대체 글자 칸은 .team-logo-fallback을 같이 달기 때문에 그 뒤에 둔다 */
 .home-notice-avatar,
@@ -1349,7 +1340,7 @@ a.btn-view-all {
 
 .badge-win { background-color: var(--color-primary); }
 
-.head-stat { clip-path: var(--cut-8); }
+.head-stat { clip-path: var(--notch-md); }
 .head-stat-label {
     font-family: "Pretendard", sans-serif;
     font-weight: 600;
@@ -1362,21 +1353,6 @@ a.btn-view-all {
 }
 .head-stat-live { color: var(--color-lose); }
 .head-stat-time { font-weight: 600; }
-
-.edge-T {
-    --profile-race-color: var(--color-race-t);
-    border-left: 3px solid var(--color-race-t) !important;
-}
-
-.edge-Z {
-    --profile-race-color: var(--color-race-z);
-    border-left: 3px solid var(--color-race-z) !important;
-}
-
-.edge-P {
-    --profile-race-color: var(--color-race-p);
-    border-left: 3px solid var(--color-race-p) !important;
-}
 
 .g2 {
     display: grid;
@@ -1449,6 +1425,9 @@ a.btn-view-all {
     background: var(--color-card);
     box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
 }
+.edge-T { --profile-race-color: var(--color-race-t); border-left: 3px solid var(--color-race-t); }
+.edge-Z { --profile-race-color: var(--color-race-z); border-left: 3px solid var(--color-race-z); }
+.edge-P { --profile-race-color: var(--color-race-p); border-left: 3px solid var(--color-race-p); }
 /* 카드 자체(요약 카드 포함)의 호버는 예전 그대로 아주 옅은 흰빛이다.
    '연한 파랑'으로 맞춘 건 줄·칩처럼 고르는 항목들이다. */
 .clean-card:hover,
@@ -1492,7 +1471,7 @@ a.btn-view-all {
 .tier-bar,
 .tier-card,
 .tool-card {
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 /* 티어표는 한 번에 300장 넘는 카드를 그린다. 화면 밖 카드는 브라우저가 레이아웃·페인트를
    건너뛰게 해서 '전체' 보기로 바꿀 때 멈칫하는 걸 없앤다(모바일에서 1초 -> 0.2초).
@@ -1658,7 +1637,7 @@ a.btn-view-all {
 }
 .selection-layout > .avatar-bar .avatar-select-all {
     border-bottom: 1px solid var(--panel-line);
-    clip-path: var(--cut-7) !important;
+    clip-path: var(--notch-sm);
 }
 .selection-layout > .avatar-bar .avatar-selector-scroll {
     width: 100%;
@@ -1689,7 +1668,7 @@ a.btn-view-all {
 .selection-layout > .avatar-bar .avatar-select-fallback {
     width: 20px;
     height: 20px;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
 }
 .selection-layout > .tier-bar {
     grid-column: 1;
@@ -1748,7 +1727,7 @@ a.btn-view-all {
     background: var(--color-card);
     grid-template-columns: 1fr 1fr;
     gap: 2px;
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
 }
 .selection-layout > .tier-bar .tier-bar-list {
     padding: 7px 0;
@@ -1771,7 +1750,7 @@ a.btn-view-all {
 .selection-layout > .avatar-bar .avatar-select-item,
 .selection-layout > .tier-bar .tier-bar-item,
 .selection-layout > .tier-bar .tier-scope-btn {
-    clip-path: var(--cut-7);
+    clip-path: var(--notch-sm);
 }
 
 @media (max-width: 920px) {
@@ -2053,7 +2032,7 @@ a.btn-view-all {
     height: 20px;
     display: inline-flex;
     align-items: center;
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
     position: absolute;
     right: 9px;
 }
@@ -2079,7 +2058,7 @@ a.btn-view-all {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none !important;
+    background: none;
 }
 .live-card-avatar {
     object-fit: cover;
@@ -2139,7 +2118,7 @@ a.btn-view-all {
     flex-direction: column;
     gap: 0;
     overflow: hidden;
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 .home-notice-card:hover { background: var(--color-row-hover); }
 .home-notice-main {
@@ -2206,7 +2185,7 @@ a.btn-view-all {
     object-fit: cover;
     background: var(--color-bg-subtle);
     flex-shrink: 0;
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
 }
 a.home-notice-card,
 a.home-notice-card:hover {
@@ -2255,7 +2234,7 @@ a.home-notice-card:hover {
     color: var(--panel-text);
     font-size: 18px;
     line-height: 1;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
 }
 .home-carousel-controls > button:first-child { left: max(0px, calc((100vw - 1240px) / 4)); }
 .home-carousel-controls > button:last-child { right: max(0px, calc((100vw - 1240px) / 4)); }
@@ -2296,7 +2275,7 @@ a.home-notice-card:hover {
 .home-carousel-dots button.active {
     width: 22px;
     background: var(--dot-active);
-    clip-path: var(--cut-2);
+    clip-path: var(--notch-xs);
 }
 .home-carousel h1 span { display: inline; }
 .home-carousel h1 { white-space: nowrap; }
@@ -2475,7 +2454,7 @@ a.home-notice-card:hover {
 }
 .cal-calendar-area > .clean-card,
 .cal-sidebar .clean-card {
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 /* 달력은 칸 폭을 화면에 맞춰 줄인다. 예전에는 최소 770px을 잡아둬서, 달력이 놓이는 자리가
    그보다 좁은 구간(태블릿 가로 768~890px, 노트북 992~1270px의 2단 배치)에서 가로 스크롤이
@@ -2540,12 +2519,12 @@ a.home-notice-card:hover {
 .cal-cell-event {
     display: flex;
     flex-direction: column;
-    clip-path: var(--cut-5) !important;
+    clip-path: var(--notch-sm);
     --ev-accent: var(--ev-accent-l);
     --ev-bg: var(--ev-bg-l);
     --ev-hover: var(--ev-hover-l);
-    background: var(--ev-bg) !important;
-    border-left: 3px solid var(--ev-accent) !important;
+    background: var(--ev-bg);
+    border-left: 3px solid var(--ev-accent);
     padding: 4px 6px 4px 6px;
     gap: 1px;
     text-align: left;
@@ -2559,7 +2538,7 @@ a.home-notice-card:hover {
     line-height: 1.3;
     overflow: hidden;
 }
-.cal-cell-event:hover { background: var(--ev-hover) !important; }
+.cal-cell-event:hover { background: var(--ev-hover); }
 html[data-theme="dark"] .cal-cell-event,
 html[data-theme="dark"] .cal-longterm-bar {
     --ev-accent: var(--ev-accent-d);
@@ -2586,9 +2565,14 @@ html[data-theme="dark"] .cal-longterm-bar {
     --ev-hover: var(--ev-hover-l);
     position: relative;
     z-index: 1;
+    margin-left: var(--bar-bleed-left, 0);
+    margin-right: var(--bar-bleed-right, 0);
+    padding-left: var(--bar-pad-left, 6px);
+    padding-right: var(--bar-pad-right, 6px);
+    border-radius: var(--bar-radius, 0);
 }
-.cal-longterm-bar.is-cont-right { clip-path: none !important; }
-.cal-longterm-bar.is-cont-left { border-left: 0 !important; }
+.cal-longterm-bar.is-cont-right { clip-path: none; }
+.cal-longterm-bar.is-cont-left { border-left: 0; }
 .cal-longterm-bar.is-cont-left .cal-cell-top,
 .cal-longterm-bar.is-cont-left .cal-event-desc {
     visibility: hidden;
@@ -2673,7 +2657,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     padding: 4px 9px 4px 4px;
     background: var(--color-bg-subtle);
 }
@@ -2728,7 +2712,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: var(--calendar-outside-text);
 }
 .cal-day-cell.today .cal-day-number {
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
     color: #fff;
 }
 .cal-day-cell:hover { background: var(--color-row-hover); }
@@ -2762,7 +2746,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 .cal-month-bar .cal-nav-btn {
     width: 32px;
     height: 32px;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
 }
@@ -2774,7 +2758,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 .cal-month-bar .cal-month-name { color: #fff; }
 
-#page-schedule .cal-day-card { padding: 20px 20px 0 !important; }
+#page-schedule .cal-day-card { padding: 20px 20px 0; }
 #page-schedule .cal-day-card-date {
     font-size: 11px;
     font-weight: 600;
@@ -2963,19 +2947,18 @@ html[data-theme="dark"] .cal-longterm-bar {
     }
 
     /* 일정 칩 → 아주 작은 노치 네모. 글자·테두리·여백을 모두 없애고 색만 남긴다.
-       동그라미 대신 사이트 공용 모서리(--cut-2)를 써서 다른 부품과 결을 맞추되,
-       모양이 보이는 만큼 무거워 보이므로 점보다 한 치수 작게 잡는다.
-       (기간 일정 막대는 인라인 스타일로 여백이 붙어 있어 !important로 덮는다) */
+       사이트 공용 작은 notch를 써서 다른 부품과 결을 맞추고,
+       모양이 보이는 만큼 무거워 보이므로 점보다 한 치수 작게 잡는다. */
     .cal-day-cell .cal-cell-event {
         width: 5px;
         height: 5px;
-        padding: 0 !important;
-        margin: 0 !important;
+        padding: 0;
+        margin: 0;
         gap: 0;
-        border: 0 !important;
-        border-radius: 0 !important;
-        clip-path: var(--cut-2) !important;
-        background: var(--ev-accent) !important;
+        border: 0;
+        border-radius: 0;
+        clip-path: var(--notch-xs);
+        background: var(--ev-accent);
     }
     .cal-day-cell .cal-cell-event > * { display: none; }
     /* 점이 다섯 개를 넘으면 칸이 밀리므로 네 개까지만 찍는다(전체 목록은 날짜 카드에서 본다) */
@@ -2984,7 +2967,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     /* 오늘 · 고른 날: 숫자에 표시를 준다(칸 전체를 칠하면 일정 표시가 묻힌다).
        PC와 같은 노치 박스를 쓰되 20px에 맞춰 모서리를 작게 잡는다. */
     .cal-day-cell.today .cal-day-number {
-        clip-path: var(--cut-3);
+        clip-path: var(--notch-xs);
         border-radius: 0;
     }
     .cal-day-cell.selected {
@@ -3038,7 +3021,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     align-items: stretch;
     padding: 16px 18px;
     background: var(--color-card);
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 .hist-item::before {
     content: "";
@@ -3049,7 +3032,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     height: 12px;
     background: var(--hist-color);
     box-shadow: 0 0 0 3px var(--color-bg);
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
 }
 .hist-item.hist-type-founding { --hist-color: var(--navy-deco-fill); }
 .hist-item.hist-type-join { --hist-color: var(--color-primary); }
@@ -3091,7 +3074,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     font-weight: 700;
     color: #fff;
     background: var(--hist-color);
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
 }
 .hist-title {
     font-size: 15px;
@@ -3139,7 +3122,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     /* 글줄 높이를 1로 고정해야 이름(12px)과 괄호 설명(10px)이 같은 중심선에 선다 */
     padding: 3px 10px 3px 3px;
     background: var(--color-bg-subtle);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     font-size: 12px;
     line-height: 1;
 }
@@ -3166,7 +3149,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     overflow: hidden;
     border: 0;
     background: var(--navy);
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
     cursor: pointer;
 }
 .hist-media img {
@@ -3184,7 +3167,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     width: 44px;
     height: 30px;
     background: rgba(0, 0, 0, 0.72);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     transform: translate(-50%, -50%);
 }
 .hist-play::after {
@@ -3219,7 +3202,7 @@ body.media-lightbox-open { overflow: hidden; }
 .media-lightbox-inner {
     width: min(960px, 100%);
     background: #0b0e14;
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 /* 쇼츠: 세로 9:16. 화면 높이에 맞춰 폭을 정한다 */
 .media-lightbox.is-vertical .media-lightbox-inner { width: min(420px, 100%, calc((100vh - 100px) * 9 / 16)); }
@@ -3254,7 +3237,7 @@ body.media-lightbox-open { overflow: hidden; }
     border: 0;
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
 }
 .media-lightbox-close:hover { background: var(--color-primary); }
 .media-lightbox-video { aspect-ratio: 16 / 9; }
@@ -3299,7 +3282,7 @@ body.media-lightbox-open { overflow: hidden; }
     transition: box-shadow 0.15s, transform 0.15s;
 }
 .news-post-card-fade { animation: newsFeaturedFadeIn 0.25s ease; }
-.news-post-photos-wrap:hover .news-photo-nav {
+.news-post-photos-wrap:hover .news-photo-nav:not(.is-hidden) {
     opacity: 1;
     pointer-events: auto;
 }
@@ -3434,8 +3417,8 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .news-post-photos-dots span,
 .photo-dot {
-    border-radius: 0 !important;
-    clip-path: var(--cut-2);
+    border-radius: 0;
+    clip-path: var(--notch-xs);
     width: 6px;
     height: 6px;
 }
@@ -3443,8 +3426,8 @@ body.media-lightbox-open { overflow: hidden; }
 .photo-dot.active {
     width: 16px;
     height: 6px;
-    border-radius: 0 !important;
-    clip-path: var(--cut-2);
+    border-radius: 0;
+    clip-path: var(--notch-xs);
 }
 
 .member-card {
@@ -3528,7 +3511,7 @@ body.media-lightbox-open { overflow: hidden; }
     width: 28px;
     height: 28px;
     border-radius: 0;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
     border: none;
     background: rgba(0, 0, 0, 0.4);
     color: #fff;
@@ -3545,8 +3528,8 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .news-photo-nav:hover { background: rgba(0, 0, 0, 0.6); }
 .news-photo-nav.is-hidden {
-    opacity: 0 !important;
-    pointer-events: none !important;
+    opacity: 0;
+    pointer-events: none;
 }
 .news-photo-nav-prev { left: 8px; }
 .news-photo-nav-next { right: 8px; }
@@ -3570,7 +3553,7 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 0 16px;
     border: 0;
     background: var(--color-card);
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
     font-size: 12px;
     font-weight: 700;
     color: var(--color-text-sub);
@@ -3649,11 +3632,11 @@ body.media-lightbox-open { overflow: hidden; }
 .profile-modal-facts dt, .profile-modal-label { margin-bottom: 5px; color: var(--color-text-sub); font-size: var(--fs-meta); font-weight: 500; }
 .profile-modal-facts dd { margin: 0; font-size: var(--fs-body); font-weight: 700; overflow-wrap: anywhere; }
 .profile-modal-period { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 0 22px; font-size: 12px; font-weight: 600; }
-.profile-modal-days { padding: 3px 7px; background: var(--navy); color: var(--navy-on-text); clip-path: var(--cut-4); font-size: var(--fs-meta); white-space: nowrap; }
+.profile-modal-days { padding: 3px 7px; background: var(--navy); color: var(--navy-on-text); clip-path: var(--notch-xs); font-size: var(--fs-meta); white-space: nowrap; }
 .profile-modal-status { color: var(--color-text-sub); font-size: var(--fs-meta); margin-bottom: 8px; }
 .profile-modal-status:empty { display: none; }
 .profile-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.profile-modal-metric { padding: 14px; background: var(--color-bg-subtle); clip-path: var(--cut-7); }
+.profile-modal-metric { padding: 14px; background: var(--color-bg-subtle); clip-path: var(--notch-sm); }
 .profile-modal-value { font-size: var(--fs-body); font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 /* 3개(티어표 분석·개인 전적·SOOP 방송국)까지 한 줄로 - flex라 숨김([hidden])인
    링크는 레이아웃에서 완전히 빠지고 남은 것들이 폭을 나눠 가진다(grid처럼 빈 칸이
@@ -3664,9 +3647,9 @@ body.media-lightbox-open { overflow: hidden; }
 
 .profile-modal-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 /* 바로가기는 바로 위 지표 상자(.profile-modal-metric)와 같은 짜임이어야 한다 -
-   좌우 패딩 14px, 노치 --cut-7, 본문 글자 크기. 예전엔 패딩 10px에 11px 글자라
+   좌우 패딩 14px, 작은 notch, 본문 글자 크기. 예전엔 패딩 10px에 11px 글자라
    라벨 시작점이 위 상자보다 4px 왼쪽으로 튀어나오고 혼자 작아 보였다. */
-.profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 12px 14px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--cut-7); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }
+.profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 12px 14px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--notch-sm); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }
 .profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
 /* 방송국은 사이트 밖으로 나가는 링크라 안쪽 바로가기 두 개와 줄을 나눈다 */
@@ -3705,7 +3688,7 @@ body.media-lightbox-open { overflow: hidden; }
    목록 자체에 카드 바탕을 깔고(스크롤바 자리까지 흰색), 스크롤바는 잘린 모서리 아래에서 시작한다. */
 #news-past-list {
     background: var(--color-card);
-    clip-path: var(--cut-12);
+    clip-path: var(--notch-lg);
 }
 /* 크롬·엣지·사파리: 표준 scrollbar-width/color를 풀어야 아래 ::-webkit-scrollbar 규칙(위아래 화살표 없음,
    잘린 모서리만큼 내려서 시작)이 먹는다. 파이어폭스는 원래대로 얇은 표준 스크롤바를 쓴다. */
@@ -3738,7 +3721,7 @@ body.media-lightbox-open { overflow: hidden; }
     .member-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     .selection-content #news-feed-content.news-feed-mobile .home-notice-card {
-        clip-path: var(--cut-12);
+        clip-path: var(--notch-lg);
     }
 }
 
@@ -3791,7 +3774,7 @@ body.media-lightbox-open { overflow: hidden; }
     background: var(--color-card);
 }
 .stat-card-box .wl {
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
     display: flex;
     height: 20px;
     overflow: hidden;
@@ -3838,7 +3821,7 @@ body.media-lightbox-open { overflow: hidden; }
 .stat-card-box:hover .stat-card-arrow { color: #fff; }
 
 .wl {
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
     display: flex;
     overflow: hidden;
     font-weight: 700;
@@ -4027,7 +4010,7 @@ body.media-lightbox-open { overflow: hidden; }
     line-height: 1;
     border: 0;
     background: transparent;
-    clip-path: var(--cut-3);
+    clip-path: var(--notch-xs);
     flex: 0 0 auto;
     min-width: 36px;
     padding: 0 9px;
@@ -4045,7 +4028,7 @@ body.media-lightbox-open { overflow: hidden; }
 .h2h-period {
     width: fit-content;
     max-width: 100%;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
     height: 28px;
     padding: 3px;
     gap: 2px;
@@ -4303,7 +4286,7 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 0 13px;
     border: 0;
     background: var(--color-card);
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
     font-size: 13px;
     color: var(--color-text-main);
 }
@@ -4325,7 +4308,7 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 6px;
     background: var(--color-card);
     box-shadow: 0 12px 28px rgba(10, 20, 40, 0.16);
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
 }
 .h2h-suggest-head {
     position: sticky;
@@ -4401,7 +4384,7 @@ body.media-lightbox-open { overflow: hidden; }
     min-height: 46px;
     padding: 12px 14px;
     background: var(--color-card);
-    clip-path: var(--cut-10);
+    clip-path: var(--notch-md);
 }
 .h2h-card-avatar {
     flex: none;
@@ -4484,7 +4467,7 @@ body.media-lightbox-open { overflow: hidden; }
     align-items: center;
     padding: 22px 20px;
     background: var(--color-card);
-    clip-path: var(--cut-12);
+    clip-path: var(--notch-lg);
 }
 .h2h-score-side { text-align: center; }
 .h2h-score-name {
@@ -4517,7 +4500,7 @@ body.media-lightbox-open { overflow: hidden; }
     margin: 8px 0;
     overflow: hidden;
     background: var(--color-lose);
-    clip-path: var(--cut-3);
+    clip-path: var(--notch-xs);
 }
 .h2h-score-bar > span,
 .h2h-map-bar > span {
@@ -4543,7 +4526,7 @@ body.media-lightbox-open { overflow: hidden; }
     gap: 2px 8px;
     padding: 10px 12px;
     background: var(--color-card);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
 }
 .h2h-map-name {
     overflow: hidden;
@@ -4574,7 +4557,7 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 10px 12px;
     border: 0;
     background: var(--color-card);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     text-align: left;
 }
 .h2h-rival:hover:not(:disabled) { background: var(--color-row-hover); }
@@ -4613,7 +4596,7 @@ body.media-lightbox-open { overflow: hidden; }
     margin: 4px 0 0;
     overflow: hidden;
     background: var(--color-lose);
-    clip-path: var(--cut-3);
+    clip-path: var(--notch-xs);
 }
 .h2h-rival-bar > span { display: block; height: 100%; background: var(--color-win); }
 /* 기록이 없으면 막대를 비워 둔다 - 칸을 없애면 카드 높이가 제각각이 된다 */
@@ -4635,7 +4618,7 @@ body.media-lightbox-open { overflow: hidden; }
     min-height: 120px;
     padding: 28px 16px;
     background: var(--color-card);
-    clip-path: var(--cut-12);
+    clip-path: var(--notch-lg);
     text-align: center;
     font-size: var(--fs-body);
     color: var(--color-text-sub);
@@ -4658,7 +4641,7 @@ body.media-lightbox-open { overflow: hidden; }
     margin-bottom: var(--space-block-gap);
     padding: 12px 16px;
     background: var(--color-card);
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
 }
 .analysis-formline-label {
     font-size: 12px;
@@ -4831,7 +4814,7 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 0 14px;
     border: 0;
     background: var(--color-card);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
@@ -4885,7 +4868,7 @@ body.media-lightbox-open { overflow: hidden; }
     overflow: hidden;
     border: 0;
     background: var(--navy);
-    clip-path: var(--cut-10);
+    clip-path: var(--notch-md);
     cursor: pointer;
 }
 .video-thumb img {
@@ -4916,7 +4899,7 @@ body.media-lightbox-open { overflow: hidden; }
     width: 48px;
     height: 34px;
     background: rgba(0, 0, 0, 0.7);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     opacity: 0;
     transform: translate(-50%, -50%);
     transition: opacity 0.15s, background 0.15s;
@@ -4959,7 +4942,7 @@ body.media-lightbox-open { overflow: hidden; }
     bottom: 8px;
     padding: 2px 6px;
     background: rgba(0, 0, 0, 0.72);
-    clip-path: var(--cut-3);
+    clip-path: var(--notch-xs);
     font-family: "Pretendard", sans-serif;
     font-size: var(--fs-badge-sm);
     font-weight: 700;
@@ -5012,7 +4995,7 @@ body.media-lightbox-open { overflow: hidden; }
     margin: 8px 0 0;
     padding: 8px 10px;
     background: var(--color-card);
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
     font-size: 12px;
     line-height: 1.55;
     color: var(--color-text-main);
@@ -5046,7 +5029,7 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 0 7px;
     border: 0;
     background: var(--navy-deco-fill);
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
     font-size: 11px;
     line-height: 1;
     color: #fff;
@@ -5080,7 +5063,7 @@ body.media-lightbox-open { overflow: hidden; }
     aspect-ratio: 9 / 16;
     overflow: hidden;
     background: var(--navy);
-    clip-path: var(--cut-10);
+    clip-path: var(--notch-md);
 }
 .video-short-thumb img {
     display: block;
@@ -5119,7 +5102,7 @@ body.media-lightbox-open { overflow: hidden; }
     grid-column: 1 / -1;
     padding: 48px 0;
     background: var(--color-card);
-    clip-path: var(--cut-12);
+    clip-path: var(--notch-lg);
     text-align: center;
     font-size: var(--fs-body);
     color: var(--color-text-sub);
@@ -5211,7 +5194,7 @@ body.media-lightbox-open { overflow: hidden; }
 .mv-chip-box .mv-quickadd { max-width: 280px; }
 .mv-chip-box,
 .mv-order-row {
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 html[data-theme="dark"] .mv-chip-box,
 html[data-theme="dark"] .mv-order-row {
@@ -5220,11 +5203,11 @@ html[data-theme="dark"] .mv-order-row {
 .mv-chip,
 .mv-order-item,
 .mv-quickadd {
-    clip-path: var(--cut-6);
+    clip-path: var(--notch-sm);
 }
 .mv-chip-check,
 .mv-quickadd-btn {
-    clip-path: var(--cut-4);
+    clip-path: var(--notch-xs);
 }
 .mv-chip.selected .mv-chip-avatar { background: rgba(255, 255, 255, 0.25); }
 .mv-chip-name {
@@ -5314,7 +5297,7 @@ html[data-theme="dark"] .mv-order-row {
     margin-bottom: var(--space-stack-gap);
     display: grid;
     gap: var(--space-content-gap);
-    clip-path: var(--cut-14);
+    clip-path: var(--notch-lg);
 }
 .mv-console-tiles {
     gap: 9px;
@@ -5375,7 +5358,7 @@ html[data-theme="dark"] .mv-order-row {
     overflow: hidden;
     background: var(--color-card);
     border-radius: 0;
-    clip-path: var(--cut-5);
+    clip-path: var(--notch-sm);
 }
 .mv-stepper button:hover {
     background: var(--color-primary);
@@ -5451,7 +5434,7 @@ html:not([data-theme="dark"]) .mv-run-btn:not(:disabled) {
 }
 .mv-run-btn,
 .mv-tile {
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
 }
 .mv-run-btn svg {
     width: 22px;
@@ -5507,7 +5490,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     align-items: center;
     gap: 2px;
     font-size: var(--fs-body);
-    border-radius: 0 !important;
+    border-radius: 0;
     height: 32px;
     padding: 0 8px 0 11px;
     background: var(--color-bg-subtle);
@@ -5577,7 +5560,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     padding: 7px 8px;
     background: var(--color-bg);
     border-left: 3px solid transparent;
-    clip-path: var(--cut-7);
+    clip-path: var(--notch-sm);
 }
 .mv-order-detail.focus-target { background: var(--color-primary-tint); }
 .mv-order-position {
@@ -5816,7 +5799,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .selection-layout > .tier-bar .tier-scope-btn.tier-scope-all.on .tier-scope-num { color: var(--color-primary); }
 
 .home-carousel .home-hero-links a {
-    clip-path: var(--cut-8);
+    clip-path: var(--notch-md);
     border: 0;
     background: #fff;
     color: var(--navy);
@@ -5900,11 +5883,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     background-color: var(--navy);
     background-image: var(--navy-pattern);
 }
-/* multiview.html은 자기 <style>에서 .mv-console 바탕을 따로 정해서, 네이비 면을 여기서 !important로 이긴다 */
-.mv-console {
-    background-color: var(--navy) !important;
-    background-image: var(--navy-pattern) !important;
-}
 #statContent .clean-card:has(.donut-wrap) .donut-sub { color: var(--navy-on-muted); }
 
 .tier-card-media {
@@ -5924,7 +5902,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     aspect-ratio: 16 / 9;
 }
 
-#page-schedule .cal-today-card-wrapper .cal-card-time { color: var(--navy-accent) !important; }
+#page-schedule .cal-today-card-wrapper .cal-card-time { color: var(--navy-accent); }
 
 .section-title .section-title-label::after,
 .nav-menu .nav-item.active::after {
@@ -5992,7 +5970,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
      이름 ↔ 총 전적 / 뱃지 ↔ 승패 / 티어랭킹 뱃지 ↔ 승률.
    티어 랭킹은 예전엔 작은 글씨였는데 종족·티어 뱃지와 같은 크기의 뱃지로 올렸다. 다만
    뱃지 줄에 같이 세우면 좁은 화면에서 줄이 넘쳐 잘려서, 셋째 줄을 따로 내준다. */
-.player-summary { position:relative; display:flex; align-items:center; flex-wrap:nowrap; gap:var(--space-content-gap); padding:22px 26px; margin-bottom:var(--space-content-gap); background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--cut-12); }
+.player-summary { position:relative; display:flex; align-items:center; flex-wrap:nowrap; gap:var(--space-content-gap); padding:22px 26px; margin-bottom:var(--space-content-gap); background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--notch-lg); }
 .player-summary-avatar { flex:none; width:76px; height:76px; border-radius:50%; overflow:hidden; display:grid; place-items:center; background:rgba(255,255,255,.1); font-size:30px; }
 .player-summary-avatar img,.player-summary-image { width:100%; height:100%; object-fit:cover; }
 .player-summary-id { flex:1; min-width:0; text-align:left; }
@@ -6036,7 +6014,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 /* 물음표 도움말: 뱃지나 제목 옆의 작은 ? 단추와, 눌렀을 때 뜨는 설명 상자.
    상자는 단추 기준으로 띄우되 좁은 화면에서 화면 밖으로 나가지 않게 폭을 제한한다. */
 .help-pop { position:relative; display:inline-flex; align-items:center; flex:none; }
-.help-btn { display:grid; place-items:center; width:17px; height:17px; padding:0; margin-left:5px; border:0; clip-path:var(--cut-3); background:transparent; color:var(--color-text-faint); }
+.help-btn { display:grid; place-items:center; width:17px; height:17px; padding:0; margin-left:5px; border:0; clip-path:var(--notch-xs); background:transparent; color:var(--color-text-faint); }
 .help-btn:hover,.help-btn[aria-expanded="true"] { background:transparent; color:var(--color-primary); }
 /* 설명 아이콘. 물음표는 '뭘 모르겠다'는 느낌이라, 사이트의 다른 아이콘(.i-arrow)과 같은
    마스크 방식으로 ⓘ를 만든다. */
@@ -6053,7 +6031,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 
 /* 상자는 <body>에 떠 있다(카드의 clip-path에 잘리지 않게). 위치는 core.js가 잡는다.
    짜임은 사이트의 다른 패널과 같다 - 남색 머리띠 + 흰 본문 + 노치 모서리. */
-.help-body { position:fixed; z-index:1200; width:max-content; max-width:min(320px,calc(100vw - 16px)); padding:0; overflow:hidden; clip-path:var(--cut-8); background:var(--color-card); color:var(--color-text-main); box-shadow:var(--shadow-card-hover); text-align:left; }
+.help-body { position:fixed; z-index:1200; width:max-content; max-width:min(320px,calc(100vw - 16px)); padding:0; overflow:hidden; clip-path:var(--notch-md); background:var(--color-card); color:var(--color-text-main); box-shadow:var(--shadow-card-hover); text-align:left; }
 .help-body[hidden] { display:none; }
 /* 머리띠: 제목 위 눈썹 라벨과 같은 대문자 느낌으로 짧게 */
 .help-head { padding:7px 12px 6px; background:var(--navy); color:var(--navy-on-text); font-size:var(--fs-eyebrow); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
@@ -6070,9 +6048,9 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .section-title .help-pop { align-self:center; }
 
 /* 페이지 넘김: 표 아래에 가로로 꽉 찬 카드 한 장. 버튼은 바탕 없이 두고 현재 쪽만 칠한다. */
-.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:var(--space-trailer) 0 0; background:var(--color-card); clip-path:var(--cut-8); }
+.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:var(--space-trailer) 0 0; background:var(--color-card); clip-path:var(--notch-md); }
 .match-pagination-nav,.match-page-nums { display:flex; align-items:center; gap:3px; }
-.match-page { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 5px; border:0; background:transparent; clip-path:var(--cut-3); font-family:"Pretendard",sans-serif; font-size:12px; font-weight:600; line-height:1; color:var(--color-text-sub); }
+.match-page { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 5px; border:0; background:transparent; clip-path:var(--notch-xs); font-family:"Pretendard",sans-serif; font-size:12px; font-weight:600; line-height:1; color:var(--color-text-sub); }
 .match-page:hover:not(:disabled):not(.active) { background:var(--color-row-hover); color:var(--color-primary); }
 .match-page.active { background:var(--select-on-light); color:#fff; font-weight:700; }
 .match-page.is-edge { min-width:22px; padding:0 4px; font-size:13px; }
@@ -6127,16 +6105,16 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-block-gap); align-items: start; }
 .entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; margin-left: auto; }
 .entry-settings { display: grid; grid-template-columns: 90px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: var(--space-block-gap); }
-.entry-auto-tier-picker { margin-bottom:var(--space-block-gap); overflow:hidden; background:var(--color-card); clip-path:var(--cut-10); }
+.entry-auto-tier-picker { margin-bottom:var(--space-block-gap); overflow:hidden; background:var(--color-card); clip-path:var(--notch-md); }
 .entry-auto-tier-head { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:38px; padding:0 12px; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); font-size:var(--fs-meta); font-weight:800; }
 .entry-auto-tier-head .text-action { color:var(--navy-on-muted); }
 .entry-auto-tier-head .text-action:hover,.entry-auto-tier-head .text-action:focus-visible { color:#fff; background:rgba(255,255,255,.08); }
 .entry-auto-tier-list { display:flex; flex-wrap:wrap; gap:6px; padding:12px 12px 0; }
-.entry-auto-tier-chip { min-width:44px; min-height:30px; border:0; padding:0 10px; background:var(--color-bg-subtle); color:var(--color-text-sub); font:inherit; font-size:var(--fs-meta); font-weight:800; clip-path:var(--cut-5); }
+.entry-auto-tier-chip { min-width:44px; min-height:30px; border:0; padding:0 10px; background:var(--color-bg-subtle); color:var(--color-text-sub); font:inherit; font-size:var(--fs-meta); font-weight:800; clip-path:var(--notch-sm); }
 .entry-auto-tier-chip:hover { background:var(--color-row-hover); color:var(--color-primary); }
 .entry-auto-tier-chip.is-active { background:var(--select-on-light); color:#fff; }
 .entry-auto-tier-empty { padding-bottom:12px; font-size:var(--fs-meta); color:var(--color-text-faint); }
-.entry-auto-apply { display:flex; align-items:center; justify-content:center; width:calc(100% - 24px); min-height:38px; margin:12px; border:0; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--cut-6); font-family:inherit; font-size:var(--fs-meta); font-weight:800; cursor:pointer; }
+.entry-auto-apply { display:flex; align-items:center; justify-content:center; width:calc(100% - 24px); min-height:38px; margin:12px; border:0; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--notch-sm); font-family:inherit; font-size:var(--fs-meta); font-weight:800; cursor:pointer; }
 .entry-auto-apply:hover,.entry-auto-apply:focus-visible { color:#fff; filter:brightness(1.08); }
 .entry-auto-apply:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 .entry-label-fields { display:contents; }
@@ -6181,7 +6159,7 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 
 /* 대진 카드: 동티어 맞대결 카드(.h2h-rival)와 같은 바탕·노치·여백. 사진·이름·승패·막대도
    그 카드의 클래스를 그대로 쓴다. 기존에 없는 건 '양쪽이 마주 보는' 배치뿐이다. */
-.entry-match { padding: 10px 12px; background: var(--color-card); clip-path: var(--cut-6); }
+.entry-match { padding: 10px 12px; background: var(--color-card); clip-path: var(--notch-sm); }
 .entry-match-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .entry-match-no { font-size: var(--fs-meta); font-weight: 700; color: var(--color-text-sub); }
 .entry-match-del { padding: 0 2px; border: 0; background: transparent; color: var(--color-text-faint); font-size: var(--fs-meta); line-height: 1; }
@@ -6216,27 +6194,27 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-match-sim { display:flex; align-items:center; justify-content:center; min-width:0; min-height:30px; margin:0; padding:0 2px; font-size:var(--fs-meta); color:var(--color-text-sub); text-align:center; }
 .entry-match-probval { min-width:0; white-space:nowrap; }
 .entry-map-control { min-width:0; height:30px; margin:0; }
-.entry-map-trigger, .entry-analysis-toggle { display:flex; align-items:center; justify-content:center; gap:5px; width:100%; min-width:0; height:30px; padding:0 8px; border:0; background:var(--color-card); clip-path:var(--cut-5); color:var(--color-text-sub); font:inherit; font-size:10px; font-weight:800; cursor:pointer; white-space:nowrap; }
+.entry-map-trigger, .entry-analysis-toggle { display:flex; align-items:center; justify-content:center; gap:5px; width:100%; min-width:0; height:30px; padding:0 8px; border:0; background:var(--color-card); clip-path:var(--notch-sm); color:var(--color-text-sub); font:inherit; font-size:10px; font-weight:800; cursor:pointer; white-space:nowrap; }
 .entry-map-trigger span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .entry-map-trigger:hover, .entry-analysis-toggle:hover, .entry-map-control.is-open .entry-map-trigger { background:var(--color-row-hover); color:var(--color-text-main); }
 .entry-map-trigger .chevron-rotatable, .entry-analysis-toggle .chevron-rotatable { flex:none; transition:transform .2s; }
 .entry-map-trigger .chevron-rotatable.is-open, .entry-analysis-toggle .chevron-rotatable.is-open { transform:rotate(180deg); }
-.entry-map-popover { margin-top:6px; padding:8px; background:var(--color-bg-subtle); clip-path:var(--cut-6); }
+.entry-map-popover { margin-top:6px; padding:8px; background:var(--color-bg-subtle); clip-path:var(--notch-sm); }
 .entry-map-popover-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; font-size:10px; color:var(--color-text-sub); }
 .entry-map-popover-head strong { color:var(--color-text-main); font-size:10px; }
 .entry-map-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; max-height:154px; overflow:auto; }
-.entry-map-option { min-width:0; height:28px; padding:0 7px; border:0; background:var(--color-card); clip-path:var(--cut-4); color:var(--color-text-sub); font:inherit; font-size:10px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.entry-map-option { min-width:0; height:28px; padding:0 7px; border:0; background:var(--color-card); clip-path:var(--notch-xs); color:var(--color-text-sub); font:inherit; font-size:10px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
 .entry-map-option:hover, .entry-map-option.is-picked { background:var(--color-primary); color:#fff; }
 /* 라이트 모드의 맵 선택은 사이트 본문 헤더와 같은 네이비로 통일 */
 html:not([data-theme="dark"]) .entry-map-option:hover,
 html:not([data-theme="dark"]) .entry-map-option.is-picked { background:var(--navy); color:#fff; }
 .entry-map-empty { grid-column:1/-1; padding:8px; text-align:center; font-size:10px; color:var(--color-text-faint); }
 .entry-map-popover-actions { display:flex; justify-content:flex-end; gap:5px; margin-top:6px; }
-.entry-map-popover-actions button { height:26px; padding:0 8px; border:0; background:var(--color-card); clip-path:var(--cut-4); color:var(--color-text-sub); font:inherit; font-size:9px; font-weight:800; cursor:pointer; }
+.entry-map-popover-actions button { height:26px; padding:0 8px; border:0; background:var(--color-card); clip-path:var(--notch-xs); color:var(--color-text-sub); font:inherit; font-size:9px; font-weight:800; cursor:pointer; }
 .entry-map-popover-actions button:hover { background:var(--color-row-hover); color:var(--color-text-main); }
 
 /* 상세 분석: 기존 카드 톤을 유지하되 한눈에 읽히는 요약형 */
-.entry-analysis-panel { margin-top:8px; overflow:hidden; background:var(--color-card); clip-path:var(--cut-8); }
+.entry-analysis-panel { margin-top:8px; overflow:hidden; background:var(--color-card); clip-path:var(--notch-md); }
 .entry-analysis-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); }
 .entry-analysis-head > div { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px; min-width:0; }
 .entry-analysis-head strong { font-size:13px; font-weight:900; color:#fff; white-space:nowrap; }
@@ -6245,7 +6223,7 @@ html:not([data-theme="dark"]) .entry-map-option.is-picked { background:var(--nav
 .entry-analysis-total { flex:none; font-size:10px; font-weight:800; color:var(--navy-on-muted); white-space:nowrap; }
 .entry-analysis-summary { margin:0; padding:9px 12px 2px; font-size:11px; line-height:1.5; font-weight:700; color:var(--color-text-main); }
 .entry-analysis-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; padding:7px 12px 9px; }
-.entry-analysis-stat { min-width:0; padding:8px 9px; background:var(--color-bg-subtle); clip-path:var(--cut-5); }
+.entry-analysis-stat { min-width:0; padding:8px 9px; background:var(--color-bg-subtle); clip-path:var(--notch-sm); }
 .entry-analysis-stat.is-low-sample { opacity:.72; }
 .entry-analysis-stat-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; font-size:10px; font-weight:800; color:var(--color-text-main); }
 .entry-analysis-adj { font-variant-numeric:tabular-nums; color:var(--color-text-sub); white-space:nowrap; }

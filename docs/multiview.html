@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-<link rel="stylesheet" href="style.css?v=4a499dc8fb">
+<link rel="stylesheet" href="style.css?v=fd69b67eb9">
 <style>
 html[data-theme="dark"] body {
     background: var(--color-bg);
@@ -15,10 +15,10 @@ html,
 body {
     height: 100%;
     margin: 0;
-    overflow: hidden !important;
+    overflow: hidden;
 }
 html {
-    scrollbar-gutter: auto !important;
+    scrollbar-gutter: auto;
 }
 body {
     font-family: "Pretendard", sans-serif;
@@ -34,7 +34,7 @@ body {
     height: 28px;
     padding: 0;
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    clip-path: var(--notch-sm);
     border: none;
     background: var(--color-primary);
     opacity: 0.85;
@@ -104,17 +104,6 @@ html:not([data-theme="dark"]) .mv-fab {
 }
 .mv-title-main {
     color: var(--color-text-main);
-}
-.mv-settings-panel .mv-console {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: 14px !important;
-}
-.mv-settings-panel .mv-tile {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 7px !important;
-    padding: 10px 6px 12px !important;
 }
 .mv-order-row {
     display: flex;
@@ -362,18 +351,18 @@ html[data-theme="dark"] .mv-settings-panel {
     display: block;
     width: 100%;
     box-sizing: border-box;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
     background-color: var(--panel-bg);
     background-image: var(--panel-pattern);
     border: 0;
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-    padding: 12px;
+    clip-path: var(--notch-lg);
+    padding: 14px;
 }
 .mv-settings-panel .mv-console-tiles {
-    display: grid !important;
+    display: grid;
     width: 100%;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 7px;
 }
 .mv-settings-panel .mv-tile {
@@ -381,15 +370,16 @@ html[data-theme="dark"] .mv-settings-panel {
     min-height: 102px;
     border: 0;
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    clip-path: var(--notch-sm);
     background: var(--panel-control);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 20px 18px 30px;
     justify-items: center;
+    align-items: center;
     align-content: center;
     gap: 7px;
-    padding: 10px 4px;
+    padding: 10px 6px 12px;
 }
 .mv-settings-panel .mv-tile-icon,
 .mv-settings-panel .mv-tile-label {
@@ -400,7 +390,7 @@ html[data-theme="dark"] .mv-settings-panel {
     min-height: 48px;
     margin-top: 8px;
     border-radius: 0;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    clip-path: var(--notch-md);
 }
 @media (max-width: 420px) {
     .mv-settings-panel {
