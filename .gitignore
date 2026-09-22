@@ -21,3 +21,6 @@ node_modules/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Supabase elo_*가 원본이다. 이 파일은 Actions/로컬 빌드 때 DB에서 재생성하는 호환 캐시.
+data/eloboard.json

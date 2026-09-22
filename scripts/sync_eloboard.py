@@ -1,4 +1,7 @@
-"""eloboard 전적을 받아 data/eloboard.json으로 저장한다.
+"""eloboard 전적을 증분 수집한다.
+
+SUPABASE_DB_URL이 있으면 Supabase elo_* 테이블을 원본으로 갱신하고,
+data/eloboard.json은 빌드 호환용 캐시로만 갱신한다. 환경변수가 없으면 기존 JSON-only 방식으로 동작한다.
 
 [왜 이 형태인가]
 원본 응답은 1건이 733바이트다(필드 21개 + participants 2명 × 6필드). 37.5만 건이면
@@ -10,8 +13,8 @@
 
 37.5만 건 기준 14.1MB(gzip 4.0MB), 1건당 39바이트. 실측으로 중급 휴대폰(CPU 4배
 스로틀)에서 파싱 0.8초 + 특정 선수 전적·상대별·맵별 집계 0.13초, JS 메모리 75MB다.
-일일 동기화로 커밋해도 git이 델타 압축을 하므로 저장소는 커밋당 1~2KB만 늘어난다
-(실측: 8커밋 후 팩 크기 변화 없음, 1년치로 약 1MB).
+Supabase 모드에서는 이 JSON을 Git에 커밋하지 않고 매 실행 DB에서 재생성한다.
+Supabase가 없는 fallback 모드에서만 기존처럼 JSON 아카이브를 직접 유지한다.
 
   - 승패는 필드로 두지 않는다. 원본의 participants[0]이 항상 승자이므로 순서가
     곧 승패다(관찰된 샘플 전건 일치. 어긋난 건이 오면 아래에서 경고를 띄운다).
@@ -219,6 +222,7 @@ def main():
     by_id = {r[0]: r for r in store['rows'] if r}
     before = len(by_id)
     changed = 0
+    changed_ids = set()     # Supabase에는 이번 실행에서 실제 바뀐 경기만 upsert
     seen = set()            # 이번에 응답으로 실제 본 경기 id (삭제 판단용)
     min_seen = None         # 이번에 훑은 가장 낮은 id
     ceiling = None          # 수집을 시작한 시점의 최신 id. 그보다 새 경기는 다음 실행에 맡긴다
@@ -241,7 +245,10 @@ def main():
             if page == 0:
                 raise
             print(e)
-            print('  ⚠️ 받다가 멈췄습니다 - 여기까지 받은 것만 저장합니다. 다시 실행하면 이어집니다.')
+            if os.environ.get('SUPABASE_DB_URL'):
+                print('  ⚠️ 받다가 멈췄습니다 - Supabase 모드에서는 부분 결과를 버리고 다음 실행에서 다시 시도합니다.')
+            else:
+                print('  ⚠️ 받다가 멈췄습니다 - 여기까지 받은 것만 저장합니다. 다시 실행하면 이어집니다.')
             break
         if not batch:
             print(f'  빈 응답 - 끝까지 받았습니다 (offset {offset:,})')
@@ -276,6 +283,7 @@ def main():
             if row and by_id.get(rid) != row:
                 by_id[rid] = row
                 changed += 1
+                changed_ids.add(rid)
 
         print(f'  offset {offset:>7,} → {len(batch):>3}건 받음 / 담은 경기 누적 {changed:,}')
         # 저장분에 닿았고, 이 페이지가 겹쳐 읽기 창보다 옛날이면 더 내려갈 이유가 없다
@@ -293,6 +301,7 @@ def main():
     # "없어진 것"이 맞다(맨 위 경기가 지워진 경우). 훑다 만 실행에서는 손대지 않는다 -
     # 받지 못한 구간을 삭제로 오해하면 안 된다.
     deleted = 0
+    gone = []
     if finished and min_seen is not None:
         gone = [rid for rid in by_id if rid >= min_seen and rid not in seen]
         for rid in gone:
@@ -321,10 +330,27 @@ def main():
         'rows': rows,
     }
     text = json.dumps(out, ensure_ascii=False, separators=(',', ':'))
+
+    # Supabase가 연결된 실행에서는 DB가 원본이다. 증분 범위를 끝까지 확인한 경우에만
+    # DB에 반영한다. 도중에 끊겼는데 일부 새 경기만 DB에 넣으면 max(id)가 앞서가서
+    # 다음 실행이 중간의 빠진 경기를 건너뛸 수 있기 때문이다.
+    dsn = os.environ.get('SUPABASE_DB_URL')
+    db_stats = None
+    if dsn:
+        if not finished:
+            print('   ⚠️ 증분 수집이 끝까지 완료되지 않아 Supabase와 로컬 캐시를 변경하지 않습니다.')
+            print('      다음 실행에서 같은 DB 스냅샷을 기준으로 다시 시도합니다.')
+            raise SystemExit(2)
+        from elo_supabase import upsert_elo_changes
+        db_stats = upsert_elo_changes(dsn, out, changed_ids, gone)
+
+    # DB 반영이 성공한 뒤에만 로컬 호환 캐시를 교체한다.
     write_atomic(OUT_PATH, text)
 
     print()
-    print(f'✅ {OUT_PATH} 저장: 새 경기 {added:,}건 · 고쳐진 경기 {updated:,}건 · 지워진 경기 {deleted:,}건 '
+    if dsn:
+        print(f'✅ Supabase ELO 증분 반영: 경기 upsert {db_stats["upserted_matches"]:,}건 · 삭제 {db_stats["deleted_matches"]:,}건')
+    print(f'✅ {OUT_PATH} 캐시 저장: 새 경기 {added:,}건 · 고쳐진 경기 {updated:,}건 · 지워진 경기 {deleted:,}건 '
           f'/ 총 {len(rows):,}건 ({len(text) / 1048576:.1f} MB)')
     if not finished:
         print('   ⚠️ 이번 실행은 끝까지 받지 못해 max_id를 올리지 않았습니다(다음 실행이 이어받습니다).')
