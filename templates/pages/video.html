@@ -18,12 +18,12 @@
     <div id="view-video-fantube">
         <div class="video-channel-row tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>
 
-        <div id="video-top-wrap">
+        <div id="video-top-wrap" hidden>
             <div class="section-title section-title-spaced" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
             <div class="video-top-grid" id="video-top-grid"></div>
         </div>
 
-        <div id="video-shorts-wrap">
+        <div id="video-shorts-wrap" hidden>
             {#- 쇼츠 선반은 가로로 넘긴다. 손가락으로 미는 화면과 달리 마우스에서는 밀 방법이
                 마땅치 않아, 제목줄 오른쪽에 넘김 버튼을 둔다(좁은 화면에서는 숨긴다). #}
             <div class="section-title section-title-spaced has-shelf-nav" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span>
@@ -36,7 +36,7 @@
         </div>
 
         <div class="section-title section-title-spaced" data-en="LATEST"><span class="section-title-label">최신 영상</span><span class="title-count" id="video-latest-count"></span></div>
-        <div class="video-grid" id="video-latest-grid"></div>
+        <div class="video-grid" id="video-latest-grid" aria-live="polite" aria-busy="true"><div class="video-empty">영상 목록을 불러오는 중...</div></div>
         <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
             <button type="button" class="news-load-more" onclick="videoShowMore()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
         </div>

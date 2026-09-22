@@ -228,6 +228,7 @@ function renderFantube() {
     grid.innerHTML = shown.length
         ? shown.map(v => videoCardHtml(v)).join('')
         : videoEmptyHtml(VideoState.channelKeys.length ? '아직 불러온 영상이 없습니다.' : '등록된 채널이 없습니다.');
+    grid.setAttribute('aria-busy', 'false');
     document.getElementById('video-latest-count').textContent = normal.length ? `${normal.length}개` : '';
     document.getElementById('video-more-wrap').hidden = normal.length <= VideoState.shown;
 

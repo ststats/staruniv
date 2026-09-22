@@ -21,14 +21,14 @@
                     <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
                     <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
                         <div class="cal-day-card-date" id="todayDateLabel"></div>
-                        <div class="cal-today-list scroll-area" id="todayList"></div>
+                        <div class="cal-today-list scroll-area is-empty" id="todayList" aria-live="polite" aria-busy="true"><div class="cal-no-schedule">오늘 일정을 불러오는 중...</div></div>
                     </div>
                 </div>
                 <div class="cal-selected-card-wrapper">
                     <div class="section-title" id="selectedListTitle" data-en="SELECTED"><span class="section-title-label">선택한 날짜 일정</span></div>
                     <div class="clean-card card-ink hatch p-4 cal-day-card cal-day-card-today">
                         <div class="cal-day-card-date" id="selectedDateLabel"></div>
-                        <div class="cal-selected-list scroll-area" id="selectedDateList"></div>
+                        <div class="cal-selected-list scroll-area is-empty" id="selectedDateList" aria-live="polite"><div class="cal-no-schedule">날짜를 클릭하세요.</div></div>
                     </div>
                 </div>
             </aside>
@@ -58,7 +58,7 @@
                                 {#- 시안은 SUN~SAT 라틴 3글자다. #}
                                 <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
                             </div>
-                            <div class="cal-days-grid" id="daysGrid"></div>
+                            <div class="cal-days-grid" id="daysGrid" aria-live="polite" aria-busy="true"><div class="cal-days-loading">달력을 불러오는 중...</div></div>
                         </div>
                     </div>
                 </div>

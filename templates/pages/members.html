@@ -26,7 +26,9 @@
     </div>
     <div class="container">
     <div id="view-member-status">
-        <div id="members-groups"></div>
+        <div id="members-groups" aria-live="polite" aria-busy="true">
+            <div class="content-state">멤버 정보를 불러오는 중...</div>
+        </div>
     </div>
 
     <div id="view-member-news" class="d-none">
@@ -40,8 +42,8 @@
             <div class="selection-content">
                 <div class="section-title" data-en="NOTICE"><span class="section-title-label" id="news-content-title">전체 공지</span></div>
 
-                <div id="news-feed-content" aria-live="polite">
-                    <div class="text-center text-muted py-4 fs-body">불러오는 중...</div>
+                <div id="news-feed-content" aria-live="polite" aria-busy="true">
+                    <div class="content-state">공지를 불러오는 중...</div>
                 </div>
             </div>
         </div>

@@ -297,6 +297,7 @@
             cells.push(`<div class="cal-day-cell other-month"><span class="cal-day-number">${i}</span></div>`);
         }
         daysGrid.innerHTML = cells.join('');
+        daysGrid.setAttribute('aria-busy', 'false');
         calBindGridClick(daysGrid);
 
         calRenderTodaySchedules();
@@ -346,6 +347,7 @@
         if (!container) return;
         const items = calEventsForDate(dateStr);
         container.classList.toggle('is-empty', items.length === 0);
+        container.setAttribute('aria-busy', 'false');
         const eventsHtml = items.length
             ? items.map(item => calEventCardHtml(item, dateStr, type)).join('')
             : `<div class="cal-no-schedule">${emptyText}</div>`;

@@ -272,11 +272,18 @@ async function renderLiveBroadcasts() {
 async function renderLatestNotices() {
     const container = document.getElementById('home-notice-list');
     if (!container) return;
+    container.setAttribute('aria-busy', 'true');
     const noNoticeHtml = emptyStateHtml('최근 공지가 없습니다.', 'clean-card');
+    if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
+        container.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못해 최근 공지를 확인할 수 없습니다.', 'clean-card');
+        container.setAttribute('aria-busy', 'false');
+        return;
+    }
     const activeMembers = activeMembersWithSoopId();
 
     if (activeMembers.length === 0) {
         container.innerHTML = noNoticeHtml;
+        container.setAttribute('aria-busy', 'false');
         return;
     }
 
@@ -292,6 +299,7 @@ async function renderLatestNotices() {
         ? latest.slice(0, 5).map(({ member: m, post }) =>
             homeNoticeCardHtml(noticeCardFields(m, post), { href: newsPageHref(m['이름']) })).join('')
         : noNoticeHtml;
+    container.setAttribute('aria-busy', 'false');
 }
 
 bootPage(() => {

@@ -1200,6 +1200,18 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
 .badge-draw { background-color: var(--color-draw); }
 
+.content-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: var(--space-card-pad-y) var(--space-card-pad-x);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    text-align: center;
+}
+
 #news-feed-content {
     display: flex;
     flex-wrap: wrap;
@@ -2612,6 +2624,15 @@ html[data-theme="dark"] .cal-longterm-bar {
     text-align: center;
     padding: 0;
     width: 100%;
+}
+.cal-days-loading {
+    grid-column: 1 / -1;
+    display: grid;
+    place-items: center;
+    min-height: 320px;
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    text-align: center;
 }
 
 .cal-card-main {

@@ -172,10 +172,16 @@ function mvChipHtml(m, isLive) {
 function mvRenderChips() {
     const container = document.getElementById('mv-chip-row');
     if (!container) return;
+    if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
+        container.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못했습니다.');
+        container.setAttribute('aria-busy', 'false');
+        return;
+    }
     const members = activeMembersWithSoopId();
     container.innerHTML = members.length
         ? members.map(m => mvChipHtml(m, !!MvState.liveMap[m['SOOP ID']])).join('')
-        : `<div class="text-muted fs-body">선택 가능한 멤버가 없습니다.</div>`;
+        : emptyStateHtml('선택 가능한 멤버가 없습니다.');
+    container.setAttribute('aria-busy', 'false');
 }
 
 // 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송중 여부(LIVE 뱃지)는 비동기로

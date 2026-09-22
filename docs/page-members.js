@@ -127,6 +127,12 @@ function markLiveMembers(liveIds) {
 }
 
 function renderMembersPage() {
+    const groups = document.getElementById('members-groups');
+    if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
+        groups.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못했습니다.');
+        groups.setAttribute('aria-busy', 'false');
+        return;
+    }
     const activeMembers = SiteData.members.filter(isActiveMember);
     const formerMembers = SiteData.members.filter(m => !isActiveMember(m));
     const allRoles = [...new Set(activeMembers.map(m => m['직책'] || '기타'))];
@@ -157,7 +163,8 @@ function renderMembersPage() {
             </div>`;
     }
 
-    document.getElementById('members-groups').innerHTML = html || '<div class="text-center text-muted py-5">등록된 멤버가 없습니다.</div>';
+    groups.innerHTML = html || emptyStateHtml('등록된 멤버가 없습니다.');
+    groups.setAttribute('aria-busy', 'false');
 }
 
 function toggleFormerMembersSection() {
@@ -312,6 +319,12 @@ async function showNewsAll(skipHashUpdate) {
     if (!skipHashUpdate) updateMembersHash();
 
     const content = document.getElementById('news-feed-content');
+    content.setAttribute('aria-busy', 'true');
+    if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
+        content.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못해 공지를 확인할 수 없습니다.');
+        content.setAttribute('aria-busy', 'false');
+        return;
+    }
     content.innerHTML = emptyStateHtml('불러오는 중...');
     const token = ++NewsState.requestSeq;
 
@@ -336,6 +349,7 @@ async function showNewsAll(skipHashUpdate) {
     NewsState.items = NewsState.allPool.slice(0, NewsState.allShownCount);
     NewsState.hasMore = NewsState.allShownCount < NewsState.allPool.length || newsAnyMemberHasMorePages();
     renderNewsLayout(content);
+    content.setAttribute('aria-busy', 'false');
 }
 
 function selectNewsPlayer(name, skipHashUpdate) {
@@ -349,7 +363,9 @@ function selectNewsPlayer(name, skipHashUpdate) {
     NewsState.memberTotalPages = 1;
     if (!skipHashUpdate) updateMembersHash();
 
-    document.getElementById('news-feed-content').innerHTML = emptyStateHtml('불러오는 중...');
+    const content = document.getElementById('news-feed-content');
+    content.setAttribute('aria-busy', 'true');
+    content.innerHTML = emptyStateHtml('불러오는 중...');
     loadNewsFeed();
 }
 
@@ -370,8 +386,12 @@ async function loadNewsFeed() {
         NewsState.items = posts.map(post => ({ member, post }));
         NewsState.hasMore = NewsState.memberPage < NewsState.memberTotalPages;
         renderNewsLayout(content);
+        content.setAttribute('aria-busy', 'false');
     } catch (e) {
-        if (token === NewsState.requestSeq) content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다.');
+        if (token === NewsState.requestSeq) {
+            content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다.');
+            content.setAttribute('aria-busy', 'false');
+        }
     }
 }
 
@@ -529,6 +549,7 @@ const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more
 
 // "전체 공지"/"멤버별 공지" 공용 렌더러.
 function renderNewsLayout(content) {
+    content.setAttribute('aria-busy', 'false');
     if (NewsState.items.length === 0) {
         content.classList.remove('news-feed-mobile');
         content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');

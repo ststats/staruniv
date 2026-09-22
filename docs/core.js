@@ -59,7 +59,7 @@ function shortMatchDate(value) {
 
 // 로딩중/데이터없음 등 안내 문구를 보여주는 <div> (공지, 방송중, 소식 피드 등 공용)
 function emptyStateHtml(text, extraClass) {
-    return `<div class="text-center text-muted py-4 fs-body${extraClass ? ' ' + extraClass : ''}">${text}</div>`;
+    return `<div class="content-state${extraClass ? ' ' + extraClass : ''}">${escapeHTML(text)}</div>`;
 }
 
 // 표(tbody) 안에서 쓰는 안내 문구 <tr>
