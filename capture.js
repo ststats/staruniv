@@ -12,6 +12,7 @@ const fs = require('fs');
 
 const PORT = 8791;
 const CAPTURE_WIDTH = 804;
+const CAPTURE_URL = `http://localhost:${PORT}/schedule/?capture=calendar`;
 
 function waitForServer(url, timeoutMs) {
     const start = Date.now();
@@ -30,44 +31,35 @@ function waitForServer(url, timeoutMs) {
 }
 
 (async () => {
-    const server = spawn('python3', ['-m', 'http.server', String(PORT), '--directory', path.resolve(__dirname, 'docs')]);
+    const pythonCommand = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
+    const server = spawn(pythonCommand, ['-m', 'http.server', String(PORT), '--directory', path.resolve(__dirname, 'docs')]);
     server.stderr.on('data', () => {});
 
     let browser;
     try {
-        await waitForServer(`http://localhost:${PORT}/schedule/`, 10000);
+        await waitForServer(CAPTURE_URL, 10000);
         browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         const page = await browser.newPage();
-        await page.setViewport({ width: CAPTURE_WIDTH + 300, height: 1700 });
-        await page.goto(`http://localhost:${PORT}/schedule/`, { waitUntil: 'networkidle0' });
-        await new Promise(resolve => setTimeout(resolve, 1800));
+        page.setDefaultTimeout(15000);
+        await page.setViewport({ width: CAPTURE_WIDTH, height: 1700, deviceScaleFactor: 1 });
+        await page.goto(CAPTURE_URL, { waitUntil: 'domcontentloaded' });
+        await page.waitForFunction(() => {
+            const days = document.getElementById('daysGrid');
+            const today = document.getElementById('todayList');
+            return document.body.classList.contains('calendar-capture')
+                && days?.getAttribute('aria-busy') === 'false'
+                && today?.getAttribute('aria-busy') === 'false'
+                && days.querySelector('.cal-day-cell');
+        }, { timeout: 10000 });
+        await page.waitForFunction(() => document.fonts.status === 'loaded').catch(() => {
+            console.warn('⚠️ 웹폰트 대기 시간이 지나 시스템 글꼴로 캡처합니다.');
+        });
+        await page.waitForFunction(() => [...document.images].every(img => img.complete)).catch(() => {
+            console.warn('⚠️ 외부 이미지 대기 시간이 지나 로드된 자원만 캡처합니다.');
+        });
 
-        await page.evaluate((w) => {
-            document.querySelectorAll('.top-navbar, .page-header, .cal-selected-card-wrapper').forEach(el => { if (el) el.style.display = 'none'; });
-            const layout = document.querySelector('.cal-main-layout');
-            const sidebar = document.querySelector('.cal-sidebar');
-            const today = document.querySelector('.cal-today-card-wrapper');
-            const calendar = document.querySelector('.cal-calendar-area');
-            if (!layout || !sidebar || !today || !calendar) throw new Error('일정 캡처 대상 요소를 찾을 수 없습니다.');
-
-            layout.id = 'captureArea';
-            Object.assign(layout.style, {
-                display: 'block', width: `${w}px`, maxWidth: `${w}px`, minWidth: `${w}px`,
-                background: '#f4f7fc', boxSizing: 'border-box', padding: '0', margin: '0'
-            });
-            Object.assign(sidebar.style, { display: 'block', width: `${w}px`, maxWidth: `${w}px`, margin: '0 0 14px 0' });
-            Object.assign(today.style, { width: `${w}px`, maxWidth: `${w}px`, margin: '0 0 14px 0' });
-            Object.assign(calendar.style, { width: `${w}px`, maxWidth: `${w}px`, minWidth: `${w}px`, margin: '0' });
-            calendar.querySelectorAll('.cal-calendar-inner').forEach(el => {
-                el.scrollLeft = 0; el.style.overflowX = 'visible';
-            });
-            document.body.style.margin = '0';
-            window.scrollTo(0, 0);
-        }, CAPTURE_WIDTH);
-
-        await new Promise(resolve => setTimeout(resolve, 300));
-        const target = await page.$('#captureArea');
-        if (!target) throw new Error('#captureArea 요소를 찾을 수 없습니다.');
+        const target = await page.$('.cal-main-layout');
+        if (!target) throw new Error('.cal-main-layout 요소를 찾을 수 없습니다.');
 
         const outPath = path.resolve(__dirname, 'docs/data/calendar.png');
         const tmpPath = outPath + '.tmp';

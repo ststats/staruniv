@@ -9,8 +9,8 @@
 
 -- StarUniv Supabase schema
 -- 1) Supabase SQL Editor에서 이 파일 전체를 실행합니다.
--- 2) 현재 사이트는 DB를 브라우저에서 직접 읽지 않고 GitHub Actions가 db.json으로 내보냅니다.
---    그래서 RLS는 켜되 공개 정책은 만들지 않습니다.
+-- 2) 공개 페이지는 publishable key로 운영 데이터를 직접 읽고, Actions는 장애 대비 JSON을 내보냅니다.
+--    공개 SELECT와 관리자 쓰기 범위는 아래 RLS/권한 정책으로 제한합니다.
 
 create table if not exists public.settings (
   source_order integer primary key,
@@ -134,7 +134,7 @@ create index if not exists tier_members_nickname_idx on public.tier_members (nic
 create index if not exists tier_members_soop_id_idx on public.tier_members (soop_id);
 create index if not exists tier_members_affiliation_idx on public.tier_members (affiliation);
 
--- ELO 원본은 2차 이전용. migrate_to_supabase.py --include-elo 로 넣을 수 있습니다.
+-- ELO 원본 테이블. Actions가 외부 최신분을 증분 저장하고 빌드용 캐시를 다시 내보냅니다.
 create table if not exists public.elo_categories (
   category_id smallint primary key,
   name text not null
@@ -573,7 +573,7 @@ create policy "public_read_calendar_off_air" on public.calendar_off_air for sele
 drop policy if exists "public_read_site_config" on public.site_config;
 create policy "public_read_site_config" on public.site_config for select to anon using (config_key = 'nav');
 
--- 관리자 CRUD. admin.sql의 public.is_admin()이 먼저 설치되어 있어야 합니다.
+-- 관리자 CRUD. public.is_admin()은 이 통합 설정의 앞부분에서 설치합니다.
 do $$
 declare t text;
 begin
@@ -771,7 +771,7 @@ on conflict (id) do nothing;
 
 -- 공개 사이트가 Supabase를 직접 읽기 위한 최소 권한 설정.
 -- Supabase SQL Editor에서 한 번 실행하세요.
--- 관리자(authenticated)의 기존 CRUD 정책은 supabase/admin.sql 그대로 유지합니다.
+-- 관리자(authenticated)의 CRUD 정책은 이 통합 설정의 관리자 정책을 유지합니다.
 
 -- 공개 방문자는 사이트 화면에 실제로 쓰는 컬럼만 SELECT할 수 있습니다.
 revoke all on public.members from anon;

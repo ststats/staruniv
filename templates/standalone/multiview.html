@@ -320,6 +320,11 @@ html:not([data-theme="dark"]) .mv-fab {
     grid-row: span 2;
 }
 
+.mv-chip-empty {
+    color: var(--color-text-sub);
+    font-size: var(--fs-body);
+}
+
 .mv-empty {
     text-align: center;
     color: var(--color-text-sub);
@@ -629,7 +634,7 @@ html[data-theme="dark"] .mv-settings-panel {
         if (!container) return;
         container.innerHTML = mvMembers.length
             ? mvMembers.map(mvChipHtml).join('')
-            : '<div style="font-size:var(--fs-body); color:var(--color-text-sub);">멤버 목록을 불러오지 못했습니다.</div>';
+            : '<div class="mv-chip-empty">멤버 목록을 불러오지 못했습니다.</div>';
     }
     function mvToggleMemberChip(soopId, name) {
         const idx = mvOrder.findIndex(e => e.soopId === soopId);

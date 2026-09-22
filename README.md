@@ -19,7 +19,7 @@ eloboard.co.kr ───┼──> data/*.json (빌드 캐시) ──> scripts/*
 6. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
 7. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
 8. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
-9. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 `admin.html`을 렌더링해 `docs/data/calendar.png` 생성
+9. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 공개 `/schedule/` 페이지를 렌더링해 `docs/data/calendar.png` 생성
 
 운영 데이터의 원본은 Supabase입니다. `data/db.json`과 `data/eloboard.json`은 기존 계산/빌드 코드와의 호환을 위한 캐시입니다.
 
@@ -77,11 +77,17 @@ python scripts/build_html.py           # -> docs/*.html
 [.github/workflows/squash-history.yml](.github/workflows/squash-history.yml) 참고.
 실행 후에는 이 저장소를 이미 clone/fork한 사람 모두 다시 clone해야 합니다.
 
-### admin.html 보안 주의
-`docs/admin.html`은 GitHub Pages로 공개된 페이지지만, 여기서 입력한 GitHub 토큰으로
-브라우저가 직접 저장소에 커밋합니다. 저장소 전체에 쓰기 권한이 있는 토큰을 여기 붙여넣지
-말고, 가능하면 이 저장소로 범위를 좁힌 Fine-grained PAT을 쓰세요. 토큰은 `sessionStorage`에만
-남고 탭을 닫으면 사라집니다.
+### Supabase 초기 설정과 관리자
+
+새 Supabase 프로젝트에서는 SQL Editor에서 `supabase/setup.sql`을 실행합니다. 이어서
+Authentication에 이메일/비밀번호 사용자를 만들고, 그 사용자의 UUID를 `admin_users`에
+등록합니다. 공개 사이트와 `/admin.html`은 Supabase의 publishable key로 접속하며 실제 읽기·쓰기
+권한은 RLS 정책이 제한합니다. DB 비밀번호와 service role key는 브라우저 설정에 넣지 않습니다.
+
+Actions에는 `SUPABASE_DB_URL` secret, `SUPABASE_URL` variable,
+`SUPABASE_PUBLISHABLE_KEY` secret 또는 variable을 등록합니다. 관리자에서 저장한 운영 데이터는
+Supabase에 즉시 반영되고 공개 사이트도 다음 조회부터 직접 읽습니다. Actions 빌드는 장애 대비
+정적 JSON과 배포 HTML을 갱신합니다.
 
 ## 워크플로 수동/자동 실행
 
@@ -94,7 +100,9 @@ python scripts/build_html.py           # -> docs/*.html
 
 | 이름 | 필수 | 용도 |
 |---|---|---|
-| `GH_TOKEN` | 권장 | 커밋 push, admin.html의 GitHub API 최신 일정 조회용 PAT |
+| `GH_TOKEN` | 선택 | Actions 기본 토큰으로 push할 수 없을 때 사용할 저장소 범위 PAT |
 | `SUPABASE_DB_URL` | **필수** | 운영 데이터 및 ELO 원본 PostgreSQL 연결 문자열 |
+| `SUPABASE_URL` | **필수** | 공개 브라우저 클라이언트의 Supabase 프로젝트 URL |
+| `SUPABASE_PUBLISHABLE_KEY` | **필수** | 공개 브라우저 클라이언트 키(RLS로 권한 제한) |
 | `YOUTUBE_API_KEY` | 선택 | 없으면 RSS로 최신 15개만 수집 |
 | `SITE_URL` | 선택 | 배포 주소가 기본값(`https://ststats.github.io/staruniv`)과 다르면 지정 |

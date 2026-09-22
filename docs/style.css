@@ -246,6 +246,12 @@ html[data-theme="dark"] {
 /* =============================================================================
    2. 기본 요소 · 부트스트랩 보정
    ============================================================================= */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     overflow-y: scroll;
     font-family: "Pretendard", sans-serif;
@@ -2456,6 +2462,42 @@ a.home-notice-card:hover {
 .cal-sidebar .clean-card {
     clip-path: var(--notch-lg);
 }
+
+/* capture.js가 사용하는 공개 일정 캡처 모드. 화면용 컴포넌트는 그대로 두고 캡처할 두 영역만
+   한 열로 배치한다. 너비와 여백을 JS에서 임시로 덮어쓰지 않아 결과가 반응형 규칙에 흔들리지 않는다. */
+body.calendar-capture {
+    margin: 0;
+    background: var(--color-bg);
+}
+body.calendar-capture .top-navbar,
+body.calendar-capture .page-header,
+body.calendar-capture .cal-selected-card-wrapper {
+    display: none;
+}
+body.calendar-capture #page-schedule,
+body.calendar-capture #page-schedule > .container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+body.calendar-capture .cal-main-layout,
+body.calendar-capture .cal-sidebar,
+body.calendar-capture .cal-calendar-area,
+body.calendar-capture .cal-today-card-wrapper {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+}
+body.calendar-capture .cal-today-card-wrapper {
+    margin-bottom: var(--space-block-gap);
+}
+body.calendar-capture .cal-calendar-inner {
+    overflow: visible;
+    padding-bottom: 0;
+}
 /* 달력은 칸 폭을 화면에 맞춰 줄인다. 예전에는 최소 770px을 잡아둬서, 달력이 놓이는 자리가
    그보다 좁은 구간(태블릿 가로 768~890px, 노트북 992~1270px의 2단 배치)에서 가로 스크롤이
    생겼다. 칸이 좁아지면 일정 칩의 글자만 한 단계 작아지고 내용은 그대로 보인다. */
@@ -2852,10 +2894,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
-@media (max-width: 888px) {
-    .cal-main-layout { flex-direction: column; }
-}
-
 @media (max-width: 991.98px) {
     .cal-main-layout { grid-template-columns: 1fr; }
 }
@@ -2866,10 +2904,6 @@ html[data-theme="dark"] .cal-longterm-bar {
         flex-direction: column;
         gap: var(--space-stack-gap);
     }
-}
-
-@media (max-width: 888px) {
-    .cal-calendar-area { order: 2; }
 }
 
 @media (max-width: 991.98px) {
@@ -2890,13 +2924,6 @@ html[data-theme="dark"] .cal-longterm-bar {
 
     .cal-calendar-area {
         order: 2;
-        width: 100%;
-    }
-}
-
-@media (max-width: 888px) {
-    .cal-selected-card-wrapper {
-        order: 3;
         width: 100%;
     }
 }

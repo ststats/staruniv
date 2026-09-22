@@ -15,11 +15,7 @@ name: Update Site
 #       curl -X POST -H "Authorization: Bearer <PAT>" -H "Accept: application/vnd.github+json" \
 #         https://api.github.com/repos/<소유자>/<저장소>/dispatches \
 #         -d '{"event_type":"update"}'
-#   (어드민 저장은 커밋만 하고 이 워크플로우를 돌리지 않는다 - 다음 크론 때 반영된다)
-#
-# [자동 실행 없음] 어드민에서 저장하면 저장소에 커밋만 되고 이 워크플로우는 돌지 않는다.
-# 예전에는 docs/data/video_channels.json 이 바뀌면 바로 한 번 돌게 해뒀는데, 저장할 때마다
-# 사이트 전체 갱신이 도는 게 부담스러워서 뺐다. 다음 크론 실행 때 함께 반영된다.
+# 관리자 저장은 Supabase에 즉시 반영된다. 이 워크플로는 정적 fallback과 집계 결과를 갱신한다.
 on:
   workflow_dispatch:
   repository_dispatch:
@@ -172,8 +168,8 @@ jobs:
         # 폴더의 실제 파일 목록을 그대로 따라간다.
         git add -A data
         git add docs/index.html docs/*/index.html docs/holidays.json
-        # 손으로 관리하는 두 페이지도 빌드가 자산 버전(?v=)을 고쳐 쓰므로 같이 커밋한다.
-        git add docs/admin.html docs/multiview.html docs/supabase-config.js
+        # 독립 페이지도 templates/standalone에서 빌드되므로 같이 커밋한다.
+        git add docs/admin.html docs/multiview.html docs/calmmon-rider.html docs/supabase-config.js
         git add docs/data/site_data.json docs/data/calendar.png docs/data/videos.json
         git add docs/data/tier_members.json
         git add -A docs/data/h2h

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-<link rel="stylesheet" href="style.css?v=d5517d67bd">
+<link rel="stylesheet" href="style.css?v=59c699608f">
 <style>
 html[data-theme="dark"] body {
     background: var(--color-bg);
@@ -320,6 +320,11 @@ html:not([data-theme="dark"]) .mv-fab {
     grid-row: span 2;
 }
 
+.mv-chip-empty {
+    color: var(--color-text-sub);
+    font-size: var(--fs-body);
+}
+
 .mv-empty {
     text-align: center;
     color: var(--color-text-sub);
@@ -629,7 +634,7 @@ html[data-theme="dark"] .mv-settings-panel {
         if (!container) return;
         container.innerHTML = mvMembers.length
             ? mvMembers.map(mvChipHtml).join('')
-            : '<div style="font-size:var(--fs-body); color:var(--color-text-sub);">멤버 목록을 불러오지 못했습니다.</div>';
+            : '<div class="mv-chip-empty">멤버 목록을 불러오지 못했습니다.</div>';
     }
     function mvToggleMemberChip(soopId, name) {
         const idx = mvOrder.findIndex(e => e.soopId === soopId);

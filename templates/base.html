@@ -26,7 +26,6 @@
     <meta name="twitter:card" content="summary">
     <script>
         document.documentElement.dataset.navPending = '';
-        window.setTimeout(() => delete document.documentElement.dataset.navPending, 4000);
     </script>
     {#- Supabase 메뉴 설정을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다. 빌드 때 이미 숨김이 반영돼
         있지만, 어드민에서 방금 저장한 경우에는 이 파일이 빌드보다 최신이라 잠깐 보였다가

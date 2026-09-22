@@ -19,6 +19,12 @@ window.calOffAirExtra = (dateStr, type) => {
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
 };
 
+// 정적 캘린더 이미지 생성도 실제 페이지 DOM과 CSS를 그대로 사용한다.
+// 캡처 전용 쿼리는 표시할 영역만 고정하며, capture.js가 런타임 스타일을 덮어쓰지 않게 한다.
+if (new URLSearchParams(location.search).get('capture') === 'calendar') {
+    document.body.classList.add('calendar-capture');
+}
+
 const SCHEDULE_TABS = { calendar: ['tab-calendar', 'view-calendar'], history: ['tab-history', 'view-history'] };
 let historyRendered = false;
 

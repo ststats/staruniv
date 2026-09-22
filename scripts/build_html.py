@@ -323,10 +323,10 @@ def main():
         print("ℹ️ tierMembers 데이터가 비어 있어 tier_members.json은 건너뜁니다(티어표는 예전 파일/시너지로 동작).")
 
     copy_static_assets()
-    # 독립 관리자/멀티뷰어도 docs를 직접 원본으로 두지 않는다.
+    # 독립 관리자/멀티뷰어/캄몬라이더도 docs를 직접 원본으로 두지 않는다.
     # templates/standalone을 소스로 관리하고 빌드 때 docs로 복사한 뒤 자산 버전을 붙인다.
     standalone_src_dir = os.path.join(TEMPLATE_DIR, 'standalone')
-    for filename in ('admin.html', 'multiview.html'):
+    for filename in ('admin.html', 'multiview.html', 'calmmon-rider.html'):
         source = os.path.join(standalone_src_dir, filename)
         standalone = os.path.join(OUT_DIR, filename)
         if os.path.isfile(source):
