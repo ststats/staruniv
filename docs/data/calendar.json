@@ -379,6 +379,46 @@
       "desc": "글램핑 으냉",
       "detail": "",
       "color": "#ff2538"
+    },
+    {
+      "id": 1790056481809,
+      "startDate": "2026-09-21",
+      "endDate": "2026-09-21",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "이영한 VS 유영진",
+      "detail": "8강 1경기",
+      "color": "#9aa6ba"
+    },
+    {
+      "id": 1790056567014,
+      "startDate": "2026-09-22",
+      "endDate": "2026-09-22",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "이재호 VS 김정우",
+      "detail": "8강 2경기",
+      "color": "#9aa6ba"
+    },
+    {
+      "id": 1790056611485,
+      "startDate": "2026-09-28",
+      "endDate": "2026-09-28",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "박상현 VS 이제동",
+      "detail": "8강 3경기",
+      "color": "#9aa6ba"
+    },
+    {
+      "id": 1790056654300,
+      "startDate": "2026-09-29",
+      "endDate": "2026-09-29",
+      "time": "19:00",
+      "person": "ASL22",
+      "desc": "신상문 VS 김민철",
+      "detail": "8강 4경기",
+      "color": "#1677ff"
     }
   ],
   "offAir": {
