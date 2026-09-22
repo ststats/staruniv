@@ -178,9 +178,10 @@ function h2hSuggest(query) {
     return [...sort(byName), ...sort(byTeam)];
 }
 
-function h2hSuggestItemsHtml(slot, list) {
+// 상대전적과 선수 분석이 같은 검색 결과 행을 쓴다. 페이지별 차이는 선택 callback뿐이다.
+function playerSuggestItemsHtml(list, pickCall) {
     return list.map(([pid, p]) => `
-        <button type="button" class="h2h-suggest-item" onclick="h2hPick(${slot}, '${jsAttr(pid)}')">
+        <button type="button" class="h2h-suggest-item" onclick="${pickCall(pid)}">
             ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
             <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
             ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
@@ -197,7 +198,7 @@ function h2hSuggestHtml(slot) {
     const shown = Math.min(list.length, H2hState.suggestShown);
     return `<div class="h2h-suggest" onscroll="h2hSuggestScroll(${slot}, this)">
         <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
-        ${h2hSuggestItemsHtml(slot, list.slice(0, shown))}
+        ${playerSuggestItemsHtml(list.slice(0, shown), pid => `h2hPick(${slot}, '${jsAttr(pid)}')`)}
     </div>`;
 }
 
@@ -209,7 +210,10 @@ function h2hSuggestScroll(slot, el) {
     const from = H2hState.suggestShown;
     if (from >= list.length) return;
     H2hState.suggestShown = Math.min(list.length, from + H2H_SUGGEST_STEP);
-    el.insertAdjacentHTML('beforeend', h2hSuggestItemsHtml(slot, list.slice(from, H2hState.suggestShown)));
+    el.insertAdjacentHTML('beforeend', playerSuggestItemsHtml(
+        list.slice(from, H2hState.suggestShown),
+        pid => `h2hPick(${slot}, '${jsAttr(pid)}')`
+    ));
 }
 
 function h2hSlotHtml(slot) {
@@ -323,6 +327,12 @@ function h2hFilterRowsByCategory(rows, label) {
     return rows.filter(r => wanted.has(r[4]));
 }
 
+function matchCategoryFilterHtml(activeLabel, handler) {
+    return ['전체', ...H2H_CAT_GROUPS.map(([, short]) => short)].map(label => `
+        <button type="button" class="filter-item${activeLabel === label ? ' active' : ''}"
+            aria-pressed="${activeLabel === label}" onclick="${handler}('${jsAttr(label)}')">${escapeHTML(label)}</button>`).join('');
+}
+
 function h2hSetFilter(label) {
     H2hState.matchFilter = label;
     H2hState.page = 1;
@@ -332,9 +342,7 @@ function h2hSetFilter(label) {
 function h2hMatchesHtml(rows, showOpponent) {
     const filtered = h2hFilterRowsByCategory(rows, H2hState.matchFilter);
     H2hState.page = Math.min(Math.max(1, H2hState.page), Math.max(1, Math.ceil(filtered.length / H2H_LIST_STEP)));
-    const chips = ['전체', ...H2H_CAT_GROUPS.map(([, short]) => short)].map(label => `
-        <button type="button" class="filter-item${H2hState.matchFilter === label ? ' active' : ''}"
-            aria-pressed="${H2hState.matchFilter === label}" onclick="h2hSetFilter('${jsAttr(label)}')">${escapeHTML(label)}</button>`).join('');
+    const chips = matchCategoryFilterHtml(H2hState.matchFilter, 'h2hSetFilter');
     return `<div class="section-title record-recent-header section-title-spaced" data-en="RECENT">
         <span class="record-recent-title section-title-label">최근 전적</span>
         <div class="filter-nav tab-scroll" role="group" aria-label="최근 전적 형식">${chips}</div>

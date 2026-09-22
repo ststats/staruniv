@@ -879,7 +879,9 @@ a {
 
 
 .tag-badge {
+    font-family: "Pretendard", sans-serif;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -1399,8 +1401,7 @@ a.btn-view-all {
 /* =============================================================================
    5. 선택 사이드바 (멤버 공지 · 개인 전적 · 티어표)
    ============================================================================= */
-.m,
-.tag-badge {
+.m {
     font-family: "Pretendard", sans-serif;
     font-variant-numeric: tabular-nums;
 }
@@ -1495,7 +1496,6 @@ a.btn-view-all {
 .mv-order-num,
 .mv-stepper-value,
 .stat-table,
-.tag-badge.race-badge,
 .tier-bar,
 .tier-bar-count,
 .tier-scope-num {
@@ -5103,9 +5103,6 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 48px 0;
     background: var(--color-card);
     clip-path: var(--notch-lg);
-    text-align: center;
-    font-size: var(--fs-body);
-    color: var(--color-text-sub);
 }
 .video-more-wrap { margin-top: var(--space-block-gap); }
 

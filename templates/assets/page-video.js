@@ -172,7 +172,7 @@ function bindShortsNav() {
 }
 
 function videoEmptyHtml(text) {
-    return `<div class="video-empty">${escapeHTML(text)}</div>`;
+    return emptyStateHtml(text, 'video-empty');
 }
 
 function videoPlay(id) {

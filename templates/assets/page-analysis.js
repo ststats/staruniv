@@ -98,12 +98,6 @@ function analysisInfo(pid) {
     return h2hPlayer(pid);
 }
 
-function analysisAllPlayers() {
-    const idx = H2hState.index;
-    if (!idx) return [];
-    return Object.entries(idx.players).map(([pid, p]) => ({ pid, ...p }));
-}
-
 function analysisRate(w, l) {
     const total = w + l;
     return total ? Math.round((w / total) * 1000) / 10 : null;
@@ -138,29 +132,7 @@ function analysisDonutHtml(label, w, l, opts) {
 // 검색 (상대전적 탭과 같은 입력 · 추천 목록 부품을 쓴다)
 // ---------------------------------------------------------------------------
 function analysisSuggest(query) {
-    const q = String(query || '').trim().toLowerCase();
-    if (!q) return [];
-    return analysisAllPlayers()
-        .filter(p => {
-            const names = [p.n, p.en].filter(Boolean).map(x => String(x).toLowerCase());
-            if (names.some(n => n.includes(q))) return true;
-            return String(p.tm || '').toLowerCase().includes(q);
-        })
-        .sort((a, b) => tierIndex(a.t) - tierIndex(b.t) || (b.m || 0) - (a.m || 0));
-}
-
-function analysisSuggestItemsHtml(list) {
-    return list.map(p => {
-        return `
-        <button type="button" class="h2h-suggest-item" onclick="analysisPick('${jsAttr(p.pid)}')">
-            ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
-            <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
-            ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
-            ${p.r ? raceBadgeHtml(p.r) : ''}
-            ${playerBadgesHtml({...p, r: ""})}
-            <span class="h2h-suggest-count">${(p.m || 0).toLocaleString("ko-KR")}판</span>
-        </button>`;
-    }).join('');
+    return h2hSuggest(query);
 }
 
 function analysisSuggestHtml() {
@@ -170,7 +142,7 @@ function analysisSuggestHtml() {
     const shown = Math.min(list.length, AnalysisState.suggestShown);
     return `<div class="h2h-suggest" onscroll="analysisSuggestScroll(this)">
         <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
-        ${analysisSuggestItemsHtml(list.slice(0, shown))}
+        ${playerSuggestItemsHtml(list.slice(0, shown), pid => `analysisPick('${jsAttr(pid)}')`)}
     </div>`;
 }
 
@@ -180,7 +152,10 @@ function analysisSuggestScroll(el) {
     const from = AnalysisState.suggestShown;
     if (from >= list.length) return;
     AnalysisState.suggestShown = Math.min(list.length, from + ANALYSIS_SUGGEST_STEP);
-    el.insertAdjacentHTML('beforeend', analysisSuggestItemsHtml(list.slice(from, AnalysisState.suggestShown)));
+    el.insertAdjacentHTML('beforeend', playerSuggestItemsHtml(
+        list.slice(from, AnalysisState.suggestShown),
+        pid => `analysisPick('${jsAttr(pid)}')`
+    ));
 }
 
 function analysisOnQuery(value) {
@@ -623,13 +598,11 @@ function analysisMatchesHtml(rows) {
     const filtered = analysisFilterRows(rows);
     const page = Math.min(Math.max(1, AnalysisState.matchPage), Math.max(1, Math.ceil(filtered.length / ANALYSIS_PAGE_SIZE)));
     const shown = filtered.slice((page - 1) * ANALYSIS_PAGE_SIZE, page * ANALYSIS_PAGE_SIZE);
-    const chips = ['전체', ...H2H_CAT_GROUPS.map(([, short]) => short)].map(label => `
-        <div class="filter-item${AnalysisState.matchFilter === label ? ' active' : ''}" role="tab" tabindex="0"
-             onclick="analysisSetFilter('${jsAttr(label)}')">${escapeHTML(label)}</div>`).join('');
+    const chips = matchCategoryFilterHtml(AnalysisState.matchFilter, 'analysisSetFilter');
     return `
         <div class="section-title record-recent-header section-title-spaced" data-en="RECENT">
             <span class="record-recent-title section-title-label">최근 전적</span>
-            <div class="filter-nav tab-scroll" role="tablist">${chips}</div>
+            <div class="filter-nav tab-scroll" role="group" aria-label="최근 전적 형식">${chips}</div>
         </div>
         <div class="clean-card p-0 overflow-hidden">
             <div class="table-responsive scroll-area">
@@ -641,14 +614,8 @@ function analysisMatchesHtml(rows) {
                         <th scope="col" class="colw-15">결과</th>
                         <th scope="col" class="colw-20">날짜</th>
                     </tr></thead>
-                    <tbody>${shown.length ? shown.map(([date, opp, win, mapId, catIdx]) => `
-                        <tr class="stat-row">
-                            <td class="stat-table-sticky-col cell-ellipsis"><span class="cell-clip">${escapeHTML(h2hName(String(opp)))}</span></td>
-                            <td class="badge-cell"><span class="tag-badge">${escapeHTML(h2hCatName(catIdx) || '-')}</span></td>
-                            <td class="cell-ellipsis cell-muted"><span class="cell-clip">${escapeHTML(h2hMapName(mapId) || '-')}</span></td>
-                            <td class="badge-cell">${resultBadgeHtml(win ? '승' : '패')}</td>
-                            <td>${escapeHTML(shortMatchDate(date))}</td>
-                        </tr>`).join('') : emptyRowHtml(5, '이 형식의 경기가 없습니다.')}</tbody>
+                    <tbody>${shown.length ? h2hMatchRowsHtml(shown, true)
+                        : emptyRowHtml(5, '이 형식의 경기가 없습니다.')}</tbody>
                 </table>
             </div>
         </div>
