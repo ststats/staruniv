@@ -3,6 +3,5 @@
 # `pip freeze > requirements.lock.txt`로 별도 잠금 파일을 만들어 쓴다.
 pandas>=2.0,<3
 numpy>=1.24,<3
-scipy>=1.10,<2        # scripts/build_ranking.py의 티어랭킹 적합(L-BFGS)
 jinja2>=3.0,<4
 psycopg[binary]>=3.2,<4  # Supabase PostgreSQL import/export

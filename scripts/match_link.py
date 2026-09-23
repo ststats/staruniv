@@ -18,14 +18,8 @@ Supabase의 matches와 rounds 데이터를 서로 연결한다. 각 매치/라�
 * '형식'은 rounds 데이터에 자체 컬럼으로 들어오므로 값이 있으면 그대로 신뢰한다.
   매치에서 가져와 채우는 건 값이 비어 있는 과거 데이터용 대체 수단이다.
 
-* '내전'(상대팀이 우리 크루 자체인 스크림) 라운드는 원본 데이터에 세트당 한 줄만 기록된다
-  (예: A가 이겼다는 관점으로 '우리 선수'=A, '상대 선수'=B). 이 한 줄만 가지고 개인 통계를
-  집계하면 진 쪽(B)은 자기 이름으로 이 세트가 전혀 집계되지 않는다(개인 승패, 종족전,
-  맵 전적, 최근 전적 모두 누락). 그래서 내전 라운드마다 '우리 선수'/'상대 선수'를 뒤집고
-  결과를 반전시킨 '미러' 라운드를 하나 더 만들어 함께 반환한다. 미러 라운드는
-  '_mirrored': True로 표시해두는데, 팀 매치 상세보기(세트별 목록)는 원본 한 줄만 보여줘야
-  하므로 프론트엔드에서 이 플래그를 보고 걸러낸다(page-records.js의 roundsForMatch 참고).
-  미러 라운드의 '상대 종족'은 원래 '우리 선수'의 종족을 멤버 목록에서 찾아 채운다.
+* 내전 미러 라운드는 Supabase의 rounds_effective가 제공한다. 이 모듈은 이미 만들어진
+  `_mirrored` 플래그를 보존하며 같은 행을 다시 복제하지 않는다.
 
 [리팩토링 메모]
 - 예전에는 매치 번호 컬럼이 없어서 원본 입력 순서만으로 회차를 추론했다. 이제 시트에
@@ -43,7 +37,7 @@ import os
 # 하므로 build/ 아래 파일은 커밋되지 않는다(저장소 용량이 늘지 않음).
 LINKED_CACHE_PATH = os.path.join('build', 'linked_db.json')
 # 캐시 포맷을 바꾸면 이 값을 올린다 - 버전이 다르면 옛 캐시는 무시하고 다시 계산한다.
-_LINKED_CACHE_VERSION = 2   # 연결 규칙이 바뀌면 올린다(옛 캐시 자동 무효화)
+_LINKED_CACHE_VERSION = 3   # rounds_effective 전환
 
 
 def _extract_round_num(round_str):
@@ -58,57 +52,6 @@ def _extract_round_num(round_str):
         return int(digits)
     except ValueError:  # 유니코드 숫자(예: '²')처럼 isdigit()은 참인데 int()가 거부하는 경우
         return None
-
-
-# members 데이터의 '종족'(전체 단어) -> rounds 데이터가 쓰는 코드. 순서가 곧 우선순위다
-# (app.js의 raceShortLabel과 동일한 규칙: 먼저 포함되는 단어가 이긴다).
-_RACE_CODES = (('테란', 'T'), ('저그', 'Z'), ('프로토스', 'P'))
-
-
-def _race_to_code(race_full):
-    """members 데이터의 '종족'(테란/저그/프로토스 전체 단어)을 rounds 데이터가 쓰는
-    'T'/'Z'/'P' 코드로 변환한다 (app.js의 raceShortLabel과 동일한 규칙)."""
-    race_full = str(race_full or '')
-    for word, code in _RACE_CODES:
-        if word in race_full:
-            return code
-    return ''
-
-
-_FLIP_RESULT = {'승': '패', '패': '승'}
-
-
-def _flip_result(res):
-    res = str(res or '').strip()
-    return _FLIP_RESULT.get(res, res)  # 무/무승부/빈값 등은 그대로
-
-
-def _build_mirrored_rounds(rounds, members):
-    """_match_key까지 부여된 rounds 중 내전 라운드를 뒤집은 사본 리스트를 만든다."""
-    # 이름 -> 종족 조회 테이블을 한 번만 만들어 두고(O(M)), 라운드마다 O(1)로 찾는다.
-    race_by_name = {}
-    for m in (members or []):
-        name = str(m.get('이름') or '').strip()
-        if name:
-            race_by_name[name] = m.get('종족')
-
-    mirrors = []
-    for r in rounds:
-        if str(r.get('상대팀') or '').strip() != '내전':
-            continue
-        our_player = str(r.get('우리 선수') or '').strip()
-        opp_player = str(r.get('상대 선수') or '').strip()
-        if not our_player or not opp_player:
-            continue
-
-        mirror = dict(r)
-        mirror['우리 선수'] = opp_player
-        mirror['상대 선수'] = our_player
-        mirror['결과'] = _flip_result(r.get('결과'))
-        mirror['상대 종족'] = _race_to_code(race_by_name.get(our_player, ''))
-        mirror['_mirrored'] = True
-        mirrors.append(mirror)
-    return mirrors
 
 
 # '매치 번호' 컬럼 이름 후보. 원본에서 실제로 쓰는 이름 하나만 있으면 된다
@@ -217,8 +160,6 @@ def link_rounds_to_matches(matches, rounds, members=None):
     """matches, rounds(dict 리스트)를 받아 각 항목에 '_match_key'를 붙이고,
     라운드에 '형식'이 비어 있으면 대응하는 매치의 '형식'으로 채워서
     (matches_copy, rounds_copy)로 반환한다. 라운드에 '형식'이 이미 있으면 그대로 둔다.
-    members(멤버 목록, 선택)를 넘기면 내전 라운드에 대해 반대편 관점의 미러 라운드를
-    함께 만들어 rounds_copy에 포함시킨다 (미러 라운드는 '_mirrored': True).
     입력 리스트/딕셔너리는 절대 변경하지 않는다(얕은 복사본에만 키를 추가)."""
     matches = [dict(m) for m in (matches or [])]
     rounds = [dict(r) for r in (rounds or [])]
@@ -285,10 +226,6 @@ def link_rounds_to_matches(matches, rounds, members=None):
 
     _report_linking(match_no_col, round_no_col, global_numbering, matches, rounds,
                     match_by_key, rounds_without_no, match_nos, format_conflicts)
-
-    # 3. 내전 라운드는 반대편 관점의 미러 라운드를 만들어 추가한다.
-    #    (_match_key가 이미 원본과 동일하게 붙어 있으므로 미러도 같은 매치로 묶인다)
-    rounds = rounds + _build_mirrored_rounds(rounds, members)
 
     return matches, rounds
 

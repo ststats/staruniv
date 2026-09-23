@@ -3,7 +3,7 @@
  * URL: /video/ (팬튜브), /video/?view=pick (보자), 채널 필터는 ?ch=<채널 번호>
  *
  * 운영 데이터는 Supabase(video_channels/videos/video_picks)에서 직접 읽는다.
- * scripts/sync_videos.py가 GitHub Actions에서 유튜브 영상을 Supabase에 주기적으로 갱신한다.
+ * ststat가 GitHub Actions에서 유튜브 영상을 Supabase에 주기적으로 갱신한다.
  * hidden이 붙은 영상은 어드민이 감춘 것이라 화면에서 뺀다. 카드에 영상 길이는 표시하지 않는다.
  *
  * '보자'에는 유튜브 말고 숲(SOOP) VOD도 올릴 수 있다. 그런 항목은 id가 'soop:<번호>'이고

@@ -36,17 +36,41 @@ function analysisResetLists() {
 // ---------------------------------------------------------------------------
 async function analysisLoadData() { return h2hLoadIndex(); }
 
-// 레이팅 변화(월별 스냅샷)는 scripts/build_ranking.py가 따로 구워둔 파일이다.
-// 분석 탭에서만 쓰므로 여기서 한 번만 받는다 - 티어표나 상대전적만 보는 사람은 안 받는다.
-const ANALYSIS_RATING_URL = 'data/h2h/rating.json';
-
 async function analysisLoadRating() {
     if (AnalysisState.rating) return AnalysisState.rating;
     if (!AnalysisState.ratingLoading) {
-        AnalysisState.ratingLoading = fetch(ANALYSIS_RATING_URL, { cache: 'no-cache' })
-            .then(res => (res.ok ? res.json() : null))
-            .catch(() => null)                 // 없으면 그래프만 빠지고 나머지는 그대로 나온다
-            .then(data => { AnalysisState.rating = data || { months: [], players: {} }; return AnalysisState.rating; });
+        AnalysisState.ratingLoading = (async () => {
+            const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+            if (!client) return { months: [], players: {} };
+            const rows = [];
+            const pageSize = 1000;
+            for (let from = 0; ; from += pageSize) {
+                const { data, error } = await client.from('elo_rating_history')
+                    .select('elo_id,month_end,rating')
+                    .order('month_end', { ascending: true })
+                    .order('elo_id', { ascending: true })
+                    .range(from, from + pageSize - 1);
+                if (error) throw error;
+                const batch = Array.isArray(data) ? data : [];
+                rows.push(...batch);
+                if (batch.length < pageSize) break;
+            }
+            const months = [...new Set(rows.map(r => String(r.month_end || '').slice(0, 7)).filter(Boolean))].sort();
+            const monthIndex = new Map(months.map((month, index) => [month, index]));
+            const players = {};
+            rows.forEach(row => {
+                const pid = String(row.elo_id);
+                if (!players[pid]) players[pid] = Array(months.length).fill(null);
+                const index = monthIndex.get(String(row.month_end || '').slice(0, 7));
+                if (index !== undefined) players[pid][index] = row.rating == null ? null : Number(row.rating);
+            });
+            return { months, players };
+        })()
+            .catch(err => {
+                console.error('[분석] 레이팅 기록 조회 실패:', err);
+                return { months: [], players: {} };
+            })
+            .then(data => { AnalysisState.rating = data; return data; });
     }
     return AnalysisState.ratingLoading;
 }
@@ -400,7 +424,7 @@ function analysisMonthlyHtml(rows) {
 // 레이팅
 // ---------------------------------------------------------------------------
 // 달마다 '그 시점까지의 경기'로, '그 시점의 티어'를 기준선 삼아 다시 맞춘 점수다
-// (scripts/build_ranking.py). 승급일을 아는 선수는 승급 전 달에 옛 티어가 붙으므로,
+// (ststat 랭킹 계산). 승급일을 아는 선수는 승급 전 달에 옛 티어가 붙으므로,
 // 티어를 올린 사람은 선이 계단처럼 올라간다.
 // 같은 선수의 오르내림을 보는 값이라, 티어가 다른 선수끼리 점수를 맞대 보면 안 된다.
 // 기간 칩에 따라 보여줄 개월 수. 점수 자체는 늘 같은 방식(반감기 4개월)으로 계산하고,

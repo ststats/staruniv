@@ -68,10 +68,19 @@ async function fetchTierMembers() {
     try {
         const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
         if (!client) throw new Error('Supabase browser client is not configured');
-        const { data, error } = await client.from('tier_members')
-            .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
-            .order('source_order');
-        if (error) throw error;
+        const data = [];
+        const pageSize = 1000;
+        for (let from = 0; ; from += pageSize) {
+            const { data: batch, error } = await client.from('tier_members')
+                .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
+                .order('source_order', { ascending: true })
+                .order('soop_id', { ascending: true })
+                .range(from, from + pageSize - 1);
+            if (error) throw error;
+            const rows = asArray(batch);
+            data.push(...rows);
+            if (rows.length < pageSize) break;
+        }
         const members = asArray(data).map(r => ({
             id: String(r.soop_id || '').trim(),
             nickname: String(r.nickname || '').trim(),
@@ -86,39 +95,6 @@ async function fetchTierMembers() {
         console.error('[티어표] Supabase 명단 조회 실패:', e);
         return null;
     }
-}
-
-async function fetchAllSynergyMembers() {
-    // dates.js는 JS 파일이라 JSON으로 못 읽는다 - 텍스트로 받아 배열만 뽑는다
-    // (core.js의 fetchSynergyData와 같은 방식).
-    const datesRes = await fetch(`${STSTATS_BASE}/data/dates.js`, { cache: 'no-cache' });
-    if (!datesRes.ok) throw new Error(`dates.js HTTP ${datesRes.status}`);
-    const match = (await datesRes.text()).match(/window\.AVAILABLE_DATES\s*=\s*(\[[^\]]*\])/);
-    if (!match) throw new Error('날짜 목록 형식을 읽을 수 없습니다.');
-
-    const dates = JSON.parse(match[1]);
-    const latestDate = Array.isArray(dates) ? dates[0] : null;
-    if (!latestDate) throw new Error('사용 가능한 날짜가 없습니다.');
-
-    const dataRes = await fetch(`${STSTATS_BASE}/data/daily/${encodeURIComponent(latestDate)}.json`, { cache: 'no-cache' });
-    if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
-    const data = await dataRes.json();
-
-    // 팀 값이 비어 있는 사람은 뺀다. 다만 조용히 버리지는 않는다 - DB에서 소속 값이
-    // 실수로 지워지면 그 사람이 아무 흔적 없이 사라져서 원인을 찾기가 매우 어려워진다.
-    // 콘솔에 남겨두면 "쟤 왜 없지?" 할 때 F12 한 번으로 답이 나온다.
-    const noTeam = [];
-    const members = asArray(data && data.members).filter(m => {
-        if (!m || !isValidSoopId(m.id)) return false;
-        const team = String(m.team || '').trim();
-        if (!team) { noTeam.push(m.nickname || m.id); return false; }
-        return !TIER_HIDDEN_TEAMS.has(team);
-    });
-    if (noTeam.length) {
-        console.warn(`[티어표] 팀 값이 비어 있어 제외한 ${noTeam.length}명:`, noTeam);
-    }
-
-    return { date: latestDate, updatedAt: (data && data.updated_at) || '', members };
 }
 
 // ---------------------------------------------------------------------------
@@ -749,9 +725,8 @@ bootPage(async () => {
 
     let payload;
     try {
-        // Supabase 명단이 먼저, 그 파일이 아직 없으면 예전처럼 시너지 명단으로 채운다.
         payload = await fetchTierMembers();
-        if (!payload) payload = await fetchAllSynergyMembers();
+        if (!payload) throw new Error('Supabase tier_members is empty');
     } catch (e) {
         console.error('티어 명단을 불러오지 못했습니다:', e);
         root.innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';

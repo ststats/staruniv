@@ -1030,7 +1030,7 @@ document.addEventListener('keydown', e => {
 window.addEventListener('scroll', () => closeAllHelp(), { passive: true });
 window.addEventListener('resize', () => closeAllHelp());
 
-// 티어랭킹 뱃지 옆 설명. 계산 방식은 scripts/build_ranking.py에 자세히 적어뒀다.
+// 티어랭킹 뱃지 옆 설명. 계산은 ststat 중앙 파이프라인이 수행한다.
 const RANK_HELP = {
     title: '티어 랭킹',
     lead: '스타대학이 전적으로 매긴 자체 랭킹입니다.',
@@ -1044,8 +1044,7 @@ const RANK_HELP = {
     note: "최근 1년 10판 미만이거나 휴면이면 '기록 없음'입니다.",
 };
 
-// 티어 랭킹 뱃지: '갓티어 · 3위/16명'. 순위는 scripts/build_ranking.py가 계산해
-// docs/data/h2h/index.json에 적어 둔 것을 그대로 쓴다(선수별 k, 티어별 인원 ranking.tierCounts).
+// 티어 랭킹 뱃지: '갓티어 · 3위/16명'. 활성 Supabase Elo 스냅샷의 순위를 쓴다.
 // 최근 1년에 10판을 못 채웠거나 지금 티어표에 없는 사람은 순위가 없어서 '기록 없음'이 된다.
 // 종족·티어 뱃지와 같은 높이·크기지만, 뱃지 줄에 같이 세우면 좁은 화면에서 줄이 넘쳐
 // 잘리므로 머리 카드의 셋째 줄을 따로 내준다(.player-summary-position).

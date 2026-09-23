@@ -91,6 +91,7 @@ def build_db(settings, teams, members, matches, rounds, tier_members):
                 "상대 종족": empty(r["opponent_race"]),
                 "상대 티어": number_or_text(r["opponent_tier"]),
                 "맵": empty(r["map_name"]),
+                "_mirrored": bool(r["is_mirrored"]),
             }
             for r in rounds
         ],
@@ -138,7 +139,7 @@ def main():
         teams = fetch(conn, "select * from public.teams order by source_order")
         members = fetch(conn, "select * from public.members order by source_order")
         matches = fetch(conn, "select * from public.matches order by source_order")
-        rounds = fetch(conn, "select * from public.rounds order by source_order")
+        rounds = fetch(conn, "select * from public.rounds_effective order by source_order, is_mirrored")
         tier_members = fetch(conn, "select * from public.tier_members order by source_order")
 
     required = {

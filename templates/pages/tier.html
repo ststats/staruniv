@@ -54,9 +54,8 @@
         </div>
     </div>
 
-    {#- 상대전적: 두 선수를 고르면 맞대결 전적과 경기 목록을 보여준다.
-        데이터는 docs/data/h2h/(scripts/build_h2h.py가 eloboard 아카이브를 선수별로 잘라 둔 것)를
-        이 탭을 처음 열 때 읽는다 - 티어표만 보러 온 사람이 받지 않도록. #}
+    {#- 상대전적: 두 선수를 고르면 Supabase 공개 Elo 조회 모델에서
+        맞대결 전적과 경기 목록을 필요한 시점에 읽는다. #}
     <div id="view-tier-h2h" class="d-none">
         <div class="section-title" data-en="HEAD TO HEAD">
             <span class="section-title-label">상대전적</span>
