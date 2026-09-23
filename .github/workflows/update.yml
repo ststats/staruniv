@@ -50,6 +50,14 @@ jobs:
           python scripts/generate_stats.py
           python scripts/build_html.py
 
+          echo "=== docs/data ==="
+          ls -la docs/data
+
+          if [ ! -f docs/data/site_data.json ]; then
+            echo "docs/data/site_data.json was not generated"
+            exit 1
+          fi
+
       - name: Write browser Supabase config
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
@@ -73,12 +81,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A data/db.json data/render_stats.json
-          git add docs/index.html docs/*/index.html docs/admin.html docs/multiview.html docs/calmmon-rider.html
-          git add docs/*.js docs/*.css docs/supabase-config.js
-          git add docs/data/site_data.json
-          git add docs/data/tier_members.json
-          git add docs/data/calendar.png
+          git add -A data
+          git add -A docs
 
           if git diff --cached --quiet; then
             echo "No generated changes"
