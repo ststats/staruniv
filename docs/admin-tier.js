@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const C=()=>window.AdminCore;
-  const S={page:0,size:50,count:0,rows:[],sort:'source_order',asc:true,selected:new Set()};
+  const S={page:0,size:50,count:0,rows:[],sort:'source_order',asc:true,selected:new Set(),filters:{q:'',tier:'',aff:'',race:''},options:{tiers:[],affs:[],races:[]}};
   const PROMO=[8,7,6,5,4,3,2,1,0];
 
   function esc(v){return C().esc(v);}
@@ -118,8 +118,12 @@
     render();
   }
   function render(){
-    const root=document.getElementById('adminDedicatedRoot');root.hidden=false;document.body.classList.add('admin-dedicated-active');const pages=Math.max(1,Math.ceil(S.count/S.size));
-    const {tiers,affs,races}=S.options;
+    const root=document.getElementById('adminDedicatedRoot');
+    if(!root){console.error('티어 관리 영역을 찾지 못했습니다.');return;}
+    root.hidden=false;
+    document.body.classList.add('admin-dedicated-active');
+    const pages=Math.max(1,Math.ceil(S.count/S.size));
+    const {tiers=[],affs=[],races=[]}=S.options||{};
     const selected=(value,current)=>String(value)===String(current||'')?' selected':'';
     root.innerHTML=`<div class="admin-dedicated-shell"><div class="admin-dedicated-head"><div><span>TIER</span><h1>전체 티어표 관리</h1></div><div><button class="admin-btn" id="tierBulk">일괄 수정</button> <button class="admin-btn primary" id="tierAdd">+ 새 선수</button></div></div>
       <div class="admin-filter-grid"><input class="admin-input" id="tierQ" placeholder="이름 · 닉네임 · SOOP ID · ELO ID" value="${esc(S.filters.q)}">
@@ -138,9 +142,15 @@
     if(document.body.dataset.adminPage!=='tier')return;
     render();
 
-    // 표 본문은 필터 옵션 전체 집계보다 먼저 띄운다.
-    // 전체 옵션 조회가 느리거나 실패해도 티어표 자체는 사용할 수 있어야 한다.
-    await load(0);
+    try{
+      await load(0);
+    }catch(err){
+      console.error('티어표 관리 조회 실패:',err);
+      const root=document.getElementById('adminDedicatedRoot');
+      if(root) root.innerHTML=`<div class="admin-dedicated-shell"><div class="admin-empty">티어표 데이터를 불러오지 못했습니다.<br><small>${esc(C().errorText(err))}</small></div></div>`;
+      C().toast(`티어표 조회 실패: ${C().errorText(err)}`,'error');
+      return;
+    }
 
     loadFilterOptions()
       .then(()=>render())
