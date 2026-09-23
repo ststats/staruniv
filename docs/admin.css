@@ -658,6 +658,93 @@ body {
   border-top-color: var(--color-lose);
 }
 
+/* Dashboard: use the same visual tokens as the public site, with clearer DB status. */
+.admin-kpi-emphasis {
+  border-top-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-card));
+}
+
+.admin-kpi-emphasis small {
+  color: var(--color-primary);
+}
+
+.admin-db-card {
+  margin-top: 14px;
+}
+
+.admin-db-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-db-stat {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  clip-path: var(--notch-sm);
+  background: var(--color-bg-subtle);
+}
+
+.admin-db-stat-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-db-stat span,
+.admin-db-stat small {
+  display: block;
+  color: var(--color-text-sub);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.admin-db-stat b {
+  display: block;
+  margin: 4px 0;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+
+.admin-link-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-link-card .admin-note {
+  margin-bottom: 0;
+}
+
+.admin-empty-state {
+  grid-column: 1 / -1;
+  padding: 16px;
+  color: var(--color-text-sub);
+  font-size: 12px;
+  text-align: center;
+}
+
+.admin-empty-state.is-error {
+  color: var(--color-lose);
+}
+
+@media (max-width: 720px) {
+  .admin-db-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-db-stat-wide {
+    grid-column: auto;
+  }
+  .admin-link-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+
 @media (max-width: 960px) {
   .admin-hero-inner {
     min-height: 160px;
