@@ -658,93 +658,6 @@ body {
   border-top-color: var(--color-lose);
 }
 
-/* Dashboard: use the same visual tokens as the public site, with clearer DB status. */
-.admin-kpi-emphasis {
-  border-top-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-card));
-}
-
-.admin-kpi-emphasis small {
-  color: var(--color-primary);
-}
-
-.admin-db-card {
-  margin-top: 14px;
-}
-
-.admin-db-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.admin-db-stat {
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--color-border);
-  clip-path: var(--notch-sm);
-  background: var(--color-bg-subtle);
-}
-
-.admin-db-stat-wide {
-  grid-column: 1 / -1;
-}
-
-.admin-db-stat span,
-.admin-db-stat small {
-  display: block;
-  color: var(--color-text-sub);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.admin-db-stat b {
-  display: block;
-  margin: 4px 0;
-  color: var(--color-text);
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: -.02em;
-  overflow-wrap: anywhere;
-}
-
-.admin-link-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.admin-link-card .admin-note {
-  margin-bottom: 0;
-}
-
-.admin-empty-state {
-  grid-column: 1 / -1;
-  padding: 16px;
-  color: var(--color-text-sub);
-  font-size: 12px;
-  text-align: center;
-}
-
-.admin-empty-state.is-error {
-  color: var(--color-lose);
-}
-
-@media (max-width: 720px) {
-  .admin-db-grid {
-    grid-template-columns: 1fr;
-  }
-  .admin-db-stat-wide {
-    grid-column: auto;
-  }
-  .admin-link-card {
-    align-items: stretch;
-    flex-direction: column;
-  }
-}
-
-
 @media (max-width: 960px) {
   .admin-hero-inner {
     min-height: 160px;
@@ -852,3 +765,694 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ========================================================================== */
+/* ADMIN CONSOLE V2 — public-site aligned editor redesign                     */
+/* ========================================================================== */
+
+:root {
+  --admin-console-w: 430px;
+  --admin-console-bg: color-mix(in srgb, var(--color-bg) 94%, var(--color-primary) 6%);
+  --admin-console-panel: var(--color-card);
+  --admin-console-line: color-mix(in srgb, var(--color-border) 78%, transparent);
+  --admin-console-muted: var(--color-text-sub);
+  --admin-console-head: var(--color-head-bg);
+}
+
+/* The public page remains live on the left; the editor becomes a dedicated
+   right-side console. No extra preview iframe, no duplicated page chrome. */
+body.admin-mode {
+  min-width: 0;
+  padding-right: var(--admin-console-w);
+  background: var(--color-bg);
+}
+
+body.admin-mode > .top-navbar {
+  right: var(--admin-console-w);
+  width: auto;
+  box-shadow: 0 1px 0 var(--admin-console-line);
+}
+
+body.admin-mode #adminView:not(.admin-hidden) {
+  display: block;
+  min-width: 0;
+}
+
+body.admin-mode #adminWorkbench.container {
+  position: fixed;
+  z-index: 1200;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--admin-console-w);
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--admin-console-line);
+  background: var(--admin-console-bg);
+  box-shadow: -18px 0 48px rgba(10, 18, 32, .10);
+}
+
+body.admin-mode .admin-edit-surface {
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  max-height: none;
+  padding: 0 16px 34px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: transparent;
+}
+
+/* Console header / context actions */
+body.admin-mode .admin-workbar {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  display: grid;
+  gap: 12px;
+  margin: 0 -16px 16px;
+  padding: 14px 16px 13px;
+  border-bottom: 3px solid var(--color-primary);
+  background: var(--admin-console-head);
+  color: var(--color-head-text);
+  box-shadow: 0 8px 24px rgba(7, 15, 30, .14);
+}
+
+body.admin-mode .admin-workbar::before {
+  content: "ADMIN · EDITOR";
+  display: block;
+  color: var(--color-primary-light);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+
+body.admin-mode .admin-context-actions {
+  display: flex;
+  min-width: 0;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+body.admin-mode .admin-context-actions::-webkit-scrollbar {
+  display: none;
+}
+
+body.admin-mode .admin-context-actions .sub-tab,
+body.admin-mode .admin-context-actions button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--color-head-text) 18%, transparent);
+  border-radius: 0;
+  clip-path: var(--notch-xs);
+  background: color-mix(in srgb, var(--color-head-text) 8%, transparent);
+  color: color-mix(in srgb, var(--color-head-text) 78%, transparent);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+body.admin-mode .admin-context-actions .sub-tab:hover,
+body.admin-mode .admin-context-actions button:hover {
+  background: color-mix(in srgb, var(--color-head-text) 16%, transparent);
+  color: var(--color-head-text);
+}
+
+body.admin-mode .admin-context-actions .sub-tab.active,
+body.admin-mode .admin-context-actions button.active {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+body.admin-mode .admin-workbar .admin-user {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  justify-content: stretch;
+  color: color-mix(in srgb, var(--color-head-text) 75%, transparent);
+  font-size: 10px;
+}
+
+body.admin-mode .admin-workbar #adminIdentity,
+body.admin-mode .admin-workbar #adminRole {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.admin-mode .admin-workbar #adminRole {
+  display: none;
+}
+
+body.admin-mode .admin-workbar .text-action {
+  color: color-mix(in srgb, var(--color-head-text) 78%, transparent);
+  white-space: nowrap;
+}
+
+body.admin-mode .admin-workbar .text-action:hover {
+  color: var(--color-primary-light);
+}
+
+/* Status becomes an obvious save / failure banner. */
+body.admin-mode .admin-status {
+  position: sticky;
+  z-index: 35;
+  top: 114px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 3px solid currentColor;
+  clip-path: var(--notch-xs);
+  background: var(--admin-console-panel);
+  box-shadow: 0 8px 20px rgba(20, 24, 33, .08);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Panels read like a compact control center, not a second full website. */
+body.admin-mode .admin-panel {
+  min-width: 0;
+}
+
+body.admin-mode .admin-panel.active {
+  animation: admin-panel-in .16s ease-out;
+}
+
+@keyframes admin-panel-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+body.admin-mode .admin-panel-actions {
+  min-height: 0;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+body.admin-mode .admin-panel-actions .text-action {
+  min-height: 32px;
+  padding: 6px 10px;
+  clip-path: var(--notch-xs);
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-card));
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+body.admin-mode .admin-card {
+  margin: 0 0 12px;
+  padding: 14px;
+  border: 1px solid var(--admin-console-line);
+  clip-path: var(--notch-md);
+  background: var(--admin-console-panel);
+  box-shadow: none;
+}
+
+body.admin-mode .admin-card + .admin-card {
+  margin-top: 0;
+}
+
+body.admin-mode .admin-card:has(> .admin-table-wrap) {
+  padding: 0;
+  border: 1px solid var(--admin-console-line);
+  clip-path: var(--notch-md);
+  background: var(--admin-console-panel);
+}
+
+body.admin-mode .admin-card:has(> .admin-table-wrap) > .admin-table-wrap {
+  clip-path: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.admin-mode .admin-section-title {
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--admin-console-line);
+}
+
+body.admin-mode .admin-section-title > div::after {
+  bottom: -11px;
+  width: 42px;
+  right: auto;
+}
+
+body.admin-mode .admin-section-title h2,
+body.admin-mode .admin-section-title h3 {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+body.admin-mode .admin-section-title p {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* Dashboard: dense, glanceable and consistent with public-site cards. */
+body.admin-mode .admin-kpi-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+body.admin-mode .admin-kpi {
+  min-height: 94px;
+  padding: 13px;
+  border: 1px solid var(--admin-console-line);
+  border-top: 3px solid var(--color-primary);
+  clip-path: var(--notch-sm);
+  background: var(--admin-console-panel);
+  box-shadow: none;
+}
+
+body.admin-mode .admin-kpi b {
+  margin-top: 3px;
+  font-size: 23px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-mode .admin-kpi span {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+body.admin-mode .admin-kpi small {
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+body.admin-mode .admin-db-grid {
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+body.admin-mode .admin-db-stat,
+body.admin-mode .admin-db-stat-wide {
+  grid-column: auto;
+  padding: 10px 11px;
+  border: 1px solid var(--admin-console-line);
+  clip-path: var(--notch-xs);
+  background: var(--color-bg-subtle);
+}
+
+body.admin-mode .admin-db-stat b {
+  font-size: 14px;
+}
+
+/* Search / form controls */
+body.admin-mode .admin-toolbar,
+body.admin-mode .admin-toolbar-left,
+body.admin-mode .admin-toolbar-right {
+  gap: 7px;
+}
+
+body.admin-mode .admin-toolbar {
+  align-items: stretch;
+  margin: 0;
+  padding: 10px;
+  border-bottom: 1px solid var(--admin-console-line);
+}
+
+body.admin-mode .admin-toolbar-left {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+body.admin-mode .admin-toolbar-right {
+  flex: 0 0 auto;
+}
+
+body.admin-mode .admin-search {
+  min-width: 0;
+}
+
+body.admin-mode .admin-input,
+body.admin-mode .admin-select,
+body.admin-mode .admin-textarea {
+  min-height: 38px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  clip-path: var(--notch-xs);
+  background: var(--color-bg-subtle);
+  font-size: 12px;
+  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease;
+}
+
+body.admin-mode .admin-textarea,
+body.admin-mode textarea.admin-input {
+  min-height: 112px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+body.admin-mode .admin-input:hover,
+body.admin-mode .admin-select:hover,
+body.admin-mode .admin-textarea:hover {
+  border-color: var(--admin-console-line);
+}
+
+body.admin-mode .admin-input:focus,
+body.admin-mode .admin-select:focus,
+body.admin-mode .admin-textarea:focus {
+  border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+  background: var(--color-card);
+  box-shadow: inset 0 -2px var(--color-primary);
+}
+
+body.admin-mode .admin-field label,
+body.admin-mode .admin-field > span {
+  margin-bottom: 5px;
+  color: var(--admin-console-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+body.admin-mode .admin-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body.admin-mode .admin-field.span-3,
+body.admin-mode .admin-field.span-2 {
+  grid-column: 1 / -1;
+}
+
+body.admin-mode .admin-btn {
+  min-height: 34px;
+  padding: 7px 10px;
+  clip-path: var(--notch-xs);
+  font-size: 11px;
+}
+
+body.admin-mode .admin-btn.primary {
+  background: var(--select-on-light);
+  color: #fff;
+}
+
+body.admin-mode .admin-btn.primary:hover {
+  filter: brightness(1.05);
+  color: #fff;
+}
+
+/* Data tables are horizontal data grids inside the console. */
+body.admin-mode .admin-table-wrap {
+  max-height: min(48dvh, 520px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+body.admin-mode .admin-table {
+  min-width: 760px;
+  font-size: 10px;
+}
+
+body.admin-mode .admin-table th,
+body.admin-mode .admin-table td {
+  padding: 8px 9px;
+}
+
+body.admin-mode .admin-table th {
+  top: 0;
+  background: color-mix(in srgb, var(--color-head-bg) 96%, var(--color-primary));
+  font-size: 9px;
+  letter-spacing: .02em;
+}
+
+body.admin-mode .admin-table td b {
+  font-size: 11px;
+}
+
+body.admin-mode .admin-row-actions {
+  gap: 4px;
+}
+
+body.admin-mode .admin-row-actions .admin-btn {
+  min-height: 28px;
+  padding: 5px 7px;
+  font-size: 9px;
+}
+
+/* Editors open as the main focus card inside the console. */
+body.admin-mode .admin-editor {
+  margin: 0;
+  padding: 14px;
+  border: 0;
+  border-top: 3px solid var(--color-primary);
+  clip-path: var(--notch-md);
+  background: var(--color-card);
+  box-shadow: 0 12px 28px rgba(18, 27, 44, .10);
+}
+
+body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-toolbar,
+body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-section-title,
+body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-table-wrap {
+  display: none;
+}
+
+body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor {
+  position: static;
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+}
+
+body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.admin-mode .admin-form-actions {
+  position: sticky;
+  z-index: 5;
+  bottom: -34px;
+  justify-content: stretch;
+  gap: 8px;
+  margin: 16px -14px -14px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--admin-console-line);
+  background: color-mix(in srgb, var(--color-card) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+body.admin-mode .admin-form-actions .admin-btn {
+  flex: 1 1 0;
+}
+
+body.admin-mode .admin-form-actions .admin-btn.primary {
+  flex: 1.5 1 0;
+}
+
+/* Match round editor becomes readable instead of an 11-column micro grid. */
+body.admin-mode .admin-rounds {
+  display: grid;
+  gap: 8px;
+}
+
+body.admin-mode .admin-round {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--admin-console-line);
+  clip-path: var(--notch-sm);
+  background: var(--color-bg-subtle);
+}
+
+body.admin-mode .admin-round .round-remove {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+/* Checkboxes are easier to scan in navigation / metric settings. */
+body.admin-mode .admin-field:has(input[type="checkbox"]) {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--admin-console-line);
+  clip-path: var(--notch-xs);
+  background: var(--color-bg-subtle);
+}
+
+body.admin-mode .admin-field:has(input[type="checkbox"]) > span {
+  margin: 0;
+  color: var(--color-text);
+}
+
+body.admin-mode input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+/* Calendar editor side is intentionally compact; the public calendar remains
+   visible on the left, so the console only needs the editing controls. */
+body.admin-mode .admin-calendar-layout {
+  grid-template-columns: 1fr;
+}
+
+body.admin-mode .admin-calendar-main {
+  display: none;
+}
+
+body.admin-mode .admin-calendar-side {
+  position: static;
+  display: block;
+  max-height: none;
+  overflow: visible;
+}
+
+body.admin-mode .admin-offair-editor {
+  margin-top: 10px;
+}
+
+/* Login / denied state — same language as the public hero, but calmer. */
+body.admin-mode .admin-login-wrap,
+.admin-login-wrap {
+  min-height: 100dvh;
+  padding: 28px 18px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--color-head-bg) 98%, transparent), color-mix(in srgb, var(--color-primary) 16%, var(--color-head-bg)));
+}
+
+.admin-login {
+  width: min(420px, 100%);
+  padding: 26px;
+  border: 1px solid color-mix(in srgb, var(--color-head-text) 14%, transparent);
+  background: color-mix(in srgb, var(--color-card) 96%, transparent);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, .18);
+}
+
+.admin-login::before {
+  margin-bottom: 12px;
+  letter-spacing: .18em;
+}
+
+/* Narrow screens: editor becomes a normal full-width section after preview. */
+@media (max-width: 1100px) {
+  :root { --admin-console-w: 390px; }
+}
+
+@media (max-width: 860px) {
+  body.admin-mode {
+    padding-right: 0;
+  }
+
+  body.admin-mode > .top-navbar {
+    right: 0;
+  }
+
+  body.admin-mode #adminWorkbench.container {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    border-top: 3px solid var(--color-primary);
+    border-left: 0;
+    box-shadow: none;
+  }
+
+  body.admin-mode .admin-edit-surface {
+    height: auto;
+    min-height: 55dvh;
+    padding: 0 18px 40px;
+    overflow: visible;
+  }
+
+  body.admin-mode .admin-workbar {
+    top: var(--navbar-h);
+  }
+
+  body.admin-mode .admin-status {
+    top: calc(var(--navbar-h) + 112px);
+  }
+
+  body.admin-mode .admin-table-wrap {
+    max-height: 460px;
+  }
+}
+
+@media (max-width: 560px) {
+  body.admin-mode .admin-workbar {
+    margin-right: -18px;
+    margin-left: -18px;
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  body.admin-mode .admin-workbar .admin-user {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  body.admin-mode .admin-workbar .admin-user > a {
+    display: none;
+  }
+
+  body.admin-mode .admin-kpi-grid,
+  body.admin-mode .admin-form-grid,
+  body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-form-grid,
+  body.admin-mode .admin-round {
+    grid-template-columns: 1fr;
+  }
+
+  body.admin-mode .admin-field.span-2,
+  body.admin-mode .admin-field.span-3,
+  body.admin-mode .admin-round .round-remove {
+    grid-column: auto;
+  }
+
+  body.admin-mode .admin-toolbar,
+  body.admin-mode .admin-toolbar-left,
+  body.admin-mode .admin-toolbar-right {
+    width: 100%;
+  }
+
+  body.admin-mode .admin-toolbar-right .admin-btn,
+  body.admin-mode .admin-toolbar > .admin-btn {
+    width: 100%;
+  }
+
+  body.admin-mode .admin-link-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+/* Current-main dashboard helpers (kept for compatibility with latest page-admin.js). */
+.admin-kpi-emphasis { border-top-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 6%, var(--color-card)); }
+.admin-kpi-emphasis small { color: var(--color-primary); }
+.admin-db-card { margin-top: 14px; }
+.admin-db-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.admin-db-stat { min-width:0; padding:14px; border:1px solid var(--color-border); clip-path:var(--notch-sm); background:var(--color-bg-subtle); }
+.admin-db-stat-wide { grid-column:1/-1; }
+.admin-db-stat span,.admin-db-stat small { display:block; color:var(--color-text-sub); font-size:10px; font-weight:700; }
+.admin-db-stat b { display:block; margin:4px 0; color:var(--color-text); font-size:18px; font-weight:900; letter-spacing:-.02em; overflow-wrap:anywhere; }
+.admin-link-card { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.admin-link-card .admin-note { margin-bottom:0; }
+.admin-empty-state { grid-column:1/-1; padding:16px; color:var(--color-text-sub); font-size:12px; text-align:center; }
+.admin-empty-state.is-error { color:var(--color-lose); }
+body.admin-mode .admin-db-grid { grid-template-columns: 1fr; gap: 7px; }
+body.admin-mode .admin-db-stat,
+body.admin-mode .admin-db-stat-wide { grid-column: auto; padding: 10px 11px; border: 1px solid var(--admin-console-line); clip-path: var(--notch-xs); background: var(--color-bg-subtle); }
+body.admin-mode .admin-db-stat b { font-size: 14px; }

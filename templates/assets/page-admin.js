@@ -72,10 +72,13 @@ async function verifyAdmin() {
   const { data, error: roleErr } = await state.client.from('admin_users').select('role,is_active').eq('user_id', user.id).maybeSingle();
   if (roleErr || !data?.is_active) { showOnly('deniedView'); return false; }
   state.role = data.role;
-  $('adminIdentity').textContent = user.email || user.id;
-  $('adminRole').textContent = data.role;
+  if ($('adminIdentity')) $('adminIdentity').textContent = user.email || user.id;
+  if ($('adminRole')) $('adminRole').textContent = data.role;
   showOnly('adminView');
-  showPublicPage('home');
+  const page = document.body?.dataset?.adminPage || 'home';
+  publicPageName = ADMIN_SUBTABS[page] ? page : 'home';
+  if ($('adminPublicPage')) showPublicPage(publicPageName);
+  else switchPanel(publicPageName);
   return true;
 }
 
@@ -115,14 +118,21 @@ const ADMIN_PAGE_META = {
 let publicPageName='home';
 let publicObserver=null;
 function showPublicPage(name) {
-  publicPageName=name;
-  $('adminPublicPage').src=name==='home'?'./':`${name}/`;
-  openEditSurface(ADMIN_SUBTABS[name][0].id);
-  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el=>el.classList.toggle('active',el.dataset.panel===name));
+  publicPageName=ADMIN_SUBTABS[name]?name:'home';
+  const frame=$('adminPublicPage');
+  if(!frame){
+    switchPanel(publicPageName);
+    return;
+  }
+  frame.src=publicPageName==='home'?'./':`${publicPageName}/`;
+  openEditSurface(ADMIN_SUBTABS[publicPageName][0].id);
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el=>el.classList.toggle('active',el.dataset.panel===publicPageName));
 }
 function refreshPublicPage() {
-  const win=$('adminPublicPage').contentWindow;
-  if(win.location.href==='about:blank') return;
+  const frame=$('adminPublicPage');
+  if(!frame) return;
+  const win=frame.contentWindow;
+  if(!win || win.location.href==='about:blank') return;
   if(publicPageName==='schedule') {
     win.StarUnivCalendar?.setData(calEvents,calOffAir);
     return;
@@ -169,6 +179,7 @@ async function openEditSurface(panel, edit) {
 function connectPublicPage() {
   publicObserver?.disconnect();
   const frame=$('adminPublicPage');
+  if(!frame) return;
   const doc=frame.contentDocument;
   if(!doc || doc.location.href==='about:blank') return;
   const page=doc.location.pathname.split('/').filter(Boolean).pop();
@@ -243,10 +254,14 @@ async function switchSubPanel(panelId) {
 
 function switchPanel(name, load=true) {
   const tabs = ADMIN_SUBTABS[name] || ADMIN_SUBTABS.home;
-  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
-  const meta=ADMIN_PAGE_META[name]||ADMIN_PAGE_META.home;
-  $('adminPageEyebrow').textContent=meta[0];$('adminPageTitle').textContent=meta[1];$('adminPageDescription').textContent=meta[2];
+  publicPageName = ADMIN_SUBTABS[name] ? name : 'home';
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === publicPageName));
+  const meta=ADMIN_PAGE_META[publicPageName]||ADMIN_PAGE_META.home;
+  if($('adminPageEyebrow')) $('adminPageEyebrow').textContent=meta[0];
+  if($('adminPageTitle')) $('adminPageTitle').textContent=meta[1];
+  if($('adminPageDescription')) $('adminPageDescription').textContent=meta[2];
   const tabBar=$('adminSubTabs');
+  if(!tabBar) return;
   tabBar.innerHTML=tabs.map((tab,index)=>`<button type="button" class="sub-tab${index===0?' active':''}" role="tab" aria-selected="${index===0}" data-admin-subpanel="${esc(tab.id)}">${esc(tab.label)}</button>`).join('');
   tabBar.hidden=tabs.length<2;
   if(load) switchSubPanel(tabs[0].id);
@@ -458,7 +473,7 @@ function closeEditor(id){$(id)?.classList.add('hidden');}
 
 async function init(){
   setTheme(document.documentElement.dataset.theme);
-  $('adminPublicPage').addEventListener('load',connectPublicPage);
+  $('adminPublicPage')?.addEventListener('load',connectPublicPage);
 
   $('adminSiteMenu')?.addEventListener('click',e=>{const b=e.target.closest('[data-panel]');if(b){showPublicPage(b.dataset.panel);toggleSiteMenu(false);}});
   $('adminSubTabs')?.addEventListener('click',e=>{const b=e.target.closest('[data-admin-subpanel]');if(b)openEditSurface(b.dataset.adminSubpanel);});
@@ -472,5 +487,11 @@ async function init(){
 }
 
 window.AdminApp={openEditSurface,closeEditSurface,setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
-init().catch(e=>{console.error(e);showOnly('configError');});
+init().catch(e=>{
+  console.error(e);
+  const configReady=!!(cfg.url&&cfg.key&&window.supabase?.createClient);
+  if(!configReady){showOnly('configError');return;}
+  showOnly('loginView');
+  setStatus(`관리자 초기화 실패: ${errText(e)}`,'error','loginStatus');
+});
 })();
