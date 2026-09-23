@@ -314,6 +314,10 @@ function entryH2hKey(a, b) { return `${a}|${b}`; }
 // 조금씩 움직인다. 조건부 전적은 선수 전체 폼 대비 얼마나 더 잘/못했는지를 보므로
 // 레이팅에 이미 반영된 '선수 자체의 강함'을 이중 계산하지 않는다.
 const ENTRY_FORM_HALF_LIFE = 90;
+// 기간 탭은 전적을 탐색하는 표시 필터다. 예측 입력까지 잘라버리면 같은 대진의
+// 확률이 탭을 누를 때마다 바뀐다. 예측은 통산 데이터를 쓰되 90일 반감기로
+// 최근 경기의 영향만 자연스럽게 크게 둔다.
+const ENTRY_PREDICTION_PERIOD = 'all';
 const ENTRY_RACE_PRIOR = 14;
 const ENTRY_MAP_PRIOR = 18;
 const ENTRY_MAX_H2H_ADJ = 0.08;
@@ -328,9 +332,13 @@ function entryAdjLabel(v) {
     return `${pp >= 0 ? '+' : ''}${pp.toFixed(1)}%p`;
 }
 function entryRowAgeDays(dateText) {
-    const d = new Date(`${dateText}T00:00:00`);
+    const d = new Date(`${dateText}T00:00:00Z`);
     if (!Number.isFinite(d.getTime())) return 0;
-    return Math.max(0, (Date.now() - d.getTime()) / 86400000);
+    const modelDate = String(EntryState.index?.ranking?.asOf || '').slice(0, 10);
+    const today = modelDate
+        ? new Date(`${modelDate}T00:00:00Z`)
+        : new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+    return Math.max(0, (today.getTime() - d.getTime()) / 86400000);
 }
 function entryRecentWeight(dateText) {
     return Math.pow(0.5, entryRowAgeDays(dateText) / ENTRY_FORM_HALF_LIFE);
@@ -395,7 +403,7 @@ function entryWinProb(aPid, bPid, mapName) {
     const factors = [];
 
     // 1) 직접 맞대결: 레이팅 승률을 prior로 삼아 작은 표본을 자동으로 수축한다.
-    const rec = entryWeightedH2hRecord(aPid, bPid, EntryState.period);
+    const rec = entryWeightedH2hRecord(aPid, bPid, ENTRY_PREDICTION_PERIOD);
     const n = rec.m;
     let h2hAdj = 0;
     if (n) {
@@ -410,10 +418,10 @@ function entryWinProb(aPid, bPid, mapName) {
     if (a && b && a.r && b.r) {
         raceA = entryConditionalEdge(aPid, row => {
             const opp = players[row[1]]; return opp && String(opp.r || '') === String(b.r || '');
-        }, EntryState.period, ENTRY_RACE_PRIOR);
+        }, ENTRY_PREDICTION_PERIOD, ENTRY_RACE_PRIOR);
         raceB = entryConditionalEdge(bPid, row => {
             const opp = players[row[1]]; return opp && String(opp.r || '') === String(a.r || '');
-        }, EntryState.period, ENTRY_RACE_PRIOR);
+        }, ENTRY_PREDICTION_PERIOD, ENTRY_RACE_PRIOR);
         raceAdj = entryClamp((raceA.edge - raceB.edge) * 0.5, -ENTRY_MAX_RACE_ADJ, ENTRY_MAX_RACE_ADJ);
         p += raceAdj;
     }
@@ -423,8 +431,8 @@ function entryWinProb(aPid, bPid, mapName) {
     const normalizedMap = entryNormalizeMapName(mapName);
     let mapAdj = 0, mapA = null, mapB = null;
     if (normalizedMap) {
-        mapA = entryConditionalEdge(aPid, row => entryNormalizeMapName(row[3]) === normalizedMap, EntryState.period, ENTRY_MAP_PRIOR);
-        mapB = entryConditionalEdge(bPid, row => entryNormalizeMapName(row[3]) === normalizedMap, EntryState.period, ENTRY_MAP_PRIOR);
+        mapA = entryConditionalEdge(aPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_PREDICTION_PERIOD, ENTRY_MAP_PRIOR);
+        mapB = entryConditionalEdge(bPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_PREDICTION_PERIOD, ENTRY_MAP_PRIOR);
         mapAdj = entryClamp((mapA.edge - mapB.edge) * 0.5, -ENTRY_MAX_MAP_ADJ, ENTRY_MAX_MAP_ADJ);
         p += mapAdj;
     }
@@ -600,7 +608,8 @@ function entryAnalysisHtml(match, wp) {
     const mapA = mapName ? entryMapRecord(match.a, mapName, EntryState.period) : {w:0,l:0,m:0};
     const mapB = mapName ? entryMapRecord(match.b, mapName, EntryState.period) : {w:0,l:0,m:0};
     const mapN = Math.min(mapA.m, mapB.m);
-    const h2hN = wp.w + wp.l;
+    const displayH2h = entryH2hRec(match.a, match.b, EntryState.period) || { w:0, l:0 };
+    const h2hN = displayH2h.w + displayH2h.l;
     const totalAdj = wp.p - base;
     const strongest = [
         ['맞대결', wp.h2hAdj || 0], ['종족전', wp.raceAdj || 0], ['맵', wp.mapAdj || 0]
@@ -615,7 +624,7 @@ function entryAnalysisHtml(match, wp) {
         ? `${escapeHTML(mapName)} · ${escapeHTML(a.n)} ${entryRecordText(mapA.w, mapA.l)} · ${escapeHTML(b.n)} ${entryRecordText(mapB.w, mapB.l)} · ${entrySampleLabel(mapN)}`
         : '세트 맵을 선택하면 맵 성적을 반영합니다.';
     const h2hDetail = h2hN
-        ? `${entryPeriodLabel()} ${wp.w}승 ${wp.l}패 · ${entrySampleLabel(h2hN)}`
+        ? `${entryPeriodLabel()} ${displayH2h.w}승 ${displayH2h.l}패 · ${entrySampleLabel(h2hN)}`
         : '맞대결 표본 없음';
     const ratingDetail = `${escapeHTML(a.n)} ${ra ? ra.value.toFixed(0) : '—'} · ${escapeHTML(b.n)} ${rb ? rb.value.toFixed(0) : '—'} · 최근 90일 가중`;
     return `<div class="entry-analysis-panel">
@@ -630,7 +639,7 @@ function entryAnalysisHtml(match, wp) {
             ${entryAnalysisStat('종족전', wp.raceAdj || 0, raceDetail, raceN && raceN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
             ${entryAnalysisStat('선택 맵', wp.mapAdj || 0, mapDetail, mapN && mapN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
         </div>
-        <div class="entry-analysis-foot">최근 경기에 90일 반감기를 적용하고, 표본이 적은 항목은 자동으로 약하게 반영합니다.</div>
+        <div class="entry-analysis-foot">승률은 기간 탭과 무관하게 통산 데이터에 90일 반감기를 적용합니다. 기간 탭은 위 전적 설명만 바꿉니다.</div>
     </div>`;
 }
 

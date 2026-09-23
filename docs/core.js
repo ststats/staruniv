@@ -210,20 +210,22 @@ document.addEventListener('keydown', e => {
 });
 
 // =====================================================================
-// 2. 사이트 데이터 (site_data.json)
+// 2. 페이지별 사이트 데이터
 // =====================================================================
 // 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
-// 박아넣지 않고 별도 JSON(data/site_data.json)에서 비동기로 fetch해온다.
+// 박아넣지 않고 shell/records JSON에서 필요한 묶음만 비동기로 가져온다.
 const SiteData = {
     members: [],
     matches: [],
     rounds: [],
     playersStats: [],
+    matchCount: 0,
+    roundCount: 0,
 };
 
 // 페이지 초기화는 데이터 요청 실패 뒤에도 계속되어야 한다. 화면이 빈 데이터와 요청 실패를
 // 구분할 수 있도록 결과 상태만 따로 남긴다(기존 SiteData 배열 사용 방식은 유지한다).
-const SiteDataLoad = { status: 'idle', error: null };
+const SiteDataLoad = { status: 'idle', error: null, loaded: new Set() };
 
 const asArray = v => (Array.isArray(v) ? v : []);
 
@@ -231,26 +233,39 @@ const asArray = v => (Array.isArray(v) ? v : []);
 // 버전(<meta name="site-data-version">)을 주소에 붙이면, 데이터가 바뀐 배포에서만 주소가 바뀌므로
 // 평소엔 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면(옛 index.html 등) 매번
 // 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
-function siteDataRequest() {
+function siteDataRequest(part) {
     const meta = document.querySelector('meta[name="site-data-version"]');
     const version = meta && meta.content;
     return version
-        ? { url: `data/site_data.json?v=${encodeURIComponent(version)}`, cache: 'default' }
-        : { url: 'data/site_data.json', cache: 'no-cache' };
+        ? { url: `data/site_${part}.json?v=${encodeURIComponent(version)}`, cache: 'default' }
+        : { url: `data/site_${part}.json`, cache: 'no-cache' };
 }
 
-async function loadSiteData() {
+async function loadSiteData(parts) {
+    const requested = (Array.isArray(parts) ? parts : ['shell'])
+        .filter(part => !SiteDataLoad.loaded.has(part));
+    if (!requested.length) return;
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        const { url, cache } = siteDataRequest();
-        const res = await fetch(url, { cache });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        SiteData.members = asArray(data && data.members);
-        SiteData.matches = asArray(data && data.matches);
-        SiteData.rounds = asArray(data && data.rounds);
-        SiteData.playersStats = asArray(data && data.playersStats);
+        const payloads = await Promise.all(requested.map(async part => {
+            const { url, cache } = siteDataRequest(part);
+            const res = await fetch(url, { cache });
+            if (!res.ok) throw new Error(`${part}: HTTP ${res.status}`);
+            return [part, await res.json()];
+        }));
+        payloads.forEach(([part, data]) => {
+            if (part === 'shell') {
+                SiteData.members = asArray(data && data.members);
+                SiteData.matchCount = Number(data && data.matchCount) || 0;
+                SiteData.roundCount = Number(data && data.roundCount) || 0;
+            } else if (part === 'records') {
+                SiteData.matches = asArray(data && data.matches);
+                SiteData.rounds = asArray(data && data.rounds);
+                SiteData.playersStats = asArray(data && data.playersStats);
+            }
+            SiteDataLoad.loaded.add(part);
+        });
         SiteDataLoad.status = 'loaded';
     } catch (e) {
         SiteDataLoad.status = 'error';
@@ -292,7 +307,14 @@ async function refreshSidebarLiveIndicators() {
         const live = new Set(Object.entries(data.live).filter(([, info]) => info && info.broad_no).map(([id]) => id.toLowerCase()));
         ids.forEach(id => update(id, live.has(id.toLowerCase())));
     } catch (_) {
-        await Promise.allSettled(ids.map(async id => update(id, Boolean(await checkIsLiveRealtime(id)))));
+        const pending = ids.slice();
+        const workers = Array.from({ length: Math.min(6, pending.length) }, async () => {
+            while (pending.length) {
+                const id = pending.shift();
+                update(id, Boolean(await checkIsLiveRealtime(id)));
+            }
+        });
+        await Promise.allSettled(workers);
     }
 }
 
@@ -732,6 +754,21 @@ function formatSponsorRecord(wins, losses) {
     return `${wins}승 ${losses}패 (${rate}%)`;
 }
 
+function formatKstDateTime(value, includeTime) {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.getTime())) return String(value).slice(0, includeTime ? 19 : 10);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+        ...(includeTime ? { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' } : {})
+    }).formatToParts(parsed).reduce((out, part) => {
+        if (part.type !== 'literal') out[part.type] = part.value;
+        return out;
+    }, {});
+    const date = `${parts.year}-${parts.month}-${parts.day}`;
+    return includeTime ? `${date} ${parts.hour}:${parts.minute}:${parts.second} KST` : date;
+}
+
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
 // 모달이 닫히기 시작할 때 그 안에 포커스가 남아있으면 부트스트랩이 aria-hidden을 씌우면서
@@ -762,6 +799,17 @@ function fetchSynergyData() {
         const latestDate = latest && latest.stat_date ? String(latest.stat_date) : '';
         if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다.');
 
+        const idToMember = new Map();
+        SiteData.members.forEach(m => {
+            const originalId = String(m['SOOP ID'] || '').trim();
+            const soopId = originalId.toLowerCase();
+            if (soopId) idToMember.set(soopId, m);
+        });
+        const memberIds = [...idToMember.values()]
+            .map(m => String(m['SOOP ID'] || '').trim())
+            .filter(Boolean);
+        if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다.');
+
         const rows = [];
         const pageSize = 1000;
         for (let from = 0; ; from += pageSize) {
@@ -769,6 +817,7 @@ function fetchSynergyData() {
                 .from('daily_member_stats')
                 .select('stat_date,soop_id,elo_id,nickname,role,affiliation,race,tier,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at,sponsor_updated_at')
                 .eq('stat_date', latestDate)
+                .in('soop_id', memberIds)
                 .order('soop_id', { ascending: true })
                 .range(from, from + pageSize - 1);
             if (error) throw error;
@@ -777,12 +826,6 @@ function fetchSynergyData() {
             if (chunk.length < pageSize) break;
         }
         if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다.`);
-
-        const idToMember = new Map();
-        SiteData.members.forEach(m => {
-            const soopId = String(m['SOOP ID'] || '').trim().toLowerCase();
-            if (soopId) idToMember.set(soopId, m);
-        });
 
         SynergyState.data = rows
             .map(row => {
@@ -913,18 +956,19 @@ async function applyNavVisibility() {
 // 페이지 시작: 사이트 데이터(멤버/경기 등)를 먼저 불러온 뒤 페이지별 초기화를 실행한다.
 // 이 스크립트들은 body 맨 끝에서 실행되므로 DOM은 이미 준비돼 있지만, 순서를 확실히 하려고
 // DOMContentLoaded에 맞춘다(이미지 로딩까지 기다리는 window.onload보다 빠르다).
-// opts.siteData: false 면 site_data.json(멤버·경기 기록)을 아예 안 받는다.
+// opts.siteData: false면 데이터를 받지 않고, 배열이면 해당 묶음만 받는다.
 // 티어표·영상처럼 그 데이터를 한 줄도 안 쓰는 페이지가 400KB짜리 파일을 기다렸다
 // 시작하던 걸 없애기 위한 것이다. 그 페이지에서 SiteData를 쓰기 시작하면 여기 옵션을
 // 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
 function bootPage(init, opts) {
-    const needsSiteData = !(opts && opts.siteData === false);
+    const siteDataParts = opts && opts.siteData === false
+        ? [] : ((opts && Array.isArray(opts.siteData)) ? opts.siteData : ['shell']);
     const start = async () => {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
         applyNavVisibility();   // 메뉴는 사이트 데이터와 무관하므로 기다리지 않는다
-        if (needsSiteData) await loadSiteData();
+        if (siteDataParts.length) await loadSiteData(siteDataParts);
         safeInit('페이지', init);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

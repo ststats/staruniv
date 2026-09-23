@@ -9,7 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "data" / "db.json"
 STATS_PATH = ROOT / "data" / "render_stats.json"
 OUT_DIR = ROOT / "docs" / "data"
-OUT_PATH = OUT_DIR / "site_data.json"
+OUT_PATHS = {
+    "shell": OUT_DIR / "site_shell.json",
+    "records": OUT_DIR / "site_records.json",
+}
 
 SITE_MEMBER_FIELDS = [
     "이름", "SOOP ID", "생년월일", "성별", "종족", "티어",
@@ -90,27 +93,33 @@ def main() -> None:
         else []
     )
 
-    payload = {
+    shell_payload = {
         "members": [pick(row, SITE_MEMBER_FIELDS) for row in members],
+        "matchCount": len(matches),
+        "roundCount": len(rounds),
+    }
+    records_payload = {
         "matches": [pick(row, SITE_MATCH_FIELDS) for row in matches],
         "rounds": [pick(row, SITE_ROUND_FIELDS) for row in rounds],
         "playersStats": [pick(row, SITE_PLAYER_STAT_FIELDS) for row in member_stats],
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    temp = OUT_PATH.with_suffix(".json.tmp")
-    temp.write_text(
-        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8",
-    )
-    temp.replace(OUT_PATH)
+    for name, payload in (("shell", shell_payload), ("records", records_payload)):
+        path = OUT_PATHS[name]
+        temp = path.with_suffix(".json.tmp")
+        temp.write_text(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        temp.replace(path)
 
     print(
-        f"✅ site_data.json 생성 완료: "
-        f"members={len(payload['members'])}, "
-        f"matches={len(payload['matches'])}, "
-        f"rounds={len(payload['rounds'])}, "
-        f"playersStats={len(payload['playersStats'])}"
+        f"✅ 사이트 데이터 분리 생성 완료: "
+        f"members={len(shell_payload['members'])}, "
+        f"matches={len(records_payload['matches'])}, "
+        f"rounds={len(records_payload['rounds'])}, "
+        f"playersStats={len(records_payload['playersStats'])}"
     )
 
 

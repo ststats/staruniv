@@ -38,8 +38,8 @@ async function fetchHomePreviewData(path) {
 function renderHomeRecordsPreview(box) {
     const rows = [
         ['누적 인원', (SiteData.members || []).length, '명'],
-        ['누적 매치', (SiteData.matches || []).length, '경기'],
-        ['누적 세트', Number(SiteData.roundCount ?? (SiteData.rounds || []).length), '세트'],
+        ['누적 매치', Number(SiteData.matchCount || 0), '경기'],
+        ['누적 세트', Number(SiteData.roundCount || 0), '세트'],
     ];
     box.innerHTML = '<div class="home-preview-label">RECORDS</div>'
         + rows.map(([label, count, unit]) =>

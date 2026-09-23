@@ -70,6 +70,10 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
         <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.loadDashboard()">새로고침</button></div>
         <div id="dashboardKpis" class="admin-kpi-grid"></div>
         <div class="admin-card admin-db-card">
+          <div class="admin-section-title"><div><h3>PIPELINE STATUS</h3><p>한국 시간 기준 데이터 갱신과 최근 외부 크론 실행 상태입니다.</p></div></div>
+          <div id="pipelineFreshness" class="admin-db-grid"><div class="admin-empty-state">파이프라인 상태를 확인하는 중...</div></div>
+        </div>
+        <div class="admin-card admin-db-card">
           <div class="admin-section-title"><div><h3>ELO DATABASE</h3><p>Supabase <code>elo_matches</code>의 실제 행 수와 경기 범위를 직접 확인합니다.</p></div><button class="admin-btn" type="button" onclick="AdminApp.openEditSurface('elo')">ELO 조회</button></div>
           <div id="eloDatabaseStatus" class="admin-db-grid"><div class="admin-empty-state">ELO DB 상태를 확인하는 중...</div></div>
         </div>
@@ -92,7 +96,7 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
 
       <section id="panel-matches" class="admin-panel">
         <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editMatch()">+ 새 경기</button></div>
-        <div class="admin-card"><div class="admin-toolbar"><input id="matchSearch" class="admin-input admin-search" placeholder="상대팀 · 날짜 검색"><button class="admin-btn" onclick="AdminApp.loadMatches()">새로고침</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>번호</th><th>날짜</th><th>상대팀</th><th>형식</th><th>방식</th><th>결과</th><th>세트</th><th></th></tr></thead><tbody id="matchRows"></tbody></table></div><div id="matchEditor" class="admin-editor admin-card hidden"></div></div>
+        <div class="admin-card"><div class="admin-toolbar"><input id="matchSearch" class="admin-input admin-search" placeholder="상대팀 · 날짜 · 경기번호 검색"><button class="admin-btn" onclick="AdminApp.loadMatches(0)">검색</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>번호</th><th>날짜</th><th>상대팀</th><th>형식</th><th>방식</th><th>결과</th><th>세트</th><th></th></tr></thead><tbody id="matchRows"></tbody></table></div><div class="admin-pager"><button id="matchPrev" class="admin-btn">이전</button><span id="matchPageInfo"></span><button id="matchNext" class="admin-btn">다음</button></div><div id="matchEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-tier" class="admin-panel">

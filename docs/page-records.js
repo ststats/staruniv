@@ -534,4 +534,4 @@ bootPage(() => {
         const member = params.get('member');
         if (view === 'individual' && member) selectPlayer(member);
     }));
-});
+}, { siteData: ['shell', 'records'] });

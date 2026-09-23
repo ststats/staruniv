@@ -3,7 +3,8 @@
   "private": true,
   "description": "capture.js: admin.html의 캘린더 영역을 헤드리스 브라우저로 캡처해 docs/data/calendar.png로 저장",
   "scripts": {
-    "capture": "node capture.js"
+    "capture": "node capture.js",
+    "test": "node --test tests/*.test.js"
   },
   "engines": {
     "node": ">=20"

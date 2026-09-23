@@ -5,7 +5,7 @@ StarUniv 관리자와 정적 웹사이트 저장소입니다.
 - 관리자는 공유 Supabase의 일정, 멤버, 경기, 로스터, 영상 설정을 편집합니다.
 - `ststat`가 EloBoard, Poonggo, YouTube 데이터와 파생 통계를 갱신합니다.
 - 브라우저는 변동이 큰 티어·Elo·방송·영상 데이터를 Supabase에서 직접 읽습니다.
-- 멤버·내부 경기 화면은 Supabase export로 만든 `docs/data/site_data.json`을 사용합니다.
+- 일반 화면은 작은 `docs/data/site_shell.json`을 사용하고, 전적 화면만 `docs/data/site_records.json`을 추가로 읽습니다.
 
 ## 웹 빌드
 

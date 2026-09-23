@@ -10,6 +10,7 @@ const state = {
   role: null,
   members: [], teams: [], matches: [], calendarEvents: [], offAir: [], navConfig: {}, historyEntries: [], videoChannels: [], videoPicks: [], videos: [], externalTools: [],
   tierPage: 0, tierCount: 0, tierPageSize: 100,
+  matchPage: 0, matchCount: 0, matchPageSize: 100,
   currentMember: null, currentTeam: null, currentMatch: null, currentTier: null, currentSetting: null, currentHistory: null, currentVideoChannel: null, currentVideoPick: null, currentExternalTool: null,
 };
 
@@ -42,6 +43,12 @@ function setStatus(msg, type='info', target='globalStatus') {
 }
 function clearStatus(target='globalStatus') { const el=$(target); if(el){el.textContent=''; el.className='admin-status';} }
 function errText(e) { return e?.message || e?.details || String(e); }
+function adminKst(value) {
+  if(!value)return '';
+  const d=new Date(value);if(!Number.isFinite(d.getTime()))return String(value).slice(0,19);
+  const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,x)=>{if(x.type!=='literal')o[x.type]=x.value;return o;},{});
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} KST`;
+}
 function button(label, fn, cls='') { return `<button class="admin-btn ${cls}" type="button" onclick="${fn}">${esc(label)}</button>`; }
 async function deleteRecord(table, column, value, confirmText, reload, successText='') {
   if (confirmText && !confirm(confirmText)) return;
@@ -276,28 +283,49 @@ async function loadDashboard() {
     ['videos','id','수집 영상'],['video_picks','id','추천 영상'],['external_tools','id','외부도구'],
     ['elo_players','elo_id','ELO 선수'],
   ];
-  const [normalCards, eloStatsResult] = await Promise.all([
-    Promise.all(tables.map(async ([table,column,label]) => {
-      const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});
-      return {table,label,count:count??0,error};
-    })),
-    // elo_matches는 37만+ 행이라 브라우저의 count=exact + RLS로 직접 세지 않는다.
-    // 관리자 확인을 한 번만 하는 DB RPC에서 exact count와 범위를 함께 가져온다.
-    state.client.rpc('admin_elo_stats')
-  ]);
-  const eloStats=Array.isArray(eloStatsResult.data)?(eloStatsResult.data[0]||null):eloStatsResult.data;
-  const eloCard={table:'elo_matches',label:'ELO 경기',count:Number(eloStats?.total||0),error:eloStatsResult.error||null};
-  const cards=[...normalCards.slice(0,10),eloCard,...normalCards.slice(10)];
+  let cards=[]; let eloStats=null; let freshness=null; let eloCard=null;
+  const overview=await state.client.rpc('admin_dashboard_stats');
+  if(!overview.error&&overview.data){
+    const counts=overview.data.counts||{};
+    const normalCards=tables.map(([table,_column,label])=>({table,label,count:Number(counts[table]||0),error:null}));
+    eloStats=overview.data.elo||null;
+    eloCard={table:'elo_matches',label:'ELO 경기',count:Number(counts.elo_matches||eloStats?.total||0),error:null};
+    cards=[...normalCards.slice(0,10),eloCard,...normalCards.slice(10)];
+    freshness=overview.data.freshness||null;
+  }else{
+    // 010 migration 적용 전에도 관리 화면은 계속 동작한다.
+    const [normalCards,eloStatsResult]=await Promise.all([
+      Promise.all(tables.map(async([table,column,label])=>{const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});return{table,label,count:count??0,error};})),
+      state.client.rpc('admin_elo_stats')
+    ]);
+    eloStats=Array.isArray(eloStatsResult.data)?(eloStatsResult.data[0]||null):eloStatsResult.data;
+    eloCard={table:'elo_matches',label:'ELO 경기',count:Number(eloStats?.total||0),error:eloStatsResult.error||null};
+    cards=[...normalCards.slice(0,10),eloCard,...normalCards.slice(10)];
+  }
 
   $('dashboardKpis').innerHTML=cards.map(x=>x.error
     ? `<div class="admin-card admin-kpi is-error"><b>—</b><span>${esc(x.label)}</span><small>조회 실패</small></div>`
     : `<div class="admin-card admin-kpi${x.table==='elo_matches'?' admin-kpi-emphasis':''}"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span>${x.table==='elo_matches'?'<small>DB exact count</small>':''}</div>`).join('');
 
   renderEloDatabaseStatus(eloCard,eloStats);
+  renderPipelineFreshness(freshness);
 
   const failed=cards.filter(x=>x.error);
   if(failed.length) setStatus(`일부 현황 조회 실패 · ${failed.map(x=>`${x.label}(${x.table}): ${errText(x.error)}`).join(' · ')}`,'error');
   else clearStatus();
+}
+
+function renderEloDatabaseStatus(card,stats){
+  const el=$('eloDatabaseStatus'); if(!el)return;
+  if(card.error){el.innerHTML=`<div class="admin-empty-state">ELO DB 조회 실패 · ${esc(errText(card.error))}</div>`;return;}
+  el.innerHTML=`<div><span>전체 경기</span><b>${Number(stats?.total||card.count||0).toLocaleString()}</b></div><div><span>경기 ID 범위</span><b>${esc(stats?.min_match_id??'-')}–${esc(stats?.max_match_id??'-')}</b></div><div><span>경기 날짜</span><b>${esc(stats?.first_match_date||'-')}–${esc(stats?.last_match_date||'-')}</b></div>`;
+}
+
+function renderPipelineFreshness(data){
+  const el=$('pipelineFreshness'); if(!el)return;
+  if(!data){el.innerHTML='<div class="admin-empty-state">010 관리자 현황 마이그레이션 적용 후 갱신 상태가 표시됩니다.</div>';return;}
+  const status=String(data.last_job_status||'unknown');
+  el.innerHTML=`<div><span>방송통계 기준일</span><b>${esc(data.daily_stat_date||'-')}</b><small>${esc(adminKst(data.daily_updated_at)||'-')}</small></div><div><span>ELO 기준일</span><b>${esc(data.elo_as_of||'-')}</b><small>${esc(adminKst(data.elo_activated_at)||'-')}</small></div><div class="${status==='failed'?'is-error':''}"><span>최근 파이프라인</span><b>${esc(data.last_job_name||'-')} · ${esc(status)}</b><small>${esc(adminKst(data.last_job_finished_at)||'-')}</small></div>`;
 }
 
 // ---- members ----
@@ -352,7 +380,7 @@ async function saveTeam(ev){ev.preventDefault();try{const row={team_name:inputVa
 async function deleteTeam(id){return deleteRecord('teams','id',id,'이 팀을 삭제할까요? matches의 상대팀 문자열은 자동 변경되지 않습니다.',loadTeams);}
 
 // ---- matches / rounds ----
-async function loadMatches(){const {data,error}=await state.client.from('matches').select('*').order('match_date',{ascending:false}).order('match_no',{ascending:false}).limit(500);if(error)return setStatus(`전적 조회 실패: ${errText(error)}`,'error');state.matches=data||[];renderMatches();}
+async function loadMatches(page=0){state.matchPage=Math.max(0,page);const from=state.matchPage*state.matchPageSize,to=from+state.matchPageSize-1;let query=state.client.from('matches').select('*',{count:'exact'}).order('match_date',{ascending:false}).order('match_no',{ascending:false}).range(from,to);const q=inputValue('matchSearch').trim();if(/^\d+$/.test(q))query=query.eq('match_no',Number(q));else if(/^\d{4}-\d{2}-\d{2}$/.test(q))query=query.eq('match_date',q);else if(q)query=query.ilike('opponent_team',`%${q}%`);const {data,count,error}=await query;if(error)return setStatus(`전적 조회 실패: ${errText(error)}`,'error');state.matches=data||[];state.matchCount=count||0;renderMatches();const pages=Math.max(1,Math.ceil(state.matchCount/state.matchPageSize));$('matchPageInfo').textContent=`${state.matchPage+1} / ${pages} · ${state.matchCount.toLocaleString()}경기`;$('matchPrev').disabled=state.matchPage<=0;$('matchNext').disabled=state.matchPage>=pages-1;}
 function renderMatches(){const q=inputValue('matchSearch').trim().toLowerCase();const rows=state.matches.filter(r=>!q||[r.opponent_team,r.match_date,r.final_result,r.match_no].some(v=>String(v??'').toLowerCase().includes(q)));$('matchRows').innerHTML=rows.map(r=>`<tr><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${esc(r.final_result)}</td><td>${esc(r.set_result)}</td><td><div class="admin-row-actions">${button('수정',`AdminApp.editMatch(${r.match_no})`)}${button('삭제',`AdminApp.deleteMatch(${r.match_no})`,'danger')}</div></td></tr>`).join('')||'<tr><td colspan="8">검색 결과가 없습니다.</td></tr>';}
 async function editMatch(matchNo){let r={};let rounds=[];if(matchNo){r=state.matches.find(x=>x.match_no===matchNo)||{};const res=await state.client.from('rounds').select('*').eq('match_no',matchNo).order('source_order');if(res.error)return setStatus(`세트 조회 실패: ${errText(res.error)}`,'error');rounds=res.data||[];}state.currentMatch=r;$('matchEditor').innerHTML=matchForm(r,rounds);$('matchEditor').classList.remove('hidden');}
 function matchForm(r={},rounds=[]){return `<form onsubmit="return AdminApp.saveMatch(event)"><input id="ma_source_order" type="hidden" value="${esc(r.source_order)}"><div class="admin-form-grid"><div class="admin-field"><label>매치 번호 ${r.match_no?'(수정 불가)':'(비우면 자동)'}</label><input id="ma_no" class="admin-input" type="number" value="${esc(r.match_no)}" ${r.match_no?'readonly':''}></div><div class="admin-field"><label>날짜 *</label><input id="ma_date" class="admin-input" type="date" value="${esc(r.match_date)}" required></div><div class="admin-field"><label>상대팀 *</label><input id="ma_opponent" class="admin-input" value="${esc(r.opponent_team)}" required></div><div class="admin-field"><label>형식</label><input id="ma_format" class="admin-input" value="${esc(r.match_format)}"></div><div class="admin-field"><label>방식</label><input id="ma_method" class="admin-input" value="${esc(r.method)}"></div><div class="admin-field"><label>최종 결과</label><input id="ma_result" class="admin-input" value="${esc(r.final_result)}" placeholder="4:2"></div><div class="admin-field"><label>세트 결과</label><input id="ma_set_result" class="admin-input" value="${esc(r.set_result)}"></div><div class="admin-field"><label>득실</label><input id="ma_score_diff" class="admin-input" value="${esc(r.score_diff)}"></div><div class="admin-field"><label>펀딩</label><input id="ma_funding" class="admin-input" value="${esc(r.funding)}"></div><div class="admin-field"><label>지원금</label><input id="ma_support" class="admin-input" value="${esc(r.support_amount)}"></div><div class="admin-field"><label>사비</label><input id="ma_personal" class="admin-input" value="${esc(r.personal_amount)}"></div><div class="admin-field"><label>도전미션</label><input id="ma_challenge" class="admin-input" value="${esc(r.challenge_mission)}"></div></div><div class="admin-rounds"><div class="admin-toolbar"><b>세트/라운드</b><button type="button" class="admin-btn" onclick="AdminApp.addRound()">+ 라운드</button></div><div id="roundRows">${rounds.map(roundForm).join('')}</div></div><div class="admin-form-actions"><button type="button" class="admin-btn" onclick="AdminApp.closeEditor('matchEditor')">취소</button><button class="admin-btn primary">경기 저장</button></div></form>`;}
@@ -469,7 +497,7 @@ async function init(){
   state.client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   $('loginForm').addEventListener('submit',login);$('logoutBtn').addEventListener('click',logout);$('deniedLogout').addEventListener('click',logout);
   $('memberSearch').addEventListener('input',renderMembers);$('teamSearch').addEventListener('input',renderTeams);$('matchSearch').addEventListener('input',renderMatches);
-  $('tierPrev').addEventListener('click',()=>loadTierMembers(state.tierPage-1));$('tierNext').addEventListener('click',()=>loadTierMembers(state.tierPage+1));$('tierSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadTierMembers(0);});$('eloSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchElo();});
+  $('tierPrev').addEventListener('click',()=>loadTierMembers(state.tierPage-1));$('tierNext').addEventListener('click',()=>loadTierMembers(state.tierPage+1));$('tierSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadTierMembers(0);});$('matchPrev').addEventListener('click',()=>loadMatches(state.matchPage-1));$('matchNext').addEventListener('click',()=>loadMatches(state.matchPage+1));$('matchSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadMatches(0);});$('eloSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchElo();});
   state.client.auth.onAuthStateChange((_event,session)=>{if(!session && !$('loginView').classList.contains('admin-hidden'))return;if(!session)showOnly('loginView');});
   await verifyAdmin();
 }
