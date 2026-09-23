@@ -14,6 +14,22 @@ const state = {
 };
 
 function showOnly(id) { views.forEach(v => $(v)?.classList.toggle('admin-hidden', v !== id)); }
+function setTheme(theme) {
+  const value = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = value;
+  document.documentElement.dataset.bsTheme = value;
+  try { localStorage.setItem('staruniv-theme', value); } catch (_) { }
+  document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === value)));
+}
+function toggleSiteMenu(force) {
+  const header = document.querySelector('.admin-site-nav');
+  const button = $('adminNavDrawerBtn');
+  if (!header || !button) return;
+  const open = typeof force === 'boolean' ? force : !header.classList.contains('menu-open');
+  header.classList.toggle('menu-open', open);
+  button.setAttribute('aria-expanded', String(open));
+  button.setAttribute('aria-label', open ? '메뉴 닫기' : '메뉴 열기');
+}
 function esc(v) { return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function emptyToNull(v) { const s = String(v ?? '').trim(); return s === '' ? null : s; }
 function intOrNull(v) { const s = String(v ?? '').trim(); if (!s) return null; const n = Number.parseInt(s, 10); return Number.isFinite(n) ? n : null; }
@@ -57,8 +73,7 @@ async function verifyAdmin() {
   $('adminIdentity').textContent = user.email || user.id;
   $('adminRole').textContent = data.role;
   showOnly('adminView');
-  await loadDashboard();
-  await loadMembers();
+  switchPanel('home');
   return true;
 }
 
@@ -72,19 +87,41 @@ async function login(ev) {
 }
 async function logout() { await state.client.auth.signOut(); state.user=null; showOnly('loginView'); }
 
+const ADMIN_GROUPS = {
+  home: ['dashboard','navigation'],
+  schedule: ['schedule','history'],
+  members: ['members'],
+  records: ['matches','teams','settings'],
+  tier: ['tier','elo'],
+  video: ['video'],
+  stats: ['stats-settings'],
+  tools: ['external-tools'],
+};
+const ADMIN_PAGE_META = {
+  home:['ADMIN · HOME','홈 관리','홈과 사이트 공통 설정을 관리합니다.'],
+  schedule:['ADMIN · SCHEDULE','일정 관리','본 페이지의 캘린더에서 일정·휴방·연혁을 바로 편집합니다.'],
+  members:['ADMIN · MEMBERS','멤버 관리','본 페이지에 표시되는 멤버 정보를 관리합니다.'],
+  records:['ADMIN · RECORDS','전적 관리','경기·팀·시즌 정보를 한 화면에서 관리합니다.'],
+  tier:['ADMIN · TIER','티어표 관리','티어 명단을 편집하고 ELO 선수를 조회합니다.'],
+  video:['ADMIN · VIDEO','영상 관리','팬튜브 채널과 추천·수집 영상을 관리합니다.'],
+  stats:['ADMIN · STATS','방송통계 관리','본 페이지에 표시할 방송통계 지표를 관리합니다.'],
+  tools:['ADMIN · TOOLS','도구 관리','본 페이지의 외부도구 링크를 관리합니다.'],
+};
+
 function switchPanel(name) {
-  document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', el.id === `panel-${name}`));
-  document.querySelectorAll('#adminNav button').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
+  const panels = new Set(ADMIN_GROUPS[name] || ADMIN_GROUPS.home);
+  document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', panels.has(el.id.replace('panel-',''))));
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
+  const meta=ADMIN_PAGE_META[name]||ADMIN_PAGE_META.home;
+  $('adminPageEyebrow').textContent=meta[0];$('adminPageTitle').textContent=meta[1];$('adminPageDescription').textContent=meta[2];
+  if (name==='home') { loadDashboard(); loadNavigation(); }
+  if (name==='schedule') { loadSchedule(); loadHistoryEntries(); }
   if (name==='members') loadMembers();
-  if (name==='teams') loadTeams();
-  if (name==='matches') loadMatches();
-  if (name==='tier') loadTierMembers(state.tierPage);
-  if (name==='settings') loadSettings();
-  if (name==='schedule') loadSchedule();
-  if (name==='navigation') loadNavigation();
-  if (name==='history') loadHistoryEntries();
+  if (name==='records') { loadMatches(); loadTeams(); loadSettings(); }
+  if (name==='tier') { loadTierMembers(state.tierPage); searchElo(); }
   if (name==='video') loadVideoAdmin();
-  if (name==='external-tools') loadExternalTools();
+  if (name==='stats') loadNavigation();
+  if (name==='tools') loadExternalTools();
 }
 
 async function loadDashboard() {
@@ -179,14 +216,20 @@ async function loadSchedule(){
   const [evRes,offRes]=await Promise.all([state.client.from('calendar_events').select('*').order('start_date').order('source_order'),state.client.from('calendar_off_air').select('*').order('off_date').order('source_order')]);
   if(evRes.error||offRes.error)return setStatus(`일정 조회 실패: ${errText(evRes.error||offRes.error)}`,'error');
   state.calendarEvents=evRes.data||[];state.offAir=offRes.data||[];
-  $('scheduleRows').innerHTML=state.calendarEvents.map(r=>`<tr><td>${esc(r.start_date)}${r.end_date&&r.end_date!==r.start_date?` ~ ${esc(r.end_date)}`:''}</td><td>${esc(r.event_time)}</td><td><b>${esc(r.person)}</b></td><td>${esc(r.description)}</td><td><span style="display:inline-block;width:18px;height:18px;background:${esc(r.color||'#999')};border:1px solid #aaa"></span></td><td><div class="admin-row-actions">${button('수정',`AdminApp.editSchedule(${r.id})`)}${button('삭제',`AdminApp.deleteSchedule(${r.id})`,'danger')}</div></td></tr>`).join('')||'<tr><td colspan="6">등록된 일정이 없습니다.</td></tr>';
+  calEvents=state.calendarEvents.map(r=>({id:r.id,startDate:r.start_date,endDate:r.end_date||r.start_date,time:r.event_time||'',person:r.person||'',desc:r.description||'',detail:r.detail||'',color:r.color||''}));
+  calOffAir={};state.offAir.forEach(r=>(calOffAir[r.off_date]??=[]).push(r.soop_id));
   $('offAirRows').innerHTML=state.offAir.map(r=>`<tr><td>${esc(r.off_date)}</td><td><b>${esc(r.soop_id)}</b></td><td>${button('삭제',`AdminApp.deleteOffAir('${String(r.off_date).replaceAll("'","\'")}','${String(r.soop_id).replaceAll("'","\'")}')`,'danger')}</td></tr>`).join('')||'<tr><td colspan="3">등록된 휴방이 없습니다.</td></tr>';
+  calRenderCalendar();
+  calSelectDate(calSelectedDateStr||calTodayStr());
 }
-function editSchedule(id){const r=id?state.calendarEvents.find(x=>String(x.id)===String(id)):{};state.currentSchedule=r||{};$('scheduleEditor').innerHTML=`<form onsubmit="return AdminApp.saveSchedule(event)"><div class="admin-form-grid"><div class="admin-field"><label>시작일 *</label><input id="c_start" type="date" class="admin-input" value="${esc(r.start_date)}" required></div><div class="admin-field"><label>종료일 *</label><input id="c_end" type="date" class="admin-input" value="${esc(r.end_date||r.start_date)}" required></div><div class="admin-field"><label>시간</label><input id="c_time" class="admin-input" value="${esc(r.event_time)}"></div><div class="admin-field"><label>사람/제목 *</label><input id="c_person" class="admin-input" value="${esc(r.person)}" required></div><div class="admin-field"><label>간략내용</label><input id="c_desc" class="admin-input" value="${esc(r.description)}"></div><div class="admin-field"><label>상세내용</label><input id="c_detail" class="admin-input" value="${esc(r.detail)}"></div><div class="admin-field"><label>색상</label><input id="c_color" type="color" class="admin-input" value="${esc(r.color||'#1677ff')}"></div></div><div class="admin-form-actions"><button type="button" class="admin-btn" onclick="AdminApp.closeEditor('scheduleEditor')">취소</button><button class="admin-btn primary">저장</button></div></form>`;$('scheduleEditor').classList.remove('hidden');}
+function editSchedule(id,date){const r=id?state.calendarEvents.find(x=>String(x.id)===String(id)):{};const selected=date||calSelectedDateStr||calTodayStr();state.currentSchedule=r||{};$('scheduleEditor').innerHTML=`<form onsubmit="return AdminApp.saveSchedule(event)"><div class="admin-form-grid"><div class="admin-field"><label>시작일 *</label><input id="c_start" type="date" class="admin-input" value="${esc(r.start_date||selected)}" required></div><div class="admin-field"><label>종료일 *</label><input id="c_end" type="date" class="admin-input" value="${esc(r.end_date||r.start_date||selected)}" required></div><div class="admin-field"><label>시간</label><input id="c_time" class="admin-input" value="${esc(r.event_time)}" placeholder="19:00"></div><div class="admin-field"><label>사람/제목 *</label><input id="c_person" class="admin-input" value="${esc(r.person)}" required></div><div class="admin-field"><label>간략내용</label><input id="c_desc" class="admin-input" value="${esc(r.description)}"></div><div class="admin-field"><label>상세내용</label><input id="c_detail" class="admin-input" value="${esc(r.detail)}"></div><div class="admin-field"><label>색상</label><input id="c_color" type="color" class="admin-input" value="${esc(r.color||'#1677ff')}"></div></div><div class="admin-form-actions"><button type="button" class="admin-btn" onclick="AdminApp.closeEditor('scheduleEditor')">취소</button><button class="admin-btn primary">저장</button></div></form>`;$('scheduleEditor').classList.remove('hidden');}
 async function saveSchedule(ev){ev.preventDefault();try{const row={start_date:inputValue('c_start'),end_date:inputValue('c_end')||inputValue('c_start'),event_time:emptyToNull(inputValue('c_time')),person:inputValue('c_person').trim(),description:emptyToNull(inputValue('c_desc')),detail:emptyToNull(inputValue('c_detail')),color:emptyToNull(inputValue('c_color'))};let error;if(state.currentSchedule?.id){({error}=await state.client.from('calendar_events').update(row).eq('id',state.currentSchedule.id));}else{row.id=Date.now();row.source_order=await nextSourceOrder('calendar_events');({error}=await state.client.from('calendar_events').insert(row));}if(error)throw error;$('scheduleEditor').classList.add('hidden');setStatus('일정을 저장했습니다.','ok');await loadSchedule();}catch(e){setStatus(`일정 저장 실패: ${errText(e)}`,'error');}return false;}
 async function deleteSchedule(id){return deleteRecord('calendar_events','id',id,'이 일정을 삭제할까요?',loadSchedule);}
 async function saveOffAir(ev){ev.preventDefault();try{const date=inputValue('o_date'),sid=inputValue('o_soop').trim();if(!date||!sid)throw new Error('날짜와 SOOP ID는 필수입니다.');const same=state.offAir.filter(x=>x.off_date===date);const {error}=await state.client.from('calendar_off_air').upsert({off_date:date,soop_id:sid,source_order:same.length+1},{onConflict:'off_date,soop_id'});if(error)throw error;$('o_soop').value='';setStatus('휴방을 저장했습니다.','ok');await loadSchedule();}catch(e){setStatus(`휴방 저장 실패: ${errText(e)}`,'error');}return false;}
 async function deleteOffAir(date,sid){const {error}=await state.client.from('calendar_off_air').delete().eq('off_date',date).eq('soop_id',sid);if(error)return setStatus(`휴방 삭제 실패: ${errText(error)}`,'error');await loadSchedule();}
+
+window.calCardExtra=(item,_date,type)=>type==='selected'?`<div class="cal-card-actions"><button type="button" class="edit-btn" onclick="AdminApp.editSchedule(${Number(item.id)})">수정</button><button type="button" class="delete-btn" onclick="AdminApp.deleteSchedule(${Number(item.id)})">삭제</button></div>`:'';
+window.calOnDateSelect=date=>{if($('o_date'))$('o_date').value=date;editSchedule(null,date);};
 
 // ---- navigation ----
 async function loadNavigation(){const {data,error}=await state.client.from('site_config').select('config_value').eq('config_key','nav').maybeSingle();if(error)return setStatus(`메뉴 설정 조회 실패: ${errText(error)}`,'error');state.navConfig=data?.config_value||{hidden:[],statsTabs:[],heroDescriptions:{}};const hidden=new Set(state.navConfig.hidden||[]),stats=new Set(state.navConfig.statsTabs||[]);document.querySelectorAll('[data-nav-key]').forEach(x=>x.checked=!hidden.has(x.dataset.navKey));document.querySelectorAll('[data-stat-key]').forEach(x=>x.checked=!stats.has(x.dataset.statKey));$('heroDescriptionsJson').value=JSON.stringify(state.navConfig.heroDescriptions||{},null,2);}
@@ -250,16 +293,17 @@ async function searchElo(){const q=inputValue('eloSearch').trim();let query=stat
 function closeEditor(id){$(id)?.classList.add('hidden');}
 
 async function init(){
+  setTheme(document.documentElement.dataset.theme);
+  $('adminSiteMenu')?.addEventListener('click',e=>{const b=e.target.closest('[data-panel]');if(b){switchPanel(b.dataset.panel);toggleSiteMenu(false);}});
   if(!cfg.url||!cfg.key||!window.supabase?.createClient){showOnly('configError');return;}
   state.client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   $('loginForm').addEventListener('submit',login);$('logoutBtn').addEventListener('click',logout);$('deniedLogout').addEventListener('click',logout);
-  $('adminNav').addEventListener('click',e=>{const b=e.target.closest('button[data-panel]');if(b)switchPanel(b.dataset.panel);});
   $('memberSearch').addEventListener('input',renderMembers);$('teamSearch').addEventListener('input',renderTeams);$('matchSearch').addEventListener('input',renderMatches);
   $('tierPrev').addEventListener('click',()=>loadTierMembers(state.tierPage-1));$('tierNext').addEventListener('click',()=>loadTierMembers(state.tierPage+1));$('tierSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadTierMembers(0);});$('eloSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchElo();});
   state.client.auth.onAuthStateChange((_event,session)=>{if(!session && !$('loginView').classList.contains('admin-hidden'))return;if(!session)showOnly('loginView');});
   await verifyAdmin();
 }
 
-window.AdminApp={loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,loadMatches,editMatch,saveMatch,deleteMatch,addRound,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
+window.AdminApp={setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
 init().catch(e=>{console.error(e);showOnly('configError');});
 })();

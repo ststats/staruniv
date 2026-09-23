@@ -6,13 +6,9 @@
  *     관리자가 제목·설명·사진·유튜브를 덧붙이거나 숨길 수 있고, 그 값은 overrides[자동 id]에 저장된다.
  *   - 수동 항목: 관리자가 직접 추가한 창단·대회·방송 등. items 배열에 저장된다.
  *
- * docs/data/history.json
- *   { "items": [ { id, date:'YYYY-MM-DD', type, title, desc, members:['이름'], youtube, image } ],
- *     "overrides": { "auto-join-2025-08-04": { title, desc, youtube, image, hidden } } }
- *   image는 저장소 안 경로(data/history/xxx.jpg)다. 사진이 없고 유튜브 링크가 있으면 유튜브 썸네일을 쓴다.
+ * 운영 데이터는 Supabase history_entries에서 직접 읽는다. image는 저장소 경로나 공개 URL이며,
+ * 사진이 없고 유튜브 링크가 있으면 유튜브 썸네일을 쓴다.
  */
-
-const HISTORY_DATA_URL = 'data/history.json'; // migration 전/장애 시 fallback only
 
 // 종류: 라벨과 점/배지 색 이름(CSS .hist-type-*)
 const HISTORY_TYPES = {
@@ -274,8 +270,8 @@ function histOpenMedia(id) {
 async function histLoadData() {
     try {
         const client = (typeof publicSupabaseClient === 'function') ? publicSupabaseClient() : null;
-        if (client) {
-            const { data, error } = await client.from('history_entries')
+        if (!client) throw new Error('Supabase browser client is not configured');
+        const { data, error } = await client.from('history_entries')
                 .select('id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden')
                 .order('event_date', { ascending: false, nullsFirst: false });
             if (error) throw error;
@@ -286,14 +282,9 @@ async function histLoadData() {
                 if (r.entry_kind === 'override') out.overrides[r.id] = value;
                 else out.items.push({ id:r.id, date:String(r.event_date||''), type:r.event_type||'event', ...value });
             });
-            return out;
-        }
+        return out;
     } catch (e) {
-        console.warn('Supabase 연혁 조회 실패 - 정적 history.json으로 fallback합니다:', e);
+        console.error('Supabase 연혁 조회 실패:', e);
+        return { items: [], overrides: {} };
     }
-    try {
-        const res = await fetch(HISTORY_DATA_URL, { cache: 'no-cache' });
-        if (res.ok) return await res.json();
-    } catch (e) { console.error('연혁 fallback도 불러오지 못했습니다:', e); }
-    return { items: [], overrides: {} };
 }

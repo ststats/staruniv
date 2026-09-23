@@ -210,10 +210,9 @@ document.addEventListener('keydown', e => {
 });
 
 // =====================================================================
-// 2. 사이트 데이터 (site_data.json)
+// 2. 사이트 데이터 (Supabase)
 // =====================================================================
-// 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
-// 박아넣지 않고 별도 JSON(data/site_data.json)에서 비동기로 fetch해온다.
+// 멤버/매치/라운드/개인통계는 브라우저가 Supabase에서 직접 읽는다.
 const SiteData = {
     members: [],
     matches: [],
@@ -227,18 +226,6 @@ const SiteData = {
 const SiteDataLoad = { status: 'idle', error: null };
 
 const asArray = v => (Array.isArray(v) ? v : []);
-
-// [캐시] 예전엔 매번 no-store로 받아서 브라우저 캐시를 전혀 못 썼다. 빌드가 index.html에 넣어준
-// 버전(<meta name="site-data-version">)을 주소에 붙이면, 데이터가 바뀐 배포에서만 주소가 바뀌므로
-// 평소엔 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면(옛 index.html 등) 매번
-// 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
-function siteDataRequest() {
-    const meta = document.querySelector('meta[name="site-data-version"]');
-    const version = meta && meta.content;
-    return version
-        ? { url: `data/site_data.json?v=${encodeURIComponent(version)}`, cache: 'default' }
-        : { url: 'data/site_data.json', cache: 'no-cache' };
-}
 
 function publicSupabaseClient() {
     if (window.StarUnivSupabaseClient) return window.StarUnivSupabaseClient;
@@ -363,24 +350,11 @@ async function loadSiteDataFromSupabase() {
     return { members, matches, rounds: allRounds, playersStats: buildDirectPlayerStats(allRounds), teamLogos };
 }
 
-async function loadSiteDataFromStaticFallback() {
-    const { url, cache } = siteDataRequest();
-    const res = await fetch(url, { cache });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-}
-
 async function loadSiteData() {
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        let data;
-        try {
-            data = await loadSiteDataFromSupabase();
-        } catch (directError) {
-            console.warn('Supabase 직접 조회 실패 - 정적 데이터로 fallback합니다:', directError);
-            data = await loadSiteDataFromStaticFallback();
-        }
+        const data = await loadSiteDataFromSupabase();
         SiteData.members = asArray(data && data.members);
         SiteData.matches = asArray(data && data.matches);
         SiteData.rounds = asArray(data && data.rounds);
@@ -942,28 +916,17 @@ const PageState = {
 // ---------------------------------------------------------------------------
 // 상단 메뉴 표시/숨김 (Supabase site_config/nav - 어드민 페이지에서 관리)
 // ---------------------------------------------------------------------------
-// 메뉴는 빌드 타임에 HTML로 박히므로(build_html.py가 nav.json을 읽어 hidden을 붙인다)
-// 평소엔 이 함수가 할 일이 없다. 이 함수가 필요한 이유는 어드민에서 저장한 직후다 -
-// 다음 빌드(데이터 갱신 워크플로)까지 기다리지 않고 바로 반영되게 한다.
-// 실패하면(파일 없음/깨짐/오프라인) 아무것도 건드리지 않는다 - 메뉴가 사라지는 쪽보다
-// HTML에 이미 박혀 있는 상태를 그대로 두는 쪽이 안전한 실패다.
-// 숨긴 방송통계 지표 탭. nav.json을 읽기 전에는 비어 있다(= 아무것도 숨기지 않음).
+// 실패하면 HTML의 기본 표시 상태를 유지한다.
 let HiddenStatsTabs = new Set();
 const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
 
 async function applyNavVisibility() {
     try {
-        let data = null;
         const client = publicSupabaseClient();
-        if (client) {
-            const { data: row, error } = await client.from('site_config').select('config_value').eq('config_key', 'nav').maybeSingle();
-            if (error) throw error;
-            data = row?.config_value || {};
-        } else {
-            const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
-            if (!res.ok) return;
-            data = await res.json();
-        }
+        if (!client) throw new Error('Supabase browser client is not configured');
+        const { data: row, error } = await client.from('site_config').select('config_value').eq('config_key', 'nav').maybeSingle();
+        if (error) throw error;
+        const data = row?.config_value || {};
         if (!data || typeof data !== 'object') return;
         if (Array.isArray(data.hidden)) {
             const hidden = new Set(data.hidden.map(String));
@@ -973,8 +936,7 @@ async function applyNavVisibility() {
             const menu = document.getElementById('mainMenu');
             if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
         }
-        // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 파일에서 끈다. 빌드 때 이미 hidden이
-        // 붙어 있지만, 어드민에서 방금 저장한 걸 다음 빌드까지 기다리지 않고 바로 반영한다.
+        // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 설정에서 끈다.
         const heroDescriptions = (data.heroDescriptions && typeof data.heroDescriptions === 'object') ? data.heroDescriptions : {};
         // 홈 캐러셀은 히어로가 셋이라 각 문구를 별도 키로 바꾼다.
         document.querySelectorAll('[data-hero-description]').forEach(subtitle => {
@@ -998,7 +960,7 @@ async function applyNavVisibility() {
         // 켜져 있던 탭이 숨겨졌으면 보이는 탭으로 옮긴다(방송통계 페이지에서만 있는 함수).
         if (typeof syncStatsMetricVisibility === 'function') syncStatsMetricVisibility();
     } catch (_) {
-        // 실패하면 빌드에 저장된 메뉴 상태를 유지한다.
+        // 실패하면 HTML 기본 상태를 유지한다.
     } finally {
         delete document.documentElement.dataset.navPending;
     }
@@ -1007,10 +969,7 @@ async function applyNavVisibility() {
 // 페이지 시작: 사이트 데이터(멤버/경기 등)를 먼저 불러온 뒤 페이지별 초기화를 실행한다.
 // 이 스크립트들은 body 맨 끝에서 실행되므로 DOM은 이미 준비돼 있지만, 순서를 확실히 하려고
 // DOMContentLoaded에 맞춘다(이미지 로딩까지 기다리는 window.onload보다 빠르다).
-// opts.siteData: false 면 site_data.json(멤버·경기 기록)을 아예 안 받는다.
-// 티어표·영상처럼 그 데이터를 한 줄도 안 쓰는 페이지가 400KB짜리 파일을 기다렸다
-// 시작하던 걸 없애기 위한 것이다. 그 페이지에서 SiteData를 쓰기 시작하면 여기 옵션을
-// 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
+// opts.siteData: false면 멤버·경기 Supabase 요청을 생략한다.
 function bootPage(init, opts) {
     const needsSiteData = !(opts && opts.siteData === false);
     const start = async () => {

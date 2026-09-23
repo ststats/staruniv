@@ -3,7 +3,7 @@
     //
     // [공개 인터페이스 - 이름을 바꾸면 admin.html/app.js가 깨진다]
     //   상태: calEvents, calOffAir(admin이 직접 재할당/수정), calSelectedDateStr(app.js가 대입)
-    //   함수: calEscapeHTML, calGetFormatDate, calTodayStr, calMigrateData, loadPublicHolidays,
+    //   함수: calEscapeHTML, calGetFormatDate, calTodayStr, loadPublicHolidays,
     //         calLoadPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
     //         calRenderTodaySchedules, calRenderSelectedDateSchedules
     //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
@@ -25,8 +25,7 @@
     //           detail(상세내용, 선택), color }
     // 하루짜리 일정은 startDate === endDate 인 항목일 뿐, 기간 일정과 데이터/렌더링 방식이 동일하다.
     let calEvents = [];
-    // 일정/휴방 운영 데이터는 Supabase를 직접 읽는다. 정적 calendar.json은 마이그레이션 전/장애 시 fallback만 사용한다.
-    const CAL_FALLBACK_URL = 'data/calendar.json';
+    // 일정/휴방 운영 데이터는 Supabase를 직접 읽는다.
 
     // 날짜별 휴방 멤버 목록 - { "YYYY-MM-DD": ["soopId1", "soopId2"] } 형태.
     // 휴방은 시간/제목이 있는 "일정"이 아니라 그날의 멤버 상태라 calEvents와 별개로 관리한다.
@@ -167,33 +166,6 @@
     const calEventsForDate = (dateStr, source) =>
         calSortByTime((source || calEvents).filter(ev => ev && calEventCoversDate(ev, dateStr)));
 
-    // 예전 데이터 형식(schedules: {날짜: [...]}, longTerm: [...])을 새 통합 형식(단일 배열)으로
-    // 변환한다. 이미 새 형식(events 배열)이면 그대로 통과. 새로 저장할 때는 항상 통합 형식만 쓴다.
-    const calMigrateData = (parsed) => {
-        if (!parsed) return [];
-        if (Array.isArray(parsed.events)) return parsed.events;
-
-        const migrated = [];
-        const oldSchedules = parsed.schedules || {};
-        Object.keys(oldSchedules).forEach(dateStr => {
-            (oldSchedules[dateStr] || []).forEach(item => {
-                migrated.push({
-                    id: item.id, startDate: dateStr, endDate: dateStr,
-                    time: item.time || '', person: item.person || '',
-                    desc: item.desc || '', detail: item.detail || '', color: item.color,
-                });
-            });
-        });
-        (parsed.longTerm || []).forEach(lt => {
-            migrated.push({
-                id: lt.id, startDate: lt.startDate, endDate: lt.endDate,
-                time: lt.time || '', person: lt.title || '',
-                desc: lt.desc || '', detail: lt.detail || '', color: lt.color,
-            });
-        });
-        return migrated;
-    };
-
     const calLoadPublicData = async () => {
         await loadPublicHolidays();
         try {
@@ -211,15 +183,9 @@
             calOffAir = {};
             (offRes.data || []).forEach(r => { (calOffAir[r.off_date] ||= []).push(r.soop_id); });
         } catch (e) {
-            console.warn('Supabase 일정 직접 조회 실패 - 정적 calendar.json fallback:', e);
-            try {
-                const scheduleRes = await fetch(CAL_FALLBACK_URL, { cache: 'no-cache' });
-                if (scheduleRes.ok) {
-                    const parsed = await scheduleRes.json();
-                    calEvents = calMigrateData(parsed);
-                    calOffAir = (parsed && parsed.offAir) || {};
-                }
-            } catch (fallbackError) { console.error(fallbackError); }
+            console.error('Supabase 일정 조회 실패:', e);
+            calEvents = [];
+            calOffAir = {};
         }
         calRenderCalendar();
     };

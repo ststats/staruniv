@@ -7,13 +7,24 @@
 <link rel="icon" type="image/webp" href="images/파비콘.webp">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=d6657a3ca8">
-<link rel="stylesheet" href="admin.css?v=db72cab0b9">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=59c699608f">
+<link rel="stylesheet" href="admin.css?v=04bd6d09da">
 <script>
 try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.dataset.bsTheme=t}catch(_){ }
 </script>
 </head>
 <body>
+<header class="top-navbar admin-site-nav">
+  <div class="navbar-inner container">
+    <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+    <button type="button" class="nav-drawer-btn" id="adminNavDrawerBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="adminSiteMenu" onclick="AdminApp.toggleSiteMenu()"><span></span><span></span><span></span></button>
+    <nav class="nav-menu tab-scroll" id="adminSiteMenu" aria-label="관리 메뉴">
+      <button type="button" class="nav-item active" data-panel="home">홈</button><button type="button" class="nav-item" data-panel="schedule">일정</button><button type="button" class="nav-item" data-panel="members">멤버</button><button type="button" class="nav-item" data-panel="records">전적</button><button type="button" class="nav-item" data-panel="tier">티어표</button><button type="button" class="nav-item" data-panel="video">영상</button><button type="button" class="nav-item" data-panel="stats">방송통계</button><button type="button" class="nav-item" data-panel="tools">도구</button>
+    </nav>
+    <div class="theme-toggle" role="group" aria-label="테마 선택"><button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="AdminApp.setTheme('light')">☀</button><button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="AdminApp.setTheme('dark')">◐</button></div>
+  </div>
+</header>
 <div id="configError" class="admin-login-wrap admin-hidden">
   <div class="admin-card admin-login">
     <h1>Supabase 설정 필요</h1>
@@ -40,27 +51,16 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
   </div>
 </div>
 
-<main id="adminView" class="admin-shell admin-hidden">
-  <div class="admin-top">
-    <div class="admin-brand"><h1>StarUniv Admin</h1><p>Supabase 원본 데이터를 직접 관리합니다.</p></div>
-    <div class="admin-user"><span id="adminIdentity" class="admin-pill"></span><span id="adminRole" class="admin-pill"></span><button id="logoutBtn" class="admin-btn">로그아웃</button></div>
-  </div>
+<main id="adminView" class="admin-hidden">
+  <section class="admin-hero">
+    <div class="admin-hero-inner container">
+      <div><span class="admin-eyebrow" id="adminPageEyebrow">ADMIN · HOME</span><h1 id="adminPageTitle">홈 관리</h1><p id="adminPageDescription">홈과 사이트 공통 설정을 관리합니다.</p></div>
+      <div class="admin-user"><span id="adminIdentity" class="admin-pill"></span><span id="adminRole" class="admin-pill"></span><button id="logoutBtn" class="admin-btn admin-btn-on-dark">로그아웃</button></div>
+    </div>
+  </section>
+  <div class="admin-shell">
   <div id="globalStatus" class="admin-status"></div>
   <div class="admin-grid">
-    <nav class="admin-nav" id="adminNav">
-      <button data-panel="dashboard" class="active">대시보드</button>
-      <button data-panel="members">멤버</button>
-      <button data-panel="teams">팀</button>
-      <button data-panel="matches">전적</button>
-      <button data-panel="tier">티어 명단</button>
-      <button data-panel="settings">시즌 설정</button>
-      <button data-panel="schedule">일정/휴방</button>
-      <button data-panel="navigation">메뉴 설정</button>
-      <button data-panel="history">연혁</button>
-      <button data-panel="video">영상 관리</button>
-      <button data-panel="external-tools">외부도구</button>
-      <button data-panel="elo">ELO 조회</button>
-    </nav>
     <div>
       <section id="panel-dashboard" class="admin-panel active">
         <div class="admin-section-title"><div><h2>대시보드</h2><p>현재 Supabase 원본 데이터 개수입니다.</p></div><button class="admin-btn" onclick="AdminApp.loadDashboard()">새로고침</button></div>
@@ -98,18 +98,64 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       </section>
 
       <section id="panel-schedule" class="admin-panel">
-        <div class="admin-section-title"><div><h2>일정 · 휴방 관리</h2><p>저장 즉시 Supabase에 반영되고 공개 사이트가 직접 읽습니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editSchedule()">+ 새 일정</button></div>
-        <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>날짜</th><th>시간</th><th>사람/제목</th><th>내용</th><th>색상</th><th></th></tr></thead><tbody id="scheduleRows"></tbody></table></div><div id="scheduleEditor" class="admin-editor admin-card hidden"></div></div>
-        <div class="admin-card"><div class="admin-section-title"><div><h2>휴방</h2><p>날짜별 SOOP ID를 등록합니다.</p></div></div><form onsubmit="return AdminApp.saveOffAir(event)" class="admin-toolbar"><input id="o_date" type="date" class="admin-input" required><input id="o_soop" class="admin-input admin-search" placeholder="SOOP ID" required><button class="admin-btn primary">추가</button></form><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>날짜</th><th>SOOP ID</th><th></th></tr></thead><tbody id="offAirRows"></tbody></table></div></div>
+        <div class="admin-section-title"><div><h2>일정 · 휴방 관리</h2><p>본 페이지와 같은 캘린더에서 날짜와 일정을 선택해 바로 편집합니다.</p></div></div>
+        <div class="admin-calendar-layout">
+          <div class="admin-calendar-main">
+            <div class="cal-today-card-wrapper">
+              <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
+              <div class="clean-card card-ink hatch cal-day-card cal-day-card-today">
+                <div class="cal-day-card-date" id="todayDateLabel"></div>
+                <div class="cal-today-list scroll-area is-empty" id="todayList" aria-live="polite"><div class="cal-no-schedule">오늘 일정을 불러오는 중...</div></div>
+              </div>
+            </div>
+            <section class="cal-calendar-area">
+              <div class="section-title" data-en="MONTHLY SCHEDULE"><span class="section-title-label">이달의 일정</span></div>
+              <div class="clean-card cal-card p-0">
+                <div class="cal-month-bar hatch">
+                  <div class="cal-month-id"><div class="cal-month-year" id="monthYear">&nbsp;</div><div class="cal-month-name" id="monthName">&nbsp;</div></div>
+                  <div class="cal-nav-group">
+                    <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달">‹</button>
+                    <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
+                    <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달">›</button>
+                  </div>
+                </div>
+                <div class="cal-calendar-inner scroll-area"><div class="cal-calendar-scroll-content">
+                  <div class="cal-weekdays"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
+                  <div class="cal-days-grid" id="daysGrid" aria-live="polite"><div class="cal-days-loading">달력을 불러오는 중...</div></div>
+                </div></div>
+              </div>
+            </section>
+          </div>
+          <aside class="admin-calendar-side">
+            <div class="cal-selected-card-wrapper">
+              <div class="section-title" id="selectedListTitle" data-en="SELECTED"><span class="section-title-label">선택한 날짜 일정</span></div>
+              <div class="clean-card card-ink hatch cal-day-card cal-day-card-today">
+                <div class="cal-day-card-date" id="selectedDateLabel"></div>
+                <div class="cal-selected-list scroll-area is-empty" id="selectedDateList"><div class="cal-no-schedule">날짜를 클릭하세요.</div></div>
+              </div>
+            </div>
+            <div class="admin-section-title admin-editor-heading"><div><h3>일정 편집</h3><p>날짜를 누르면 새 일정 날짜가 자동으로 채워집니다.</p></div><button class="admin-btn primary" type="button" onclick="AdminApp.editSchedule()">+ 새 일정</button></div>
+            <div id="scheduleEditor" class="admin-editor admin-card hidden"></div>
+            <div class="admin-card admin-offair-editor">
+              <div class="admin-section-title"><div><h3>휴방</h3><p>선택한 날짜의 SOOP ID를 등록합니다.</p></div></div>
+              <form onsubmit="return AdminApp.saveOffAir(event)" class="admin-toolbar"><input id="o_date" type="date" class="admin-input" required><input id="o_soop" class="admin-input" placeholder="SOOP ID" required><button class="admin-btn primary">추가</button></form>
+              <div class="admin-table-wrap"><table class="admin-table admin-table-compact"><thead><tr><th>날짜</th><th>SOOP ID</th><th></th></tr></thead><tbody id="offAirRows"></tbody></table></div>
+            </div>
+          </aside>
+        </div>
       </section>
 
       <section id="panel-navigation" class="admin-panel">
-        <div class="admin-section-title"><div><h2>메뉴 · 표시 설정</h2><p>기존 nav.json 대신 Supabase site_config를 직접 수정합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.saveNavigation()">저장</button></div>
+        <div class="admin-section-title"><div><h2>홈 · 메뉴 설정</h2><p>홈 문구와 본 페이지의 상단 메뉴 표시를 관리합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.saveNavigation()">저장</button></div>
         <div class="admin-card"><h3>상단 메뉴</h3><div class="admin-form-grid">
           <label class="admin-field"><span>일정</span><input type="checkbox" data-nav-key="schedule"></label><label class="admin-field"><span>멤버</span><input type="checkbox" data-nav-key="members"></label><label class="admin-field"><span>전적</span><input type="checkbox" data-nav-key="records"></label><label class="admin-field"><span>티어표</span><input type="checkbox" data-nav-key="tier"></label><label class="admin-field"><span>영상</span><input type="checkbox" data-nav-key="video"></label><label class="admin-field"><span>방송통계</span><input type="checkbox" data-nav-key="stats"></label><label class="admin-field"><span>도구</span><input type="checkbox" data-nav-key="tools"></label>
         </div></div>
-        <div class="admin-card"><h3>방송통계 지표</h3><div class="admin-form-grid"><label class="admin-field"><span>별풍선</span><input type="checkbox" data-stat-key="balloons"></label><label class="admin-field"><span>방송시간</span><input type="checkbox" data-stat-key="broadcast_seconds"></label><label class="admin-field"><span>누적시청자</span><input type="checkbox" data-stat-key="cumulative_viewers"></label><label class="admin-field"><span>스폰판수</span><input type="checkbox" data-stat-key="sponsor"></label></div></div>
         <div class="admin-card"><div class="admin-field"><label>히어로 설명 JSON</label><textarea id="heroDescriptionsJson" class="admin-input" rows="9" spellcheck="false"></textarea></div></div>
+      </section>
+
+      <section id="panel-stats-settings" class="admin-panel">
+        <div class="admin-section-title"><div><h2>방송통계 설정</h2><p>통계 값은 자동 집계하며, 여기서는 본 페이지에 표시할 지표를 고릅니다.</p></div><button class="admin-btn primary" onclick="AdminApp.saveNavigation()">저장</button></div>
+        <div class="admin-card"><div class="admin-form-grid"><label class="admin-field"><span>별풍선</span><input type="checkbox" data-stat-key="balloons"></label><label class="admin-field"><span>방송시간</span><input type="checkbox" data-stat-key="broadcast_seconds"></label><label class="admin-field"><span>누적시청자</span><input type="checkbox" data-stat-key="cumulative_viewers"></label><label class="admin-field"><span>스폰판수</span><input type="checkbox" data-stat-key="sponsor"></label></div></div>
       </section>
 
 
@@ -146,10 +192,12 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       </section>
     </div>
   </div>
+  </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="page-admin.js?v=7f0f7b1565"></script>
+<script src="calendar.js?v=0288bb8fd1"></script>
+<script src="page-admin.js?v=14e5ca36de"></script>
 </body>
 </html>

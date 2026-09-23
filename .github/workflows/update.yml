@@ -176,8 +176,7 @@ jobs:
         git add docs/index.html docs/*/index.html docs/holidays.json
         # 독립 페이지도 templates/standalone에서 빌드되므로 같이 커밋한다.
         git add docs/admin.html docs/multiview.html docs/calmmon-rider.html docs/supabase-config.js
-        git add docs/data/site_data.json docs/data/calendar.png docs/data/videos.json
-        git add docs/data/tier_members.json
+        git add docs/data/calendar.png
         git add -A docs/data/h2h
         for f in templates/assets/*; do
           git add "docs/$(basename "$f")"

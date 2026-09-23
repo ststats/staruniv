@@ -1,10 +1,9 @@
 /**
  * 티어표 페이지 - 스타 커뮤니티 전체 명단을 티어별로, 티어 안에서는 종족별로 보여준다.
  *
- * 명단은 Supabase의 tier_members에서 온다. 빌드가 docs/data/tier_members.json으로
- * 구워두고 여기서는 그 파일만 읽는다. 예전에는 시너지(ststats)가 매일 올리는 명단을
+ * 명단은 브라우저가 Supabase의 tier_members에서 직접 읽는다. 예전에는 시너지(ststats)가 매일 올리는 명단을
  * 브라우저가 직접 받아갔는데, 그 명단은 소속이 있는 사람만 담겨 있어서 FA·휴면 선수는
- * 상대전적에서 찾을 수 없었다. 파일이 아직 없는 저장소에서는 예전처럼 시너지로 물러난다.
+ * 상대전적에서 찾을 수 없었다.
  *
  * soop.js의 checkIsLiveRealtime()을 안 쓰는 이유:
  *   그건 한 명씩 bjapi에 묻는 방식이라 "활성 멤버가 소수"일 때만 성립한다. 수백 명에
@@ -64,7 +63,7 @@ function switchTierView(view) {
 // ---------------------------------------------------------------------------
 // 데이터
 // ---------------------------------------------------------------------------
-// 빌드가 구워둔 Supabase 티어 명단. 없으면 null을 돌려준다.
+// Supabase 티어 명단. 없거나 조회에 실패하면 null을 돌려준다.
 async function fetchTierMembers() {
     try {
         const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
@@ -84,13 +83,8 @@ async function fetchTierMembers() {
         const updatedAt = asArray(data).map(r => String(r.modified_at || '')).filter(Boolean).sort().pop() || '';
         return { date: '', updatedAt, members };
     } catch (e) {
-        console.warn('[티어표] Supabase 직접 조회 실패 - 정적 파일로 fallback:', e);
-        const res = await fetch('data/tier_members.json', { cache: 'no-cache' });
-        if (!res.ok) return null;
-        const data = await res.json();
-        const members = asArray(data && data.members).filter(m => m && isValidSoopId(m.id));
-        if (!members.length) return null;
-        return { date: '', updatedAt: (data && data.updatedAt) || '', members };
+        console.error('[티어표] Supabase 명단 조회 실패:', e);
+        return null;
     }
 }
 
@@ -746,8 +740,7 @@ function applyLiveToCards(setChanged) {
 // ---------------------------------------------------------------------------
 // 시작
 // ---------------------------------------------------------------------------
-// 티어표는 site_data.json(우리 팀 멤버·경기 기록)을 쓰지 않는다 - 명단은 Supabase에서
-// 구워둔 tier_members.json이다. 그래서 그 파일을 기다리지 않고 바로 시작한다.
+// 티어표는 우리 팀 멤버·경기 기록을 쓰지 않으므로 해당 Supabase 요청을 생략한다.
 bootPage(async () => {
     const root = document.getElementById('tier-root');
     // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면

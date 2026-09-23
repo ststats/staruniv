@@ -1,31 +1,20 @@
 import hashlib
-import datetime as dt
-import json
 import os
 import re
 import shutil
-import sys
 from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader
 
-from match_link import load_linked_db
-
 # [리팩토링 메모]
-# - link_rounds_to_matches를 여기서 다시 돌리지 않고, generate_stats.py가 같은 db.json으로
-#   이미 계산해 둔 결과를 load_linked_db()로 재사용한다(db.json이 바뀌었으면 자동 재계산).
-# - 출력 파일(index.html, site_data.json)은 임시 파일에 다 쓴 뒤 교체(atomic write)해서,
+# - 출력 HTML은 임시 파일에 다 쓴 뒤 교체(atomic write)해서,
 #   빌드가 중간에 죽어도 반쯤 쓰인 파일이 배포되는 일이 없게 했다.
 # - 정적 자산 복사 시 하위 폴더가 섞여 있으면 shutil.copyfile이 IsADirectoryError로 빌드
 #   전체를 죽이던 문제를 막았다(파일만 복사).
-# - 템플릿의 팀 로고 파일명 규칙('내전'→캄몬스타즈, URL 인코딩)을 app.js의 teamLogoHtml과
-#   똑같이 맞추는 team_logo_src 필터를 추가했다(예전엔 템플릿에 규칙이 따로 박혀 있었다).
 # - [캐시] 정적 자산 주소에 내용 해시를 붙인다(asset_url: app.js → app.js?v=1a2b3c4d5e).
 #   GitHub Pages는 정적 파일을 약 10분간 캐시하므로, 배포 직후 "새 index.html + 옛 app.js"
 #   조합을 받는 사용자가 생길 수 있었다. 파일 내용이 바뀌면 주소 자체가 바뀌므로 이런 불일치가
 #   생기지 않고, 반대로 안 바뀐 파일은 브라우저 캐시를 그대로 재사용한다.
-#   site_data.json도 같은 방식으로 버전을 <meta name="site-data-version">에 넣어,
-#   app.js가 매번 no-store로 새로 받지 않고 버전이 바뀔 때만 새로 받게 했다.
 
 TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
@@ -44,10 +33,9 @@ PAGES = [
     ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다.'),
     ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다.'),
     # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다. 명단은 Supabase에서
-    # export된 db.json의 tierMembers를 docs/data/tier_members.json으로 구워두고 page-tier.js가 읽는다.
-    # 방송 중 여부는 시너지 워커에서 받아온다.
+    # 명단은 브라우저가 Supabase tier_members를 직접 읽고 방송 중 여부는 시너지 워커에서 받는다.
     ('tier', '티어표', '티어표', '스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다.'),
-    # 영상은 어드민이 등록한 유튜브 채널의 최신 영상(data/videos.json, scripts/sync_videos.py)을 브라우저가 직접 읽는다.
+    # 영상은 scripts/sync_videos.py가 Supabase에 동기화하고 브라우저가 직접 읽는다.
     ('video', '영상', '영상', '캄몬스타즈 팬 유튜브 채널의 최신 영상과 추천 영상입니다.'),
     ('stats', '방송통계', '방송통계', '캄몬스타즈 멤버들의 이번 달 방송 통계입니다.'),
     ('tools', '도구', '도구', '자주 쓰는 도구 모음입니다.'),
@@ -59,102 +47,9 @@ SITE_URL = os.environ.get('SITE_URL', 'https://ststats.github.io/staruniv').rstr
 # 링크 미리보기 이미지. 가로 1200×630 PNG/JPG를 따로 만들어 images/에 넣고 이 값을 바꾸면 더 잘 보인다.
 OG_IMAGE_PATH = 'images/캄몬스타즈.webp'
 
-# app.js의 TIER_ORDER와 완전히 동일한 순서 - 멤버카드 그리드 정렬이랑 아바타 바
-# 정렬이 서로 다르게 나오지 않도록 여기서도 같은 기준을 쓴다. (참고: app.js의
-# tierIndex()는 목록에 없는 값이면 배열 길이를 반환해 맨 뒤로 보내는데, 여기서도
-# 동일하게 처리한다.)
-TIER_ORDER = ['갓', '킹', '잭', '조커', '스페이드', '0', '1', '2', '3', '4', '5', '6', '7', '8', '베이비']
-_TIER_INDEX = {tier: i for i, tier in enumerate(TIER_ORDER)}  # list.index()의 O(n) 탐색 대신 O(1) 조회
-ROLE_ORDER = {'감독': 1, '코치': 2, '선수': 3}
-
-# 자기 자신과 붙는 '내전'은 상대 로고 대신 우리 팀 로고를 쓴다 (app.js의 teamLogoHtml과 동일).
-OWN_TEAM_LOGO_NAME = '캄몬스타즈'
-# encodeURIComponent가 인코딩하지 않는 문자 중 urllib.parse.quote가 기본으로 인코딩하는 것들
-# (영숫자와 -_.~ 는 quote도 원래 그대로 둔다).
-_URI_COMPONENT_SAFE = "!'()*"
-
-
-def cell(row, key):
-    """DB에서 export된 한 칸을 문자열로 읽는다.
-    0 같은 유효한 값이 빈 값으로 바뀌지 않도록 None만 빈 문자열로 보고
-    나머지는 그대로 문자열로 만든다."""
-    v = row.get(key)
-    return '' if v is None else str(v).strip()
-
-
-def tier_index(tier):
-    return _TIER_INDEX.get(str(tier) if tier is not None else '', len(TIER_ORDER))
-
-
-def sort_members(members):
-    return sorted(members, key=lambda x: (
-        ROLE_ORDER.get(x.get('직책', '선수'), 99),
-        tier_index(x.get('티어'))
-    ))
-
-
-def team_logo_src(team_name):
-    """images/{팀이름}.webp 경로. JS의 encodeURIComponent와 같은 문자 집합만 남기고
-    인코딩해서, 템플릿이 그린 로고와 app.js가 그린 로고가 항상 같은 URL을 가리키게 한다."""
-    name = str(team_name or '').strip()
-    file_name = OWN_TEAM_LOGO_NAME if name == '내전' else name
-    return f"images/{quote(file_name, safe=_URI_COMPONENT_SAFE)}.webp"
-
-
 def load_nav_config():
     """런타임 Supabase 설정을 사용하므로 빌드 시에는 모두 표시한다."""
     return set(), set()
-
-
-# ---------------------------------------------------------------------------
-# docs/data/site_data.json 에 담을 칸 (여기 없는 칸은 배포본에서 빠진다)
-# ---------------------------------------------------------------------------
-# 사이트는 정적 페이지라, 브라우저가 받아 그리는 데이터는 누구나 그대로 내려받을 수 있다.
-# 그래서 "화면에 안 쓰는 값은 아예 안 내보낸다"가 유일한 가리기 방법이다.
-# (Supabase와 data/db.json에는 그대로 남아 있고, 배포 폴더로만 안 나간다)
-SITE_MEMBER_FIELDS = ['이름', 'SOOP ID', '생년월일', '성별', '종족', '티어', '직책', '입단일', '퇴단일', 'MBTI']
-SITE_MATCH_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '방식', '최종 결과', '세트 결과', '_match_key']
-SITE_ROUND_FIELDS = ['매치 번호', '날짜', '상대팀', '형식', '세트', '라운드',
-                     '우리 선수', '결과', '상대 선수', '맵', '_match_key', '_mirrored']
-SITE_PLAYER_STAT_FIELDS = ['이름', '대회 전적', '대학 전적', '미니 전적', 'CK 전적',
-                           '테란전 전적', '저그전 전적', '프로토스전 전적', '상대전적']
-
-
-# 티어표(스타 커뮤니티 전체 명단)에 내보낼 값. DB에는 생년월일·성별도 있지만
-# 화면에 안 쓰는 값이라 배포본에는 넣지 않는다.
-TIER_HIDDEN_TEAMS = {'휴면'}
-
-
-def build_tier_members(rows):
-    """Supabase tier_members → 티어표가 읽을 명단.
-    소속이 '휴면'인 사람과 SOOP 아이디가 없는 사람은 뺀다(방송 상태를 물을 수 없다)."""
-    out, skipped = [], 0
-    seen = set()
-    for r in rows or []:
-        soop = cell(r, 'SOOP ID')
-        team = cell(r, '소속')
-        nickname = cell(r, '닉네임') or cell(r, '이름')
-        if not soop or not nickname or team in TIER_HIDDEN_TEAMS:
-            skipped += 1
-            continue
-        key = soop.lower()
-        if key in seen:            # 같은 아이디가 두 번 적힌 경우 앞의 행만 쓴다
-            skipped += 1
-            continue
-        seen.add(key)
-        out.append({
-            'id': soop,
-            'nickname': nickname,
-            'team': team,
-            'tier': cell(r, '티어'),
-            'race': cell(r, '종족'),
-        })
-    return out, skipped
-
-
-def pick(row, fields):
-    """정해둔 칸만 남긴 새 dict. 값이 없는 칸은 넣지 않는다(파일 크기도 줄어든다)."""
-    return {k: row[k] for k in fields if k in row}
 
 
 def page_output_path(page_id):
@@ -228,17 +123,9 @@ def make_asset_url(versions):
 
 
 def load_inputs():
-    try:
-        with open('data/render_stats.json', 'r', encoding='utf-8') as f:
-            stats_data = json.load(f)
-        db_data, linked_matches, linked_rounds = load_linked_db('data/db.json')
-    except FileNotFoundError:
-        print("❌ JSON 파일이 없습니다.")
-        sys.exit(1)
-    except ValueError as e:  # json.JSONDecodeError 포함 - 파일이 깨졌을 때 원인을 바로 알 수 있게
-        print(f"❌ JSON 파일을 읽는 중 오류가 발생했습니다: {e}")
-        sys.exit(1)
-    return stats_data, db_data, linked_matches, linked_rounds
+    import json
+    with open('data/render_stats.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 
 def copy_static_assets():
@@ -261,35 +148,12 @@ def copy_static_assets():
 
 
 def main():
-    stats_data, db_data, linked_matches, linked_rounds = load_inputs()
-
-    sorted_members = sort_members(db_data.get('members', []))
-
-    # 최신 경기가 위로 오도록 역순 정렬 (팀 경기, 개인 라운드 경기)
-    # (같은 날짜끼리는 원본 입력 순서가 유지된다 - sorted는 reverse=True여도 안정 정렬)
-    matches_list = sorted(linked_matches, key=lambda x: str(x.get('날짜', '')), reverse=True)
-    rounds_list = sorted(linked_rounds, key=lambda x: str(x.get('날짜', '')), reverse=True)
-
-    # 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, index.html에
-    # 직접 박아넣지 않고 별도 JSON으로 빼서 브라우저가 비동기로 fetch하게 한다.
-    # (초기 HTML 용량이 데이터량과 무관하게 항상 일정하게 유지됨)
-    # 버전(해시)을 index.html에 넣어야 하므로 템플릿 렌더링보다 먼저 직렬화한다.
-    # 배포 폴더(docs/)에 올라가는 JSON은 인터넷에 그대로 공개된다. 그래서 화면에 실제로 쓰는
-    # 칸만 골라 담는다 - DB에는 있지만 사이트가 안 쓰는 칸(펀딩·지원금·사비 같은 금액, 도전미션,
-    # 라운드별 종족·티어 등)은 여기서 걸러진다. 화면에 새 칸을 쓰기 시작하면 여기 목록에 추가한다.
-    site_data = {
-        'members': [pick(m, SITE_MEMBER_FIELDS) for m in sorted_members],
-        'matches': [pick(m, SITE_MATCH_FIELDS) for m in matches_list],
-        'rounds': [pick(r, SITE_ROUND_FIELDS) for r in rounds_list],
-        'playersStats': [pick(p, SITE_PLAYER_STAT_FIELDS) for p in stats_data['member_stats']['전체']],
-    }
-    site_data_text = json.dumps(site_data, ensure_ascii=False)
+    stats_data = load_inputs()
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-    env.filters['team_logo_src'] = team_logo_src
     versions = static_asset_versions()
     env.globals['asset_url'] = make_asset_url(versions)
-    common = {'crew_stats': stats_data['crew_stats'], 'site_data_version': content_version(site_data_text)}
+    common = {'crew_stats': stats_data['crew_stats']}
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
     hidden_nav_ids, hidden_stats_tabs = load_nav_config()
@@ -304,23 +168,6 @@ def main():
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         write_text_atomic(out_path, html_output)
     print(f"✅ 페이지 {len(PAGES)}개 생성: {', '.join(page_output_path(p[0]) for p in PAGES)}")
-
-    site_data_path = os.path.join(OUT_DIR, 'data', 'site_data.json')
-    write_text_atomic(site_data_path, site_data_text)
-    print(f"✅ site_data.json 저장 완료 ({os.path.getsize(site_data_path) / 1024:.1f} KB)")
-
-    # 티어표 명단. Supabase에서 export된 tierMembers를 여기서 정적 파일로 구워둔다.
-    # 외부 시너지 명단은 DB 명단이 비어 있을 때만 예비 경로로 사용한다.
-    tier_members, tier_skipped = build_tier_members(db_data.get('tierMembers', []))
-    if tier_members:
-        tier_path = os.path.join(OUT_DIR, 'data', 'tier_members.json')
-        write_text_atomic(tier_path, json.dumps(
-            {'updatedAt': dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M'),
-             'members': tier_members}, ensure_ascii=False))
-        print(f"✅ tier_members.json 저장 완료 ({len(tier_members):,}명"
-              f"{f' · 제외 {tier_skipped}명' if tier_skipped else ''})")
-    else:
-        print("ℹ️ tierMembers 데이터가 비어 있어 tier_members.json은 건너뜁니다(티어표는 예전 파일/시너지로 동작).")
 
     copy_static_assets()
     # 독립 관리자/멀티뷰어/캄몬라이더도 docs를 직접 원본으로 두지 않는다.

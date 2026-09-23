@@ -6,9 +6,10 @@ GitHub Pages(`docs/`)로 배포되고, GitHub Actions가 주기적으로 데이�
 ## 데이터 흐름
 
 ```
-Supabase ─────────┐
-eloboard.co.kr ───┼──> data/*.json (빌드 캐시) ──> scripts/*.py ──> docs/*.html, docs/data/*.json
-유튜브 RSS/API ────┘                                                       (GitHub Pages 배포물)
+Supabase ───────────────> 브라우저 공개 데이터 + data/*.json (계산용 캐시)
+eloboard.co.kr ─────────> Supabase ELO ──> H2H/통계 계산
+유튜브 RSS/API ─────────> Supabase videos
+templates/ + 계산 결과 ─> docs/ (GitHub Pages 배포물)
 ```
 
 1. **Supabase → `data/db.json`** ([scripts/export_supabase.py](scripts/export_supabase.py)) - 설정/팀/멤버/매치/라운드/티어멤버를 빌드용 JSON으로 내보냄
@@ -18,7 +19,7 @@ eloboard.co.kr ───┼──> data/*.json (빌드 캐시) ──> scripts/*
 5. **티어랭킹 계산** ([scripts/build_ranking.py](scripts/build_ranking.py))
 6. **통계 산출** ([scripts/generate_stats.py](scripts/generate_stats.py)) → `data/render_stats.json`
 7. **페이지 빌드** ([scripts/build_html.py](scripts/build_html.py)) - `templates/`를 Jinja2로 렌더링해 `docs/*.html` 생성
-8. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → `docs/data/videos.json`
+8. **유튜브 영상 목록** ([scripts/sync_videos.py](scripts/sync_videos.py)) → Supabase `videos`
 9. **캘린더 이미지 캡처** ([capture.js](capture.js)) - Puppeteer로 공개 `/schedule/` 페이지를 렌더링해 `docs/data/calendar.png` 생성
 
 운영 데이터의 원본은 Supabase입니다. `data/db.json`과 `data/eloboard.json`은 기존 계산/빌드 코드와의 호환을 위한 캐시입니다.
@@ -29,7 +30,7 @@ eloboard.co.kr ───┼──> data/*.json (빌드 캐시) ──> scripts/*
 
 ```
 data/            빌드 캐시(db.json, eloboard.json 등) - 원본은 Supabase
-docs/            GitHub Pages 배포 루트(빌드 결과물 + 정적 자산)
+docs/            GitHub Pages 배포 루트(HTML/자산 + H2H 파생 데이터 + 캘린더 이미지)
 templates/       Jinja2 템플릿 + 프론트엔드 자산 원본(build_html.py가 docs/로 복사)
 scripts/         파이썬 파이프라인 스크립트
 .github/workflows/  자동화 워크플로(update.yml, squash-history.yml)

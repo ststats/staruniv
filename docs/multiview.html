@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>멀티뷰어 - 스타대학</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-<link rel="stylesheet" href="style.css?v=d6657a3ca8">
+<link rel="stylesheet" href="style.css?v=59c699608f">
 <style>
 html[data-theme="dark"] body {
     background: var(--color-bg);
@@ -471,6 +471,8 @@ html[data-theme="dark"] .mv-settings-panel {
 
 <div id="mv-grid-area"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script src="mv-shared.js?v=095cbe3ddb"></script>
 <script>
     // escapeHTML/jsStrEscape는 이 페이지 전용 범용 유틸이라 여기서 정의한다.
@@ -490,7 +492,7 @@ html[data-theme="dark"] .mv-settings-panel {
     let mvCols = 2;
     let mvFocus = true;
     let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
-    let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - site_data.json에서 로드
+    let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - Supabase에서 로드
     let mvLiveMap = {};    // soopId -> 방송중 여부
     // (음소거 기능은 제거했다 - 음소거 후 해제해도 SOOP 플레이어의 소리가 돌아오지 않는 문제가 있었다.
     //  잠깐 배포됐던 버전이 저장해둔 음소거 목록이 남아 있으면 지운다.)
@@ -610,7 +612,7 @@ html[data-theme="dark"] .mv-settings-panel {
         document.getElementById('mv-col-tile').classList.toggle('disabled', mvFocus);
     }
 
-    // ===== 멤버 선택 칩 (도구 탭과 동일 - site_data.json에서 직접 불러온다) =====
+    // ===== 멤버 선택 칩 (도구 탭과 동일 - Supabase에서 직접 불러온다) =====
     function mvAvatarHtml(soopId) {
         const id = String(soopId || '').trim().toLowerCase();
         if (!id || !/^[a-z0-9_-]+$/.test(id)) return `<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>`;
@@ -644,15 +646,18 @@ html[data-theme="dark"] .mv-settings-panel {
     }
     async function mvLoadMembers() {
         try {
-            const res = await fetch('data/site_data.json', { cache: 'no-store' });
-            if (res.ok) {
-                const data = await res.json();
-                mvMembers = (data.members || []).filter(m => {
-                    const active = !m['퇴단일'] || String(m['퇴단일']).trim() === '';
-                    const soopId = m['SOOP ID'];
-                    return active && soopId && /^[a-zA-Z0-9_-]+$/.test(String(soopId).trim());
-                });
-            }
+            const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
+            if (!cfg.url || !cfg.key || !window.supabase?.createClient) throw new Error('Supabase browser client is not configured');
+            const client = window.supabase.createClient(cfg.url, cfg.key, {
+                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+            });
+            const { data, error } = await client.from('members')
+                .select('nickname,soop_id,left_date,source_order')
+                .order('source_order');
+            if (error) throw error;
+            mvMembers = (data || []).map(m => ({
+                '이름': m.nickname || '', 'SOOP ID': m.soop_id || '', '퇴단일': m.left_date || ''
+            })).filter(m => !m['퇴단일'] && /^[a-zA-Z0-9_-]+$/.test(String(m['SOOP ID']).trim()));
         } catch (e) { mvMembers = []; }
         mvRenderMemberChips();
         mvCheckLiveMembers();

@@ -13,7 +13,7 @@
         </div>
     </div>
     <div class="container">
-    {#- 1. 팬튜브: 어드민이 등록한 유튜브 채널의 최신 영상(scripts/sync_videos.py가 RSS로 모아 data/videos.json에 쌓는다).
+    {#- 1. 팬튜브: 어드민이 등록한 유튜브 채널의 최신 영상(scripts/sync_videos.py가 Supabase에 동기화한다).
         채널 칩으로 거르고, 이번 달 인기 3개 → 쇼츠 선반 → 최신 영상 순. #}
     <div id="view-video-fantube">
         <div class="video-channel-row tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>

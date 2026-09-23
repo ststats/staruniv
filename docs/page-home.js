@@ -34,9 +34,7 @@ async function fetchHomePreviewData(path) {
     return res.json();
 }
 
-// 캄몬스타즈 전적만 센다. 스타대학 전체 집계를 보여주려고 tier_members.json과
-// h2h/index.json(125KB)을 따로 받던 것을 걷어냈다 - SiteData는 어차피 받아둔 것이라
-// 홈이 추가로 받는 파일이 없어진다.
+// 캄몬스타즈 전적만 센다. SiteData는 Supabase에서 이미 받아둔 값을 재사용한다.
 function renderHomeRecordsPreview(box) {
     const rows = [
         ['누적 인원', (SiteData.members || []).length, '명'],
@@ -57,17 +55,11 @@ async function renderTodaySchedulePreview(box) {
     if (!box) return;
     box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중...</div>';
     try {
-        let events = [];
         const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-        if (client) {
-            const { data, error } = await client.from('calendar_events').select('start_date,end_date,event_time,person,description').order('source_order');
-            if (error) throw error;
-            events = (data || []).map(r => ({ startDate:r.start_date, endDate:r.end_date || r.start_date, time:r.event_time || '', person:r.person || '', desc:r.description || '' }));
-        } else {
-            const res = await fetch('data/calendar.json', { cache: 'no-cache' });
-            const data = res.ok ? await res.json() : {};
-            events = Array.isArray(data.events) ? data.events : [];
-        }
+        if (!client) throw new Error('Supabase browser client is not configured');
+        const { data, error } = await client.from('calendar_events').select('start_date,end_date,event_time,person,description').order('source_order');
+        if (error) throw error;
+        const events = (data || []).map(r => ({ startDate:r.start_date, endDate:r.end_date || r.start_date, time:r.event_time || '', person:r.person || '', desc:r.description || '' }));
         const now = new Date();
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const todayEvents = events.filter(ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate));

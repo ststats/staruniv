@@ -28,7 +28,7 @@
 [티어표와 잇기]
 검색 대상은 티어표(시너지 명단)에 있는 선수다. 시너지 명단에 eloboard 선수 번호(elo_id)가
 들어 있으므로 그 번호로 잇는다. elo_id가 비어 있는 선수만 이름으로 맞춰보고(공백·대소문자 무시),
-그래도 못 찾으면 docs/data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 적어주면 된다.
+그래도 못 찾으면 data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 적어주면 된다.
 
 [대회 이름] eloboard는 형식을 영문 코드로 준다(sponsored, college_war ...). 화면에 그대로 쓰면
 읽기 어려워서 아래 CAT_LABELS로 우리말 이름을 붙인다. 목록에 없는 코드는 원문 그대로 둔다.
@@ -49,7 +49,7 @@ import urllib.request
 
 SRC_PATH = os.path.join('data', 'eloboard.json')
 OUT_DIR = os.path.join('docs', 'data', 'h2h')
-ALIAS_PATH = os.path.join('docs', 'data', 'h2h_alias.json')
+ALIAS_PATH = os.path.join('data', 'h2h_alias.json')
 SYNERGY_BASE = 'https://ststats.github.io/synergy'
 HIDDEN_TEAMS = {'휴면'}          # page-tier.js의 TIER_HIDDEN_TEAMS와 같은 기준
 
@@ -300,7 +300,7 @@ def main():
             print('   → 명단이 비어 있습니다. Supabase tier_members와 data/db.json 을 확인해주세요.')
         else:
             print('   → 양쪽 다 있는데 하나도 안 맞습니다. 명단의 ELO ID가 비어 있다면')
-            print('      docs/data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 몇 명 적어주세요.')
+            print('      data/h2h_alias.json 에 {"시너지 닉네임": "eloboard 이름"} 으로 몇 명 적어주세요.')
         sys.exit(1)
     target = set(linked) if linked else set(players)
     per = {pid: [] for pid in target}

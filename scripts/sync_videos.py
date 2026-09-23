@@ -1,28 +1,14 @@
-"""영상 탭 데이터: 어드민이 등록한 유튜브 채널의 최신 영상을 RSS로 모아 docs/data/videos.json에 쌓는다.
+"""영상 탭 데이터: Supabase에 등록된 채널의 최신 영상을 모아 Supabase에 갱신한다.
 
-[원본] Supabase video_channels / video_picks / videos (SUPABASE_DB_URL이 있을 때)
-[장애 fallback] docs/data/video_channels.json + docs/data/videos.json
-    { "channels": [ { "url": "https://www.youtube.com/@handle", "name": "표시 이름(선택)" } ],
-      "picks":    [ { "url": "https://youtu.be/... 또는 https://vod.sooplive.co.kr/player/<번호>",
-                      "title": "(선택, 숲 VOD는 적어주는 게 좋다)", "note": "한 줄 설명",
-                      "group": "분류 제목(선택)", "groupEn": "분류 영문 라벨(선택)",
-                      "addedAt": "YYYY-MM-DD" } ],
-      "hidden":   [ "영상id" ] }        # 사이트에서 감출 영상 (지우지 않고 표시만 한다)
-
-[출력] docs/data/videos.json
-    { "updatedAt": "...",
-      "channels": { "<등록 url>": { "id": "UC...", "title", "name", "thumb", "url" } },
-      "videos":   [ { "id", "channel": "<등록 url>", "title", "published", "views", "thumb", "short", "hidden"(선택) } ],
-      "picks":    [ { "id", "kind": "youtube|soop", "title", "note", "group", "groupEn",
-                      "addedAt", "author", "thumb", "short" } ] }
-    (숲 VOD는 id가 "soop:<번호>"다. 썸네일은 VOD 페이지의 og:image를 한 번 받아 저장해 둔다.)
+[원본/출력] Supabase video_channels / video_picks / videos (SUPABASE_DB_URL 필수)
+숲 VOD는 id가 "soop:<번호>"다. 썸네일은 VOD 페이지의 og:image를 한 번 받아 저장해 둔다.
 
 [두 가지 방식]
  1) 유튜브 API 키가 있으면(환경변수 YOUTUBE_API_KEY) 채널 업로드 목록을 전부 받는다. 과거 영상까지
     한 번에 채워진다. 할당량은 하루 10,000이고 1,000개 채널 하나가 40 정도라 사실상 넉넉하다.
     처음 받는 채널은 전체를, 이미 쌓여 있는 채널은 최신 100개만 훑는다(--full 이면 다시 전체).
  2) 키가 없으면 RSS로 받는다. 키가 필요 없는 대신 채널마다 "최신 15개"만 준다. 그래서 받은 영상을
-    이 파일에 계속 쌓아 두고, 피드에 남아 있는 동안 조회수를 갱신한다. 과거 영상은 들어오지 않는다.
+    Supabase에 계속 쌓아 두고, 피드에 남아 있는 동안 조회수를 갱신한다. 과거 영상은 들어오지 않는다.
 어느 쪽이든 조회수는 이번에 훑은 범위 밖으로 밀려나면 그때 값에서 멈춘다 - 월간 인기는 최근 30일
 영상만 보므로 대부분 범위 안에 있다.
 
@@ -32,7 +18,6 @@
 GitHub Actions(.github/workflows/update.yml)가 3시간마다 실행한다. 로컬에서도 python scripts/sync_videos.py
 """
 
-import datetime as dt
 import html
 import json
 import os
@@ -44,8 +29,6 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-CONFIG_PATH = os.path.join('docs', 'data', 'video_channels.json')
-OUT_PATH = os.path.join('docs', 'data', 'videos.json')
 SUPABASE_DB_URL = os.environ.get('SUPABASE_DB_URL', '').strip()
 MAX_VIDEOS = 3000          # 보관 상한(오래된 것부터 버린다). 1건 약 200바이트라 3천 건이면 0.6MB
 
@@ -108,29 +91,11 @@ def http_get(url, allow_redirect=True, timeout=20):
         return 0, ''
 
 
-def load_json(path, default):
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return default
-    except ValueError as e:
-        sys.exit(f'❌ {path} 이 깨졌습니다: {e}')
-
-
-def write_atomic(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=1)
-        f.write('\n')
-    os.replace(tmp, path)
-
 
 def load_supabase_state():
-    """Supabase를 영상 탭의 원본으로 사용한다. 연결 정보가 없으면 기존 JSON 모드로 돌아간다."""
+    """Supabase에서 영상 채널, 추천 영상, 기존 수집 영상을 읽는다."""
     if not SUPABASE_DB_URL:
-        return None, None
+        raise RuntimeError('SUPABASE_DB_URL 환경변수가 필요합니다.')
     try:
         import psycopg
         with psycopg.connect(SUPABASE_DB_URL) as conn, conn.cursor() as cur:
@@ -141,8 +106,7 @@ def load_supabase_state():
             cur.execute("select id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order from public.video_picks order by source_order")
             pick_rows = cur.fetchall()
     except Exception as e:
-        print(f'  ⚠️ Supabase 영상 원본을 읽지 못해 JSON fallback을 사용합니다: {e}')
-        return None, None
+        raise RuntimeError(f'Supabase 영상 원본을 읽지 못했습니다: {e}') from e
 
     config = {'channels': [], 'picks': [], 'hidden': []}
     out = {'channels': {}, 'videos': [], 'picks': []}
@@ -166,9 +130,7 @@ def load_supabase_state():
 
 
 def save_supabase_state(channels, videos, picks):
-    """동기화 결과를 Supabase에 UPSERT한다. 정적 videos.json은 장애 대비 스냅샷으로도 계속 남긴다."""
-    if not SUPABASE_DB_URL:
-        return
+    """동기화 결과를 Supabase에 UPSERT한다."""
     import psycopg
     with psycopg.connect(SUPABASE_DB_URL) as conn, conn.cursor() as cur:
         for url, info in channels.items():
@@ -460,11 +422,7 @@ def main():
     else:
         print('▶ API 키가 없어 RSS로 받습니다 (채널당 최신 15개)')
     config, out = load_supabase_state()
-    if config is None:
-        config = load_json(CONFIG_PATH, {'channels': [], 'picks': []})
-        out = load_json(OUT_PATH, {'channels': {}, 'videos': [], 'picks': []})
-    else:
-        print('▶ 영상 채널/추천/숨김 설정은 Supabase 원본을 사용합니다.')
+    print('▶ 영상 채널/추천/숨김 설정은 Supabase 원본을 사용합니다.')
     known_channels = out.get('channels', {})
     videos = {v['id']: v for v in out.get('videos', []) if v.get('id')}
 
@@ -567,22 +525,8 @@ def main():
         else:
             p_.pop('hidden', None)
 
-    result = {
-        'updatedAt': dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M'),
-        'channels': channels,
-        'videos': kept,
-        'picks': picks,
-    }
-    # 내용이 그대로면 시각만 바뀐 커밋이 매번 생기지 않게 파일을 건드리지 않는다
-    same = {k: v for k, v in out.items() if k != 'updatedAt'} == {k: v for k, v in result.items() if k != 'updatedAt'}
-    if SUPABASE_DB_URL:
-        save_supabase_state(channels, kept, picks)
-        print(f'✅ Supabase videos 갱신: 채널 {len(channels)}개, 영상 {len(kept)}개, 보자 {len(picks)}개')
-    if same:
-        print('ℹ️ fallback videos.json 내용은 바뀌지 않았습니다.')
-        return
-    write_atomic(OUT_PATH, result)
-    print(f'✅ fallback {OUT_PATH}: 채널 {len(channels)}개, 영상 {len(kept)}개, 보자 {len(picks)}개')
+    save_supabase_state(channels, kept, picks)
+    print(f'✅ Supabase videos 갱신: 채널 {len(channels)}개, 영상 {len(kept)}개, 보자 {len(picks)}개')
 
 
 if __name__ == '__main__':

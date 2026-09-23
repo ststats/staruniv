@@ -63,7 +63,7 @@ function firstVisibleMetric() {
     return el ? el.dataset.metric : '';
 }
 
-// core.js가 nav.json을 읽어 탭을 숨긴 뒤 불러준다(이 페이지에 있을 때만).
+// core.js가 Supabase의 메뉴 설정을 읽어 탭을 숨긴 뒤 불러준다(이 페이지에 있을 때만).
 function syncStatsMetricVisibility() {
     if (typeof isStatsTabHidden !== 'function' || !isStatsTabHidden(SynergyState.metric)) return;
     const next = firstVisibleMetric();

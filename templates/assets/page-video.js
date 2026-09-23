@@ -2,16 +2,14 @@
  * 영상 페이지: 팬튜브(등록 채널 최신 영상) + 보자(어드민 추천). (core.js → media-lightbox.js → 이 파일)
  * URL: /video/ (팬튜브), /video/?view=pick (보자), 채널 필터는 ?ch=<채널 번호>
  *
- * 운영 데이터는 Supabase(video_channels/videos/video_picks)를 우선 읽는다.
+ * 운영 데이터는 Supabase(video_channels/videos/video_picks)에서 직접 읽는다.
  * scripts/sync_videos.py가 GitHub Actions에서 유튜브 영상을 Supabase에 주기적으로 갱신한다.
- * 마이그레이션 전/장애 시에만 data/videos.json을 fallback으로 읽는다.
  * hidden이 붙은 영상은 어드민이 감춘 것이라 화면에서 뺀다. 카드에 영상 길이는 표시하지 않는다.
  *
  * '보자'에는 유튜브 말고 숲(SOOP) VOD도 올릴 수 있다. 그런 항목은 id가 'soop:<번호>'이고
  * kind가 'soop'이며, 재생은 숲 임베드 플레이어로 연다(유튜브는 유튜브 플레이어로).
  */
 
-const VIDEO_DATA_URL = 'data/videos.json';
 const VIDEO_TABS = { fantube: ['tab-video-fantube', 'view-video-fantube'], pick: ['tab-video-pick', 'view-video-pick'] };
 const VIDEO_PAGE_SIZE = 20;      // 최신 영상 한 번에 보여줄 개수
 const VIDEO_TOP_COUNT = 3;       // 이번 달 인기
@@ -337,21 +335,14 @@ async function loadVideoDataFromSupabase() {
 
 async function loadVideoData() {
     try {
-        const direct = await loadVideoDataFromSupabase();
-        if (direct) return direct;
-    } catch (e) {
-        console.warn('Supabase 영상 조회 실패, 정적 fallback 사용:', e);
-    }
-    try {
-        const res = await fetch(VIDEO_DATA_URL, { cache: 'no-cache' });
-        if (res.ok) return await res.json();
+        return await loadVideoDataFromSupabase();
     } catch (e) {
         console.error('영상 목록을 불러오지 못했습니다:', e);
+        return { channels: {}, videos: [], picks: [] };
     }
-    return { channels: {}, videos: [], picks: [] };
 }
 
-// 영상 페이지는 Supabase를 우선 읽고 videos.json은 fallback으로만 쓴다.
+// 영상 페이지는 Supabase에서 운영 데이터를 직접 읽는다.
 bootPage(async () => {
     const data = await loadVideoData();
     VideoState.data = {

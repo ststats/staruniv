@@ -295,7 +295,7 @@ function openMultiviewer() {
     window.open(`multiview.html?${params.toString()}`, '_blank', 'noopener');
 }
 
-// ----- 외부 도구 (docs/data/tools.json - 어드민 '도구' 탭에서 편집) -----
+// ----- 외부 도구 (Supabase external_tools - 어드민 '도구' 탭에서 편집) -----
 // javascript: 같은 스킴이 섞여 들어와도 클릭 시 실행되지 않도록 http(s) 링크만 허용한다.
 // (예전엔 '#'으로 대체했는데, 페이지 <base>가 사이트 루트라 '#'이 홈으로 이동하는 링크가 된다 -
 //  허용되지 않은 주소면 아예 href를 달지 않는다)
@@ -308,7 +308,7 @@ function toolCardHtml(tool) {
     const url = (tool && tool.url) || '';
     let iconUrl;
     if (tool.favicon) {
-        // tools.json에 favicon이 직접 지정돼 있으면(구글 캐시에 그 페이지가 없는 경우를 위한
+        // favicon이 직접 지정돼 있으면(구글 캐시에 그 페이지가 없는 경우를 위한
         // 수동 지정) 구글을 거치지 않고 그 값을 그대로 쓴다.
         iconUrl = escapeHTML(tool.favicon);
     } else {
@@ -346,31 +346,23 @@ function renderExternalTools(data) {
 }
 
 async function loadToolsData() {
-    // 외부도구는 기존 어드민 관리 데이터다. Supabase를 우선 읽고, 마이그레이션 전/장애 시에만
-    // 기존 tools.json을 fallback으로 사용한다. 멀티뷰어/엔트리/라이더 자체 기능은 DB와 무관하다.
     try {
         const client = publicSupabaseClient();
-        if (client) {
-            const { data, error } = await client.from('external_tools')
-                .select('id,category,name,url,favicon,source_order,active')
-                .eq('active', true)
-                .order('source_order');
-            if (!error && Array.isArray(data)) {
-                const grouped = { extTools: { items: [] }, extSites: { items: [] } };
-                data.forEach(row => {
-                    if (!grouped[row.category]) return;
-                    grouped[row.category].items.push({ name: row.name, url: row.url, favicon: row.favicon || '' });
-                });
-                renderExternalTools(grouped);
-                return;
-            }
-            if (error) console.warn('Supabase 외부도구 조회 실패 - tools.json으로 fallback합니다:', error);
-        }
-        const res = await fetch('data/tools.json', { cache: 'no-cache' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        renderExternalTools(await res.json());
+        if (!client) throw new Error('Supabase browser client is not configured');
+        const { data, error } = await client.from('external_tools')
+            .select('id,category,name,url,favicon,source_order,active')
+            .eq('active', true)
+            .order('source_order');
+        if (error) throw error;
+        const grouped = { extTools: { items: [] }, extSites: { items: [] } };
+        asArray(data).forEach(row => {
+            if (!grouped[row.category]) return;
+            grouped[row.category].items.push({ name: row.name, url: row.url, favicon: row.favicon || '' });
+        });
+        renderExternalTools(grouped);
     } catch (e) {
         console.error('도구 목록을 불러오지 못했습니다:', e);
+        renderExternalTools({});
     }
 }
 
