@@ -43,8 +43,9 @@
     {#- 글꼴은 Pretendard 하나로 통일한다(예전에는 숫자·라틴 라벨에 Chakra Petch를 따로 썼는데,
         한글과 섞이는 자리에서 자간이 어긋나 보였다). 표 자리수는 font-variant-numeric으로 맞춘다. #}
     <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+{% if admin_mode %}<link rel="stylesheet" href="{{ asset_url('admin.css') }}">{% endif %}
 </head>
-<body>
+<body{% if admin_mode %} class="admin-mode" data-admin-page="{{ page_id }}"{% endif %}>
 
 {#- [구조] 예전엔 이 파일(index.html) 하나에 모든 메뉴를 넣고 JS로 보였다 숨겼다 했다(SPA).
     이제 build_html.py가 templates/pages/*.html을 이 레이아웃에 끼워 메뉴마다 실제 페이지
@@ -57,7 +58,7 @@
 
 <header class="top-navbar">
     <div class="navbar-inner container">
-        <a class="logo" href="./" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
+        <a class="logo" href="{{ 'admin.html' if admin_mode else './' }}" aria-label="스타대학 홈"><span class="logo-title"><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub">CALMMON<br>STARZ</span></a>
         {#- [리디자인] 모바일에서는 메뉴를 서랍으로 넣는다. 좁은 화면에서 메뉴 6개를 한 줄에
             담으려면 글자를 계속 줄이거나 가로로 밀어야 했다. 버튼 하나로 여닫는다.
             (열고 닫는 건 core.js의 toggleMainMenu) #}
@@ -81,12 +82,18 @@
     </div>
 </header>
 
-<main>
+{% if admin_mode %}{% include 'partials/admin-auth.html' %}{% endif %}
+<main{% if admin_mode %} id="adminView" class="admin-hidden"{% endif %}>
 {% block content %}{% endblock %}
+{% if admin_mode %}<div class="container" id="adminWorkbench">{% include 'partials/admin-editor.html' %}</div>{% endif %}
 </main>
 
 {% block modals %}{% endblock %}
 
 {% block scripts %}{% endblock %}
+{% if admin_mode %}
+{% if page_id != 'schedule' %}<script src="{{ asset_url('calendar.js') }}"></script><script src="{{ asset_url('history.js') }}"></script>{% endif %}
+<script src="{{ asset_url('page-admin.js') }}"></script>
+{% endif %}
 </body>
 </html>

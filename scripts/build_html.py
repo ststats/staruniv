@@ -183,13 +183,20 @@ def main():
         out_path = page_output_path(page_id)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         write_text_atomic(out_path, html_output)
+        admin_context = page_context(page_id, title, description, hidden_nav_ids, hidden_stats_tabs)
+        admin_context.update(admin_mode=True, root='', public_href=page_url_path(page_id) or './')
+        for nav in admin_context['nav_items']:
+            nav['href'] = f"admin-{nav['id']}.html"
+        admin_output = env.get_template(f'pages/{page_id}.html').render(**common, **admin_context)
+        admin_name = 'admin.html' if page_id == 'home' else f'admin-{page_id}.html'
+        write_text_atomic(os.path.join(OUT_DIR, admin_name), admin_output)
     print(f"✅ 페이지 {len(PAGES)}개 생성: {', '.join(page_output_path(p[0]) for p in PAGES)}")
 
     copy_static_assets()
     # 독립 관리자/멀티뷰어/캄몬라이더도 docs를 직접 원본으로 두지 않는다.
     # templates/standalone을 소스로 관리하고 빌드 때 docs로 복사한 뒤 자산 버전을 붙인다.
     standalone_src_dir = os.path.join(TEMPLATE_DIR, 'standalone')
-    for filename in ('admin.html', 'multiview.html', 'calmmon-rider.html'):
+    for filename in ('multiview.html', 'calmmon-rider.html'):
         source = os.path.join(standalone_src_dir, filename)
         standalone = os.path.join(OUT_DIR, filename)
         if os.path.isfile(source):
