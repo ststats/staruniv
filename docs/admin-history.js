@@ -25,15 +25,77 @@
     const data=await histLoadData();
     const merged=histMergeItems(data, SiteData.members, true);
     histRegisterItems(merged);
-    root.innerHTML=histTimelineHtml(merged,{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true});
+    root.innerHTML=`
+      <div class="hist-admin-content-head">
+        <div>
+          <span class="hist-admin-kicker">HISTORY EDIT</span>
+          <strong>연혁 타임라인</strong>
+        </div>
+        <button type="button" class="admin-btn admin-btn-compact primary" id="adminHistoryAdd">연혁 추가</button>
+      </div>
+      ${histTimelineHtml(merged,{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true})}`;
+    document.getElementById('adminHistoryAdd')?.addEventListener('click',()=>open(null));
   }
 
-  function memberChecks(selected) {
-    const set=new Set(selected||[]);
-    return `<div class="admin-member-checks">${(C().state.members||[]).map(m=>{
-      const name=m.name||m.nickname;
-      return `<label><input type="checkbox" name="ah_member" value="${C().esc(name)}"${set.has(name)?' checked':''}>${C().esc(name)}</label>`;
-    }).join('')}</div>`;
+  function participantRows(selected) {
+    const rows=(selected||[]).map(entry=>{
+      const parsed=typeof histParseMember==='function'?histParseMember(entry):{name:String(entry||''),note:''};
+      return {name:parsed.name||'',note:parsed.note||''};
+    });
+    if(!rows.length) rows.push({name:'',note:''});
+    return `
+      <div class="admin-participants" id="ahParticipants">
+        ${rows.map((r,i)=>participantRowHtml(r,i)).join('')}
+      </div>
+      <div class="admin-participant-tools">
+        <button type="button" class="admin-btn admin-btn-compact" id="ahAddParticipant">참여 인원 추가</button>
+        <span class="admin-help">멤버가 아니어도 직접 입력할 수 있고, 설명은 이름 뒤 괄호로 표시됩니다.</span>
+      </div>`;
+  }
+
+  function participantRowHtml(row,index) {
+    return `<div class="admin-participant-row" data-participant-row>
+      <input class="admin-input" name="ah_member_name" value="${C().esc(row.name||'')}" placeholder="이름" list="ahMemberNames" aria-label="참여 인원 이름">
+      <input class="admin-input" name="ah_member_note" value="${C().esc(row.note||'')}" placeholder="설명 (예: 게스트, 코치)" aria-label="참여 인원 설명">
+      <button type="button" class="admin-icon-btn" data-remove-participant aria-label="참여 인원 삭제">×</button>
+    </div>`;
+  }
+
+  function collectParticipants() {
+    return [...document.querySelectorAll('#ahParticipants [data-participant-row]')].map(row=>{
+      const name=row.querySelector('[name="ah_member_name"]')?.value.trim()||'';
+      const note=row.querySelector('[name="ah_member_note"]')?.value.trim()||'';
+      if(!name) return '';
+      return typeof histFormatMember==='function' ? histFormatMember(name,note) : (note?`${name}(${note})`:name);
+    }).filter(Boolean);
+  }
+
+  function bindParticipantEditor() {
+    const box=document.getElementById('ahParticipants');
+    const add=document.getElementById('ahAddParticipant');
+    const datalist=document.createElement('datalist');
+    datalist.id='ahMemberNames';
+    datalist.innerHTML=(C().state.members||[]).map(m=>`<option value="${C().esc(m.name||m.nickname||'')}"></option>`).join('');
+    box?.after(datalist);
+    const bindRemove=()=>box?.querySelectorAll('[data-remove-participant]').forEach(btn=>{
+      btn.onclick=()=>{
+        const rows=box.querySelectorAll('[data-participant-row]');
+        if(rows.length===1){
+          rows[0].querySelectorAll('input').forEach(x=>x.value='');
+          C().markDirty(true);
+          return;
+        }
+        btn.closest('[data-participant-row]')?.remove();
+        C().markDirty(true);
+      };
+    });
+    add?.addEventListener('click',()=>{
+      box?.insertAdjacentHTML('beforeend',participantRowHtml({name:'',note:''},box.querySelectorAll('[data-participant-row]').length));
+      bindRemove();
+      box?.lastElementChild?.querySelector('input')?.focus();
+      C().markDirty(true);
+    });
+    bindRemove();
   }
 
   function open(row) {
@@ -49,7 +111,7 @@
         </div>
         ${C().field('제목',C().input('ah_title',row.title,'text','required maxlength="120"'))}
         ${C().field('설명',C().textarea('ah_desc',row.desc,'rows="4"'))}
-        <div class="admin-field"><span>참여 인원</span>${memberChecks(row.members)}</div>
+        <div class="admin-field"><span>참여 인원</span>${participantRows(row.members)}</div>
         ${C().field('YouTube 링크',C().input('ah_youtube',row.youtube,'url','placeholder="https://..."'))}
         <div class="admin-preview-row">
           <div><b>YouTube 미리보기</b><div id="ahYoutubePreview" class="admin-media-preview"></div></div>
@@ -65,7 +127,7 @@
         const payload={
           id,entry_kind:'manual',event_date:C().value('ah_date'),event_type:C().empty(C().value('ah_type')),
           title:C().value('ah_title').trim(),description:C().empty(C().value('ah_desc')),
-          members:[...document.querySelectorAll('input[name="ah_member"]:checked')].map(x=>x.value),
+          members:collectParticipants(),
           youtube_url:C().empty(C().value('ah_youtube')),image_path:image,
           sort_order:Number(C().value('ah_order')||0),hidden:!!document.getElementById('ah_hidden')?.checked,
           updated_at:new Date().toISOString()
@@ -84,6 +146,7 @@
         await load();
       }:null
     });
+    bindParticipantEditor();
     const yt=document.getElementById('ah_youtube');
     const img=document.getElementById('ah_image');
     const refreshYt=()=>{
@@ -117,11 +180,6 @@
     window.histAdminEdit=id=>open(rows.find(x=>String(x.id)===String(id)));
     window.histAdminRemove=id=>toggle(id);
     window.histAdminMove=(id,dir)=>move(id,dir).catch(e=>C().toast(C().errorText(e),'error'));
-    const tabs=document.querySelector('.sub-tabs');
-    if(tabs&&!document.getElementById('adminHistoryAdd')){
-      const b=document.createElement('button');b.type='button';b.id='adminHistoryAdd';b.className='admin-inline-add admin-tab-action';b.textContent='+ 연혁';
-      b.onclick=()=>open(null);tabs.appendChild(b);
-    }
     await load();
   }
   document.addEventListener('admin:ready',init);

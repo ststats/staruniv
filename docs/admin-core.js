@@ -279,14 +279,33 @@
       setVisible('configError', true);
       return;
     }
-    state.client = typeof publicSupabaseClient === 'function'
-      ? publicSupabaseClient()
-      : window.supabase.createClient(cfg.url, cfg.key);
+    // 관리자 페이지끼리 이동해도 같은 Supabase Auth 세션을 유지한다.
+    // 공개 조회용 publicSupabaseClient()는 persistSession:false 이므로 관리자 전용 클라이언트를 쓴다.
+    state.client = window.supabase.createClient(cfg.url, cfg.key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storageKey: 'staruniv-admin-auth'
+      }
+    });
     if (!state.client) {
       setVisible('configError', true);
       return;
     }
     setVisible('configError', false);
+
+    state.client.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        queueMicrotask(() => requireAdmin().catch(err => console.error('관리자 세션 확인 실패:', err)));
+      } else {
+        state.user = null;
+        setVisible('loginView', true);
+        setVisible('deniedView', false);
+        $('adminView')?.classList.add('admin-hidden');
+      }
+    });
+
     await requireAdmin();
   }
 
