@@ -1,23 +1,10 @@
 /**
- * 티어표 · 상대전적 탭: 선수 두 명을 고르면 맞대결 전적과 최근 전적을 보여준다.
- * (core.js → page-tier.js → 이 파일. 탭을 처음 열 때만 데이터를 읽는다)
+ * 티어표 · 상대전적 탭.
  *
- * 데이터: docs/data/h2h/ - scripts/build_h2h.py가 eloboard 아카이브를 선수id 범위별로 잘라 둔 것.
- *   index.json          { syncedAt, shardBounds:[샤드 시작id, ... 오름차순], cats:[대회 이름],
- *                         maps:{맵id:이름},
- *                         players:{ 선수id: {n:이름(티어표 닉네임), en:eloboard 이름(다를 때만),
- *                                            r:종족, m:판수, w:승, d:최근 경기일, tm:대학, t:티어, s:숲아이디} },
- *                         others: { 선수id: 이름 } }        // 티어표 밖 상대 이름
- *   p/<샤드시작id>.json { 선수id: [[날짜, 상대id, 이김(1/0), 맵id, 대회 인덱스], ...], ... }  // 각 선수 최신순
- * 선수 한 명당 파일 하나를 두면 1,100개가 넘게 쌓여서, id 순서대로 묶어 파일 수를 줄였다
- * (약 120개). 폭을 고정하지 않고 "한 샤드 용량이 목표치를 넘기 전까지" 채우는 방식이라
- * (활동이 많아 경기가 몰린 선수는 그 자체로 샤드 하나가 되기도 한다) 경계가 shardBounds에
- * 들어 있다 - 선수id보다 작거나 같은 것 중 가장 큰 경계가 그 선수가 속한 샤드다.
- * 선수를 고르면 그 샤드 하나만 받고(같은 탭에서 같은 샤드를 다시 고르면 shardCache에서
- * 재사용), 원본 아카이브(14MB) 전체는 안 받는다.
+ * Part 9부터 EloBoard 상대전적/랭킹의 단일 데이터 소스는 Supabase다.
+ * 구형 정적 fallback은 사용하지 않는다.
  */
 
-const H2H_INDEX_URL = 'data/h2h/index.json';
 const H2H_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
 const H2H_LIST_STEP = 10;
 const H2H_RIVAL_STEP = 8;
@@ -27,12 +14,9 @@ const H2H_SUGGEST_STEP = 40;
 const H2hState = {
     index: null,
     loading: null,
-    source: '',
     period: '90',
     picks: [null, null],
     rows: {},
-    shardData: {},
-    shardLoading: {},
     page: 1,
     matchFilter: '전체',
     rivalShown: H2H_RIVAL_STEP,
@@ -41,21 +25,6 @@ const H2hState = {
     suggestShown: H2H_SUGGEST_STEP,
     query: ['', ''],
 };
-
-async function h2hFetchAll(client, table, select, orderColumn) {
-    const out = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-        let q = client.from(table).select(select).range(from, from + pageSize - 1);
-        if (orderColumn) q = q.order(orderColumn, { ascending: true });
-        const { data, error } = await q;
-        if (error) throw error;
-        const batch = Array.isArray(data) ? data : [];
-        out.push(...batch);
-        if (batch.length < pageSize) break;
-    }
-    return out;
-}
 
 async function h2hLoadIndexFromSupabase() {
     const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
@@ -99,7 +68,6 @@ async function h2hLoadIndexFromSupabase() {
         }
     }
 
-    H2hState.source = 'supabase';
     return {
         syncedAt,
         shardBounds: [],
@@ -113,52 +81,17 @@ async function h2hLoadIndexFromSupabase() {
     };
 }
 
-async function h2hLoadIndexStatic() {
-    const res = await fetch(H2H_INDEX_URL, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    H2hState.source = 'static';
-    return res.json();
-}
-
 async function h2hLoadIndex() {
     if (H2hState.index) return H2hState.index;
     if (!H2hState.loading) {
-        H2hState.loading = (async () => {
-            try {
-                const data = await h2hLoadIndexFromSupabase();
+        H2hState.loading = h2hLoadIndexFromSupabase()
+            .then(data => {
                 H2hState.index = data;
                 return data;
-            } catch (e) {
-                console.warn('[H2H] Supabase 조회 실패, 정적 fallback 사용:', e);
-                const data = await h2hLoadIndexStatic();
-                H2hState.index = data;
-                return data;
-            }
-        })().finally(() => { H2hState.loading = null; });
+            })
+            .finally(() => { H2hState.loading = null; });
     }
     return H2hState.loading;
-}
-
-function h2hShardOf(pid) {
-    const bounds = (H2hState.index && H2hState.index.shardBounds) || [];
-    const n = Number(pid);
-    let found = bounds.length ? bounds[0] : pid;
-    for (const b of bounds) {
-        if (b > n) break;
-        found = b;
-    }
-    return found;
-}
-
-async function h2hLoadShard(shard) {
-    if (H2hState.shardData[shard]) return H2hState.shardData[shard];
-    if (!H2hState.shardLoading[shard]) {
-        H2hState.shardLoading[shard] = fetch(`data/h2h/p/${encodeURIComponent(shard)}.json`, { cache: 'no-cache' })
-            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
-            .then(data => { H2hState.shardData[shard] = data; return data; })
-            .finally(() => { delete H2hState.shardLoading[shard]; });
-    }
-    return H2hState.shardLoading[shard];
 }
 
 function h2hCategoryIndex(name) {
@@ -210,12 +143,7 @@ async function h2hLoadPlayer(pid) {
     if (!pid) return [];
     if (H2hState.rows[pid]) return H2hState.rows[pid];
     try {
-        if (H2hState.source === 'supabase') {
-            H2hState.rows[pid] = await h2hLoadPlayerFromSupabase(pid);
-            return H2hState.rows[pid];
-        }
-        const data = await h2hLoadShard(h2hShardOf(pid));
-        H2hState.rows[pid] = Array.isArray(data[pid]) ? data[pid] : [];
+        H2hState.rows[pid] = await h2hLoadPlayerFromSupabase(pid);
         return H2hState.rows[pid];
     } catch (e) {
         throw new Error(`선수 전적을 불러오지 못했습니다 (${e.message})`);
@@ -223,7 +151,7 @@ async function h2hLoadPlayer(pid) {
 }
 
 // 머리 카드의 '킹티어 · 3위/27명' 뱃지에 쓸 값. 순위와 티어 인원은 세지 않고
-// scripts/build_ranking.py가 index.json에 적어 둔 것을 읽는다.
+// ststat가 계산해 Supabase에 저장한 랭킹 값을 읽는다.
 function h2hRankInfo(p) {
     const counts = (H2hState.index && H2hState.index.ranking && H2hState.index.ranking.tierCounts) || {};
     return { rank: p.k, tierTotal: counts[String(p.t)] };
