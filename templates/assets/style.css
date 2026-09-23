@@ -1291,7 +1291,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .donut-sub { font-size: var(--fs-body); }
 
 .team-row-clickable { transition: background 0.1s; }
-.team-row-clickable:hover > * { background-color: var(--color-row-hover); }
+.team-row-clickable:hover > :not(.h2h-rival-bar) { background-color: var(--color-row-hover); }
 .team-row-clickable:hover .ext-arrow { color: var(--color-primary); }
 
 .fs-body { font-size: var(--fs-body); }
