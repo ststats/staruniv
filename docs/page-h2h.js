@@ -32,15 +32,28 @@ function h2hRaceLabel(value) {
 function h2hNormalizeCategory(value) {
     const raw = String(value ?? '').trim();
     if (!raw) return '';
-    const compact = raw.replace(/\s+/g, '').toUpperCase();
 
-    if (['개인', '개인전', '1V1', 'SOLO'].includes(compact)) return '개인';
-    if (['대회', '대회전'].includes(compact)) return '대회';
-    if (['대학', '대학대전', '대학전'].includes(compact)) return '대학';
-    if (['미니', '미니대전', '미니전'].includes(compact)) return '미니';
-    if (compact === 'CK' || compact.includes('CK')) return 'CK';
-    if (['리그', '프로리그', 'LEAGUE'].includes(compact)) return '리그';
-    if (['스폰', '스폰빵', 'SPON', 'SPONSOR'].includes(compact)) return '스폰';
+    const compact = raw.replace(/\s+/g, '').toLowerCase();
+
+    // 실제 EloBoard/Supabase category_name 값 기준
+    if (compact === 'sponsored') return '스폰';
+    if (compact === 'pro_league') return '리그';
+    if (compact === 'team_event') return '대회';
+    if (compact === 'solo_event') return '개인';
+    if (compact === 'college_mini') return '미니';
+    if (compact === 'college_event') return '대학';
+    if (compact === 'college_war') return '대학';
+
+    // 과거/표시용 별칭도 호환
+    const upper = raw.replace(/\s+/g, '').toUpperCase();
+    if (['개인', '개인전', '1V1', 'SOLO'].includes(upper)) return '개인';
+    if (['대회', '대회전'].includes(upper)) return '대회';
+    if (['대학', '대학대전', '대학전'].includes(upper)) return '대학';
+    if (['미니', '미니대전', '미니전'].includes(upper)) return '미니';
+    if (upper === 'CK' || upper.includes('CK')) return 'CK';
+    if (['리그', '프로리그', 'LEAGUE'].includes(upper)) return '리그';
+    if (['스폰', '스폰빵', 'SPON', 'SPONSOR'].includes(upper)) return '스폰';
+
     return raw;
 }
 
