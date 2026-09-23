@@ -502,6 +502,7 @@ async function entryLoadH2h(pids) {
 // '최근 90일 전적'처럼 전적 위에 작게 적을 이름
 function entryPeriodLabel() {
     if (EntryState.period === 'all') return '통산 전적';
+    renderEntry();
     const found = ENTRY_PERIODS.find(([k]) => k === EntryState.period);
     return `${found ? found[1] : '최근'} 전적`;
 }

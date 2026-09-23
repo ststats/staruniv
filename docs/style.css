@@ -6306,3 +6306,29 @@ html:not([data-theme="dark"]) .entry-map-option.is-picked { background:var(--nav
     .entry-analysis-grid { grid-template-columns:1fr; }
     .entry-analysis-total { white-space:normal; text-align:right; }
 }
+
+
+/* External-link square icon: keep the northeast arrow optically centered. */
+.external-link-icon,
+.link-square-icon,
+.icon-external,
+.action-external,
+a[class*="external"] .icon-box,
+button[class*="external"] .icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-align: center;
+}
+
+.external-link-icon svg,
+.link-square-icon svg,
+.icon-external svg,
+.action-external svg,
+a[class*="external"] .icon-box svg,
+button[class*="external"] .icon-box svg {
+  display: block;
+  margin: 0;
+  flex: 0 0 auto;
+}
