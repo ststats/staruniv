@@ -10,26 +10,42 @@ const H2H_LIST_STEP = 10;
 const H2H_RIVAL_STEP = 8;
 const H2H_MAP_STEP = 8;
 const H2H_SUGGEST_STEP = 40;
-const H2H_REQUEST_TIMEOUT_MS = 12000;
 
-// 상대전적/분석 공통 형식 그룹.
-// EloBoard 쪽 표기가 조금씩 달라도 같은 화면 묶음으로 합친다.
-const H2H_CAT_GROUPS = [
-    ['개인', '개인', ['개인', '개인전']],
-    ['대회', '대회', ['대회']],
-    ['대학', '대학', ['대학', '대학대전']],
-    ['미니', '미니', ['미니', '미니대전']],
-    ['CK', 'CK', ['CK']],
-    ['리그', '리그', ['리그', '프로리그']],
-    ['스폰', '스폰', ['스폰', '스폰빵']],
-];
+const H2H_RACE_LABEL = { T: '테란', P: '프로토스', Z: '저그' };
 
-function h2hWithTimeout(promise, label) {
-    let timer;
-    const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다.`)), H2H_REQUEST_TIMEOUT_MS);
-    });
-    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+function h2hNormalizeRace(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    const upper = raw.toUpperCase();
+    if (upper === 'T' || upper === 'TERRAN' || raw === 'T') return 'T';
+    if (upper === 'P' || upper === 'PROTOSS' || raw === 'P') return 'P';
+    if (upper === 'Z' || upper === 'ZERG' || raw === 'Z') return 'Z';
+    return upper;
+}
+
+function h2hRaceLabel(value) {
+    const key = h2hNormalizeRace(value);
+    return H2H_RACE_LABEL[key] || String(value ?? '').trim() || '-';
+}
+
+function h2hNormalizeCategory(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    const compact = raw.replace(/\s+/g, '').toUpperCase();
+
+    if (['개인', '개인전', '1V1', 'SOLO'].includes(compact)) return '개인';
+    if (['대회', '대회전'].includes(compact)) return '대회';
+    if (['대학', '대학대전', '대학전'].includes(compact)) return '대학';
+    if (['미니', '미니대전', '미니전'].includes(compact)) return '미니';
+    if (compact === 'CK' || compact.includes('CK')) return 'CK';
+    if (['리그', '프로리그', 'LEAGUE'].includes(compact)) return '리그';
+    if (['스폰', '스폰빵', 'SPON', 'SPONSOR'].includes(compact)) return '스폰';
+
+    return raw;
+}
+
+function h2hCategoryMatches(value, expected) {
+    return h2hNormalizeCategory(value) === h2hNormalizeCategory(expected);
 }
 
 const H2hState = {
@@ -51,23 +67,12 @@ async function h2hLoadIndexFromSupabase() {
     const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
     if (!client) throw new Error('Supabase browser client is not configured');
 
-    const playersData = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-        const request = client
-            .from('elo_public_players')
-            .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
-            .order('elo_id', { ascending: true })
-            .range(from, from + pageSize - 1);
-
-        const { data, error } = await h2hWithTimeout(request, '선수 목록');
-        if (error) throw error;
-
-        const batch = Array.isArray(data) ? data : [];
-        playersData.push(...batch);
-        if (batch.length < pageSize) break;
-    }
-    if (!playersData.length) throw new Error('Elo public player view is empty');
+    const { data: playersData, error: playersError } = await client
+        .from('elo_public_players')
+        .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
+        .order('elo_id', { ascending: true });
+    if (playersError) throw playersError;
+    if (!Array.isArray(playersData) || !playersData.length) throw new Error('Elo public player view is empty');
 
     const players = {};
     const others = {};
@@ -127,6 +132,7 @@ async function h2hLoadIndex() {
 }
 
 function h2hCategoryIndex(name) {
+    name = h2hNormalizeCategory(name);
     name = String(name || '');
     if (!name) return -1;
     const state = H2hState.index;
@@ -147,13 +153,12 @@ async function h2hLoadPlayerFromSupabase(pid) {
     const rows = [];
     const pageSize = 1000;
     for (let from = 0; ; from += pageSize) {
-        const request = client
+        const { data, error } = await client
             .from('elo_public_matches')
             .select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
             .eq('elo_id', Number(pid))
             .order('match_date', { ascending: false })
             .range(from, from + pageSize - 1);
-        const { data, error } = await h2hWithTimeout(request, '선수 전적');
         if (error) throw error;
         const batch = Array.isArray(data) ? data : [];
         for (const r of batch) {
@@ -604,25 +609,16 @@ function h2hSyncUrl() {
 let h2hStarted = false;
 
 async function h2hEnter() {
-    if (h2hStarted && H2hState.index) { h2hSyncUrl(); return; }
-
+    if (h2hStarted) { h2hSyncUrl(); return; }
+    h2hStarted = true;
     renderH2hPeriod();
     renderH2hSlots();
-    const resultBox = document.getElementById('h2h-result');
-    if (resultBox) resultBox.innerHTML = '<div class="h2h-empty">전적 데이터를 불러오는 중...</div>';
-
     try {
         await h2hLoadIndex();
-        h2hStarted = true;
     } catch (e) {
-        h2hStarted = false;
-        H2hState.index = null;
-        H2hState.loading = null;
         console.error('상대전적 데이터를 불러오지 못했습니다:', e);
-        if (resultBox) {
-            resultBox.innerHTML =
-                `<div class="h2h-empty">전적 데이터를 불러오지 못했습니다.<br><small>${escapeHTML(e.message || String(e))}</small><br><button type="button" class="news-load-more" onclick="h2hEnter()">다시 시도</button></div>`;
-        }
+        document.getElementById('h2h-result').innerHTML =
+            '<div class="h2h-empty">전적 데이터를 아직 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</div>';
         return;
     }
     if (!Object.keys(H2hState.index.players || {}).length) {
