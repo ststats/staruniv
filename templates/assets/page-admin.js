@@ -274,15 +274,27 @@ async function loadDashboard() {
     ['members','id','멤버'],['teams','id','팀'],['matches','match_no','팀 경기'],['tier_members','id','티어 선수'],
     ['calendar_events','id','일정'],['calendar_off_air','off_date','휴방'],['video_channels','channel_url','영상 채널'],
     ['videos','id','수집 영상'],['video_picks','id','추천 영상'],['external_tools','id','외부도구'],
-    ['elo_matches','elo_match_id','ELO 경기','planned'],['elo_players','elo_id','ELO 선수'],
+    ['elo_players','elo_id','ELO 선수'],
   ];
-  const cards = await Promise.all(tables.map(async ([table,column,label,countMode='exact']) => {
-    const {count,error}=await state.client.from(table).select(column,{count:countMode,head:true});
-    return {table,label,count:count??0,error};
-  }));
+  const [normalCards, eloStatsResult] = await Promise.all([
+    Promise.all(tables.map(async ([table,column,label]) => {
+      const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});
+      return {table,label,count:count??0,error};
+    })),
+    // elo_matches는 37만+ 행이라 브라우저의 count=exact + RLS로 직접 세지 않는다.
+    // 관리자 확인을 한 번만 하는 DB RPC에서 exact count와 범위를 함께 가져온다.
+    state.client.rpc('admin_elo_stats')
+  ]);
+  const eloStats=Array.isArray(eloStatsResult.data)?(eloStatsResult.data[0]||null):eloStatsResult.data;
+  const eloCard={table:'elo_matches',label:'ELO 경기',count:Number(eloStats?.total||0),error:eloStatsResult.error||null};
+  const cards=[...normalCards.slice(0,10),eloCard,...normalCards.slice(10)];
+
   $('dashboardKpis').innerHTML=cards.map(x=>x.error
     ? `<div class="admin-card admin-kpi is-error"><b>—</b><span>${esc(x.label)}</span><small>조회 실패</small></div>`
-    : `<div class="admin-card admin-kpi"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span></div>`).join('');
+    : `<div class="admin-card admin-kpi${x.table==='elo_matches'?' admin-kpi-emphasis':''}"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span>${x.table==='elo_matches'?'<small>DB exact count</small>':''}</div>`).join('');
+
+  renderEloDatabaseStatus(eloCard,eloStats);
+
   const failed=cards.filter(x=>x.error);
   if(failed.length) setStatus(`일부 현황 조회 실패 · ${failed.map(x=>`${x.label}(${x.table}): ${errText(x.error)}`).join(' · ')}`,'error');
   else clearStatus();
