@@ -2976,16 +2976,16 @@ html[data-theme="dark"] .cal-longterm-bar {
     /* 모바일 일정 표시: 5x5 점에 4px notch를 적용하면 거의 삼각형으로 잘린다.
        점 대신 작은 가로 노치 박스로 표시해 기존 일정표시 형태를 유지한다. */
     .cal-day-cell .cal-cell-event {
-        flex: 0 0 10px;
-        width: 10px;
-        height: 7px;
-        min-width: 10px;
+        flex: 0 0 7px;
+        width: 7px;
+        height: 4px;
+        min-width: 7px;
         padding: 0;
         margin: 0;
         gap: 0;
         border: 0;
         border-radius: 0;
-        clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+        clip-path: polygon(0 0, calc(100% - 1px) 0, 100% 1px, 100% 100%, 0 100%);
         background: var(--ev-accent);
     }
     .cal-day-cell .cal-cell-event > * { display: none; }
