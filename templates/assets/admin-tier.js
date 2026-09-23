@@ -79,22 +79,53 @@
       }
     });
   }
+  async function loadFilterOptions(){
+    const all=[], size=1000;
+    for(let from=0;;from+=size){
+      const {data,error}=await C().state.client.from('tier_members')
+        .select('tier,affiliation,race').order('id',{ascending:true}).range(from,from+size-1);
+      if(error)throw error;
+      const batch=data||[];
+      all.push(...batch);
+      if(batch.length<size)break;
+    }
+    const clean=key=>[...new Set(all.map(r=>String(r[key]||'').trim()).filter(Boolean))]
+      .sort((a,b)=>a.localeCompare(b,'ko',{numeric:true,sensitivity:'base'}));
+    S.options={tiers:clean('tier'),affs:clean('affiliation'),races:clean('race')};
+  }
+
   async function load(page=0){
-    S.page=Math.max(0,page);const from=S.page*S.size,to=from+S.size-1;
+    S.page=Math.max(0,page);
+    if(document.getElementById('tierQ')){
+      S.filters={
+        q:C().value('tierQ').trim().replace(/[%_,]/g,''),
+        tier:C().value('tierFilter').trim(),
+        aff:C().value('tierAff').trim(),
+        race:C().value('tierRace').trim()
+      };
+    }
+    const from=S.page*S.size,to=from+S.size-1;
     let q=C().state.client.from('tier_members').select('*',{count:'exact'}).order(S.sort,{ascending:S.asc}).range(from,to);
-    const search=C().value('tierQ').trim().replace(/[%_,]/g,''),tier=C().value('tierFilter').trim(),aff=C().value('tierAff').trim(),race=C().value('tierRace').trim();
+    const {q:search,tier,aff,race}=S.filters;
     if(search)q=q.or(`name.ilike.%${search}%,nickname.ilike.%${search}%,soop_id.ilike.%${search}%,elo_id.eq.${/^\d+$/.test(search)?search:-1}`);
-    if(tier)q=q.eq('tier',tier);if(aff)q=q.eq('affiliation',aff);if(race)q=q.eq('race',race);
-    const {data,count,error}=await q;if(error)throw error;S.rows=data||[];S.count=count||0;render();
+    if(tier)q=q.eq('tier',tier);
+    if(aff)q=q.eq('affiliation',aff);
+    if(race)q=q.eq('race',race);
+    const {data,count,error}=await q;
+    if(error)throw error;
+    S.rows=data||[];
+    S.count=count||0;
+    render();
   }
   function render(){
     const root=document.getElementById('adminDedicatedRoot');root.hidden=false;document.body.classList.add('admin-dedicated-active');const pages=Math.max(1,Math.ceil(S.count/S.size));
-    const tiers=[...new Set(S.rows.map(r=>r.tier).filter(Boolean))],affs=[...new Set(S.rows.map(r=>r.affiliation).filter(Boolean))],races=[...new Set(S.rows.map(r=>r.race).filter(Boolean))];
+    const {tiers,affs,races}=S.options;
+    const selected=(value,current)=>String(value)===String(current||'')?' selected':'';
     root.innerHTML=`<div class="admin-dedicated-shell"><div class="admin-dedicated-head"><div><span>TIER</span><h1>전체 티어표 관리</h1></div><div><button class="admin-btn" id="tierBulk">일괄 수정</button> <button class="admin-btn primary" id="tierAdd">+ 새 선수</button></div></div>
-      <div class="admin-filter-grid"><input class="admin-input" id="tierQ" placeholder="이름 · 닉네임 · SOOP ID · ELO ID" value="${esc(C().value('tierQ'))}">
-      <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x=>`<option>${esc(x)}</option>`).join('')}</select>
-      <select class="admin-input" id="tierAff"><option value="">전체 소속</option>${affs.map(x=>`<option>${esc(x)}</option>`).join('')}</select>
-      <select class="admin-input" id="tierRace"><option value="">전체 종족</option>${races.map(x=>`<option>${esc(x)}</option>`).join('')}</select><button class="admin-btn" id="tierSearch">조회</button></div>
+      <div class="admin-filter-grid"><input class="admin-input" id="tierQ" placeholder="이름 · 닉네임 · SOOP ID · ELO ID" value="${esc(S.filters.q)}">
+      <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.tier)}>${esc(x)}</option>`).join('')}</select>
+      <select class="admin-input" id="tierAff"><option value="">전체 소속</option>${affs.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.aff)}>${esc(x)}</option>`).join('')}</select>
+      <select class="admin-input" id="tierRace"><option value="">전체 종족</option>${races.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.race)}>${esc(x)}</option>`).join('')}</select><button class="admin-btn" id="tierSearch">조회</button></div>
       <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th></th>${[['name','이름'],['nickname','닉네임'],['soop_id','SOOP ID'],['elo_id','ELO ID'],['gender','성별'],['race','종족'],['birth_date','생년월일'],['tier','티어'],['affiliation','소속'],['role','직책'],['promoted_tier_0','최근 승급일'],['modified_at','수정일']].map(([k,l])=>`<th><button class="admin-sort" data-sort="${k}">${l}</button></th>`).join('')}<th>관리</th></tr></thead><tbody>${S.rows.map(r=>{const warn=promotionWarnings(r);return`<tr data-tier-id="${r.id}" class="${warn.length?'has-warning':''}"><td><input type="checkbox" data-select-id="${r.id}"${S.selected.has(r.id)?' checked':''}></td><td>${esc(r.name)}</td><td><b>${esc(r.nickname)}</b>${warn.length?`<span class="admin-warning" title="${esc(warn.join(' / '))}">!</span>`:''}</td><td>${esc(r.soop_id)}</td><td>${esc(r.elo_id)}</td><td>${esc(r.gender)}</td><td>${esc(r.race)}</td><td>${esc(r.birth_date)}</td><td>${esc(r.tier)}</td><td>${esc(r.affiliation)}</td><td>${esc(r.role)}</td><td>${esc(latestPromotion(r))}</td><td>${esc(r.modified_at)}</td><td><button class="admin-btn" data-edit-tier="${r.id}">수정</button><button class="admin-btn" data-history-tier="${r.id}">이력</button></td></tr>`}).join('')||'<tr><td colspan="14">검색 결과가 없습니다.</td></tr>'}</tbody></table></div>
       <div class="admin-pager"><button class="admin-btn" id="tierPrev"${S.page<=0?' disabled':''}>이전</button><span>${S.page+1} / ${pages} · ${S.count}명</span><button class="admin-btn" id="tierNext"${S.page>=pages-1?' disabled':''}>다음</button></div></div>`;
     root.querySelector('#tierAdd').onclick=()=>open(null);root.querySelector('#tierBulk').onclick=bulk;root.querySelector('#tierSearch').onclick=()=>load(0);root.querySelector('#tierPrev').onclick=()=>load(S.page-1);root.querySelector('#tierNext').onclick=()=>load(S.page+1);
@@ -103,6 +134,6 @@
     root.querySelectorAll('[data-history-tier]').forEach(b=>b.onclick=()=>{const r=S.rows.find(x=>String(x.id)===b.dataset.historyTier);C().openDrawer({eyebrow:'PROMOTION',title:`${r.nickname} 승급 이력`,html:historyHtml(r),onSubmit:async()=>{}});document.getElementById('adminDrawerSave').hidden=true;});
     root.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;if(S.sort===k)S.asc=!S.asc;else{S.sort=k;S.asc=true;}load(0);});
   }
-  async function init(){if(document.body.dataset.adminPage!=='tier')return;render();await load(0);}
+  async function init(){if(document.body.dataset.adminPage!=='tier')return;render();await loadFilterOptions();await load(0);}
   document.addEventListener('admin:ready',init);
 }());

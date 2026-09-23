@@ -41,6 +41,10 @@ function switchScheduleView(view) {
 async function renderHistory() {
     const root = document.getElementById('history-root');
     if (!root) return;
+    if (document.body.dataset.adminPage === 'schedule' && window.StarUnivAdminHistory?.render) {
+        await window.StarUnivAdminHistory.render();
+        return;
+    }
     const data = await histLoadData();
     const items = histMergeItems(data, SiteData.members, false);
     histRegisterItems(items);

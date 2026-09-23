@@ -23,6 +23,14 @@
     return values.map(v=>`<option value="${C().esc(v)}"${String(v)===String(selected||'')?' selected':''}>${C().esc(v||'선택')}</option>`).join('');
   }
 
+  function normalizeGender(value){
+    const raw=String(value||'').trim();
+    const upper=raw.toUpperCase();
+    if(['남','남성','남자'].includes(raw)||['M','MALE'].includes(upper))return '남';
+    if(['여','여성','여자'].includes(raw)||['F','FEMALE'].includes(upper))return '여';
+    return raw;
+  }
+
   function open(row){
     row=row||{};
     C().openDrawer({
@@ -37,7 +45,7 @@
           ${C().field('티어',C().input('am_tier',row.tier||''))}
           ${C().field('입단 티어',C().input('am_join_tier',row.join_tier||''))}
           ${C().field('종족',`<select class="admin-input" id="am_race">${opts(['','테란','저그','프로토스'],row.race)}</select>`)}
-          ${C().field('성별',`<select class="admin-input" id="am_gender">${opts(['','남','여'],row.gender)}</select>`)}
+          ${C().field('성별',`<select class="admin-input" id="am_gender">${opts(['','남','여'],normalizeGender(row.gender))}</select>`)}
           ${C().field('생년월일',C().input('am_birth',row.birth_date||'','date'))}
           ${C().field('MBTI',C().input('am_mbti',row.mbti||'','text','maxlength="8"'))}
           ${C().field('입단일',C().input('am_joined',row.joined_date||'','date'))}

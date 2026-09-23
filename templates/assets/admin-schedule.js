@@ -116,8 +116,9 @@
       ? `<button type="button" class="admin-inline-edit" data-admin-event-id="${C().esc(item.id)}">수정</button>` : '';
     window.calOffAirExtra = (date,type) => {
       const publicHtml = typeof publicOffAirExtra === 'function' ? publicOffAirExtra(date,type) : '';
-      return publicHtml + (C().state.editMode
-        ? `<button type="button" class="admin-inline-add" data-admin-offair-add="${C().esc(date)}">+ 휴방</button>` : '');
+      const addHtml = C().state.editMode && type === 'selected'
+        ? `<button type="button" class="admin-inline-add" data-admin-offair-add="${C().esc(date)}">+ 휴방</button>` : '';
+      return publicHtml + addHtml;
     };
     document.addEventListener('click', ev => {
       if (!C().state.editMode) return;

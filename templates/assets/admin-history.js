@@ -174,6 +174,8 @@
     if(error)throw error;await load();
   }
 
+  window.StarUnivAdminHistory={render,openNew:()=>open(null)};
+
   async function init(){
     if(document.body.dataset.adminPage!=='schedule')return;
     await C().loadMembers();

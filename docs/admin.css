@@ -1495,15 +1495,307 @@ body.admin-mode{padding-top:52px}
 }
 
 
-/* Inline admin polish — match public StarUniv UI */
-body.admin-mode{--admin-surface:var(--color-card);--admin-surface-soft:var(--color-bg-subtle);--admin-line:var(--color-border);--admin-line-strong:var(--color-border-strong);--admin-text:var(--color-text-main);--admin-muted:var(--color-text-muted)}
-.admin-inline-bar{height:46px;padding:0 max(12px,calc((100vw - 1280px)/2));background:color-mix(in srgb,var(--color-head-bg) 94%,transparent);border-bottom:1px solid var(--head-line);box-shadow:none;backdrop-filter:blur(12px)}
-body.admin-mode{padding-top:46px}.admin-edit-badge{color:var(--navy-accent);font-size:var(--fs-eyebrow);letter-spacing:.14em}.admin-inline-left strong{font-size:12px}.admin-save-state{padding-left:8px;border-left:1px solid var(--head-line);color:var(--navy-on-muted);font-size:11px}
-body.admin-mode .admin-btn,body.admin-mode .admin-inline-edit,body.admin-mode .admin-inline-add,body.admin-mode .admin-card-action,body.admin-mode .admin-home-edit,body.admin-mode .admin-section-eye,body.admin-mode .admin-eye-toggle,body.admin-mode .admin-subtab-eye,body.admin-mode .admin-nav-manage,body.admin-mode .admin-subtab-manage,body.admin-mode .admin-floating-add{min-height:30px;border:1px solid var(--admin-line-strong);border-radius:0;clip-path:polygon(0 0,calc(100% - 2px) 0,100% 2px,100% 100%,0 100%);background:var(--admin-surface);color:var(--admin-text);padding:5px 9px;font-size:11px;font-weight:800;box-shadow:none}
-body.admin-mode .admin-btn:hover,body.admin-mode .admin-inline-edit:hover,body.admin-mode .admin-card-action:hover,body.admin-mode .admin-floating-add:hover{border-color:var(--color-primary);background:var(--color-primary-tint);color:var(--color-primary)}
-body.admin-mode .admin-btn.primary{border-color:var(--color-primary);background:var(--color-primary);color:#fff}body.admin-mode .admin-btn.danger{border-color:color-mix(in srgb,var(--color-lose) 38%,var(--admin-line));color:var(--color-lose);background:var(--admin-surface)}body.admin-mode .admin-btn-ghost{border-color:rgba(255,255,255,.2);background:transparent;color:var(--navy-on-text)}.admin-btn-compact{min-height:28px!important;padding:4px 8px!important}
-.admin-drawer-backdrop{background:rgba(5,10,20,.34)}.admin-drawer-sheet{width:min(520px,92vw);background:var(--admin-surface);color:var(--admin-text);box-shadow:-18px 0 36px rgba(11,18,32,.16);border-left:1px solid var(--admin-line)}.admin-drawer-head{padding:16px 18px 12px;border-bottom:1px solid var(--admin-line);background:var(--admin-surface)}.admin-drawer-head h2{margin:2px 0 0;font-size:18px;font-weight:900}.admin-drawer-eyebrow{color:var(--title-eyebrow);font-size:var(--fs-eyebrow)}.admin-drawer-close{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid var(--admin-line);clip-path:polygon(0 0,calc(100% - 2px) 0,100% 2px,100% 100%,0 100%);font-size:20px}.admin-drawer-form>#adminDrawerBody{padding:16px 18px 24px}.admin-drawer-actions{padding:10px 18px;border-top:1px solid var(--admin-line);background:var(--admin-surface)}
-body.admin-mode .admin-field{gap:5px;margin-bottom:12px}body.admin-mode .admin-field>span,body.admin-mode .admin-field>label{color:var(--color-text-sub);font-size:11px;letter-spacing:-.01em}body.admin-mode .admin-input{min-height:36px;padding:7px 9px;border:1px solid var(--admin-line-strong);border-radius:0;clip-path:polygon(0 0,calc(100% - 2px) 0,100% 2px,100% 100%,0 100%);background:var(--admin-surface);color:var(--admin-text);font-size:12px;outline:none}body.admin-mode .admin-input:focus{border-color:var(--color-primary);box-shadow:inset 3px 0 0 var(--color-primary)}body.admin-mode .admin-textarea{min-height:88px}body.admin-mode .admin-form-grid{gap:10px;padding:10px;margin-bottom:12px;border:1px solid var(--admin-line);background:var(--admin-surface-soft);clip-path:var(--notch-xs)}body.admin-mode .admin-preview-row{gap:10px;margin:10px 0 14px}body.admin-mode .admin-media-preview{min-height:84px;border:1px solid var(--admin-line);border-radius:0;clip-path:var(--notch-xs);background:var(--admin-surface-soft)}body.admin-mode .admin-help{color:var(--admin-muted);font-size:11px}.admin-toast{top:56px;border-radius:0;clip-path:var(--notch-sm);background:var(--color-head-bg);border:1px solid var(--head-line)}
-.hist-admin-content-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--admin-line);background:var(--admin-surface-soft);clip-path:var(--notch-xs)}.hist-admin-content-head>div{display:flex;align-items:baseline;gap:8px}.hist-admin-kicker{color:var(--title-eyebrow);font-size:var(--fs-eyebrow);font-weight:900;letter-spacing:.12em}.hist-admin-content-head strong{font-size:13px}.hist-admin-bar{margin-top:8px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}.hist-admin-bar button{border:1px solid var(--admin-line-strong);border-radius:0;clip-path:polygon(0 0,calc(100% - 2px) 0,100% 2px,100% 100%,0 100%);background:var(--admin-surface);color:var(--admin-text);min-height:26px;padding:3px 7px;font-size:10px;font-weight:800}.hist-admin-bar .edit-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}.hist-admin-bar .delete-btn:hover{border-color:var(--color-lose);color:var(--color-lose)}
-.admin-participants{display:flex;flex-direction:column;gap:7px}.admin-participant-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 30px;gap:6px;align-items:center}.admin-participant-row .admin-input{margin:0}.admin-participant-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px}.admin-icon-btn{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid var(--admin-line-strong);background:var(--admin-surface);color:var(--color-text-sub);border-radius:0;clip-path:polygon(0 0,calc(100% - 2px) 0,100% 2px,100% 100%,0 100%);cursor:pointer}.admin-icon-btn:hover{color:var(--color-lose);border-color:var(--color-lose)}
-@media(max-width:760px){body.admin-mode{padding-top:46px}.admin-inline-bar{height:46px}.admin-drawer-sheet{width:100vw}.hist-admin-content-head{align-items:flex-start}.admin-participant-row{grid-template-columns:1fr 1fr 30px}.admin-participant-tools{align-items:flex-start;flex-direction:column}}
+/* =========================================================
+   Inline admin polish — reuse StarUniv public visual language
+   ========================================================= */
+body.admin-mode {
+  --admin-surface: var(--color-card);
+  --admin-surface-soft: var(--color-bg-subtle);
+  --admin-line: var(--color-border);
+  --admin-line-strong: var(--color-border-strong);
+  --admin-text: var(--color-text-main);
+  --admin-muted: var(--color-text-muted);
+  --admin-accent: var(--color-primary);
+  --admin-accent-soft: var(--color-primary-tint);
+}
+
+.admin-inline-bar {
+  height: 46px;
+  padding: 0 max(12px, calc((100vw - 1280px) / 2));
+  background: color-mix(in srgb, var(--color-head-bg) 94%, transparent);
+  border-bottom: 1px solid var(--head-line);
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+body.admin-mode { padding-top: 46px; }
+.admin-edit-badge {
+  color: var(--navy-accent);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: .14em;
+}
+.admin-inline-left strong { font-size: 12px; }
+.admin-save-state {
+  padding-left: 8px;
+  border-left: 1px solid var(--head-line);
+  color: var(--navy-on-muted);
+  font-size: 11px;
+}
+
+body.admin-mode .admin-btn,
+body.admin-mode .admin-inline-edit,
+body.admin-mode .admin-inline-add,
+body.admin-mode .admin-card-action,
+body.admin-mode .admin-home-edit,
+body.admin-mode .admin-section-eye,
+body.admin-mode .admin-eye-toggle,
+body.admin-mode .admin-subtab-eye,
+body.admin-mode .admin-nav-manage,
+body.admin-mode .admin-subtab-manage,
+body.admin-mode .admin-floating-add {
+  min-height: 30px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: none;
+}
+body.admin-mode .admin-btn:hover,
+body.admin-mode .admin-inline-edit:hover,
+body.admin-mode .admin-card-action:hover,
+body.admin-mode .admin-floating-add:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+}
+body.admin-mode .admin-btn.primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+body.admin-mode .admin-btn.danger {
+  border-color: color-mix(in srgb, var(--color-lose) 38%, var(--admin-line));
+  color: var(--color-lose);
+  background: var(--admin-surface);
+}
+body.admin-mode .admin-btn-ghost {
+  border-color: rgba(255,255,255,.2);
+  background: transparent;
+  color: var(--navy-on-text);
+}
+.admin-btn-compact { min-height: 28px !important; padding: 4px 8px !important; }
+
+.admin-drawer-backdrop { background: rgba(5,10,20,.34); }
+.admin-drawer-sheet {
+  width: min(520px, 92vw);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: -18px 0 36px rgba(11,18,32,.16);
+  border-left: 1px solid var(--admin-line);
+}
+.admin-drawer-head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--admin-line);
+  background: var(--admin-surface);
+}
+.admin-drawer-head h2 {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+.admin-drawer-eyebrow {
+  color: var(--title-eyebrow);
+  font-size: var(--fs-eyebrow);
+}
+.admin-drawer-close {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--admin-line);
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+  font-size: 20px;
+}
+.admin-drawer-form > #adminDrawerBody { padding: 16px 18px 24px; }
+.admin-drawer-actions {
+  padding: 10px 18px;
+  border-top: 1px solid var(--admin-line);
+  background: var(--admin-surface);
+}
+
+body.admin-mode .admin-field { gap: 5px; margin-bottom: 12px; }
+body.admin-mode .admin-field > span,
+body.admin-mode .admin-field > label {
+  color: var(--color-text-sub);
+  font-size: 11px;
+  letter-spacing: -.01em;
+}
+body.admin-mode .admin-input {
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  font-size: 12px;
+  outline: none;
+}
+body.admin-mode .admin-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+body.admin-mode .admin-textarea { min-height: 88px; }
+body.admin-mode .admin-form-grid {
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-surface-soft);
+  clip-path: var(--notch-xs);
+}
+body.admin-mode .admin-preview-row {
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+body.admin-mode .admin-media-preview {
+  min-height: 84px;
+  border: 1px solid var(--admin-line);
+  border-radius: 0;
+  clip-path: var(--notch-xs);
+  background: var(--admin-surface-soft);
+}
+body.admin-mode .admin-help { color: var(--admin-muted); font-size: 11px; }
+
+.admin-toast {
+  top: 56px;
+  border-radius: 0;
+  clip-path: var(--notch-sm);
+  background: var(--color-head-bg);
+  border: 1px solid var(--head-line);
+}
+
+/* Timeline editing belongs inside the real history content. */
+.hist-admin-content-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-surface-soft);
+  clip-path: var(--notch-xs);
+}
+.hist-admin-content-head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.hist-admin-kicker {
+  color: var(--title-eyebrow);
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.hist-admin-content-head strong { font-size: 13px; }
+.hist-admin-bar {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.hist-admin-bar button {
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  min-height: 26px;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.hist-admin-bar .edit-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.hist-admin-bar .delete-btn:hover { border-color: var(--color-lose); color: var(--color-lose); }
+
+/* History participants: linked member suggestions + arbitrary guests + per-person note. */
+.admin-participants {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.admin-participant-row {
+  display: grid;
+  grid-template-columns: minmax(0,1.1fr) minmax(0,1fr) 30px;
+  gap: 6px;
+  align-items: center;
+}
+.admin-participant-row .admin-input { margin: 0; }
+.admin-participant-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.admin-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--admin-line-strong);
+  background: var(--admin-surface);
+  color: var(--color-text-sub);
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+  cursor: pointer;
+}
+.admin-icon-btn:hover { color: var(--color-lose); border-color: var(--color-lose); }
+
+@media (max-width: 760px) {
+  body.admin-mode { padding-top: 46px; }
+  .admin-inline-bar { height: 46px; }
+  .admin-drawer-sheet { width: 100vw; }
+  .hist-admin-content-head { align-items: flex-start; }
+  .admin-participant-row { grid-template-columns: 1fr 1fr 30px; }
+  .admin-participant-tools { align-items: flex-start; flex-direction: column; }
+}
+
+/* Admin compact visual pass v2 */
+body.admin-mode{--admin-notch-control:var(--notch-xs);--admin-notch-card:var(--notch-sm);--admin-notch-sheet:var(--notch-md);padding-top:40px}
+body.admin-mode .admin-inline-bar{height:40px;padding-inline:max(12px,calc((100vw - 1240px)/2));border:0;background:var(--color-head-bg);box-shadow:0 1px 0 color-mix(in srgb,var(--head-line) 70%,transparent)}
+body.admin-mode .admin-inline-left,body.admin-mode .admin-inline-right{gap:6px}
+body.admin-mode .admin-inline-left strong{font-size:11px;line-height:1.2;letter-spacing:-.015em}
+body.admin-mode .admin-edit-badge{font-size:8px;line-height:1;letter-spacing:.16em}
+body.admin-mode .admin-save-state{font-size:10px;padding-left:7px}
+body.admin-mode .admin-btn,body.admin-mode .admin-inline-edit,body.admin-mode .admin-inline-add,body.admin-mode .admin-card-action,body.admin-mode .admin-home-edit,body.admin-mode .admin-section-eye,body.admin-mode .admin-eye-toggle,body.admin-mode .admin-subtab-eye,body.admin-mode .admin-nav-manage,body.admin-mode .admin-subtab-manage,body.admin-mode .admin-floating-add{min-height:26px;padding:4px 7px;border:0!important;border-radius:0;clip-path:var(--admin-notch-control);background:var(--panel-control);color:var(--color-text-sub);box-shadow:none;font-size:10px;line-height:1.1;font-weight:700;letter-spacing:-.01em}
+body.admin-mode .admin-btn:hover,body.admin-mode .admin-inline-edit:hover,body.admin-mode .admin-inline-add:hover,body.admin-mode .admin-card-action:hover,body.admin-mode .admin-floating-add:hover{border:0!important;background:var(--color-row-hover);color:var(--color-primary)}
+body.admin-mode .admin-btn.primary{border:0!important;background:var(--color-primary);color:#fff}
+body.admin-mode .admin-btn.danger{border:0!important;background:color-mix(in srgb,var(--color-lose) 9%,var(--panel-control));color:var(--color-lose)}
+body.admin-mode .admin-btn-compact{min-height:24px!important;padding:3px 7px!important;font-size:10px!important}
+body.admin-mode .admin-drawer-sheet{width:min(460px,90vw);border:0;clip-path:var(--admin-notch-sheet);background:var(--color-card);box-shadow:-12px 0 30px rgba(10,18,32,.13)}
+body.admin-mode .admin-drawer-head{padding:13px 15px 10px;border-bottom:1px solid var(--color-border)}
+body.admin-mode .admin-drawer-head h2{margin-top:1px;font-size:16px;line-height:1.2;letter-spacing:-.025em}
+body.admin-mode .admin-drawer-eyebrow{font-size:8px;line-height:1;letter-spacing:.16em}
+body.admin-mode .admin-drawer-close{width:26px;height:26px;border:0;clip-path:var(--admin-notch-control);background:var(--panel-control);font-size:16px}
+body.admin-mode .admin-drawer-form>#adminDrawerBody{padding:12px 15px 18px}
+body.admin-mode .admin-drawer-actions{padding:8px 15px;border-top:1px solid var(--color-border)}
+body.admin-mode .admin-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 8px;padding:8px;margin-bottom:9px;border:0;clip-path:var(--admin-notch-card);background:var(--color-bg-subtle)}
+body.admin-mode .admin-field{gap:4px;margin-bottom:8px}
+body.admin-mode .admin-field>span,body.admin-mode .admin-field>label{font-size:10px;line-height:1.2;font-weight:700;letter-spacing:-.015em;color:var(--color-text-sub)}
+body.admin-mode .admin-input{min-height:31px;padding:5px 7px;border:0!important;border-radius:0;clip-path:var(--admin-notch-control);background:var(--panel-control);color:var(--color-text-main);box-shadow:none;font-size:11px;line-height:1.25;letter-spacing:-.012em}
+body.admin-mode select.admin-input{padding-right:24px}
+body.admin-mode .admin-input:focus{border:0!important;outline:0;background:color-mix(in srgb,var(--color-primary) 7%,var(--panel-control));box-shadow:inset 2px 0 0 var(--color-primary)}
+body.admin-mode .admin-textarea{min-height:72px;line-height:1.5}
+body.admin-mode .admin-help{font-size:10px;line-height:1.45}
+body.admin-mode .admin-filter-grid{gap:6px}
+body.admin-mode .admin-table-wrap,body.admin-mode .admin-dedicated-shell{border:0;clip-path:var(--admin-notch-card)}
+body.admin-mode .admin-table{font-size:10px}
+body.admin-mode .admin-table th{font-size:9px;letter-spacing:.02em}
+body.admin-mode .admin-table th,body.admin-mode .admin-table td{padding:7px 8px}
+body.admin-mode .admin-dedicated-head{padding-bottom:9px;margin-bottom:10px;border-bottom:1px solid var(--color-border)}
+body.admin-mode .admin-dedicated-head h1{font-size:18px;letter-spacing:-.025em}
+body.admin-mode .admin-dedicated-head>div>span{font-size:8px;letter-spacing:.16em}
+body.admin-mode .hist-admin-content-head{margin-bottom:10px;padding:7px 9px;border:0;clip-path:var(--admin-notch-card);background:var(--color-bg-subtle)}
+body.admin-mode .hist-admin-kicker{font-size:8px;letter-spacing:.15em}
+body.admin-mode .hist-admin-content-head strong{font-size:12px}
+body.admin-mode .hist-admin-bar{gap:4px;margin-top:6px}
+body.admin-mode .hist-admin-bar button{min-height:23px;padding:3px 6px;border:0;clip-path:var(--admin-notch-control);background:var(--panel-control);font-size:9px;line-height:1}
+body.admin-mode .admin-participant-row{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr) 26px;gap:5px}
+body.admin-mode .admin-icon-btn{width:26px;height:26px;border:0;clip-path:var(--admin-notch-control);background:var(--panel-control);font-size:13px}
+@media(max-width:760px){body.admin-mode{padding-top:40px}body.admin-mode .admin-inline-bar{height:40px}body.admin-mode .admin-drawer-sheet{width:100vw;clip-path:none}body.admin-mode .admin-form-grid{grid-template-columns:1fr}}
