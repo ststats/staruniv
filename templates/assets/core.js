@@ -908,31 +908,71 @@ const PageState = {
 let HiddenStatsTabs = new Set();
 const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
 
+let SiteRuntimeConfig = {};
+function runtimePageId() {
+    return document.body.dataset.adminPage
+        || document.querySelector('.page-section.active')?.id?.replace(/^page-/,'')
+        || location.pathname.split('/').filter(Boolean).pop()
+        || 'home';
+}
+function runtimeSubtabConfig(pageId, fallbackDefault) {
+    const raw = SiteRuntimeConfig?.subtabs?.[pageId] || {};
+    return {
+        hidden: Array.isArray(raw.hidden) ? raw.hidden.map(String) : [],
+        default: String(raw.default || fallbackDefault || ''),
+    };
+}
+function runtimeDefaultSubtab(pageId, fallbackDefault) {
+    return runtimeSubtabConfig(pageId, fallbackDefault).default || fallbackDefault;
+}
+function runtimeSectionEnabled(key, fallback=true) {
+    const sections = SiteRuntimeConfig?.homeSections;
+    if (!sections || !Object.prototype.hasOwnProperty.call(sections, key)) return fallback;
+    return !!sections[key];
+}
+
 async function applyNavVisibility() {
     try {
-        const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data || typeof data !== 'object') return;
-        if (Array.isArray(data.hidden)) {
-            const hidden = new Set(data.hidden.map(String));
-            document.querySelectorAll('.top-navbar .nav-item[data-page]').forEach(el => {
-                el.hidden = hidden.has(el.dataset.page);
+        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+        if (!client) throw new Error('Supabase browser client is not configured');
+        const { data: row, error } = await client.from('site_config')
+            .select('config_value').eq('config_key','nav').maybeSingle();
+        if (error) throw error;
+        const data = row?.config_value || {};
+        SiteRuntimeConfig = data;
+
+        const isAdmin = document.body.classList.contains('admin-mode');
+        const hidden = new Set((Array.isArray(data.hidden) ? data.hidden : []).map(String));
+        const order = Array.isArray(data.order) ? data.order.map(String) : [];
+        const menu = document.getElementById('mainMenu');
+        const navItems = [...document.querySelectorAll('.top-navbar .nav-item[data-page]')];
+        navItems.forEach(el => {
+            const isHidden = hidden.has(el.dataset.page);
+            el.hidden = isHidden && !isAdmin;
+            el.classList.toggle('admin-config-hidden', isHidden && isAdmin);
+        });
+        if (menu && order.length) {
+            order.forEach(pageId => {
+                const el = navItems.find(x => x.dataset.page === pageId);
+                if (el) menu.appendChild(el);
             });
-            const menu = document.getElementById('mainMenu');
-            if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
         }
-        // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 파일에서 끈다. 빌드 때 이미 hidden이
-        // 붙어 있지만, 어드민에서 방금 저장한 걸 다음 빌드까지 기다리지 않고 바로 반영한다.
+
+        const pageId = runtimePageId();
+        const sub = runtimeSubtabConfig(pageId, '');
+        document.querySelectorAll('.sub-tabs .sub-tab[id]').forEach(el => {
+            const key = el.id.replace(/^tab-(?:member-|tools-|video-)?/,'').replace(/^tab-/,'');
+            const hiddenSub = sub.hidden.includes(key);
+            el.hidden = hiddenSub && !isAdmin;
+            el.classList.toggle('admin-config-hidden', hiddenSub && isAdmin);
+        });
+
         const heroDescriptions = (data.heroDescriptions && typeof data.heroDescriptions === 'object') ? data.heroDescriptions : {};
-        // 홈 캐러셀은 히어로가 셋이라 각 문구를 별도 키로 바꾼다.
         document.querySelectorAll('[data-hero-description]').forEach(subtitle => {
             const heroText = String(heroDescriptions[subtitle.dataset.heroDescription] || '').trim();
             if (heroText) subtitle.textContent = heroText;
         });
-        const activePage = document.querySelector('.top-navbar .nav-item.active[data-page]')?.dataset.page
-            || ({'schedule':'schedule','members':'members','records':'records','tier':'tier','video':'video','stats':'stats','tools':'tools'}[location.pathname.split('/').filter(Boolean).pop()] || '');
-        const heroText = String(heroDescriptions[activePage] || '').trim();
+        const heroText = String(heroDescriptions[pageId] || '').trim();
         if (heroText) {
             const subtitle = document.querySelector('.page-section.active .page-header-subtitle:not([data-hero-description])');
             if (subtitle) {
@@ -940,14 +980,48 @@ async function applyNavVisibility() {
                 else subtitle.textContent = heroText;
             }
         }
+
+        const carousel = data.homeCarousel && typeof data.homeCarousel === 'object' ? data.homeCarousel : {};
+        document.querySelectorAll('.home-carousel-slide').forEach((slide, idx) => {
+            const key = ['schedule','records','video'][idx];
+            const cfg = carousel[key];
+            if (!cfg) return;
+            const title = slide.querySelector('.page-header-title');
+            const desc = slide.querySelector('.page-header-subtitle');
+            const link = slide.querySelector('.home-hero-links a');
+            if (title && cfg.title) title.textContent = cfg.title;
+            if (desc && cfg.description) desc.textContent = cfg.description;
+            if (link && cfg.href) link.setAttribute('href', cfg.href);
+        });
+
+        const liveTitle = document.querySelector('#home-live-broadcast')?.previousElementSibling;
+        const noticeList = document.getElementById('home-notice-list');
+        const noticeTitle = noticeList?.previousElementSibling;
+        const liveWrap = document.getElementById('home-live-broadcast');
+        if (liveWrap) {
+            const enabled = runtimeSectionEnabled('live', true);
+            liveWrap.hidden = !enabled && !isAdmin;
+            liveTitle?.classList.toggle('admin-config-hidden', !enabled && isAdmin);
+            liveWrap.classList.toggle('admin-config-hidden', !enabled && isAdmin);
+        }
+        if (noticeList) {
+            const enabled = runtimeSectionEnabled('notices', true);
+            noticeList.hidden = !enabled && !isAdmin;
+            noticeTitle?.classList.toggle('admin-config-hidden', !enabled && isAdmin);
+            noticeList.classList.toggle('admin-config-hidden', !enabled && isAdmin);
+        }
+
         HiddenStatsTabs = new Set((Array.isArray(data.statsTabs) ? data.statsTabs : []).map(String));
         document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]').forEach(el => {
-            el.hidden = HiddenStatsTabs.has(el.dataset.metric);
+            const isHidden = HiddenStatsTabs.has(el.dataset.metric);
+            el.hidden = isHidden && !isAdmin;
+            el.classList.toggle('admin-config-hidden', isHidden && isAdmin);
         });
-        // 켜져 있던 탭이 숨겨졌으면 보이는 탭으로 옮긴다(방송통계 페이지에서만 있는 함수).
         if (typeof syncStatsMetricVisibility === 'function') syncStatsMetricVisibility();
-    } catch (_) {
-        // 실패하면 빌드에 저장된 메뉴 상태를 유지한다.
+        if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
+        document.dispatchEvent(new CustomEvent('site:config', {detail:data}));
+    } catch (e) {
+        console.warn('사이트 표시 설정을 불러오지 못했습니다.', e);
     } finally {
         delete document.documentElement.dataset.navPending;
     }
@@ -967,7 +1041,7 @@ function bootPage(init, opts) {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
-        applyNavVisibility();   // 메뉴는 사이트 데이터와 무관하므로 기다리지 않는다
+        await applyNavVisibility();   // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다
         if (siteDataParts.length) await loadSiteData(siteDataParts);
         safeInit('페이지', init);
     };

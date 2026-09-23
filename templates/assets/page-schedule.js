@@ -14,7 +14,7 @@ window.calOffAirExtra = (dateStr, type) => {
     const chips = soopIds.map(soopId => {
         const m = findMemberBySoopId(soopId);
         const name = m ? m['이름'] : soopId;
-        return `<div class="cal-offair-chip">${avatarHtml(soopId, 'cal-offair-avatar')}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
+        return `<div class="cal-offair-chip" data-offair-date="${escapeHTML(dateStr)}" data-soop-id="${escapeHTML(soopId)}">${avatarHtml(soopId, 'cal-offair-avatar')}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
     }).join('');
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
 };
@@ -53,6 +53,6 @@ bootPage(() => {
         return calLoadPublicData();
     });
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        switchScheduleView(params.get('view'));
+        switchScheduleView(params.get('view') || runtimeDefaultSubtab('schedule','calendar'));
     }));
 });

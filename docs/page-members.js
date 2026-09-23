@@ -773,7 +773,8 @@ function loadProfileActivityData() {
 bootPage(() => {
     safeInit('멤버 페이지', renderMembersPage);
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        const view = params.get('view') === 'news' ? 'news' : 'status';
+        const rawView = params.get('view') || runtimeDefaultSubtab('members','status');
+        const view = rawView === 'news' ? 'news' : 'status';
         switchMemberView(view);
         const member = params.get('member');
         if (view === 'news' && member) selectNewsPlayer(member);

@@ -323,7 +323,7 @@ function toolCardHtml(tool) {
     let host = '';
     try { host = new URL(safeHttpUrl(url)).hostname.replace(/^www\./, ''); } catch (e) { /* 주소가 없거나 잘못되면 비워 둔다 */ }
     return `
-        <a class="tool-card"${safeHttpUrl(url) ? ` href="${escapeHTML(safeHttpUrl(url))}"` : ''} target="_blank" rel="noopener">
+        <a class="tool-card" data-tool-id="${escapeHTML(tool.id || '')}" data-tool-category="${escapeHTML(tool.category || '')}"${safeHttpUrl(url) ? ` href="${escapeHTML(safeHttpUrl(url))}"` : ''} target="_blank" rel="noopener">
             <div class="tool-card-media">
                 <div class="tool-card-icon"><img loading="lazy" src="${iconUrl}" alt="" onerror="this.style.display='none';"></div>
             </div>
@@ -331,6 +331,7 @@ function toolCardHtml(tool) {
                 <div class="tool-card-name">${escapeHTML(tool.name)}</div>
                 ${host ? `<div class="tool-card-host">${escapeHTML(host)}</div>` : ''}
             </div>
+            ${typeof window.toolCardAdminExtra === 'function' ? window.toolCardAdminExtra(tool) : ''}
         </a>`;
 }
 
@@ -357,7 +358,7 @@ async function loadToolsData() {
         const grouped = { extTools: { items: [] }, extSites: { items: [] } };
         asArray(data).forEach(row => {
             if (!grouped[row.category]) return;
-            grouped[row.category].items.push({ name: row.name, url: row.url, favicon: row.favicon || '' });
+            grouped[row.category].items.push({ id: row.id, category: row.category, name: row.name, url: row.url, favicon: row.favicon || '', source_order: row.source_order, active: row.active });
         });
         renderExternalTools(grouped);
     } catch (e) {
@@ -370,6 +371,6 @@ bootPage(() => {
     safeInit('도구 목록', loadToolsData);
     safeInit('멀티뷰어', () => { mvRenderAll(); return mvCheckLiveAndRerenderChips(); });
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        switchToolsView(toolsViewFromUrl(params.get('view')), true);
+        switchToolsView(toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW)), true);
     }));
 });

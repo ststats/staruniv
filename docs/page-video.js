@@ -101,7 +101,7 @@ function videoCardHtml(v, opts) {
     const rank = opts.rank ? `<span class="video-rank">${opts.rank}</span>` : '';
     const avatar = v.channel ? videoChannelAvatar(ch, 'video-card-avatar') : '';
     return `
-        <article class="video-card${opts.top ? ' is-top' : ''}">
+        <article class="video-card${opts.top ? ' is-top' : ''}" data-video-id="${escapeHTML(v.id)}" data-video-pick="${opts.pick ? '1' : '0'}">
             <button type="button" class="video-thumb" onclick="videoPlay('${escapeHTML(v.id)}')" aria-label="${escapeHTML(v.title)} 재생">
                 ${videoThumbInnerHtml(v)}
                 ${rank}
@@ -116,6 +116,7 @@ function videoCardHtml(v, opts) {
                     ${opts.pick && v.note ? `<p class="video-card-note">${escapeHTML(v.note)}</p>` : ''}
                 </div>
             </div>
+            ${typeof window.videoCardAdminExtra === 'function' ? window.videoCardAdminExtra(v, opts) : ''}
         </article>`;
 }
 
@@ -363,7 +364,8 @@ bootPage(async () => {
         const idx = parseInt(params.get('ch'), 10);
         VideoState.channel = VideoState.channelKeys[idx - 1] || '';
         VideoState.shown = VIDEO_PAGE_SIZE;
-        activateTabView(VIDEO_TABS, params.get('view') === 'pick' ? 'pick' : 'fantube');
+        const rawView = params.get('view') || runtimeDefaultSubtab('video','fantube');
+        activateTabView(VIDEO_TABS, rawView === 'pick' ? 'pick' : 'fantube');
         renderVideoChannels();
         renderFantube();
     }));

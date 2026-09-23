@@ -32,8 +32,18 @@
     let calOffAir = {};
     const calOffAirForDate = (dateStr) => (calOffAir && Array.isArray(calOffAir[dateStr])) ? calOffAir[dateStr] : [];
 
-    const CAL_DEFAULT_EVENT_COLOR = '#eff6ff';
-    const CAL_DEFAULT_LONGTERM_COLOR = '#ffedd5';
+    const CAL_COLOR_PALETTE = {
+        red: '#ff2538',
+        orange: '#ff8a00',
+        yellow: '#ffd43b',
+        green: '#16c75b',
+        blue: '#1677ff',
+        indigo: '#3346b5',
+        purple: '#7c3aed',
+        light_gray: '#e5e7eb',
+    };
+    const CAL_DEFAULT_EVENT_COLOR = CAL_COLOR_PALETTE.blue;
+    const CAL_DEFAULT_LONGTERM_COLOR = CAL_COLOR_PALETTE.orange;
 
     // HTML 이스케이프 (admin.html이 escapeHTML이라는 이름으로 재사용한다).
     // app.js의 escapeHTML과 달리 falsy 값(0 포함)은 빈 문자열이 되는데, 일정 필드는 항상
@@ -54,8 +64,9 @@
     // 어드민의 <input type="color">는 항상 #rrggbb라 정상 데이터는 그대로 통과한다.
     const CAL_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|(rgb|hsl)a?\([\w\s.,%\/]+\)|[a-zA-Z]+)$/;
     const calSafeColor = (color, fallback) => {
-        const c = String(color || '').trim();
-        return c && CAL_COLOR_PATTERN.test(c) ? c : fallback;
+        const raw = String(color || '').trim();
+        if (CAL_COLOR_PALETTE[raw]) return CAL_COLOR_PALETTE[raw];
+        return CAL_COLOR_PATTERN.test(raw) ? raw : fallback;
     };
 
     // 이어붙는 막대(장기 일정)의 좌우 모서리 스타일. 옆 칸과 이어지는 쪽은 각지게 하고
@@ -303,9 +314,9 @@
     const calEventCardHtml = (item, dateStr, type) => {
         const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
         return `
-            <div class="${cardClass}">
+            <div class="${cardClass}" data-event-id="${calEscapeHTML(item.id)}">
                 <div class="cal-card-main">
-                    ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''} 
+                    ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''}
                     ${item.person ? `<span class="cal-card-person">${calEscapeHTML(item.person)}</span>` : ''}
                     <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ` <span class="cal-card-detail">${calEscapeHTML(item.detail)}</span>` : ''}</span>
                     ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, dateStr, type) : ''}
@@ -369,3 +380,5 @@
             calRenderCalendar();
         },
     };
+
+window.CAL_COLOR_PALETTE = CAL_COLOR_PALETTE;

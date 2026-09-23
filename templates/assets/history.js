@@ -245,6 +245,7 @@ function histItemHtml(item, opts) {
                 ${item.desc ? `<div class="hist-desc">${histEscape(item.desc)}</div>` : ''}
                 ${chips}
                 ${adminBar}
+                ${typeof window.histCardExtra === 'function' ? window.histCardExtra(item, opts) : ''}
             </div>
             ${media}
           </div>

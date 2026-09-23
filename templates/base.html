@@ -85,15 +85,29 @@
 {% if admin_mode %}{% include 'partials/admin-auth.html' %}{% endif %}
 <main{% if admin_mode %} id="adminView" class="admin-hidden"{% endif %}>
 {% block content %}{% endblock %}
-{% if admin_mode %}<div class="container" id="adminWorkbench">{% include 'partials/admin-editor.html' %}</div>{% endif %}
+{% if admin_mode %}{% include 'partials/admin-editor.html' %}{% endif %}
 </main>
 
 {% block modals %}{% endblock %}
 
 {% block scripts %}{% endblock %}
 {% if admin_mode %}
-{% if page_id != 'schedule' %}<script src="{{ asset_url('calendar.js') }}"></script><script src="{{ asset_url('history.js') }}"></script>{% endif %}
-<script src="{{ asset_url('page-admin.js') }}"></script>
+<script src="{{ asset_url('admin-core.js') }}"></script>
+<script src="{{ asset_url('admin-site.js') }}"></script>
+{% if page_id == 'schedule' %}
+<script src="{{ asset_url('admin-schedule.js') }}"></script>
+<script src="{{ asset_url('admin-history.js') }}"></script>
+{% elif page_id == 'members' %}
+<script src="{{ asset_url('admin-members.js') }}"></script>
+{% elif page_id == 'records' %}
+<script src="{{ asset_url('admin-records.js') }}"></script>
+{% elif page_id == 'tier' %}
+<script src="{{ asset_url('admin-tier.js') }}"></script>
+{% elif page_id == 'video' %}
+<script src="{{ asset_url('admin-video.js') }}"></script>
+{% elif page_id == 'tools' %}
+<script src="{{ asset_url('admin-tools.js') }}"></script>
+{% endif %}
 {% endif %}
 </body>
 </html>
