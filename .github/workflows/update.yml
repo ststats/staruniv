@@ -11,6 +11,7 @@ on:
       - 'scripts/generate_stats.py'
       - 'scripts/export_supabase.py'
       - 'scripts/match_link.py'
+      - 'scripts/write_site_data.py'
       - 'scripts/write_supabase_browser_config.py'
       - 'capture.js'
       - 'package.json'
@@ -49,6 +50,7 @@ jobs:
         run: |
           python scripts/generate_stats.py
           python scripts/build_html.py
+          python scripts/write_site_data.py
 
           echo "=== docs/data ==="
           ls -la docs/data
