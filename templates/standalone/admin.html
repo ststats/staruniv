@@ -52,6 +52,9 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
 </div>
 
 <main id="adminView" class="admin-hidden">
+  <iframe id="adminPublicPage" class="admin-public-page" title="사이트 화면에서 편집" src="about:blank"></iframe>
+  <dialog id="adminEditDialog" class="admin-edit-dialog">
+  <div class="admin-dialog-actions"><button type="button" class="text-action" onclick="AdminApp.closeEditSurface()">편집 닫기</button></div>
   <section class="admin-hero">
     <div class="admin-hero-inner container">
       <div><span class="admin-eyebrow" id="adminPageEyebrow">ADMIN · HOME</span><h1 id="adminPageTitle">홈 관리</h1><p id="adminPageDescription">홈과 사이트 공통 설정을 관리합니다.</p></div>
@@ -64,13 +67,13 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
   <div class="admin-grid">
     <div>
       <section id="panel-dashboard" class="admin-panel active">
-        <div class="admin-section-title"><div><h2>대시보드</h2><p>현재 Supabase 원본 데이터 개수입니다.</p></div><button class="admin-btn" onclick="AdminApp.loadDashboard()">새로고침</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.loadDashboard()">새로고침</button></div>
         <div id="dashboardKpis" class="admin-kpi-grid"></div>
         <div class="admin-card"><b>사이트 반영</b><p class="admin-note">이 화면에서 저장하면 Supabase에 즉시 반영되고, 공개 사이트도 다음 조회부터 같은 데이터를 직접 읽습니다. GitHub Actions 재빌드는 필요하지 않습니다.</p></div>
       </section>
 
       <section id="panel-members" class="admin-panel">
-        <div class="admin-section-title"><div><h2>멤버 관리</h2><p><b>id</b>는 내부 행 ID, <b>name</b>은 기준 이름, <b>nickname</b>은 해당 행의 방송/표시 닉네임입니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editMember()">+ 새 멤버</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editMember()">+ 새 멤버</button></div>
         <div class="admin-card">
           <div class="admin-toolbar"><div class="admin-toolbar-left"><input id="memberSearch" class="admin-input admin-search" placeholder="이름 · 닉네임 · SOOP ID 검색"></div><div class="admin-toolbar-right"><button class="admin-btn" onclick="AdminApp.loadMembers()">새로고침</button></div></div>
           <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>name</th><th>nickname</th><th>SOOP ID</th><th>ELO ID</th><th>종족</th><th>티어</th><th>직책</th><th>입단일</th><th></th></tr></thead><tbody id="memberRows"></tbody></table></div>
@@ -79,27 +82,26 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       </section>
 
       <section id="panel-teams" class="admin-panel">
-        <div class="admin-section-title"><div><h2>팀 관리</h2><p>상대 팀/대학 기본 정보를 관리합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editTeam()">+ 새 팀</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editTeam()">+ 새 팀</button></div>
         <div class="admin-card"><div class="admin-toolbar"><input id="teamSearch" class="admin-input admin-search" placeholder="팀 이름 검색"><button class="admin-btn" onclick="AdminApp.loadTeams()">새로고침</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>팀</th><th>설립자</th><th>창단일</th><th>해체일</th><th>우승</th><th>비고</th><th></th></tr></thead><tbody id="teamRows"></tbody></table></div><div id="teamEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-matches" class="admin-panel">
-        <div class="admin-section-title"><div><h2>전적 관리</h2><p>매치와 해당 세트를 한 번에 저장합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editMatch()">+ 새 경기</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editMatch()">+ 새 경기</button></div>
         <div class="admin-card"><div class="admin-toolbar"><input id="matchSearch" class="admin-input admin-search" placeholder="상대팀 · 날짜 검색"><button class="admin-btn" onclick="AdminApp.loadMatches()">새로고침</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>번호</th><th>날짜</th><th>상대팀</th><th>형식</th><th>방식</th><th>결과</th><th>세트</th><th></th></tr></thead><tbody id="matchRows"></tbody></table></div><div id="matchEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-tier" class="admin-panel">
-        <div class="admin-section-title"><div><h2>티어 명단</h2><p>1,000명 이상이므로 100명씩 불러옵니다. 생년월일은 날짜 또는 빈값(NULL)만 허용됩니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editTierMember()">+ 새 선수</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editTierMember()">+ 새 선수</button></div>
         <div class="admin-card"><div class="admin-toolbar"><input id="tierSearch" class="admin-input admin-search" placeholder="이름 · 닉네임 · SOOP ID 검색"><button class="admin-btn" onclick="AdminApp.loadTierMembers(0)">검색</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>이름</th><th>닉네임</th><th>SOOP ID</th><th>ELO ID</th><th>종족</th><th>티어</th><th>소속</th><th>직책</th><th></th></tr></thead><tbody id="tierRows"></tbody></table></div><div class="admin-pager"><button id="tierPrev" class="admin-btn">이전</button><span id="tierPageInfo"></span><button id="tierNext" class="admin-btn">다음</button></div><div id="tierEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-settings" class="admin-panel">
-        <div class="admin-section-title"><div><h2>시즌 설정</h2><p>현재 db.json의 settings 순서를 그대로 관리합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editSetting()">+ 새 설정</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editSetting()">+ 새 설정</button></div>
         <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>순서</th><th>시즌</th><th>시작일</th><th></th></tr></thead><tbody id="settingRows"></tbody></table></div><div id="settingEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-schedule" class="admin-panel">
-        <div class="admin-section-title"><div><h2>일정 · 휴방 관리</h2><p>본 페이지와 같은 캘린더에서 날짜와 일정을 선택해 바로 편집합니다.</p></div></div>
         <div class="admin-calendar-layout">
           <div class="admin-calendar-main">
             <div class="cal-today-card-wrapper">
@@ -147,7 +149,7 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       </section>
 
       <section id="panel-navigation" class="admin-panel">
-        <div class="admin-section-title"><div><h2>홈 · 메뉴 설정</h2><p>홈 문구와 본 페이지의 상단 메뉴 표시를 관리합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.saveNavigation()">저장</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.saveNavigation()">저장</button></div>
         <div class="admin-card"><h3>상단 메뉴</h3><div class="admin-form-grid">
           <label class="admin-field"><span>일정</span><input type="checkbox" data-nav-key="schedule"></label><label class="admin-field"><span>멤버</span><input type="checkbox" data-nav-key="members"></label><label class="admin-field"><span>전적</span><input type="checkbox" data-nav-key="records"></label><label class="admin-field"><span>티어표</span><input type="checkbox" data-nav-key="tier"></label><label class="admin-field"><span>영상</span><input type="checkbox" data-nav-key="video"></label><label class="admin-field"><span>방송통계</span><input type="checkbox" data-nav-key="stats"></label><label class="admin-field"><span>도구</span><input type="checkbox" data-nav-key="tools"></label>
         </div></div>
@@ -155,18 +157,17 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
       </section>
 
       <section id="panel-stats-settings" class="admin-panel">
-        <div class="admin-section-title"><div><h2>방송통계 설정</h2><p>통계 값은 자동 집계하며, 여기서는 본 페이지에 표시할 지표를 고릅니다.</p></div><button class="admin-btn primary" onclick="AdminApp.saveNavigation()">저장</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.saveNavigation()">저장</button></div>
         <div class="admin-card"><div class="admin-form-grid"><label class="admin-field"><span>별풍선</span><input type="checkbox" data-stat-key="balloons"></label><label class="admin-field"><span>방송시간</span><input type="checkbox" data-stat-key="broadcast_seconds"></label><label class="admin-field"><span>누적시청자</span><input type="checkbox" data-stat-key="cumulative_viewers"></label><label class="admin-field"><span>스폰판수</span><input type="checkbox" data-stat-key="sponsor"></label></div></div>
       </section>
 
 
       <section id="panel-history" class="admin-panel">
-        <div class="admin-section-title"><div><h2>연혁 관리</h2><p>연혁 항목을 관리합니다. 사진과 YouTube URL은 필요한 항목에만 선택해서 추가할 수 있습니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editHistory()">+ 새 연혁</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editHistory()">+ 새 연혁</button></div>
         <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류</th><th>날짜</th><th>분류</th><th>제목</th><th>영상</th><th>이미지</th><th></th></tr></thead><tbody id="historyRows"></tbody></table></div><div id="historyEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-video" class="admin-panel">
-        <div class="admin-section-title"><div><h2>영상 관리</h2><p>별도 영상 탭의 팬튜브 채널, 추천 영상(보자), 수집 영상 노출을 관리합니다.</p></div></div>
         <div class="admin-card">
           <div class="admin-section-title"><div><h3>팬튜브 채널</h3><p>채널을 추가/수정하면 다음 영상 동기화부터 해당 채널 영상을 수집합니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editVideoChannel()">+ 채널</button></div>
           <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>순서</th><th>표시 이름</th><th>채널 URL</th><th>상태</th><th></th></tr></thead><tbody id="videoChannelRows"></tbody></table></div><div id="videoChannelEditor" class="admin-editor admin-card hidden"></div>
@@ -183,17 +184,17 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
 
 
       <section id="panel-external-tools" class="admin-panel">
-        <div class="admin-section-title"><div><h2>외부도구 관리</h2><p>도구 탭의 <b>외부도구</b> 서브탭에 표시되는 링크를 관리합니다. 멀티뷰어/엔트리/캄몬라이더는 여기서 관리하지 않습니다.</p></div><button class="admin-btn primary" onclick="AdminApp.editExternalTool()">+ 새 링크</button></div>
+        <div class="admin-panel-actions"><button class="text-action" onclick="AdminApp.editExternalTool()">+ 새 링크</button></div>
         <div class="admin-card"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>순서</th><th>구분</th><th>이름</th><th>URL</th><th>상태</th><th></th></tr></thead><tbody id="externalToolRows"></tbody></table></div><div id="externalToolEditor" class="admin-editor admin-card hidden"></div></div>
       </section>
 
       <section id="panel-elo" class="admin-panel">
-        <div class="admin-section-title"><div><h2>ELO 선수 조회</h2><p>ELO 원본은 자동 동기화 대상이라 관리자 페이지에서는 읽기만 합니다.</p></div></div>
         <div class="admin-card"><div class="admin-toolbar"><input id="eloSearch" class="admin-input admin-search" placeholder="ELO ID 또는 이름 검색"><button class="admin-btn" onclick="AdminApp.searchElo()">검색</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ELO ID</th><th>이름</th><th>종족</th></tr></thead><tbody id="eloRows"></tbody></table></div></div>
       </section>
     </div>
   </div>
   </div>
+  </dialog>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -62,6 +62,31 @@ body {
   padding-bottom: 64px;
 }
 
+.admin-public-page {
+  display: block;
+  width: 100%;
+  height: calc(100dvh - var(--navbar-h));
+  border: 0;
+}
+
+.admin-edit-dialog {
+  width: min(1120px, calc(100% - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  background: var(--color-bg);
+  color: var(--color-text-main);
+}
+
+.admin-edit-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.admin-dialog-actions { display: flex; justify-content: flex-end; padding: 12px 24px; }
+.admin-edit-dialog .admin-user { display: none; }
+.admin-edit-dialog .admin-calendar-main,
+.admin-edit-dialog .cal-selected-card-wrapper { display: none; }
+.admin-edit-dialog .admin-calendar-layout { grid-template-columns: minmax(0, 1fr); }
+.admin-edit-dialog .admin-calendar-side { position: static; max-height: none; overflow: visible; }
+.admin-edit-dialog .admin-calendar-side .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
 .admin-subtabs {
   flex-basis: 100%;
   margin-top: 2px;
@@ -131,6 +156,13 @@ body {
   display: block;
 }
 
+.admin-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 28px;
+  margin-bottom: var(--space-compact-gap);
+}
+
 .admin-calendar-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
@@ -189,10 +221,23 @@ body {
 
 .admin-card {
   padding: 18px;
-  border: 1px solid var(--panel-line);
-  clip-path: var(--notch-md);
+  border: 0;
+  clip-path: var(--notch-lg);
   background: var(--color-card);
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
+}
+
+.admin-card:has(> .admin-table-wrap) {
+  padding: 0;
+  clip-path: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-card:has(> .admin-table-wrap) > .admin-table-wrap {
+  clip-path: var(--notch-lg);
+  background: var(--color-card);
+  box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
 }
 
 .admin-card + .admin-card {
@@ -205,26 +250,16 @@ body {
 
 .admin-section-title {
   margin-bottom: 14px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
 }
 
-.admin-panel > .admin-section-title {
+.admin-section-title > div {
   position: relative;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--panel-line);
-}
-
-.admin-panel > .admin-section-title::after {
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 76px;
-  height: 2px;
-  background: var(--color-primary);
-  content: "";
 }
 
 .admin-section-title h2,
@@ -248,6 +283,16 @@ body {
   color: var(--color-text-sub);
   font-size: 12px;
   line-height: 1.55;
+}
+
+.admin-section-title > div::after {
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  left: 0;
+  height: 2px;
+  background: var(--color-primary);
+  content: "";
 }
 
 .admin-section-title > .admin-btn,
@@ -285,9 +330,10 @@ body {
   width: 100%;
   min-height: 40px;
   padding: 9px 11px;
-  border: 1px solid var(--panel-line);
+  border: 0;
   border-radius: 0;
-  background: var(--color-card);
+  clip-path: var(--notch-sm);
+  background: var(--color-bg-subtle);
   color: var(--color-text);
   font: inherit;
   font-size: 13px;
@@ -297,8 +343,8 @@ body {
 .admin-input:focus,
 .admin-select:focus,
 .admin-textarea:focus {
-  border-color: var(--color-primary);
-  box-shadow: inset 3px 0 var(--color-primary);
+  background: var(--color-card);
+  box-shadow: inset 0 -2px var(--color-primary);
 }
 
 .admin-search {
@@ -308,10 +354,10 @@ body {
 .admin-btn {
   min-height: 38px;
   padding: 8px 13px;
-  border: 1px solid var(--panel-line);
+  border: 0;
   border-radius: 0;
   clip-path: var(--notch-xs);
-  background: var(--color-card);
+  background: var(--color-bg-subtle);
   color: var(--color-text);
   font-size: 12px;
   font-weight: 800;
@@ -319,18 +365,17 @@ body {
 }
 
 .admin-btn:hover {
-  border-color: var(--color-primary);
+  background: var(--color-row-hover);
   color: var(--color-primary);
 }
 
 .admin-btn.primary {
-  border-color: var(--select-on-light);
   background: var(--select-on-light);
   color: #fff;
 }
 
 .admin-btn.danger {
-  border-color: color-mix(in srgb, var(--color-lose) 42%, var(--panel-line));
+  background: color-mix(in srgb, var(--color-lose) 8%, var(--color-card));
   color: var(--color-lose);
 }
 
@@ -353,7 +398,7 @@ body {
 .admin-table-wrap {
   max-width: 100%;
   overflow: auto;
-  border: 1px solid var(--panel-line);
+  border: 0;
 }
 
 .admin-table {
@@ -418,7 +463,6 @@ body {
 
 .admin-editor {
   margin-top: 16px;
-  border-top: 3px solid var(--color-primary);
   background: var(--color-card);
 }
 
@@ -632,7 +676,10 @@ body {
   .admin-round {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 12px;
-    border: 1px solid var(--panel-line);
+    border: 0;
+    clip-path: var(--notch-md);
+    background: var(--color-card);
+    box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
     margin-bottom: 8px;
   }
 

@@ -73,7 +73,7 @@ async function verifyAdmin() {
   $('adminIdentity').textContent = user.email || user.id;
   $('adminRole').textContent = data.role;
   showOnly('adminView');
-  switchPanel('home');
+  showPublicPage('home');
   return true;
 }
 
@@ -108,6 +108,76 @@ const ADMIN_PAGE_META = {
   tools:['ADMIN · TOOLS','도구 관리','본 페이지의 외부도구 링크를 관리합니다.'],
 };
 
+// The public document owns all page markup, styles, tabs and renderers.
+// Admin adds only entry points; writes still use the verified Supabase session.
+let publicPageName='home';
+let publicObserver=null;
+function showPublicPage(name) {
+  publicPageName=name;
+  $('adminPublicPage').src=name==='home'?'./':`${name}/`;
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el=>el.classList.toggle('active',el.dataset.panel===name));
+}
+function closeEditSurface() {
+  $('adminEditDialog').close();
+  $('adminPublicPage').contentWindow.location.reload();
+}
+async function openEditSurface(panel, edit) {
+  if(!state.user || !state.role) return;
+  const group=Object.keys(ADMIN_SUBTABS).find(key=>ADMIN_SUBTABS[key].some(tab=>tab.id===panel))||publicPageName;
+  switchPanel(group, false);
+  await switchSubPanel(panel);
+  if(edit) await edit();
+  if(!$('adminEditDialog').open) $('adminEditDialog').showModal();
+}
+function connectPublicPage() {
+  publicObserver?.disconnect();
+  const frame=$('adminPublicPage');
+  const doc=frame.contentDocument;
+  if(!doc || doc.location.href==='about:blank') return;
+  const page=doc.location.pathname.split('/').filter(Boolean).pop();
+  if(ADMIN_SUBTABS[page]) publicPageName=page;
+  else publicPageName='home';
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el=>el.classList.toggle('active',el.dataset.panel===publicPageName));
+  const header=doc.querySelector('.top-navbar');
+  if(header) header.hidden=true;
+  const addAction=(target,label,action)=>{
+    if(!target||target.querySelector(':scope > [data-admin-action]')) return;
+    const button=doc.createElement('button');
+    button.type='button';button.className='text-action';button.dataset.adminAction='true';button.textContent=label;
+    button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();action();});
+    target.append(button);
+  };
+  const toolbar=doc.createElement('div');toolbar.className='container';
+  const actions=doc.createElement('div');actions.className='admin-public-actions';
+  for(const tab of ADMIN_SUBTABS[publicPageName]) {
+    const button=doc.createElement('button');button.className='text-action';button.type='button';
+    button.textContent=`${tab.label} 편집`;button.onclick=()=>openEditSurface(tab.id);actions.append(button);
+  }
+  toolbar.append(actions);
+  const hero=doc.querySelector('.page-header')||doc.querySelector('.home-carousel');
+  if(hero) hero.after(toolbar);else doc.body.prepend(toolbar);
+  const style=doc.createElement('style');
+  style.textContent='.top-navbar[hidden]{display:none}.admin-public-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:12px 0}.member-card>[data-admin-action]{position:absolute;right:8px;bottom:8px;background:var(--color-card);z-index:2}.member-card{position:relative}';
+  doc.head.append(style);
+  const decorate=()=>{
+    doc.querySelectorAll('.member-card[data-member]').forEach(card=>addAction(card,'수정',()=>openEditSurface('members',()=>{
+      const member=state.members.find(row=>row.nickname===card.dataset.member);
+      if(member) editMember(member.id);
+    })));
+  };
+  decorate();publicObserver=new MutationObserver(decorate);publicObserver.observe(doc.body,{childList:true,subtree:true});
+  if(publicPageName==='schedule') {
+    const win=frame.contentWindow;
+    win.calOnDateSelect=date=>openEditSurface('schedule',()=>editSchedule(null,date));
+    win.calCardExtra=item=>`<button type="button" class="text-action" data-admin-event="${esc(item.id)}">수정</button>`;
+    doc.addEventListener('click',event=>{
+      const button=event.target.closest('[data-admin-event]');
+      if(button){event.preventDefault();event.stopPropagation();openEditSurface('schedule',()=>editSchedule(button.dataset.adminEvent));}
+    });
+    win.calRenderCalendar?.();
+  }
+}
+
 const ADMIN_PANEL_LOADERS = {
   dashboard: loadDashboard,
   navigation: loadNavigation,
@@ -124,17 +194,17 @@ const ADMIN_PANEL_LOADERS = {
   'external-tools': loadExternalTools,
 };
 
-function switchSubPanel(panelId) {
+async function switchSubPanel(panelId) {
   document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', el.id === `panel-${panelId}`));
   document.querySelectorAll('#adminSubTabs [data-admin-subpanel]').forEach(el => {
     const active = el.dataset.adminSubpanel === panelId;
     el.classList.toggle('active', active);
     el.setAttribute('aria-selected', String(active));
   });
-  ADMIN_PANEL_LOADERS[panelId]?.();
+  await ADMIN_PANEL_LOADERS[panelId]?.();
 }
 
-function switchPanel(name) {
+function switchPanel(name, load=true) {
   const tabs = ADMIN_SUBTABS[name] || ADMIN_SUBTABS.home;
   document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
   const meta=ADMIN_PAGE_META[name]||ADMIN_PAGE_META.home;
@@ -142,7 +212,7 @@ function switchPanel(name) {
   const tabBar=$('adminSubTabs');
   tabBar.innerHTML=tabs.map((tab,index)=>`<button type="button" class="sub-tab${index===0?' active':''}" role="tab" aria-selected="${index===0}" data-admin-subpanel="${esc(tab.id)}">${esc(tab.label)}</button>`).join('');
   tabBar.hidden=tabs.length<2;
-  switchSubPanel(tabs[0].id);
+  if(load) switchSubPanel(tabs[0].id);
 }
 
 async function loadDashboard() {
@@ -323,7 +393,9 @@ function closeEditor(id){$(id)?.classList.add('hidden');}
 
 async function init(){
   setTheme(document.documentElement.dataset.theme);
-  $('adminSiteMenu')?.addEventListener('click',e=>{const b=e.target.closest('[data-panel]');if(b){switchPanel(b.dataset.panel);toggleSiteMenu(false);}});
+  $('adminPublicPage').addEventListener('load',connectPublicPage);
+  $('adminEditDialog').addEventListener('cancel',event=>{event.preventDefault();closeEditSurface();});
+  $('adminSiteMenu')?.addEventListener('click',e=>{const b=e.target.closest('[data-panel]');if(b){showPublicPage(b.dataset.panel);toggleSiteMenu(false);}});
   $('adminSubTabs')?.addEventListener('click',e=>{const b=e.target.closest('[data-admin-subpanel]');if(b)switchSubPanel(b.dataset.adminSubpanel);});
   if(!cfg.url||!cfg.key||!window.supabase?.createClient){showOnly('configError');return;}
   state.client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -334,6 +406,6 @@ async function init(){
   await verifyAdmin();
 }
 
-window.AdminApp={setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
+window.AdminApp={closeEditSurface,setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
 init().catch(e=>{console.error(e);showOnly('configError');});
 })();
