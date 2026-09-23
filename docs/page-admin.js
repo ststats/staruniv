@@ -72,13 +72,10 @@ async function verifyAdmin() {
   const { data, error: roleErr } = await state.client.from('admin_users').select('role,is_active').eq('user_id', user.id).maybeSingle();
   if (roleErr || !data?.is_active) { showOnly('deniedView'); return false; }
   state.role = data.role;
-  if ($('adminIdentity')) $('adminIdentity').textContent = user.email || user.id;
-  if ($('adminRole')) $('adminRole').textContent = data.role;
+  $('adminIdentity').textContent = user.email || user.id;
+  $('adminRole').textContent = data.role;
   showOnly('adminView');
-  const page = document.body?.dataset?.adminPage || 'home';
-  publicPageName = ADMIN_SUBTABS[page] ? page : 'home';
-  if ($('adminPublicPage')) showPublicPage(publicPageName);
-  else switchPanel(publicPageName);
+  showPublicPage(adminPageFromHash(), false);
   return true;
 }
 
@@ -117,22 +114,32 @@ const ADMIN_PAGE_META = {
 // Admin adds only entry points; writes still use the verified Supabase session.
 let publicPageName='home';
 let publicObserver=null;
-function showPublicPage(name) {
-  publicPageName=ADMIN_SUBTABS[name]?name:'home';
+const ADMIN_PAGE_KEYS = new Set(Object.keys(ADMIN_SUBTABS));
+function adminPageFromHash() {
+  const raw = String(location.hash || '').replace(/^#/, '').trim().toLowerCase();
+  return ADMIN_PAGE_KEYS.has(raw) ? raw : 'home';
+}
+function syncAdminHash(name, replace=false) {
+  const next = `#${ADMIN_PAGE_KEYS.has(name) ? name : 'home'}`;
+  if (location.hash === next) return;
+  if (replace) history.replaceState(null, '', next);
+  else history.pushState(null, '', next);
+}
+function showPublicPage(name, syncHash=true) {
+  name = ADMIN_PAGE_KEYS.has(name) ? name : 'home';
+  publicPageName=name;
   const frame=$('adminPublicPage');
-  if(!frame){
-    switchPanel(publicPageName);
-    return;
+  if (frame) {
+    const nextSrc=name==='home'?'./':`${name}/`;
+    if (frame.getAttribute('src') !== nextSrc) frame.src=nextSrc;
   }
-  frame.src=publicPageName==='home'?'./':`${publicPageName}/`;
-  openEditSurface(ADMIN_SUBTABS[publicPageName][0].id);
-  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el=>el.classList.toggle('active',el.dataset.panel===publicPageName));
+  if (syncHash) syncAdminHash(name);
+  openEditSurface(ADMIN_SUBTABS[name][0].id);
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el=>el.classList.toggle('active',el.dataset.panel===name));
 }
 function refreshPublicPage() {
-  const frame=$('adminPublicPage');
-  if(!frame) return;
-  const win=frame.contentWindow;
-  if(!win || win.location.href==='about:blank') return;
+  const win=$('adminPublicPage').contentWindow;
+  if(win.location.href==='about:blank') return;
   if(publicPageName==='schedule') {
     win.StarUnivCalendar?.setData(calEvents,calOffAir);
     return;
@@ -179,7 +186,6 @@ async function openEditSurface(panel, edit) {
 function connectPublicPage() {
   publicObserver?.disconnect();
   const frame=$('adminPublicPage');
-  if(!frame) return;
   const doc=frame.contentDocument;
   if(!doc || doc.location.href==='about:blank') return;
   const page=doc.location.pathname.split('/').filter(Boolean).pop();
@@ -254,14 +260,10 @@ async function switchSubPanel(panelId) {
 
 function switchPanel(name, load=true) {
   const tabs = ADMIN_SUBTABS[name] || ADMIN_SUBTABS.home;
-  publicPageName = ADMIN_SUBTABS[name] ? name : 'home';
-  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === publicPageName));
-  const meta=ADMIN_PAGE_META[publicPageName]||ADMIN_PAGE_META.home;
-  if($('adminPageEyebrow')) $('adminPageEyebrow').textContent=meta[0];
-  if($('adminPageTitle')) $('adminPageTitle').textContent=meta[1];
-  if($('adminPageDescription')) $('adminPageDescription').textContent=meta[2];
+  document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
+  const meta=ADMIN_PAGE_META[name]||ADMIN_PAGE_META.home;
+  $('adminPageEyebrow').textContent=meta[0];$('adminPageTitle').textContent=meta[1];$('adminPageDescription').textContent=meta[2];
   const tabBar=$('adminSubTabs');
-  if(!tabBar) return;
   tabBar.innerHTML=tabs.map((tab,index)=>`<button type="button" class="sub-tab${index===0?' active':''}" role="tab" aria-selected="${index===0}" data-admin-subpanel="${esc(tab.id)}">${esc(tab.label)}</button>`).join('');
   tabBar.hidden=tabs.length<2;
   if(load) switchSubPanel(tabs[0].id);
@@ -272,45 +274,18 @@ async function loadDashboard() {
     ['members','id','멤버'],['teams','id','팀'],['matches','match_no','팀 경기'],['tier_members','id','티어 선수'],
     ['calendar_events','id','일정'],['calendar_off_air','off_date','휴방'],['video_channels','channel_url','영상 채널'],
     ['videos','id','수집 영상'],['video_picks','id','추천 영상'],['external_tools','id','외부도구'],
-    ['elo_players','elo_id','ELO 선수'],
+    ['elo_matches','elo_match_id','ELO 경기','planned'],['elo_players','elo_id','ELO 선수'],
   ];
-  const [normalCards, eloStatsResult] = await Promise.all([
-    Promise.all(tables.map(async ([table,column,label]) => {
-      const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});
-      return {table,label,count:count??0,error};
-    })),
-    // elo_matches는 37만+ 행이라 브라우저의 count=exact + RLS로 직접 세지 않는다.
-    // 관리자 확인을 한 번만 하는 DB RPC에서 exact count와 범위를 함께 가져온다.
-    state.client.rpc('admin_elo_stats')
-  ]);
-  const eloStats=Array.isArray(eloStatsResult.data)?(eloStatsResult.data[0]||null):eloStatsResult.data;
-  const eloCard={table:'elo_matches',label:'ELO 경기',count:Number(eloStats?.total||0),error:eloStatsResult.error||null};
-  const cards=[...normalCards.slice(0,10),eloCard,...normalCards.slice(10)];
-
+  const cards = await Promise.all(tables.map(async ([table,column,label,countMode='exact']) => {
+    const {count,error}=await state.client.from(table).select(column,{count:countMode,head:true});
+    return {table,label,count:count??0,error};
+  }));
   $('dashboardKpis').innerHTML=cards.map(x=>x.error
     ? `<div class="admin-card admin-kpi is-error"><b>—</b><span>${esc(x.label)}</span><small>조회 실패</small></div>`
-    : `<div class="admin-card admin-kpi${x.table==='elo_matches'?' admin-kpi-emphasis':''}"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span>${x.table==='elo_matches'?'<small>DB exact count</small>':''}</div>`).join('');
-
-  renderEloDatabaseStatus(eloCard,eloStats);
-
+    : `<div class="admin-card admin-kpi"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span></div>`).join('');
   const failed=cards.filter(x=>x.error);
   if(failed.length) setStatus(`일부 현황 조회 실패 · ${failed.map(x=>`${x.label}(${x.table}): ${errText(x.error)}`).join(' · ')}`,'error');
   else clearStatus();
-}
-
-function renderEloDatabaseStatus(eloCard,stats) {
-  const target=$('eloDatabaseStatus');
-  if(!target) return;
-  if(eloCard?.error) {
-    target.innerHTML=`<div class="admin-empty-state is-error">ELO DB 상태 조회 실패 · ${esc(errText(eloCard.error))}<br><small>Supabase SQL Editor에서 supabase/admin_elo_stats.sql을 한 번 실행하세요.</small></div>`;
-    return;
-  }
-  const firstId=Number(stats?.min_match_id||0),lastId=Number(stats?.max_match_id||0);
-  target.innerHTML=`
-    <div class="admin-db-stat"><span>총 경기</span><b>${Number(stats?.total||0).toLocaleString()}</b><small>exact count</small></div>
-    <div class="admin-db-stat"><span>최초 경기</span><b>${esc(stats?.first_match_date||'—')}</b><small>ID ${firstId.toLocaleString()}</small></div>
-    <div class="admin-db-stat"><span>최신 경기</span><b>${esc(stats?.last_match_date||'—')}</b><small>ID ${lastId.toLocaleString()}</small></div>
-    <div class="admin-db-stat admin-db-stat-wide"><span>데이터 범위</span><b>${firstId.toLocaleString()} → ${lastId.toLocaleString()}</b><small>경기 ID는 연속 번호가 아니므로 범위 차이와 총 경기 수는 다를 수 있습니다.</small></div>`;
 }
 
 // ---- members ----
@@ -473,9 +448,10 @@ function closeEditor(id){$(id)?.classList.add('hidden');}
 
 async function init(){
   setTheme(document.documentElement.dataset.theme);
-  $('adminPublicPage')?.addEventListener('load',connectPublicPage);
+  $('adminPublicPage').addEventListener('load',connectPublicPage);
 
   $('adminSiteMenu')?.addEventListener('click',e=>{const b=e.target.closest('[data-panel]');if(b){showPublicPage(b.dataset.panel);toggleSiteMenu(false);}});
+  window.addEventListener('hashchange',()=>{if(state.user&&state.role)showPublicPage(adminPageFromHash(), false);});
   $('adminSubTabs')?.addEventListener('click',e=>{const b=e.target.closest('[data-admin-subpanel]');if(b)openEditSurface(b.dataset.adminSubpanel);});
   if(!cfg.url||!cfg.key||!window.supabase?.createClient){showOnly('configError');return;}
   state.client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -486,12 +462,6 @@ async function init(){
   await verifyAdmin();
 }
 
-window.AdminApp={openEditSurface,closeEditSurface,setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
-init().catch(e=>{
-  console.error(e);
-  const configReady=!!(cfg.url&&cfg.key&&window.supabase?.createClient);
-  if(!configReady){showOnly('configError');return;}
-  showOnly('loginView');
-  setStatus(`관리자 초기화 실패: ${errText(e)}`,'error','loginStatus');
-});
+window.AdminApp={closeEditSurface,setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
+init().catch(e=>{console.error(e);showOnly('configError');});
 })();
