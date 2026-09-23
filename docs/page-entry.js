@@ -346,7 +346,7 @@ const ENTRY_FORM_HALF_LIFE = 90;
 // 기간 탭은 전적을 탐색하는 표시 필터다. 예측 입력까지 잘라버리면 같은 대진의
 // 확률이 탭을 누를 때마다 바뀐다. 예측은 통산 데이터를 쓰되 90일 반감기로
 // 최근 경기의 영향만 자연스럽게 크게 둔다.
-const ENTRY_PREDICTION_PERIOD = '365';
+const ENTRY_PREDICTION_PERIOD = 'all';
 const ENTRY_RACE_PRIOR = 14;
 const ENTRY_MAP_PRIOR = 18;
 const ENTRY_MAX_H2H_ADJ = 0.08;
@@ -490,10 +490,9 @@ function entryCoverageEnough(current, needed) {
 }
 
 function entryNeededRowsPeriod() {
-    // 화면에 보여 줄 기간과 예상승률 계산 기간 중 더 넓은 범위만 한 번 받는다.
-    if (EntryState.period === 'all') return 'all';
-    return entryCoverageDays(EntryState.period) >= entryCoverageDays(ENTRY_PREDICTION_PERIOD)
-        ? EntryState.period : ENTRY_PREDICTION_PERIOD;
+    // 예상승률은 UI 기간필터와 독립이다. 통산 데이터에 반감기 가중을 적용하므로
+    // 예측용 캐시는 항상 전체 범위를 확보한다.
+    return ENTRY_PREDICTION_PERIOD;
 }
 
 // 선수 경기 기록은 필요한 기간만 Supabase에서 직접 읽는다.
@@ -729,13 +728,10 @@ function entrySetPeriod(period) {
     EntryState.period = period;
     EntryState.h2hCache = {};
     renderEntryPeriod();
-    renderEntryResult();
 
-    const pids = EntryState.matches.flatMap(m => [m.a, m.b]);
-    const needed = entryNeededRowsPeriod();
-    if (pids.some(pid => !entryCoverageEnough(EntryState.rowCoverage[pid], needed))) {
-        entryRefreshProbs();
-    }
+    // 기간필터는 표시되는 맞대결 전적만 바꾼다.
+    // 예상승률은 통산 + 반감기 모델이므로 같은 캐시를 그대로 사용한다.
+    renderEntryResult();
 }
 
 function renderEntryPeriod() {
