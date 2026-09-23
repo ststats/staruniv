@@ -257,49 +257,45 @@ async function loadDashboard() {
     ['members','id','멤버'],['teams','id','팀'],['matches','match_no','팀 경기'],['tier_members','id','티어 선수'],
     ['calendar_events','id','일정'],['calendar_off_air','off_date','휴방'],['video_channels','channel_url','영상 채널'],
     ['videos','id','수집 영상'],['video_picks','id','추천 영상'],['external_tools','id','외부도구'],
-    ['elo_matches','elo_match_id','ELO 경기'],['elo_players','elo_id','ELO 선수'],
+    ['elo_players','elo_id','ELO 선수'],
   ];
-  const cards = await Promise.all(tables.map(async ([table,column,label]) => {
-    // 대시보드 현황은 추정치(planned)가 아니라 DB의 정확한 행 수를 표시한다.
-    const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});
-    return {table,label,count:count??0,error};
-  }));
+  const [normalCards, eloStatsResult] = await Promise.all([
+    Promise.all(tables.map(async ([table,column,label]) => {
+      const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});
+      return {table,label,count:count??0,error};
+    })),
+    // elo_matches는 37만+ 행이라 브라우저의 count=exact + RLS로 직접 세지 않는다.
+    // 관리자 확인을 한 번만 하는 DB RPC에서 exact count와 범위를 함께 가져온다.
+    state.client.rpc('admin_elo_stats')
+  ]);
+  const eloStats=Array.isArray(eloStatsResult.data)?(eloStatsResult.data[0]||null):eloStatsResult.data;
+  const eloCard={table:'elo_matches',label:'ELO 경기',count:Number(eloStats?.total||0),error:eloStatsResult.error||null};
+  const cards=[...normalCards.slice(0,10),eloCard,...normalCards.slice(10)];
+
   $('dashboardKpis').innerHTML=cards.map(x=>x.error
     ? `<div class="admin-card admin-kpi is-error"><b>—</b><span>${esc(x.label)}</span><small>조회 실패</small></div>`
-    : `<div class="admin-card admin-kpi${x.table==='elo_matches'?' admin-kpi-emphasis':''}"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span>${x.table==='elo_matches'?'<small>Supabase exact count</small>':''}</div>`).join('');
+    : `<div class="admin-card admin-kpi${x.table==='elo_matches'?' admin-kpi-emphasis':''}"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span>${x.table==='elo_matches'?'<small>DB exact count</small>':''}</div>`).join('');
 
-  const eloCard=cards.find(x=>x.table==='elo_matches');
-  await loadEloDatabaseStatus(eloCard);
+  renderEloDatabaseStatus(eloCard,eloStats);
 
   const failed=cards.filter(x=>x.error);
   if(failed.length) setStatus(`일부 현황 조회 실패 · ${failed.map(x=>`${x.label}(${x.table}): ${errText(x.error)}`).join(' · ')}`,'error');
   else clearStatus();
 }
 
-async function loadEloDatabaseStatus(eloCard) {
+function renderEloDatabaseStatus(eloCard,stats) {
   const target=$('eloDatabaseStatus');
   if(!target) return;
   if(eloCard?.error) {
-    target.innerHTML='<div class="admin-empty-state">ELO DB 상태를 읽지 못했습니다.</div>';
+    target.innerHTML=`<div class="admin-empty-state is-error">ELO DB 상태 조회 실패 · ${esc(errText(eloCard.error))}<br><small>Supabase SQL Editor에서 supabase/admin_elo_stats.sql을 한 번 실행하세요.</small></div>`;
     return;
   }
-  target.innerHTML='<div class="admin-empty-state">ELO DB 범위를 확인하는 중...</div>';
-  const [firstResult,lastResult]=await Promise.all([
-    state.client.from('elo_matches').select('elo_match_id,match_date').order('elo_match_id',{ascending:true}).limit(1).maybeSingle(),
-    state.client.from('elo_matches').select('elo_match_id,match_date').order('elo_match_id',{ascending:false}).limit(1).maybeSingle(),
-  ]);
-  const error=firstResult.error||lastResult.error;
-  if(error) {
-    target.innerHTML=`<div class="admin-empty-state is-error">범위 조회 실패 · ${esc(errText(error))}</div>`;
-    return;
-  }
-  const first=firstResult.data||{};
-  const last=lastResult.data||{};
+  const firstId=Number(stats?.min_match_id||0),lastId=Number(stats?.max_match_id||0);
   target.innerHTML=`
-    <div class="admin-db-stat"><span>총 경기</span><b>${Number(eloCard?.count||0).toLocaleString()}</b><small>exact count</small></div>
-    <div class="admin-db-stat"><span>최초 경기</span><b>${esc(first.match_date||'—')}</b><small>ID ${Number(first.elo_match_id||0).toLocaleString()}</small></div>
-    <div class="admin-db-stat"><span>최신 경기</span><b>${esc(last.match_date||'—')}</b><small>ID ${Number(last.elo_match_id||0).toLocaleString()}</small></div>
-    <div class="admin-db-stat admin-db-stat-wide"><span>데이터 범위</span><b>${Number(first.elo_match_id||0).toLocaleString()} → ${Number(last.elo_match_id||0).toLocaleString()}</b><small>경기 ID는 연속 번호가 아니므로 범위 차이와 총 경기 수는 다를 수 있습니다.</small></div>`;
+    <div class="admin-db-stat"><span>총 경기</span><b>${Number(stats?.total||0).toLocaleString()}</b><small>exact count</small></div>
+    <div class="admin-db-stat"><span>최초 경기</span><b>${esc(stats?.first_match_date||'—')}</b><small>ID ${firstId.toLocaleString()}</small></div>
+    <div class="admin-db-stat"><span>최신 경기</span><b>${esc(stats?.last_match_date||'—')}</b><small>ID ${lastId.toLocaleString()}</small></div>
+    <div class="admin-db-stat admin-db-stat-wide"><span>데이터 범위</span><b>${firstId.toLocaleString()} → ${lastId.toLocaleString()}</b><small>경기 ID는 연속 번호가 아니므로 범위 차이와 총 경기 수는 다를 수 있습니다.</small></div>`;
 }
 
 // ---- members ----
