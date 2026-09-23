@@ -87,15 +87,15 @@ async function login(ev) {
 }
 async function logout() { await state.client.auth.signOut(); state.user=null; showOnly('loginView'); }
 
-const ADMIN_GROUPS = {
-  home: ['dashboard','navigation'],
-  schedule: ['schedule','history'],
-  members: ['members'],
-  records: ['matches','teams','settings'],
-  tier: ['tier','elo'],
-  video: ['video'],
-  stats: ['stats-settings'],
-  tools: ['external-tools'],
+const ADMIN_SUBTABS = {
+  home: [{id:'dashboard',label:'대시보드'}, {id:'navigation',label:'홈 · 메뉴 설정'}],
+  schedule: [{id:'schedule',label:'일정 · 휴방'}, {id:'history',label:'연혁'}],
+  members: [{id:'members',label:'멤버'}],
+  records: [{id:'matches',label:'경기'}, {id:'teams',label:'팀'}, {id:'settings',label:'시즌'}],
+  tier: [{id:'tier',label:'티어 명단'}, {id:'elo',label:'ELO 조회'}],
+  video: [{id:'video',label:'영상'}],
+  stats: [{id:'stats-settings',label:'표시 지표'}],
+  tools: [{id:'external-tools',label:'외부도구'}],
 };
 const ADMIN_PAGE_META = {
   home:['ADMIN · HOME','홈 관리','홈과 사이트 공통 설정을 관리합니다.'],
@@ -108,31 +108,60 @@ const ADMIN_PAGE_META = {
   tools:['ADMIN · TOOLS','도구 관리','본 페이지의 외부도구 링크를 관리합니다.'],
 };
 
+const ADMIN_PANEL_LOADERS = {
+  dashboard: loadDashboard,
+  navigation: loadNavigation,
+  schedule: loadSchedule,
+  history: loadHistoryEntries,
+  members: loadMembers,
+  matches: loadMatches,
+  teams: loadTeams,
+  settings: loadSettings,
+  tier: () => loadTierMembers(state.tierPage),
+  elo: searchElo,
+  video: loadVideoAdmin,
+  'stats-settings': loadNavigation,
+  'external-tools': loadExternalTools,
+};
+
+function switchSubPanel(panelId) {
+  document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', el.id === `panel-${panelId}`));
+  document.querySelectorAll('#adminSubTabs [data-admin-subpanel]').forEach(el => {
+    const active = el.dataset.adminSubpanel === panelId;
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-selected', String(active));
+  });
+  ADMIN_PANEL_LOADERS[panelId]?.();
+}
+
 function switchPanel(name) {
-  const panels = new Set(ADMIN_GROUPS[name] || ADMIN_GROUPS.home);
-  document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', panels.has(el.id.replace('panel-',''))));
+  const tabs = ADMIN_SUBTABS[name] || ADMIN_SUBTABS.home;
   document.querySelectorAll('#adminSiteMenu [data-panel]').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
   const meta=ADMIN_PAGE_META[name]||ADMIN_PAGE_META.home;
   $('adminPageEyebrow').textContent=meta[0];$('adminPageTitle').textContent=meta[1];$('adminPageDescription').textContent=meta[2];
-  if (name==='home') { loadDashboard(); loadNavigation(); }
-  if (name==='schedule') { loadSchedule(); loadHistoryEntries(); }
-  if (name==='members') loadMembers();
-  if (name==='records') { loadMatches(); loadTeams(); loadSettings(); }
-  if (name==='tier') { loadTierMembers(state.tierPage); searchElo(); }
-  if (name==='video') loadVideoAdmin();
-  if (name==='stats') loadNavigation();
-  if (name==='tools') loadExternalTools();
+  const tabBar=$('adminSubTabs');
+  tabBar.innerHTML=tabs.map((tab,index)=>`<button type="button" class="sub-tab${index===0?' active':''}" role="tab" aria-selected="${index===0}" data-admin-subpanel="${esc(tab.id)}">${esc(tab.label)}</button>`).join('');
+  tabBar.hidden=tabs.length<2;
+  switchSubPanel(tabs[0].id);
 }
 
 async function loadDashboard() {
-  try {
-    const tables = [['members','멤버'],['teams','팀'],['matches','팀 경기'],['tier_members','티어 선수'],['calendar_events','일정'],['calendar_off_air','휴방'],['video_channels','영상 채널'],['videos','수집 영상'],['video_picks','추천 영상'],['external_tools','외부도구'],['elo_matches','ELO 경기'],['elo_players','ELO 선수']];
-    const cards = await Promise.all(tables.map(async ([table,label]) => {
-      const { count, error } = await state.client.from(table).select('*',{count:'exact',head:true});
-      if (error) throw error; return {label,count:count ?? 0};
-    }));
-    $('dashboardKpis').innerHTML = cards.map(x=>`<div class="admin-card admin-kpi"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span></div>`).join('');
-  } catch(e) { setStatus(`대시보드 조회 실패: ${errText(e)}`, 'error'); }
+  const tables = [
+    ['members','id','멤버'],['teams','id','팀'],['matches','match_no','팀 경기'],['tier_members','id','티어 선수'],
+    ['calendar_events','id','일정'],['calendar_off_air','off_date','휴방'],['video_channels','channel_url','영상 채널'],
+    ['videos','id','수집 영상'],['video_picks','id','추천 영상'],['external_tools','id','외부도구'],
+    ['elo_matches','elo_match_id','ELO 경기','planned'],['elo_players','elo_id','ELO 선수'],
+  ];
+  const cards = await Promise.all(tables.map(async ([table,column,label,countMode='exact']) => {
+    const {count,error}=await state.client.from(table).select(column,{count:countMode,head:true});
+    return {table,label,count:count??0,error};
+  }));
+  $('dashboardKpis').innerHTML=cards.map(x=>x.error
+    ? `<div class="admin-card admin-kpi is-error"><b>—</b><span>${esc(x.label)}</span><small>조회 실패</small></div>`
+    : `<div class="admin-card admin-kpi"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span></div>`).join('');
+  const failed=cards.filter(x=>x.error);
+  if(failed.length) setStatus(`일부 현황 조회 실패 · ${failed.map(x=>`${x.label}(${x.table}): ${errText(x.error)}`).join(' · ')}`,'error');
+  else clearStatus();
 }
 
 // ---- members ----
@@ -295,6 +324,7 @@ function closeEditor(id){$(id)?.classList.add('hidden');}
 async function init(){
   setTheme(document.documentElement.dataset.theme);
   $('adminSiteMenu')?.addEventListener('click',e=>{const b=e.target.closest('[data-panel]');if(b){switchPanel(b.dataset.panel);toggleSiteMenu(false);}});
+  $('adminSubTabs')?.addEventListener('click',e=>{const b=e.target.closest('[data-admin-subpanel]');if(b)switchSubPanel(b.dataset.adminSubpanel);});
   if(!cfg.url||!cfg.key||!window.supabase?.createClient){showOnly('configError');return;}
   state.client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   $('loginForm').addEventListener('submit',login);$('logoutBtn').addEventListener('click',logout);$('deniedLogout').addEventListener('click',logout);

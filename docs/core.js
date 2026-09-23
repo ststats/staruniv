@@ -306,7 +306,9 @@ async function loadSiteDataFromSupabase() {
         client.from('members')
             .select('source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path')
             .order('source_order'),
-        client.from('teams').select('team_name,logo_path').order('source_order'),
+        // 팀 로고 맵은 순서가 필요 없다. 공개 권한에 없는 source_order로 정렬하면
+        // teams 요청 전체가 401이 되어 멤버를 포함한 공통 데이터 로딩까지 실패한다.
+        client.from('teams').select('team_name,logo_path'),
         client.from('matches')
             .select('source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result')
             .order('match_date', { ascending: false }).order('source_order', { ascending: false }),

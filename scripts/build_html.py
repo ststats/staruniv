@@ -18,6 +18,7 @@ from jinja2 import Environment, FileSystemLoader
 
 TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
+STATIC_TREE_SRC = os.path.join(TEMPLATE_DIR, 'static')
 OUT_DIR = 'docs'
 # 메뉴/방송통계 표시 설정은 이제 Supabase site_config에서 런타임에 직접 읽는다.
 
@@ -145,6 +146,21 @@ def copy_static_assets():
         shutil.copyfile(src, os.path.join(OUT_DIR, filename))
         copied.append(filename)
     print(f"✅ 정적 자산 {copied} 을(를) docs/로 복사했습니다.")
+    if os.path.isdir(STATIC_TREE_SRC):
+        for name in sorted(os.listdir(STATIC_TREE_SRC)):
+            source = os.path.join(STATIC_TREE_SRC, name)
+            target = os.path.join(OUT_DIR, name)
+            if os.path.isdir(source):
+                os.makedirs(target, exist_ok=True)
+                source_files = set(os.listdir(source))
+                for stale in set(os.listdir(target)) - source_files:
+                    stale_path = os.path.join(target, stale)
+                    if os.path.isfile(stale_path):
+                        os.unlink(stale_path)
+                shutil.copytree(source, target, dirs_exist_ok=True)
+            elif os.path.isfile(source):
+                shutil.copyfile(source, target)
+        print(f"✅ 정적 폴더를 templates/static에서 docs/로 동기화했습니다.")
 
 
 def main():

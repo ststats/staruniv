@@ -29,6 +29,7 @@ body {
   padding-top: 24px;
   padding-bottom: 24px;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 28px;
@@ -57,9 +58,36 @@ body {
 }
 
 .admin-shell {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 32px 20px 64px;
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+
+.admin-subtabs {
+  flex-basis: 100%;
+  margin-top: 2px;
+}
+
+.admin-subtabs[hidden] {
+  display: none;
+}
+
+.admin-subtabs .sub-tab {
+  appearance: none;
+  border: 1px solid transparent;
+  font-family: inherit;
+  background: color-mix(in srgb, var(--color-head-text) 9%, transparent);
+  color: color-mix(in srgb, var(--color-head-text) 72%, transparent);
+}
+
+.admin-subtabs .sub-tab.active {
+  border-color: var(--color-head-text);
+  background: var(--color-head-text);
+  color: var(--color-head-bg);
+}
+
+.admin-subtabs .sub-tab:hover:not(.active) {
+  background: color-mix(in srgb, var(--color-head-text) 20%, transparent);
+  color: var(--color-head-text);
 }
 
 .admin-user,
@@ -101,12 +129,6 @@ body {
 
 .admin-panel.active {
   display: block;
-}
-
-.admin-panel.active + .admin-panel.active {
-  margin-top: 34px;
-  padding-top: 28px;
-  border-top: 1px solid var(--panel-line);
 }
 
 .admin-calendar-layout {
@@ -189,6 +211,22 @@ body {
   gap: 16px;
 }
 
+.admin-panel > .admin-section-title {
+  position: relative;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--panel-line);
+}
+
+.admin-panel > .admin-section-title::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 76px;
+  height: 2px;
+  background: var(--color-primary);
+  content: "";
+}
+
 .admin-section-title h2,
 .admin-section-title h3 {
   margin: 0;
@@ -210,6 +248,24 @@ body {
   color: var(--color-text-sub);
   font-size: 12px;
   line-height: 1.55;
+}
+
+.admin-section-title > .admin-btn,
+.admin-section-title > .admin-btn.primary {
+  min-height: 28px;
+  padding: 0 var(--space-inline-gap);
+  border: 0;
+  clip-path: none;
+  background: transparent;
+  color: var(--color-text-sub);
+  font-size: var(--fs-meta);
+  font-weight: 700;
+}
+
+.admin-section-title > .admin-btn:hover,
+.admin-section-title > .admin-btn.primary:hover {
+  background: var(--color-row-hover);
+  color: var(--color-primary);
 }
 
 .admin-toolbar {
@@ -268,8 +324,8 @@ body {
 }
 
 .admin-btn.primary {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
+  border-color: var(--select-on-light);
+  background: var(--select-on-light);
   color: #fff;
 }
 
@@ -362,7 +418,8 @@ body {
 
 .admin-editor {
   margin-top: 16px;
-  background: var(--color-bg-subtle);
+  border-top: 3px solid var(--color-primary);
+  background: var(--color-card);
 }
 
 /* 예전 관리자처럼 목록과 편집기를 같은 화면에 둔다. 편집을 열면 목록은 왼쪽,
@@ -526,6 +583,18 @@ body {
   font-size: 11px;
 }
 
+.admin-kpi small {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-lose);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.admin-kpi.is-error {
+  border-top-color: var(--color-lose);
+}
+
 @media (max-width: 960px) {
   .admin-hero-inner {
     min-height: 160px;
@@ -590,7 +659,8 @@ body {
   }
 
   .admin-shell {
-    padding: 22px 12px 44px;
+    padding-top: 22px;
+    padding-bottom: 44px;
   }
 
   .admin-card {

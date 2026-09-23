@@ -8,7 +8,7 @@ revoke all on public.rounds from anon;
 revoke all on public.tier_members from anon;
 
 grant select (source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path) on public.members to anon;
-grant select (team_name,logo_path) on public.teams to anon;
+grant select (source_order,team_name,logo_path) on public.teams to anon;
 grant select (source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result) on public.matches to anon;
 grant select (source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name) on public.rounds to anon;
 grant select (source_order,nickname,soop_id,race,tier,affiliation,modified_at) on public.tier_members to anon;
@@ -59,4 +59,3 @@ revoke all on public.external_tools from anon;
 grant select (id,category,name,url,favicon,source_order,active) on public.external_tools to anon;
 drop policy if exists public_read_external_tools on public.external_tools;
 create policy public_read_external_tools on public.external_tools for select to anon using (active=true);
-
