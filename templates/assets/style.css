@@ -2973,7 +2973,7 @@ html[data-theme="dark"] .cal-longterm-bar {
         font-size: 11px;
     }
 
-    /* 모바일 일정 표시: 원래 크기인 5x5를 유지하고 모서리만 1px 잘라 삼각형처럼 무너지지 않게 한다. */
+    /* 모바일 일정 표시: 원래 크기인 5x5를 유지하고 모서리만 2px 잘라 삼각형처럼 무너지지 않게 한다. */
     .cal-day-cell .cal-cell-event {
         flex: 0 0 5px;
         width: 5px;
@@ -2984,7 +2984,7 @@ html[data-theme="dark"] .cal-longterm-bar {
         gap: 0;
         border: 0;
         border-radius: 0;
-        clip-path: polygon(0 0, calc(100% - 1px) 0, 100% 1px, 100% 100%, 0 100%);
+        clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
         background: var(--ev-accent);
     }
     .cal-day-cell .cal-cell-event > * { display: none; }
