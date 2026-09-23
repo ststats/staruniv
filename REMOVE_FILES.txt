@@ -1,0 +1,15 @@
+After Part 8 validation succeeds, delete these StarUniv files:
+scripts/sync_eloboard.py
+scripts/elo_supabase.py
+scripts/export_elo_supabase.py
+scripts/build_h2h.py
+scripts/build_ranking.py
+scripts/sync_videos.py
+
+Keep for now:
+scripts/export_supabase.py
+scripts/generate_stats.py
+scripts/match_link.py   (generate_stats.py still imports load_linked_db)
+scripts/build_html.py
+scripts/write_supabase_browser_config.py
+docs/data/h2h/**        (legacy fallback only; no longer regenerated)

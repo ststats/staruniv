@@ -1,207 +1,79 @@
-name: Update Site
+name: Build StarUniv web
 
-# 한 번 돌리면 사이트에 필요한 걸 전부 갱신한다. 서로 독립이라 하나가 실패해도 나머지는 간다.
-#   1) 유튜브 → Supabase 영상 목록                               - 키 있으면 전체, 없으면 RSS 15개
-#   2) Supabase → data/db.json + data/eloboard.json 캐시
-#   3) eloboard 최신분 → Supabase elo_* 증분 저장
-#      + Supabase에서 만든 캐시로 상대전적/티어랭킹을 계산한다
-#   4) 통계 산출 + docs/ 페이지 빌드 (data/db.json이 있을 때만)
-#   5) 캘린더 이미지 캡처 (공개 /schedule/ 페이지 렌더링 → docs/data/calendar.png)
-#   6) 바뀐 것만 한 번에 커밋
-#
-# 돌리는 방법 (셋 다 같은 일을 한다)
-#   · Actions 탭에서 'Run workflow' 수동 실행
-#   · 외부 크론에서 호출:
-#       curl -X POST -H "Authorization: Bearer <PAT>" -H "Accept: application/vnd.github+json" \
-#         https://api.github.com/repos/<소유자>/<저장소>/dispatches \
-#         -d '{"event_type":"update"}'
-# 관리자 저장은 Supabase에 즉시 반영된다. 이 워크플로는 외부 데이터와 집계 결과를 갱신한다.
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [update]
+  push:
+    branches: [main]
+    paths:
+      - 'templates/**'
+      - 'scripts/build_html.py'
+      - 'scripts/generate_stats.py'
+      - 'scripts/export_supabase.py'
+      - 'scripts/match_link.py'
+      - 'capture.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 permissions:
   contents: write
 
-# 외부 크론이 짧은 간격으로 여러 번 불러도 한 번에 하나만 돌게 한다(같은 브랜치에 커밋하므로).
 concurrency:
-  group: site-update
+  group: staruniv-web-build
   cancel-in-progress: false
 
 jobs:
-  update:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - name: 저장소 체크아웃
-      uses: actions/checkout@v4
-      with:
-        # git push는 이 체크아웃 스텝이 설정한 인증 정보를 그대로 쓴다. 기본 자동 토큰
-        # (secrets.GITHUB_TOKEN)은 저장소 설정이 "읽기 전용"이면 push가 막힐 수 있어서,
-        # 그 설정 영향을 안 받는 개인 액세스 토큰(PAT, secrets.GH_TOKEN)을 쓴다.
-        # GH_TOKEN(개인 액세스 토큰)을 넣어뒀으면 그걸 쓰고, 없으면 Actions가 자동으로 주는
-        # 토큰으로 푸시한다(그 경우 Settings → Actions → Workflow permissions 를
-        # 'Read and write'로 켜둬야 한다).
-        token: ${{ secrets.GH_TOKEN || github.token }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
 
-    - name: 파이썬 환경 세팅
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-        cache: 'pip'
-        cache-dependency-path: requirements.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
 
-    - name: 필요 라이브러리 설치
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
-    - name: Supabase 연결 확인
-      env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      run: |
-        if [ -z "$SUPABASE_DB_URL" ]; then
-          echo "❌ SUPABASE_DB_URL Secret이 없습니다. 이제 운영 데이터 원본은 Supabase만 사용합니다."
-          exit 1
-        fi
-        echo "✅ Supabase 연결 정보 확인"
+      - name: Export web build cache from Supabase
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python scripts/export_supabase.py
 
-    - name: 공개 사이트 Supabase 읽기 권한 적용
-      env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      run: python scripts/apply_public_read_permissions.py
+      - name: Build internal StarUniv stats and pages
+        run: |
+          python scripts/generate_stats.py
+          python scripts/build_html.py
 
-    # 남의 서버를 읽는 일이라 실패해도 DB/사이트 빌드는 계속 진행한다.
-    - name: 유튜브 영상 목록 갱신
-      continue-on-error: true
-      env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY || vars.YOUTUBE_API_KEY }}
-      run: |
-        if [ -z "$YOUTUBE_API_KEY" ]; then
-          echo "ℹ️ YOUTUBE_API_KEY 가 비어 있습니다 - RSS로 받습니다."
-        else
-          echo "✅ YOUTUBE_API_KEY 확인 (${#YOUTUBE_API_KEY}자)"
-        fi
-        python scripts/sync_videos.py
+      - name: Write browser Supabase config
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY }}
+        run: python scripts/write_supabase_browser_config.py
 
-    # 핵심 운영 데이터의 원본은 Supabase. 기존 Python/JS 호환을 위해 db.json을 재생성한다.
-    - name: Supabase에서 핵심 데이터 받기
-      env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      run: python scripts/export_supabase.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
 
-    # ELO도 Supabase가 원본이다. data/eloboard.json은 build_h2h/build_ranking용 임시 캐시다.
-    - name: Supabase에서 ELO 캐시 만들기
-      env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      run: python scripts/export_elo_supabase.py
+      - run: npm ci
 
-    # 방금 DB에서 만든 캐시를 기준으로 eloboard 최신분만 읽고, 바뀐 경기만 Supabase에 UPSERT한다.
-    # API가 일시적으로 실패해도 위에서 만든 DB 스냅샷으로 사이트는 계속 빌드된다.
-    - name: ELO 최신분을 Supabase에 증분 저장
-      continue-on-error: true
-      env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      run: python scripts/sync_eloboard.py
+      - name: Capture calendar image
+        continue-on-error: true
+        run: node capture.js
 
-    # 상대전적 파일은 Supabase에서 만든 ELO 캐시와 data/db.json의 멤버 명단을 사용한다.
-    - name: 상대전적 파일 만들기
-      continue-on-error: true
-      run: |
-        if [ ! -f data/eloboard.json ]; then
-          echo "ℹ️ data/eloboard.json 이 없어 상대전적 단계를 건너뜁니다."
-          exit 0
-        fi
-        python scripts/build_h2h.py
-
-    # 티어 안 순위. 상대전적 index.json을 읽어 순위 필드만 덧붙인다(numpy·scipy가 필요해서
-    # 라이브러리 설치 뒤에 온다). 여기서 실패해도 사이트는 순위 없이 그대로 나가야 하므로
-    # 나머지 단계를 막지 않는다.
-    - name: 티어랭킹 계산
-      continue-on-error: true
-      run: |
-        if [ ! -f docs/data/h2h/index.json ]; then
-          echo "ℹ️ 상대전적 index.json 이 없어 티어랭킹을 건너뜁니다."
-          exit 0
-        fi
-        python scripts/build_ranking.py
-
-    - name: 통계 산출 및 웹페이지 빌드
-      run: |
-        python scripts/generate_stats.py
-        python scripts/build_html.py
-
-    - name: 관리자 브라우저용 Supabase 설정 생성
-      env:
-        SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
-        SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY }}
-      run: python scripts/write_supabase_browser_config.py
-
-    - name: Node 환경 세팅
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Puppeteer 캐시 복원
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/puppeteer
-        # package-lock.json에 잠긴 puppeteer 버전이 바뀔 때만 새로 받는다(캡처 로직만
-        # 바뀌고 버전은 그대로인 capture.js 커밋에서는 매번 다시 받지 않는다).
-        key: ${{ runner.os }}-puppeteer-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-puppeteer-
-
-    - name: Puppeteer 설치
-      # package-lock.json에 잠긴 버전 그대로 설치한다(매번 최신을 새로 받지 않아 재현 가능하다).
-      run: npm ci
-
-    - name: 캘린더 이미지 캡처 (오늘의 일정 + 이달의 일정)
-      continue-on-error: true
-      # 관리자 페이지와 무관하게 공개 /schedule/ 페이지를 캡처한다.
-      run: node capture.js
-
-    - name: 바뀐 것 커밋
-      run: |
-        git config --global user.name "GitHub Actions Bot"
-        git config --global user.email "actions@github.com"
-
-        # templates/assets/(style.css, core.js, page-*.js 등)는 build_html.py가 파일명 그대로
-        # docs/로 복사한다. 여기서 파일명을 하나하나 나열하면 새 정적 파일이 추가됐을 때
-        # 목록에 넣는 걸 깜빡하기 쉬워서(실제로 mv-shared.js가 그렇게 빠진 적이 있다)
-        # 폴더의 실제 파일 목록을 그대로 따라간다.
-        git add -A data
-        git add docs/index.html docs/*/index.html docs/holidays.json
-        # 독립 페이지도 templates/standalone에서 빌드되므로 같이 커밋한다.
-        git add docs/admin.html docs/multiview.html docs/calmmon-rider.html docs/supabase-config.js
-        git add docs/data/calendar.png
-        git add -A docs/data/h2h
-        for f in templates/assets/*; do
-          git add "docs/$(basename "$f")"
-        done
-
-        # 무엇이 바뀌었는지(또는 안 바뀌었는지) 로그에 남긴다 - "워크플로우는 도는데 반영이
-        # 안 됨" 문제가 생기면 (1) 애초에 diff가 없었는지 (2) 커밋은 됐는데 push가 실패했는지
-        # 이 로그만 보고 구분할 수 있다.
-        # 예전에 이미 Git이 추적하던 build/ 캐시가 남아 있어도 rebase를 방해하지 않게 복원한다.
-        # .gitignore는 이미 추적 중인 파일에는 소급 적용되지 않기 때문에 필요한 안전장치다.
-        git restore --worktree -- build/ 2>/dev/null || true
-
-        echo "── git status (add 이후) ──"
-        git status --short
-
-        if git diff --staged --quiet; then
-          echo "ℹ️ 바뀐 내용이 없습니다 - 커밋을 건너뜁니다."
-          exit 0
-        fi
-
-        git commit -m "🚀 사이트 자동 업데이트"
-
-        # 커밋 대상이 아닌 tracked build 캐시가 혹시 다시 생겼다면 rebase 전에 버린다.
-        git restore --worktree -- build/ 2>/dev/null || true
-
-        # 어드민 저장 등 다른 커밋이 먼저 들어와 있으면 그 위에 다시 얹는다.
-        git pull --rebase origin main
-        git push
+      - name: Commit generated web files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/db.json data/render_stats.json
+          git add docs/index.html docs/*/index.html docs/admin.html docs/multiview.html docs/calmmon-rider.html
+          git add docs/*.js docs/*.css docs/supabase-config.js docs/data/calendar.png
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git commit -m "Build StarUniv web"
+          git pull --rebase origin main
+          git push

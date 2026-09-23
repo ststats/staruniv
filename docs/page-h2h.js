@@ -19,60 +19,126 @@
 
 const H2H_INDEX_URL = 'data/h2h/index.json';
 const H2H_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
-const H2H_LIST_STEP = 10;          // 최근 전적 한 번에 보여줄 개수
-const H2H_RIVAL_STEP = 8;          // '자주 만난 상대' 한 번에 보여줄 명수(4열 x 2줄)
-const H2H_MAP_STEP = 8;            // '맵별 전적' 한 번에 보여줄 개수
-// 검색 결과는 전부 볼 수 있어야 한다(대학 이름으로 찾으면 수십~수백 명이 나온다).
-// 다만 한 글자만 쳐도 수백 줄을 한꺼번에 그리면 타자마다 버벅이므로, 스크롤이 끝에
-// 닿을 때마다 이어서 그린다 - 사용자 입장에서는 그냥 계속 스크롤되는 목록이다.
+const H2H_LIST_STEP = 10;
+const H2H_RIVAL_STEP = 8;
+const H2H_MAP_STEP = 8;
 const H2H_SUGGEST_STEP = 40;
-
-// 형식 묶음: eloboard 형식(스폰·리그·개인·CK·대회·미니·대학·기타)을 화면용으로 묶는다.
-// CK와 리그는 둘 다 팀 단위 경기라 하나로 본다.
-// [정식 이름, 짧은 이름, 묶을 원본 형식들] - 도넛에는 정식 이름을, 필터 칩에는 짧은 이름을 쓴다
-// (칩에 '개인대회·대학대회…'를 다 적으면 휴대폰에서 필터 줄이 옆으로 밀린다).
-const H2H_CAT_GROUPS = [
-    ['개인대회', '개인', ['개인']],
-    ['대학대회', '대회', ['대회']],
-    ['대학대전', '대학', ['대학']],
-    ['미니대전', '미니', ['미니']],
-    ['CK · 리그', 'CK · 리그', ['CK', '리그']],
-    ['스폰', '스폰', ['스폰', '기타']],
-];
 
 const H2hState = {
     index: null,
-    loading: null,        // 진행 중인 index 요청(중복 요청 방지)
+    loading: null,
+    source: '',
     period: '90',
-    picks: [null, null],  // 선수 id
-    rows: {},             // 선수 id -> 경기 행
-    shardData: {},        // 샤드 시작id -> 받아온 원본 { 선수id: rows } (같은 샤드 재요청 방지)
-    shardLoading: {},     // 샤드 시작id -> 진행 중인 요청(동시에 여러 번 고를 때 중복 요청 방지)
+    picks: [null, null],
+    rows: {},
+    shardData: {},
+    shardLoading: {},
     page: 1,
     matchFilter: '전체',
     rivalShown: H2H_RIVAL_STEP,
     mapShown: H2H_MAP_STEP,
-    suggestSlot: -1,      // 추천 목록이 열려 있는 칸
-    suggestShown: H2H_SUGGEST_STEP,   // 추천 목록에 지금 그려둔 개수
+    suggestSlot: -1,
+    suggestShown: H2H_SUGGEST_STEP,
     query: ['', ''],
 };
 
-// ---------------------------------------------------------------------------
-// 데이터
-// ---------------------------------------------------------------------------
+async function h2hFetchAll(client, table, select, orderColumn) {
+    const out = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+        let q = client.from(table).select(select).range(from, from + pageSize - 1);
+        if (orderColumn) q = q.order(orderColumn, { ascending: true });
+        const { data, error } = await q;
+        if (error) throw error;
+        const batch = Array.isArray(data) ? data : [];
+        out.push(...batch);
+        if (batch.length < pageSize) break;
+    }
+    return out;
+}
+
+async function h2hLoadIndexFromSupabase() {
+    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+    if (!client) throw new Error('Supabase browser client is not configured');
+
+    const { data: playersData, error: playersError } = await client
+        .from('elo_public_players')
+        .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
+        .order('elo_id', { ascending: true });
+    if (playersError) throw playersError;
+    if (!Array.isArray(playersData) || !playersData.length) throw new Error('Elo public player view is empty');
+
+    const players = {};
+    const others = {};
+    const otherRaces = {};
+    const tierCounts = {};
+    let syncedAt = '';
+
+    for (const row of playersData) {
+        const pid = String(row.elo_id);
+        const eloName = String(row.elo_name || '');
+        syncedAt = syncedAt || String(row.as_of || '');
+        if (row.nickname) {
+            const nickname = String(row.nickname || eloName);
+            players[pid] = {
+                n: nickname,
+                en: eloName && eloName !== nickname ? eloName : '',
+                r: String(row.race || ''),
+                m: Number(row.total_games || 0),
+                w: Number(row.wins || 0),
+                d: row.last_match_date || '',
+                tm: String(row.affiliation || ''),
+                t: String(row.tier || ''),
+                s: String(row.soop_id || ''),
+                k: row.tier_rank == null ? null : Number(row.tier_rank),
+            };
+            if (row.tier && row.tier_count != null) tierCounts[String(row.tier)] = Number(row.tier_count);
+        } else {
+            others[pid] = eloName || '알 수 없음';
+            if (row.race) otherRaces[pid] = String(row.race);
+        }
+    }
+
+    H2hState.source = 'supabase';
+    return {
+        syncedAt,
+        shardBounds: [],
+        cats: [],
+        maps: {},
+        players,
+        others,
+        otherRaces,
+        ranking: { tierCounts },
+        _catIndexByName: {},
+    };
+}
+
+async function h2hLoadIndexStatic() {
+    const res = await fetch(H2H_INDEX_URL, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    H2hState.source = 'static';
+    return res.json();
+}
+
 async function h2hLoadIndex() {
     if (H2hState.index) return H2hState.index;
     if (!H2hState.loading) {
-        H2hState.loading = fetch(H2H_INDEX_URL, { cache: 'no-cache' })
-            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
-            .then(data => { H2hState.index = data; return data; })
-            .finally(() => { H2hState.loading = null; });
+        H2hState.loading = (async () => {
+            try {
+                const data = await h2hLoadIndexFromSupabase();
+                H2hState.index = data;
+                return data;
+            } catch (e) {
+                console.warn('[H2H] Supabase 조회 실패, 정적 fallback 사용:', e);
+                const data = await h2hLoadIndexStatic();
+                H2hState.index = data;
+                return data;
+            }
+        })().finally(() => { H2hState.loading = null; });
     }
     return H2hState.loading;
 }
 
-// 이 선수가 속한 샤드의 시작id(=파일명)를 찾는다. shardBounds는 오름차순이므로
-// "pid보다 작거나 같은 것 중 가장 큰 경계"가 그 샤드다. 목록이 짧아(백여 개) 그냥 훑는다.
 function h2hShardOf(pid) {
     const bounds = (H2hState.index && H2hState.index.shardBounds) || [];
     const n = Number(pid);
@@ -95,17 +161,65 @@ async function h2hLoadShard(shard) {
     return H2hState.shardLoading[shard];
 }
 
+function h2hCategoryIndex(name) {
+    name = String(name || '');
+    if (!name) return -1;
+    const state = H2hState.index;
+    if (!state._catIndexByName) {
+        state._catIndexByName = {};
+        (state.cats || []).forEach((n, i) => { state._catIndexByName[n] = i; });
+    }
+    if (Object.prototype.hasOwnProperty.call(state._catIndexByName, name)) return state._catIndexByName[name];
+    const idx = state.cats.length;
+    state.cats.push(name);
+    state._catIndexByName[name] = idx;
+    return idx;
+}
+
+async function h2hLoadPlayerFromSupabase(pid) {
+    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+    if (!client) throw new Error('Supabase browser client is not configured');
+    const rows = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+        const { data, error } = await client
+            .from('elo_public_matches')
+            .select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
+            .eq('elo_id', Number(pid))
+            .order('match_date', { ascending: false })
+            .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = Array.isArray(data) ? data : [];
+        for (const r of batch) {
+            if (r.map_id != null && r.map_name) H2hState.index.maps[String(r.map_id)] = String(r.map_name);
+            const cat = h2hCategoryIndex(r.category_name);
+            rows.push([
+                String(r.match_date || ''),
+                Number(r.opponent_elo_id),
+                r.won ? 1 : 0,
+                r.map_id == null ? '' : Number(r.map_id),
+                cat,
+            ]);
+        }
+        if (batch.length < pageSize) break;
+    }
+    return rows;
+}
+
 async function h2hLoadPlayer(pid) {
     if (!pid) return [];
     if (H2hState.rows[pid]) return H2hState.rows[pid];
-    let data;
     try {
-        data = await h2hLoadShard(h2hShardOf(pid));
+        if (H2hState.source === 'supabase') {
+            H2hState.rows[pid] = await h2hLoadPlayerFromSupabase(pid);
+            return H2hState.rows[pid];
+        }
+        const data = await h2hLoadShard(h2hShardOf(pid));
+        H2hState.rows[pid] = Array.isArray(data[pid]) ? data[pid] : [];
+        return H2hState.rows[pid];
     } catch (e) {
         throw new Error(`선수 전적을 불러오지 못했습니다 (${e.message})`);
     }
-    H2hState.rows[pid] = Array.isArray(data[pid]) ? data[pid] : [];
-    return H2hState.rows[pid];
 }
 
 // 머리 카드의 '킹티어 · 3위/27명' 뱃지에 쓸 값. 순위와 티어 인원은 세지 않고
