@@ -210,16 +210,15 @@ document.addEventListener('keydown', e => {
 });
 
 // =====================================================================
-// 2. 사이트 데이터 (Supabase)
+// 2. 사이트 데이터 (site_data.json)
 // =====================================================================
-// 멤버/매치/라운드/개인통계는 브라우저가 Supabase에서 직접 읽는다.
+// 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
+// 박아넣지 않고 별도 JSON(data/site_data.json)에서 비동기로 fetch해온다.
 const SiteData = {
     members: [],
     matches: [],
     rounds: [],
-    roundCount: 0,
     playersStats: [],
-    teamLogos: {},
 };
 
 // 페이지 초기화는 데이터 요청 실패 뒤에도 계속되어야 한다. 화면이 빈 데이터와 요청 실패를
@@ -228,160 +227,30 @@ const SiteDataLoad = { status: 'idle', error: null };
 
 const asArray = v => (Array.isArray(v) ? v : []);
 
-function publicSupabaseClient() {
-    if (window.StarUnivSupabaseClient) return window.StarUnivSupabaseClient;
-    const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
-    if (!cfg.url || !cfg.key || !window.supabase || typeof window.supabase.createClient !== 'function') return null;
-    window.StarUnivSupabaseClient = window.supabase.createClient(cfg.url, cfg.key, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-    });
-    return window.StarUnivSupabaseClient;
-}
-
-
-async function fetchAllPublicRows(client, table, columns, orderBy = [], pageSize = 1000) {
-    const rows = [];
-    for (let from = 0; ; from += pageSize) {
-        const to = from + pageSize - 1;
-        let query = client.from(table).select(columns).range(from, to);
-        for (const order of orderBy) {
-            query = query.order(order.column, { ascending: !!order.ascending });
-        }
-        const { data, error } = await query;
-        if (error) throw error;
-        const page = asArray(data);
-        rows.push(...page);
-        if (page.length < pageSize) break;
-    }
-    return rows;
-}
-
-const DIRECT_ROLE_ORDER = { '감독': 1, '코치': 2, '선수': 3 };
-const DIRECT_TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
-const DIRECT_FORMATS = ['대회', '대학', '미니', 'CK'];
-
-function directText(v) { return v === null || v === undefined ? '' : String(v).trim(); }
-function directMemberSort(a, b) {
-    const ar = DIRECT_ROLE_ORDER[a['직책']] || 99, br = DIRECT_ROLE_ORDER[b['직책']] || 99;
-    if (ar !== br) return ar - br;
-    const at = DIRECT_TIER_ORDER.indexOf(String(a['티어'] || ''));
-    const bt = DIRECT_TIER_ORDER.indexOf(String(b['티어'] || ''));
-    return (at < 0 ? 999 : at) - (bt < 0 ? 999 : bt);
-}
-function directRaceCode(v) {
-    const s = directText(v).toUpperCase();
-    if (s === 'T' || s.includes('테란')) return 'T';
-    if (s === 'Z' || s.includes('저그')) return 'Z';
-    if (s === 'P' || s.includes('프로토스')) return 'P';
-    return '';
-}
-function directFlipResult(v) { const s = directText(v); return s === '승' ? '패' : (s === '패' ? '승' : s); }
-function directWlText(w, l) {
-    const total = w + l;
-    return total ? `${w}승 ${l}패 (${(w / total * 100).toFixed(1)}%)` : '-';
-}
-function buildDirectPlayerStats(rounds) {
-    const byPlayer = new Map();
-    const ensure = name => {
-        if (!byPlayer.has(name)) byPlayer.set(name, { name, formats: new Map(), races: new Map() });
-        return byPlayer.get(name);
-    };
-    rounds.forEach(r => {
-        const name = directText(r['우리 선수']);
-        const result = directText(r['결과']);
-        if (!name || (result !== '승' && result !== '패')) return;
-        const p = ensure(name);
-        const fmt = directText(r['형식']);
-        if (DIRECT_FORMATS.includes(fmt)) {
-            const rec = p.formats.get(fmt) || { w: 0, l: 0 };
-            result === '승' ? rec.w++ : rec.l++;
-            p.formats.set(fmt, rec);
-        }
-        const race = directRaceCode(r['_opponent_race']);
-        if (race) {
-            const rec = p.races.get(race) || { w: 0, l: 0 };
-            result === '승' ? rec.w++ : rec.l++;
-            p.races.set(race, rec);
-        }
-    });
-    return [...byPlayer.values()].map(p => {
-        const out = { '이름': p.name };
-        DIRECT_FORMATS.forEach(fmt => {
-            const rec = p.formats.get(fmt) || { w: 0, l: 0 };
-            out[`${fmt} 전적`] = directWlText(rec.w, rec.l);
-        });
-        [['T','테란전'],['Z','저그전'],['P','프로토스전']].forEach(([race, label]) => {
-            const rec = p.races.get(race) || { w: 0, l: 0 };
-            out[`${label} 전적`] = directWlText(rec.w, rec.l);
-        });
-        return out;
-    });
-}
-
-async function loadSiteDataFromSupabase() {
-    const client = publicSupabaseClient();
-    if (!client) throw new Error('Supabase browser client is not configured');
-    const [memberRes, teamRes, matchRows, roundRows] = await Promise.all([
-        client.from('members')
-            .select('source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path')
-            .order('source_order'),
-        // 팀 로고 맵은 순서가 필요 없다. 공개 권한에 없는 source_order로 정렬하면
-        // teams 요청 전체가 401이 되어 멤버를 포함한 공통 데이터 로딩까지 실패한다.
-        client.from('teams').select('team_name,logo_path'),
-        fetchAllPublicRows(client, 'matches',
-            'source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result',
-            [{column:'match_date',ascending:false},{column:'source_order',ascending:false}]),
-        fetchAllPublicRows(client, 'rounds',
-            'source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name',
-            [{column:'match_date',ascending:false},{column:'source_order',ascending:false}])
-    ]);
-    const error = memberRes.error || teamRes.error;
-    if (error) throw error;
-
-    const members = asArray(memberRes.data).map(r => ({
-        '이름': directText(r.nickname), 'SOOP ID': directText(r.soop_id), '생년월일': directText(r.birth_date),
-        '성별': directText(r.gender), '종족': directText(r.race), '티어': directText(r.tier), '직책': directText(r.role),
-        '입단일': directText(r.joined_date), '퇴단일': directText(r.left_date), 'MBTI': directText(r.mbti), '프로필 이미지': directText(r.avatar_path)
-    })).sort(directMemberSort);
-
-    const matches = asArray(matchRows).map(r => ({
-        '매치 번호': r.match_no, '날짜': directText(r.match_date), '상대팀': directText(r.opponent_team),
-        '형식': directText(r.match_format), '방식': directText(r.method), '최종 결과': directText(r.final_result),
-        '세트 결과': directText(r.set_result), '_match_key': `match:${r.match_no}`
-    }));
-
-    const rounds = asArray(roundRows).map(r => ({
-        '매치 번호': r.match_no, '날짜': directText(r.match_date), '상대팀': directText(r.opponent_team),
-        '형식': directText(r.match_format), '세트': directText(r.set_name), '라운드': directText(r.round_name),
-        '우리 선수': directText(r.our_player), '결과': directText(r.result), '상대 선수': directText(r.opponent_player),
-        '맵': directText(r.map_name), '_match_key': `match:${r.match_no}`, '_opponent_race': directText(r.opponent_race)
-    }));
-
-    const raceByName = new Map(members.map(m => [directText(m['이름']), directRaceCode(m['종족'])]));
-    const mirrors = rounds.filter(r => directText(r['상대팀']) === '내전' && r['우리 선수'] && r['상대 선수']).map(r => ({
-        ...r,
-        '우리 선수': r['상대 선수'],
-        '상대 선수': r['우리 선수'],
-        '결과': directFlipResult(r['결과']),
-        '_opponent_race': raceByName.get(r['우리 선수']) || '',
-        '_mirrored': true,
-    }));
-    const allRounds = rounds.concat(mirrors);
-    const teamLogos = Object.fromEntries(asArray(teamRes.data).filter(r=>r.team_name&&r.logo_path).map(r=>[directText(r.team_name), directText(r.logo_path)]));
-    return { members, matches, rounds: allRounds, roundCount: rounds.length, playersStats: buildDirectPlayerStats(allRounds), teamLogos };
+// [캐시] 예전엔 매번 no-store로 받아서 브라우저 캐시를 전혀 못 썼다. 빌드가 index.html에 넣어준
+// 버전(<meta name="site-data-version">)을 주소에 붙이면, 데이터가 바뀐 배포에서만 주소가 바뀌므로
+// 평소엔 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면(옛 index.html 등) 매번
+// 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
+function siteDataRequest() {
+    const meta = document.querySelector('meta[name="site-data-version"]');
+    const version = meta && meta.content;
+    return version
+        ? { url: `data/site_data.json?v=${encodeURIComponent(version)}`, cache: 'default' }
+        : { url: 'data/site_data.json', cache: 'no-cache' };
 }
 
 async function loadSiteData() {
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        const data = await loadSiteDataFromSupabase();
+        const { url, cache } = siteDataRequest();
+        const res = await fetch(url, { cache });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
         SiteData.members = asArray(data && data.members);
         SiteData.matches = asArray(data && data.matches);
         SiteData.rounds = asArray(data && data.rounds);
-        SiteData.roundCount = Number(data && data.roundCount) || 0;
         SiteData.playersStats = asArray(data && data.playersStats);
-        SiteData.teamLogos = (data && data.teamLogos && typeof data.teamLogos === 'object') ? data.teamLogos : {};
         SiteDataLoad.status = 'loaded';
     } catch (e) {
         SiteDataLoad.status = 'error';
@@ -518,22 +387,11 @@ function isValidSoopId(soopId) {
     return !!soopId && SOOP_ID_PATTERN.test(String(soopId).trim());
 }
 
-function contentMediaPublicUrl(path) {
-    const p = String(path || '').trim().replace(/^\/+/, '');
-    if (!p) return '';
-    if (/^https:\/\//i.test(p)) return p;
-    const base = String(window.STARUNIV_SUPABASE_CONFIG?.url || '').replace(/\/$/, '');
-    if (!base) return '';
-    return `${base}/storage/v1/object/public/staruniv-media/${p.split('/').map(encodeURIComponent).join('/')}`;
-}
-
 function getProfileImgUrl(soopId) {
     if (!soopId) return null;
     const id = String(soopId).trim().toLowerCase();
+    // SOOP 아이디는 영문/숫자/일부 특수문자만 쓰이므로, 형식이 이상한 값은 URL/속성에 꽂지 않고 무시
     if (!id || !/^[a-z0-9_-]+$/.test(id)) return null;
-    const member = SiteData.members.find(m => String(m['SOOP ID'] || '').trim().toLowerCase() === id);
-    const custom = contentMediaPublicUrl(member && member['프로필 이미지']);
-    if (custom) return custom;
     const prefix = id.substring(0, 2);
     return `https://stimg.sooplive.com/LOGO/${prefix}/${id}/m/${id}.webp`;
 }
@@ -556,7 +414,12 @@ function profileAvatarInnerHtml(soopId) {
 function teamLogoFallback(imgEl, teamName) {
     const initial = String(teamName || '').trim().charAt(0) || '?';
     const span = document.createElement('span');
-    span.className = imgEl.className.replace(/\bteam-logo-icon\b/, 'team-logo-fallback');
+    span.className = 'team-logo-fallback';
+    const w = imgEl.style.width, h = imgEl.style.height;
+    if (w) span.style.width = w;
+    if (h) span.style.height = h;
+    const sizeNum = parseInt(w, 10);
+    if (sizeNum) span.style.fontSize = Math.max(8, Math.round(sizeNum * 0.5)) + 'px';
     span.textContent = initial;
     imgEl.replaceWith(span);
 }
@@ -572,14 +435,14 @@ function teamLogoHtml(teamName, sizePx) {
     if (!name) return '';
     const fileName = (name === '내전') ? '캄몬스타즈' : name;
     const size = sizePx || 16;
-    const custom = contentMediaPublicUrl(SiteData.teamLogos && SiteData.teamLogos[name]);
-    const src = custom || `images/${encodeURIComponent(fileName)}.webp`;
-    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon team-logo-size-${size}" loading="lazy" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
+    // 팀 이름을 onerror 안의 JS 문자열로 직접 꽂지 않고 data 속성으로 넘긴다(이스케이프 문제 원천 차단).
+    // 크기는 대체 배지(teamLogoFallback)가 그대로 물려받아야 해서 인라인으로 둔다.
+    return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
 function teamCellInnerHtml(teamName) {
-    return `<span class="team-cell">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
+    return `<span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
 }
 
 const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
@@ -827,9 +690,21 @@ function initEdgeFades(root) {
 }
 
 // =====================================================================
-// 5. 방송통계 데이터 (ststats 외부 데이터에서 우리 로스터만 추림 - 방송통계 표, 멤버 프로필 공용)
+// 5. 방송통계 데이터
+// ststat -> Supabase daily_member_stats 를 직접 읽고 우리 로스터만 추린다.
 // =====================================================================
-const STSTATS_BASE = 'https://ststats.github.io/synergy';
+let _publicSupabaseClient = null;
+function publicSupabaseClient() {
+    if (_publicSupabaseClient) return _publicSupabaseClient;
+    const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
+    if (!cfg.url || !cfg.key || !window.supabase || typeof window.supabase.createClient !== 'function') {
+        return null;
+    }
+    _publicSupabaseClient = window.supabase.createClient(cfg.url, cfg.key, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+    return _publicSupabaseClient;
+}
 
 const SynergyState = {
     data: null,          // [{ ...외부 필드, ourMember, active }]
@@ -871,38 +746,81 @@ staticAll('.modal').forEach(modalEl => {
 let _synergyRequest = null;
 function fetchSynergyData() {
     if (_synergyRequest) return _synergyRequest;
+
     _synergyRequest = (async () => {
-        const datesRes = await fetch(`${STSTATS_BASE}/data/dates.js`, { cache: 'no-cache' });
-        if (!datesRes.ok) throw new Error(`dates.js HTTP ${datesRes.status}`);
-        const datesText = await datesRes.text();
-        const match = datesText.match(/window\.AVAILABLE_DATES\s*=\s*(\[[^\]]*\])/);
-        if (!match) throw new Error('날짜 목록 형식을 읽을 수 없습니다.');
-        const dates = JSON.parse(match[1]);
-        const latestDate = Array.isArray(dates) ? dates[0] : null;
-        if (!latestDate) throw new Error('사용 가능한 날짜가 없습니다.');
+        const client = publicSupabaseClient();
+        if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다.');
 
-        const dataRes = await fetch(`${STSTATS_BASE}/data/daily/${encodeURIComponent(latestDate)}.json`, { cache: 'no-cache' });
-        if (!dataRes.ok) throw new Error(`daily json HTTP ${dataRes.status}`);
-        const data = await dataRes.json();
+        const { data: dateRows, error: dateError } = await client
+            .from('synergy_daily_dates')
+            .select('stat_date,updated_at')
+            .order('stat_date', { ascending: false })
+            .limit(1);
+        if (dateError) throw dateError;
 
-        // team 이름이 아니라 SOOP ID로 매칭한다 - 외부 쪽 team 표기가 우리 쪽 개편
-        // (예: 캄몬스타즈 -> 스타대학)과 항상 동기화된다는 보장이 없기 때문.
+        const latest = Array.isArray(dateRows) ? dateRows[0] : null;
+        const latestDate = latest && latest.stat_date ? String(latest.stat_date) : '';
+        if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다.');
+
+        const rows = [];
+        const pageSize = 1000;
+        for (let from = 0; ; from += pageSize) {
+            const { data: batch, error } = await client
+                .from('daily_member_stats')
+                .select('stat_date,soop_id,elo_id,nickname,role,affiliation,race,tier,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at,sponsor_updated_at')
+                .eq('stat_date', latestDate)
+                .order('soop_id', { ascending: true })
+                .range(from, from + pageSize - 1);
+            if (error) throw error;
+            const chunk = Array.isArray(batch) ? batch : [];
+            rows.push(...chunk);
+            if (chunk.length < pageSize) break;
+        }
+        if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다.`);
+
         const idToMember = new Map();
         SiteData.members.forEach(m => {
             const soopId = String(m['SOOP ID'] || '').trim().toLowerCase();
             if (soopId) idToMember.set(soopId, m);
         });
-        SynergyState.data = asArray(data && data.members)
-            .map(m => {
-                const ours = idToMember.get(String((m && m.id) || '').trim().toLowerCase());
-                return ours ? { ...m, ourMember: ours, active: isActiveMember(ours) } : null;
+
+        SynergyState.data = rows
+            .map(row => {
+                const soopId = String((row && row.soop_id) || '').trim().toLowerCase();
+                const ours = idToMember.get(soopId);
+                if (!ours) return null;
+                return {
+                    id: row.soop_id,
+                    elo_id: row.elo_id,
+                    nickname: row.nickname,
+                    role: row.role || '',
+                    team: row.affiliation || null,
+                    race: row.race || null,
+                    tier: row.tier || null,
+                    balloons: Number(row.balloons || 0),
+                    broadcast_seconds: Number(row.broadcast_seconds || 0),
+                    cumulative_viewers: Number(row.cumulative_viewers || 0),
+                    sponsor_wins: Number(row.sponsor_wins || 0),
+                    sponsor_losses: Number(row.sponsor_losses || 0),
+                    ourMember: ours,
+                    active: isActiveMember(ours),
+                };
             })
             .filter(Boolean);
-        SynergyState.updatedAt = (data && data.updated_at) || '';
+
+        const latestUpdated = rows.reduce((acc, row) => {
+            const value = String(row.updated_at || '');
+            return value > acc ? value : acc;
+        }, '');
+        SynergyState.updatedAt = latestUpdated || String(latest.updated_at || latestDate);
         SynergyState.failed = false;
         return SynergyState.data;
     })();
-    _synergyRequest.catch(() => { SynergyState.failed = true; _synergyRequest = null; });
+
+    _synergyRequest.catch(() => {
+        SynergyState.failed = true;
+        _synergyRequest = null;
+    });
     return _synergyRequest;
 }
 
@@ -936,19 +854,22 @@ const PageState = {
 };
 
 // ---------------------------------------------------------------------------
-// 상단 메뉴 표시/숨김 (Supabase site_config/nav - 어드민 페이지에서 관리)
+// 상단 메뉴 표시/숨김 (docs/data/nav.json - 어드민 페이지에서 관리)
 // ---------------------------------------------------------------------------
-// 실패하면 HTML의 기본 표시 상태를 유지한다.
+// 메뉴는 빌드 타임에 HTML로 박히므로(build_html.py가 nav.json을 읽어 hidden을 붙인다)
+// 평소엔 이 함수가 할 일이 없다. 이 함수가 필요한 이유는 어드민에서 저장한 직후다 -
+// 다음 빌드(데이터 갱신 워크플로)까지 기다리지 않고 바로 반영되게 한다.
+// 실패하면(파일 없음/깨짐/오프라인) 아무것도 건드리지 않는다 - 메뉴가 사라지는 쪽보다
+// HTML에 이미 박혀 있는 상태를 그대로 두는 쪽이 안전한 실패다.
+// 숨긴 방송통계 지표 탭. nav.json을 읽기 전에는 비어 있다(= 아무것도 숨기지 않음).
 let HiddenStatsTabs = new Set();
 const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
 
 async function applyNavVisibility() {
     try {
-        const client = publicSupabaseClient();
-        if (!client) throw new Error('Supabase browser client is not configured');
-        const { data: row, error } = await client.from('site_config').select('config_value').eq('config_key', 'nav').maybeSingle();
-        if (error) throw error;
-        const data = row?.config_value || {};
+        const res = await fetch('data/nav.json', { cache: 'no-cache', signal: AbortSignal.timeout(3500) });
+        if (!res.ok) return;
+        const data = await res.json();
         if (!data || typeof data !== 'object') return;
         if (Array.isArray(data.hidden)) {
             const hidden = new Set(data.hidden.map(String));
@@ -958,7 +879,8 @@ async function applyNavVisibility() {
             const menu = document.getElementById('mainMenu');
             if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
         }
-        // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 설정에서 끈다.
+        // 방송통계 지표 탭(별풍선·방송시간·…)도 같은 파일에서 끈다. 빌드 때 이미 hidden이
+        // 붙어 있지만, 어드민에서 방금 저장한 걸 다음 빌드까지 기다리지 않고 바로 반영한다.
         const heroDescriptions = (data.heroDescriptions && typeof data.heroDescriptions === 'object') ? data.heroDescriptions : {};
         // 홈 캐러셀은 히어로가 셋이라 각 문구를 별도 키로 바꾼다.
         document.querySelectorAll('[data-hero-description]').forEach(subtitle => {
@@ -982,7 +904,7 @@ async function applyNavVisibility() {
         // 켜져 있던 탭이 숨겨졌으면 보이는 탭으로 옮긴다(방송통계 페이지에서만 있는 함수).
         if (typeof syncStatsMetricVisibility === 'function') syncStatsMetricVisibility();
     } catch (_) {
-        // 실패하면 HTML 기본 상태를 유지한다.
+        // 실패하면 빌드에 저장된 메뉴 상태를 유지한다.
     } finally {
         delete document.documentElement.dataset.navPending;
     }
@@ -991,7 +913,10 @@ async function applyNavVisibility() {
 // 페이지 시작: 사이트 데이터(멤버/경기 등)를 먼저 불러온 뒤 페이지별 초기화를 실행한다.
 // 이 스크립트들은 body 맨 끝에서 실행되므로 DOM은 이미 준비돼 있지만, 순서를 확실히 하려고
 // DOMContentLoaded에 맞춘다(이미지 로딩까지 기다리는 window.onload보다 빠르다).
-// opts.siteData: false면 멤버·경기 Supabase 요청을 생략한다.
+// opts.siteData: false 면 site_data.json(멤버·경기 기록)을 아예 안 받는다.
+// 티어표·영상처럼 그 데이터를 한 줄도 안 쓰는 페이지가 400KB짜리 파일을 기다렸다
+// 시작하던 걸 없애기 위한 것이다. 그 페이지에서 SiteData를 쓰기 시작하면 여기 옵션을
+// 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
 function bootPage(init, opts) {
     const needsSiteData = !(opts && opts.siteData === false);
     const start = async () => {

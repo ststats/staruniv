@@ -16,7 +16,7 @@
             </div>
         </div>
         {#- 지표 탭은 어드민(방송통계 관리)에서 하나씩 끌 수 있다. 끈 탭도 마크업에는 남기고
-            hidden만 붙인다 - core.js가 Supabase 설정을 다시 읽어 바로 되살릴 수 있어야 한다.
+            hidden만 붙인다 - core.js가 nav.json을 다시 읽어 바로 되살릴 수 있어야 한다.
             처음 켜져 있는 탭은 '보이는 것 중 첫 번째'다. #}
         {%- set stats_tabs = [('balloons', '별풍선'), ('broadcast_seconds', '방송시간'),
                               ('cumulative_viewers', '누적시청자'), ('sponsor', '스폰판수')] %}
@@ -78,6 +78,8 @@
 </section>
 {% endblock %}
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('page-stats.js') }}"></script>
 {% endblock %}
