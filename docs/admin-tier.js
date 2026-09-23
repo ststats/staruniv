@@ -134,6 +134,20 @@
     root.querySelectorAll('[data-history-tier]').forEach(b=>b.onclick=()=>{const r=S.rows.find(x=>String(x.id)===b.dataset.historyTier);C().openDrawer({eyebrow:'PROMOTION',title:`${r.nickname} 승급 이력`,html:historyHtml(r),onSubmit:async()=>{}});document.getElementById('adminDrawerSave').hidden=true;});
     root.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;if(S.sort===k)S.asc=!S.asc;else{S.sort=k;S.asc=true;}load(0);});
   }
-  async function init(){if(document.body.dataset.adminPage!=='tier')return;render();await loadFilterOptions();await load(0);}
+  async function init(){
+    if(document.body.dataset.adminPage!=='tier')return;
+    render();
+
+    // 표 본문은 필터 옵션 전체 집계보다 먼저 띄운다.
+    // 전체 옵션 조회가 느리거나 실패해도 티어표 자체는 사용할 수 있어야 한다.
+    await load(0);
+
+    loadFilterOptions()
+      .then(()=>render())
+      .catch(err=>{
+        console.error('티어 필터 옵션 조회 실패:',err);
+        C().toast('티어 필터 옵션 일부를 불러오지 못했습니다. 표 조회는 계속 사용할 수 있습니다.','error');
+      });
+  }
   document.addEventListener('admin:ready',init);
 }());

@@ -81,6 +81,7 @@ function entrySeqIndex(tier) {
 const EntryState = {
     index: null,
     loading: null,
+    ratingMetaLoading: null,
     teams: [null, null],     // 소속 이름
     matches: [],             // [{a, b}]  a/b는 선수 id
     sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
@@ -90,6 +91,9 @@ const EntryState = {
     period: '90',            // 맞대결 기간(ENTRY_PERIODS). 기본은 최근 90일 - 옛날 천적
                              // 관계보다 지금 폼이 엔트리를 짜는 데 쓸모 있다.
     rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
+    rowCoverage: {},         // 선수id -> '30'/'90'/'365'/'all' 중 현재 캐시 범위
+    rowLoads: {},            // 선수id -> 진행 중 요청(같은 선수를 연속 클릭해도 중복 조회 금지)
+    refreshToken: 0,
     h2hCache: {},            // "기간|a|b" -> {w, l}
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
@@ -106,48 +110,23 @@ async function entryLoadIndexFromSupabase() {
     const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
     if (!client) throw new Error('Supabase browser client is not configured');
 
+    // 첫 화면에는 선수 목록만 필요하다. 랭킹 전체/메타 조회를 여기서 기다리면
+    // 보조 쿼리 하나만 느려도 엔트리 탭 전체가 로딩 상태에 묶인다.
     const playersData = await entryPagedQuery(
         (from, to) => client
             .from('elo_public_players')
-            .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
+            .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date')
             .order('elo_id', { ascending: true })
             .range(from, to),
         '선수 목록'
     );
 
-    const rankingsData = await entryPagedQuery(
-        (from, to) => client
-            .from('elo_rankings')
-            .select('elo_id,raw_rating,rating,tier,tier_rank,tier_count,as_of')
-            .order('elo_id', { ascending: true })
-            .range(from, to),
-        '레이팅'
-    );
-
-    const { data: metaRows, error: metaError } = await entryWithTimeout(
-        client
-            .from('elo_ranking_meta')
-            .select('as_of,tier_counts,tier_levels')
-            .order('as_of', { ascending: false })
-            .limit(1),
-        '랭킹 기준선'
-    );
-    if (metaError) throw metaError;
-
-    const rankingById = {};
-    rankingsData.forEach(row => { rankingById[String(row.elo_id)] = row; });
-
     const players = {};
-    let syncedAt = '';
     playersData.forEach(row => {
-        const pid = String(row.elo_id);
-        if (!row.nickname) return;
-
-        const rank = rankingById[pid] || {};
+        const pid = String(row.elo_id || '');
+        if (!pid || !row.nickname) return;
         const nickname = String(row.nickname || row.elo_name || '');
         const eloName = String(row.elo_name || '');
-
-        syncedAt = syncedAt || String(row.as_of || rank.as_of || '');
         players[pid] = {
             n: nickname,
             en: eloName && eloName !== nickname ? eloName : '',
@@ -156,27 +135,69 @@ async function entryLoadIndexFromSupabase() {
             w: Number(row.wins || 0),
             d: row.last_match_date || '',
             tm: String(row.affiliation || ''),
-            t: String(row.tier || rank.tier || ''),
+            t: String(row.tier || ''),
             s: String(row.soop_id || ''),
-            k: row.tier_rank == null
-                ? (rank.tier_rank == null ? null : Number(rank.tier_rank))
-                : Number(row.tier_rank),
-            rawRating: rank.raw_rating == null ? null : Number(rank.raw_rating),
-            rating: rank.rating == null ? null : Number(rank.rating),
+            k: null,
+            rawRating: null,
+            rating: null,
         };
     });
 
-    const meta = Array.isArray(metaRows) && metaRows.length ? metaRows[0] : {};
     return {
-        syncedAt,
+        syncedAt: '',
         players,
         maps: {},
         recentMaps: [],
-        ranking: {
+        ranking: { tierCounts: {}, tierLevels: {} },
+    };
+}
+
+async function entryLoadRatingMetaInBackground() {
+    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+    if (!client || !EntryState.index) return;
+
+    try {
+        const rankingsData = await entryPagedQuery(
+            (from, to) => client
+                .from('elo_rankings')
+                .select('elo_id,raw_rating,rating,tier,tier_rank,tier_count,as_of')
+                .order('elo_id', { ascending: true })
+                .range(from, to),
+            '레이팅'
+        );
+
+        rankingsData.forEach(row => {
+            const player = EntryState.index?.players?.[String(row.elo_id)];
+            if (!player) return;
+            if (!player.t && row.tier) player.t = String(row.tier);
+            player.k = row.tier_rank == null ? null : Number(row.tier_rank);
+            player.rawRating = row.raw_rating == null ? null : Number(row.raw_rating);
+            player.rating = row.rating == null ? null : Number(row.rating);
+            if (!EntryState.index.syncedAt && row.as_of) EntryState.index.syncedAt = String(row.as_of);
+        });
+
+        const { data: metaRows, error: metaError } = await entryWithTimeout(
+            client
+                .from('elo_ranking_meta')
+                .select('as_of,tier_counts,tier_levels')
+                .order('as_of', { ascending: false })
+                .limit(1),
+            '랭킹 기준선'
+        );
+        if (metaError) throw metaError;
+
+        const meta = Array.isArray(metaRows) && metaRows.length ? metaRows[0] : {};
+        EntryState.index.ranking = {
             tierCounts: meta.tier_counts || {},
             tierLevels: meta.tier_levels || {},
-        },
-    };
+        };
+        if (!EntryState.index.syncedAt && meta.as_of) EntryState.index.syncedAt = String(meta.as_of);
+
+        renderEntry();
+    } catch (e) {
+        // 보조 데이터 실패는 엔트리 탭 전체 실패로 취급하지 않는다.
+        console.warn('엔트리 레이팅 보조 데이터를 불러오지 못했습니다:', e);
+    }
 }
 
 async function entryEnsureLoaded() {
@@ -205,6 +226,14 @@ async function entryEnsureLoaded() {
         renderEntryMapDatalist();
         renderEntryPeriod();
         renderEntry();
+        if (!EntryState.ratingMetaLoading) {
+            EntryState.ratingMetaLoading = entryLoadRatingMetaInBackground()
+                .finally(() => { EntryState.ratingMetaLoading = null; });
+        }
+        if (!EntryState.ratingMetaLoading) {
+            EntryState.ratingMetaLoading = entryLoadRatingMetaInBackground()
+                .finally(() => { EntryState.ratingMetaLoading = null; });
+        }
     } catch (e) {
         console.error('엔트리 데이터를 불러오지 못했습니다:', e);
         ['a', 'b'].forEach(k => {
@@ -317,7 +346,7 @@ const ENTRY_FORM_HALF_LIFE = 90;
 // 기간 탭은 전적을 탐색하는 표시 필터다. 예측 입력까지 잘라버리면 같은 대진의
 // 확률이 탭을 누를 때마다 바뀐다. 예측은 통산 데이터를 쓰되 90일 반감기로
 // 최근 경기의 영향만 자연스럽게 크게 둔다.
-const ENTRY_PREDICTION_PERIOD = 'all';
+const ENTRY_PREDICTION_PERIOD = '365';
 const ENTRY_RACE_PRIOR = 14;
 const ENTRY_MAP_PRIOR = 18;
 const ENTRY_MAX_H2H_ADJ = 0.08;
@@ -448,17 +477,45 @@ function entryWinProb(aPid, bPid, mapName) {
 
 // 선수 경기 기록은 Supabase public view에서 직접 읽는다.
 // rows 형식은 기존 엔트리 로직을 그대로 쓰도록 [날짜, 상대id, 이김, 맵, 형식]을 유지한다.
-async function entryLoadPlayerRows(pid) {
+function entryCoverageDays(period) {
+    if (period === 'all') return Infinity;
+    return Math.max(0, Number(period) || 0);
+}
+
+function entryCoverageEnough(current, needed) {
+    if (!current) return false;
+    if (current === 'all') return true;
+    if (needed === 'all') return false;
+    return entryCoverageDays(current) >= entryCoverageDays(needed);
+}
+
+function entryNeededRowsPeriod() {
+    // 화면에 보여 줄 기간과 예상승률 계산 기간 중 더 넓은 범위만 한 번 받는다.
+    if (EntryState.period === 'all') return 'all';
+    return entryCoverageDays(EntryState.period) >= entryCoverageDays(ENTRY_PREDICTION_PERIOD)
+        ? EntryState.period : ENTRY_PREDICTION_PERIOD;
+}
+
+// 선수 경기 기록은 필요한 기간만 Supabase에서 직접 읽는다.
+// 기본 화면(90일)에서도 예상승률 계산용 최근 1년까지만 받고,
+// 사용자가 "전체"를 눌렀을 때에만 통산을 확장 조회한다.
+async function entryLoadPlayerRows(pid, period) {
     const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
     if (!client) throw new Error('Supabase browser client is not configured');
 
+    const requestedPeriod = period || entryNeededRowsPeriod();
+    const since = requestedPeriod === 'all' ? '' : entrySinceKey(requestedPeriod);
+
     const rows = await entryPagedQuery(
-        (from, to) => client
-            .from('elo_public_matches')
-            .select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
-            .eq('elo_id', Number(pid))
-            .order('match_date', { ascending: false })
-            .range(from, to),
+        (from, to) => {
+            let q = client
+                .from('elo_public_matches')
+                .select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
+                .eq('elo_id', Number(pid))
+                .order('match_date', { ascending: false });
+            if (since) q = q.gte('match_date', since);
+            return q.range(from, to);
+        },
         '선수 전적'
     );
 
@@ -487,22 +544,46 @@ async function entryLoadPlayerRows(pid) {
             ...(EntryState.index.recentMaps || []),
         ].filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 30);
     }
-    renderEntryMapDatalist();
 
-    return out;
+    return { rows: out, coverage: requestedPeriod };
 }
 
 // 고른 선수들의 경기 행을 받아 둔다. 맞대결은 기간이 바뀔 때마다 여기서 다시 센다.
-async function entryLoadH2h(pids) {
-    await Promise.all([...new Set(pids)].filter(pid => !EntryState.rows[pid]).map(async pid => {
-        try { EntryState.rows[pid] = await entryLoadPlayerRows(pid); } catch (e) { EntryState.rows[pid] = []; }
+async function entryLoadH2h(pids, period) {
+    const needed = period || entryNeededRowsPeriod();
+    const unique = [...new Set(pids)].filter(Boolean);
+
+    await Promise.all(unique.map(async pid => {
+        if (entryCoverageEnough(EntryState.rowCoverage[pid], needed)) return;
+
+        const loading = EntryState.rowLoads[pid];
+        if (loading && entryCoverageEnough(loading.period, needed)) {
+            await loading.promise;
+            return;
+        }
+
+        const promise = entryLoadPlayerRows(pid, needed)
+            .then(result => {
+                EntryState.rows[pid] = result.rows;
+                EntryState.rowCoverage[pid] = result.coverage;
+                renderEntryMapDatalist();
+            })
+            .catch(e => {
+                console.warn(`엔트리 선수 ${pid} 전적 조회 실패:`, e);
+                if (!EntryState.rows[pid]) EntryState.rows[pid] = [];
+            })
+            .finally(() => {
+                if (EntryState.rowLoads[pid]?.promise === promise) delete EntryState.rowLoads[pid];
+            });
+
+        EntryState.rowLoads[pid] = { period: needed, promise };
+        await promise;
     }));
 }
 
 // '최근 90일 전적'처럼 전적 위에 작게 적을 이름
 function entryPeriodLabel() {
     if (EntryState.period === 'all') return '통산 전적';
-    renderEntry();
     const found = ENTRY_PERIODS.find(([k]) => k === EntryState.period);
     return `${found ? found[1] : '최근'} 전적`;
 }
@@ -646,8 +727,15 @@ function entryAnalysisHtml(match, wp) {
 
 function entrySetPeriod(period) {
     EntryState.period = period;
+    EntryState.h2hCache = {};
     renderEntryPeriod();
     renderEntryResult();
+
+    const pids = EntryState.matches.flatMap(m => [m.a, m.b]);
+    const needed = entryNeededRowsPeriod();
+    if (pids.some(pid => !entryCoverageEnough(EntryState.rowCoverage[pid], needed))) {
+        entryRefreshProbs();
+    }
 }
 
 function renderEntryPeriod() {
@@ -717,8 +805,10 @@ function entryTogglePlayer(side, pid) {
         EntryState.matches.push({ a, b, map: '' });
         EntryState.sel = [null, null];
     }
+
+    // 클릭 결과를 먼저 화면에 그린 뒤 네트워크/분석을 시작한다.
     renderEntry();
-    entryRefreshProbs();
+    requestAnimationFrame(() => entryRefreshProbs());
 }
 
 function entryRemoveMatch(i) {
@@ -839,7 +929,12 @@ function entrySetTarget(n) {
 async function entryRefreshProbs() {
     const pids = EntryState.matches.flatMap(m => [m.a, m.b]);
     if (!pids.length) return;
-    await entryLoadH2h(pids);
+
+    const token = ++EntryState.refreshToken;
+    const needed = entryNeededRowsPeriod();
+    await entryLoadH2h(pids, needed);
+
+    if (token !== EntryState.refreshToken) return;
     renderEntryResult();
 }
 
@@ -1316,7 +1411,7 @@ async function entrySavePoster() {
     const rows = entryPosterRows();
     if (!rows.length) { alert('대진을 먼저 만들어 주세요.'); return; }
     // 맞대결을 아직 안 받았으면 먼저 받는다(포스터의 가운데 칸이 그 값이다)
-    await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
+    await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]), 'all');
 
     const W = ENTRY_POSTER_W;
     // 공유해서 보는 그림이라 휴대폰에서 줄어들어도 읽혀야 한다 - 글자를 넉넉히 키운다
