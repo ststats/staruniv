@@ -1,7 +1,7 @@
 name: Update Site
 
 # 한 번 돌리면 사이트에 필요한 걸 전부 갱신한다. 서로 독립이라 하나가 실패해도 나머지는 간다.
-#   1) 유튜브 → 영상 목록 (docs/data/videos.json)                 - 키 있으면 전체, 없으면 RSS 15개
+#   1) 유튜브 → Supabase 영상 목록                               - 키 있으면 전체, 없으면 RSS 15개
 #   2) Supabase → data/db.json + data/eloboard.json 캐시
 #   3) eloboard 최신분 → Supabase elo_* 증분 저장
 #      + Supabase에서 만든 캐시로 상대전적/티어랭킹을 계산한다
@@ -15,7 +15,7 @@ name: Update Site
 #       curl -X POST -H "Authorization: Bearer <PAT>" -H "Accept: application/vnd.github+json" \
 #         https://api.github.com/repos/<소유자>/<저장소>/dispatches \
 #         -d '{"event_type":"update"}'
-# 관리자 저장은 Supabase에 즉시 반영된다. 이 워크플로는 정적 fallback과 집계 결과를 갱신한다.
+# 관리자 저장은 Supabase에 즉시 반영된다. 이 워크플로는 외부 데이터와 집계 결과를 갱신한다.
 on:
   workflow_dispatch:
   repository_dispatch:
@@ -66,10 +66,16 @@ jobs:
         fi
         echo "✅ Supabase 연결 정보 확인"
 
+    - name: 공개 사이트 Supabase 읽기 권한 적용
+      env:
+        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      run: python scripts/apply_public_read_permissions.py
+
     # 남의 서버를 읽는 일이라 실패해도 DB/사이트 빌드는 계속 진행한다.
     - name: 유튜브 영상 목록 갱신
       continue-on-error: true
       env:
+        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY || vars.YOUTUBE_API_KEY }}
       run: |
         if [ -z "$YOUTUBE_API_KEY" ]; then
