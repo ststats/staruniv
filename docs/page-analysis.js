@@ -73,8 +73,11 @@ function analysisSummary(rows) {
         const i = r[2] ? 0 : 1;
         e[r[2] ? 'w' : 'l']++;
         (e.cat[r[4]] ||= [0, 0])[i]++;
-        const race = (h2hPlayer(String(r[1])) || {}).r || (H2hState.index.otherRaces || {})[r[1]];
-        if (race) (e.race[race] ||= [0, 0])[i]++;
+        const rawRace = (h2hPlayer(String(r[1])) || {}).r || (H2hState.index.otherRaces || {})[r[1]];
+        const race = h2hNormalizeRace(rawRace);
+        if (race === 'T' || race === 'P' || race === 'Z') {
+            (e.race[race] ||= [0, 0])[i]++;
+        }
     });
     if (rows.length) {
         const win = rows[0][2];
@@ -189,24 +192,38 @@ function analysisHeadHtml(pid, p, e) {
 
 // ---------------------------------------------------------------------------
 // 형식별 전적 · 종족전 전적 (도넛)
+// 분석 화면에서는 원본 7개 형식 중 리그와 CK만 한 묶음으로 보여준다.
+const ANALYSIS_CAT_GROUPS = [
+    ['개인', ['개인']],
+    ['대회', ['대회']],
+    ['대학', ['대학']],
+    ['미니', ['미니']],
+    ['리그·CK', ['리그', 'CK']],
+    ['스폰', ['스폰']],
+];
+
 // ---------------------------------------------------------------------------
 function analysisCatTotals(e) {
     const cats = (H2hState.index && H2hState.index.cats) || [];
     const totals = new Map();
-    H2H_CAT_GROUPS.forEach(([label]) => totals.set(label, [0, 0]));
+    ANALYSIS_CAT_GROUPS.forEach(([label]) => totals.set(label, [0, 0]));
+
     cats.forEach((name, i) => {
         const pair = (e.cat && e.cat[i]) || [0, 0];
-        const group = H2H_CAT_GROUPS.find(([, , members]) => members.includes(name));
+        const normalized = h2hNormalizeCategory(name);
+        const group = ANALYSIS_CAT_GROUPS.find(([, members]) => members.includes(normalized));
         if (!group) return;
+
         const acc = totals.get(group[0]);
         acc[0] += pair[0];
         acc[1] += pair[1];
     });
+
     return totals;
 }
 
 function analysisCatPages() {
-    return Math.max(1, Math.ceil(H2H_CAT_GROUPS.length / ANALYSIS_CAT_PER_PAGE));
+    return Math.max(1, Math.ceil(ANALYSIS_CAT_GROUPS.length / ANALYSIS_CAT_PER_PAGE));
 }
 
 function analysisSetCatPage(page) {
@@ -215,13 +232,13 @@ function analysisSetCatPage(page) {
     renderAnalysisBody();
 }
 
-// 형식은 6가지인데 한 줄에 6개를 늘어놓으면 도넛이 너무 작아진다.
-// 3개씩 한 화면에 보여주고 오른쪽 화살표로 나머지(미니대전 · CK · 리그 · 스폰)를 넘겨 본다.
+// 분석 형식은 개인 · 대회 · 대학 · 미니 · 리그·CK · 스폰의 6개 묶음이다.
+// 3개씩 한 화면에 보여준다.
 function analysisCatHtml(e) {
     const totals = analysisCatTotals(e);
     const pages = analysisCatPages();
     const from = AnalysisState.catPage * ANALYSIS_CAT_PER_PAGE;
-    const boxes = H2H_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE).map(([label]) => {
+    const boxes = ANALYSIS_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE).map(([label]) => {
         const [w, l] = totals.get(label) || [0, 0];
         return analysisDonutHtml(label, w, l);
     }).join('');

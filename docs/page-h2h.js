@@ -65,13 +65,13 @@ function h2hCategoryMatches(value, expected) {
 }
 
 const H2H_CAT_GROUPS = [
+    ['개인', '개인', ['개인', '개인대회', '개인전', 'solo_event']],
     ['대회', '대회', ['대회', '대학대회', 'college_event']],
     ['대학', '대학', ['대학', '대학대전', 'college_war']],
     ['미니', '미니', ['미니', '미니대전', 'college_mini']],
-    ['개인', '개인', ['개인', '개인대회', '개인전', 'solo_event']],
-    ['스폰', '스폰', ['스폰', '스폰빵', 'sponsored']],
     ['리그', '리그', ['리그', '프로리그', 'pro_league']],
     ['CK', 'CK', ['CK', 'team_event']],
+    ['스폰', '스폰', ['스폰', '스폰빵', 'sponsored']],
 ];
 
 function h2hWithTimeout(promise, label) {
@@ -134,7 +134,7 @@ async function h2hLoadIndexFromSupabase() {
             players[pid] = {
                 n: nickname,
                 en: eloName && eloName !== nickname ? eloName : '',
-                r: String(row.race || ''),
+                r: h2hNormalizeRace(row.race),
                 m: Number(row.total_games || 0),
                 w: Number(row.wins || 0),
                 d: row.last_match_date || '',
@@ -146,7 +146,7 @@ async function h2hLoadIndexFromSupabase() {
             if (row.tier && row.tier_count != null) tierCounts[String(row.tier)] = Number(row.tier_count);
         } else {
             others[pid] = eloName || '알 수 없음';
-            if (row.race) otherRaces[pid] = String(row.race);
+            if (row.race) otherRaces[pid] = h2hNormalizeRace(row.race);
         }
     }
 
