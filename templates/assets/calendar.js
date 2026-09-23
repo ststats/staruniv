@@ -360,3 +360,12 @@
         calSetDayLabel('selectedDateLabel', calSelectedDateStr);
         calRenderScheduleList('selectedDateList', calSelectedDateStr, 'selected', '등록된 일정이 없습니다.');
     };
+
+    window.StarUnivCalendar = {
+        refresh: () => calRenderCalendar(),
+        setData(events, offAir) {
+            calEvents = events;
+            calOffAir = offAir;
+            calRenderCalendar();
+        },
+    };

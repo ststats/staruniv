@@ -53,8 +53,8 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
 
 <main id="adminView" class="admin-hidden">
   <iframe id="adminPublicPage" class="admin-public-page" title="사이트 화면에서 편집" src="about:blank"></iframe>
-  <dialog id="adminEditDialog" class="admin-edit-dialog">
-  <div class="admin-dialog-actions"><button type="button" class="text-action" onclick="AdminApp.closeEditSurface()">편집 닫기</button></div>
+  <aside id="adminEditSurface" class="admin-edit-surface" aria-label="편집 도구">
+
   <section class="admin-hero">
     <div class="admin-hero-inner container">
       <div><span class="admin-eyebrow" id="adminPageEyebrow">ADMIN · HOME</span><h1 id="adminPageTitle">홈 관리</h1><p id="adminPageDescription">홈과 사이트 공통 설정을 관리합니다.</p></div>
@@ -140,8 +140,8 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
             <div class="admin-section-title admin-editor-heading"><div><h3>일정 편집</h3><p>날짜를 누르면 새 일정 날짜가 자동으로 채워집니다.</p></div><button class="admin-btn primary" type="button" onclick="AdminApp.editSchedule()">+ 새 일정</button></div>
             <div id="scheduleEditor" class="admin-editor admin-card hidden"></div>
             <div class="admin-card admin-offair-editor">
-              <div class="admin-section-title"><div><h3>휴방</h3><p>선택한 날짜의 SOOP ID를 등록합니다.</p></div></div>
-              <form onsubmit="return AdminApp.saveOffAir(event)" class="admin-toolbar"><input id="o_date" type="date" class="admin-input" required><input id="o_soop" class="admin-input" placeholder="SOOP ID" required><button class="admin-btn primary">추가</button></form>
+              <div class="admin-section-title"><div><h3>휴방</h3><p>선택한 날짜에 휴방하는 멤버를 고릅니다.</p></div></div>
+              <form onsubmit="return AdminApp.saveOffAir(event)" class="admin-toolbar"><input id="o_date" type="date" class="admin-input" required><select id="o_soop" class="admin-select" required aria-label="휴방 멤버"><option value="">멤버 선택</option></select><button class="admin-btn primary">추가</button></form>
               <div class="admin-table-wrap"><table class="admin-table admin-table-compact"><thead><tr><th>날짜</th><th>SOOP ID</th><th></th></tr></thead><tbody id="offAirRows"></tbody></table></div>
             </div>
           </aside>
@@ -194,12 +194,13 @@ try{const t=localStorage.getItem('staruniv-theme')||(matchMedia('(prefers-color-
     </div>
   </div>
   </div>
-  </dialog>
+  </aside>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="calendar.js"></script>
+<script src="history.js"></script>
 <script src="page-admin.js"></script>
 </body>
 </html>

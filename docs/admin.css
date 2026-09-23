@@ -62,30 +62,49 @@ body {
   padding-bottom: 64px;
 }
 
+#adminView:not(.admin-hidden) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+}
 .admin-public-page {
   display: block;
   width: 100%;
   height: calc(100dvh - var(--navbar-h));
   border: 0;
 }
-
-.admin-edit-dialog {
-  width: min(1120px, calc(100% - 24px));
-  max-height: calc(100dvh - 32px);
-  padding: 0;
-  border: 0;
+.admin-edit-surface {
+  min-width: 0;
+  max-height: calc(100dvh - var(--navbar-h));
+  overflow: auto;
+  padding: 20px 16px;
   background: var(--color-bg);
-  color: var(--color-text-main);
 }
-
-.admin-edit-dialog::backdrop { background: rgb(0 0 0 / .45); }
-.admin-dialog-actions { display: flex; justify-content: flex-end; padding: 12px 24px; }
-.admin-edit-dialog .admin-user { display: none; }
-.admin-edit-dialog .admin-calendar-main,
-.admin-edit-dialog .cal-selected-card-wrapper { display: none; }
-.admin-edit-dialog .admin-calendar-layout { grid-template-columns: minmax(0, 1fr); }
-.admin-edit-dialog .admin-calendar-side { position: static; max-height: none; overflow: visible; }
-.admin-edit-dialog .admin-calendar-side .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-edit-surface .admin-hero { background: transparent; border: 0; color: var(--color-text-main); }
+.admin-edit-surface .admin-hero-inner { min-height: 0; padding: 0; gap: 12px; }
+.admin-edit-surface .admin-hero-inner > div:first-child,
+.admin-edit-surface .admin-user,
+.admin-edit-surface .admin-calendar-main,
+.admin-edit-surface .cal-selected-card-wrapper { display: none; }
+.admin-edit-surface .admin-subtabs { margin: 0 0 16px; }
+.admin-edit-surface .admin-subtabs .sub-tab { color: var(--color-text-sub); background: var(--color-bg-subtle); }
+.admin-edit-surface .admin-subtabs .sub-tab.active { color: #fff; background: var(--select-on-light); }
+.admin-edit-surface .admin-shell { padding: 0; }
+.admin-edit-surface .admin-calendar-layout { grid-template-columns: minmax(0, 1fr); }
+.admin-edit-surface .admin-calendar-side { position: static; max-height: none; overflow: visible; }
+.admin-edit-surface .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
+.admin-edit-surface .admin-field.span-2,
+.admin-edit-surface .admin-field.span-3 { grid-column: auto; }
+.admin-edit-surface .admin-card:has(> .admin-editor:not(.hidden)) { display: block; }
+.admin-edit-surface .admin-card > .admin-editor { position: static; max-height: none; margin-top: 16px; }
+.admin-edit-surface .admin-card:has(> .admin-editor:not(.hidden)) > .admin-table-wrap { display: none; }
+.admin-edit-surface .admin-search { min-width: 0; }
+.admin-edit-surface .admin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 960px) {
+  #adminView:not(.admin-hidden) { grid-template-columns: minmax(0, 1fr); }
+  .admin-public-page { height: 65dvh; }
+  .admin-edit-surface { max-height: none; overflow: visible; padding: 24px 18px; }
+}
 
 .admin-subtabs {
   flex-basis: 100%;
