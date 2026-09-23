@@ -84,7 +84,8 @@ def main():
             f.write(',"rows":[')
 
             first = True
-            # 37만 행을 한꺼번에 메모리에 올리지 않고 서버 커서로 스트리밍한다.
+            exported_count = 0
+            # 전체 행을 한꺼번에 메모리에 올리지 않고 서버 커서로 끝까지 스트리밍한다.
             with conn.cursor(name="elo_export") as cur:
                 cur.execute(
                     """
@@ -110,13 +111,23 @@ def main():
                             f.write(",")
                         f.write(_json(packed))
                         first = False
+                        exported_count += 1
 
             f.write("]}")
+
+    if exported_count != int(count):
+        try:
+            tmp.unlink(missing_ok=True)
+        finally:
+            sys.exit(
+                "❌ ELO 캐시 검증 실패: "
+                f"DB exact count={int(count):,}, streamed={exported_count:,}. 기존 캐시는 유지합니다."
+            )
 
     os.replace(tmp, OUTPUT_PATH)
     size_mb = OUTPUT_PATH.stat().st_size / 1048576
     print("✅ Supabase ELO -> data/eloboard.json 내보내기 완료")
-    print(f"   elo_matches : {int(count):,}행")
+    print(f"   elo_matches : {int(count):,}행 (streamed {exported_count:,}행, 검증 완료)")
     print(f"   elo_players : {len(players):,}명")
     print(f"   elo_maps    : {len(maps):,}개")
     print(f"   categories  : {len(cats):,}개")

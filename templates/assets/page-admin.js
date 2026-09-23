@@ -257,18 +257,49 @@ async function loadDashboard() {
     ['members','id','멤버'],['teams','id','팀'],['matches','match_no','팀 경기'],['tier_members','id','티어 선수'],
     ['calendar_events','id','일정'],['calendar_off_air','off_date','휴방'],['video_channels','channel_url','영상 채널'],
     ['videos','id','수집 영상'],['video_picks','id','추천 영상'],['external_tools','id','외부도구'],
-    ['elo_matches','elo_match_id','ELO 경기','planned'],['elo_players','elo_id','ELO 선수'],
+    ['elo_matches','elo_match_id','ELO 경기'],['elo_players','elo_id','ELO 선수'],
   ];
-  const cards = await Promise.all(tables.map(async ([table,column,label,countMode='exact']) => {
-    const {count,error}=await state.client.from(table).select(column,{count:countMode,head:true});
+  const cards = await Promise.all(tables.map(async ([table,column,label]) => {
+    // 대시보드 현황은 추정치(planned)가 아니라 DB의 정확한 행 수를 표시한다.
+    const {count,error}=await state.client.from(table).select(column,{count:'exact',head:true});
     return {table,label,count:count??0,error};
   }));
   $('dashboardKpis').innerHTML=cards.map(x=>x.error
     ? `<div class="admin-card admin-kpi is-error"><b>—</b><span>${esc(x.label)}</span><small>조회 실패</small></div>`
-    : `<div class="admin-card admin-kpi"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span></div>`).join('');
+    : `<div class="admin-card admin-kpi${x.table==='elo_matches'?' admin-kpi-emphasis':''}"><b>${Number(x.count).toLocaleString()}</b><span>${esc(x.label)}</span>${x.table==='elo_matches'?'<small>Supabase exact count</small>':''}</div>`).join('');
+
+  const eloCard=cards.find(x=>x.table==='elo_matches');
+  await loadEloDatabaseStatus(eloCard);
+
   const failed=cards.filter(x=>x.error);
   if(failed.length) setStatus(`일부 현황 조회 실패 · ${failed.map(x=>`${x.label}(${x.table}): ${errText(x.error)}`).join(' · ')}`,'error');
   else clearStatus();
+}
+
+async function loadEloDatabaseStatus(eloCard) {
+  const target=$('eloDatabaseStatus');
+  if(!target) return;
+  if(eloCard?.error) {
+    target.innerHTML='<div class="admin-empty-state">ELO DB 상태를 읽지 못했습니다.</div>';
+    return;
+  }
+  target.innerHTML='<div class="admin-empty-state">ELO DB 범위를 확인하는 중...</div>';
+  const [firstResult,lastResult]=await Promise.all([
+    state.client.from('elo_matches').select('elo_match_id,match_date').order('elo_match_id',{ascending:true}).limit(1).maybeSingle(),
+    state.client.from('elo_matches').select('elo_match_id,match_date').order('elo_match_id',{ascending:false}).limit(1).maybeSingle(),
+  ]);
+  const error=firstResult.error||lastResult.error;
+  if(error) {
+    target.innerHTML=`<div class="admin-empty-state is-error">범위 조회 실패 · ${esc(errText(error))}</div>`;
+    return;
+  }
+  const first=firstResult.data||{};
+  const last=lastResult.data||{};
+  target.innerHTML=`
+    <div class="admin-db-stat"><span>총 경기</span><b>${Number(eloCard?.count||0).toLocaleString()}</b><small>exact count</small></div>
+    <div class="admin-db-stat"><span>최초 경기</span><b>${esc(first.match_date||'—')}</b><small>ID ${Number(first.elo_match_id||0).toLocaleString()}</small></div>
+    <div class="admin-db-stat"><span>최신 경기</span><b>${esc(last.match_date||'—')}</b><small>ID ${Number(last.elo_match_id||0).toLocaleString()}</small></div>
+    <div class="admin-db-stat admin-db-stat-wide"><span>데이터 범위</span><b>${Number(first.elo_match_id||0).toLocaleString()} → ${Number(last.elo_match_id||0).toLocaleString()}</b><small>경기 ID는 연속 번호가 아니므로 범위 차이와 총 경기 수는 다를 수 있습니다.</small></div>`;
 }
 
 // ---- members ----
@@ -444,6 +475,6 @@ async function init(){
   await verifyAdmin();
 }
 
-window.AdminApp={closeEditSurface,setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
+window.AdminApp={openEditSurface,closeEditSurface,setTheme,toggleSiteMenu,loadDashboard,loadMembers,editMember,saveMember,deleteMember,loadTeams,editTeam,saveTeam,deleteTeam,addRound,loadMatches,editMatch,saveMatch,deleteMatch,loadTierMembers,editTierMember,saveTierMember,deleteTierMember,loadSettings,editSetting,saveSetting,deleteSetting,loadSchedule,editSchedule,saveSchedule,deleteSchedule,saveOffAir,deleteOffAir,loadNavigation,saveNavigation,loadHistoryEntries,editHistory,saveHistory,deleteHistory,loadVideoAdmin,editVideoChannel,saveVideoChannel,deleteVideoChannel,editVideoPick,saveVideoPick,deleteVideoPick,toggleVideoHidden,loadExternalTools,editExternalTool,saveExternalTool,deleteExternalTool,searchElo,closeEditor};
 init().catch(e=>{console.error(e);showOnly('configError');});
 })();
