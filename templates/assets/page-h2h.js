@@ -30,12 +30,21 @@ async function h2hLoadIndexFromSupabase() {
     const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
     if (!client) throw new Error('Supabase browser client is not configured');
 
-    const { data: playersData, error: playersError } = await client
-        .from('elo_public_players')
-        .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
-        .order('elo_id', { ascending: true });
-    if (playersError) throw playersError;
-    if (!Array.isArray(playersData) || !playersData.length) throw new Error('Elo public player view is empty');
+    const playersData = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+        const { data, error } = await client
+            .from('elo_public_players')
+            .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
+            .order('elo_id', { ascending: true })
+            .range(from, from + pageSize - 1);
+        if (error) throw error;
+
+        const batch = Array.isArray(data) ? data : [];
+        playersData.push(...batch);
+        if (batch.length < pageSize) break;
+    }
+    if (!playersData.length) throw new Error('Elo public player view is empty');
 
     const players = {};
     const others = {};
