@@ -2973,13 +2973,12 @@ html[data-theme="dark"] .cal-longterm-bar {
         font-size: 11px;
     }
 
-    /* 모바일 일정 표시: 5x5 점에 4px notch를 적용하면 거의 삼각형으로 잘린다.
-       점 대신 작은 가로 노치 박스로 표시해 기존 일정표시 형태를 유지한다. */
+    /* 모바일 일정 표시: 원래 크기인 5x5를 유지하고 모서리만 1px 잘라 삼각형처럼 무너지지 않게 한다. */
     .cal-day-cell .cal-cell-event {
-        flex: 0 0 7px;
-        width: 7px;
-        height: 4px;
-        min-width: 7px;
+        flex: 0 0 5px;
+        width: 5px;
+        height: 5px;
+        min-width: 5px;
         padding: 0;
         margin: 0;
         gap: 0;
