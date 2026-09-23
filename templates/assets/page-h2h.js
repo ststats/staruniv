@@ -17,10 +17,13 @@ const H2H_RACE_LABEL = { T: '테란', P: '프로토스', Z: '저그' };
 function h2hNormalizeRace(value) {
     const raw = String(value ?? '').trim();
     if (!raw) return '';
+
     const upper = raw.toUpperCase();
-    if (upper === 'T' || upper === 'TERRAN' || raw === 'T') return 'T';
-    if (upper === 'P' || upper === 'PROTOSS' || raw === 'P') return 'P';
-    if (upper === 'Z' || upper === 'ZERG' || raw === 'Z') return 'Z';
+
+    if (upper === 'T' || upper === 'TERRAN' || raw === '테란') return 'T';
+    if (upper === 'P' || upper === 'PROTOSS' || raw === '프로토스') return 'P';
+    if (upper === 'Z' || upper === 'ZERG' || raw === '저그') return 'Z';
+
     return upper;
 }
 
@@ -35,24 +38,24 @@ function h2hNormalizeCategory(value) {
 
     const compact = raw.replace(/\s+/g, '').toLowerCase();
 
-    // 실제 EloBoard/Supabase category_name 값 기준
+    // 실제 EloBoard/Supabase category_name 값 기준 (사용자 확인)
+    if (compact === 'college_event') return '대회';
+    if (compact === 'college_war') return '대학';
+    if (compact === 'college_mini') return '미니';
+    if (compact === 'solo_event') return '개인';
     if (compact === 'sponsored') return '스폰';
     if (compact === 'pro_league') return '리그';
-    if (compact === 'team_event') return '대회';
-    if (compact === 'solo_event') return '개인';
-    if (compact === 'college_mini') return '미니';
-    if (compact === 'college_event') return '대학';
-    if (compact === 'college_war') return '대학';
+    if (compact === 'team_event') return 'CK';
 
-    // 과거/표시용 별칭도 호환
+    // 화면/과거 별칭 호환
     const upper = raw.replace(/\s+/g, '').toUpperCase();
-    if (['개인', '개인전', '1V1', 'SOLO'].includes(upper)) return '개인';
-    if (['대회', '대회전'].includes(upper)) return '대회';
-    if (['대학', '대학대전', '대학전'].includes(upper)) return '대학';
-    if (['미니', '미니대전', '미니전'].includes(upper)) return '미니';
-    if (upper === 'CK' || upper.includes('CK')) return 'CK';
-    if (['리그', '프로리그', 'LEAGUE'].includes(upper)) return '리그';
-    if (['스폰', '스폰빵', 'SPON', 'SPONSOR'].includes(upper)) return '스폰';
+    if (['대회', '대학대회'].includes(raw)) return '대회';
+    if (['대학', '대학대전'].includes(raw)) return '대학';
+    if (['미니', '미니대전'].includes(raw)) return '미니';
+    if (['개인', '개인대회', '개인전'].includes(raw)) return '개인';
+    if (upper === 'CK') return 'CK';
+    if (['스폰', '스폰빵'].includes(raw) || upper === 'SPON' || upper === 'SPONSOR') return '스폰';
+    if (['리그', '프로리그'].includes(raw) || upper === 'LEAGUE') return '리그';
 
     return raw;
 }
@@ -62,13 +65,13 @@ function h2hCategoryMatches(value, expected) {
 }
 
 const H2H_CAT_GROUPS = [
-    ['개인', '개인', ['개인', '개인전']],
-    ['대회', '대회', ['대회', '대회전']],
-    ['대학', '대학', ['대학', '대학대전', '대학전']],
-    ['미니', '미니', ['미니', '미니대전', '미니전']],
-    ['CK', 'CK', ['CK']],
-    ['리그', '리그', ['리그', '프로리그']],
-    ['스폰', '스폰', ['스폰', '스폰빵']],
+    ['대회', '대회', ['대회', '대학대회', 'college_event']],
+    ['대학', '대학', ['대학', '대학대전', 'college_war']],
+    ['미니', '미니', ['미니', '미니대전', 'college_mini']],
+    ['개인', '개인', ['개인', '개인대회', '개인전', 'solo_event']],
+    ['스폰', '스폰', ['스폰', '스폰빵', 'sponsored']],
+    ['리그', '리그', ['리그', '프로리그', 'pro_league']],
+    ['CK', 'CK', ['CK', 'team_event']],
 ];
 
 function h2hWithTimeout(promise, label) {
