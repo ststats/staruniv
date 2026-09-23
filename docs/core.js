@@ -217,6 +217,7 @@ const SiteData = {
     members: [],
     matches: [],
     rounds: [],
+    roundCount: 0,
     playersStats: [],
     teamLogos: {},
 };
@@ -235,6 +236,24 @@ function publicSupabaseClient() {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
     });
     return window.StarUnivSupabaseClient;
+}
+
+
+async function fetchAllPublicRows(client, table, columns, orderBy = [], pageSize = 1000) {
+    const rows = [];
+    for (let from = 0; ; from += pageSize) {
+        const to = from + pageSize - 1;
+        let query = client.from(table).select(columns).range(from, to);
+        for (const order of orderBy) {
+            query = query.order(order.column, { ascending: !!order.ascending });
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        const page = asArray(data);
+        rows.push(...page);
+        if (page.length < pageSize) break;
+    }
+    return rows;
 }
 
 const DIRECT_ROLE_ORDER = { '감독': 1, '코치': 2, '선수': 3 };
@@ -302,21 +321,21 @@ function buildDirectPlayerStats(rounds) {
 async function loadSiteDataFromSupabase() {
     const client = publicSupabaseClient();
     if (!client) throw new Error('Supabase browser client is not configured');
-    const [memberRes, teamRes, matchRes, roundRes] = await Promise.all([
+    const [memberRes, teamRes, matchRows, roundRows] = await Promise.all([
         client.from('members')
             .select('source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path')
             .order('source_order'),
         // 팀 로고 맵은 순서가 필요 없다. 공개 권한에 없는 source_order로 정렬하면
         // teams 요청 전체가 401이 되어 멤버를 포함한 공통 데이터 로딩까지 실패한다.
         client.from('teams').select('team_name,logo_path'),
-        client.from('matches')
-            .select('source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result')
-            .order('match_date', { ascending: false }).order('source_order', { ascending: false }),
-        client.from('rounds')
-            .select('source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name')
-            .order('match_date', { ascending: false }).order('source_order', { ascending: false })
+        fetchAllPublicRows(client, 'matches',
+            'source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result',
+            [{column:'match_date',ascending:false},{column:'source_order',ascending:false}]),
+        fetchAllPublicRows(client, 'rounds',
+            'source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name',
+            [{column:'match_date',ascending:false},{column:'source_order',ascending:false}])
     ]);
-    const error = memberRes.error || teamRes.error || matchRes.error || roundRes.error;
+    const error = memberRes.error || teamRes.error;
     if (error) throw error;
 
     const members = asArray(memberRes.data).map(r => ({
@@ -325,13 +344,13 @@ async function loadSiteDataFromSupabase() {
         '입단일': directText(r.joined_date), '퇴단일': directText(r.left_date), 'MBTI': directText(r.mbti), '프로필 이미지': directText(r.avatar_path)
     })).sort(directMemberSort);
 
-    const matches = asArray(matchRes.data).map(r => ({
+    const matches = asArray(matchRows).map(r => ({
         '매치 번호': r.match_no, '날짜': directText(r.match_date), '상대팀': directText(r.opponent_team),
         '형식': directText(r.match_format), '방식': directText(r.method), '최종 결과': directText(r.final_result),
         '세트 결과': directText(r.set_result), '_match_key': `match:${r.match_no}`
     }));
 
-    const rounds = asArray(roundRes.data).map(r => ({
+    const rounds = asArray(roundRows).map(r => ({
         '매치 번호': r.match_no, '날짜': directText(r.match_date), '상대팀': directText(r.opponent_team),
         '형식': directText(r.match_format), '세트': directText(r.set_name), '라운드': directText(r.round_name),
         '우리 선수': directText(r.our_player), '결과': directText(r.result), '상대 선수': directText(r.opponent_player),
@@ -349,7 +368,7 @@ async function loadSiteDataFromSupabase() {
     }));
     const allRounds = rounds.concat(mirrors);
     const teamLogos = Object.fromEntries(asArray(teamRes.data).filter(r=>r.team_name&&r.logo_path).map(r=>[directText(r.team_name), directText(r.logo_path)]));
-    return { members, matches, rounds: allRounds, playersStats: buildDirectPlayerStats(allRounds), teamLogos };
+    return { members, matches, rounds: allRounds, roundCount: rounds.length, playersStats: buildDirectPlayerStats(allRounds), teamLogos };
 }
 
 async function loadSiteData() {
@@ -360,6 +379,7 @@ async function loadSiteData() {
         SiteData.members = asArray(data && data.members);
         SiteData.matches = asArray(data && data.matches);
         SiteData.rounds = asArray(data && data.rounds);
+        SiteData.roundCount = Number(data && data.roundCount) || 0;
         SiteData.playersStats = asArray(data && data.playersStats);
         SiteData.teamLogos = (data && data.teamLogos && typeof data.teamLogos === 'object') ? data.teamLogos : {};
         SiteDataLoad.status = 'loaded';
