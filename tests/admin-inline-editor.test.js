@@ -34,7 +34,11 @@ test('schedule uses stable fixed palette and public renderer accepts keys', () =
   const admin = read('templates/assets/admin-schedule.js');
   assert.doesNotMatch(admin, /type="color"/);
   assert.match(admin, /schedule_color/);
-  assert.match(admin, /<select class="admin-input" id="as_person"/);
+  // 일정 제목은 멤버 이름만이 아니라 '중만컵'·'캄몬' 같은 값도 들어가므로 자유 입력이다
+  assert.doesNotMatch(admin, /<select class="admin-input" id="as_person"/);
+  assert.match(admin, /field\('제목', C\(\)\.input\('as_person'/);
+  // 휴방 멤버 선택지는 퇴단한 이전 멤버를 뺀다
+  assert.match(admin, /function offAirOptions[\s\S]*?!m\.left_date/);
 });
 
 test('records use atomic match RPC and validate set results before save', () => {

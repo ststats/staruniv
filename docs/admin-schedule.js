@@ -6,11 +6,11 @@
     ['blue','파랑'],['indigo','남색'],['purple','보라'],['light_gray','연한 회색']
   ];
 
-  function memberOptions(selected) {
-    const members = C().state.members || [];
-    return [['','선택']].concat(members.filter(m => !m.left_date || m.left_date >= new Date().toISOString().slice(0,10))
-      .map(m => [m.name || m.nickname, m.name || m.nickname])).map(([v,l]) =>
-        `<option value="${C().esc(v)}"${String(v)===String(selected||'')?' selected':''}>${C().esc(l)}</option>`).join('');
+  // 휴방 멤버 선택지: 활동 중인 멤버만(퇴단일 없음). 이미 등록된 휴방의 멤버는 퇴단했어도 남겨 둔다.
+  function offAirOptions(selected) {
+    const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || m.soop_id === selected));
+    return [['','선택']].concat(members.map(m => [m.soop_id, m.name || m.nickname || m.soop_id])).map(([v,l]) =>
+      `<option value="${C().esc(v)}"${String(v)===String(selected||'')?' selected':''}>${C().esc(l)}</option>`).join('');
   }
 
   function colorPicker(selected) {
@@ -39,7 +39,7 @@
           ${C().field('시작일', C().input('as_start', start, 'date', 'required'))}
           ${C().field('종료일', C().input('as_end', end, 'date', 'required'))}
           ${C().field('시간', C().input('as_time', row?.time || '', 'text', 'placeholder="19:00"'))}
-          ${C().field('이름', `<select class="admin-input" id="as_person" required>${memberOptions(row?.person)}</select>`)}
+          ${C().field('제목', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, 중만컵, 멤버 이름"'))}
         </div>
         ${C().field('간략 내용', C().input('as_desc', row?.desc || '', 'text', 'maxlength="120"'))}
         ${C().field('상세 내용', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
@@ -48,6 +48,7 @@
         const startDate=C().value('as_start'), endDate=C().value('as_end')||startDate;
         if (!startDate || !endDate) throw new Error('시작일과 종료일이 필요합니다.');
         if (endDate < startDate) throw new Error('종료일은 시작일보다 빠를 수 없습니다.');
+        if (!C().value('as_person').trim()) throw new Error('제목을 입력하세요.');
         const color = document.querySelector('input[name="schedule_color"]:checked')?.value || 'blue';
         const dbRow = {
           start_date:startDate, end_date:endDate, event_time:C().empty(C().value('as_time')),
@@ -82,7 +83,7 @@
       title: soopId ? '휴방 수정' : '휴방 등록',
       html: `
         ${C().field('날짜', C().input('ao_date', date || calSelectedDateStr || calTodayStr(),'date','required'))}
-        ${C().field('멤버', `<select class="admin-input" id="ao_member" required>${[['','선택']].concat((C().state.members||[]).map(m=>[m.soop_id,m.name||m.nickname])).map(([v,l])=>`<option value="${C().esc(v||'')}"${String(v||'')===String(soopId||'')?' selected':''}>${C().esc(l||v||'')}</option>`).join('')}</select>`)}
+        ${C().field('멤버', `<select class="admin-input" id="ao_member" required>${offAirOptions(soopId)}</select>`)}
       `,
       onSubmit: async () => {
         const newDate=C().value('ao_date'), newId=C().value('ao_member');

@@ -164,7 +164,12 @@
     setVisible('deniedView', false);
     $('adminView')?.classList.remove('admin-hidden');
     if ($('adminPageLabel')) $('adminPageLabel').textContent = document.body.dataset.adminPage || 'admin';
-    document.dispatchEvent(new CustomEvent('admin:ready', { detail: { user, role: state.role }}));
+    // 세션 확인은 첫 로드 + onAuthStateChange(INITIAL_SESSION·SIGNED_IN·TOKEN_REFRESHED)로 여러 번 돈다.
+    // 각 페이지 init이 버튼·클릭 핸들러를 다시 붙이지 않게 ready는 페이지당 한 번만 알린다.
+    if (!state.readyFired) {
+      state.readyFired = true;
+      document.dispatchEvent(new CustomEvent('admin:ready', { detail: { user, role: state.role }}));
+    }
     return true;
   }
 
