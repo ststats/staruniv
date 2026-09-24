@@ -1,19 +1,25 @@
 """펨코 스타 티어표(대학별 카드 이미지 + FA 명단 글)를 읽어 DB 티어표와 비교한다.
 
-    python scripts/tier_table.py --image <이미지 주소 또는 파일> [--fa-text FA명단.txt] [--out 결과.json]
+    python scripts/tier_table.py --image <이미지 주소 또는 파일> [--fa-text FA명단.txt] [--out 결과.json] [--learn]
 
-- 이미지: 대학마다 배경색이 다른 구역이 세로로 이어지고, 구역 안에 선수 카드가 격자로 놓인다
-  (사진 80px, 오른쪽에 티어 / 직책+닉네임 / 종족 세 줄). 구역을 배경색으로 나누고 카드를 잘라
-  Tesseract(무료 OCR, kor+eng)로 읽는다.
-- 티어·종족은 정해진 값 중 가장 가까운 것으로 고르고, 닉네임은 같은 대학 DB 명단에서 가장 비슷한
-  이름과 맞춘다(OCR 오타를 여기서 거른다). 대학 이름은 카드 선수들이 DB에서 속한 대학으로 정한다.
-- FA 명단 글은 '티어｜ T 이름 … Z 이름 … P 이름 …' 형식을 그대로 읽는다.
-- 결과: 소속·티어·종족 변동, 닉네임이 다른 선수(확인 필요), 목록에서 빠진 선수.
+1. 이미지를 배경색으로 대학 구역에 나누고, 구역마다 카드 자리를 찾는다. 줄·칸 수나 간격을 가정하지
+   않는다(깔끔한 카드로 줄·칸 선을 알아낸 뒤 교차점을 다시 본다) - 인원이 늘어 배치가 바뀌어도 된다.
+2. 카드마다 사진 지문(32×32 색)과 티어·종족 글씨(늘리지 않은 원본 칸의 잉크 농도)를 만든다.
+3. 기억(data/tier_table_memory.json)과 비교한다.
+   - 사진이 같으면 같은 선수(다른 선수끼리는 12 이상, 같은 사진은 다시 압축·2px 어긋나도 3.3 이하).
+   - 티어·종족은 기억한 글씨(그 선수의 지난번 글씨 포함) 중 가장 가까운 값. 안 바뀐 카드는 다시
+     압축해도 219/219 그대로, 처음 보는 글씨(승급 등)는 약 95%라 변동으로 올려 사람이 확인한다.
+   - 기억에 없으면 Tesseract OCR(무료)로 읽고, 닉네임은 같은 대학 DB 명단에서 비슷한 이름과 맞춘다.
+4. FA 명단 글은 '티어｜ T 이름 … Z 이름 … P 이름 …' 형식을 그대로 읽는다.
+5. 결과: 소속·티어·종족 변동(changes), 사람이 확인할 것(review: 처음 보는 카드·표에서 빠짐 등).
+   --learn: 이번 결과의 확실한 짝을 기억에 더한다(관리자 화면에서는 반영할 때 자동으로).
 
 DB는 공개 읽기(Supabase REST, publishable key)로 tier_members의 공개 칸만 읽는다.
 """
 import argparse
+import base64
 import collections
+import zlib
 import difflib
 import io
 import json
@@ -41,6 +47,8 @@ ROLES = ('이사장', '부총장', '총장', '교수', '코치', '대장', '수�
 # 카드 위치는 고정값을 쓰지 않고 구역마다 사진 칸을 찾아서 정한다 - 인원이 늘어 줄·칸 수나 간격이
 # 바뀌어도 그대로 읽힌다. 구역 머리(대학 로고·인원 수)는 위쪽 HEADER px 안에 있어 사진 찾기에서 뺀다.
 PHOTO, HEADER = 80, 125
+TIER_BOX, RACE_BOX = (120, 24), (120, 23)   # 티어·종족 글씨 칸(폭, 높이): 늘리지 않고 원본 크기로 비교
+DIGIT_W = 22                                # 숫자 티어의 숫자 부분 폭
 
 
 # ---------------------------------------------------------------------------
@@ -123,70 +131,65 @@ def text_mask(crop: Image.Image, bg, scale=3) -> Image.Image:
     return ImageOps.expand(out, border=12, fill=255)
 
 
-def ink_points(crop: Image.Image, bg):
-    """글씨 속(채운 부분) 픽셀. 글씨 둘레의 그림자·테두리는 빼야 3과 5처럼 비슷한 모양이 갈린다.
-    구역마다 글씨 색이 달라서(주황·노랑·보라·흰색) 가장 진한 색 대비 비율로 자른다."""
-    px = crop.load()
-    W, H = crop.size
-    dist = [[color_dist(px[x, y], bg) for x in range(W)] for y in range(H)]
-    top = max(max(row) for row in dist)
-    thr = max(120, top * 0.62)
-    return [(x, y) for y in range(H) for x in range(W) if dist[y][x] > thr]
+def glyph_feat(crop: Image.Image, bg, width: int) -> np.ndarray:
+    """글씨 칸을 늘리거나 줄이지 않고 그대로, 배경색과 다른 정도(0~1 잉크 농도)로 바꾼다.
+
+    처음엔 글씨 테두리 상자에 맞춰 늘린 흑백 모양을 썼는데, 이미지를 다시 압축하면 가장자리 1px만
+    바뀌어도 모양 전체가 달라졌다(같은 글씨끼리 차이 0.32). 고정 칸 농도로 바꾸니 0.04 안쪽이다.
+    글씨 색이 구역마다 달라 가장 진한 쪽(상위 2%)을 1로 맞춘다."""
+    a = np.asarray(crop, dtype=np.float32)
+    d = np.abs(a - np.array(bg, dtype=np.float32)).sum(axis=2)
+    f = np.clip(d / max(120.0, float(np.percentile(d, 98))), 0, 1)
+    out = np.zeros((f.shape[0], width), dtype=np.float32)
+    out[:, :min(width, f.shape[1])] = f[:, :width]
+    return out
 
 
-def points_bits(pts, box, size) -> str:
-    x0, y0, x1, y1 = box
-    mask = Image.new('L', (x1 - x0 + 1, y1 - y0 + 1), 0)
-    mp = mask.load()
-    for x, y in pts:
-        if x0 <= x <= x1 and y0 <= y <= y1:
-            mp[x - x0, y - y0] = 255
-    small = mask.resize(size, Image.BILINEAR)
-    return ''.join('1' if v > 96 else '0' for v in small.tobytes())
+def pack_feat(f: np.ndarray) -> str:
+    return base64.b64encode(zlib.compress((f * 255).astype(np.uint8).tobytes(), 9)).decode()
 
 
-def glyph_bits(crop: Image.Image, bg, size=(48, 16)) -> str:
-    """글씨 전체를 정해진 크기로 줄인 흑백 모양(0/1 문자열). 색이 달라도 모양이 같으면 같다."""
-    pts = ink_points(crop, bg)
-    if not pts:
-        return ''
-    return points_bits(pts, (min(p[0] for p in pts), min(p[1] for p in pts),
-                             max(p[0] for p in pts), max(p[1] for p in pts)), size)
+def unpack_feat(s: str, shape) -> np.ndarray:
+    return np.frombuffer(zlib.decompress(base64.b64decode(s)), dtype=np.uint8).reshape(shape).astype(np.float32) / 255
 
 
-def lead_bits(crop: Image.Image, bg, size=(16, 24)) -> str:
-    """첫 글자(숫자 티어의 숫자)만의 모양. 숫자와 '티'가 붙어 있는 경우가 많아 글자 높이의
-    0.55배 폭으로 자른다(이미지로 시험해 가장 잘 갈렸다)."""
-    pts = ink_points(crop, bg)
-    if not pts:
-        return ''
-    x0, y0, y1 = min(p[0] for p in pts), min(p[1] for p in pts), max(p[1] for p in pts)
-    return points_bits(pts, (x0, y0, x0 + int((y1 - y0 + 1) * 0.55), y1), size)
+def nearest(feat: np.ndarray, cands, width=None):
+    """cands: [(특징 배열, 값)]. ±1px 어긋남을 허용한 평균 차이가 가장 작은 값.
+    한 값이 넘는 기준(문턱) 대신 '어느 기억 글씨와 가장 가까운가'로 정한다 - 압축 잡음은 모든 후보와의
+    차이에 똑같이 끼어서, 문턱은 흔들려도 가장 가까운 후보는 그대로다(다시 압축해도 219/219)."""
+    if not cands:
+        return None, 1.0
+    w = width or feat.shape[1]
+    stack = np.stack([c[0][:, :w] for c in cands])
+    best = None
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            sh = np.roll(np.roll(feat[:, :w], dy, 0), dx, 1)
+            d = np.abs(stack - sh)[:, 2:-2, 2:-2].mean(axis=(1, 2))
+            best = d if best is None else np.minimum(best, d)
+    i = int(best.argmin())
+    return cands[i][1], float(best[i])
 
 
-def bits_distance(a: str, b: str) -> float:
-    if not a or not b or len(a) != len(b):
-        return 1.0
-    return sum(x != y for x, y in zip(a, b)) / len(a)
-
-
-PHOTO_SIDE = 12
-PHOTO_SAME = 5.0   # 같은 사진을 다시 압축해도 1.7 이하, 서로 다른 선수 사진은 10.6 이상이었다
+PHOTO_SIDE = 32
+PHOTO_SAME = 8.0   # 아래 main의 --calibrate로 잰 값에 맞춘다(같은 사진 재압축 vs 다른 선수 사진)
 
 
 def photo_hash(photo: Image.Image) -> str:
-    """사진 지문: 테두리·▲·New 표시를 피한 안쪽을 12×12 색으로 줄인 값(16진 문자열).
-    증명사진 구도가 비슷해서 흑백 64비트 지문으로는 다른 사람끼리 겹쳤다."""
+    """사진 지문: 테두리·▲·New 표시를 피한 안쪽 68px을 32×32 색으로 줄인 값(base64).
+    처음엔 12×12로 줄였는데 여유가 작아(1px 어긋나면 흔들림) 크게 했다."""
     inner = photo.crop((6, 6, photo.width - 6, photo.height - 6)).resize((PHOTO_SIDE, PHOTO_SIDE), Image.BILINEAR)
-    return inner.convert('RGB').tobytes().hex()
+    return base64.b64encode(inner.convert('RGB').tobytes()).decode()
+
+
+def _photo_vec(h: str):
+    return np.frombuffer(base64.b64decode(h), dtype=np.uint8).astype(np.int16)
 
 
 def hash_distance(a: str, b: str) -> float:
     """두 사진 지문의 평균 색 차이(0~255)."""
-    x, y = bytes.fromhex(a), bytes.fromhex(b)
-    if len(x) != len(y):
-        return 255.0
-    return sum(abs(p - q) for p, q in zip(x, y)) / len(x)
+    x, y = _photo_vec(a), _photo_vec(b)
+    return float(np.abs(x - y).mean()) if x.shape == y.shape else 255.0
 
 
 def ocr(img: Image.Image, lang: str) -> str:
@@ -243,12 +246,7 @@ def refine_edge(px, bg, x, y, side):
     return left, upper, side
 
 
-def find_photos(im: Image.Image, top: int, bottom: int, bg):
-    """구역 안의 사진 칸을 찾는다. 줄·칸 수나 간격을 가정하지 않아서 인원이 늘어 격자가 바뀌어도 된다.
-
-    사진 칸 조건(PHOTO×PHOTO 네모): 안쪽 64×64가 대부분 배경색과 다르고(사진), 바로 왼쪽 세로띠와
-    사진-글씨 사이 틈은 배경색이다. 모든 위치를 numpy 면적 합으로 한 번에 따져, 조건을 만족하는 위치
-    덩어리마다 한가운데를 사진 자리로 잡는다. 돌려주는 값: (줄, 칸, x, y, 한 변) 목록."""
+def _diff_integral(im, top, bottom, bg):
     W = im.width
     arr = np.asarray(im.crop((0, top, W, bottom)), dtype=np.int16)
     diff = (np.abs(arr - np.array(bg, dtype=np.int16)).sum(axis=2) > 60).astype(np.int32)
@@ -257,48 +255,94 @@ def find_photos(im: Image.Image, top: int, bottom: int, bg):
     ii[1:, 1:] = diff.cumsum(0).cumsum(1)
 
     def box(x, y, w, h):
-        """모든 (x, y) 격자에 대해 [x, x+w)×[y, y+h) 안의 '배경과 다른' 비율."""
+        """[x, x+w)×[y, y+h) 안에서 배경과 다른 픽셀 비율(구역 안 좌표, 배열로도 된다)."""
         return (ii[y + h, x + w] - ii[y, x + w] - ii[y + h, x] + ii[y, x]) / (w * h)
+    return box, H, W
 
+
+def _cluster(values, tol):
+    """가까운 값끼리 묶어 묶음마다 가장 흔한 값(중앙값)을 돌려준다."""
+    groups = []
+    for v in sorted(values):
+        if groups and v - groups[-1][-1] <= tol:
+            groups[-1].append(v)
+        else:
+            groups.append([v])
+    return [sorted(g)[len(g) // 2] for g in groups]
+
+
+def _extend(lines, lo, hi):
+    """바둑판 간격으로 줄(칸)을 채운다. ▲ 표시 카드만 있는 줄·칸은 1)에서 못 찾을 수 있어서,
+    찾은 줄 사이 빈 곳과 양 끝 바깥을 같은 간격으로 이어 본다(없는 자리는 3)에서 걸러진다)."""
+    if len(lines) < 2:
+        return lines
+    step = sorted(b - a for a, b in zip(lines, lines[1:]))[0]
+    out = []
+    for a, b in zip(lines, lines[1:]):
+        out.append(a)
+        n = round((b - a) / step)
+        out += [a + round((b - a) * k / n) for k in range(1, n)]
+    out.append(lines[-1])
+    while out[0] - step >= lo:
+        out.insert(0, out[0] - step)
+    while out[-1] + step <= hi:
+        out.append(out[-1] + step)
+    return out
+
+
+def find_photos(im: Image.Image, top: int, bottom: int, bg):
+    """구역 안의 사진 칸을 찾는다. 줄·칸 수나 간격은 가정하지 않는다(인원이 늘어 격자가 바뀌어도 된다).
+
+    1) 깔끔한 카드부터: 안쪽 64×64가 대부분 배경과 다르고, 사진 둘레 네 방향 틈(왼쪽·오른쪽 글씨 사이·
+       위·아래)이 모두 배경색인 자리. ▲ 테두리·New 표시가 튀어나온 카드는 여기서 빠질 수 있다.
+    2) 1)의 자리들로 줄(y)과 칸(x) 위치를 알아낸다. 카드는 늘 바둑판처럼 맞춰 놓이므로, 한 줄·한 칸에
+       깔끔한 카드가 하나만 있어도 그 줄·칸 전체 위치를 안다.
+    3) 모든 줄×칸 교차점을 느슨한 조건(사진 안쪽 절반 이상 + 오른쪽에 글씨)으로 다시 본다.
+    돌려주는 값: (줄, 칸, x, y, 한 변) 목록."""
+    box, H, W = _diff_integral(im, top, bottom, bg)
     ys = np.arange(HEADER, H - PHOTO - 4)[:, None]
     xs = np.arange(6, W - PHOTO - 8)[None, :]
-    inner = box(xs + 8, ys + 8, PHOTO - 16, PHOTO - 16)
-    left = box(xs - 5, ys + 8, 3, PHOTO - 16)
-    gap = box(xs + PHOTO + 1, ys + 8, 3, PHOTO - 16)
-    above = box(xs + 8, ys - 5, PHOTO - 16, 3)
-    below = box(xs + 8, ys + PHOTO + 1, PHOTO - 16, 3)
-    # New 표시·▲ 테두리가 사진 위·옆으로 조금 튀어나오는 카드가 있어 위·아래 틈은 한쪽만 깨끗해도 된다
-    ok = (inner >= 0.7) & (left <= 0.3) & (gap <= 0.3) & ((above <= 0.15) | (below <= 0.15))
-    # 조건을 만족하는 위치는 진짜 자리 둘레에 덩어리로 모인다 → 덩어리마다 하나
-    pts = list(zip(*np.nonzero(ok)))
+    ok = ((box(xs + 8, ys + 8, PHOTO - 16, PHOTO - 16) >= 0.7)
+          & (box(xs - 5, ys + 8, 3, PHOTO - 16) <= 0.15)
+          & (box(xs + PHOTO + 1, ys + 8, 3, PHOTO - 16) <= 0.2)
+          & (box(xs + 8, ys - 5, PHOTO - 16, 3) <= 0.15)
+          & (box(xs + 8, ys + PHOTO + 1, PHOTO - 16, 3) <= 0.15))
+    px = im.load()
+    clean = []
     taken = np.zeros_like(ok)
-    found = []
-    for yy, xx in pts:
+    for yy, xx in zip(*np.nonzero(ok)):
         if taken[yy, xx]:
             continue
-        y_lo, y_hi, x_lo, x_hi = yy, yy, xx, xx
-        stack = [(yy, xx)]
+        stack, cells = [(yy, xx)], []
         taken[yy, xx] = True
         while stack:
             cy, cx = stack.pop()
-            y_lo, y_hi, x_lo, x_hi = min(y_lo, cy), max(y_hi, cy), min(x_lo, cx), max(x_hi, cx)
+            cells.append((cy, cx))
             for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
                 if 0 <= ny < ok.shape[0] and 0 <= nx < ok.shape[1] and ok[ny, nx] and not taken[ny, nx]:
                     taken[ny, nx] = True
                     stack.append((ny, nx))
-        x = int(round((x_lo + x_hi) / 2)) + 6
-        y = int(round((y_lo + y_hi) / 2)) + HEADER + top
-        found.append(refine_edge(im.load(), bg, x, y, PHOTO))
-    found.sort(key=lambda p: (p[1], p[0]))
-    rows, out = [], []
-    for p in found:
-        if rows and abs(rows[-1][0][1] - p[1]) <= 20:
-            rows[-1].append(p)
-        else:
-            rows.append([p])
-    for r, items in enumerate(rows):
-        for c, p in enumerate(sorted(items)):
-            out.append((r, c) + p)
+        cy = sorted(c[0] for c in cells)[len(cells) // 2]
+        cx = sorted(c[1] for c in cells)[len(cells) // 2]
+        clean.append(refine_edge(px, bg, int(cx) + 6, int(cy) + HEADER + top, PHOTO))
+    if not clean:
+        return []
+    col_x = _extend(_cluster([p[0] for p in clean], 10), 6, W - PHOTO - 90)
+    row_y = _extend(_cluster([p[1] for p in clean], 10), top + HEADER, bottom - PHOTO - 2)
+    out = []
+    for r, y in enumerate(row_y):
+        for c, x in enumerate(col_x):
+            hit = next((p for p in clean if abs(p[0] - x) <= 4 and abs(p[1] - y) <= 4), None)
+            if hit is None:
+                ly = y - top
+                if ly + PHOTO + 2 > H or x + PHOTO + 90 > W:
+                    continue
+                photo_ok = box(x + 8, ly + 8, PHOTO - 16, PHOTO - 16) >= 0.5
+                text_ok = box(x + PHOTO + 5, ly + 2, 60, PHOTO - 8) >= 0.04   # 오른쪽 세 줄 글씨
+                if not (photo_ok and text_ok):
+                    continue
+                hit = refine_edge(px, bg, x, y, PHOTO)
+            out.append((r, c) + hit)
     return out
 
 
@@ -306,7 +350,11 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
     px = im.load()
     bg = px[3, (top + bottom) // 2]
     cards = []
-    for row, col, x, y, side in find_photos(im, top, bottom, bg):
+    spots = find_photos(im, top, bottom, bg)
+    for row, col, x, y, side in spots:
+        # 글씨 칸 폭: 같은 줄 다음 카드 사진 앞까지(최대 125px). 칸 간격이 좁은 배치에서 옆 사진이 섞이지 않게
+        nxt = min((p[2] for p in spots if p[0] == row and p[2] > x), default=x + 1000)
+        tw = max(40, min(125, nxt - (x + side + 5) - 4))
         if True:
             # 찾은 네모는 4px 단위라 원래 사진(80px)의 가장자리가 조금 어긋날 수 있다. 크기가 80px에서
             # 크게 벗어나지 않으면 80px로 보고, 글씨 위치는 사진 크기에 비례해 잡는다.
@@ -316,27 +364,24 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             if side != PHOTO:
                 photo = photo.resize((PHOTO, PHOTO), Image.LANCZOS)
             tx = x + side + 5
-            tier_img = im.crop((tx, y + 2, tx + 125, y + 26))
-            name_img = cut_badge(im.crop((tx, y + 26, tx + 125, y + 50)))
-            race_img = im.crop((tx, y + 49, tx + 125, y + 72))
+            tier_img = im.crop((tx, y + 2, tx + tw, y + 2 + TIER_BOX[1]))
+            name_img = cut_badge(im.crop((tx, y + 26, tx + tw, y + 50)))
+            race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
+            tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
             card = {'row': row, 'col': col, 'bg': '%02x%02x%02x' % bg,
-                    'tier_bits': glyph_bits(tier_img, bg), 'tier_lead': lead_bits(tier_img, bg),
-                    'race_bits': glyph_bits(race_img, bg), 'photo': photo_hash(photo),
+                    'tier_feat': pack_feat(tier_f), 'race_feat': pack_feat(race_f), 'photo': photo_hash(photo),
                     'photo_shifts': [photo_hash(im.crop((x + dx, y + dy, x + side + dx, y + side + dy)).resize((PHOTO, PHOTO)))
-                                     for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]}
-            # 기억으로 사진·글씨 모양을 다 아는 카드는 OCR(느리고 틀리기 쉬움)을 건너뛴다
+                                     for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2) if dx or dy]}
             mem = memory or {}
-            tier = classify_tier(card, mem)
-            race = classify_race(card, mem)
             known = recall_photo(card, mem)
-            if not (tier and race):
-                tier_raw, race_raw = ocr(text_mask(tier_img, bg), 'eng+kor'), ocr(text_mask(race_img, bg), 'eng')
-            else:
-                tier_raw = race_raw = ''
+            # 기억한 글씨(아는 선수면 그 선수의 지난번 글씨 포함) 중 가장 가까운 값. 기억이 없으면 OCR
+            tier = classify_tier(tier_f, mem, known)
+            race = classify_race(race_f, mem, known)
+            tier_raw = ocr(text_mask(tier_img, bg), 'eng+kor') if not tier else ''
+            race_raw = ocr(text_mask(race_img, bg), 'eng') if not race else ''
             name_raw = '' if known else ocr(text_mask(name_img, bg), 'kor')
             role, nick = split_role(name_raw)
             card.update({'tier': tier or read_tier(tier_raw), 'race': race or read_race(race_raw),
-                         'tier_ocr': read_tier(tier_raw) if tier_raw else None,
                          'role': role, 'nickname_ocr': nick or (known['nickname'] if known else ''),
                          'raw': {'tier': tier_raw, 'name': name_raw, 'race': race_raw}})
             if known:
@@ -353,7 +398,7 @@ def read_image(im: Image.Image, memory=None):
 # 기억(학습): 확인된 카드의 사진 지문·티어/종족 글씨 모양을 쌓아 두고 다음 갱신 때 쓴다
 # ---------------------------------------------------------------------------
 MEMORY_PATH = ROOT / 'data' / 'tier_table_memory.json'
-TEMPLATES_PER_VALUE = 12  # 같은 배경색(구역)·같은 값마다 몇 개까지 기억할지
+TEMPLATES_PER_VALUE = 30  # 값마다 기억할 글씨 수(구역 색이 다양하게)
 
 
 def load_memory(path=MEMORY_PATH):
@@ -367,40 +412,29 @@ def save_memory(memory, path=MEMORY_PATH):
     Path(path).write_text(json.dumps(memory, ensure_ascii=False, indent=0) + '\n', encoding='utf-8')
 
 
-def hex_rgb(h):
-    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+def _cands(memory, kind, known):
+    """비교 후보: 기억한 글씨 전부 + 사진으로 아는 선수면 그 선수의 지난번 글씨."""
+    shape = (TIER_BOX[1], TIER_BOX[0]) if kind == 'tier' else (RACE_BOX[1], RACE_BOX[0])
+    out = [(unpack_feat(t['feat'], shape), t['value']) for t in memory.get(kind) or []]
+    if known and known.get(kind + '_feat'):
+        out.append((unpack_feat(known[kind + '_feat'], shape), known[kind]))
+    return out
 
 
-def same_colour(card, temps):
-    """구역 배경색이 같은(=같은 대학 구역 디자인) 기억 모양을 먼저 쓴다. 글씨 색·대비가 구역마다
-    달라서 다른 색 구역의 모양과 비교하면 Protoss와 Terran이 뒤바뀌는 일이 있었다."""
-    if not card.get('bg'):
-        return temps
-    near = [t for t in temps if t.get('bg') and color_dist(hex_rgb(t['bg']), hex_rgb(card['bg'])) < 60]
-    return near or temps
-
-
-def classify_tier(card, memory):
-    """전체 모양으로 가장 가까운 티어를 고르고, 숫자 티어면 숫자 모양만 다시 비교한다."""
-    temps = same_colour(card, memory.get('tier') or [])
-    if not temps or not card.get('tier_bits'):
-        return None
-    dist, value = min((bits_distance(card['tier_bits'], t['bits']), t['value']) for t in temps)
-    if dist > 0.25:
+def classify_tier(feat, memory, known=None):
+    """티어 칸 전체로 가장 가까운 값을 고르고, 숫자 티어면 숫자 부분만 숫자 후보끼리 다시 비교한다."""
+    cands = _cands(memory, 'tier', known)
+    value, dist = nearest(feat, cands)
+    if value is None or dist > 0.25:
         return None
     if value.isdigit():
-        nums = [t for t in temps if t['value'].isdigit() and t.get('lead')]
-        if nums:
-            value = min((bits_distance(card['tier_lead'], t['lead']), t['value']) for t in nums)[1]
+        value = nearest(feat, [c for c in cands if c[1].isdigit()], DIGIT_W)[0]
     return value
 
 
-def classify_race(card, memory):
-    temps = same_colour(card, memory.get('race') or [])
-    if not temps or not card.get('race_bits'):
-        return None
-    dist, value = min((bits_distance(card['race_bits'], t['bits']), t['value']) for t in temps)
-    return value if dist <= 0.25 else None
+def classify_race(feat, memory, known=None):
+    value, dist = nearest(feat, _cands(memory, 'race', known))
+    return value if value and dist <= 0.25 else None
 
 
 _PHOTO_MATRIX = {}
@@ -408,19 +442,18 @@ _PHOTO_MATRIX = {}
 
 def recall_photo(card, memory):
     """기억한 사진 중 가장 가까운 것. 사진 칸 위치가 1px만 어긋나도 지문이 4~7 달라지므로
-    카드를 읽을 때 ±1px 어긋난 지문(card['photo_shifts'])까지 함께 비교한다."""
+    카드를 읽을 때 ±2px 어긋난 지문(card['photo_shifts'])까지 함께 비교한다."""
     photos = memory.get('photos') or []
     if not photos:
         return None
     key = id(photos), len(photos)
     if key not in _PHOTO_MATRIX:
         _PHOTO_MATRIX.clear()
-        _PHOTO_MATRIX[key] = np.array([np.frombuffer(bytes.fromhex(p['hash']), dtype=np.uint8) for p in photos],
-                                      dtype=np.int16)
+        _PHOTO_MATRIX[key] = np.array([_photo_vec(p['hash']) for p in photos], dtype=np.int16)
     mat = _PHOTO_MATRIX[key]
     best, who = 255.0, None
     for h in [card['photo']] + card.get('photo_shifts', []):
-        v = np.frombuffer(bytes.fromhex(h), dtype=np.uint8).astype(np.int16)
+        v = _photo_vec(h)
         d = np.abs(mat - v).mean(axis=1)
         i = int(d.argmin())
         if d[i] < best:
@@ -429,22 +462,28 @@ def recall_photo(card, memory):
 
 
 def learn(memory, confirmed):
-    """confirmed: [(카드, DB 선수)] - 사람이 확인했거나 이름·사진으로 확실히 맞은 짝."""
-    def add(kind, value, bits, lead=None, bg=None):
-        if not bits:
+    """confirmed: [(카드, DB 선수)] - 사람이 확인했거나 이름·사진으로 확실히 맞은 짝.
+    글씨는 값마다 TEMPLATES_PER_VALUE개까지(아직 없는 구역 색을 먼저), 사진은 선수마다 최신 하나."""
+    shapes = {'tier': (TIER_BOX[1], TIER_BOX[0]), 'race': (RACE_BOX[1], RACE_BOX[0])}
+
+    def add(kind, value, feat, bg):
+        if not feat:
             return
-        same = [t for t in memory[kind] if t['value'] == value and t.get('bg') == bg]
-        if any(bits_distance(bits, t['bits']) < 0.02 for t in same) or len(same) >= TEMPLATES_PER_VALUE:
+        same = [t for t in memory[kind] if t['value'] == value]
+        new = unpack_feat(feat, shapes[kind])
+        if any(nearest(new, [(unpack_feat(t['feat'], shapes[kind]), 0)])[1] < 0.01 for t in same):
             return
-        item = {'value': value, 'bits': bits, 'bg': bg}
-        if lead:
-            item['lead'] = lead
-        memory[kind].append(item)
+        if len(same) >= TEMPLATES_PER_VALUE and any(t.get('bg') == bg for t in same):
+            return
+        memory[kind].append({'value': value, 'feat': feat, 'bg': bg})
     for card, r in confirmed:
-        add('tier', str(r['tier']), card.get('tier_bits'), card.get('tier_lead'), card.get('bg'))
-        add('race', r['race'], card.get('race_bits'), bg=card.get('bg'))
-        memory['photos'] = [p for p in memory['photos'] if hash_distance(p['hash'], card['photo']) > PHOTO_SAME]
-        memory['photos'].append({'hash': card['photo'], 'soop_id': r.get('soop_id'), 'nickname': r['nickname']})
+        add('tier', str(r['tier']), card.get('tier_feat'), card.get('bg'))
+        add('race', r['race'], card.get('race_feat'), card.get('bg'))
+        memory['photos'] = [p for p in memory['photos'] if hash_distance(p['hash'], card['photo']) > PHOTO_SAME
+                            and not (r.get('soop_id') and p.get('soop_id') == r.get('soop_id'))]
+        memory['photos'].append({'hash': card['photo'], 'soop_id': r.get('soop_id'), 'nickname': r['nickname'],
+                                 'tier': str(r['tier']), 'race': r['race'],
+                                 'tier_feat': card.get('tier_feat'), 'race_feat': card.get('race_feat')})
     return memory
 
 
@@ -524,7 +563,7 @@ def match_sections(sections, db):
 
 
 def compare(sections, fa, db):
-    changes, review = [], []
+    changes, review, missing = [], [], []
     matched_ids = set()
     for sec in match_sections(sections, db):
         team = sec['team']
@@ -550,7 +589,10 @@ def compare(sections, fa, db):
             if diff:
                 changes.append({'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team, 'diff': diff,
                                 'ocr': card['nickname_ocr']})
-        for r in sec['missing']:
+        missing += [(team, r) for r in sec['missing']]
+    # 다른 구역에서 찾은 선수(이적)는 원래 대학에서 '빠짐'으로 보이지 않게
+    for team, r in missing:
+        if id(r) not in matched_ids:
             review.append({'type': '표에서 빠짐', 'team': team, 'nickname': r['nickname'], 'tier': r['tier']})
     fa_rows = [r for r in db if r['affiliation'] == 'FA']
     fa_seen = set()
