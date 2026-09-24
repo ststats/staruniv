@@ -184,6 +184,47 @@
     });
   }
 
+  // 운영 현황: 파이프라인 갱신 상태 · ELO DB 범위 · 테이블 건수(ststat migration 010의 admin_dashboard_stats 한 번).
+  // 예전 독립 관리자(admin.html + page-admin.js)에만 있던 대시보드를 홈 맨 위 접기 카드로 옮겼다.
+  const OPS_TABLES=[['members','멤버'],['matches','팀 경기'],['tier_members','티어 선수'],['calendar_events','일정'],
+    ['calendar_off_air','휴방'],['videos','수집 영상'],['video_picks','추천 영상'],['elo_players','ELO 선수']];
+  const kst=v=>{if(!v)return '-';const d=new Date(v);return isNaN(d)?String(v):d.toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
+
+  async function renderOps(){
+    if(document.body.dataset.adminPage!=='home')return;
+    const host=document.querySelector('#page-home > .container');
+    if(!host)return;
+    let box=document.getElementById('adminOps');
+    if(!box){
+      box=document.createElement('details');
+      box.id='adminOps';
+      box.className='admin-rank-explain admin-ops';
+      try{box.open=localStorage.getItem('admin-ops-open')==='1';}catch(_){}
+      box.addEventListener('toggle',()=>{try{localStorage.setItem('admin-ops-open',box.open?'1':'0');}catch(_){}});
+      host.prepend(box);
+    }
+    const esc=C().esc;
+    box.innerHTML='<summary class="admin-rank-explain-head"><b>운영 현황</b><span>불러오는 중...</span></summary>';
+    const {data,error}=await C().state.client.rpc('admin_dashboard_stats');
+    if(error||!data){
+      box.innerHTML=`<summary class="admin-rank-explain-head"><b>운영 현황</b><span>조회 실패 · ${esc(C().errorText?C().errorText(error):'')}</span></summary>`;
+      return;
+    }
+    const f=data.freshness||{}, elo=data.elo||{}, counts=data.counts||{};
+    const status=String(f.last_job_status||'unknown');
+    const total=Number(counts.elo_matches||elo.total||0);
+    box.innerHTML=`
+      <summary class="admin-rank-explain-head"><b>운영 현황</b><span>ELO ${total.toLocaleString()}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
+      <div class="admin-ops-grid">
+        <div${status==='failed'?' class="is-error"':''}><span>최근 파이프라인</span><b>${esc(f.last_job_name||'-')} · ${esc(status)}</b><small>${esc(kst(f.last_job_finished_at))}</small></div>
+        <div><span>ELO 기준일</span><b>${esc(f.elo_as_of||'-')}</b><small>${esc(kst(f.elo_activated_at))}</small></div>
+        <div><span>방송통계 기준일</span><b>${esc(f.daily_stat_date||'-')}</b><small>${esc(kst(f.daily_updated_at))}</small></div>
+        <div><span>ELO 경기</span><b>${total.toLocaleString()}</b><small>ID ${esc(elo.min_match_id??'-')}–${esc(elo.max_match_id??'-')}</small></div>
+        <div><span>ELO 경기 날짜</span><b>${esc(elo.first_match_date||'-')}</b><small>~ ${esc(elo.last_match_date||'-')}</small></div>
+        ${OPS_TABLES.map(([t,l])=>`<div><span>${esc(l)}</span><b>${Number(counts[t]||0).toLocaleString()}</b></div>`).join('')}
+      </div>`;
+  }
+
   async function enhance(){
     await enhanceNav();
     await enhanceSubtabs();
@@ -203,6 +244,7 @@
   async function init(){
     await C().loadSiteConfig(true);
     await enhance();
+    renderOps().catch(e=>console.error('운영 현황',e));
     document.addEventListener('click',async ev=>{
       if(!C().state.editMode)return;
       const slide=ev.target.closest('[data-admin-home-slide]');if(slide){ev.preventDefault();ev.stopPropagation();openHomeSlide(Number(slide.dataset.adminHomeSlide));return;}

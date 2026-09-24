@@ -1071,6 +1071,26 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-filter-grid .admin-input { background: var(--admin-field); }
 .admin-filter-grid .admin-btn { min-height: 42px; padding: 0 20px; }
 
+/* 어드민 홈 '운영 현황' (admin-site.js renderOps). 접기 카드는 티어 랭킹 설명과 같은 부품 */
+.admin-ops { margin: 0 0 var(--space-block-gap); }
+.admin-ops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 8px;
+    padding-bottom: 18px;
+}
+.admin-ops-grid > div {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--admin-soft);
+    clip-path: var(--notch-sm);
+}
+.admin-ops-grid span { color: var(--color-text-muted); font-size: 11px; font-weight: 700; }
+.admin-ops-grid b { color: var(--color-text-strong); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.admin-ops-grid small { color: var(--color-text-muted); font-size: 11px; }
+.admin-ops-grid .is-error b { color: var(--color-lose); }
+
 /* 티어 랭킹 보기 (티어표 관리 > 티어 랭킹) */
 .admin-rank-explain {
     margin-bottom: 16px;
