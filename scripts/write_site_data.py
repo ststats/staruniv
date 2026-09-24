@@ -31,15 +31,15 @@ SITE_PLAYER_STAT_FIELDS = [
     "테란전 전적", "저그전 전적", "프로토스전 전적", "상대전적",
 ]
 
-ROLE_ORDER = {
-    "총장": 0, "교수": 1, "코치": 2, "매니저": 3,
-    "선수": 10, "학생": 10,
-}
+# 멤버 순서: 멤버 현황 페이지(page-members.js)와 같다 - 감독 → 코치 → 선수 → 그 밖의 직책,
+# 같은 직책 안에서는 티어 높은 순, 같은 티어면 이름순. 선택 바(멤버 공지·개인 전적)가 이 순서를 그대로 쓴다.
+# (예전 키는 총장/교수였고 티어도 '3티어' 꼴만 알아서, 감독이 맨 뒤로 가고 선수는 티어순이 안 됐다.)
+ROLE_ORDER = {"감독": 0, "코치": 1, "선수": 2}
 
+# core.js의 TIER_ORDER와 같다. DB에는 '3'처럼 숫자만 들어 있다.
 TIER_ORDER = [
-    "갓", "킹", "잭", "스페이드",
-    "0티어", "1티어", "2티어", "3티어", "4티어",
-    "5티어", "6티어", "7티어", "8티어",
+    "갓", "킹", "잭", "조커", "스페이드",
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "베이비",
 ]
 
 
@@ -48,19 +48,20 @@ def pick(row: dict, fields: list[str]) -> dict:
 
 
 def tier_index(value) -> int:
-    text = str(value or "").strip()
+    text = str(value or "").strip().removesuffix("티어")
     try:
         return TIER_ORDER.index(text)
     except ValueError:
-        return 999
+        return len(TIER_ORDER)
 
 
 def sort_members(rows: list[dict]) -> list[dict]:
     return sorted(
         rows,
         key=lambda row: (
-            ROLE_ORDER.get(str(row.get("직책") or "선수"), 99),
+            ROLE_ORDER.get(str(row.get("직책") or "선수"), len(ROLE_ORDER)),
             tier_index(row.get("티어")),
+            str(row.get("이름") or ""),
         ),
     )
 
