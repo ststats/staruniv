@@ -397,6 +397,54 @@ textarea.admin-input {
     cursor: pointer;
 }
 
+/* 여러 명 고르기 (휴방 멤버): 체크하면 남색으로 채워지는 칸 */
+.admin-pick-count { margin-left: 4px; color: var(--color-text-strong); font-style: normal; }
+.admin-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+.admin-pick-item { position: relative; margin: 0; cursor: pointer; }
+.admin-pick-item input { position: absolute; opacity: 0; pointer-events: none; }
+.admin-pick-item span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 10px;
+    background: var(--admin-soft);
+    clip-path: var(--notch-sm);
+    color: var(--color-text-main);
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background-color .15s, color .15s;
+}
+/* 체크 표시 네모 */
+.admin-pick-item span::before {
+    content: "";
+    flex: none;
+    width: 14px;
+    height: 14px;
+    box-shadow: inset 0 0 0 1.5px var(--color-text-faint);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 10px;
+}
+.admin-pick-item:hover span { background: var(--admin-line); }
+.admin-pick-item input:checked + span { background: var(--admin-ink); color: var(--admin-on-ink); }
+.admin-pick-item input:checked + span::before {
+    box-shadow: none;
+    background-color: var(--admin-on-ink);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%2314264a' stroke-width='2.4'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] .admin-pick-item input:checked + span::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23e9ecf1' stroke-width='2.4'/%3E%3C/svg%3E");
+}
+.admin-pick-item input:focus-visible + span { outline: 2px solid var(--admin-ink); outline-offset: -2px; }
+
 /* 일정 색상: 달력 이벤트 색(.cal-color-*)을 그대로 견본으로 쓴다 */
 .admin-color-grid {
     display: grid;
@@ -768,6 +816,15 @@ body.admin-drawer-open { overflow: hidden; }
     white-space: nowrap;
     cursor: pointer;
     transition: background-color .15s, color .15s;
+}
+/* 날짜 카드 맨 아래 '휴방 관리': 카드 가로를 채우고 위아래 여백을 둔다 */
+.cal-selected-list > .admin-inline-add,
+.cal-today-list > .admin-inline-add {
+    flex: none;
+    align-self: stretch;
+    min-height: 36px;
+    margin: 12px 0 16px;
+    font-size: 12px;
 }
 .admin-inline-edit:hover,
 .admin-inline-add:hover {
@@ -1187,6 +1244,7 @@ body.admin-drawer-open { overflow: hidden; }
 }
 
 @media (max-width: 480px) {
+    .admin-pick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
     .admin-inline-left strong { display: none; }
 }

@@ -6,13 +6,6 @@
     ['blue','파랑'],['indigo','남색'],['purple','보라'],['light_gray','연한 회색']
   ];
 
-  // 휴방 멤버 선택지: 활동 중인 멤버만(퇴단일 없음). 이미 등록된 휴방의 멤버는 퇴단했어도 남겨 둔다.
-  function offAirOptions(selected) {
-    const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || m.soop_id === selected));
-    return [['','선택']].concat(members.map(m => [m.soop_id, m.name || m.nickname || m.soop_id])).map(([v,l]) =>
-      `<option value="${C().esc(v)}"${String(v)===String(selected||'')?' selected':''}>${C().esc(l)}</option>`).join('');
-  }
-
   function colorPicker(selected) {
     const key = COLORS.some(x=>x[0]===selected) ? selected : 'blue';
     return `<div class="admin-color-grid">${COLORS.map(([v,l]) =>
@@ -77,35 +70,57 @@
     });
   }
 
-  function openOffAir(date, soopId='') {
+  // 휴방은 날짜 하나에 여러 명을 체크 목록으로 한 번에 정한다.
+  // 선택지는 활동 중인 멤버(퇴단일 없음)만. 그날 이미 휴방으로 등록된 사람은 퇴단했어도 남겨 둔다.
+  function offAirChecklist(date) {
+    const current = new Set(calOffAirForDate(date));
+    const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || current.has(m.soop_id)));
+    if (!members.length) return '<p class="admin-help">선택할 수 있는 멤버가 없습니다.</p>';
+    return members.map(m => `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${current.has(m.soop_id)?' checked':''}><span>${C().esc(m.name || m.nickname || m.soop_id)}</span></label>`).join('');
+  }
+
+  function openOffAir(date) {
+    let shownDate = date || calSelectedDateStr || calTodayStr();
     C().openDrawer({
       eyebrow:'OFF AIR',
-      title: soopId ? '휴방 수정' : '휴방 등록',
+      title:'휴방 관리',
       html: `
-        ${C().field('날짜', C().input('ao_date', date || calSelectedDateStr || calTodayStr(),'date','required'))}
-        ${C().field('멤버', `<select class="admin-input" id="ao_member" required>${offAirOptions(soopId)}</select>`)}
+        ${C().field('날짜', C().input('ao_date', shownDate,'date','required'))}
+        <div class="admin-field"><span>휴방 멤버 <em class="admin-pick-count" id="ao_count"></em></span>
+          <div class="admin-pick-grid" id="ao_members">${offAirChecklist(shownDate)}</div>
+        </div>
+        <p class="admin-help">체크한 멤버가 그날 휴방으로 표시됩니다. 체크를 풀면 휴방에서 빠집니다.</p>
       `,
       onSubmit: async () => {
-        const newDate=C().value('ao_date'), newId=C().value('ao_member');
-        if (!newDate || !newId) throw new Error('날짜와 멤버를 선택하세요.');
-        if (soopId && (newDate!==date || newId!==soopId)) {
-          const {error:delErr}=await C().state.client.from('calendar_off_air').delete().eq('off_date',date).eq('soop_id',soopId);
-          if (delErr) throw delErr;
+        const offDate = C().value('ao_date');
+        if (!offDate) throw new Error('날짜를 선택하세요.');
+        const before = new Set(calOffAirForDate(offDate));
+        const after = new Set([...document.querySelectorAll('#ao_members input:checked')].map(x => x.value));
+        const add = [...after].filter(id => !before.has(id));
+        const remove = [...before].filter(id => !after.has(id));
+        if (!add.length && !remove.length) throw new Error('바뀐 내용이 없습니다.');
+        if (remove.length) {
+          const {error} = await C().state.client.from('calendar_off_air').delete().eq('off_date',offDate).in('soop_id',remove);
+          if (error) throw error;
+          await C().audit('delete','calendar_off_air',`${offDate}:${remove.join(',')}`,{});
         }
-        const {error}=await C().state.client.from('calendar_off_air').upsert({
-          off_date:newDate, soop_id:newId, source_order:await C().nextSourceOrder('calendar_off_air')
-        },{onConflict:'off_date,soop_id'});
-        if (error) throw error;
-        C().toast('휴방을 저장했습니다.');
-        await refresh(newDate);
-      },
-      onDelete: soopId ? async () => {
-        const {error}=await C().state.client.from('calendar_off_air').delete().eq('off_date',date).eq('soop_id',soopId);
-        if (error) throw error;
-        await C().audit('delete','calendar_off_air',`${date}:${soopId}`,{});
-        C().toast('휴방을 삭제했습니다.');
-        await refresh(date);
-      } : null
+        if (add.length) {
+          const start = await C().nextSourceOrder('calendar_off_air');
+          const {error} = await C().state.client.from('calendar_off_air').upsert(
+            add.map((soop_id,i) => ({off_date:offDate, soop_id, source_order:start+i})), {onConflict:'off_date,soop_id'});
+          if (error) throw error;
+        }
+        C().toast(`휴방을 저장했습니다. (추가 ${add.length} · 삭제 ${remove.length})`);
+        await refresh(offDate);
+      }
+    });
+    const list = document.getElementById('ao_members');
+    const count = () => { const el=document.getElementById('ao_count'); if (el) el.textContent = `${list.querySelectorAll('input:checked').length}명`; };
+    count();
+    list?.addEventListener('change', count);
+    document.getElementById('ao_date')?.addEventListener('change', ev => {
+      const d = ev.target.value; if (!d || d === shownDate) return;
+      shownDate = d; list.innerHTML = offAirChecklist(d); count();
     });
   }
 
@@ -118,7 +133,7 @@
     window.calOffAirExtra = (date,type) => {
       const publicHtml = typeof publicOffAirExtra === 'function' ? publicOffAirExtra(date,type) : '';
       const addHtml = C().state.editMode && type === 'selected'
-        ? `<button type="button" class="admin-inline-add" data-admin-offair-add="${C().esc(date)}">+ 휴방</button>` : '';
+        ? `<button type="button" class="admin-inline-add" data-admin-offair-add="${C().esc(date)}">휴방 관리</button>` : '';
       return publicHtml + addHtml;
     };
     document.addEventListener('click', ev => {
@@ -133,7 +148,7 @@
       const off = ev.target.closest('.cal-offair-chip[data-offair-date][data-soop-id]');
       if (off) {
         ev.preventDefault(); ev.stopPropagation();
-        openOffAir(off.dataset.offairDate, off.dataset.soopId);
+        openOffAir(off.dataset.offairDate);
         return;
       }
       const addOff = ev.target.closest('[data-admin-offair-add]');

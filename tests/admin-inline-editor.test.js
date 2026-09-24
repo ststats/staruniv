@@ -37,8 +37,9 @@ test('schedule uses stable fixed palette and public renderer accepts keys', () =
   // 일정 제목은 멤버 이름만이 아니라 '중만컵'·'캄몬' 같은 값도 들어가므로 자유 입력이다
   assert.doesNotMatch(admin, /<select class="admin-input" id="as_person"/);
   assert.match(admin, /field\('제목', C\(\)\.input\('as_person'/);
-  // 휴방 멤버 선택지는 퇴단한 이전 멤버를 뺀다
-  assert.match(admin, /function offAirOptions[\s\S]*?!m\.left_date/);
+  // 휴방은 체크 목록으로 여러 명을 한 번에 고르고, 퇴단한 이전 멤버는 뺀다
+  assert.match(admin, /function offAirChecklist[\s\S]*?!m\.left_date/);
+  assert.match(admin, /type="checkbox"/);
 });
 
 test('records use atomic match RPC and validate set results before save', () => {
