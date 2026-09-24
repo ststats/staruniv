@@ -88,24 +88,3 @@
     background-image: var(--navy-pattern);
 }
 
-.section-title .section-title-label::after,
-.nav-menu .nav-item.active::after {
-    background: var(--navy-deco);
-}
-.section-title .title-count,
-.cal-day-cell.today .cal-day-number {
-    background: var(--navy-deco-fill);
-}
-.section-title[data-en]::before,
-#page-schedule .cal-selected-card-wrapper .cal-day-card-date {
-    color: var(--title-eyebrow);
-}
-
-@media (max-width: 920px) {
-    .selection-layout > .avatar-bar .avatar-select-item.active { border-bottom-color: #fff; }
-    .selection-layout > .tier-bar .tier-bar-item.active {
-        border-left: 0;
-        border-left-color: #fff;
-    }
-}
-

@@ -445,7 +445,6 @@ a.home-notice-card:hover {
     .home-carousel-slide > .home-carousel-preview { display: none; }
 }
 
-/* (14-surfaces.css에서 옮김) */
 .home-carousel .home-hero-links a {
     clip-path: var(--notch-md);
     border: 0;
@@ -458,7 +457,6 @@ a.home-notice-card:hover {
     color: var(--navy-accent);
 }
 
-/* (14-surfaces.css에서 옮김) */
 @media (max-width: 767.98px) {
     .home-carousel h1 i,
     .home-carousel h1 span {

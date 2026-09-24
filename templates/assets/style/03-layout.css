@@ -58,6 +58,7 @@
 .nav-menu .nav-item:last-child { margin-right: 0; }
 .nav-menu .nav-item.active::after {
     content: "";
+    background: var(--navy-deco);
     position: absolute;
     bottom: 0;
     left: 0;
@@ -241,6 +242,7 @@
 
 .section-title[data-en]::before {
     content: attr(data-en);
+    color: var(--title-eyebrow);
     flex: 0 0 100%;
     order: -1;
     margin-bottom: 5px;
@@ -252,6 +254,7 @@
 }
 .section-title .title-count {
     display: inline-flex;
+    background: var(--navy-deco-fill);
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
@@ -272,6 +275,7 @@
 .section-title > :not(.section-title-label) { align-self: center; }
 .section-title .section-title-label::after {
     content: "";
+    background: var(--navy-deco);
     position: absolute;
     left: 0;
     right: 0;
@@ -433,7 +437,6 @@
     .nav-drawer-btn { display: flex; }
 }
 
-/* (14-surfaces.css에서 옮김) */
 @media (max-width: 767.98px) {
     .page-header {
             margin-top: -22px;

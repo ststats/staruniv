@@ -343,6 +343,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 }
 .cal-day-cell.today .cal-day-number {
     clip-path: var(--notch-xs);
+    background: var(--navy-deco-fill);
     color: #fff;
 }
 .cal-day-cell:hover { background: var(--color-row-hover); }
@@ -891,7 +892,6 @@ body.media-lightbox-open { overflow: hidden; }
     .hist-media { flex: none; width: 100%; align-self: stretch; }
 }
 
-/* (14-surfaces.css에서 옮김) */
 .cal-month-bar {
     display: flex;
     align-items: center;
@@ -918,8 +918,11 @@ body.media-lightbox-open { overflow: hidden; }
     background-attachment: fixed;
 }
 
-/* (14-surfaces.css에서 옮김) */
 @media (max-width: 767.98px) {
     .cal-month-bar { padding: 13px 15px; }
+}
+
+#page-schedule .cal-selected-card-wrapper .cal-day-card-date {
+    color: var(--title-eyebrow);
 }
 

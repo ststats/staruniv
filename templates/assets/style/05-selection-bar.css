@@ -560,3 +560,11 @@
     .selection-layout > .is-dragging .tier-bar-item { pointer-events: none; }
 }
 
+@media (max-width: 920px) {
+    .selection-layout > .avatar-bar .avatar-select-item.active { border-bottom-color: #fff; }
+    .selection-layout > .tier-bar .tier-bar-item.active {
+        border-left: 0;
+        border-left-color: #fff;
+    }
+}
+
