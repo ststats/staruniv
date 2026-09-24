@@ -246,7 +246,7 @@ function renderTierGroups() {
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`).join('')
-        : `<div class="tier-empty">${TierState.liveOnly ? '방송 중인 사람이 없습니다.' : '표시할 인원이 없습니다.'}</div>`;
+        : `<div class="tier-empty">${TierState.liveOnly ? '방송 중인 사람이 없습니다' : '표시할 인원이 없습니다'}</div>`;
 
     observeTierThumbs();
     syncTierCardHeight();
@@ -665,7 +665,7 @@ bootPage(async () => {
         if (!payload) throw new Error('Supabase tier_members is empty');
     } catch (e) {
         console.error('티어 명단을 불러오지 못했습니다:', e);
-        root.innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';
+        root.innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요</div>';
         return;
     }
 

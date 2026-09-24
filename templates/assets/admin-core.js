@@ -98,7 +98,7 @@
       ev.preventDefault();
       if (state.saving) return;
       state.saving = true;
-      setSaveState('저장 중…','saving');
+      setSaveState('저장 중','saving');
       $('adminDrawerSave').disabled = true;
       try {
         await opts.onSubmit?.(ev);
@@ -178,7 +178,7 @@
     const email = value('loginEmail').trim();
     const password = value('loginPassword');
     const status = $('loginStatus');
-    if (status) status.textContent = '로그인 중…';
+    if (status) status.textContent = '로그인 중';
     const { error } = await state.client.auth.signInWithPassword({ email, password });
     if (error) {
       if (status) status.textContent = errorText(error);

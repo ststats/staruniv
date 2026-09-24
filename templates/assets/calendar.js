@@ -356,7 +356,7 @@
 
     const calRenderTodaySchedules = () => {
         calSetDayLabel('todayDateLabel', calTodayStr());
-        calRenderScheduleList('todayList', calTodayStr(), 'today', '오늘 등록된 일정이 없습니다.');
+        calRenderScheduleList('todayList', calTodayStr(), 'today', '오늘 등록된 일정이 없습니다');
     };
 
     const calRenderSelectedDateSchedules = () => {
@@ -364,12 +364,12 @@
             const container = document.getElementById('selectedDateList');
             if (container) {
                 container.classList.add('is-empty');
-                container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요.</div>`;
+                container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요</div>`;
             }
             return;
         }
         calSetDayLabel('selectedDateLabel', calSelectedDateStr);
-        calRenderScheduleList('selectedDateList', calSelectedDateStr, 'selected', '등록된 일정이 없습니다.');
+        calRenderScheduleList('selectedDateList', calSelectedDateStr, 'selected', '등록된 일정이 없습니다');
     };
 
     window.StarUnivCalendar = {

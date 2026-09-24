@@ -54,7 +54,7 @@ function renderHomeVideoPreview(box) {
 
 async function renderTodaySchedulePreview(box) {
     if (!box) return;
-    box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중...</div>';
+    box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중</div>';
     try {
         const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
         if (!client) throw new Error('Supabase browser client is not configured');
@@ -68,10 +68,10 @@ async function renderTodaySchedulePreview(box) {
         box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div>' +
             (todayEvents.length
                 ? todayEvents.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><span class="home-preview-description">${escapeHTML(ev.desc || '')}</span></div>`).join('')
-                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다.</div>')
+                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다</div>')
             + homePreviewLinkHtml('schedule/', '일정 보기');
     } catch (e) {
-        box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다.</div>';
+        box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다</div>';
     }
 }
 
@@ -230,16 +230,16 @@ async function renderLiveBroadcasts() {
         else if (grid.childElementCount) grid.replaceChildren();
     };
 
-    setState('loading', '방송 상태 확인 중...');
+    setState('loading', '방송 상태 확인 중');
     if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
-        setState('error', '멤버 정보를 불러오지 못해 방송 상태를 확인할 수 없습니다.');
+        setState('error', '멤버 정보를 불러오지 못해 방송 상태를 확인할 수 없습니다');
         return;
     }
 
     const activeMembers = activeMembersWithSoopId();
 
     if (activeMembers.length === 0) {
-        setState('empty', '현재 방송 중인 멤버가 없습니다.');
+        setState('empty', '현재 방송 중인 멤버가 없습니다');
         return;
     }
 
@@ -252,19 +252,19 @@ async function renderLiveBroadcasts() {
     const liveList = results.filter(r => r.ok && r.live);
 
     if (successCount === 0) {
-        setState('error', '방송 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
+        setState('error', '방송 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요');
         return;
     }
     if (liveList.length) {
-        const note = failedCount ? `일부 멤버(${failedCount}명)의 방송 상태를 확인하지 못했습니다.` : '';
+        const note = failedCount ? `일부 멤버(${failedCount}명)의 방송 상태를 확인하지 못했습니다` : '';
         setState(failedCount ? 'partial' : 'live', note, liveList.map(liveCardHtml).join(''));
         return;
     }
     setState(
         failedCount ? 'partial' : 'empty',
         failedCount
-            ? `확인된 방송은 없습니다. 일부 멤버(${failedCount}명)의 상태를 확인하지 못했습니다.`
-            : '현재 방송 중인 멤버가 없습니다.'
+            ? `확인된 방송은 없습니다. 일부 멤버(${failedCount}명)의 상태를 확인하지 못했습니다`
+            : '현재 방송 중인 멤버가 없습니다'
     );
 }
 
@@ -274,9 +274,9 @@ async function renderLatestNotices() {
     const container = document.getElementById('home-notice-list');
     if (!container) return;
     container.setAttribute('aria-busy', 'true');
-    const noNoticeHtml = emptyStateHtml('최근 공지가 없습니다.', 'clean-card');
+    const noNoticeHtml = emptyStateHtml('최근 공지가 없습니다', 'clean-card');
     if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
-        container.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못해 최근 공지를 확인할 수 없습니다.', 'clean-card');
+        container.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못해 최근 공지를 확인할 수 없습니다', 'clean-card');
         container.setAttribute('aria-busy', 'false');
         return;
     }

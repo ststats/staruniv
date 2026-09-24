@@ -51,7 +51,7 @@
           ${C().field('입단일',C().input('am_joined',row.joined_date||'','date'))}
           ${C().field('퇴단일',C().input('am_left',row.left_date||'','date'))}
         </div>
-        <p class="admin-help">활동 상태는 별도 필드 없이 퇴단일 유무로 판단합니다. 일반적인 운영에서는 삭제 대신 퇴단일을 입력하세요.</p>
+        <p class="admin-help">활동 상태는 별도 필드 없이 퇴단일 유무로 판단합니다. 일반적인 운영에서는 삭제 대신 퇴단일을 입력하세요</p>
         <div class="admin-preview-row"><div><b>현재 프로필</b><div class="admin-media-preview">${row.avatar_path?`<img src="${C().esc(C().mediaUrl(row.avatar_path))}" alt="">`:''}</div></div></div>
         ${C().field('프로필 사진',`<input class="admin-input" id="am_avatar" type="file" accept="image/*">`)}
       `,
@@ -63,7 +63,7 @@
           birth_date:C().empty(C().value('am_birth')),mbti:C().empty(C().value('am_mbti')),joined_date:C().empty(C().value('am_joined')),
           left_date:C().empty(C().value('am_left')),avatar_path:row.avatar_path||null
         };
-        if(!payload.name||!payload.nickname)throw new Error('이름과 닉네임은 필수입니다.');
+        if(!payload.name||!payload.nickname)throw new Error('이름과 닉네임은 필수입니다');
         const file=document.getElementById('am_avatar')?.files?.[0];
         if(file)payload.avatar_path=await C().uploadMedia(file,'members',payload.soop_id||payload.nickname);
         let error;
@@ -73,7 +73,7 @@
           ({error}=await C().state.client.from('members').insert(payload));
         }
         if(error)throw error;
-        C().toast('멤버를 저장했습니다.');
+        C().toast('멤버를 저장했습니다');
         await load();
       },
       onDelete:row.id?async()=>{
@@ -83,7 +83,7 @@
         const {error}=await C().state.client.from('members').delete().eq('id',row.id);
         if(error)throw error;
         await C().audit('delete','members',row.id,{name:row.name,linked_rounds:count||0});
-        C().toast('멤버를 삭제했습니다.');
+        C().toast('멤버를 삭제했습니다');
         await load();
       }:null,
       deleteConfirm:'멤버 삭제는 연결 데이터에 영향을 줄 수 있습니다. 계속할까요?'

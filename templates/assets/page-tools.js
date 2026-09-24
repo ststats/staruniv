@@ -173,14 +173,14 @@ function mvRenderChips() {
     const container = document.getElementById('mv-chip-row');
     if (!container) return;
     if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
-        container.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못했습니다.');
+        container.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못했습니다');
         container.setAttribute('aria-busy', 'false');
         return;
     }
     const members = activeMembersWithSoopId();
     container.innerHTML = members.length
         ? members.map(m => mvChipHtml(m, !!MvState.liveMap[m['SOOP ID']])).join('')
-        : emptyStateHtml('선택 가능한 멤버가 없습니다.');
+        : emptyStateHtml('선택 가능한 멤버가 없습니다');
     container.setAttribute('aria-busy', 'false');
 }
 
@@ -207,7 +207,7 @@ function mvRenderOrderRow() {
     if (count) count.textContent = `${order.length}명`;
     row.innerHTML = order.length
         ? order.map((entry, idx) => mvOrderItemHtml(entry, idx, order, focus, focusEntryId, true)).join('')
-        : `<div class="mv-order-empty"><strong>선택된 방송이 없습니다.</strong></div>`;
+        : `<div class="mv-order-empty"><strong>선택된 방송이 없습니다</strong></div>`;
 }
 
 function mvUpdateActionbar() {
@@ -342,7 +342,7 @@ function renderExternalTools(data) {
         const items = asArray(data && data[key] && data[key].items);
         container.innerHTML = items.length
             ? items.map(toolCardHtml).join('')
-            : `<div class="text-center text-muted py-3 fs-body grid-span-all">등록된 도구가 없습니다.</div>`;
+            : `<div class="text-center text-muted py-3 fs-body grid-span-all">등록된 도구가 없습니다</div>`;
     });
 }
 

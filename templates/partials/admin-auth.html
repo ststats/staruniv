@@ -1,14 +1,14 @@
 <div id="configError" class="admin-login-wrap admin-hidden">
   <div class="admin-card admin-login">
     <h1>Supabase 설정 필요</h1>
-    <p class="admin-note">이 관리자 페이지에는 공개용 <code>SUPABASE_URL</code>과 <code>SUPABASE_PUBLISHABLE_KEY</code>가 필요합니다. GitHub Actions 변수/Secret을 설정한 뒤 사이트를 다시 빌드하세요.</p>
+    <p class="admin-note">이 관리자 페이지에는 공개용 <code>SUPABASE_URL</code>과 <code>SUPABASE_PUBLISHABLE_KEY</code>가 필요합니다. GitHub Actions 변수/Secret을 설정한 뒤 사이트를 다시 빌드하세요</p>
   </div>
 </div>
 
 <div id="loginView" class="admin-login-wrap admin-hidden">
   <form id="loginForm" class="admin-card admin-login">
     <h1>관리자 로그인</h1>
-    <p class="admin-note">Supabase Auth에 등록된 관리자 계정만 접근할 수 있습니다.</p>
+    <p class="admin-note">Supabase Auth에 등록된 관리자 계정만 접근할 수 있습니다</p>
     <div id="loginStatus" class="admin-status"></div>
     <div class="admin-field"><label>이메일</label><input class="admin-input" id="loginEmail" type="email" autocomplete="username" required></div>
     <div class="admin-field"><label>비밀번호</label><input class="admin-input" id="loginPassword" type="password" autocomplete="current-password" required></div>
@@ -19,7 +19,7 @@
 <div id="deniedView" class="admin-login-wrap admin-hidden">
   <div class="admin-card admin-login">
     <h1>관리자 권한 없음</h1>
-    <p class="admin-note">로그인은 되었지만 <code>admin_users</code>에 활성 관리자 계정으로 등록되지 않았습니다.</p>
+    <p class="admin-note">로그인은 되었지만 <code>admin_users</code>에 활성 관리자 계정으로 등록되지 않았습니다</p>
     <button class="admin-btn" id="deniedLogout">로그아웃</button>
   </div>
 </div>

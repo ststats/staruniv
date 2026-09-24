@@ -131,7 +131,7 @@ function markLiveMembers(liveIds) {
 function renderMembersPage() {
     const groups = document.getElementById('members-groups');
     if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
-        groups.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못했습니다.');
+        groups.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못했습니다');
         groups.setAttribute('aria-busy', 'false');
         return;
     }
@@ -165,7 +165,7 @@ function renderMembersPage() {
             </div>`;
     }
 
-    groups.innerHTML = html || emptyStateHtml('등록된 멤버가 없습니다.');
+    groups.innerHTML = html || emptyStateHtml('등록된 멤버가 없습니다');
     groups.setAttribute('aria-busy', 'false');
 }
 
@@ -336,7 +336,7 @@ function newsItemKey(item) {
 // 붙잡아 두고, 새 글을 그린 뒤 풀어서 개인 전적처럼 보던 자리가 그대로 남게 한다.
 function showNewsLoading(content) {
     content.style.minHeight = `${content.offsetHeight}px`;
-    content.innerHTML = emptyStateHtml('불러오는 중...');
+    content.innerHTML = emptyStateHtml('불러오는 중');
 }
 function releaseNewsHeight(content) {
     content.style.minHeight = '';
@@ -351,7 +351,7 @@ async function showNewsAll(skipHashUpdate) {
     const content = document.getElementById('news-feed-content');
     content.setAttribute('aria-busy', 'true');
     if (typeof SiteDataLoad !== 'undefined' && SiteDataLoad.status === 'error') {
-        content.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못해 공지를 확인할 수 없습니다.');
+        content.innerHTML = emptyStateHtml('멤버 정보를 불러오지 못해 공지를 확인할 수 없습니다');
         content.setAttribute('aria-busy', 'false');
         return;
     }
@@ -422,7 +422,7 @@ async function loadNewsFeed() {
     } catch (e) {
         if (token === NewsState.requestSeq) {
             releaseNewsHeight(content);
-            content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다.');
+            content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다');
             content.setAttribute('aria-busy', 'false');
         }
     }
@@ -569,7 +569,7 @@ function newsDesktopLayoutHtml(sorted, loadMoreHtml) {
     const restItems = sorted.filter(it => newsItemKey(it) !== NewsState.featuredKey);
     const pastListHtml = restItems.length
         ? restItems.map(renderPastNoticeHtml).join('')
-        : emptyStateHtml('지난 글이 없습니다.');
+        : emptyStateHtml('지난 글이 없습니다');
     return `
                 ${featuredPostWrapHtml(featuredItem)}
                 <div class="past-posts">
@@ -585,7 +585,7 @@ function renderNewsLayout(content) {
     content.setAttribute('aria-busy', 'false');
     if (NewsState.items.length === 0) {
         content.classList.remove('news-feed-mobile');
-        content.innerHTML = emptyStateHtml('작성된 글이 없습니다.');
+        content.innerHTML = emptyStateHtml('작성된 글이 없습니다');
         return;
     }
 

@@ -231,7 +231,7 @@ function renderFantube() {
     const shown = normal.slice(0, VideoState.shown);
     grid.innerHTML = shown.length
         ? shown.map(v => videoCardHtml(v)).join('')
-        : videoEmptyHtml(VideoState.channelKeys.length ? '아직 불러온 영상이 없습니다.' : '등록된 채널이 없습니다.');
+        : videoEmptyHtml(VideoState.channelKeys.length ? '아직 불러온 영상이 없습니다' : '등록된 채널이 없습니다');
     grid.setAttribute('aria-busy', 'false');
     document.getElementById('video-latest-count').textContent = normal.length ? `${normal.length}개` : '';
     document.getElementById('video-more-wrap').hidden = normal.length <= VideoState.shown;
@@ -267,7 +267,7 @@ function renderPicks() {
     const picks = VideoState.data.picks || [];
     const box = document.getElementById('video-pick-grid');
     if (!picks.length) {
-        box.innerHTML = videoEmptyHtml('추천 영상이 아직 없습니다.');
+        box.innerHTML = videoEmptyHtml('추천 영상이 아직 없습니다');
         return;
     }
     const groups = [];                       // [[분류 이름, [영상...]], ...] - 처음 나온 순서대로

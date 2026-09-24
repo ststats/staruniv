@@ -52,8 +52,8 @@
       <div class="admin-participant-tools">
         ${locked?'':'<button type="button" class="admin-btn admin-btn-compact" id="ahAddParticipant">참여 인원 추가</button>'}
         <span class="admin-help">${locked
-          ?'자동 항목의 인원은 멤버 데이터(입단일·퇴단일)로 정해집니다. 이름 뒤 괄호 설명만 붙일 수 있습니다.'
-          :'멤버가 아니어도 직접 입력할 수 있고, 설명은 이름 뒤 괄호로 표시됩니다.'}</span>
+          ?'자동 항목의 인원은 멤버 데이터(입단일·퇴단일)로 정해집니다. 이름 뒤 괄호 설명만 붙일 수 있습니다'
+          :'멤버가 아니어도 직접 입력할 수 있고, 설명은 이름 뒤 괄호로 표시됩니다'}</span>
       </div>`;
   }
 
@@ -153,17 +153,17 @@
           sort_order:order,hidden:!!document.getElementById('ah_hidden')?.checked,
           updated_at:new Date().toISOString()
         };
-        if(!payload.event_date||!payload.title) throw new Error('날짜와 제목은 필수입니다.');
+        if(!payload.event_date||!payload.title) throw new Error('날짜와 제목은 필수입니다');
         const {error}=await C().state.client.from('history_entries').upsert(payload,{onConflict:'id'});
         if(error) throw error;
-        C().toast('연혁을 저장했습니다.');
+        C().toast('연혁을 저장했습니다');
         await load();
       },
       onDelete:row.id?async()=>{
         const {error}=await C().state.client.from('history_entries').delete().eq('id',row.id);
         if(error) throw error;
         await C().audit('delete','history_entries',row.id,{title:row.title});
-        C().toast('연혁을 삭제했습니다.');
+        C().toast('연혁을 삭제했습니다');
         await load();
       }:null
     });
@@ -190,7 +190,7 @@
     C().openDrawer({
       eyebrow:'HISTORY · 자동', title:'자동 연혁 수정',
       html:`
-        <p class="admin-help">멤버 데이터에서 자동으로 만들어진 항목입니다. 날짜·형식·인원은 멤버의 입단일·퇴단일을 따르고, 여기서는 보이는 내용만 바꿉니다.</p>
+        <p class="admin-help">멤버 데이터에서 자동으로 만들어진 항목입니다. 날짜·형식·인원은 멤버의 입단일·퇴단일을 따르고, 여기서는 보이는 내용만 바꿉니다</p>
         <div class="admin-form-grid">
           ${C().field('날짜',C().input('ah_date',item.date,'date','readonly'))}
           ${C().field('형식',C().input('ah_type_label',labels[item.type]||item.type,'text','readonly'))}
@@ -215,7 +215,7 @@
           members:collectParticipants(),youtube_url:C().empty(C().value('ah_youtube')),image_path:image,
           hidden:!!document.getElementById('ah_hidden')?.checked
         });
-        C().toast('자동 연혁을 수정했습니다.');
+        C().toast('자동 연혁을 수정했습니다');
         await load();
       }
     });

@@ -65,13 +65,13 @@
           ${C().field('사용 여부',C().checkbox('avc_active',row.channel_url?!!row.active:true,'사용'))}
         </div>`,
       onSubmit:async()=>{
-        const url=C().value('avc_url').trim();if(!/^https?:\/\//i.test(url))throw new Error('올바른 채널 URL을 입력하세요.');
+        const url=C().value('avc_url').trim();if(!/^https?:\/\//i.test(url))throw new Error('올바른 채널 URL을 입력하세요');
         const payload={channel_url:url,display_name:C().value('avc_name').trim(),source_order:Number(C().value('avc_order')||await C().nextSourceOrder('video_channels')),active:!!document.getElementById('avc_active')?.checked,updated_at:new Date().toISOString()};
         if(row.channel_url&&row.channel_url!==url){
           const {error:del}=await C().state.client.from('video_channels').delete().eq('channel_url',row.channel_url);if(del)throw del;
         }
         const {error}=await C().state.client.from('video_channels').upsert({...row,...payload},{onConflict:'channel_url'});if(error)throw error;
-        C().toast('채널을 저장했습니다.');await refresh();
+        C().toast('채널을 저장했습니다');await refresh();
       }
     });
   }
@@ -90,7 +90,7 @@
 
   async function toggleHidden(id,hidden){
     const {error}=await C().state.client.from('videos').update({hidden}).eq('id',id);if(error)throw error;
-    C().toast(hidden?'영상을 숨겼습니다.':'영상을 표시했습니다.');await refresh();
+    C().toast(hidden?'영상을 숨겼습니다':'영상을 표시했습니다');await refresh();
   }
 
   function openPick(row){
@@ -111,12 +111,12 @@
         <div class="admin-form-grid">${C().field('쇼츠',C().checkbox('avp_short',!!row.short,'쇼츠'))}${C().field('숨김',C().checkbox('avp_hidden',!!row.hidden,'숨김'))}</div>
         <div class="admin-media-preview" id="avp_preview">${row.thumb?`<img src="${C().esc(row.thumb)}" alt="">`:''}</div>`,
       onSubmit:async()=>{
-        const url=C().value('avp_url').trim();const y=youtubeId(url),s=soopId(url);if(!y&&!s)throw new Error('지원하는 YouTube 또는 SOOP URL이 아닙니다.');
+        const url=C().value('avp_url').trim();const y=youtubeId(url),s=soopId(url);if(!y&&!s)throw new Error('지원하는 YouTube 또는 SOOP URL이 아닙니다');
         const id=y||s,kind=y?'youtube':'soop';
         const payload={id,kind,title:C().value('avp_title').trim(),note:C().empty(C().value('avp_note')),group_name:C().empty(C().value('avp_group')),group_en:null,author:C().empty(C().value('avp_author')),thumb:C().empty(C().value('avp_thumb')),added_at:C().empty(C().value('avp_date')),source_order:Number(C().value('avp_order')||await C().nextSourceOrder('video_picks')),short:!!document.getElementById('avp_short')?.checked,hidden:!!document.getElementById('avp_hidden')?.checked,updated_at:new Date().toISOString()};
         if(row.id&&row.id!==id){const {error:del}=await C().state.client.from('video_picks').delete().eq('id',row.id);if(del)throw del;}
         const {error}=await C().state.client.from('video_picks').upsert(payload,{onConflict:'id'});if(error)throw error;
-        C().toast('보자 영상을 저장했습니다.');await refresh();
+        C().toast('보자 영상을 저장했습니다');await refresh();
       },
       onDelete:row.id?async()=>{const {error}=await C().state.client.from('video_picks').delete().eq('id',row.id);if(error)throw error;await C().audit('delete','video_picks',row.id,{title:row.title});await refresh();}:null
     });

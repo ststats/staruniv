@@ -65,7 +65,8 @@ npm test                              # node --test (의존성 없음)
 - 공개 CSS는 `templates/assets/style/`의 섹션 파일(`01-tokens.css` … `18-tools-entry.css`)이고, 빌드가 이름 순서대로
   합쳐 `docs/style.css`로 냅니다. **번호 순서가 곧 우선순위**라, 부품을 고칠 때는 뒤에 새 규칙을 덧붙이지 말고
   그 부품 파일의 원래 규칙을 고칩니다. `14-surfaces.css`는 남색 면의 색 변수만 두는 곳입니다. 어드민 CSS는 `admin.css`.
-- `npm test`가 같은 선택자 규칙이 두 번 생기거나 안 쓰는 클래스 규칙이 남으면 실패합니다(`.github/workflows/test.yml`).
+- 화면 문구는 끝에 마침표·말줄임표(`.` `...` `…`)를 붙이지 않습니다. 관리자가 입력한 히어로 설명도 표시할 때 끝을 지웁니다.
+- `npm test`가 같은 선택자 규칙이 두 번 생기거나, 안 쓰는 클래스 규칙이 남거나, 문구 끝에 마침표가 붙으면 실패합니다(`.github/workflows/test.yml`).
 
 ## GitHub·Supabase 설정 값
 

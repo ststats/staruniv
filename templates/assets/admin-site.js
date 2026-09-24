@@ -20,7 +20,7 @@
     return cfg;
   }
 
-  async function save(cfg,msg='사이트 설정을 저장했습니다.'){
+  async function save(cfg,msg='사이트 설정을 저장했습니다'){
     await C().saveSiteConfig(cfg);
     C().toast(msg);
     if(typeof applyNavVisibility==='function') await applyNavVisibility();
@@ -83,7 +83,7 @@
     const order=cfg.order.filter(x=>NAV_LABELS[x]).concat(Object.keys(NAV_LABELS).filter(x=>!cfg.order.includes(x)));
     C().openDrawer({
       eyebrow:'SITE',title:'상단 메뉴 편집',
-      html:`<p class="admin-help">상단 메뉴의 순서와 표시 여부를 정합니다. 숨긴 메뉴는 방문자에게 보이지 않고, 관리자 화면에서만 흐리게 보입니다.</p>
+      html:`<p class="admin-help">상단 메뉴의 순서와 표시 여부를 정합니다. 숨긴 메뉴는 방문자에게 보이지 않고, 관리자 화면에서만 흐리게 보입니다</p>
         <div class="admin-order-list" id="an_order">${order.map((id,i)=>orderRow(i,NAV_LABELS[id],`data-nav="${id}"`,!cfg.hidden.includes(id),
           `<span class="admin-order-actions"><button type="button" data-dir="-1" aria-label="위로"></button><button type="button" data-dir="1" aria-label="아래로"></button></span>`)).join('')}</div>`,
       onSubmit:async()=>{
@@ -110,13 +110,13 @@
     const cfg=configDefaults(await C().loadSiteConfig()), sub=cfg.subtabs[page]||{hidden:[],default:ids[0]};
     C().openDrawer({
       eyebrow:'SUBTAB',title:'서브탭 편집',
-      html:`<p class="admin-help">이 페이지 서브탭의 표시 여부와, 처음 열릴 때 보여 줄 기본 탭을 정합니다. 기본 탭은 숨길 수 없습니다.</p>
+      html:`<p class="admin-help">이 페이지 서브탭의 표시 여부와, 처음 열릴 때 보여 줄 기본 탭을 정합니다. 기본 탭은 숨길 수 없습니다</p>
         <div class="admin-order-list" id="as_subtabs">${ids.map((key,i)=>orderRow(i,subtabLabel(page,key),`data-sub="${C().esc(key)}"`,!(sub.hidden||[]).includes(key),
           `<label class="admin-default-pick"><input type="radio" name="sub_default" value="${C().esc(key)}"${String(sub.default||ids[0])===key?' checked':''}><span>기본</span></label>`)).join('')}</div>`,
       onSubmit:async()=>{
         sub.hidden=ids.filter(key=>!document.querySelector(`[data-sub="${CSS.escape(key)}"] [data-visible]`)?.checked);
         sub.default=document.querySelector('input[name="sub_default"]:checked')?.value||ids[0];
-        if(sub.hidden.includes(sub.default))throw new Error('기본 서브탭은 표시 상태여야 합니다.');
+        if(sub.hidden.includes(sub.default))throw new Error('기본 서브탭은 표시 상태여야 합니다');
         cfg.subtabs[page]=sub;await save(cfg);
       }
     });
@@ -127,9 +127,9 @@
     const cfg=configDefaults(await C().loadSiteConfig());
     const key=['schedule','records','video'][index]; if(!key)return;
     const defaults={
-      schedule:{title:'캄몬스타즈',description:'캄몬스타즈의 일정을 한곳에서 확인하세요.',href:'schedule/'},
-      records:{title:'전적아카이브',description:'캄몬스타즈의 모든 전적을 저장합니다.',href:'records/'},
-      video:{title:'캄몬플레이',description:'캄몬스타즈를 재생하세요.',href:'video/'},
+      schedule:{title:'캄몬스타즈',description:'캄몬스타즈의 일정을 한곳에서 확인하세요',href:'schedule/'},
+      records:{title:'전적아카이브',description:'캄몬스타즈의 모든 전적을 저장합니다',href:'records/'},
+      video:{title:'캄몬플레이',description:'캄몬스타즈를 재생하세요',href:'video/'},
     };
     const row={...defaults[key],...(cfg.homeCarousel[key]||{})};
     const slide=document.querySelectorAll('.home-carousel-slide')[index];
@@ -162,7 +162,7 @@
   async function toggleHomeSection(key){
     const cfg=configDefaults(await C().loadSiteConfig());
     cfg.homeSections[key]=!(cfg.homeSections[key]!==false);
-    await save(cfg,`${key==='live'?'방송 중':'최근 공지'} 영역 표시를 변경했습니다.`);
+    await save(cfg,`${key==='live'?'방송 중':'최근 공지'} 영역 표시를 변경했습니다`);
   }
 
   async function enhanceHome(){
@@ -204,7 +204,7 @@
       host.prepend(box);
     }
     const esc=C().esc;
-    box.innerHTML='<summary class="admin-rank-explain-head"><b>운영 현황</b><span>불러오는 중...</span></summary>';
+    box.innerHTML='<summary class="admin-rank-explain-head"><b>운영 현황</b><span>불러오는 중</span></summary>';
     const {data,error}=await C().state.client.rpc('admin_dashboard_stats');
     if(error||!data){
       box.innerHTML=`<summary class="admin-rank-explain-head"><b>운영 현황</b><span>조회 실패 · ${esc(C().errorText?C().errorText(error):'')}</span></summary>`;

@@ -157,7 +157,7 @@ function analysisSuggest(query) {
 function analysisSuggestHtml() {
     if (!AnalysisState.query.trim()) return '';
     const list = analysisSuggest(AnalysisState.query);
-    if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다.</div></div>';
+    if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다</div></div>';
     const shown = Math.min(list.length, AnalysisState.suggestShown);
     return `<div class="h2h-suggest" onscroll="analysisSuggestScroll(this)">
         <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
@@ -434,7 +434,7 @@ function nextMonthKey(key) {
 
 const RATING_HELP = {
     title: '레이팅',
-    lead: '티어 기준선과 최근 경기력을 합친 실력 추정치입니다. 같은 티어 순위도 이 값 순서입니다.',
+    lead: '티어 기준선과 최근 경기력을 합친 실력 추정치입니다. 같은 티어 순위도 이 값 순서입니다',
     rows: [
         ['계산', '상대 강도 · 경기 형식 · 종족 상성을 반영'],
         ['최근성', '개인 폼 반감기 90일'],
@@ -445,7 +445,7 @@ const RATING_HELP = {
         ['구간', '전체 18개월 · 1년 12 · 90일 3 · 30일 1'],
         ['기간 칩', '가로축만 자릅니다 (계산은 동일)'],
     ],
-    note: '그 시점에 최근 1년 기록이 없으면 선이 끊깁니다.',
+    note: '그 시점에 최근 1년 기록이 없으면 선이 끊깁니다',
 };
 
 function analysisRatingTitleHtml(count) {
@@ -479,7 +479,7 @@ function analysisRatingHtml(pid) {
     // 제목과 안내만 남긴다.
     if (have.length < 2) {
         return analysisRatingTitleHtml('')
-            + '<div class="clean-card p-3 analysis-rating-empty">이 기간에는 그릴 만한 기록이 없습니다.</div>';
+            + '<div class="clean-card p-3 analysis-rating-empty">이 기간에는 그릴 만한 기록이 없습니다</div>';
     }
 
     // 월별 전적 그래프와 같은 틀(660x220)이어야 두 카드가 같은 크기로 나란히 선다.
@@ -650,7 +650,7 @@ function analysisMatchesHtml(rows) {
                         <th scope="col" class="colw-20">날짜</th>
                     </tr></thead>
                     <tbody>${shown.length ? h2hMatchRowsHtml(shown, true)
-                        : emptyRowHtml(5, '이 형식의 경기가 없습니다.')}</tbody>
+                        : emptyRowHtml(5, '이 형식의 경기가 없습니다')}</tbody>
                 </table>
             </div>
         </div>
@@ -664,7 +664,7 @@ function analysisProfileHtml(pid) {
     const p = analysisInfo(pid);
     const rows = analysisRows(pid);
     const e = analysisSummary(rows);
-    if (!p || !e) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다.</div>';
+    if (!p || !e) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다</div>';
     return `
         ${analysisHeadHtml(pid, p, e)}
         ${analysisFormHtml(rows)}
@@ -710,14 +710,14 @@ async function analysisPick(pid) {
     const old = box && box.querySelector('.h2h-suggest');
     if (old) old.remove();
 
-    document.getElementById('analysis-body').innerHTML = '<div class="h2h-empty">불러오는 중...</div>';
+    document.getElementById('analysis-body').innerHTML = '<div class="h2h-empty">불러오는 중</div>';
     try {
         // 레이팅 변화는 없어도 나머지가 나와야 하므로, 실패해도 멈추지 않는다(위에서 잡는다).
         await Promise.all([analysisLoadPlayer(pid), analysisLoadRating()]);
     } catch (err) {
         console.error(err);
         document.getElementById('analysis-body').innerHTML =
-            `<div class="h2h-empty">${escapeHTML(err.message || '경기 기록을 불러오지 못했습니다.')}</div>`;
+            `<div class="h2h-empty">${escapeHTML(err.message || '경기 기록을 불러오지 못했습니다')}</div>`;
         return;
     }
     renderAnalysisBody();
@@ -750,7 +750,7 @@ async function analysisEnter() {
     } catch (e) {
         console.error('분석 데이터를 불러오지 못했습니다:', e);
         document.getElementById('analysis-body').innerHTML =
-            '<div class="h2h-empty">분석 데이터를 아직 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</div>';
+            '<div class="h2h-empty">분석 데이터를 아직 불러올 수 없습니다. 잠시 후 다시 시도해주세요</div>';
         return;
     }
     const updated = document.getElementById('analysis-updated');

@@ -67,7 +67,7 @@ function emptyRowHtml(colspan, text, cellClass) {
     return `<tr><td colspan="${colspan}" class="text-center text-muted ${cellClass || 'py-4'}">${text}</td></tr>`;
 }
 
-const EMPTY_MATCH_ROW_HTML = emptyRowHtml(6, '경기 기록이 없습니다.');
+const EMPTY_MATCH_ROW_HTML = emptyRowHtml(6, '경기 기록이 없습니다');
 
 // 아래 방향 쉐브론 아이콘(더 보기/이전 멤버/세트 상세 토글 등에서 공용)
 function chevronDownSvg(size, extraAttrs) {
@@ -880,7 +880,7 @@ function fetchSynergyData() {
 
     _synergyRequest = (async () => {
         const client = publicSupabaseClient();
-        if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다.');
+        if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다');
 
         const { data: dateRows, error: dateError } = await client
             .from('synergy_daily_dates')
@@ -891,7 +891,7 @@ function fetchSynergyData() {
 
         const latest = Array.isArray(dateRows) ? dateRows[0] : null;
         const latestDate = latest && latest.stat_date ? String(latest.stat_date) : '';
-        if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다.');
+        if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다');
 
         const idToMember = new Map();
         SiteData.members.forEach(m => {
@@ -902,7 +902,7 @@ function fetchSynergyData() {
         const memberIds = [...idToMember.values()]
             .map(m => String(m['SOOP ID'] || '').trim())
             .filter(Boolean);
-        if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다.');
+        if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다');
 
         const rows = await fetchAllPages((from, to) => client
             .from('daily_member_stats')
@@ -911,7 +911,7 @@ function fetchSynergyData() {
             .in('soop_id', memberIds)
             .order('soop_id', { ascending: true })
             .range(from, to), { parallel: 1 });
-        if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다.`);
+        if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다`);
 
         SynergyState.data = rows
             .map(row => {
@@ -1052,6 +1052,11 @@ async function applyNavVisibility() {
     delete document.documentElement.dataset.navPending;
 }
 
+// 사이트 문구는 끝에 마침표·말줄임표를 붙이지 않는다. 관리자가 입력한 문구도 표시할 때 맞춘다.
+function trimEndPunct(text) {
+    return String(text || '').trim().replace(/(?:\.|…)+$/, '').trim();
+}
+
 function applyNavConfig(data) {
     try {
         SiteRuntimeConfig = data;
@@ -1084,14 +1089,14 @@ function applyNavConfig(data) {
 
         const heroDescriptions = (data.heroDescriptions && typeof data.heroDescriptions === 'object') ? data.heroDescriptions : {};
         document.querySelectorAll('[data-hero-description]').forEach(subtitle => {
-            const heroText = String(heroDescriptions[subtitle.dataset.heroDescription] || '').trim();
+            const heroText = trimEndPunct(heroDescriptions[subtitle.dataset.heroDescription]);
             if (heroText) subtitle.textContent = heroText;
         });
-        const heroText = String(heroDescriptions[pageId] || '').trim();
+        const heroText = trimEndPunct(heroDescriptions[pageId]);
         if (heroText) {
             const subtitle = document.querySelector('.page-section.active .page-header-subtitle:not([data-hero-description])');
             if (subtitle) {
-                if (subtitle.id === 'tier-subtitle' && subtitle.firstChild) subtitle.firstChild.nodeValue = heroText + ' 출처 : ';
+                if (subtitle.id === 'tier-subtitle' && subtitle.firstChild) subtitle.firstChild.nodeValue = heroText + '. 출처 : ';
                 else subtitle.textContent = heroText;
             }
         }
@@ -1105,7 +1110,7 @@ function applyNavConfig(data) {
             const desc = slide.querySelector('.page-header-subtitle');
             const link = slide.querySelector('.home-hero-links a');
             if (title && cfg.title) title.textContent = cfg.title;
-            if (desc && cfg.description) desc.textContent = cfg.description;
+            if (desc && cfg.description) desc.textContent = trimEndPunct(cfg.description);
             if (link && cfg.href) link.setAttribute('href', cfg.href);
         });
 
@@ -1269,7 +1274,7 @@ window.addEventListener('resize', () => closeAllHelp());
 // 티어랭킹 뱃지 옆 설명. 계산은 ststat 중앙 파이프라인이 수행한다.
 const RANK_HELP = {
     title: '티어 랭킹',
-    lead: '상대의 강함과 경기 중요도까지 반영한 실력 추정치로, 같은 티어 안에서 매긴 순위입니다.',
+    lead: '상대의 강함과 경기 중요도까지 반영한 실력 추정치로, 같은 티어 안에서 매긴 순위입니다',
     rows: [
         ['순위 범위', '현재 티어 안에서만 비교'],
         ['계산', '상대가 강할수록 승리 가치가 커짐'],
@@ -1279,7 +1284,7 @@ const RANK_HELP = {
         ['적은 표본', '기록이 적을수록 티어 평균 쪽으로 당겨짐'],
         ['형식 비중', '대회 › 대학 › 미니 › 리그·CK › 스폰'],
     ],
-    note: "티어 기준점은 갓→베이비 순서를 지키며, 최근 1년 10판 미만이거나 휴면이면 '기록 없음'입니다.",
+    note: "티어 기준점은 갓→베이비 순서를 지키며, 최근 1년 10판 미만이거나 휴면이면 '기록 없음'입니다",
 };
 
 // 티어 랭킹 뱃지: '갓티어 · 3위/16명'. 활성 Supabase Elo 스냅샷의 순위를 쓴다.

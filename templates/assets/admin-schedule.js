@@ -39,9 +39,9 @@
         <div class="admin-field"><span>색상</span>${colorPicker(selectedColor)}</div>`,
       onSubmit: async () => {
         const startDate=C().value('as_start'), endDate=C().value('as_end')||startDate;
-        if (!startDate || !endDate) throw new Error('시작일과 종료일이 필요합니다.');
-        if (endDate < startDate) throw new Error('종료일은 시작일보다 빠를 수 없습니다.');
-        if (!C().value('as_person').trim()) throw new Error('제목을 입력하세요.');
+        if (!startDate || !endDate) throw new Error('시작일과 종료일이 필요합니다');
+        if (endDate < startDate) throw new Error('종료일은 시작일보다 빠를 수 없습니다');
+        if (!C().value('as_person').trim()) throw new Error('제목을 입력하세요');
         const color = document.querySelector('input[name="schedule_color"]:checked')?.value || 'blue';
         const dbRow = {
           start_date:startDate, end_date:endDate, event_time:C().empty(C().value('as_time')),
@@ -56,14 +56,14 @@
           ({error}=await C().state.client.from('calendar_events').insert(dbRow));
         }
         if (error) throw error;
-        C().toast('일정을 저장했습니다.');
+        C().toast('일정을 저장했습니다');
         await refresh(startDate);
       },
       onDelete: row?.id ? async () => {
         const {error}=await C().state.client.from('calendar_events').delete().eq('id',row.id);
         if (error) throw error;
         await C().audit('delete','calendar_events',row.id,{start_date:row.startDate,person:row.person});
-        C().toast('일정을 삭제했습니다.');
+        C().toast('일정을 삭제했습니다');
         await refresh(startDate);
       } : null,
       deleteConfirm:'이 일정을 삭제할까요?'
@@ -75,7 +75,7 @@
   function offAirChecklist(date) {
     const current = new Set(calOffAirForDate(date));
     const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || current.has(m.soop_id)));
-    if (!members.length) return '<p class="admin-help">선택할 수 있는 멤버가 없습니다.</p>';
+    if (!members.length) return '<p class="admin-help">선택할 수 있는 멤버가 없습니다</p>';
     return members.map(m => `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${current.has(m.soop_id)?' checked':''}><span>${C().esc(m.name || m.nickname || m.soop_id)}</span></label>`).join('');
   }
 
@@ -89,16 +89,16 @@
         <div class="admin-field"><span>휴방 멤버 <em class="admin-pick-count" id="ao_count"></em></span>
           <div class="admin-pick-grid" id="ao_members">${offAirChecklist(shownDate)}</div>
         </div>
-        <p class="admin-help">체크한 멤버가 그날 휴방으로 표시됩니다. 체크를 풀면 휴방에서 빠집니다.</p>
+        <p class="admin-help">체크한 멤버가 그날 휴방으로 표시됩니다. 체크를 풀면 휴방에서 빠집니다</p>
       `,
       onSubmit: async () => {
         const offDate = C().value('ao_date');
-        if (!offDate) throw new Error('날짜를 선택하세요.');
+        if (!offDate) throw new Error('날짜를 선택하세요');
         const before = new Set(calOffAirForDate(offDate));
         const after = new Set([...document.querySelectorAll('#ao_members input:checked')].map(x => x.value));
         const add = [...after].filter(id => !before.has(id));
         const remove = [...before].filter(id => !after.has(id));
-        if (!add.length && !remove.length) throw new Error('바뀐 내용이 없습니다.');
+        if (!add.length && !remove.length) throw new Error('바뀐 내용이 없습니다');
         if (remove.length) {
           const {error} = await C().state.client.from('calendar_off_air').delete().eq('off_date',offDate).in('soop_id',remove);
           if (error) throw error;
@@ -132,13 +132,13 @@
     const label = btn.querySelector('span');
     const idle = label.textContent;
     btn.disabled = true;
-    label.textContent = '요청 중...';
+    label.textContent = '요청 중';
     try {
       const client = C().state.client;
       const { data: requestId, error } = await client.rpc('admin_request_calendar_capture');
       if (error) {
         if (/admin_request_calendar_capture/.test(error.message || '') && /(find|exist)/i.test(error.message || ''))
-          throw new Error('Supabase에 supabase/calendar_capture.sql을 먼저 실행해야 합니다.');
+          throw new Error('Supabase에 supabase/calendar_capture.sql을 먼저 실행해야 합니다');
         throw error;
       }
       let status = null, detail = '';
@@ -148,8 +148,8 @@
         const row = (res.data || [])[0];
         if (row && (row.status_code !== null || row.error)) { status = row.status_code; detail = row.error || ''; }
       }
-      if (status === null && !detail) C().toast('요청을 보냈습니다. 1분쯤 뒤 calendar.png가 바뀝니다.');
-      else if (status >= 200 && status < 300) C().toast('빌드를 시작했습니다. 1분쯤 뒤 calendar.png가 바뀝니다.');
+      if (status === null && !detail) C().toast('요청을 보냈습니다. 1분쯤 뒤 calendar.png가 바뀝니다');
+      else if (status >= 200 && status < 300) C().toast('빌드를 시작했습니다. 1분쯤 뒤 calendar.png가 바뀝니다');
       else throw new Error(`GitHub가 요청을 거절했습니다(${status || '응답 없음'}) ${detail}`.trim());
     } catch (e) {
       C().toast(C().errorText ? C().errorText(e) : String(e.message || e), 'error');

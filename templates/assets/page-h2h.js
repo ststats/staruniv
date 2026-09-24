@@ -77,7 +77,7 @@ const H2H_CAT_GROUPS = [
 function h2hWithTimeout(promise, label) {
     let timer;
     const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다.`)), H2H_REQUEST_TIMEOUT_MS);
+        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다`)), H2H_REQUEST_TIMEOUT_MS);
     });
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
@@ -309,7 +309,7 @@ function playerSuggestItemsHtml(list, pickCall) {
 function h2hSuggestHtml(slot) {
     const list = h2hSuggest(H2hState.query[slot]);
     if (!H2hState.query[slot].trim()) return '';
-    if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다.</div></div>';
+    if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다</div></div>';
     const shown = Math.min(list.length, H2hState.suggestShown);
     return `<div class="h2h-suggest" onscroll="h2hSuggestScroll(${slot}, this)">
         <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
@@ -369,7 +369,7 @@ async function h2hPick(slot, pid) {
     H2hState.rivalShown = H2H_RIVAL_STEP;
     H2hState.mapShown = H2H_MAP_STEP;
     renderH2hSlots();
-    document.getElementById('h2h-result').innerHTML = '<div class="h2h-empty">전적을 불러오는 중...</div>';
+    document.getElementById('h2h-result').innerHTML = '<div class="h2h-empty">전적을 불러오는 중</div>';
     try {
         await h2hLoadPlayer(pid);
     } catch (e) {
@@ -483,7 +483,7 @@ function h2hTableHtml(rows, showOpponent) {
                         </tr>
                     </thead>
                     <tbody>${shown.length ? h2hMatchRowsHtml(shown, showOpponent)
-                        : emptyRowHtml(showOpponent ? 5 : 4, '이 형식의 경기가 없습니다.')}</tbody>
+                        : emptyRowHtml(showOpponent ? 5 : 4, '이 형식의 경기가 없습니다')}</tbody>
                 </table>
             </div>
         </div>
@@ -596,7 +596,7 @@ function renderH2hResult() {
         const targetSlot = a ? 1 : 0;
         const rows = h2hRowsInPeriod(pid);
         if (!rows.length) {
-            box.innerHTML = '<div class="h2h-empty">이 기간에 경기가 없습니다.</div>';
+            box.innerHTML = '<div class="h2h-empty">이 기간에 경기가 없습니다</div>';
             return;
         }
         box.innerHTML = `
@@ -615,7 +615,7 @@ function renderH2hResult() {
                 <span class="title-count">${escapeHTML(h2hName(a))} 기준</span></div>
             ${h2hMapTableHtml(rows)}
             ${h2hMatchesHtml(rows, false)}`
-        : '<div class="h2h-empty h2h-empty-spaced">이 기간에 맞대결이 없습니다. 기간을 넓혀보세요.</div>'}`;
+        : '<div class="h2h-empty h2h-empty-spaced">이 기간에 맞대결이 없습니다. 기간을 넓혀보세요</div>'}`;
 }
 
 function renderH2hPeriod() {
@@ -649,7 +649,7 @@ async function h2hEnter() {
     renderH2hPeriod();
     renderH2hSlots();
     const resultBox = document.getElementById('h2h-result');
-    if (resultBox) resultBox.innerHTML = '<div class="h2h-empty">전적 데이터를 불러오는 중...</div>';
+    if (resultBox) resultBox.innerHTML = '<div class="h2h-empty">전적 데이터를 불러오는 중</div>';
 
     try {
         await h2hLoadIndex();
@@ -661,14 +661,14 @@ async function h2hEnter() {
         console.error('상대전적 데이터를 불러오지 못했습니다:', e);
         if (resultBox) {
             resultBox.innerHTML =
-                `<div class="h2h-empty">전적 데이터를 불러오지 못했습니다.<br><small>${escapeHTML(e.message || String(e))}</small><br><button type="button" class="news-load-more" onclick="h2hEnter()">다시 시도</button></div>`;
+                `<div class="h2h-empty">전적 데이터를 불러오지 못했습니다<br><small>${escapeHTML(e.message || String(e))}</small><br><button type="button" class="news-load-more" onclick="h2hEnter()">다시 시도</button></div>`;
         }
         return;
     }
     if (!Object.keys(H2hState.index.players || {}).length) {
         // 아직 아카이브를 한 번도 모으지 않은 상태(빈 index.json)
         document.getElementById('h2h-result').innerHTML =
-            '<div class="h2h-empty">전적 아카이브를 아직 모으는 중입니다. 조금 뒤에 다시 열어주세요.</div>';
+            '<div class="h2h-empty">전적 아카이브를 아직 모으는 중입니다. 조금 뒤에 다시 열어주세요</div>';
         return;
     }
     const updated = document.getElementById('h2h-updated');

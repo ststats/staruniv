@@ -636,7 +636,7 @@ html[data-theme="dark"] .mv-settings-panel {
         if (!container) return;
         container.innerHTML = mvMembers.length
             ? mvMembers.map(mvChipHtml).join('')
-            : '<div class="mv-chip-empty">멤버 목록을 불러오지 못했습니다.</div>';
+            : '<div class="mv-chip-empty">멤버 목록을 불러오지 못했습니다</div>';
     }
     function mvToggleMemberChip(soopId, name) {
         const idx = mvOrder.findIndex(e => e.soopId === soopId);
@@ -684,7 +684,7 @@ html[data-theme="dark"] .mv-settings-panel {
         const focusEntryId = mvFocusEntryId(mvOrder, mvFocusId);
         row.innerHTML = mvOrder.length
             ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId, true)).join('')
-            : '<div class="mv-order-empty"><strong>선택된 방송이 없습니다.</strong></div>';
+            : '<div class="mv-order-empty"><strong>선택된 방송이 없습니다</strong></div>';
     }
 
     // [수정] 예전엔 칸의 DOM 위치를 맞바꾸거나(replaceWith) 그리드를 통째로 다시 그려서
@@ -840,7 +840,7 @@ html[data-theme="dark"] .mv-settings-panel {
     function mvRenderGrid() {
         const area = document.getElementById('mv-grid-area');
         if (mvOrder.length === 0) {
-            area.innerHTML = '<div class="mv-empty">선택된 방송이 없습니다.</div>';
+            area.innerHTML = '<div class="mv-empty">선택된 방송이 없습니다</div>';
             return;
         }
         let grid = document.getElementById('mv-grid');

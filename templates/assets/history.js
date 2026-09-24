@@ -200,7 +200,7 @@ const HIST_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 // 타임라인 HTML. opts: { members, avatarUrl(soopId), admin: true면 수정 버튼과 숨김 표시 }
 function histTimelineHtml(items, opts) {
     opts = opts || {};
-    if (!items.length) return '<div class="hist-empty">등록된 연혁이 없습니다.</div>';
+    if (!items.length) return '<div class="hist-empty">등록된 연혁이 없습니다</div>';
     const byYear = new Map();
     items.forEach(item => {
         const y = item.date.slice(0, 4);

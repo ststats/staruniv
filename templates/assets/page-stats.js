@@ -50,7 +50,7 @@ async function loadSynergyData() {
         renderSynergyTable();
     } catch (e) {
         console.error(e);
-        const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다.');
+        const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다');
         document.getElementById('synergy-tbody-male').innerHTML = errRow;
         document.getElementById('synergy-tbody-female').innerHTML = errRow;
     }
@@ -156,7 +156,7 @@ function renderSynergyTable() {
     const active = SynergyState.data.filter(m => m.active);
     // 요약 타일은 남녀를 합친 전체 순위를 기준으로 한다.
     renderSynergySummary(sortSynergyRows(active));
-    const noData = emptyRowHtml(3, '표시할 멤버가 없습니다.');
+    const noData = emptyRowHtml(3, '표시할 멤버가 없습니다');
     [['synergy-tbody-male', '남자'], ['synergy-tbody-female', '여자']].forEach(([tbodyId, gender]) => {
         const rows = sortSynergyRows(active.filter(m => m.ourMember['성별'] === gender));
         document.getElementById(tbodyId).innerHTML = rows.length

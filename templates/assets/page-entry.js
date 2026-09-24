@@ -43,7 +43,7 @@ function entryNormalizeRace(value) {
 function entryWithTimeout(promise, label) {
     let timer;
     const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다.`)), ENTRY_REQUEST_TIMEOUT_MS);
+        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다`)), ENTRY_REQUEST_TIMEOUT_MS);
     });
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
@@ -222,7 +222,7 @@ async function entryEnsureLoaded() {
     if (!EntryState.loading) {
         ['a', 'b'].forEach(k => {
             const box = document.getElementById(`entry-body-${k}`);
-            if (box) box.innerHTML = '<div class="h2h-suggest-empty">명단을 불러오는 중...</div>';
+            if (box) box.innerHTML = '<div class="h2h-suggest-empty">명단을 불러오는 중</div>';
         });
 
         EntryState.loading = entryLoadIndexFromSupabase()
@@ -252,7 +252,7 @@ async function entryEnsureLoaded() {
         ['a', 'b'].forEach(k => {
             const box = document.getElementById(`entry-body-${k}`);
             if (box) box.innerHTML =
-                `<div class="h2h-suggest-empty">명단을 불러오지 못했습니다.<br><small>${escapeHTML(e.message || String(e))}</small></div>`;
+                `<div class="h2h-suggest-empty">명단을 불러오지 못했습니다<br><small>${escapeHTML(e.message || String(e))}</small></div>`;
         });
     }
     return EntryState.index;
@@ -728,15 +728,15 @@ function entryAnalysisHtml(match, wp) {
     const strongest = [
         ['맞대결', wp.h2hAdj || 0], ['종족전', wp.raceAdj || 0], ['맵', wp.mapAdj || 0]
     ].sort((x,y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
-    let summary = '레이팅 차이가 예측의 중심입니다.';
+    let summary = '레이팅 차이가 예측의 중심입니다';
     if (strongest && Math.abs(strongest[1]) >= 0.008) {
         const side = strongest[1] > 0 ? a.n : b.n;
-        summary = `${strongest[0]} 데이터가 ${side} 쪽으로 가장 크게 보정했습니다.`;
+        summary = `${strongest[0]} 데이터가 ${side} 쪽으로 가장 크게 보정했습니다`;
     }
     const raceDetail = `${escapeHTML(a.n)} vs ${entryRaceLabel(b.r)} ${entryRecordText(raceA.w, raceA.l)} · ${escapeHTML(b.n)} vs ${entryRaceLabel(a.r)} ${entryRecordText(raceB.w, raceB.l)} · ${entrySampleLabel(raceN)}`;
     const mapDetail = mapName
         ? `${escapeHTML(mapName)} · ${escapeHTML(a.n)} ${entryRecordText(mapA.w, mapA.l)} · ${escapeHTML(b.n)} ${entryRecordText(mapB.w, mapB.l)} · ${entrySampleLabel(mapN)}`
-        : '세트 맵을 선택하면 맵 성적을 반영합니다.';
+        : '세트 맵을 선택하면 맵 성적을 반영합니다';
     const h2hDetail = h2hN
         ? `${entryPeriodLabel()} ${displayH2h.w}승 ${displayH2h.l}패 · ${entrySampleLabel(h2hN)}`
         : '맞대결 표본 없음';
@@ -757,7 +757,7 @@ function entryAnalysisHtml(match, wp) {
             ${entryAnalysisStat('종족전', wp.raceAdj || 0, raceDetail, raceN && raceN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
             ${entryAnalysisStat('선택 맵', wp.mapAdj || 0, mapDetail, mapN && mapN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
         </div>
-        <div class="entry-analysis-foot">보정은 레이팅이 설명하지 못한 '실제 − 기대' 차이만 반영합니다. 승률은 기간 탭과 무관하게 통산 데이터에 90일 반감기를 적용하고, 기간 탭은 위 전적 설명만 바꿉니다.</div>
+        <div class="entry-analysis-foot">보정은 레이팅이 설명하지 못한 '실제 − 기대' 차이만 반영합니다. 승률은 기간 탭과 무관하게 통산 데이터에 90일 반감기를 적용하고, 기간 탭은 위 전적 설명만 바꿉니다</div>
     </div>`;
 }
 
@@ -896,12 +896,12 @@ function renderEntryAutoTierPicker() {
     root.innerHTML = tiers.length ? tiers.map(t => {
         const on = EntryState.autoTiers.has(t);
         return `<button type="button" class="entry-auto-tier-chip${on ? ' is-active' : ''}" aria-pressed="${on}" onclick="entryToggleAutoTier('${jsAttr(t)}')">${escapeHTML(tierLabel(t))}</button>`;
-    }).join('') : '<span class="entry-auto-tier-empty">양쪽 소속에 공통으로 있는 티어가 없습니다.</span>';
+    }).join('') : '<span class="entry-auto-tier-empty">양쪽 소속에 공통으로 있는 티어가 없습니다</span>';
 }
 
 function entryToggleAutoTierPicker() {
     if (!EntryState.teams[0] || !EntryState.teams[1]) {
-        alert('자동매칭을 하려면 양쪽 소속을 먼저 골라 주세요.');
+        alert('자동매칭을 하려면 양쪽 소속을 먼저 골라 주세요');
         return;
     }
     const box = document.getElementById('entry-auto-tier-picker');
@@ -928,7 +928,7 @@ function entrySelectAllAutoTiers() {
 
 function entryAutoFillSelectedTiers() {
     if (!EntryState.autoTiers.size) {
-        alert('자동매칭에 사용할 티어를 하나 이상 선택해 주세요.');
+        alert('자동매칭에 사용할 티어를 하나 이상 선택해 주세요');
         return;
     }
     const players = entryPlayers();
@@ -937,7 +937,7 @@ function entryAutoFillSelectedTiers() {
         return EntryState.autoTiers.has(tier);
     });
     if (!all.length) {
-        alert('선택한 티어에서 만들 수 있는 대진이 없습니다.');
+        alert('선택한 티어에서 만들 수 있는 대진이 없습니다');
         return;
     }
     EntryState.matches = all.map(m => ({ ...m, map: m.map || '' }));
@@ -1135,7 +1135,7 @@ function entryChooseMap(index, value) {
 
 function entryChooseCustomMap(index) {
     const current = entryMapName(EntryState.matches[index]?.map || '');
-    const custom = window.prompt('맵 이름을 입력하세요.', current) || '';
+    const custom = window.prompt('맵 이름을 입력하세요', current) || '';
     if (!custom.trim()) return;
     entrySetMatchMap(index, custom.trim(), true);
 }
@@ -1153,7 +1153,7 @@ function entryMapPickerHtml(index, current) {
     }).join('');
     return `<div class="entry-map-popover">
         <div class="entry-map-popover-head"><strong>${showAll ? '전체 맵' : '최근 많이 하는 맵'}</strong><span>${showAll ? all.length : Math.min(primary.length, all.length)}개</span></div>
-        <div class="entry-map-options">${buttons || '<span class="entry-map-empty">맵 정보가 없습니다.</span>'}</div>
+        <div class="entry-map-options">${buttons || '<span class="entry-map-empty">맵 정보가 없습니다</span>'}</div>
         <div class="entry-map-popover-actions">
             <button type="button" onclick="entryToggleAllMaps(${index})">${showAll ? '최근 맵만' : '전체 맵 보기'}</button>
             <button type="button" onclick="entryChooseCustomMap(${index})">직접 입력</button>
@@ -1175,7 +1175,7 @@ function renderEntryColBody(side) {
     body.innerHTML = `<div class="h2h-suggest-head">${escapeHTML(label)} ${list.length.toLocaleString('ko-KR')}명</div>`
         + (list.length
             ? list.map(p => entryPlayerItemHtml(side, p, searching || !team)).join('')
-            : `<div class="h2h-suggest-empty">${searching ? '찾는 선수가 없습니다.' : '명단이 비어 있습니다.'}</div>`);
+            : `<div class="h2h-suggest-empty">${searching ? '찾는 선수가 없습니다' : '명단이 비어 있습니다'}</div>`);
 }
 
 function renderEntryRosters() {
@@ -1203,7 +1203,7 @@ function entryMatchRowHtml(m, i) {
             : '<span class="entry-match-none">맞대결 없음</span>');
     const probText = wp
         ? `<span class="entry-match-probval">예상 승률 <b>${(wp.p * 100).toFixed(1)}%</b> : ${((1 - wp.p) * 100).toFixed(1)}%</span>`
-        : '<span class="entry-match-probval">예상 승률을 계산할 수 없습니다.</span>';
+        : '<span class="entry-match-probval">예상 승률을 계산할 수 없습니다</span>';
     const mapValue = entryMapName(m.map);
     const isOpen = Boolean(EntryState.analysisOpen[i]);
     const analysis = (wp && isOpen) ? entryAnalysisHtml(m, wp) : '';
@@ -1473,7 +1473,7 @@ function entryPosterRows() {
 async function entrySavePoster() {
     const ta = entrySideName(0); const tb = entrySideName(1);
     const rows = entryPosterRows();
-    if (!rows.length) { alert('대진을 먼저 만들어 주세요.'); return; }
+    if (!rows.length) { alert('대진을 먼저 만들어 주세요'); return; }
     // 맞대결을 아직 안 받았으면 먼저 받는다(포스터의 가운데 칸이 그 값이다)
     await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]), 'all');
 
@@ -1595,7 +1595,7 @@ async function entrySavePoster() {
 
     let url;
     try { url = cv.toDataURL('image/png'); }
-    catch (e) { alert('포스터를 만들지 못했습니다. 프로필 사진을 불러올 수 없는 환경일 수 있습니다.'); return; }
+    catch (e) { alert('포스터를 만들지 못했습니다. 프로필 사진을 불러올 수 없는 환경일 수 있습니다'); return; }
     const a = document.createElement('a');
     a.href = url;
     a.download = `엔트리_${ta}_vs_${tb}.png`;

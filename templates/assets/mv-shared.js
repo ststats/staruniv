@@ -95,13 +95,13 @@ function mvResolveCustomInput(raw, order, memberList) {
 
     const byName = members.find(m => m && m['이름'] != null && String(m['이름']).trim().toLowerCase() === lowered);
     if (byName) {
-        if (isInOrder(byName['SOOP ID'])) return { error: '이미 선택된 목록에 있습니다.' };
+        if (isInOrder(byName['SOOP ID'])) return { error: '이미 선택된 목록에 있습니다' };
         return { entry: { soopId: byName['SOOP ID'], name: byName['이름'], isMember: true } };
     }
 
     const id = lowered;
-    if (!MV_SHARED_SOOP_ID_PATTERN.test(id)) return { error: '멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다.' };
-    if (isInOrder(id)) return { error: '이미 추가된 아이디입니다.' };
+    if (!MV_SHARED_SOOP_ID_PATTERN.test(id)) return { error: '멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다' };
+    if (isInOrder(id)) return { error: '이미 추가된 아이디입니다' };
     const knownMember = members.find(m => m && m['SOOP ID'] === id);
     return { entry: knownMember
         ? { soopId: id, name: knownMember['이름'], isMember: true }

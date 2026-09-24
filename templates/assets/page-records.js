@@ -141,7 +141,7 @@ function calculateTeamSummaries() {
 function teamSetDetailsHtml(m) {
     const teamRounds = roundsForMatch(m);
     if (teamRounds.length === 0) {
-        return emptyRowHtml(6, '상세 세트 기록이 없습니다.', 'py-2 fs-body');
+        return emptyRowHtml(6, '상세 세트 기록이 없습니다', 'py-2 fs-body');
     }
     return teamRounds.map(r => {
         const isWin = r['결과'] === '승';
@@ -469,7 +469,7 @@ function renderOpponentTable() {
         .sort((a, b) => (b.stat.wins + b.stat.losses) - (a.stat.wins + a.stat.losses));
 
     if (!cards.length) {
-        wrap.innerHTML = '<div class="h2h-empty">이 형식의 전적이 없습니다.</div>';
+        wrap.innerHTML = '<div class="h2h-empty">이 형식의 전적이 없습니다</div>';
         return;
     }
     wrap.innerHTML = `<div class="h2h-rivals">${cards.map(({ team, stat }) => {

@@ -75,12 +75,12 @@
           opponent_team:C().value('ar_opp').trim(),match_format:C().empty(C().value('ar_format')),method:C().empty(C().value('ar_method')),
           final_result:C().empty(C().value('ar_result')),set_result:C().empty(C().value('ar_set'))
         };
-        if(!p_match.match_date||!p_match.opponent_team)throw new Error('날짜와 상대 대학은 필수입니다.');
+        if(!p_match.match_date||!p_match.opponent_team)throw new Error('날짜와 상대 대학은 필수입니다');
         const p_rounds=collectRounds();
         const check=validateScore(p_match,p_rounds);
-        if(check?.mismatches.length&&!confirm(`세트 결과와 매치 결과가 다릅니다.\n${check.mismatches.join('\n')}\n그래도 저장할까요?`))throw new Error('결과 불일치로 저장을 취소했습니다.');
+        if(check?.mismatches.length&&!confirm(`세트 결과와 매치 결과가 다릅니다.\n${check.mismatches.join('\n')}\n그래도 저장할까요?`))throw new Error('결과 불일치로 저장을 취소했습니다');
         const {data,error}=await C().state.client.rpc('admin_save_match',{p_match,p_rounds});if(error)throw error;
-        C().toast(`경기 ${data}번을 저장했습니다.`);await load(S.page);
+        C().toast(`경기 ${data}번을 저장했습니다`);await load(S.page);
       },
       onDelete:sourceNo&&!clone?async()=>{const {error}=await C().state.client.from('matches').delete().eq('match_no',sourceNo);if(error)throw error;await C().audit('delete','matches',sourceNo,{opponent_team:match.opponent_team});await load(S.page);}:null
     });
@@ -123,7 +123,7 @@
   function render(){
     const root=document.getElementById('adminDedicatedRoot');root.hidden=false;document.body.classList.add('admin-dedicated-active');
     const pages=Math.max(1,Math.ceil(S.count/S.size));
-    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><div class="admin-hero-actions"><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다.</p></div></div><div class="admin-dedicated-shell">
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><div class="admin-hero-actions"><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다</p></div></div><div class="admin-dedicated-shell">
       <div class="admin-toolbar admin-filter-grid">
         <input class="admin-input" id="recordsDate" type="date" value="${esc(C().value('recordsDate'))}">
         <input class="admin-input" id="recordsOpponent" placeholder="상대 대학" value="${esc(C().value('recordsOpponent'))}">
@@ -131,7 +131,7 @@
         <input class="admin-input" id="recordsPlayer" placeholder="선수 검색" value="${esc(C().value('recordsPlayer'))}">
         <button class="admin-btn primary" id="recordsSearch">조회</button>
       </div>
-      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>세트 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${wl(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다.</td></tr>'}</tbody></table></div>
+      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>세트 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${wl(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다</td></tr>'}</tbody></table></div>
       <div class="admin-pager"><button class="admin-btn" id="recordsPrev"${S.page<=0?' disabled':''}>이전</button><span>${S.page+1} / ${pages} · ${S.count}경기</span><button class="admin-btn" id="recordsNext"${S.page>=pages-1?' disabled':''}>다음</button></div></div>`;
     root.querySelector('#recordsAdd').onclick=()=>openEditor(null);
     root.querySelector('#recordsSearch').onclick=()=>load(0);
