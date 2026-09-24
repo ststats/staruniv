@@ -19,7 +19,8 @@ from capture_calendar import crop_png_height, find_chrome, run_chrome  # noqa: E
 W, H = 1200, 630
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates', 'static')
 OUT_DIR = os.path.join(STATIC_DIR, 'images', 'share')
-LOGO = os.path.join(STATIC_DIR, 'images', '캄몬스타즈.webp')
+# 사이트용 로고는 작게(96px) 줄여 두었으므로 미리보기 이미지는 원본을 쓴다
+LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', '캄몬스타즈-원본.webp')
 FONT_CSS = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css'
 
 # 페이지 머리 위 영문 라벨(pages/*.html의 data-label)과 같게 둔다
