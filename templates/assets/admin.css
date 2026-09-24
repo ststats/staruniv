@@ -1414,3 +1414,46 @@ body.admin-drawer-open { overflow: hidden; }
     .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
     .admin-inline-left strong { display: none; }
 }
+
+/* =============================================================================
+   11. 티어표 갱신 (티어표 관리 > 티어표 갱신)
+   ============================================================================= */
+.admin-tu-box { margin-bottom: 22px; }
+.admin-tu-form { display: grid; gap: 10px; }
+.admin-tu-actions,
+.admin-tu-apply { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.admin-tu-apply { justify-content: flex-end; margin-top: 16px; }
+.admin-tu-apply .admin-field { min-width: 180px; }
+.admin-tu-jobs { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-tu-job {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    min-width: 120px; max-width: 280px; padding: 8px 12px; text-align: left;
+    background: var(--admin-soft); border: 1px solid var(--admin-line); border-radius: 6px;
+    color: var(--color-text); cursor: pointer;
+}
+.admin-tu-job.is-on { border-color: var(--admin-ink); box-shadow: inset 0 0 0 1px var(--admin-ink); }
+.admin-tu-job small { color: var(--color-text-muted); font-size: 11px; }
+.admin-tu-status { font-size: 12px; font-weight: 700; }
+.admin-tu-status.is-failed,
+.admin-tu-err { color: #c62828 !important; }
+.admin-tu-status.is-done { color: #b26a00; }
+.admin-tu-status.is-applied { color: #2e7d32; }
+/* 카드 조각: 1100px 폭 원본에서 사진+글씨(약 215×88)만 보이게 자른다 */
+.admin-tu-thumb {
+    position: relative; flex: 0 0 auto; width: 214px; max-width: 214px; height: 88px; overflow: hidden;
+    border-radius: 4px; background: var(--admin-soft);
+}
+.admin-tu-thumb img { position: absolute; left: 0; top: 0; width: 1100px; max-width: none; height: auto; }
+.admin-tu-table td { vertical-align: middle; }
+.admin-tu-table tr.is-uncertain td { background: rgba(255, 193, 7, .08); }
+.admin-tu-reviews { display: grid; gap: 8px; }
+.admin-tu-review {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 12px;
+    border: 1px solid var(--admin-line); border-radius: 6px;
+}
+.admin-tu-review > div { flex: 1 1 200px; min-width: 0; }
+.admin-tu-review small { color: var(--color-text-muted); }
+.admin-tu-review > select,
+.admin-tu-review > .admin-field { flex: 0 0 200px; }
+.admin-tu-choice { display: flex; flex-wrap: wrap; gap: 6px; flex: 2 1 320px !important; }
+.admin-tu-choice .admin-input { width: auto; min-width: 110px; flex: 1 1 110px; }

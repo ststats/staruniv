@@ -558,6 +558,38 @@ def load_memory_sql(conn):
     return memory
 
 
+def save_memory_sql(conn, memory):
+    """기억 전체를 DB에 다시 쓴다(한 트랜잭션)."""
+    with conn.transaction(), conn.cursor() as c:
+        c.execute('delete from public.tier_memory_glyphs')
+        c.execute('delete from public.tier_memory_photos')
+        c.executemany('insert into public.tier_memory_glyphs (kind, value, feat, bg) values (%s, %s, %s, %s)',
+                      [(k, t['value'], t['feat'], t.get('bg')) for k in ('tier', 'race') for t in memory[k]])
+        c.executemany('insert into public.tier_memory_photos (soop_id, nickname, hash, tier, race, tier_feat, race_feat) '
+                      'values (%s, %s, %s, %s, %s, %s, %s)',
+                      [(p.get('soop_id'), p['nickname'], p['hash'], p.get('tier'), p.get('race'),
+                        p.get('tier_feat'), p.get('race_feat')) for p in memory['photos']])
+
+
+def learn_applied(conn, memory):
+    """관리자가 반영한 작업의 확인된 카드(사진·글씨 ↔ 선수)를 기억에 더한다. 반환: 배운 작업 수."""
+    rows = conn.execute('select id, result, applied from public.tier_update_jobs '
+                        'where status = %s and learned_at is null order by id', ('applied',)).fetchall()
+    for job_id, result, applied in rows:
+        sections = (result or {}).get('sections') or []
+        confirmed = []
+        for c in (applied or {}).get('confirmed') or []:
+            si, i = c['ref']
+            if si < len(sections) and i < len(sections[si]['cards']) and c.get('nickname'):
+                confirmed.append((sections[si]['cards'][i], c))
+        learn(memory, confirmed)
+        print(f'작업 {job_id}에서 배움: 카드 {len(confirmed)}장', file=sys.stderr)
+    if rows:
+        save_memory_sql(conn, memory)
+        conn.execute('update public.tier_update_jobs set learned_at = now() where id = any(%s)', ([r[0] for r in rows],))
+    return len(rows)
+
+
 def run_job(job_id: int):
     from psycopg.types.json import Jsonb
     conn = db_connect()
@@ -573,6 +605,7 @@ def run_job(job_id: int):
         if im.width != 1100:
             im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
         memory = load_memory_sql(conn)
+        learn_applied(conn, memory)
         sections = read_image(im, memory)
         fa = read_fa_text(fa_text or '')
         db = load_db_sql(conn)
@@ -599,16 +632,26 @@ FA_TIER = {'갓티어': '갓', '킹티어': '킹', '잭티어': '잭', '조커�
            '스페읻': '스페이드', '스페이드': '스페이드', 'BABY': '베이비', '베이비': '베이비'}
 
 
+FA_TIERS = {'갓', '킹', '잭', '조커', '스페이드', '베이비'} | {str(n) for n in range(9)}
+
+
 def read_fa_text(text: str):
     out, tier, race = [], None, None
     for line in text.splitlines():
         line = line.strip()
         if not line or 'FA 인원' in line:
             continue
+        # 명단 줄은 '티어｜ T …' 또는 이어지는 'P …' 줄뿐이다. 글의 다른 문장은 이름으로 읽지 않는다
+        if not ('｜' in line or '|' in line or line.split()[0] in ('T', 'Z', 'P')):
+            continue
         if '｜' in line or '|' in line:
             head, line = re.split(r'[｜|]', line, maxsplit=1)
             head = head.strip()
             tier = FA_TIER.get(head, re.sub(r'티어$', '', head).strip())
+            if tier not in FA_TIERS:   # '댓글 환영 | 공지' 같은 다른 문장
+                tier = race = None
+                continue
+            race = None
         for tok in line.split():
             if tok in ('T', 'Z', 'P'):
                 race = {'T': '테란', 'Z': '저그', 'P': '프로토스'}[tok]

@@ -49,6 +49,17 @@ Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand
 
 토큰 교체: `select vault.update_secret((select id from vault.secrets where name = 'github_actions_token'), '<새 토큰>');`
 
+### 티어표 갱신(반자동)
+
+어드민 티어표 → **티어표 갱신** 탭. 펨코 티어표 이미지 주소와 FA 명단 글을 넣고 분석을 요청하면
+Supabase(`admin_request_tier_analysis`)가 GitHub Actions(`tier-analysis.yml`)를 실행해
+`scripts/tier_table.py --job`이 이미지를 읽고 DB와 비교합니다(1~2분). 결과 화면에서 변동을 체크해 **반영**하면
+소속·티어·종족이 바뀌고, 대학으로 옮기면 연혁 끝에 대학이, 숫자 티어로 오르면 그 티어 승급일에 날짜가 더해집니다.
+표·FA 명단 어디에도 없는 선수는 휴면, 새 대학·모르는 카드·FA 명단에만 있는 사람은 직접 고릅니다.
+반영한 카드(사진·티어/종족 글씨)는 다음 분석 때 기억에 더해져 점점 덜 묻습니다.
+화면의 **펨코 글에서 가져오기** 버튼을 북마크바로 끌어 두면 펨코 글에서 두 칸을 자동으로 채워 엽니다.
+설정: `supabase/tier_table_update.sql` 한 번 실행(달력 버튼과 같은 토큰을 씀).
+
 ## 로컬에서 빌드·확인
 
 ```bash
@@ -80,13 +91,14 @@ npm test                              # node --test (의존성 없음)
 |---|---|---|
 | `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
-| `github_actions_token` | Supabase Vault | "달력 사진 갱신" 버튼 |
+| `github_actions_token` | Supabase Vault | "달력 사진 갱신" 버튼, 티어표 갱신 |
 
 ## Supabase SQL
 
 - 공유 DB의 파이프라인 스키마와 공개 뷰: `ststat/migrations`
 - 이 저장소 `supabase/`: `setup.sql`(관리자 테이블·RPC 초기 설치), `public_read.sql`(공개 읽기 권한),
-  `admin_inline_editor.sql`, `admin_elo_stats.sql`, `calendar_capture.sql`(달력 사진 갱신 버튼)
+  `admin_inline_editor.sql`, `admin_elo_stats.sql`, `calendar_capture.sql`(달력 사진 갱신 버튼),
+  `tier_table_update.sql`(티어표 갱신)
 
 ## 지켜야 할 것
 

@@ -23,6 +23,10 @@ create table if not exists public.tier_update_jobs (
   finished_at timestamptz,
   applied_at timestamptz
 );
+-- 반영 내용(다음 분석 때 확인된 카드를 기억에 더한다)과 GitHub 실행 요청 번호
+alter table public.tier_update_jobs add column if not exists applied jsonb;
+alter table public.tier_update_jobs add column if not exists learned_at timestamptz;
+alter table public.tier_update_jobs add column if not exists dispatch_request bigint;
 alter table public.tier_update_jobs enable row level security;
 drop policy if exists tier_update_jobs_admin_read on public.tier_update_jobs;
 create policy tier_update_jobs_admin_read on public.tier_update_jobs
@@ -65,6 +69,7 @@ as $$
 declare
   token text;
   job_id bigint;
+  req bigint;
 begin
   if not coalesce(public.is_admin(), false) then
     raise exception '관리자만 실행할 수 있습니다.';
@@ -83,7 +88,7 @@ begin
   values (p_image_url, nullif(btrim(coalesce(p_fa_text, '')), ''))
   returning id into job_id;
 
-  perform net.http_post(
+  select net.http_post(
     url := 'https://api.github.com/repos/ststats/staruniv/actions/workflows/tier-analysis.yml/dispatches',
     body := jsonb_build_object('ref', 'main', 'inputs', jsonb_build_object('job_id', job_id::text)),
     headers := jsonb_build_object(
@@ -92,10 +97,148 @@ begin
       'X-GitHub-Api-Version', '2022-11-28',
       'User-Agent', 'staruniv-supabase'
     )
-  );
+  ) into req;
+  update public.tier_update_jobs set dispatch_request = req where id = job_id;
   return job_id;
 end;
 $$;
 
 revoke all on function public.admin_request_tier_analysis(text, text) from public, anon;
 grant execute on function public.admin_request_tier_analysis(text, text) to authenticated;
+
+-- GitHub 실행 요청의 응답(204면 성공). 작업이 오래 '대기'에 머물 때 관리자 화면이 원인을 보여 준다.
+create or replace function public.admin_tier_job_dispatch_status(p_job_id bigint)
+returns table (status_code integer, error text)
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+begin
+  if not coalesce(public.is_admin(), false) then
+    raise exception '관리자만 실행할 수 있습니다.';
+  end if;
+  return query
+    select r.status_code, coalesce(r.error_msg, case when r.status_code >= 300 then left(r.content::text, 300) end)
+    from public.tier_update_jobs j join net._http_response r on r.id = j.dispatch_request
+    where j.id = p_job_id;
+end;
+$$;
+revoke all on function public.admin_tier_job_dispatch_status(bigint) from public, anon;
+grant execute on function public.admin_tier_job_dispatch_status(bigint) to authenticated;
+
+-- 반영: 관리자 화면에서 고른 변동을 tier_members에 한 번에 적용한다.
+--   p_updates   [{id, affiliation?, tier?, race?, nickname?}]  바뀌는 칸만
+--   p_inserts   [{nickname, tier, race, affiliation, soop_id?}] 새 선수
+--   p_confirmed [{ref:[구역,카드], id} 또는 {ref, insert:새 선수 순번(0부터)}]  이 카드가 이 선수로 확인됨(학습용)
+--   p_date      승급일로 적을 날짜(보통 티어표 글 날짜)
+-- 소속이 대학으로 바뀌면 연혁 끝에 대학을 붙이고, 숫자 티어로 오르면 그 티어 승급일에 날짜를 더한다
+-- (이미 날짜가 있으면 강등 뒤 재승급이라 쉼표로 이어 적는다).
+create or replace function public.admin_apply_tier_update(
+  p_job_id bigint, p_updates jsonb, p_inserts jsonb, p_confirmed jsonb, p_date date default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ladder constant text[] := array['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
+  stamp text := to_char(timezone('Asia/Seoul', now()), 'YYYY-MM-DD HH24:MI:SS');
+  d text := to_char(coalesce(p_date, timezone('Asia/Seoul', now())::date), 'YYYY-MM-DD');
+  job_status text;
+  u jsonb;
+  r public.tier_members;
+  new_aff text;
+  new_tier text;
+  hist text;
+  col text;
+  cur text;
+  next_order integer;
+  new_id bigint;
+  ins_ids bigint[] := '{}';
+  conf jsonb := '[]'::jsonb;
+  pid bigint;
+  n_upd integer := 0;
+begin
+  if not coalesce(public.is_admin(), false) then
+    raise exception '관리자만 실행할 수 있습니다.';
+  end if;
+  select status into job_status from public.tier_update_jobs where id = p_job_id for update;
+  if job_status is null then
+    raise exception '작업 %이 없습니다.', p_job_id;
+  end if;
+  if job_status <> 'done' then
+    raise exception '분석이 끝난 작업만 반영할 수 있습니다(지금: %).', job_status;
+  end if;
+
+  for u in select * from jsonb_array_elements(coalesce(p_updates, '[]'::jsonb)) loop
+    select * into r from public.tier_members where id = (u->>'id')::bigint for update;
+    if not found then
+      raise exception '선수 번호 %이 없습니다.', u->>'id';
+    end if;
+    new_aff := coalesce(nullif(btrim(u->>'affiliation'), ''), r.affiliation);
+    new_tier := coalesce(nullif(btrim(u->>'tier'), ''), r.tier);
+    hist := r.history;
+    if new_aff is distinct from r.affiliation and new_aff not in ('FA', '휴면')
+       and btrim(regexp_replace(coalesce(hist, ''), '^.*,', '')) is distinct from new_aff then
+      hist := case when coalesce(btrim(hist), '') = '' then new_aff else hist || ', ' || new_aff end;
+    end if;
+    if new_tier is distinct from r.tier and new_tier ~ '^[0-8]$'
+       and array_position(ladder, new_tier) < coalesce(array_position(ladder, r.tier), 999) then
+      col := 'promoted_tier_' || new_tier;
+      execute format('select %I from public.tier_members where id = $1', col) into cur using r.id;
+      if coalesce(cur, '') not like '%' || d || '%' then
+        execute format('update public.tier_members set %I = $1 where id = $2', col)
+          using case when coalesce(btrim(cur), '') = '' then d else cur || ', ' || d end, r.id;
+      end if;
+    end if;
+    update public.tier_members set
+      affiliation = new_aff,
+      tier = new_tier,
+      race = coalesce(nullif(btrim(u->>'race'), ''), race),
+      nickname = coalesce(nullif(btrim(u->>'nickname'), ''), nickname),
+      history = hist,
+      modified_at = stamp
+    where id = r.id;
+    n_upd := n_upd + 1;
+  end loop;
+
+  select coalesce(max(source_order), 0) into next_order from public.tier_members;
+  for u in select * from jsonb_array_elements(coalesce(p_inserts, '[]'::jsonb)) loop
+    if coalesce(btrim(u->>'nickname'), '') = '' then
+      raise exception '새 선수 닉네임이 비었습니다.';
+    end if;
+    next_order := next_order + 1;
+    insert into public.tier_members (source_order, nickname, soop_id, tier, race, affiliation, history,
+                                     modified_at, tier_table_registered)
+    values (next_order, btrim(u->>'nickname'), nullif(btrim(u->>'soop_id'), ''), nullif(u->>'tier', ''),
+            nullif(u->>'race', ''), nullif(u->>'affiliation', ''),
+            case when u->>'affiliation' in ('FA', '휴면') then null else nullif(u->>'affiliation', '') end,
+            stamp, d)
+    returning id into new_id;
+    ins_ids := ins_ids || new_id;
+  end loop;
+
+  -- 확인된 카드: 반영이 끝난 뒤의 선수 정보로 적어 둔다(다음 분석이 사진·글씨를 이 값으로 기억)
+  for u in select * from jsonb_array_elements(coalesce(p_confirmed, '[]'::jsonb)) loop
+    pid := case when u ? 'insert' then ins_ids[(u->>'insert')::int + 1] else (u->>'id')::bigint end;
+    select * into r from public.tier_members where id = pid;
+    if found then
+      conf := conf || jsonb_build_object('ref', u->'ref', 'id', r.id, 'soop_id', r.soop_id,
+                                         'nickname', r.nickname, 'tier', r.tier, 'race', r.race);
+    end if;
+  end loop;
+
+  update public.tier_update_jobs set status = 'applied', applied_at = now(),
+    applied = jsonb_build_object('date', d, 'updates', coalesce(p_updates, '[]'::jsonb),
+                                 'inserts', coalesce(p_inserts, '[]'::jsonb), 'confirmed', conf)
+  where id = p_job_id;
+  begin
+    perform public.admin_write_audit('tier_table_update', 'tier_members', p_job_id::text,
+      jsonb_build_object('updated', n_upd, 'inserted', coalesce(array_length(ins_ids, 1), 0)));
+  exception when undefined_function then null;
+  end;
+  return jsonb_build_object('updated', n_upd, 'inserted', coalesce(array_length(ins_ids, 1), 0));
+end;
+$$;
+revoke all on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date) from public, anon;
+grant execute on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date) to authenticated;
