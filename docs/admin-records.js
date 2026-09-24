@@ -114,20 +114,22 @@
   async function toggleRounds(no,tr){
     if(S.expanded.has(no)){S.expanded.delete(no);tr.nextElementSibling?.remove();return;}
     const rows=await getRounds(no);S.expanded.set(no,rows);
-    const detail=document.createElement('tr');detail.className='admin-expand-row';detail.innerHTML=`<td colspan="9"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>순서</th><th>세트명</th><th>라운드명</th><th>캄몬 선수</th><th>종족</th><th>티어</th><th>상대 선수</th><th>상대 종족</th><th>상대 티어</th><th>맵</th><th>결과</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.source_order}</td><td>${esc(r.set_name)}</td><td>${esc(r.round_name)}</td><td>${esc(r.our_player)}</td><td>${esc(r.our_race)}</td><td>${esc(r.our_tier)}</td><td>${esc(r.opponent_player)}</td><td>${esc(r.opponent_race)}</td><td>${esc(r.opponent_tier)}</td><td>${esc(r.map_name)}</td><td>${esc(r.result)}</td></tr>`).join('')}</tbody></table></div></td>`;tr.after(detail);
+    const detail=document.createElement('tr');detail.className='admin-expand-row';detail.innerHTML=`<td colspan="9"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>순서</th><th>세트명</th><th>라운드명</th><th>캄몬 선수</th><th>종족</th><th>티어</th><th>상대 선수</th><th>상대 종족</th><th>상대 티어</th><th>맵</th><th>결과</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.source_order}</td><td>${esc(r.set_name)}</td><td>${esc(r.round_name)}</td><td>${esc(r.our_player)}</td><td>${esc(r.our_race)}</td><td>${esc(r.our_tier)}</td><td>${esc(r.opponent_player)}</td><td>${esc(r.opponent_race)}</td><td>${esc(r.opponent_tier)}</td><td>${esc(r.map_name)}</td><td>${wl(r.result)}</td></tr>`).join('')}</tbody></table></div></td>`;tr.after(detail);
   }
+  // 승/패는 공개 전적 페이지와 같은 파랑·빨강으로 구분한다
+  function wl(v){const t=String(v??'');const c=t.includes('승')?'wl-w':t.includes('패')?'wl-l':'';return c?`<span class="admin-wl ${c}">${esc(t)}</span>`:esc(t);}
   function render(){
     const root=document.getElementById('adminDedicatedRoot');root.hidden=false;document.body.classList.add('admin-dedicated-active');
     const pages=Math.max(1,Math.ceil(S.count/S.size));
-    root.innerHTML=`<div class="admin-dedicated-shell"><div class="admin-dedicated-head"><div><span>RECORDS</span><h1>캄몬 전적 관리</h1></div><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div>
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><div class="admin-hero-actions"><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다.</p></div></div><div class="admin-dedicated-shell">
       <div class="admin-toolbar admin-filter-grid">
         <input class="admin-input" id="recordsDate" type="date" value="${esc(C().value('recordsDate'))}">
         <input class="admin-input" id="recordsOpponent" placeholder="상대 대학" value="${esc(C().value('recordsOpponent'))}">
         <input class="admin-input" id="recordsFormat" placeholder="경기 형식" value="${esc(C().value('recordsFormat'))}">
         <input class="admin-input" id="recordsPlayer" placeholder="선수 검색" value="${esc(C().value('recordsPlayer'))}">
-        <button class="admin-btn" id="recordsSearch">조회</button>
+        <button class="admin-btn primary" id="recordsSearch">조회</button>
       </div>
-      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>세트 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${esc(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다.</td></tr>'}</tbody></table></div>
+      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>세트 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${wl(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다.</td></tr>'}</tbody></table></div>
       <div class="admin-pager"><button class="admin-btn" id="recordsPrev"${S.page<=0?' disabled':''}>이전</button><span>${S.page+1} / ${pages} · ${S.count}경기</span><button class="admin-btn" id="recordsNext"${S.page>=pages-1?' disabled':''}>다음</button></div></div>`;
     root.querySelector('#recordsAdd').onclick=()=>openEditor(null);
     root.querySelector('#recordsSearch').onclick=()=>load(0);

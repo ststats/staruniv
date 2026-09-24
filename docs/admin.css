@@ -741,49 +741,30 @@ body.admin-drawer-open { overflow: hidden; }
    ============================================================================= */
 .admin-dedicated-active .page-section { display: none !important; }
 .admin-dedicated-active #adminDedicatedRoot { display: block !important; }
-.admin-dedicated {
+.admin-dedicated-shell {
     max-width: 1240px;
     margin: 0 auto;
-    padding: var(--space-page-top) 32px var(--space-page-bottom);
+    padding: 0 32px var(--space-page-bottom);
 }
 
-/* 머리: .section-title과 같은 짜임 (영문 눈썹 → 제목 → 밑줄) */
-.admin-dedicated-head {
+/* 머리: 공개 페이지와 같은 .page-header 네이비 히어로. 추가 버튼은 오른쪽 통계 자리에 둔다 */
+.admin-hero-actions {
+    grid-column: 2;
+    grid-row: 2;
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: var(--space-title-gap);
-    padding-bottom: 9px;
-    border-bottom: 1px solid var(--color-border);
+    gap: 6px;
 }
-.admin-dedicated-head > div:first-child { position: relative; }
-.admin-dedicated-head > div:first-child::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -10px;
-    height: 2px;
-    background: var(--navy-deco);
+.page-header .admin-btn {
+    min-height: 40px;
+    padding: 0 16px;
+    background: var(--panel-control);
+    background-image: none;
+    color: #fff;
+    font-size: 13px;
 }
-.admin-dedicated-head span {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--title-eyebrow);
-    font-size: var(--fs-eyebrow);
-    font-weight: 600;
-    letter-spacing: 0.16em;
-}
-.admin-dedicated-head h1 {
-    margin: 0;
-    color: var(--color-text-strong);
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-}
-.admin-dedicated-head > div:last-child:not(:first-child) { display: flex; gap: 6px; }
+.page-header .admin-btn:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.page-header .admin-btn.primary,
+.page-header .admin-btn.primary:hover { background: #fff; color: var(--navy); }
 
 .admin-filter-grid {
     display: grid;
@@ -832,6 +813,7 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-table td { border-bottom: 1px solid var(--color-border); }
 .admin-table td b { color: var(--color-text-strong); font-weight: 700; }
+.admin-table td .admin-wl { font-weight: 700; }
 .admin-table tbody tr:hover > td { background: var(--color-row-hover); }
 .admin-table tbody tr[data-match],
 .admin-table tbody tr[data-tier-id] { cursor: pointer; }
@@ -993,7 +975,8 @@ body.admin-drawer-open { overflow: hidden; }
     .admin-color-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-preview-row { grid-template-columns: minmax(0, 1fr); }
 
-    .admin-dedicated { padding: 16px 16px var(--space-page-bottom); }
+    .admin-dedicated-shell { padding: 0 16px var(--space-page-bottom); }
+    .admin-hero-actions { grid-column: 1 / -1; grid-row: 4; margin-top: 18px; }
     .admin-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-table { font-size: 12px; }
     .admin-table th,
