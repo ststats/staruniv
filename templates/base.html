@@ -14,6 +14,7 @@
     {#- 카카오톡/디스코드 등에 링크를 붙였을 때 보이는 미리보기 #}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="스타대학">
+    <meta property="og:locale" content="ko_KR">
     <meta property="og:title" content="{{ full_title }}">
     <meta property="og:description" content="{{ description }}">
     {%- if canonical_url %}
@@ -22,8 +23,11 @@
     {%- endif %}
     {%- if og_image_url %}
     <meta property="og:image" content="{{ og_image_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ full_title }}">
     {%- endif %}
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <script>
         document.documentElement.dataset.navPending = '';
     </script>

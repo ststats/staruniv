@@ -45,8 +45,10 @@ SITE_NAME = '스타대학'
 # 대표 주소(검색엔진 대표 URL, 링크 미리보기 이미지 주소에 쓰임 - 절대 주소여야 한다).
 # 다른 주소로 배포하면 워크플로 환경변수 SITE_URL로 바꾸면 된다(끝의 / 없이).
 SITE_URL = os.environ.get('SITE_URL', 'https://ststats.github.io/staruniv').rstrip('/')
-# 링크 미리보기 이미지. 가로 1200×630 PNG/JPG를 따로 만들어 images/에 넣고 이 값을 바꾸면 더 잘 보인다.
-OG_IMAGE_PATH = 'images/캄몬스타즈.webp'
+# 링크 미리보기 이미지: 페이지마다 1200×630 PNG(scripts/make_share_images.py로 만들어 저장소에 둔다).
+# 카카오톡은 webp 미리보기를 제대로 못 보여 줘서 PNG로 둔다.
+def og_image_path(page_id):
+    return f'images/share/{page_id}.png'
 
 def load_nav_config():
     """런타임 Supabase 설정을 사용하므로 빌드 시에는 모두 표시한다."""
@@ -71,7 +73,7 @@ def page_context(page_id, title, description, hidden_nav_ids=frozenset(), hidden
         'full_title': f'{title} | {SITE_NAME}' if title else SITE_NAME,
         'description': description,
         'canonical_url': f'{SITE_URL}/{page_url_path(page_id)}',
-        'og_image_url': f'{SITE_URL}/{quote(OG_IMAGE_PATH)}',
+        'og_image_url': f'{SITE_URL}/{quote(og_image_path(page_id))}',
         # 상단 메뉴에서 '홈'은 뺀다 - 왼쪽 로고가 홈 링크라(base.html) 중복이고, 메뉴 칸도
         # 아낀다. 홈 페이지 자체는 PAGES에 그대로 있으니 계속 생성된다.
         # 숨긴 메뉴도 마크업에는 남기고 hidden 속성만 붙인다 - core.js가 런타임에
