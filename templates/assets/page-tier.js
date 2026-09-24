@@ -72,7 +72,7 @@ async function fetchTierMembers() {
             .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
             .order('source_order', { ascending: true })
             .order('soop_id', { ascending: true })
-            .range(from, to), { parallel: 1 });   // 수백 명이라 한 쪽이면 끝난다
+            .range(from, to));   // 1천 명이 넘어 두 쪽을 함께 받는다
         const members = asArray(data).map(r => ({
             id: String(r.soop_id || '').trim(),
             nickname: String(r.nickname || '').trim(),
@@ -658,6 +658,14 @@ bootPage(async () => {
     // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
     // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
     ensureTierPick();
+
+    // 상대전적·분석 탭 주소로 바로 들어오면 그 탭이 쓰는 선수 목록도 명단과 함께 받기 시작한다
+    // (명단을 다 받은 뒤 탭을 열면서 시작하면 요청 한 번을 더 기다린다). 실패하면 탭이 다시 받는다.
+    const startParams = new URLSearchParams(location.search);
+    const startView = startParams.get('view');
+    if (startView === 'h2h' || startView === 'analysis') h2hLoadIndex().catch(() => {});
+    // 분석 탭에 선수까지 담긴 주소(공유 링크)면 레이팅 기록(약 8천 줄)도 미리 받는다
+    if (startView === 'analysis' && startParams.get('p')) analysisLoadRating();
 
     let payload;
     try {

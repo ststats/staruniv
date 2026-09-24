@@ -88,7 +88,7 @@
   }
   async function loadFilterOptions(){
     const all=await fetchAllPages((from,to)=>C().state.client.from('tier_members')
-      .select('tier,affiliation,race').order('id',{ascending:true}).range(from,to),{parallel:1});
+      .select('tier,affiliation,race').order('id',{ascending:true}).range(from,to));
     const clean=key=>[...new Set(all.map(r=>String(r[key]||'').trim()).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,'ko',{numeric:true,sensitivity:'base'}));
     const tiers=clean('tier').sort((a,b)=>tierRank(a)-tierRank(b)||a.localeCompare(b,'ko'));
