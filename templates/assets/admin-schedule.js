@@ -124,8 +124,104 @@
     });
   }
 
+  // 달력 이미지 저장: 공개 일정의 캡처 화면(schedule/?capture=calendar)을 화면 밖 폭 804px iframe에
+  // 열어 그대로 PNG로 만든다. iframe 안에서는 페이지가 '폭 804px 화면'으로 그려지므로 폰에서 눌러도
+  // 서버 캡처(capture.js → docs/data/calendar.png)와 같은 배치가 나온다. 높이는 내용에 맞춰 잰다.
+  const CAPTURE_WIDTH = 804;
+  const HTML_TO_IMAGE = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js';
+  const BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+  function waitFor(check, ms, message) {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const tick = () => {
+        let ok = false;
+        try { ok = check(); } catch (_) { ok = false; }
+        if (ok) return resolve(ok);
+        if (Date.now() - start > ms) return reject(new Error(message));
+        setTimeout(tick, 150);
+      };
+      tick();
+    });
+  }
+
+  function loadScriptInto(doc, src) {
+    return new Promise((resolve, reject) => {
+      const s = doc.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('이미지 도구를 불러오지 못했습니다.'));
+      doc.head.appendChild(s);
+    });
+  }
+
+  async function saveCalendarImage(btn) {
+    if (btn.disabled) return;
+    const label = btn.querySelector('span');
+    const idle = label.textContent;
+    btn.disabled = true;
+    label.textContent = '이미지 만드는 중...';
+    const frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.tabIndex = -1;
+    frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${CAPTURE_WIDTH}px;height:2000px;border:0;opacity:0;pointer-events:none;`;
+    try {
+      const loaded = new Promise((resolve, reject) => { frame.onload = resolve; frame.onerror = reject; });
+      frame.src = 'schedule/?capture=calendar';
+      document.body.appendChild(frame);
+      await loaded;
+      const win = frame.contentWindow, doc = frame.contentDocument;
+      await waitFor(() => {
+        const days = doc.getElementById('daysGrid'), today = doc.getElementById('todayList');
+        return doc.body.classList.contains('calendar-capture')
+          && days?.getAttribute('aria-busy') === 'false'
+          && today?.getAttribute('aria-busy') === 'false'
+          && days.querySelector('.cal-day-cell');
+      }, 15000, '달력을 불러오는 데 시간이 너무 걸립니다.');
+      if (doc.fonts?.ready) await doc.fonts.ready;
+      await waitFor(() => [...doc.images].every(img => img.complete), 5000, '').catch(() => {});
+      await loadScriptInto(doc, HTML_TO_IMAGE);
+      const target = doc.querySelector('.cal-main-layout');
+      const blob = await win.htmlToImage.toBlob(target, {
+        pixelRatio: 2,
+        backgroundColor: win.getComputedStyle(doc.body).backgroundColor,
+        imagePlaceholder: BLANK_IMG,   // 외부 사진을 못 받으면 빈 칸으로 두고 계속한다
+      });
+      if (!blob) throw new Error('이미지를 만들지 못했습니다.');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `calendar-${calTodayStr()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      C().toast('달력 이미지를 저장했습니다.');
+    } catch (e) {
+      C().toast(C().errorText ? C().errorText(e) : String(e.message || e), 'error');
+    } finally {
+      frame.remove();
+      btn.disabled = false;
+      label.textContent = idle;
+    }
+  }
+
+  function addCaptureButton() {
+    const view = document.getElementById('view-calendar');
+    if (!view || document.getElementById('adminCalendarCapture')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'adminCalendarCapture';
+    b.className = 'admin-floating-add';
+    b.dataset.icon = 'download';
+    b.innerHTML = '<span>달력 이미지 저장</span>';
+    b.onclick = () => saveCalendarImage(b);
+    view.prepend(b);
+  }
+
   async function init() {
     if (document.body.dataset.adminPage !== 'schedule') return;
+    addCaptureButton();
     await C().loadMembers();
     const publicOffAirExtra = window.calOffAirExtra;
     window.calCardExtra = item => C().state.editMode

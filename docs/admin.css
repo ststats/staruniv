@@ -28,6 +28,7 @@ body.admin-mode {
     --admin-soft: #f3f4f6;
     --admin-ico-plus-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='white' stroke-width='2.2'/%3E%3C/svg%3E");
     --admin-ico-edit-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --admin-ico-download-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10' fill='none' stroke='white' stroke-width='1.9'/%3E%3C/svg%3E");
 }
 html[data-theme="dark"] body.admin-mode {
     --admin-ink: #e9ecf1;
@@ -36,6 +37,7 @@ html[data-theme="dark"] body.admin-mode {
     --admin-line: #2b3039;
     --admin-ico-plus-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='%23111a2c' stroke-width='2.2'/%3E%3C/svg%3E");
     --admin-ico-edit-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='%23111a2c' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --admin-ico-download-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10' fill='none' stroke='%23111a2c' stroke-width='1.9'/%3E%3C/svg%3E");
 }
 
 .admin-hidden.admin-hidden { display: none !important; }
@@ -974,6 +976,8 @@ body.admin-drawer-open { overflow: hidden; }
     background-size: 14px;
 }
 .admin-floating-add[data-icon="edit"]::after { background-image: var(--admin-ico-edit-on-ink); }
+.admin-floating-add[data-icon="download"]::after { background-image: var(--admin-ico-download-on-ink); }
+.admin-floating-add:disabled { opacity: .6; cursor: wait; }
 .admin-floating-add:hover { background: var(--admin-soft); }
 
 

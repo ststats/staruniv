@@ -2510,8 +2510,11 @@ body.calendar-capture .cal-today-card-wrapper {
     max-width: none;
     margin: 0;
 }
+/* 간격은 margin이 아니라 padding으로 준다 - 어드민 '달력 이미지 저장'(html-to-image)이
+   복제할 때 이 margin이 빠져 두 영역이 붙어 나왔다. padding이면 서버 캡처와 똑같이 나온다. */
 body.calendar-capture .cal-today-card-wrapper {
-    margin-bottom: var(--space-block-gap);
+    margin-bottom: 0;
+    padding-bottom: var(--space-block-gap);
 }
 body.calendar-capture .cal-calendar-inner {
     overflow: visible;

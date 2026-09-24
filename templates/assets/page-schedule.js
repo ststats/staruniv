@@ -21,8 +21,11 @@ window.calOffAirExtra = (dateStr, type) => {
 
 // 정적 캘린더 이미지 생성도 실제 페이지 DOM과 CSS를 그대로 사용한다.
 // 캡처 전용 쿼리는 표시할 영역만 고정하며, capture.js가 런타임 스타일을 덮어쓰지 않게 한다.
+// 어드민의 '달력 이미지 저장'도 같은 주소를 폭 804px 틀(iframe)에 열어 찍으므로, 기기·테마와
+// 상관없이 서버 캡처(calendar.png)와 같은 모양이 나온다. 캡처는 늘 라이트 테마로 찍는다.
 if (new URLSearchParams(location.search).get('capture') === 'calendar') {
     document.body.classList.add('calendar-capture');
+    if (typeof applyTheme === 'function') applyTheme('light');
 }
 
 const SCHEDULE_TABS = { calendar: ['tab-calendar', 'view-calendar'], history: ['tab-history', 'view-history'] };
