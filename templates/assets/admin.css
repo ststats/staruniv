@@ -1478,3 +1478,9 @@ body.admin-drawer-open { overflow: hidden; }
     .admin-tu-apply { justify-content: stretch; }
     .admin-tu-apply .admin-field { flex: 1 1 auto; }
 }
+.admin-tu-log { display: grid; gap: 0; border-top: 1px solid var(--color-border); }
+.admin-tu-log-row {
+    display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px;
+    padding: 10px 4px; border-bottom: 1px solid var(--color-border); font-size: 13px; line-height: 1.6;
+}
+.admin-tu-log-row b { color: var(--color-text-strong); }

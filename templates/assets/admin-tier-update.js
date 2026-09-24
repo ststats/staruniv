@@ -253,11 +253,9 @@
       return `<section class="admin-tu-box"><div class="admin-empty">결과를 불러오는 중</div></section>`;
     }
     if(j.status==='failed')return `<section class="admin-tu-box"><div class="admin-empty">분석 실패<br><small>${esc(j.error||'')}</small></div></section>`;
-    if(j.status==='applied'){
-      const a=j.applied||{};
-      return `<section class="admin-tu-box"><div class="admin-empty">작업 #${j.id} 반영 완료 · ${esc(fmtTime(j.applied_at))}<br><small>수정 ${(a.updates||[]).length}명 · 추가 ${(a.inserts||[]).length}명 · 확인된 카드 ${(a.confirmed||[]).length}장(다음 분석 때 기억에 더함)</small></div></section>`;
-    }
+    if(j.status==='applied')return appliedHtml(j);
     if(j.status!=='done')return `<section class="admin-tu-box"><div class="admin-empty">작업 #${j.id} ${STATUS[j.status]||j.status}</div></section>`;
+    if(!j.result)return `<section class="admin-tu-box"><div class="admin-empty">작업 #${j.id}의 분석 결과는 오래되어 정리했습니다<br>다시 분석을 요청해 주세요</div></section>`;
     const r=j.result||{};
     const cards=(r.sections||[]).reduce((n,s)=>n+s.cards.length,0);
     const changes=(r.changes||[]).map((c,i)=>{
@@ -276,6 +274,51 @@
       <datalist id="tuPeople">${(U.people||[]).map(p=>`<option value="${esc(pickLabel(p))}"></option>`).join('')}</datalist>
     </section>`;
   }
+  // ---------------------------------------------------------------------------
+  // 반영 내역: 누가 무엇이 바뀌었는지(공지용 글 복사 포함)
+  // ---------------------------------------------------------------------------
+  const tierPos=t=>{const i=SITE_ORDER.tiers.indexOf(String(t??''));return i<0?99:i;};
+  // 기록 한 줄 → 분류(한 선수가 여러 개일 수 있음)와 설명
+  function logKinds(e){
+    const b=e.before||{},a=e.after||{},out=[];
+    if(e.new){out.push(['새 선수',`${a.nickname} (${a.affiliation||'-'}, ${tierText(a.tier)||'-'}, ${a.race||'-'})`]);return out;}
+    const who=a.nickname;
+    if(b.tier!==a.tier){
+      const up=tierPos(a.tier)<tierPos(b.tier);
+      out.push([up?'승급':'강등',`${who} ${tierText(b.tier)||'-'} → ${tierText(a.tier)}`]);
+    }
+    if(b.affiliation!==a.affiliation){
+      const to=a.affiliation,from=b.affiliation;
+      const kind=to==='휴면'?'휴면':to==='FA'?'FA':NO_TEAM.has(from)||!from?'입단·복귀':'이적';
+      out.push([kind,kind==='휴면'||kind==='FA'?`${who} (${from||'-'})`:`${who} ${from||'-'} → ${to}`]);
+    }
+    if(b.race!==a.race)out.push(['종족',`${who} ${b.race||'-'} → ${a.race}`]);
+    if(b.nickname!==a.nickname)out.push(['닉네임',`${b.nickname} → ${a.nickname}`]);
+    return out;
+  }
+  const LOG_ORDER=['승급','강등','입단·복귀','이적','FA','휴면','새 선수','종족','닉네임'];
+  function logGroups(log){
+    const g={};
+    log.forEach(e=>logKinds(e).forEach(([k,t])=>{(g[k]=g[k]||[]).push(t);}));
+    return LOG_ORDER.filter(k=>g[k]).map(k=>[k,g[k]]);
+  }
+  function appliedText(j){
+    const a=j.applied||{};
+    const lines=logGroups(a.log||[]).map(([k,items])=>`[${k}] ${items.join(', ')}`);
+    return `티어표 갱신 ${a.date||''}\n${lines.join('\n')||'바뀐 선수 없음'}`;
+  }
+  function appliedHtml(j){
+    const a=j.applied||{},log=a.log;
+    const head=`<div class="admin-section-head"><b>작업 #${j.id} 반영 내역</b><small>${esc(fmtTime(j.applied_at))} 반영 · 승급일 ${esc(a.date||'-')} · 확인된 카드 ${(a.confirmed||[]).length}장은 다음 분석 때 학습</small></div>`;
+    if(!log)return `<section class="admin-tu-box">${head}<div class="admin-empty">수정 ${(a.updates||[]).length}명 · 추가 ${(a.inserts||[]).length}명<br>이 작업은 자세한 기록 전에 반영되어 선수별 내역이 없습니다</div></section>`;
+    if(!log.length)return `<section class="admin-tu-box">${head}<div class="admin-empty">바뀐 선수가 없습니다</div></section>`;
+    const groups=logGroups(log);
+    return `<section class="admin-tu-box">${head}
+      <div class="admin-tu-log">${groups.map(([k,items])=>`<div class="admin-tu-log-row"><b>${esc(k)} ${items.length}</b><span>${items.map(esc).join('<br>')}</span></div>`).join('')}</div>
+      <div class="admin-tu-apply"><button class="admin-btn" id="tuCopyLog">공지용 글 복사</button></div>
+    </section>`;
+  }
+
   function reviewRow(x,i){
     const d=U.decide;
     if(x.type==='새 대학'){
@@ -318,6 +361,11 @@
     const on=(sel,ev,fn)=>el.querySelectorAll(sel).forEach(n=>n[ev]=()=>fn(n));
     el.querySelector('#tuRequest')?.addEventListener('click',request);
     el.querySelector('#tuApply')?.addEventListener('click',apply);
+    el.querySelector('#tuCopyLog')?.addEventListener('click',async()=>{
+      const text=appliedText(U.job);
+      try{await navigator.clipboard.writeText(text);C().toast('반영 내역을 복사했습니다');}
+      catch(e){prompt('아래 글을 복사하세요',text);}
+    });
     const bmLink=el.querySelector('#tuBookmarklet');
     bmLink?.addEventListener('click',ev=>{ev.preventDefault();C().toast('북마크바로 끌어다 놓아 쓰는 버튼입니다');});
     el.querySelector('#tuBmCopy')?.addEventListener('click',async()=>{

@@ -158,6 +158,8 @@ declare
   conf jsonb := '[]'::jsonb;
   pid bigint;
   n_upd integer := 0;
+  log jsonb := '[]'::jsonb;   -- 반영 기록: 선수마다 바뀌기 전·후(관리자 화면의 '반영 내역')
+  promoted text;
 begin
   if not coalesce(public.is_admin(), false) then
     raise exception '관리자만 실행할 수 있습니다.';
@@ -178,6 +180,7 @@ begin
     new_aff := coalesce(nullif(btrim(u->>'affiliation'), ''), r.affiliation);
     new_tier := coalesce(nullif(btrim(u->>'tier'), ''), r.tier);
     hist := r.history;
+    promoted := null;
     if new_aff is distinct from r.affiliation and new_aff not in ('FA', '휴면')
        and btrim(regexp_replace(coalesce(hist, ''), '^.*,', '')) is distinct from new_aff then
       hist := case when coalesce(btrim(hist), '') = '' then new_aff else hist || ', ' || new_aff end;
@@ -186,6 +189,7 @@ begin
        and array_position(ladder, new_tier) < coalesce(array_position(ladder, r.tier), 999) then
       col := 'promoted_tier_' || new_tier;
       execute format('select %I from public.tier_members where id = $1', col) into cur using r.id;
+      promoted := new_tier;
       if coalesce(cur, '') not like '%' || d || '%' then
         execute format('update public.tier_members set %I = $1 where id = $2', col)
           using case when coalesce(btrim(cur), '') = '' then d else cur || ', ' || d end, r.id;
@@ -200,6 +204,12 @@ begin
       modified_at = stamp
     where id = r.id;
     n_upd := n_upd + 1;
+    log := log || jsonb_build_object('id', r.id, 'nickname', r.nickname,
+      'before', jsonb_build_object('nickname', r.nickname, 'affiliation', r.affiliation, 'tier', r.tier, 'race', r.race),
+      'after', jsonb_build_object('nickname', coalesce(nullif(btrim(u->>'nickname'), ''), r.nickname),
+                                  'affiliation', new_aff, 'tier', new_tier,
+                                  'race', coalesce(nullif(btrim(u->>'race'), ''), r.race)),
+      'promoted', promoted);
   end loop;
 
   select coalesce(max(source_order), 0) into next_order from public.tier_members;
@@ -216,6 +226,9 @@ begin
             stamp, d)
     returning id into new_id;
     ins_ids := ins_ids || new_id;
+    log := log || jsonb_build_object('id', new_id, 'nickname', btrim(u->>'nickname'), 'new', true,
+      'after', jsonb_build_object('nickname', btrim(u->>'nickname'), 'affiliation', nullif(u->>'affiliation', ''),
+                                  'tier', nullif(u->>'tier', ''), 'race', nullif(u->>'race', '')));
   end loop;
 
   -- 확인된 카드: 반영이 끝난 뒤의 선수 정보로 적어 둔다(다음 분석이 사진·글씨를 이 값으로 기억)
@@ -230,7 +243,7 @@ begin
 
   update public.tier_update_jobs set status = 'applied', applied_at = now(),
     applied = jsonb_build_object('date', d, 'updates', coalesce(p_updates, '[]'::jsonb),
-                                 'inserts', coalesce(p_inserts, '[]'::jsonb), 'confirmed', conf)
+                                 'inserts', coalesce(p_inserts, '[]'::jsonb), 'confirmed', conf, 'log', log)
   where id = p_job_id;
   begin
     perform public.admin_write_audit('tier_table_update', 'tier_members', p_job_id::text,

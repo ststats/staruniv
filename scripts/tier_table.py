@@ -590,6 +590,21 @@ def learn_applied(conn, memory):
     return len(rows)
 
 
+KEEP_RESULTS = 5   # 최근 작업 몇 개는 결과(카드 사진·글씨 특징, 작업당 약 1.6MB)를 남긴다
+
+
+def prune_results(conn):
+    """오래된 작업의 분석 결과를 비운다. 반영 기록(applied)은 남는다.
+    학습이 끝났거나 실패한 작업, 그리고 한 달 넘게 반영하지 않은 작업만."""
+    cur = conn.execute('update public.tier_update_jobs set result = null '
+                       'where result is not null and id not in '
+                       '(select id from public.tier_update_jobs order by id desc limit %s) '
+                       "and (learned_at is not null or status = 'failed' "
+                       "or (status = 'done' and created_at < now() - interval '30 days'))", (KEEP_RESULTS,))
+    if cur.rowcount:
+        print(f'오래된 분석 결과 {cur.rowcount}개를 비움', file=sys.stderr)
+
+
 def run_job(job_id: int):
     from psycopg.types.json import Jsonb
     conn = db_connect()
@@ -606,6 +621,7 @@ def run_job(job_id: int):
             im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
         memory = load_memory_sql(conn)
         learn_applied(conn, memory)
+        prune_results(conn)
         sections = read_image(im, memory)
         fa = read_fa_text(fa_text or '')
         db = load_db_sql(conn)

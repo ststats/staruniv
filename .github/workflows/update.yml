@@ -33,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
           cache: pip
@@ -69,7 +69,7 @@ jobs:
         run: python scripts/write_supabase_browser_config.py
 
       - id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       # 외부 자동화가 가져가는 docs/data/calendar.png. 러너에 깔린 크롬으로 찍는다(Node·puppeteer 불필요).
       # 캡처가 실패해도 사진 주소가 비지 않게, 먼저 지금 배포돼 있는 사진을 받아 둔다.
@@ -79,7 +79,7 @@ jobs:
         continue-on-error: true
         run: python scripts/capture_calendar.py
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
@@ -91,4 +91,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
