@@ -170,6 +170,31 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
     return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${histEscape(name)}</span>${noteHtml}</span>`;
 }
 
+// 형식 필터. 선택 바(멤버 공지와 같은 .avatar-bar)는 연혁에 실제로 있는 형식만 보여준다.
+// 공개 페이지와 어드민이 같이 쓰며, 고르면 각자 등록한 histRedraw로 다시 그린다.
+let histTypeFilter = '';
+function histFilterItems(items) {
+    return histTypeFilter ? items.filter(x => x.type === histTypeFilter) : items;
+}
+function histRenderTypeBar(items) {
+    const list = document.getElementById('history-type-list');
+    if (!list || typeof renderAvatarBar !== 'function') return;
+    const types = Object.keys(HISTORY_TYPES).filter(t => items.some(x => x.type === t));
+    if (!types.includes(histTypeFilter)) histTypeFilter = '';
+    renderAvatarBar('history-type-list',
+        avatarSelectAllItemHtml('history-type-all', "histPickType('')", `${items.length}`),
+        types.map(t => `<div class="avatar-select-item hist-bar-item hist-type-${t}" id="history-type-${t}" role="button" tabindex="0" onclick="histPickType('${t}')">
+                <span class="hist-bar-dot" aria-hidden="true"></span>
+                <span class="avatar-select-name">${HISTORY_TYPES[t]}</span>
+                <span class="avatar-select-tier">${items.filter(x => x.type === t).length}</span>
+            </div>`).join(''));
+    setActiveAvatarItem('history-type-list', document.getElementById(histTypeFilter ? `history-type-${histTypeFilter}` : 'history-type-all'));
+}
+function histPickType(type) {
+    histTypeFilter = HISTORY_TYPES[type] ? type : '';
+    if (typeof window.histRedraw === 'function') window.histRedraw();
+}
+
 const HIST_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 // 타임라인 HTML. opts: { members, avatarUrl(soopId), admin: true면 수정 버튼과 숨김 표시 }

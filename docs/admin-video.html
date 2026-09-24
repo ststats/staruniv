@@ -23,7 +23,7 @@
     <link rel="icon" type="image/webp" href="images/%ED%8C%8C%EB%B9%84%EC%BD%98.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css?v=c26e082ec7">
+    <link rel="stylesheet" href="style.css?v=01c5009ff0">
 <link rel="stylesheet" href="admin.css?v=44f05719ad">
 </head>
 <body class="admin-mode" data-admin-page="video"><header class="top-navbar">
@@ -91,7 +91,11 @@
     </div>
     <div class="container">
     <div id="view-video-fantube">
-        <div class="video-channel-row tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>
+      <div class="selection-layout">
+        <div class="avatar-selector-scroll scroll-area">
+            <div class="avatar-selector-list" id="video-channel-row"></div>
+        </div>
+        <div class="selection-content">
 
         <div id="video-top-wrap" hidden>
             <div class="section-title section-title-spaced" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
@@ -113,6 +117,8 @@
         <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
             <button type="button" class="news-load-more" onclick="videoShowMore()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
         </div>
+        </div>
+      </div>
     </div>
     <div id="view-video-pick" class="d-none">
         <div id="video-pick-grid"></div>
@@ -165,13 +171,13 @@
 
 <script src="core.js?v=e2ee6f733f"></script>
 <script src="media-lightbox.js?v=93e2c5177c"></script>
-<script src="page-video.js?v=a0a34e24cc"></script>
+<script src="page-video.js?v=2bea5bb422"></script>
 
 
 <script src="admin-core.js?v=02047c183d"></script>
 <script src="admin-site.js?v=96942a4f8c"></script>
 
-<script src="admin-video.js?v=9f5c71d9fc"></script>
+<script src="admin-video.js?v=253606a68c"></script>
 
 
 </body>

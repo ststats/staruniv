@@ -127,40 +127,8 @@ function tierDisplayName(tier) {
 // 썸네일 주소에는 아이디가 아니라 방송번호가 들어간다 - 방송을 켤 때마다 새로 생기는
 // 값이라 아이디만으로는 만들 수 없다. 뒤의 분 단위 값은 브라우저 캐시를 1분에 한 번만
 // 비우기 위한 것(매번 새로 받으면 낭비).
-let tierThumbRefreshToken = 0;
 function tierThumbUrl(broadNo) {
-    return `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broadNo)}?t=${Math.floor(Date.now() / 60000)}&r=${tierThumbRefreshToken}`;
-}
-
-async function refreshTierThumbnails() {
-    const button = document.getElementById('tier-thumb-refresh');
-    if (button.disabled) return;
-    tierThumbRefreshToken = Math.max(Date.now(), tierThumbRefreshToken + 1);
-    button.disabled = true;
-    button.setAttribute('aria-busy', 'true');
-    try {
-        await Promise.all(Array.from(document.querySelectorAll('#tier-root .tier-card-thumb')).map(img => {
-            const rect = img.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0 || rect.bottom < 0 || rect.top > window.innerHeight) return;
-            const live = TierState.live[img.closest('.tier-card').dataset.tierId];
-            if (!live) return;
-            return new Promise(resolve => {
-                const done = () => {
-                    clearTimeout(timeout);
-                    img.removeEventListener('load', done);
-                    img.removeEventListener('error', done);
-                    resolve();
-                };
-                const timeout = setTimeout(done, 8000);
-                img.addEventListener('load', done);
-                img.addEventListener('error', done);
-                img.src = tierThumbUrl(live.broadNo);
-            });
-        }));
-    } finally {
-        button.disabled = false;
-        button.removeAttribute('aria-busy');
-    }
+    return `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broadNo)}?t=${Math.floor(Date.now() / 60000)}`;
 }
 
 // 팀 로고 경로 규칙은 build_html.py의 team_logo_src와 같다(images/{팀이름}.webp).
@@ -324,16 +292,9 @@ function renderTierBar() {
 
 // 티어 바 높이를 CSS 변수로 넘겨서, 바로가기로 이동했을 때 제목이 바 뒤에 가리지 않게 한다.
 // (아바타 바는 내용에 따라 높이가 달라져서 CSS에 숫자로 못 박아둔다.)
-// [리디자인] 티어 바가 왼쪽 사이드바로 서 있을 때는 본문을 가리지 않는다. 그때 바 높이
-// (사이드바라 500px이 넘는다)를 그대로 넘기면 scroll-margin-top이 터무니없이 커져서
-// 바로가기를 눌렀을 때 제목이 화면 밖으로 날아간다. 그래서 0을 넘긴다.
+// 티어 바는 PC에서는 본문 위 가로 바, 모바일에서는 접히는 선택 줄로 늘 화면 위에 붙어 본문을 가린다.
 function tierBarCoversContent() {
-    const bar = document.getElementById('tier-bar');
-    if (!bar) return false;
-    // 사이드바 틀 안에 있고 화면이 좁지 않으면 = 세로 사이드바 = 본문을 가리지 않는다
-    const inSidebar = !!bar.closest('.selection-layout');
-    const narrow = window.matchMedia('(max-width: 920px)').matches;
-    return !inSidebar || narrow;
+    return !!document.getElementById('tier-bar');
 }
 
 // [리디자인] 모바일에서 티어 바도 아바타 사이드바와 같은 '접히는 한 줄 선택 바'가 되게 한다.
@@ -518,7 +479,6 @@ function syncTierCardHeight() {
 function tierStickyOffset() {
     const nav = document.querySelector('.top-navbar');
     const bar = document.getElementById('tier-bar');
-    // 사이드바로 서 있을 때는 바가 본문을 가리지 않으므로 높이를 더하지 않는다.
     const barH = bar && tierBarCoversContent() ? bar.offsetHeight : 0;
     return (nav ? nav.offsetHeight : 64) + barH;
 }
@@ -750,7 +710,6 @@ bootPage(async () => {
 
     document.getElementById('tier-scope').addEventListener('click', onTierScopeClick);
     document.getElementById('tier-bar').addEventListener('click', onTierBarClick);
-    document.getElementById('tier-thumb-refresh').addEventListener('click', refreshTierThumbnails);
 
     // 스크롤 이벤트는 초당 수십 번 온다. 프레임당 한 번만 계산한다.
     let highlightScheduled = false;

@@ -48,7 +48,11 @@ async function renderHistory() {
     const data = await histLoadData();
     const items = histMergeItems(data, SiteData.members, false);
     histRegisterItems(items);
-    root.innerHTML = histTimelineHtml(items, { members: SiteData.members, avatarUrl: getProfileImgUrl });
+    window.histRedraw = () => {
+        histRenderTypeBar(items);
+        root.innerHTML = histTimelineHtml(histFilterItems(items), { members: SiteData.members, avatarUrl: getProfileImgUrl });
+    };
+    window.histRedraw();
 }
 
 bootPage(() => {

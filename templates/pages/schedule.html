@@ -69,7 +69,15 @@
 
     {#- 연혁: 최신이 위. 멤버 데이터의 입단/퇴단은 자동으로 들어오고, 창단·대회 같은 나머지는 어드민에서 추가한다(history.js). #}
     <div id="view-history" class="d-none">
-        <div id="history-root" aria-live="polite"><div class="hist-empty">불러오는 중...</div></div>
+        {#- 형식 선택 바는 멤버 공지·개인 전적과 같은 부품이다(history.js의 histRenderTypeBar). #}
+        <div class="selection-layout">
+            <div class="avatar-selector-scroll scroll-area">
+                <div class="avatar-selector-list" id="history-type-list"></div>
+            </div>
+            <div class="selection-content">
+                <div id="history-root" aria-live="polite"><div class="hist-empty">불러오는 중...</div></div>
+            </div>
+        </div>
     </div>
     </div>
 </section>

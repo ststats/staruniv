@@ -16,7 +16,12 @@
     {#- 1. 팬튜브: 어드민이 등록한 유튜브 채널의 최신 영상(ststat가 Supabase에 동기화한다).
         채널 칩으로 거르고, 이번 달 인기 3개 → 쇼츠 선반 → 최신 영상 순. #}
     <div id="view-video-fantube">
-        <div class="video-channel-row tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>
+      {#- 채널 선택 바는 멤버 공지·개인 전적과 같은 부품이다. 채널이 하나뿐이면 숨긴다. #}
+      <div class="selection-layout">
+        <div class="avatar-selector-scroll scroll-area">
+            <div class="avatar-selector-list" id="video-channel-row"></div>
+        </div>
+        <div class="selection-content">
 
         <div id="video-top-wrap" hidden>
             <div class="section-title section-title-spaced" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
@@ -40,6 +45,8 @@
         <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
             <button type="button" class="news-load-more" onclick="videoShowMore()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
         </div>
+        </div>{#- /.selection-content #}
+      </div>{#- /.selection-layout #}
     </div>
 
     {#- 2. 보자: 어드민이 골라 올린 영상. 한 줄 설명(note)을 같이 보여준다. #}

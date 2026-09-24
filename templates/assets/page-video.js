@@ -193,15 +193,19 @@ function videoFiltered() {
 }
 
 function renderVideoChannels() {
-    const row = document.getElementById('video-channel-row');
-    if (!row) return;
     const keys = VideoState.channelKeys;
-    row.hidden = keys.length < 2;   // 채널이 하나뿐이면 거를 게 없다
-    const chip = (key, label, avatar) => `
-        <button type="button" class="video-channel-chip${VideoState.channel === key ? ' active' : ''}" aria-pressed="${VideoState.channel === key}" onclick="selectVideoChannel('${jsAttr(key)}')">
-            ${avatar}<span>${escapeHTML(label)}</span>
-        </button>`;
-    row.innerHTML = chip('', '전체', '') + keys.map(k => chip(k, videoChannelName(videoChannel(k)), videoChannelAvatar(videoChannel(k), 'video-chip-avatar'))).join('');
+    const all = VideoState.data.videos || [];
+    renderAvatarBar('video-channel-row',
+        avatarSelectAllItemHtml('video-ch-all', "selectVideoChannel('')", `${all.length}`),
+        keys.map((k, i) => `<div class="avatar-select-item" id="video-ch-${i}" role="button" tabindex="0" onclick="selectVideoChannel('${jsAttr(k)}')">
+                ${videoChannelAvatar(videoChannel(k), 'video-bar-avatar')}
+                <span class="avatar-select-name">${escapeHTML(videoChannelName(videoChannel(k)))}</span>
+                <span class="avatar-select-tier">${all.filter(v => v.channel === k).length}</span>
+            </div>`).join(''));
+    const bar = document.getElementById('video-channel-row').closest('.avatar-bar');
+    if (bar) bar.hidden = keys.length < 2;   // 채널이 하나뿐이면 거를 게 없다
+    const idx = keys.indexOf(VideoState.channel);
+    setActiveAvatarItem('video-channel-row', document.getElementById(idx >= 0 ? `video-ch-${idx}` : 'video-ch-all'));
 }
 
 function renderFantube() {
@@ -237,11 +241,9 @@ function renderFantube() {
     const first = titles.find(t => !t.closest('[hidden]'));
     titles.forEach(t => t.classList.toggle('is-first', t === first));
 
-    // 가로 선반/칩 줄은 내용이 바뀌면 끝 페이드를 다시 맞춘다
-    ['video-shorts-shelf', 'video-channel-row'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el && el._edgeFadeUpdate) el._edgeFadeUpdate();
-    });
+    // 쇼츠 선반은 내용이 바뀌면 끝 페이드를 다시 맞춘다
+    const shelf = document.getElementById('video-shorts-shelf');
+    if (shelf && shelf._edgeFadeUpdate) shelf._edgeFadeUpdate();
     updateShortsNav();
 }
 

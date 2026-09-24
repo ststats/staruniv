@@ -131,7 +131,7 @@
     --scroll-thumb: var(--color-border-strong);
     --scroll-thumb-hover: var(--color-primary);
     --navbar-h: 64px;
-    --sidebar-top: 84px;   /* 선택 사이드바가 붙는 위치: 상단바 68px + 16px */
+    --sidebar-top: 68px;   /* 선택 바가 붙는 위치: 상단바(68px) 바로 아래 */
     --bar-scope-h: 34px;
     --bar-scope-btn-h: 28px;
     --bar-chip-h: 30px;
@@ -1517,6 +1517,7 @@ a.btn-view-all {
     font-variant-numeric: tabular-nums;
 }
 .avatar-bar-pick { display: none; }
+.avatar-bar[hidden] { display: none !important; }
 
 .tier-bar {
     z-index: 90;
@@ -1633,16 +1634,6 @@ a.btn-view-all {
     top: var(--sidebar-top);
     border: 0;
 }
-.selection-layout > .avatar-bar::before {
-    content: "멤버  ·  ROSTER";
-    display: block;
-    padding: 14px 15px 11px;
-    border-bottom: 1px solid var(--panel-line);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--sidebar-title, currentColor);
-}
 .selection-layout > .avatar-bar-tools {
     min-height: 0;
     padding: 0;
@@ -1704,27 +1695,8 @@ a.btn-view-all {
     letter-spacing: 0.06em;
     color: var(--sidebar-title, currentColor);
 }
-.tier-thumb-refresh {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-    padding: 7px 2px;
-    border: 0;
-    background: transparent;
-    color: var(--panel-muted);
-    font: inherit;
-    font-size: 11px;
-    letter-spacing: 0;
-    white-space: nowrap;
-    cursor: pointer;
-}
-.tier-thumb-refresh:hover { color: var(--panel-accent); }
-.tier-thumb-refresh:disabled { opacity: .5; cursor: wait; }
-.tier-thumb-refresh:focus-visible { outline: 2px solid var(--panel-accent); outline-offset: 2px; }
 @media (max-width: 920px) {
     .tier-bar-heading { padding: 0; border-bottom: 0; }
-    .tier-bar-title, .tier-thumb-refresh { display: none; }
     .tier-bar-heading .tier-bar-pick { flex: 1; min-width: 0; width: auto; }
 }
 .selection-layout > .tier-bar .tier-bar-tools {
@@ -1853,7 +1825,6 @@ a.btn-view-all {
         width: 20px;
         height: 20px;
     }
-    .selection-layout > .avatar-bar::before { display: none; }
     .selection-layout > .avatar-bar:not(.is-closed) .avatar-bar-pick svg {
         transform: rotate(180deg);
     }
@@ -1913,7 +1884,6 @@ a.btn-view-all {
 }
 
 @media (max-width: 920px) {
-    .selection-layout > .tier-bar::before { display: none; }
     .selection-layout > .tier-bar:not(.is-closed) .tier-bar-pick svg { transform: rotate(180deg); }
     .selection-layout > .tier-bar.is-closed .tier-bar-list,
     .selection-layout > .tier-bar.is-closed .tier-bar-tools {
@@ -1934,38 +1904,61 @@ a.btn-view-all {
     }
 }
 
+/* PC: 선택 바는 본문 위 가로 한 줄이다. 왼쪽에 '전체'(티어표는 전체/방송중 전환)가 고정되고,
+   나머지 항목이 오른쪽으로 이어지며 넘치면 바 안에서 가로로 민다. 스크롤하면 상단바 아래에 붙는다.
+   (예전엔 오른쪽 세로 사이드바였는데 본문 폭을 224px 먹어서 페이지마다 본문 폭이 달랐다.)
+   920px 아래에서는 위 규칙들이 '접히는 한 줄 선택 바'로 바꾼다. */
 @media (min-width: 921px) {
-    .selection-layout { grid-template-columns: minmax(0, 1fr) 224px; }
-    .selection-layout > .avatar-bar,
-    .selection-layout > .tier-bar {
-        grid-column: 2;
-        grid-row: 1;
-    }
-    .selection-layout > :not(.avatar-bar):not(.tier-bar) {
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    /* 사이드바 높이 = 화면 높이 − 붙는 위치(--sidebar-top) − 페이지 아래 여백(--space-page-bottom).
-       머리(제목 · 전체 · 보기 전환)는 제 높이를 지키고, 목록이 남는 높이를 채우며 스크롤한다.
-       목록이 짧으면 사이드바도 짧아진다. */
+    .selection-layout { grid-template-columns: minmax(0, 1fr); }
     .selection-layout > .avatar-bar,
     .selection-layout > .tier-bar {
         display: flex;
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
         gap: 0;
-        max-height: calc(100vh - var(--sidebar-top) - var(--space-page-bottom));
+        min-width: 0;
     }
-    .selection-layout > .avatar-bar > *,
-    .selection-layout > .tier-bar > * {
-        flex-shrink: 0;
+    .selection-layout > .avatar-bar .avatar-bar-tools,
+    .selection-layout > .tier-bar .tier-bar-tools {
+        flex: none;
+        padding: 6px;
+        border-bottom: 0;
+        border-right: 1px solid var(--panel-line);
+    }
+    .selection-layout > .avatar-bar .avatar-select-all {
+        width: auto;
+        height: 34px;
+        gap: 12px;
+        border-bottom: 0;
     }
     .selection-layout > .avatar-bar .avatar-selector-scroll,
     .selection-layout > .tier-bar .tier-bar-list {
         flex: 1 1 auto;
-        min-height: 0;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
+    .selection-layout > .avatar-bar .avatar-selector-list {
+        flex-direction: row;
+        width: max-content;
+        padding: 6px;
+        gap: 2px;
+    }
+    .selection-layout > .tier-bar .tier-bar-list {
+        display: flex;
+        padding: 6px;
+        gap: 2px;
+    }
+    .selection-layout > .avatar-bar .avatar-select-item,
+    .selection-layout > .tier-bar .tier-bar-item {
+        flex: none;
+        width: auto;
+        height: 34px;
+        gap: 8px;
+        border-left: 0;
+    }
+    .selection-layout > .tier-bar .tier-bar-tools { width: 210px; }
+    .selection-layout > .tier-bar .tier-bar-heading { display: none; }
 }
 
 
@@ -3069,13 +3062,21 @@ html[data-theme="dark"] .cal-longterm-bar {
     box-shadow: 0 0 0 3px var(--color-bg);
     clip-path: var(--notch-xs);
 }
-.hist-item.hist-type-founding { --hist-color: var(--navy-deco-fill); }
-.hist-item.hist-type-join { --hist-color: var(--color-primary); }
-.hist-item.hist-type-leave { --hist-color: var(--color-text-faint); }
-.hist-item.hist-type-match { --hist-color: var(--color-lose); }
-.hist-item.hist-type-broadcast { --hist-color: var(--color-race-z); }
-.hist-item.hist-type-event { --hist-color: var(--color-badge-format); }
-.hist-item.hist-type-other { --hist-color: var(--color-text-muted); }
+/* 형식 선택 바(.hist-bar-item)의 색 점도 같은 색을 쓴다 */
+:is(.hist-item, .hist-bar-item).hist-type-founding { --hist-color: var(--navy-deco-fill); }
+:is(.hist-item, .hist-bar-item).hist-type-join { --hist-color: var(--color-primary); }
+:is(.hist-item, .hist-bar-item).hist-type-leave { --hist-color: var(--color-text-faint); }
+:is(.hist-item, .hist-bar-item).hist-type-match { --hist-color: var(--color-lose); }
+:is(.hist-item, .hist-bar-item).hist-type-broadcast { --hist-color: var(--color-race-z); }
+:is(.hist-item, .hist-bar-item).hist-type-event { --hist-color: var(--color-badge-format); }
+:is(.hist-item, .hist-bar-item).hist-type-other { --hist-color: var(--color-text-muted); }
+.hist-bar-dot {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    background: var(--hist-color);
+    clip-path: var(--notch-sm);
+}
 .hist-item.is-hidden { opacity: 0.5; }
 .hist-main {
     flex: 1;
@@ -4086,8 +4087,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 
 .theme-toggle button.active,
-.mv-chip.selected,
-.video-channel-chip.active {
+.mv-chip.selected {
     background: var(--select-on-light);
     color: #fff;
 }
@@ -4834,33 +4834,8 @@ body.media-lightbox-open { overflow: hidden; }
 /* =============================================================================
    12. 영상 (팬튜브 · 보자)
    ============================================================================= */
-/* 채널 칩 줄: 가로로 넘치면 스크롤(.tab-scroll 끝 페이드) */
-.video-channel-row {
-    display: flex;
-    gap: var(--space-inline-gap);
-    margin-bottom: var(--space-block-gap);
-}
-.video-channel-row[hidden] { display: none; }
-.video-channel-chip {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    gap: 7px;
-    height: 36px;
-    padding: 0 14px;
-    border: 0;
-    background: var(--color-card);
-    clip-path: var(--notch-sm);
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    color: var(--color-text-main);
-    transition: background 0.15s, color 0.15s;
-}
-.video-channel-chip:has(.video-chip-avatar) { padding-left: 5px; }
-.video-channel-chip:hover:not(.active) { background: var(--color-row-hover); }
-.video-channel-chip.active { font-weight: 700; }
-.video-chip-avatar,
+/* 채널 선택 바(.avatar-bar, 멤버 공지와 같은 부품)의 채널 아바타 - 멤버 줄의 종족 뱃지 자리 */
+.video-bar-avatar,
 .video-card-avatar {
     display: inline-grid;
     flex: none;
@@ -4873,9 +4848,8 @@ body.media-lightbox-open { overflow: hidden; }
     font-weight: 700;
     color: #fff;
 }
-.video-chip-avatar { width: 26px; height: 26px; }
+.video-bar-avatar { width: 20px; height: 20px; font-size: 10px; }
 .video-card-avatar { width: 34px; height: 34px; margin-top: 2px; }
-.video-channel-chip.active .video-chip-avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
 
 /* 앞 섹션이 비어 숨겨지면 첫 제목의 윗여백을 뺀다(page-video.js가 is-first를 붙인다) */
 .section-title.section-title-spaced.is-first { margin-top: 0; }
@@ -5151,7 +5125,6 @@ body.media-lightbox-open { overflow: hidden; }
     .video-short { flex-basis: calc((100% - 12px * 3) / 4); }
 }
 @media (max-width: 767.98px) {
-    .video-channel-row { margin-bottom: var(--space-content-gap); }
     .video-top-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-stack-gap); }
     .video-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-stack-gap); }
     .video-short { flex-basis: 42%; min-width: 0; }

@@ -25,6 +25,8 @@
     const data=await histLoadData();
     const merged=histMergeItems(data, SiteData.members, true);
     histRegisterItems(merged);
+    histRenderTypeBar(merged);
+    window.histRedraw=render;
     root.innerHTML=`
       <div class="hist-admin-content-head">
         <div>
@@ -33,7 +35,7 @@
         </div>
         <button type="button" class="admin-btn admin-btn-compact primary" id="adminHistoryAdd">연혁 추가</button>
       </div>
-      ${histTimelineHtml(merged,{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true})}`;
+      ${histTimelineHtml(histFilterItems(merged),{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true})}`;
     document.getElementById('adminHistoryAdd')?.addEventListener('click',()=>open(null));
   }
 
