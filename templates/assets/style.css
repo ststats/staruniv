@@ -3028,9 +3028,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 
 /* 연혁 탭 (history.js) ---------------------------------------------------------
    왼쪽 세로선 위에 종류별 색 점, 오른쪽에 카드. 카드 오른쪽에는 사진이나 유튜브 썸네일(누르면 크게/재생). */
-/* 맨 위 '연혁' 제목 줄(오른쪽에 형식 필터) 아래로 연도는 작은 제목 */
 .hist-year { margin-top: var(--space-block-gap); }
-.hist-head + .hist-year,
 .hist-year:first-child { margin-top: 0; }
 .hist-list {
     position: relative;
@@ -4879,16 +4877,8 @@ body.media-lightbox-open { overflow: hidden; }
 .video-card-avatar { width: 34px; height: 34px; margin-top: 2px; }
 .video-channel-chip.active .video-chip-avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
 
-/* 팬튜브: 맨 위 큰 제목 한 줄(오른쪽에 채널 필터) 아래로 인기·쇼츠·최신 영상은 작은 제목.
-   앞 섹션이 비어 숨겨지면 처음 보이는 작은 제목의 윗여백을 뺀다(page-video.js가 is-first를 붙인다) */
-.video-sub { margin-top: var(--space-section-gap); }
-.video-sub.is-first { margin-top: 0; }
-.section-title-sm .title-count {
-    margin-left: auto;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--color-text-sub);
-}
+/* 앞 섹션이 비어 숨겨지면 첫 제목의 윗여백을 뺀다(page-video.js가 is-first를 붙인다) */
+.section-title.section-title-spaced.is-first { margin-top: 0; }
 #video-top-wrap[hidden],
 #video-shorts-wrap[hidden],
 .video-more-wrap[hidden] { display: none; }
@@ -5058,8 +5048,8 @@ body.media-lightbox-open { overflow: hidden; }
 
 /* 제목줄 오른쪽 넘김 버튼(쇼츠 선반). 손가락으로 미는 화면에서는 필요 없어 숨긴다.
    개수는 다른 제목줄과 같이 맨 오른쪽에 두고, 넘김 버튼은 그 왼쪽에 붙인다. */
-:is(.section-title, .section-title-sm).has-shelf-nav .shelf-nav { order: 2; margin-left: auto; }
-:is(.section-title, .section-title-sm).has-shelf-nav .title-count { order: 3; margin-left: 10px; }
+.section-title.has-shelf-nav .shelf-nav { order: 2; margin-left: auto; }
+.section-title.has-shelf-nav .title-count { order: 3; margin-left: 10px; }
 .shelf-nav {
     display: inline-flex;
     gap: 6px;

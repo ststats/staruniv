@@ -16,21 +16,17 @@
     {#- 1. 팬튜브: 어드민이 등록한 유튜브 채널의 최신 영상(ststat가 Supabase에 동기화한다).
         채널 칩으로 거르고, 이번 달 인기 3개 → 쇼츠 선반 → 최신 영상 순. #}
     <div id="view-video-fantube">
-        {#- 첫 줄은 다른 페이지처럼 제목. 채널 필터는 제목 줄 오른쪽에 붙어 아래 인기·쇼츠·최신 영상을 모두 거른다. #}
-        <div class="section-title record-recent-header video-head" data-en="FANTUBE">
-            <span class="record-recent-title section-title-label">팬튜브 영상</span>
-            <div class="filter-nav tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>
-        </div>
+        <div class="video-channel-row tab-scroll" id="video-channel-row" role="group" aria-label="채널 선택"></div>
 
         <div id="video-top-wrap" hidden>
-            <div class="section-title-sm video-sub" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
+            <div class="section-title section-title-spaced" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
             <div class="video-top-grid" id="video-top-grid"></div>
         </div>
 
         <div id="video-shorts-wrap" hidden>
             {#- 쇼츠 선반은 가로로 넘긴다. 손가락으로 미는 화면과 달리 마우스에서는 밀 방법이
                 마땅치 않아, 제목줄 오른쪽에 넘김 버튼을 둔다(좁은 화면에서는 숨긴다). #}
-            <div class="section-title-sm video-sub has-shelf-nav" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span>
+            <div class="section-title section-title-spaced has-shelf-nav" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span>
                 <span class="shelf-nav" id="video-shorts-nav" hidden>
                     <button type="button" class="shelf-nav-btn" aria-label="이전 쇼츠" onclick="videoShortsScroll(-1)">‹</button>
                     <button type="button" class="shelf-nav-btn" aria-label="다음 쇼츠" onclick="videoShortsScroll(1)">›</button>
@@ -39,7 +35,7 @@
             <div class="video-shorts-shelf tab-scroll" id="video-shorts-shelf"></div>
         </div>
 
-        <div class="section-title-sm video-sub" data-en="LATEST"><span class="section-title-label">최신 영상</span><span class="title-count" id="video-latest-count"></span></div>
+        <div class="section-title section-title-spaced" data-en="LATEST"><span class="section-title-label">최신 영상</span><span class="title-count" id="video-latest-count"></span></div>
         <div class="video-grid" id="video-latest-grid" aria-live="polite" aria-busy="true"><div class="content-state video-empty">영상 목록을 불러오는 중...</div></div>
         <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
             <button type="button" class="news-load-more" onclick="videoShowMore()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
