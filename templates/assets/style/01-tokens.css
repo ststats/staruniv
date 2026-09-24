@@ -1,0 +1,243 @@
+/* =============================================================================
+   스타대학 style.css
+   구성: 토큰 → 기본 → 공통 레이아웃 → 공용 부품 → 사이드바 → 페이지별 → 네이비/검정 면
+   다크 모드는 html[data-theme="dark"]가 1번 토큰을 바꿔 끼우고, 토큰으로 안 되는 곳만 부품 옆에 다크 규칙을 둔다.
+   ============================================================================= */
+
+/* =============================================================================
+   1. 디자인 토큰 (라이트 / 다크)
+   ============================================================================= */
+:root {
+    /* 바탕 · 카드 · 선 */
+    --color-bg: #eef2f8;
+    --color-card: #ffffff;
+    --color-card-hover: #f6f9ff;
+    /* 줄·칩·목록에 마우스를 올렸을 때. 파랑기를 거의 뺀 옅은 회청색이라 바탕(--color-bg)과
+       카드 흰색 사이에 조용히 앉는다. 여기 한 줄만 바꾸면 사이트의 호버가 같이 바뀐다. */
+    --color-row-hover: #f2f5fa;
+    --color-border: #dde4ee;
+    --color-bg-subtle: #f1f5fb;
+    --color-border-strong: #cdd6e3;
+    --color-border-hover: #b3cdfb;
+    --color-placeholder-bg: #e9eff8;
+    --color-donut-track: #e6ecf5;
+    --color-modal-body-bg: #ffffff;
+    --calendar-outside-bg: #f6f8fb;
+    --calendar-outside-text: #aab3c1;
+
+    /* 글자색 */
+    --color-text-main: #0b1220;
+    --color-text-sub: #5d687a;
+    --color-text-strong: #050a14;
+    --color-text-dark: #0b1220;
+    --color-text-body: #1f2937;
+    --color-text-soft: #4b5565;
+    --color-text-muted: #7a8596;
+    --color-text-faint: #9aa4b3;
+    --color-icon-faint: #c6cedb;
+
+    /* 강조 · 승패 · 종족 · 배지 */
+    --color-primary: #1f6fff;
+    --color-primary-deep: #0b55e0;
+    --color-primary-tint: #eaf1ff;
+    --color-primary-tint-strong: #d9e6ff;
+    --color-win: #1f6fff;
+    --color-lose: #f03e3e;
+    --color-draw: #868e96;
+    --color-ink: #0b1220;
+    --color-badge-format: #5a9ea6;
+    --color-badge-role-text: #fff;
+    --color-race-t: #1976d2;
+    --color-race-z: #7b1fa2;
+    --color-race-p: #f57f17;
+    --select-on-light: var(--navy);
+    --kammon: #055df3;
+    --color-tier-badge: #1c3563;
+
+    /* 면(패널) 토큰: 네이비 면 안에서는 흰 계열로 바뀐다 */
+    --panel-bg: #ffffff;
+    --panel-control: #edf2fb;
+    --panel-text: #0b1220;
+    --panel-muted: #56627a;
+    --panel-line: #e1e7f0;
+    --panel-accent: var(--kammon);
+    --panel-pattern: none;
+    --nav-bg: rgba(255, 255, 255, 0.9);
+
+    /* 네이비 / 검정 면 · 표 머리글 */
+    --navy: #14264a;
+    --navy-deco: #1c3563;
+    --navy-deco-fill: #1c3563;
+    --navy-on-text: #e6ecf7;
+    --navy-on-muted: #b3c2de;
+    --navy-accent: #5a95ff;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ffb0b0;
+    --color-head-sat: #5a95ff;
+    --navy-pattern: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 8px);
+    --hero-glow: none;                          /* 페이지 머리 · 홈 캐러셀 위에 겹치는 빛 (다크만) */
+    --head-line: rgba(255, 255, 255, 0.1);      /* 달력 월 표시칸 · 표 머리 아래 선 */
+    --head-line-w: 1px;
+    --label-accent: var(--navy-on-muted);       /* 요약 박스 라벨 · 사이드바 제목 · 순위 숫자 */
+    --dot-active: #fff;                         /* 홈 캐러셀 선택 점 */
+    --title-eyebrow: var(--navy-deco);          /* 섹션 제목 위 영문 라벨 */
+
+    /* 글자 크기 */
+    --fs-hero: 28px;
+    --fs-heading: 16px;
+    --fs-subheading: 14px;
+    --fs-body: 13px;
+    /* 아래 여섯은 11·10·9·8px이 곳곳에 흩어져 있던 것을 역할 이름으로 묶은 것이다.
+       같은 역할이면 같은 토큰을 쓴다 - 새 부품을 만들 때 px를 새로 고르지 않게. */
+    --fs-card-title: 14px;   /* 카드 격자의 개체 이름(멤버·도구·영상) */
+    --fs-list-name: 13px;    /* 촘촘한 목록 안의 이름(방송·검색 결과·공지·티어 카드) */
+    --fs-meta: 11px;         /* 날짜·개수·보조 설명 */
+    --fs-eyebrow: 9px;       /* 제목 위 대문자 눈썹 라벨 */
+    --fs-badge: 11px;        /* 뱃지·칩 */
+    --fs-badge-sm: 10px;     /* 표 안에 들어가는 뱃지 */
+
+    /* 간격: 페이지/큰 묶음 → 내부 묶음 → 조밀한 카드 → 라벨 순서.
+       같은 역할은 같은 토큰을 쓰고, 표·아이콘의 광학 보정은 개별 값을 유지한다. */
+    --space-page-top: 24px;
+    --space-page-bottom: 40px;
+    --space-block-gap: 24px;
+    --space-title-gap: 16px;
+    --space-trailer: 16px;
+    --space-section-gap: 32px;
+    --space-stack-gap: 20px;
+    --space-content-gap: 16px;
+    --space-card-gap: 14px;
+    --space-compact-gap: 12px;
+    --space-inline-gap: 8px;
+    --space-label-gap: 6px;
+    --space-card-pad-y: 10px;
+    --space-card-pad-x: 12px;
+
+    /* 모서리 · 그림자 · 잘린 모서리 */
+    --radius-card: 0px;
+    --shadow-card: none;
+    --shadow-card-hover: 0 10px 22px rgba(24, 63, 130, 0.13);
+    /* 오른쪽 위 notch는 역할별 네 단계만 사용한다. */
+    --notch-xs: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    --notch-sm: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    --notch-md: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    --notch-lg: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+
+    /* 크기: 상단바 · 선택 바 · 스크롤바 · 목록 높이 */
+    --scroll-gutter: 10px;
+    --scroll-thumb-inset: 3px;
+    --scroll-thumb: var(--color-border-strong);
+    --scroll-thumb-hover: var(--color-primary);
+    --navbar-h: 64px;
+    --sidebar-top: 68px;   /* 선택 바가 붙는 위치: 상단바(68px) 바로 아래 */
+    --bar-scope-h: 34px;
+    --bar-scope-btn-h: 28px;
+    --bar-chip-h: 30px;
+    --bar-pad-y: 7px;
+    --bar-pad-x: 10px;
+    --bar-gap: 10px;
+    --filterbar-h: 24px;
+    --news-photo-h: 400px;
+    --news-past-item-h: 91px;   /* 지난 공지 카드 한 장 높이 (이름 · 제목 · 본문 한 줄) */
+    --day-list-h: 360px;
+    --tier-navbar-h: var(--navbar-h);
+    --tier-bar-h: calc(var(--bar-chip-h) + var(--bar-pad-y) * 2 + 2px);
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* 바탕 · 카드 · 선 */
+    --color-bg: #07090d;
+    --color-card: #10131a;
+    --color-card-hover: #151b27;
+    --color-row-hover: #1a202b;
+    --color-border: #1f2531;
+    --color-bg-subtle: #171c26;
+    --color-border-strong: #353b46;
+    --color-border-hover: #2d5fc0;
+    --color-modal-body-bg: #10131a;
+    --color-placeholder-bg: #1a1e25;
+    --color-donut-track: #1d2129;
+    --calendar-outside-bg: #0b0d12;
+    --calendar-outside-text: #555d69;
+
+    /* 글자색 */
+    --color-text-main: #eef2f8;
+    --color-text-strong: #ffffff;
+    --color-text-dark: #eef2f8;
+    --color-text-sub: #8f98a6;
+    --color-text-body: #dbe0e8;
+    --color-text-soft: #b1b8c4;
+    --color-text-muted: #98a0ad;
+    --color-text-faint: #767f8c;
+    --color-icon-faint: #3a404b;
+
+    /* 강조 · 승패 · 종족 · 배지 */
+    --color-badge-format: #336a71;
+    --color-badge-role-text: #a9c7ff;
+    --logo-accent: #3d82ff;          /* 로고 "대학": 검은 바탕에서 캄몬 파랑이 어둡게 보여 한 단계 밝힘 */
+    --title-line: var(--color-border-strong);   /* 작은 섹션 제목 밑줄 */
+    --mv-chip-hover: var(--color-primary-tint-strong);   /* 멀티뷰어 멤버 칩 호버 */
+    --color-primary: #3b82ff;
+    --color-primary-deep: #2a6cf0;
+    --color-primary-tint: #0f1d36;
+    --color-primary-tint-strong: #16294d;
+    --color-win: #3b82ff;
+    --color-ink: #1a3a7c;
+    --select-on-light: #3b82ff;
+    --color-tier-badge: #2a2d35;
+
+    /* 면(패널) 토큰: 네이비 면 안에서는 흰 계열로 바뀐다 */
+    --panel-bg: #0b0e14;
+    --panel-control: #1a202c;
+    --panel-text: #eef2f8;
+    --panel-muted: #a0a8b5;
+    --panel-line: #242b38;
+    --panel-accent: var(--kammon);
+    --nav-bg: rgba(7, 9, 13, 0.88);
+
+    /* 네이비 / 검정 면 · 표 머리글 */
+    /* 다크 모드는 무채색이 되지 않게 면에 푸른 기운을 남기고, 라이트의 네이비 장식 자리를 파랑이 맡는다 */
+    --navy: #111a2c;
+    --navy-deco: #3b82ff;
+    --navy-deco-fill: #2563eb;
+    --navy-pattern: repeating-linear-gradient(135deg, rgba(90, 149, 255, 0.07) 0 1px, transparent 1px 8px);
+    --hero-glow: radial-gradient(120% 140% at 100% 0%, rgba(59, 130, 255, 0.22), transparent 55%);
+    --head-line: #3b82ff;
+    --head-line-w: 2px;
+    --label-accent: #6ea2ff;
+    --dot-active: #3b82ff;
+    --title-eyebrow: #c9cdd4;          /* 영문 라벨은 파랑으로 바꾸지 않고 밝은 회색 유지 */
+    --synergy-rank-color: #6ea2ff;
+    --sidebar-title: #6ea2ff;
+    --navy-on-text: #e9ecf1;
+    --navy-on-muted: #9aa0ab;
+    --navy-accent: #3d82ff;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ff9a9a;
+    --color-head-sat: #3d82ff;
+
+    /* 부트스트랩 변수 덮어쓰기 */
+    --bs-body-bg: #07090d;
+    --bs-body-color: #eef2f8;
+    --bs-body-color-rgb: 238, 242, 248;
+    --bs-secondary-color: #98a0ad;
+    --bs-secondary-color-rgb: 152, 160, 173;
+    --bs-border-color: #1f2531;
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        /* 크기: 상단바 · 선택 바 · 스크롤바 · 목록 높이 */
+        --bar-scope-h: 32px;
+        --bar-scope-btn-h: 26px;
+        --bar-chip-h: 28px;
+        --bar-pad-y: 6px;
+        --bar-pad-x: 8px;
+        --bar-gap: 8px;
+    }
+}
+

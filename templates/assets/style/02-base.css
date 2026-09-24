@@ -1,0 +1,141 @@
+/* =============================================================================
+   2. 기본 요소 · 부트스트랩 보정
+   ============================================================================= */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    overflow-y: scroll;
+    font-family: "Pretendard", sans-serif;
+    color: var(--color-text-main);
+    background: var(--color-bg);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.modal-body,
+.scroll-area {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+}
+.modal-body::-webkit-scrollbar,
+.scroll-area::-webkit-scrollbar {
+    width: var(--scroll-gutter);
+    height: var(--scroll-gutter);
+}
+.modal-body::-webkit-scrollbar-thumb,
+.scroll-area::-webkit-scrollbar-thumb {
+    border: var(--scroll-thumb-inset) solid transparent;
+}
+.modal-body:hover::-webkit-scrollbar-thumb,
+.scroll-area:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb-hover);
+}
+.modal-body { background: var(--color-modal-body-bg); }
+.modal-body.profile-modal-body { padding: 12px 24px 24px 24px; }
+
+/* 제목과 공지 하단의 보조 동작: 사이트 글꼴·메타 크기·간격 토큰을 공유한다. */
+.text-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    gap: var(--space-label-gap);
+    min-height: 28px;
+    padding: 0 var(--space-inline-gap);
+    border: 0;
+    border-radius: 0;
+    clip-path: var(--notch-xs);
+    background: transparent;
+    color: var(--panel-muted);
+    font-family: inherit;
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color .15s, background-color .15s;
+}
+.text-action:hover,
+.text-action:focus-visible {
+    color: var(--panel-text);
+    background: color-mix(in srgb, var(--panel-text) 7%, transparent);
+    text-decoration: none;
+}
+.text-action:active {
+    color: var(--panel-text);
+    background: color-mix(in srgb, var(--panel-text) 12%, transparent);
+}
+.text-action:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 1px var(--panel-accent);
+}
+.text-action svg,
+.text-action .i-arrow { width: 12px; height: 12px; flex: none; margin: 0; }
+.section-title.has-actions { column-gap: var(--space-inline-gap); }
+.section-title.has-actions .title-count { margin-left: 0; }
+.section-title.has-actions > .text-action,
+.section-title.has-actions > .rider-actions { margin-left: auto; }
+@media (max-width: 767.98px) {
+    .text-action { min-height: 32px; }
+}
+
+.modal-content {
+    overflow: hidden;
+    border-radius: 0;
+    border: 0;
+    clip-path: var(--notch-lg);
+}
+
+.modal-header {
+    position: relative;
+    min-height: 52px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 56px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-card);
+    border-radius: 0;
+}
+.modal-header .btn-close {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background-size: 12px;
+    margin: 0;
+}
+
+.modal-title {
+    margin: 0;
+    line-height: 27px;
+    overflow-wrap: anywhere;
+    font-size: var(--fs-heading);
+    font-weight: 800;
+    text-align: center;
+    width: 100%;
+    color: var(--color-text-strong);
+}
+
+.table-fixed { table-layout: fixed; }
+
+.modal-dialog.modal-w-550 { max-width: 550px; }
+.modal-dialog.modal-w-600 { max-width: 600px; }
+
+.btn { border-radius: 0; }
+
+.btn-close { border-radius: 0; }
+

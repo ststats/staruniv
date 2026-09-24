@@ -1,0 +1,300 @@
+/* =============================================================================
+   12. 영상 (팬튜브 · 보자)
+   ============================================================================= */
+/* 채널 선택 바(.avatar-bar, 멤버 공지와 같은 부품)의 채널 아바타 - 멤버 줄의 종족 뱃지 자리 */
+.video-bar-avatar,
+.video-card-avatar {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--navy);
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+}
+.video-bar-avatar { width: 20px; height: 20px; font-size: 10px; }
+.video-card-avatar { width: 34px; height: 34px; margin-top: 2px; }
+
+/* 앞 섹션이 비어 숨겨지면 첫 제목의 윗여백을 뺀다(page-video.js가 is-first를 붙인다) */
+.section-title.section-title-spaced.is-first { margin-top: 0; }
+#video-top-wrap[hidden],
+#video-shorts-wrap[hidden],
+.video-more-wrap[hidden] { display: none; }
+
+/* 영상 카드: 위 16:9 썸네일(노치), 아래 채널 사진 + 제목 두 줄 + 채널 · 조회수 · 올린 때 */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-block-gap) var(--space-content-gap);
+}
+.video-top-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-content-gap);
+}
+.video-card { min-width: 0; }
+.video-thumb {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: var(--navy);
+    clip-path: var(--notch-md);
+    cursor: pointer;
+}
+.video-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;          /* hqdefault(4:3)의 위아래 검은 띠를 잘라낸다 */
+    transition: transform 0.25s;
+}
+.video-thumb:hover img { transform: scale(1.04); }
+/* 썸네일을 못 받아온 영상(숲 VOD 등)은 이름만 넣은 판으로 대신한다 */
+.video-thumb-blank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-family: "Pretendard", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--navy-on-muted);
+}
+.video-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 34px;
+    background: rgba(0, 0, 0, 0.7);
+    clip-path: var(--notch-sm);
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.15s, background 0.15s;
+}
+.video-play::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-style: solid;
+    border-width: 8px 0 8px 13px;
+    border-color: transparent transparent transparent #fff;
+    transform: translate(-35%, -50%);
+}
+.video-thumb:hover .video-play,
+.video-thumb:focus-visible .video-play {
+    opacity: 1;
+    background: #ff0033;
+}
+.video-rank {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: start;
+    width: 40px;
+    height: 40px;
+    padding: 4px 0 0 9px;
+    background: var(--navy-deco-fill);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    font-family: "Pretendard", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+}
+.video-card.is-top .video-rank { width: 52px; height: 52px; font-size: 18px; padding: 5px 0 0 11px; }
+.video-badge {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.72);
+    clip-path: var(--notch-xs);
+    font-family: "Pretendard", sans-serif;
+    font-size: var(--fs-badge-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #fff;
+}
+.video-card-body {
+    display: flex;
+    gap: 10px;
+    padding-top: 10px;
+}
+.video-card-text {
+    flex: 1;
+    min-width: 0;
+}
+.video-card-title {
+    display: -webkit-box;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: none;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    text-align: left;
+    font-size: var(--fs-card-title);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-text-strong);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+.video-card-title:hover { color: var(--color-primary); }
+.video-card.is-top .video-card-title { font-size: 16px; }
+.video-card-meta {
+    margin-top: 3px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--fs-meta);
+    color: var(--color-text-sub);
+    margin-top: 3px;
+}
+
+/* 채널 이름 · 조회수 · 올린 때 사이의 구분점 */
+.video-meta-dot {
+    margin: 0 5px;
+    color: var(--color-icon-faint);
+}
+.video-card-note {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    background: var(--color-card);
+    clip-path: var(--notch-sm);
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--color-text-main);
+    white-space: pre-wrap;
+    word-break: keep-all;
+}
+
+/* 쇼츠 선반: 세로 9:16 카드를 가로로 늘어놓는다 */
+.video-shorts-shelf {
+    display: flex;
+    gap: 12px;
+    scroll-behavior: smooth;
+}
+
+/* 제목줄 오른쪽 넘김 버튼(쇼츠 선반). 손가락으로 미는 화면에서는 필요 없어 숨긴다.
+   개수는 다른 제목줄과 같이 맨 오른쪽에 두고, 넘김 버튼은 그 왼쪽에 붙인다. */
+.section-title.has-shelf-nav .shelf-nav { order: 2; margin-left: auto; }
+.section-title.has-shelf-nav .title-count { order: 3; margin-left: 10px; }
+.shelf-nav {
+    display: inline-flex;
+    gap: 6px;
+    margin-left: auto;
+    align-self: center;
+}
+/* 버튼은 옆에 있는 개수 뱃지와 같은 크기·같은 네이비 바탕 + 흰 글씨 */
+.shelf-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 20px;
+    padding: 0 7px;
+    border: 0;
+    background: var(--navy-deco-fill);
+    clip-path: var(--notch-xs);
+    font-size: 11px;
+    line-height: 1;
+    color: #fff;
+    transition: opacity 0.15s;
+}
+.shelf-nav-btn:hover:not(:disabled) { opacity: 0.82; }
+.shelf-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+@media (max-width: 767.98px) {
+    /* 쇼츠 선반은 손가락으로 밀 수 있어 좁은 화면에서 넘김 버튼을 숨긴다.
+       밀 수 없는 곳(분석 탭 형식별 전적)은 is-always로 계속 띄운다. */
+    .shelf-nav:not(.is-always) { display: none; }
+}
+.video-short {
+    display: flex;
+    flex: 0 0 calc((100% - 12px * 5) / 6);
+    flex-direction: column;
+    min-width: 150px;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+.video-short-thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    background: var(--navy);
+    clip-path: var(--notch-md);
+}
+.video-short-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s;
+}
+.video-short:hover .video-short-thumb img { transform: scale(1.04); }
+.video-short-title {
+    display: -webkit-box;
+    margin-top: 8px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: var(--fs-list-name);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-text-strong);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+.video-short:hover .video-short-title { color: var(--color-primary); }
+.video-short-meta {
+    margin-top: 2px;
+    font-size: var(--fs-meta);
+    color: var(--color-text-sub);
+}
+
+/* 보자: 분류 제목줄과 그 아래 묶음 */
+.video-pick-title { margin-top: var(--space-block-gap); }
+.video-pick-title:first-child { margin-top: 0; }
+.video-pick-grid + .video-pick-title { margin-top: var(--space-section-gap); }
+
+.video-empty {
+    grid-column: 1 / -1;
+    padding: 48px 0;
+    background: var(--color-card);
+    clip-path: var(--notch-lg);
+}
+.video-more-wrap { margin-top: var(--space-block-gap); }
+
+@media (max-width: 1199.98px) {
+    .video-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .video-short { flex-basis: calc((100% - 12px * 4) / 5); }
+}
+@media (max-width: 991.98px) {
+    .video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .video-short { flex-basis: calc((100% - 12px * 3) / 4); }
+}
+@media (max-width: 767.98px) {
+    .video-top-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-stack-gap); }
+    .video-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-stack-gap); }
+    .video-short { flex-basis: 42%; min-width: 0; }
+}
+

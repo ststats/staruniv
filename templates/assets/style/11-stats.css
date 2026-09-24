@@ -1,0 +1,16 @@
+/* =============================================================================
+   11. 방송통계
+   ============================================================================= */
+.stat-table td.synergy-value { color: var(--color-primary); }
+
+#page-stats .row.gap-block { gap: 0; }
+
+.synergy-rank {
+    font-weight: 700;
+    color: var(--synergy-rank-color, var(--color-text-sub));
+}
+
+.synergy-value { line-height: 1.25; }
+
+.synergy-val-text { display: block; }
+

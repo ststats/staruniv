@@ -100,9 +100,24 @@ def content_version(data):
     return hashlib.sha256(data).hexdigest()[:10]
 
 
+# 여러 파일을 이어 붙여 하나로 내보내는 자산. 공개 CSS는 섹션별 파일(templates/assets/style/NN-이름.css)을
+# 이름 순서대로 합쳐 docs/style.css로 낸다 - 순서가 곧 우선순위(cascade)이니 번호를 바꿀 때 주의.
+BUNDLES = {'style.css': 'style'}
+
+
+def bundle_text(name):
+    folder = os.path.join(STATIC_SRC, BUNDLES[name])
+    parts = []
+    for filename in sorted(os.listdir(folder)):
+        if filename.endswith('.css'):
+            with open(os.path.join(folder, filename), encoding='utf-8', newline='') as f:
+                parts.append(f.read())
+    return ''.join(parts)
+
+
 def static_asset_versions():
     """templates/assets/ 안 파일별 버전. 템플릿의 asset_url()이 이 값을 쓴다."""
-    versions = {}
+    versions = {name: content_version(bundle_text(name)) for name in BUNDLES}
     if os.path.isdir(STATIC_SRC):
         for filename in os.listdir(STATIC_SRC):
             path = os.path.join(STATIC_SRC, filename)
@@ -148,6 +163,9 @@ def copy_static_assets():
             continue
         shutil.copyfile(src, os.path.join(OUT_DIR, filename))
         copied.append(filename)
+    for name in BUNDLES:
+        write_text_atomic(os.path.join(OUT_DIR, name), bundle_text(name), newline='')
+        copied.append(name)
     print(f"✅ 정적 자산 {copied} 을(를) docs/로 복사했습니다.")
     if os.path.isdir(STATIC_TREE_SRC):
         for name in sorted(os.listdir(STATIC_TREE_SRC)):

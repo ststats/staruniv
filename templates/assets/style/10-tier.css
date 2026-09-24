@@ -1,0 +1,617 @@
+/* =============================================================================
+   10. 티어표
+   ============================================================================= */
+.tier-empty {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--color-text-sub);
+    font-size: var(--fs-body);
+}
+
+.tier-scope-btn {
+    display: inline-flex;
+    align-items: center;
+    border: none;
+    background: none;
+    font-weight: 700;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    line-height: 1.7;
+}
+.tier-scope-btn:hover { color: var(--color-text-strong); }
+.tier-scope-num { font-weight: 800; }
+
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: var(--space-compact-gap);
+}
+
+.tier-card:hover { transform: translateY(-2px); }
+.tier-card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #0b0c10;
+    transition: transform 0.25s ease;
+}
+.tier-card:hover .tier-card-thumb { transform: scale(1.05); }
+.tier-card-avatar {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    background: var(--color-bg-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+.tier-card.is-offcate {
+    filter: grayscale(1);
+    opacity: 0.6;
+}
+.tier-card.is-offcate:hover {
+    filter: none;
+    opacity: 1;
+}
+.tier-card-body {
+    padding: 10px 12px 12px;
+    text-align: center;
+}
+.tier-card-nameline {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.tier-card-name {
+    font-weight: 700;
+    font-size: var(--fs-list-name);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.tier-card:hover .tier-card-name { color: var(--color-primary); }
+.tier-card-nameline .tag-badge { flex-shrink: 0; }
+.tier-card-team {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+}
+.tier-card-team-logo {
+    width: 16px;
+    height: 16px;
+    margin-right: 0;
+}
+.tier-card-team-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tier-card-nameline,
+.tier-card-team {
+    justify-content: center;
+}
+
+.selection-layout > .tier-bar .tier-scope-btn {
+    flex: none;
+    justify-content: center;
+    padding: 0 4px;
+    width: 100%;
+    height: 30px;
+    gap: 4px;
+    color: var(--panel-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+}
+.selection-layout > .tier-bar .tier-scope-btn:hover {
+    background: var(--color-primary-tint-strong);
+    color: var(--color-primary);
+}
+.selection-layout > .tier-bar .tier-scope-all .tier-scope-num { color: var(--panel-accent); }
+.selection-layout > .tier-bar .tier-scope-btn > * { min-width: 0; }
+
+@media (max-width: 767.98px) {
+    .tier-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .tier-card-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    .tier-card-body { padding: 8px 10px 10px; }
+    .tier-card-team-logo {
+        width: 14px;
+        height: 14px;
+    }
+    .tier-card-team-name { font-size: 10px; }
+}
+
+/* ----- 상대전적 (티어표 서브탭) ----- */
+.h2h-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-compact-gap);
+    margin-bottom: var(--space-content-gap);
+}
+.h2h-updated {
+    margin-left: auto;
+    align-self: center;
+    font-size: var(--fs-meta);
+    font-weight: 500;
+    color: var(--color-text-faint);
+}
+/* 두 선수 칸 + 가운데 VS */
+.h2h-pick {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: var(--space-card-gap);
+    align-items: center;
+    margin-bottom: var(--space-block-gap);
+}
+/* 선택 영역의 바깥 여백은 .h2h-pick이 담당한다. 카드 여백이 더해지지 않게 한다. */
+.h2h-pick .player-summary { margin-bottom: 0; }
+/* VS는 '선수 1/2' 라벨이 아니라 카드 높이의 한가운데에 와야 한다.
+   라벨 높이만큼(16px + 아래 여백 6px) 내려준다. */
+.h2h-vs {
+    margin-top: 22px;
+    font-family: "Pretendard", sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-faint);
+}
+.h2h-slot-inner { position: relative; }
+.h2h-slot-label {
+    display: block;
+    height: 16px;
+    line-height: 16px;
+    margin-bottom: var(--space-label-gap);
+    font-family: "Pretendard", sans-serif;
+    font-size: var(--fs-eyebrow);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--color-text-sub);
+}
+.h2h-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 13px;
+    border: 0;
+    background: var(--color-card);
+    clip-path: var(--notch-md);
+    font-size: 13px;
+    color: var(--color-text-main);
+}
+.h2h-input::placeholder { color: var(--color-text-faint); }
+/* 외곽선을 쓰면 노치(clip-path)에 잘려 모서리에서 끊겨 보인다 - 바탕색으로 표시한다 */
+.h2h-input:focus {
+    outline: none;
+    background: var(--color-bg-subtle);
+}
+/* 검색 추천: 이름이 맞으면 먼저, 대학이 맞으면 그 소속 선수들이 뒤따른다 */
+.h2h-suggest {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 6px;
+    background: var(--color-card);
+    box-shadow: 0 12px 28px rgba(10, 20, 40, 0.16);
+    clip-path: var(--notch-md);
+}
+.h2h-suggest-head {
+    position: sticky;
+    top: -6px;                 /* .h2h-suggest의 padding(6px)만큼 올려 붙여 목록 위에 고정한다 */
+    z-index: 1;
+    margin: -6px -6px 4px;
+    padding: 7px 10px;
+    background: var(--color-card);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--color-text-muted);
+}
+.h2h-suggest-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 8px;
+    border: 0;
+    background: none;
+    text-align: left;
+}
+.h2h-suggest-item:hover { background: var(--color-row-hover); }
+.h2h-suggest-avatar,
+.h2h-rival-avatar {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-placeholder-bg);
+    font-size: 12px;
+}
+.h2h-suggest-name {
+    font-size: var(--fs-list-name);
+    font-weight: 700;
+    color: var(--color-text-strong);
+    white-space: nowrap;
+}
+.h2h-suggest-alt {
+    flex: none;
+    font-size: 11px;
+    color: var(--color-text-faint);
+}
+.h2h-suggest-team {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    color: var(--color-text-sub);
+}
+.h2h-suggest-count {
+    margin-left: auto;
+    flex: none;
+    font-family: "Pretendard", sans-serif;
+    font-size: var(--fs-meta);
+    color: var(--color-text-faint);
+}
+.h2h-suggest-empty {
+    padding: 14px 8px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-sub);
+}
+/* 고른 선수 카드 */
+
+.h2h-win { color: var(--color-win); font-weight: 700; }
+.h2h-lose { color: var(--color-lose); font-weight: 700; }
+.h2h-card-clear {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    color: var(--color-text-faint);
+}
+.h2h-card-clear:hover { color: var(--color-lose); }
+
+/* 맞대결 점수판 */
+.h2h-score {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    padding: 22px 20px;
+    background: var(--color-card);
+    clip-path: var(--notch-lg);
+}
+.h2h-score-side { text-align: center; }
+.h2h-score-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+}
+.h2h-score-num {
+    font-family: "Pretendard", sans-serif;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+.h2h-score-num.is-a { color: var(--color-win); }
+.h2h-score-num.is-b { color: var(--color-lose); }
+.h2h-score-mid { text-align: center; }
+.h2h-score-rate {
+    font-family: "Pretendard", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+.h2h-score-bar,
+.h2h-map-bar {
+    display: block;
+    height: 8px;
+    margin: 8px 0;
+    overflow: hidden;
+    background: var(--color-lose);
+    clip-path: var(--notch-xs);
+}
+.h2h-score-bar > span,
+.h2h-map-bar > span {
+    display: block;
+    height: 100%;
+    background: var(--color-win);
+}
+.h2h-score-total {
+    font-size: var(--fs-meta);
+    color: var(--color-text-sub);
+}
+
+/* 맵별 전적 · 상대 목록: 8개씩(+더 보기) 보여주므로 한 줄에 4장 = 두 줄로 떨어진다 */
+.h2h-maps,
+.h2h-rivals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+.h2h-map {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    padding: 10px 12px;
+    background: var(--color-card);
+    clip-path: var(--notch-sm);
+}
+.h2h-map-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+.h2h-map-rec {
+    font-family: "Pretendard", sans-serif;
+    font-size: 12px;
+    color: var(--color-text-sub);
+}
+.h2h-map-bar {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+    height: 6px;
+}
+
+/* 자주 만난 상대 · 동티어 맞대결: 맵 카드와 같은 짜임(이름 / 승-패 · 승률 / 승률 막대)에
+   프로필 사진을 왼쪽 끝에 두 줄에 걸쳐 세운다. */
+.h2h-rival {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px 8px;
+    padding: 10px 12px;
+    border: 0;
+    background: var(--color-card);
+    clip-path: var(--notch-sm);
+    text-align: left;
+}
+.h2h-rival:hover:not(:disabled) { background: var(--color-row-hover); }
+.h2h-rival:disabled { cursor: default; }
+.h2h-rival-name {
+    grid-column: 2;
+    grid-row: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+.h2h-rival-rec {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    flex: none;
+    font-family: "Pretendard", sans-serif;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--color-text-sub);
+}
+.h2h-rival-avatar {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 32px;
+    height: 32px;
+}
+.h2h-rival-bar {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    display: block;
+    height: 6px;
+    margin: 4px 0 0;
+    overflow: hidden;
+    background: var(--color-lose);
+    clip-path: var(--notch-xs);
+}
+.h2h-rival-bar > span { display: block; height: 100%; background: var(--color-win); }
+/* 기록이 없으면 막대를 비워 둔다 - 칸을 없애면 카드 높이가 제각각이 된다 */
+.h2h-rival-bar.is-empty { background: var(--color-bg-subtle); }
+
+@media (max-width: 1199.98px) {
+    .h2h-maps,
+    .h2h-rivals { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* 경기 목록은 전적 페이지 표(.stat-table)를 그대로 쓴다 */
+.h2h-more-wrap { margin-top: var(--space-trailer); }
+.h2h-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 120px;
+    padding: 28px 16px;
+    background: var(--color-card);
+    clip-path: var(--notch-lg);
+    text-align: center;
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    background:var(--navy);
+    background-image:var(--navy-pattern);
+    color:var(--navy-on-muted);
+}
+.h2h-empty-title {
+    font-size: var(--fs-card-title);
+    font-weight: 700;
+    color: var(--color-text-main);
+    color:var(--navy-on-text);
+}
+.h2h-empty-sub { font-size: 12px; color: var(--color-text-muted); color:var(--navy-on-muted); }
+
+/* 분석 탭 - 전적 페이지의 개인 프로필과 같은 틀을 쓰고, 분석 전용 부품만 여기서 더한다 */
+
+/* 최근 폼: W/L 배지 한 줄 (사이트 공용 .match-badge를 그대로 쓴다) */
+.analysis-formline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: var(--space-block-gap);
+    padding: 12px 16px;
+    background: var(--color-card);
+    clip-path: var(--notch-md);
+    flex-wrap:nowrap;
+    gap:10px;
+}
+.analysis-formline-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--color-text-sub);
+    flex:none;
+    white-space:nowrap;
+}
+.analysis-formline-badges { display: flex; flex-wrap: wrap; gap: 4px; flex:1; flex-wrap:nowrap; min-width:0; }
+.analysis-formline-badges .match-badge { width: 26px; height: 20px; font-size: 11px; }
+
+/* 형식별 도넛은 6개지만 한 번에 3개만 보여주고 화살표로 넘긴다(page-analysis.js).
+   종족전도 3개라 두 카드가 같은 폭·같은 높이로 떨어진다. */
+.analysis-donut-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 8px;
+}
+
+/* 월별 전적 그래프(막대: 경기 수, 선: 승률) */
+.analysis-chart-svg {
+    display: block;
+    width: 100%;
+    height: 220px;
+    margin-top: 6px;
+}
+.analysis-chart-grid {
+    stroke: var(--color-border);
+    stroke-width: 1;
+}
+.analysis-chart-grid.is-mid { stroke-dasharray: 4 4; }
+.analysis-chart-axis {
+    fill: var(--color-text-faint);
+    font-size: 9px;
+    font-family: "Pretendard", sans-serif;
+}
+/* 그래프에 마우스를 올리면 눈금 숫자도 같이 진해진다 - 막대를 짚어 읽는 동안
+   옆의 수치가 흐리면 대조가 안 된다. */
+.analysis-chart-axis,
+.analysis-chart-label { transition: fill 0.12s; }
+.analysis-chart-svg:hover .analysis-chart-axis,
+.analysis-chart-svg:hover .analysis-chart-label { fill: var(--color-text-main); }
+.analysis-bar rect { transition: opacity 0.1s; }
+.analysis-chart-svg:hover .analysis-bar { opacity: 0.55; }
+.analysis-chart-svg .analysis-bar:hover { opacity: 1; }
+.analysis-bar-win { fill: var(--color-win); }
+.analysis-bar-lose { fill: var(--color-lose); }
+.analysis-rate-line {
+    stroke: var(--color-text-main);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+.analysis-rate-dot {
+    fill: var(--color-card);
+    stroke: var(--color-text-main);
+    stroke-width: 2;
+}
+.analysis-chart-label {
+    fill: var(--color-text-faint);
+    font-size: 10px;
+    font-family: "Pretendard", sans-serif;
+}
+.analysis-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--color-text-sub);
+}
+.analysis-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.analysis-legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+.analysis-legend-dot.is-win { background: var(--color-win); }
+.analysis-legend-dot.is-lose { background: var(--color-lose); }
+.analysis-legend-line { width: 14px; height: 2px; background: var(--color-text-main); }
+
+/* 좁은 화면의 분석 필터와 도넛 배치 */
+@media (max-width: 767.98px) {
+    /* 최근 전적 형식 필터는 제목과 같은 줄에 둔다(예전엔 줄을 통째로 내줘서 제목 아래로
+       떨어졌다). 칩이 다 안 들어가면 그 칸 안에서만 옆으로 밀어 볼 수 있게 한다. */
+    :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header {
+        grid-template-columns: max-content minmax(0, 1fr) max-content;
+        align-items: center;
+    }
+    :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header .filter-nav {
+        grid-column: 2;
+        grid-row: auto;
+        min-width: 0;
+        overflow-x: auto;
+    }
+    :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header .title-count { grid-column: 3; }
+}
+@media (max-width: 575.98px) {
+    .analysis-donut-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 4px; }
+}
+
+@media (max-width: 767.98px) {
+    .h2h-pick {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-inline-gap);
+    }
+    /* 첫 선수와 VS 사이만 16 + 8px. 마지막 선수 아래는 공통 블록 여백 하나만 쓴다. */
+    .h2h-pick > .h2h-slot:first-child { padding-bottom: var(--space-content-gap); }
+    .h2h-vs {
+        justify-self: center;
+        margin-top: 0;
+    }
+    .h2h-score {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        padding: 18px 16px;
+    }
+    .h2h-score-side {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .h2h-score-num { font-size: 30px; }
+    .h2h-score-mid { order: 1; }
+    /* 좁은 화면에서도 '자주 만난 상대'와 맵 카드는 한 줄에 두 개씩(8개 = 네 줄) */
+    .h2h-rivals,
+    .h2h-maps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .h2h-rival { padding: 8px 10px; gap: 2px 6px; }
+    /* 좁은 화면에서는 승률 숫자를 뺀다 - 바로 아래 막대가 같은 걸 보여주고,
+       그 자리를 이름에 내줘야 '연합팀'이나 '컬러리스 페이트'가 잘리지 않는다. */
+    .h2h-rate-sub { display: none; }
+    .h2h-rival-name { font-size: 12px; }
+    .h2h-rival-avatar { width: 26px; height: 26px; }
+    .h2h-map { padding: 8px 10px; }
+}
+

@@ -1,0 +1,45 @@
+/* 페이지 넘김: 표 아래에 가로로 꽉 찬 카드 한 장. 버튼은 바탕 없이 두고 현재 쪽만 칠한다. */
+.match-pagination { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:46px; padding:8px 14px; margin:var(--space-trailer) 0 0; background:var(--color-card); clip-path:var(--notch-md); }
+.match-pagination-nav,.match-page-nums { display:flex; align-items:center; gap:3px; }
+.match-page { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 5px; border:0; background:transparent; clip-path:var(--notch-xs); font-family:"Pretendard",sans-serif; font-size:12px; font-weight:600; line-height:1; color:var(--color-text-sub); }
+.match-page:hover:not(:disabled):not(.active) { background:var(--color-row-hover); color:var(--color-primary); }
+.match-page.active { background:var(--select-on-light); color:#fff; font-weight:700; }
+.match-page.is-edge { min-width:22px; padding:0 4px; font-size:13px; }
+.match-page.is-gap { min-width:18px; padding:0; }
+.match-page:disabled { opacity:.3; }
+.match-pagination-info { position:absolute; right:14px; font-family:"Pretendard",sans-serif; font-size:11px; color:var(--color-text-muted); }
+
+/* 최근 10경기(폼) 띠 - 오른쪽 요약 글은 없앴다(좁은 화면에서 두 줄로 접혔다) */
+
+@media (max-width:991.98px) {
+    .match-pagination-info { display:none; }
+}
+@media (max-width:767.98px) {
+    /* 모바일도 PC와 같은 짜임으로 - 동그란 프로필, 같은 두 줄 격자, 줄만 조금 작게 */
+    .player-summary { gap:var(--space-compact-gap); padding:16px 14px; }
+    .player-summary-avatar { width:64px; height:64px; border-radius:50%; font-size:26px; }
+    .player-summary-id,.player-summary-stats { grid-template-rows:24px 19px 19px; row-gap:4px; }
+    .player-summary-name { font-size:18px; }
+    .player-summary-badges { gap:3px; }
+    .player-summary-badges .tag-badge,
+    .player-summary-position .tag-badge { height:18px; padding:0 5px; font-size:9px; }
+    .player-summary-badges .tag-badge.race-badge { width:18px; padding:0; }
+    .player-summary-badges .team-badge { line-height:18px; }
+    .player-summary-wl,.player-summary-rate { font-size:14px; }
+    .player-summary-total { padding-bottom:3px; font-size:9px; }
+    .analysis-formline { padding:10px 8px; gap:6px; }
+    .analysis-formline-label { font-size:10px; }
+    .analysis-formline-badges { gap:2px; }
+    /* flex-grow는 0으로 둬서 자리 남는다고 뱃지가 커지지 않게 하고, 아주 좁은 화면에서만
+       flex-shrink로 조금씩 줄어들게 한다(예전엔 flex:1이라 남는 폭만큼 계속 늘어났다). */
+    .analysis-formline-badges .match-badge { flex:0 1 20px; width:20px; height:18px; font-size:9px; }
+
+    .h2h-map-rec,.h2h-rival-rec { white-space:nowrap; font-size:10px; }
+    .h2h-suggest-item { gap:4px; }
+    .h2h-suggest-alt,.h2h-suggest-count { display:none; }
+    .h2h-suggest-item .tag-badge { font-size:10px; padding:2px 4px; }
+
+    .match-pagination { gap:4px; padding:8px; min-height:44px; }
+    .match-page { min-width:22px; height:24px; padding:0 4px; font-size:11px; }
+}
+

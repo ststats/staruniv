@@ -1,0 +1,298 @@
+/* =============================================================================
+   9. 전적
+   ============================================================================= */
+.stat-card-box:hover {
+    transform: translateY(-2px);
+    border: 0;
+}
+.stat-card-box .label {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    grid-area: label;
+    font-weight: 700;
+}
+.stat-card-box .donut {
+    width: 66px;
+    height: 66px;
+    grid-area: donut;
+    margin: 0;
+    --color-win: #4d90ff;
+    --color-lose: #ff8080;
+    --color-donut-track: var(--panel-line);
+}
+.stat-card-box .donut-text { font-size: 14px; }
+
+.stat-card-box {
+    position: relative;
+    height: 100%;
+    flex-direction: column;
+    transition: box-shadow 0.15s, transform 0.15s;
+    padding: 20px 22px 22px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "label label" "donut wl";
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+}
+.stat-card-box .donut::before {
+    width: 48px;
+    height: 48px;
+    background: var(--color-card);
+}
+.stat-card-box .wl {
+    clip-path: var(--notch-sm);
+    display: flex;
+    height: 20px;
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    min-height: 1.4em;
+    align-items: center;
+    justify-content: center;
+    grid-area: wl;
+}
+.stat-card-box .wl .wl-lose,
+.stat-card-box .wl .wl-win,
+.wl .wl-lose,
+.wl .wl-win {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    min-width: 0;
+    color: #fff;
+}
+.stat-card-box .wl .wl-win,
+.wl .wl-win {
+    background: var(--color-primary);
+}
+.stat-card-box .wl .wl-lose,
+.wl .wl-lose {
+    background: var(--color-lose);
+}
+.stat-card-box .wl .wl-none {
+    background: var(--panel-control);
+    color: var(--panel-muted);
+}
+
+.wl {
+    clip-path: var(--notch-sm);
+    display: flex;
+    overflow: hidden;
+    font-weight: 700;
+}
+.wl .wl-none {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-faint);
+    font-family: "Pretendard", sans-serif;
+    font-weight: 600;
+}
+
+.match-row:hover { background: var(--color-row-hover); }
+.match-row[aria-expanded="true"] .m-arrow { transform: rotate(180deg); }
+
+.past-posts {
+    flex: 1 1 0;
+    min-width: 300px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.past-posts .news-load-more-wrap { flex-shrink: 0; }
+
+.player-avatar-sm {
+    width: 18px;
+    height: 18px;
+    object-fit: cover;
+    background: var(--color-placeholder-bg);
+    flex-shrink: 0;
+}
+
+.minw-320 { min-width: min(320px, 100%); }
+
+/* 표의 최소 너비. 자리(칸)가 이 값보다 좁아지면 최소 너비를 포기하고 자리에 맞춘다
+   - 예전에는 그냥 520px이라, 화면은 넓어도 표가 놓인 칸이 좁은 구간(노트북에서 표 두 개를
+   나란히 놓는 992~1200px 등)에서 표에 가로 스크롤이 생겼다. min()이 그 구간을 없애준다. */
+.minw-480 { min-width: min(480px, 100%); }
+
+.minw-520 { min-width: min(520px, 100%); }
+
+.colw-6 { width: 6%; }
+
+.colw-15 { width: 15%; }
+
+.colw-16-66 { width: 16.66%; }
+
+.colw-18-8 { width: 18.8%; }
+
+.colw-20 { width: 20%; }
+
+.colw-25 { width: 25%; }
+
+.colw-40 { width: 40%; }
+
+.stat-table td.set-detail-host {
+    padding: 0;
+    border: none;
+}
+
+.set-detail-panel {
+    background-color: var(--color-modal-body-bg);
+    border-top: 1px dashed var(--color-border);
+    padding: 8px clamp(12px, 3vw, 24px);
+}
+.set-detail-table {
+    width: 100%;
+    table-layout: fixed;
+}
+.set-detail-table td.set-detail-label {
+    font-weight: 800;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+.set-detail-table td.set-detail-map { color: var(--color-text-soft); }
+
+.wl-empty {
+    color: var(--color-line2, #d3dbe8);
+    font-size: 12px;
+}
+
+.head-plate { padding: 20px 22px 22px; }
+.head-plate-value {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-top: 12px;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.head-plate-sub {
+    font-size: var(--fs-meta);
+    color: var(--panel-muted);
+    margin-top: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wl-block {
+    grid-area: wl;
+    min-width: 0;
+}
+.wl-block .wl { margin-top: 9px; }
+
+.wl-text {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.wl-text small {
+    font-size: 13px;
+    color: var(--panel-muted);
+}
+.wl-text i {
+    font-style: normal;
+    color: var(--panel-muted);
+}
+
+.record-recent-header {
+    display: grid;
+    grid-template-columns: max-content minmax(0, max-content) minmax(max-content, 1fr);
+    justify-content: normal;
+    gap: 5px 12px;
+    align-items: stretch;
+}
+.record-recent-header[data-en]::before {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+.record-recent-title { white-space: nowrap; }
+.record-recent-header .filter-item,
+.h2h-period .filter-item {
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    border: 0;
+    background: transparent;
+    clip-path: var(--notch-xs);
+    flex: 0 0 auto;
+    min-width: 36px;
+    padding: 0 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-sub);
+}
+.record-recent-header .filter-item.active::after,
+.h2h-period .filter-item.active::after { display: none; }
+
+.record-recent-header .filter-nav,
+.h2h-period {
+    width: fit-content;
+    max-width: 100%;
+    clip-path: var(--notch-sm);
+    height: 28px;
+    padding: 3px;
+    gap: 2px;
+    align-items: stretch;
+    background: var(--color-bg-subtle);
+}
+.record-recent-header .filter-item:hover:not(.active),
+.h2h-period .filter-item:hover:not(.active) {
+    background: var(--color-row-hover);
+    color: var(--color-primary);
+}
+.record-recent-header .filter-item.active,
+.h2h-period .filter-item.active { font-weight: 700; }
+.record-recent-header .filter-item.active,
+.h2h-period .filter-item.active,
+.mv-order-focus[aria-pressed="true"] {
+    background: var(--select-on-light);
+    color: #fff;
+}
+
+.theme-toggle button.active,
+.mv-chip.selected {
+    background: var(--select-on-light);
+    color: #fff;
+}
+
+@media (max-width: 767.98px) {
+    .stat-card-box {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "label" "donut" "wl";
+        justify-items: center;
+        gap: 12px;
+        padding: 16px 14px 18px;
+        text-align: center;
+    }
+    .stat-card-box .label { justify-self: start; }
+    .stat-card-box .wl { width: 100%; }
+
+    .head-plate { padding: 16px 16px 18px; }
+    .head-plate-value { font-size: 24px; }
+}
+
+@media (max-width: 600px) {
+    .record-recent-header { column-gap: 10px; }
+    .record-recent-header .filter-nav {
+        height: 26px;
+        padding: 2px;
+        gap: 1px;
+    }
+    .record-recent-header .filter-item {
+        min-width: 28px;
+        padding: 0 6px;
+        font-size: 11px;
+    }
+}
+

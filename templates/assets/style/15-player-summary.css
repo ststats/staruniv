@@ -1,0 +1,34 @@
+/* 선수 머리 카드 (개인 전적 · 상대전적 · 분석이 같이 쓴다)
+   양쪽을 같은 3행 격자로 맞춰 줄이 서로 나란히 서게 한다:
+     이름 ↔ 총 전적 / 뱃지 ↔ 승패 / 티어랭킹 뱃지 ↔ 승률.
+   티어 랭킹은 예전엔 작은 글씨였는데 종족·티어 뱃지와 같은 크기의 뱃지로 올렸다. 다만
+   뱃지 줄에 같이 세우면 좁은 화면에서 줄이 넘쳐 잘려서, 셋째 줄을 따로 내준다. */
+.player-summary { position:relative; display:flex; align-items:center; flex-wrap:nowrap; gap:var(--space-content-gap); padding:22px 26px; margin-bottom:var(--space-content-gap); background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--notch-lg); }
+.player-summary-avatar { flex:none; width:76px; height:76px; border-radius:50%; overflow:hidden; display:grid; place-items:center; background:rgba(255,255,255,.1); font-size:30px; }
+.player-summary-avatar img,.player-summary-image { width:100%; height:100%; object-fit:cover; }
+.player-summary-id { flex:1; min-width:0; text-align:left; }
+.player-summary-id,.player-summary-stats { display:grid; grid-template-rows:30px 22px 22px; row-gap:5px; align-items:center; }
+.player-summary-name { margin:0; line-height:1.2; font-size:24px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.player-summary-badges { display:flex; align-items:center; gap:5px; flex-wrap:nowrap; white-space:nowrap; overflow:hidden; }
+.player-summary-badges .tag-badge { flex:none; height:22px; padding:0 8px; font-size:11px; }
+.player-summary-badges .tag-badge.race-badge { width:22px; padding:0; }
+/* 대학 이름은 길이가 제각각이라(한국외국어대학교 등) 이 뱃지만 줄어들며 말줄임되게 둔다 -
+   좁은 화면에서 뒤에 붙은 뱃지가 통째로 잘려 나가는 걸 막는다. */
+.player-summary-badges .team-badge { flex:0 1 auto; min-width:0; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:22px; }
+.player-summary-position { margin:0; display:flex; align-items:center; min-width:0; }
+.player-summary .player-summary-position .tag-badge.rank-badge { background:rgba(255,255,255,.16); color:#fff; }
+.player-summary-stats { flex:none; text-align:right; justify-items:end; white-space:nowrap; }
+.player-summary-total { align-self:end; padding-bottom:5px; font-size:11px; line-height:1; color:var(--navy-on-muted); }
+.player-summary-wl,.player-summary-rate { margin:0; font-size:16px; line-height:1; font-weight:700; }
+.player-summary-wl small { font-size:inherit; }
+.player-summary-rate { color:#68b5ff; }
+.player-summary .h2h-card-clear { color:var(--navy-on-muted); top:3px; right:3px; }
+
+/* 맞대결이 없을 때의 안내 상자는 바로 위 점수판에 붙어 버려서 한 칸 띄운다 */
+.h2h-empty-spaced { margin-top:var(--space-block-gap); }
+
+#analysis-search { margin-bottom:var(--space-block-gap); }
+/* 레이팅 그래프를 못 그릴 때(그 기간에 점이 하나뿐) 자리만 지키는 안내.
+   높이를 그래프 카드와 맞춰 옆의 월별 전적과 어긋나지 않게 한다. */
+.analysis-rating-empty { display:grid; place-items:center; min-height:255px; font-size:12px; color:var(--color-text-sub); text-align:center; }
+

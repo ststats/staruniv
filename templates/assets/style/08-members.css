@@ -1,0 +1,428 @@
+/* =============================================================================
+   8. 멤버 · 공지 · 프로필 모달
+   ============================================================================= */
+.news-post-card {
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+.news-post-card-fade { animation: newsFeaturedFadeIn 0.25s ease; }
+.news-post-photos-wrap:hover .news-photo-nav:not(.is-hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+.news-post-card:hover { transform: translateY(-1px); }
+.news-post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 0 16px;
+    margin-bottom: 12px;
+}
+.news-post-avatar {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+.news-post-name {
+    font-weight: 700;
+    font-size: var(--fs-list-name);
+}
+.news-post-meta {
+    font-size: var(--fs-meta);
+    color: var(--color-text-faint);
+    margin-top: 4px;
+}
+.news-post-title {
+    font-weight: 800;
+    color: var(--color-text-strong);
+    margin-bottom: 8px;
+    padding: 0 16px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.news-post-body {
+    font-size: var(--fs-body);
+    color: var(--color-text-body);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    margin-bottom: 12px;
+    padding: 0 16px;
+}
+.news-post-body p { margin: 0 0 8px; }
+.news-post-body p:last-child { margin-bottom: 0; }
+.news-post-body-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.news-post-more-btn {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    font-size: var(--fs-body);
+    color: var(--color-text-main);
+    padding: 0 16px 12px 16px;
+    margin-top: -8px;
+    transition: opacity 0.15s;
+}
+.news-post-more-btn:hover { opacity: 0.7; }
+.news-post-photos-wrap { position: relative; }
+.news-post-photos {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.news-post-photos::-webkit-scrollbar { display: none; }
+.news-post-photos img {
+    flex: 0 0 100%;
+    width: 100%;
+    height: var(--news-photo-h);
+    object-fit: cover;
+    object-position: center;
+    border-radius: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: block;
+    background: var(--color-bg-subtle);
+}
+.news-post-photos-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+.news-post-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--space-content-gap);
+    font: inherit;
+}
+.news-post-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.news-post-stat svg {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    opacity: 0.85;
+}
+.news-post-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-inline-gap);
+    margin-top: var(--space-compact-gap);
+    padding: 0 var(--space-content-gap) var(--space-compact-gap);
+    color: var(--panel-muted);
+    font-family: inherit;
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: 1;
+}
+.news-post-link {
+    margin-left: auto;
+}
+.news-post-photos-dots span,
+.photo-dot {
+    border-radius: 0;
+    clip-path: var(--notch-xs);
+    width: 6px;
+    height: 6px;
+}
+.news-post-photos-dots span.active,
+.photo-dot.active {
+    width: 16px;
+    height: 6px;
+    border-radius: 0;
+    clip-path: var(--notch-xs);
+}
+
+.member-card {
+    transition: 0.15s;
+    flex-direction: column;
+    min-height: 0;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 0 0 var(--space-compact-gap);
+    text-align: center;
+}
+.member-card:hover { transform: translateY(-2px); }
+.member-card.former { opacity: 0.55; }
+.member-card.former:hover { opacity: 0.85; }
+.member-card-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--fs-card-title);
+    font-weight: 700;
+}
+.member-card-tags {
+    flex-wrap: wrap;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.member-card .member-avatar-img { margin: 0 auto 12px; }
+.member-card .member-avatar-img,
+.tier-card .tier-card-avatar {
+    box-shadow: 0 0 0 2px var(--profile-race-color, var(--color-border));
+}
+.member-card-media .member-profile-media,
+.member-card-media .member-live-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.member-card-media .member-profile-media {
+    display: grid;
+    place-items: center;
+}
+.member-card-media .member-profile-media .member-avatar-img {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+}
+/* 멤버 카드 본문은 티어 카드 본문(.tier-card-body)을 같이 쓰고 여백만 바꾼다 */
+.member-card .member-card-body { padding: var(--space-card-pad-y) var(--space-card-pad-x) 0; }
+.member-card-body .member-card-tags { margin: var(--space-label-gap) 0 0; }
+
+.featured-post {
+    flex: 1 1 0;
+    min-width: 300px;
+}
+
+#news-feed-content.news-feed-mobile {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--space-compact-gap);
+    max-width: 100%;
+}
+#news-feed-content.news-feed-mobile > .featured-post {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+#news-feed-content.news-feed-mobile > .home-notice-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.news-photo-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 0;
+    clip-path: var(--notch-sm);
+    border: none;
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s, background 0.15s;
+    z-index: 2;
+}
+.news-photo-nav:hover { background: rgba(0, 0, 0, 0.6); }
+.news-photo-nav.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+.news-photo-nav-prev { left: 8px; }
+.news-photo-nav-next { right: 8px; }
+
+.photo-dot {
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    transition: width 0.2s, border-radius 0.2s, background 0.2s;
+}
+.photo-dot.active { background: rgba(255, 255, 255, 0.95); }
+
+/* 공지 '지난 공지 더 불러오기': 목록 박스 아래에 붙는 별도 박스 (목록과 같은 잘린 모서리) */
+.news-load-more-wrap { padding-top: 8px; }
+.news-load-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    background: var(--color-card);
+    clip-path: var(--notch-md);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+    transition: background 0.15s, color 0.15s;
+}
+.news-load-more:hover {
+    background: var(--color-row-hover);
+    color: var(--color-text-main);
+}
+
+.profile-avatar {
+    width: 72px;
+    height: 72px;
+    background: var(--color-bg-subtle);
+    font-size: var(--fs-hero);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.former-members-toggle { margin-left: var(--space-inline-gap); }
+
+.member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: var(--space-card-gap);
+}
+
+.member-avatar-img {
+    max-width: 72px;
+    min-width: 40px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: var(--color-bg-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.profile-dialog { max-width: 440px; }
+.profile-modal-hero { position: relative; padding: 20px 24px 24px; background: var(--navy); background-image: var(--navy-pattern); color: var(--navy-on-text); }
+/* 예전엔 이 자리에 'MEMBER PROFILE' 영문 레일이 한 줄 통째로 있었다 - 정보 없이 높이만
+   차지해서 뺐다. 닫기 버튼만 우상단에 얹는다. */
+.profile-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; padding: 0; background-size: 12px; }
+.profile-modal-identity { display: flex; align-items: center; gap: 18px; }
+/* 사진 높이를 오른쪽 글자 덩어리(이름 26px/1.2 + 여백 12px + 뱃지 줄)에 맞춘다.
+   그 덩어리가 이미 64px쯤이라, 여기까지는 키워도 모달이 세로로 안 길어진다. */
+.profile-modal-identity .profile-avatar { width: 64px; height: 64px; margin: 0; }
+.profile-modal-identity-text { min-width: 0; padding-right: 34px; }
+.profile-modal-name { margin: 0 0 12px; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.profile-dialog .profile-modal-body { padding: 22px 24px 24px; }
+.profile-modal-section { margin-bottom: 14px; font-size: 13px; }
+.profile-modal-section h3 { margin: 0; font: inherit; }
+.profile-modal-section .section-title-label::after { background: var(--navy); }
+/* 이 모달만: 영문 레일을 제목 위 한 줄로 빼지 않고 제목 옆에 붙인다(모달이 너무 길어져서). */
+.profile-modal-section[data-en]::before {
+    flex: 0 0 auto;
+    order: 1;
+    align-self: center;
+    margin-bottom: 0;
+    margin-left: 8px;
+    color: var(--color-text-faint);
+}
+.profile-modal-facts { display: grid; grid-template-columns: .8fr 1.4fr .8fr; gap: 12px; margin: 0; padding-bottom: 18px; border-bottom: 1px solid var(--color-border); }
+.profile-modal-facts > div { min-width: 0; }
+.profile-modal-facts dt, .profile-modal-label { margin-bottom: 5px; color: var(--color-text-sub); font-size: var(--fs-meta); font-weight: 500; }
+.profile-modal-facts dd { margin: 0; font-size: var(--fs-body); font-weight: 700; overflow-wrap: anywhere; }
+.profile-modal-period { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 0 22px; font-size: 12px; font-weight: 600; }
+.profile-modal-days { padding: 3px 7px; background: var(--navy); color: var(--navy-on-text); clip-path: var(--notch-xs); font-size: var(--fs-meta); white-space: nowrap; }
+.profile-modal-status { color: var(--color-text-sub); font-size: var(--fs-meta); margin-bottom: 8px; }
+.profile-modal-status:empty { display: none; }
+.profile-modal-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.profile-modal-metric { padding: 14px; background: var(--color-bg-subtle); clip-path: var(--notch-sm); }
+.profile-modal-value { font-size: var(--fs-body); font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* 3개(티어표 분석·개인 전적·SOOP 방송국)까지 한 줄로 - flex라 숨김([hidden])인
+   링크는 레이아웃에서 완전히 빠지고 남은 것들이 폭을 나눠 가진다(grid처럼 빈 칸이
+   안 남는다). 세 개가 다 보일 때를 기준으로 글자를 줄였다. */
+/* 미리보기 칸 전체를 덮는 투명 링크 (page-home.js의 homePreviewLinkHtml) */
+.home-preview-link { position: absolute; inset: 0; z-index: 1; }
+.home-carousel-preview:hover { background: var(--panel-control-hover, rgba(255,255,255,.16)); }
+
+.profile-modal-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+/* 바로가기는 바로 위 지표 상자(.profile-modal-metric)와 같은 짜임이어야 한다 -
+   좌우 패딩 14px, 작은 notch, 본문 글자 크기. 예전엔 패딩 10px에 11px 글자라
+   라벨 시작점이 위 상자보다 4px 왼쪽으로 튀어나오고 혼자 작아 보였다. */
+.profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 12px 14px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--notch-sm); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }
+.profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
+/* 방송국은 사이트 밖으로 나가는 링크라 안쪽 바로가기 두 개와 줄을 나눈다 */
+.profile-modal-station { flex: 1 1 100%; background: var(--navy); color: var(--navy-on-text); }
+.profile-modal-station:hover { background: var(--color-primary); color: #fff; }
+.profile-modal-link[hidden], .profile-modal-days[hidden] { display: none; }
+@media (max-width: 380px) {
+    .profile-modal-hero { padding: 16px 18px 20px; }
+    .profile-dialog .profile-modal-body { padding: 20px 18px; }
+    .profile-modal-identity { gap: 14px; }
+    .profile-modal-identity .profile-avatar { width: 58px; height: 58px; }
+    .profile-modal-metric { padding: 12px; }
+}
+@media (pointer: coarse) { .profile-modal-close { width: 44px; height: 44px; } }
+
+/* 지난 공지 목록 박스: 스크롤바가 생겨도 박스 폭과 잘린 모서리가 아래 '더 불러오기' 박스와 같게 보이도록
+   목록 자체에 카드 바탕을 깔고(스크롤바 자리까지 흰색), 스크롤바는 잘린 모서리 아래에서 시작한다. */
+
+/* 크롬·엣지·사파리: 표준 scrollbar-width/color를 풀어야 아래 ::-webkit-scrollbar 규칙(위아래 화살표 없음,
+   잘린 모서리만큼 내려서 시작)이 먹는다. 파이어폭스는 원래대로 얇은 표준 스크롤바를 쓴다. */
+@supports selector(::-webkit-scrollbar) {
+    #news-past-list {
+        scrollbar-width: auto;
+        scrollbar-color: auto;
+    }
+    #news-past-list::-webkit-scrollbar,
+    #news-past-list::-webkit-scrollbar-track { background: transparent; }
+    #news-past-list::-webkit-scrollbar-track { margin-top: 12px; }
+    #news-past-list:hover::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb-hover); }
+    #news-past-list::-webkit-scrollbar-button { display: none; }
+    #news-past-list::-webkit-scrollbar-thumb {
+        background-color: var(--scroll-thumb);
+        background-clip: padding-box;
+        border-radius: 999px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .member-card { min-height: 158px; }
+}
+
+@media (hover: none) {
+    .news-photo-nav { display: none; }
+}
+
+@media (max-width: 767.98px) {
+    .member-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .selection-content #news-feed-content.news-feed-mobile .home-notice-card {
+        clip-path: var(--notch-lg);
+    }
+}
+

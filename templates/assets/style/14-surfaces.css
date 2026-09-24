@@ -1,0 +1,205 @@
+/* =============================================================================
+   14. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
+   ============================================================================= */
+/* 네이비(다크 모드는 검정) 면. 면 안에서는 --panel-* · --color-* 토큰을 흰 계열로 바꿔
+   안쪽 부품이 따로 다크 규칙 없이 따라오게 한다.
+   선택 표시 원칙: "선택 = 바탕의 반대색"
+   - 네이비 면 위(히어로 탭 · 사이드바 · 달력 이동 버튼): 흰 바탕 + 네이비 글씨
+   - 흰 면 위(최근 전적 필터 · 테마 버튼 · 멀티뷰어 멤버 칩): --select-on-light 바탕 + 흰 글씨
+     (다크 모드는 네이비가 바탕에 묻히므로 파랑) */
+/* 네이비 면 위 선택 표시: 흰 바탕 + --navy 글씨 (다크 모드는 --navy가 검정이라 검정 글씨) */
+.selection-layout > .avatar-bar .avatar-select-item.active,
+.selection-layout > .tier-bar .tier-bar-item.active,
+.selection-layout > .tier-bar .tier-scope-btn.on,
+.page-header .sub-tab.active,
+.home-carousel .sub-tab.active,
+.cal-month-bar .cal-nav-btn:hover {
+    background: #fff;
+    color: var(--navy);
+}
+.selection-layout > .avatar-bar .avatar-select-item.active,
+.selection-layout > .tier-bar .tier-bar-item.active {
+    border-left-color: #fff;
+}
+.page-header .sub-tab.active,
+.home-carousel .sub-tab.active {
+    border-color: #fff;
+}
+.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-name,
+.selection-layout > .avatar-bar .avatar-select-item.active .avatar-select-tier,
+.selection-layout > .tier-bar .tier-bar-item.active .tier-bar-count,
+.selection-layout > .tier-bar .tier-scope-btn.on .tier-scope-num {
+    color: var(--navy);
+}
+
+/* 인원 수는 켜져 있든 아니든 제 색을 지킨다 - 방송중은 빨강, 전체는 파랑이라 한눈에
+   구분된다. 위 '선택된 버튼은 남색' 규칙보다 뒤에 와야 이긴다.
+   켜진 쪽은 바탕이 흰색이라 네이비 면용 --panel-accent 대신 --color-primary를 쓴다. */
+.selection-layout > .tier-bar .tier-scope-btn.tier-scope-live .tier-scope-num { color: var(--color-lose); }
+.selection-layout > .tier-bar .tier-scope-btn.tier-scope-all.on .tier-scope-num { color: var(--color-primary); }
+
+.home-carousel .home-hero-links a {
+    clip-path: var(--notch-md);
+    border: 0;
+    background: #fff;
+    color: var(--navy);
+}
+.home-carousel h1 i {
+    display: inline;
+    font-style: normal;
+    color: var(--navy-accent);
+}
+
+.head-plate-label {
+    font-family: "Pretendard", sans-serif;
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--label-accent);
+}
+
+.cal-month-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 20px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    background-attachment: fixed;
+    border-bottom: var(--head-line-w) solid var(--head-line);   /* 캡처(html2canvas) 때문에 inset 그림자 대신 테두리 */
+}
+.cal-month-bar .cal-month-year { color: var(--navy-on-muted); }
+
+.page-header,
+.home-carousel {
+    --panel-bg: var(--navy);
+    --panel-text: #fff;
+    --panel-muted: var(--navy-on-muted);
+    --panel-accent: var(--navy-accent);
+    --panel-control: rgba(255, 255, 255, 0.12);
+    --panel-line: rgba(255, 255, 255, 0.18);
+    --color-text-strong: #fff;
+    --color-text-main: #fff;
+    --color-text-sub: var(--navy-on-muted);
+    --color-card: rgba(255, 255, 255, 0.08);
+    --color-primary-tint: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    background-color: var(--navy);
+    background-image: var(--hero-glow), var(--navy-pattern);
+}
+
+/* 네이비 박스 면: 요약 박스 · 프로필 머리 · 사이드바 · 멀티뷰어 설정칸 · 오늘 일정 카드.
+   카드 토큰(--color-card · --color-card-hover)까지 네이비로 바꿔서 .clean-card 호버도 면 색을 유지한다. */
+.stat-card-box,
+.head-plate,
+#statContent .clean-card:has(.donut-wrap),
+.analysis-panel,
+.mv-console,
+.selection-layout > .avatar-bar,
+.selection-layout > .tier-bar,
+#page-schedule .cal-today-card-wrapper > .cal-day-card {
+    --color-card-hover: var(--navy);
+    --panel-bg: var(--navy);
+    --panel-text: #fff;
+    --panel-muted: var(--navy-on-muted);
+    --panel-accent: var(--navy-accent);
+    --panel-control: rgba(255, 255, 255, 0.12);
+    --panel-line: rgba(255, 255, 255, 0.16);
+    --color-row-hover: rgba(255, 255, 255, 0.1);
+    --color-card: var(--navy);
+    --color-text-strong: #fff;
+    --color-text-main: #fff;
+    --color-text-dark: #fff;
+    --color-text-sub: var(--navy-on-muted);
+    --color-text-muted: var(--navy-on-muted);
+    --color-border: rgba(255, 255, 255, 0.14);
+    --color-bg-subtle: rgba(255, 255, 255, 0.12);
+    --color-donut-track: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+}
+#statContent .clean-card:has(.donut-wrap) .donut-sub { color: var(--navy-on-muted); }
+
+.tier-card-media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+}
+
+.member-card-media {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+}
+
+#page-schedule .cal-today-card-wrapper .cal-card-time { color: var(--navy-accent); }
+
+.section-title .section-title-label::after,
+.nav-menu .nav-item.active::after {
+    background: var(--navy-deco);
+}
+.section-title .title-count,
+.cal-day-cell.today .cal-day-number {
+    background: var(--navy-deco-fill);
+}
+.section-title[data-en]::before,
+#page-schedule .cal-selected-card-wrapper .cal-day-card-date {
+    color: var(--title-eyebrow);
+}
+
+.stat-table thead th {
+    font-family: "Pretendard", sans-serif;
+    text-transform: uppercase;
+    background-color: var(--color-head-bg);
+    color: var(--color-head-text);
+    border: 0;
+    letter-spacing: 0;
+    background-image: var(--navy-pattern);
+    background-attachment: fixed;
+}
+
+.cal-weekdays {
+    text-align: center;
+    padding: 9px 0;
+    font-family: "Pretendard", sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    background-color: var(--color-head-bg);
+    color: var(--color-head-text);
+    background-image: var(--navy-pattern);
+    background-attachment: fixed;
+}
+
+@media (max-width: 920px) {
+    .selection-layout > .avatar-bar .avatar-select-item.active { border-bottom-color: #fff; }
+    .selection-layout > .tier-bar .tier-bar-item.active {
+        border-left: 0;
+        border-left-color: #fff;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .home-carousel h1 i,
+    .home-carousel h1 span {
+        display: inline;
+    }
+
+    .cal-month-bar { padding: 13px 15px; }
+
+    .page-header {
+        margin-top: -22px;
+        padding: 34px 24px 56px;
+        background-image: var(--hero-glow), var(--navy-pattern);
+    }
+    .home-carousel-slide { margin-top: 0; }
+}
+

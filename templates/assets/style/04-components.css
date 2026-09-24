@@ -1,0 +1,508 @@
+/* =============================================================================
+   4. 공용 부품: 카드 · 배지 · 버튼 · 필터 · 표 · 도넛 · 아이콘
+   ============================================================================= */
+.scroll-area.scroll-y { overflow-x: hidden; }
+
+#view-indiv-stat,
+#view-member-news,
+#view-team-stat,
+#view-tier-analysis,
+#view-tier-list,
+#view-tools-external,
+#view-tools-multiviewer {
+    margin-bottom: var(--space-page-bottom);
+}
+
+.tag-badge {
+    font-family: "Pretendard", sans-serif;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    height: 20px;
+    padding: 0 8px;
+    font-size: var(--fs-badge);
+    clip-path: var(--notch-sm);
+}
+.tag-badge.race-badge {
+    padding: 0;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+}
+.tag-badge.race-badge.race-T { background: var(--color-race-t); }
+.tag-badge.race-badge.race-Z { background: var(--color-race-z); }
+.tag-badge.race-badge.race-P {
+    background: var(--color-race-p);
+    color: #141821;
+}
+.tag-badge.role-badge {
+    color: var(--color-badge-role-text);   /* 바탕색은 page-members.js가 직책별로 인라인으로 준다 */
+    font-family: "Pretendard", sans-serif;
+}
+.tag-badge:not(.race-badge):not(.role-badge):not(.tier-badge) {
+    background: var(--color-badge-format);
+    color: #fff;
+}
+.tag-badge.tier-badge {
+    background: var(--color-tier-badge);
+    color: #fff;
+}
+
+.match-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+    clip-path: var(--notch-sm);
+    width: 34px;
+    height: 18px;
+    font-size: var(--fs-badge-sm);
+    vertical-align: middle;
+}
+
+.stat-table tbody td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--color-border);
+}
+html[data-theme="dark"] .stat-table tbody td {
+    background: var(--color-card);
+    border-color: var(--color-border);
+}
+html[data-theme="dark"] .stat-table tbody .stat-table-sticky-col { background: var(--color-card); }
+html[data-theme="dark"] .stat-table tbody tr:hover > .stat-table-sticky-col,
+html[data-theme="dark"] .stat-table tbody tr:hover > td {
+    background: var(--color-row-hover);
+}
+
+/* 부트스트랩 .table/.text-center가 늦게 오거나 못 불러와도 표 모양이 흔들리지 않게
+   너비와 가운데 정렬은 우리 스타일시트에서 직접 잡는다(표 칸은 모두 가운데 정렬이다). */
+.stat-table,
+.set-detail-table {
+    width: 100%;
+    text-align: center;
+}
+.stat-table { font-size: var(--fs-body); }
+/* 목록 표는 같은 한 줄 높이를 쓰고, 상세 펼침·두 줄 정보는 내용에 따라 늘어난다. */
+.stat-table > thead > tr > th,
+.stat-table > tbody > tr > td:not(.set-detail-host) {
+    line-height: 20px;
+    vertical-align: middle;
+}
+.stat-table > thead > tr > th { border-bottom: 1px solid transparent; }
+.stat-table tbody td.badge-cell { line-height: 0; }
+.stat-table-sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--color-card);
+}
+.stat-table tbody td.stat-table-sticky-col {
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+/* 부트스트랩 .table-hover는 칸마다 반투명 검정(inset box-shadow)을 덧칠한다. 그래서 우리가
+   연한 파랑을 깔아도 표 안에서만 살짝 어둡게 보였다 - 덧칠을 꺼서 카드·목록과 같은 색이 되게 한다. */
+.table {
+    --bs-table-hover-bg: transparent;
+    --bs-table-hover-color: inherit;
+}
+
+/* 호버는 그 줄의 칸에만. (자식 선택자 > 가 없으면 전적 상세처럼 표 안에 표가 든 줄에서
+   바깥 줄 호버가 안쪽 세트 줄 전체를 한꺼번에 칠한다) */
+.stat-table tbody tr:hover > .stat-table-sticky-col,
+.stat-table tbody tr:hover > td {
+    background: var(--color-row-hover);
+}
+.stat-table thead .stat-table-sticky-col { z-index: 3; }
+.stat-table tbody td.cell-muted { color: var(--color-text-sub); }
+
+/* 표 두 개를 나란히 놓는 구간에서는 칸이 좁아지므로 글자·여백을 한 단계 줄인다
+   (모바일 압축 표만큼은 아니고, 열 구성과 표기는 그대로다) */
+@media (min-width: 768px) and (max-width: 1279.98px) {
+    .stat-table { font-size: 12px; }
+    .stat-table thead th,
+    .stat-table tbody td { padding: 8px 6px; }
+}
+
+/* 좁은 화면에서만 쓰는 조각의 기본값(넓은 화면에서는 숨긴다) */
+.cell-subline { display: none; }
+
+/* 전적 칸 표기: "6승 4패 (60.0%)" 대신 6-4 + 그 밑에 승률.
+   상대 전적 표와 개인 전체전적 표가 같은 표기를 쓴다.
+   승률 줄은 넓은 화면에서만 붙이고, 좁아지면 숨긴다(줄이 두 줄이라 표가 길어진다). */
+
+/* 넓은 화면에서는 승률을 같은 줄 옆에 둔다(칸이 넉넉해 굳이 두 줄로 쓸 이유가 없다) */
+
+/* 팀 로고는 얼굴 사진이 아니라 도형이라 동그랗게 자르지 않고 그대로 담는다 */
+.h2h-rival-avatar.is-logo {
+    display: grid;
+    place-items: center;
+    border-radius: 0;
+    background: none;
+}
+
+.wl-w { color: var(--color-primary); }
+.wl-l { color: var(--color-lose); }
+
+/* -----------------------------------------------------------------------
+   좁은 화면의 표 (압축 표)
+   -----------------------------------------------------------------------
+   표는 원래 minw-520(최소 520px)이라 390px 화면에서는 늘 좌우로 밀어야 했고,
+   마지막 칸(날짜)이 잘려서 안 보였다. 좁은 화면에서는
+     · 최소 너비와 칸 비율(colw-*)을 풀고, 내용에 맞춰 칸 폭을 잡는다(table-layout: auto)
+     · 글자와 여백을 한 단계 줄이고, 줄바꿈을 막아 줄 높이를 일정하게 둔다
+     · 긴 이름·맵은 말줄임(…)으로 자른다
+   이렇게 하면 열 구성은 그대로 둔 채 한 화면에 들어간다. 데스크톱은 건드리지 않는다. */
+@media (max-width: 767.98px) {
+    .stat-table[class*="minw-"] { min-width: 0; }
+    .stat-table.table-fixed { table-layout: auto; }
+    .stat-table th[class*="colw-"],
+    .stat-table td[class*="colw-"] { width: auto; }
+    /* 단, 펼쳐지는 세트 상세표는 칸 비율을 그대로 둔다. 경기마다 따로 그려지는 표라
+       내용에 맡기면 펼칠 때마다 칸 폭이 달라져 줄이 서로 안 맞는다. */
+    .stat-table .set-detail-table td.colw-18-8 { width: 18.8%; }
+    .stat-table .set-detail-table td.colw-6 { width: 6%; }
+
+    .stat-table { font-size: 11px; }
+    .stat-table thead th,
+    .stat-table tbody td {
+        padding: 6px 5px;
+        white-space: nowrap;
+    }
+    /* 표 칸(td)에 max-width를 주면 브라우저가 참고만 하고 지키지 않는다(칸이 내용만큼 늘어난다).
+       그래서 실제로 자르는 건 칸 안의 span이다 - 긴 이름·맵이 들어와도 표가 화면을 넘지 않는다. */
+    .stat-table .cell-clip,
+    .stat-table .ellipsis-text {
+        display: inline-block;
+        max-width: 78px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+    .stat-table .tag-badge {
+        height: 16px;
+        padding: 0 5px;
+        font-size: 9px;
+        line-height: 16px;
+    }
+    .stat-table .match-badge { font-size: 9px; }
+    .stat-table .team-logo-icon[class],
+    .stat-table .team-logo-fallback[class] { width: 14px; height: 14px; }
+    .stat-table .player-avatar-sm { width: 16px; height: 16px; font-size: 8px; }
+    .stat-table .set-detail-table td { padding: 5px 4px; }
+
+    /* 개인 최근전적은 6칸이라 이것만으로는 빠듯하다. 상대 팀은 칸을 따로 두지 않고
+       상대 선수 이름 밑에 작은 줄로 붙인다(칸 하나를 통째로 아낀다). */
+    .stat-table .col-oppteam { display: none; }
+    .stat-table .cell-subline {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        margin-top: 1px;
+        font-size: 9px;
+        font-weight: 500;
+        color: var(--color-text-muted);
+    }
+    .stat-table .cell-subline .team-logo-icon[class],
+    .stat-table .cell-subline .team-logo-fallback[class] { width: 11px; height: 11px; }
+    /* 로고와 팀 이름 사이는 붙여 둔다(부트스트랩 gap-2는 8px라 한 덩어리로 안 보였다) */
+    .stat-table .cell-subline > .team-cell { gap: 3px; }
+
+    /* 좁은 화면: 숫자만 한 단계 작게 남기고 승률 줄은 뺀다 */
+
+    /* 상세로 넘어가는 ↗·⌄ 표시는 표가 작아진 만큼 같이 줄인다(예전엔 글자보다 커 보였다) */
+
+    .stat-table .col-arrow { padding-left: 0; padding-right: 2px; }
+    .stat-table .col-arrow .m-arrow svg { width: 8px; height: 8px; }
+
+    /* 상대 전적 표와 최근 전적 표는 나란히 보는 표라 첫 칸(상대) 폭을 같게 맞춘다
+       (칸 폭을 내용에 맡기면 로고 유무·이름 길이에 따라 표마다 달라진다) */
+    .stat-table th.stat-table-sticky-col { width: 88px; }
+}
+
+/* 더 좁은 기기(갤럭시 S 계열 360px, 아이폰 SE 375px 등)에서는 한 단계 더 조인다.
+   위 규칙만으로는 '상대·형식·세트·결과·날짜'가 몇 픽셀씩 넘쳤다. 펼침 화살표는
+   줄 전체를 눌러도 열리므로 이 폭에서는 칸째로 뺀다. */
+@media (max-width: 389.98px) {
+    .stat-table { font-size: 11px; }
+    .stat-table thead th,
+    .stat-table tbody td { padding: 5px 3px; }
+    .stat-table .cell-clip,
+    .stat-table .ellipsis-text { max-width: 58px; }
+    .stat-table .tag-badge { padding: 0 4px; font-size: 9px; }
+    .stat-table .col-arrow { display: none; }
+    .stat-table .set-detail-table td { padding: 4px 3px; }
+}
+
+/* 아주 좁은 기기(아이폰 SE 1세대 320px 등). 한 칸이 2~3px씩 넘쳐서 여기서 더 줄인다. */
+@media (max-width: 339.98px) {
+    .stat-table { font-size: 10px; }
+    .stat-table thead th,
+    .stat-table tbody td { padding: 5px 2px; }
+    .stat-table .cell-clip,
+    .stat-table .ellipsis-text { max-width: 48px; }
+}
+
+.filter-nav { display: flex; }
+
+.filter-item {
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s;
+}
+.filter-item:hover { color: var(--color-text-strong); }
+.filter-item.active::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--color-primary);
+    border-radius: 2px;
+}
+
+.team-logo-icon {
+    object-fit: contain;
+    margin-right: 4px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.team-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+}
+/* 팀 전적 모달 제목의 'vs 로고 팀이름' - 텍스트/이미지가 섞여 있어 각자 다른 간격으로
+   벌어져 보였다. 셋을 하나의 flex 줄로 묶어 간격·높이를 gap 하나로만 맞춘다. */
+.modal-title-vs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+}
+.modal-title-vs .team-logo-icon { margin-right: 0; }
+.team-logo-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
+    font-weight: 800;
+    line-height: 1;
+    vertical-align: middle;
+    margin-right: 4px;
+    flex-shrink: 0;
+    border-radius: 0;
+    clip-path: var(--notch-xs);
+}
+
+.m-arrow {
+    color: var(--color-text-faint);
+    display: inline-flex;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.badge-lose { background-color: var(--color-lose); }
+
+.badge-draw { background-color: var(--color-draw); }
+
+.content-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: var(--space-card-pad-y) var(--space-card-pad-x);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    text-align: center;
+}
+
+#news-feed-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: var(--space-block-gap);
+    align-items: stretch;
+}
+
+#news-past-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    max-height: calc(var(--news-past-item-h) * 5);   /* 공지 카드 5개가 보이는 높이 */
+    border-radius: var(--radius-card);
+    background: var(--color-card);
+    clip-path: var(--notch-lg);
+}
+
+.gap-block {
+    --bs-gutter-x: var(--space-block-gap);
+    --bs-gutter-y: var(--space-block-gap);
+}
+
+.mb-block { margin-bottom: var(--space-block-gap); }
+
+.donut-wrap {
+    display: flex;
+    justify-content: space-around;
+}
+
+.donut-box { text-align: center; }
+
+.donut {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px auto;
+    background: var(--color-donut-track);
+    position: relative;
+}
+.donut::before {
+    content: "";
+    width: 56px;
+    height: 56px;
+    background: var(--color-card);
+    border-radius: 50%;
+    position: absolute;
+}
+
+.donut-text {
+    position: relative;
+    font-size: var(--fs-body);
+    font-weight: 800;
+}
+
+.donut-label {
+    font-size: var(--fs-body);
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.donut-label-t { color: var(--color-race-t); }
+.donut-label-z { color: var(--color-race-z); }
+.donut-label-p { color: var(--color-race-p); }
+
+.donut-sub { font-size: var(--fs-body); }
+
+.team-row-clickable { transition: background 0.1s; }
+.team-row-clickable:hover > :not(.h2h-rival-bar) { background-color: var(--color-row-hover); }
+
+.fs-body { font-size: var(--fs-body); }
+
+.ellipsis-text {
+    overflow: hidden;
+    white-space: nowrap;      /* 부트스트랩 .text-nowrap에 기대지 않고 직접 잡는다 */
+    text-overflow: ellipsis;
+    line-height: normal;
+}
+
+.grid-span-all { grid-column: 1 / -1; }
+
+.stat-row { border-bottom: 1px solid var(--color-bg-subtle); }
+
+.cell-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 사람 아바타는 원형. 사진이 없을 때 쓰는 대체 글자 칸은 .team-logo-fallback을 같이 달기 때문에 그 뒤에 둔다 */
+.home-notice-avatar,
+.live-card-avatar,
+.live-card-avatar-ring,
+.mv-chip-avatar,
+.news-post-avatar,
+.player-avatar-sm,
+.tier-card-avatar {
+    border-radius: 50%;
+}
+
+.chevron-rotatable { transition: transform 0.2s; }
+.chevron-rotatable.is-open { transform: rotate(180deg); }
+
+.tier-row {
+    margin-bottom: 36px;
+    scroll-margin-top: calc(var(--tier-navbar-h) + var(--tier-bar-h) + 16px);
+}
+.tier-row + .tier-row { margin-top: 30px; }
+.tier-row:last-child { margin-bottom: 0; }   /* 페이지 아래 여백은 .page-section이 준다 */
+
+.tier-race-block + .tier-race-block { margin-top: var(--space-content-gap); }
+
+.selection-content { min-width: 0; }
+
+.badge-win { background-color: var(--color-primary); }
+
+.head-stat { clip-path: var(--notch-md); }
+.head-stat-label {
+    font-family: "Pretendard", sans-serif;
+    font-weight: 600;
+    color: var(--color-text-sub);
+    font-size: var(--fs-eyebrow);
+}
+.head-stat-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.head-stat-live { color: var(--color-lose); }
+.head-stat-time { font-weight: 600; }
+
+.g2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-block-gap);
+}
+
+.i-arrow {
+    display: inline-block;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    font-size: 0;
+    vertical-align: 0;
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14 3h7v7M21 3l-9 9M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14 3h7v7M21 3l-9 9M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.badge-cell .tag-badge {
+    width: 34px;
+    min-width: 34px;
+    height: 18px;
+    padding: 0;
+    font-size: 10px;
+}
+
+@media (max-width: 767.98px) {
+    .tier-row { margin-bottom: 28px; }
+
+    .tier-race-block + .tier-race-block { margin-top: var(--space-compact-gap); }
+
+    .head-stat { flex: 1; }
+}
+
+@media (max-width: 920px) {
+    .g2 {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-stack-gap);
+    }
+}
+

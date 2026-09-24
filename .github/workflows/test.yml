@@ -1,0 +1,18 @@
+name: Test
+
+# node --test tests/*.test.js (CSS 구조 검사 포함). 사이트 배포(update.yml)와는 따로 돌아서
+# 테스트가 실패해도 정기 배포를 막지 않는다 - 실패하면 Actions 탭에 빨갛게 남는다.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm test
