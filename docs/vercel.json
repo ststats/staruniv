@@ -1,0 +1,9 @@
+{
+  "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "destination": "https://ststats.github.io/staruniv/:path*"
+    }
+  ]
+}

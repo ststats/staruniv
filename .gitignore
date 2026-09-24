@@ -27,7 +27,10 @@ data/eloboard.json
 
 # 빌드 결과. GitHub Actions가 빌드해서 Pages에 바로 배포한다(저장소에 커밋하지 않음).
 # 로컬 확인은 python scripts/build_html.py 뒤 docs/를 열면 된다.
-docs/
+# 단 docs/vercel.json만은 저장소에 둔다: Vercel(staruniv.vercel.app)이 docs 폴더를 배포하는데,
+# 이 파일 하나로 모든 주소를 GitHub Pages 사이트로 넘겨서(rewrite) 같은 최신 내용을 보여 준다.
+docs/*
+!docs/vercel.json
 # 빌드 캐시(Supabase export)
 data/db.json
 data/render_stats.json

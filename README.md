@@ -26,6 +26,10 @@
 결과(`docs/`)를 GitHub Pages에 바로 배포합니다. **빌드 결과는 저장소에 커밋하지 않습니다**
 (저장소 Settings → Pages → Source: GitHub Actions). 사이트: https://ststats.github.io/staruniv/
 
+`https://staruniv.vercel.app/`도 같은 사이트입니다. Vercel은 저장소의 `docs` 폴더를 배포하는데, 그 폴더에는
+`docs/vercel.json` 하나만 저장소에 있고 이 파일이 모든 주소를 GitHub Pages로 넘깁니다(rewrite). 그래서 Vercel 쪽은
+따로 빌드하지 않아도 늘 Pages와 같은 최신 내용입니다.
+
 달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`이고, 커뮤니티용 Cloudflare Worker가
 이 주소를 가져갑니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 배포합니다.
 
