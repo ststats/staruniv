@@ -287,6 +287,7 @@ function renderTierBar() {
             <span class="tier-bar-count">${sec.count}</span>
         </button>`).join('');
     TierState.activeId = null;  // 칩을 새로 만들었으니 강조도 다시 붙여야 한다
+    attachBarScroll(list);      // PC 가로 바: 끌어서 넘기기 + 아래 스크롤 막대(core.js)
     syncTierBarHeight();
 }
 

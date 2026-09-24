@@ -613,6 +613,85 @@ function renderAvatarBar(listId, allItemHtml, itemsHtml) {
     if (!list) return;
     avatarBarTools(list).querySelector('.bar-scope').innerHTML = allItemHtml;
     list.innerHTML = itemsHtml;
+    attachBarScroll(list.parentElement);
+}
+
+// 선택 바(PC 가로 바)의 넘치는 목록을 움직이는 방법 두 가지를 붙인다.
+//  1) 마우스로 눌러 끌기. 5px 넘게 끌었으면 손을 뗄 때의 클릭은 버린다(항목이 눌리지 않게).
+//  2) 바 맨 아래의 얇은 스크롤 막대. 브라우저 기본 스크롤바는 바마다 높이가 달라서 '전체' 칸과
+//     목록의 줄이 어긋나 보였다 - 기본 막대는 CSS로 숨기고, 바 전체 폭(전체 칸 아래까지)에
+//     트랙을 깔고 목록 구간에서만 움직이는 손잡이를 직접 그린다. 손잡이도 끌 수 있다.
+// 넘치지 않으면(연혁·영상, 모바일의 세로 목록) 바에 .is-scrollable이 안 붙어 아무것도 안 보인다.
+function attachBarScroll(el) {
+    if (!el || el._barScroll) return;
+    const bar = el.closest('.avatar-bar, .tier-bar');
+    if (!bar) return;
+    el._barScroll = true;
+
+    const track = document.createElement('div');
+    track.className = 'bar-scrollbar';
+    track.setAttribute('aria-hidden', 'true');
+    const thumb = document.createElement('div');
+    thumb.className = 'bar-scrollbar-thumb';
+    track.appendChild(thumb);
+    bar.appendChild(track);
+
+    const update = () => {
+        const max = el.scrollWidth - el.clientWidth;
+        const on = max > 1;
+        bar.classList.toggle('is-scrollable', on);
+        if (!on) return;
+        const barRect = bar.getBoundingClientRect();
+        const listRect = el.getBoundingClientRect();
+        const w = Math.max(24, listRect.width * el.clientWidth / el.scrollWidth);
+        thumb.style.width = `${w}px`;
+        thumb.style.left = `${listRect.left - barRect.left + (listRect.width - w) * (el.scrollLeft / max)}px`;
+    };
+    el.addEventListener('scroll', update, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(update);
+        ro.observe(el);
+        ro.observe(bar);
+    } else {
+        window.addEventListener('resize', update);
+    }
+    new MutationObserver(update).observe(el, { childList: true, subtree: true });
+
+    // 끌기: 목록(내용을 끈 방향으로)과 손잡이(막대를 끈 방향으로) 둘 다
+    const drag = (target, dir) => {
+        let startX = 0, startLeft = 0, moved = false, id = null;
+        target.addEventListener('pointerdown', e => {
+            if (e.pointerType !== 'mouse' || e.button !== 0 || !bar.classList.contains('is-scrollable')) return;
+            id = e.pointerId; startX = e.clientX; startLeft = el.scrollLeft; moved = false;
+        });
+        target.addEventListener('pointermove', e => {
+            if (e.pointerId !== id) return;
+            const dx = e.clientX - startX;
+            if (!moved && Math.abs(dx) < 5) return;
+            if (!moved) { moved = true; target.setPointerCapture(id); bar.classList.add('is-dragging'); }
+            const ratio = dir > 0 ? 1 : (el.scrollWidth / el.getBoundingClientRect().width);
+            el.scrollLeft = startLeft - dx * dir * ratio;
+        });
+        const end = e => {
+            if (e.pointerId !== id) return;
+            id = null;
+            bar.classList.remove('is-dragging');
+            if (moved) el._dragged = true;
+        };
+        target.addEventListener('pointerup', end);
+        target.addEventListener('pointercancel', end);
+    };
+    drag(el, 1);
+    drag(thumb, -1);
+    el.addEventListener('click', e => {
+        if (!el._dragged) return;
+        el._dragged = false;
+        e.preventDefault();
+        e.stopPropagation();
+    }, true);
+    el.addEventListener('dragstart', e => e.preventDefault());
+
+    update();
 }
 
 // 바 구조를 한 번만 만들고, 그 다음부터는 만들어 둔 '전체' 칸을 그대로 돌려준다.
