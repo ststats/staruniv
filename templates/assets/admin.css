@@ -12,7 +12,6 @@
          → 전용 관리 화면(전적·티어표) → 연혁 → 반응형
    ============================================================================= */
 
-
 /* =============================================================================
    1. 토큰
    ============================================================================= */
@@ -41,7 +40,6 @@ html[data-theme="dark"] body.admin-mode {
 }
 
 .admin-hidden.admin-hidden { display: none !important; }
-
 
 /* =============================================================================
    2. 로그인 · 권한 없음 · 설정 오류
@@ -106,7 +104,6 @@ html[data-theme="dark"] body.admin-mode {
     font-size: var(--fs-meta);
     font-weight: 700;
 }
-
 
 /* =============================================================================
    3. 편집 바 (화면 맨 위 네이비 띠)
@@ -209,7 +206,6 @@ body.admin-mode > .top-navbar { top: var(--admin-bar-h); }
 }
 .admin-toast[data-kind="error"] { border-left-color: var(--color-lose); }
 
-
 /* =============================================================================
    4. 버튼 (.sub-tab과 같은 면 버튼)
    ============================================================================= */
@@ -291,7 +287,6 @@ html[data-theme="dark"] .admin-btn.primary { background: var(--admin-ink); color
     background: color-mix(in srgb, var(--color-lose) 9%, var(--color-card));
     color: var(--color-lose);
 }
-
 
 /* =============================================================================
    5. 폼 (입력칸 = .h2h-input, 라벨 = .h2h-slot-label)
@@ -567,7 +562,6 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
 .admin-list { display: flex; flex-direction: column; gap: 6px; }
 .admin-list { margin-top: var(--space-compact-gap); }
 .admin-order-row,
-.admin-setting-row,
 .admin-list-row {
     display: flex;
     align-items: center;
@@ -584,9 +578,8 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
     transition: background-color .15s, opacity .15s;
 }
 .admin-order-row b,
-.admin-setting-row b,
 .admin-list-row b { flex: 1; min-width: 0; color: var(--color-text-strong); font-weight: 700; }
-.admin-setting-row { margin-bottom: 6px; }
+
 .admin-list-row { cursor: pointer; }
 .admin-list-row span { color: var(--color-text-muted); font-size: var(--fs-meta); }
 .admin-list-row:hover { background: var(--admin-line); }
@@ -709,7 +702,6 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
     border-bottom: 1px solid var(--color-border);
 }
 
-
 /* =============================================================================
    6. 편집 서랍 (오른쪽에서 열리는 편집 창 - 공개 사이트의 모달과 같은 머리)
    ============================================================================= */
@@ -807,7 +799,6 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-drawer-spacer { flex: 1; }
 .admin-drawer-actions .admin-btn { min-height: 44px; padding: 0 22px; font-size: 13px; }
-
 
 /* =============================================================================
    7. 공개 화면 위 편집 도구
@@ -980,7 +971,6 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-floating-add:disabled { opacity: .6; cursor: wait; }
 .admin-floating-add:hover { background: var(--admin-soft); }
 
-
 /* 카드 오른쪽 위에 떠 있는 편집 · 숨김 버튼 */
 .admin-card-action,
 .admin-section-eye {
@@ -1040,7 +1030,6 @@ body.admin-drawer-open { overflow: hidden; }
     .admin-subtab-manage, .admin-floating-add, .hist-admin-content-head .admin-btn, .hist-admin-bar) {
     display: none !important;
 }
-
 
 /* =============================================================================
    8. 전용 관리 화면 (전적 · 티어표): 공개 화면 대신 표를 보여 준다
@@ -1318,7 +1307,6 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-empty small { color: var(--color-lose); }
 
-
 /* =============================================================================
    9. 연혁 편집 (일정 > 연혁 타임라인 안)
    ============================================================================= */
@@ -1383,7 +1371,6 @@ body.admin-drawer-open { overflow: hidden; }
     font-weight: 700;
 }
 .hist-admin-bar .hist-auto.is-hidden { background: var(--color-draw); }
-
 
 /* =============================================================================
    10. 반응형

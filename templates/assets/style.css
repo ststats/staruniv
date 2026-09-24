@@ -4,7 +4,6 @@
    다크 모드는 html[data-theme="dark"]가 1번 토큰을 바꿔 끼우고, 토큰으로 안 되는 곳만 부품 옆에 다크 규칙을 둔다.
    ============================================================================= */
 
-
 /* =============================================================================
    1. 디자인 토큰 (라이트 / 다크)
    ============================================================================= */
@@ -242,7 +241,6 @@ html[data-theme="dark"] {
     }
 }
 
-
 /* =============================================================================
    2. 기본 요소 · 부트스트랩 보정
    ============================================================================= */
@@ -285,34 +283,6 @@ a {
 }
 .modal-body { background: var(--color-modal-body-bg); }
 .modal-body.profile-modal-body { padding: 12px 24px 24px 24px; }
-
-.btn-view-all {
-    background: transparent;
-    border: 0;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    transition: 0.15s;
-    color: var(--color-text-main);
-}
-.btn-view-all svg {
-    margin-left: 2px;
-    vertical-align: middle;
-}
-.btn-view-all:hover {
-    background: transparent;
-    color: var(--color-text-main);
-    text-decoration: none;
-}
-.btn-view-all,
-.rider-actions .btn-view-all,
-.record-recent-header .btn-view-all {
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.3;
-    letter-spacing: 0;
-    gap: 5px;
-}
 
 /* 제목과 공지 하단의 보조 동작: 사이트 글꼴·메타 크기·간격 토큰을 공유한다. */
 .text-action {
@@ -404,7 +374,6 @@ a {
 
 .table-fixed { table-layout: fixed; }
 
-.modal-dialog.modal-w-400 { max-width: 400px; }
 .modal-dialog.modal-w-550 { max-width: 550px; }
 .modal-dialog.modal-w-600 { max-width: 600px; }
 
@@ -412,11 +381,9 @@ a {
 
 .btn-close { border-radius: 0; }
 
-.modal-footer,
 .modal-header {
     border-radius: 0;
 }
-
 
 /* =============================================================================
    3. 공통 레이아웃: 상단바 · 페이지 머리 · 탭 · 섹션 제목
@@ -656,31 +623,9 @@ a {
     flex-wrap: wrap;
     border-bottom: 1px solid var(--color-border);
 }
-.section-title-sm {
-    font-weight: 800;
-    color: var(--color-text-strong);
-    padding-bottom: 8px;
-    margin-bottom: var(--space-compact-gap);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--title-line, var(--color-border));
-    font-size: 14px;
-    flex-wrap: wrap;
-}
+
 .section-title.section-title-spaced { margin-top: var(--space-section-gap); }
-.section-title-sm[data-en]::before {
-    content: attr(data-en);
-    flex: 0 0 100%;
-    order: -1;
-    color: var(--color-text-sub);
-    font-family: "Pretendard", sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    font-size: var(--fs-eyebrow);
-    margin-bottom: 4px;
-}
+
 .section-title[data-en]::before {
     content: attr(data-en);
     flex: 0 0 100%;
@@ -875,7 +820,6 @@ a {
     .nav-drawer-btn { display: flex; }
 }
 
-
 /* =============================================================================
    4. 공용 부품: 카드 · 배지 · 버튼 · 필터 · 표 · 도넛 · 아이콘
    ============================================================================= */
@@ -890,7 +834,6 @@ a {
 #view-tools-multiviewer {
     margin-bottom: var(--space-page-bottom);
 }
-
 
 .tag-badge {
     font-family: "Pretendard", sans-serif;
@@ -958,10 +901,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > .stat-table-sticky-col,
 html[data-theme="dark"] .stat-table tbody tr:hover > td {
     background: var(--color-row-hover);
 }
-.stat-table .ext-arrow {
-    margin-left: 0;
-    color: var(--color-icon-faint);
-}
+
 /* 부트스트랩 .table/.text-center가 늦게 오거나 못 불러와도 표 모양이 흔들리지 않게
    너비와 가운데 정렬은 우리 스타일시트에서 직접 잡는다(표 칸은 모두 가운데 정렬이다). */
 .stat-table,
@@ -1010,7 +950,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table { font-size: 12px; }
     .stat-table thead th,
     .stat-table tbody td { padding: 8px 6px; }
-    .wl-short-rate { margin-left: 4px; font-size: 10px; }
 }
 
 /* 좁은 화면에서만 쓰는 조각의 기본값(넓은 화면에서는 숨긴다) */
@@ -1019,11 +958,9 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 /* 전적 칸 표기: "6승 4패 (60.0%)" 대신 6-4 + 그 밑에 승률.
    상대 전적 표와 개인 전체전적 표가 같은 표기를 쓴다.
    승률 줄은 넓은 화면에서만 붙이고, 좁아지면 숨긴다(줄이 두 줄이라 표가 길어진다). */
-.wl-full { display: none; }
-.wl-short { display: block; }
-.wl-short-num { font-size: 13px; font-weight: 700; }
+
 /* 넓은 화면에서는 승률을 같은 줄 옆에 둔다(칸이 넉넉해 굳이 두 줄로 쓸 이유가 없다) */
-.wl-short-rate { margin-left: 6px; font-size: 11px; color: var(--color-text-muted); }
+
 /* 팀 로고는 얼굴 사진이 아니라 도형이라 동그랗게 자르지 않고 그대로 담는다 */
 .h2h-rival-avatar.is-logo {
     display: grid;
@@ -1102,11 +1039,9 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table .cell-subline > .team-cell { gap: 3px; }
 
     /* 좁은 화면: 숫자만 한 단계 작게 남기고 승률 줄은 뺀다 */
-    .wl-short-num { font-size: 12px; }
-    .wl-short-rate { display: none; }
 
     /* 상세로 넘어가는 ↗·⌄ 표시는 표가 작아진 만큼 같이 줄인다(예전엔 글자보다 커 보였다) */
-    .stat-table .col-arrow .ext-arrow.i-arrow { width: 8px; height: 8px; }
+
     .stat-table .col-arrow { padding-left: 0; padding-right: 2px; }
     .stat-table .col-arrow .m-arrow svg { width: 8px; height: 8px; }
 
@@ -1127,7 +1062,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table .tag-badge { padding: 0 4px; font-size: 9px; }
     .stat-table .col-arrow { display: none; }
     .stat-table .set-detail-table td { padding: 4px 3px; }
-    .wl-short-num { font-size: 11px; }
 }
 
 /* 아주 좁은 기기(아이폰 SE 1세대 320px 등). 한 칸이 2~3px씩 넘쳐서 여기서 더 줄인다. */
@@ -1164,9 +1098,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     flex-shrink: 0;
     vertical-align: middle;
 }
-.team-logo-size-16 { width: 16px; height: 16px; font-size: 8px; }
-.team-logo-size-20 { width: 20px; height: 20px; font-size: 10px; }
-.team-logo-size-26 { width: 26px; height: 26px; font-size: 13px; }
+
 .team-cell {
     display: flex;
     align-items: center;
@@ -1244,8 +1176,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
 .mb-block { margin-bottom: var(--space-block-gap); }
 
-.ext-arrow { margin-left: 3px; }
-
 .donut-wrap {
     display: flex;
     justify-content: space-around;
@@ -1292,7 +1222,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
 .team-row-clickable { transition: background 0.1s; }
 .team-row-clickable:hover > :not(.h2h-rival-bar) { background-color: var(--color-row-hover); }
-.team-row-clickable:hover .ext-arrow { color: var(--color-primary); }
 
 .fs-body { font-size: var(--fs-body); }
 
@@ -1313,12 +1242,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     text-overflow: ellipsis;
 }
 
-.soop-logo-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-}
-.soop-logo-icon,
 .team-logo-fallback {
     border-radius: 0;
     clip-path: var(--notch-xs);
@@ -1336,12 +1259,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
 .chevron-rotatable { transition: transform 0.2s; }
 .chevron-rotatable.is-open { transform: rotate(180deg); }
-
-a.btn-view-all {
-    display: inline-flex;
-    text-align: center;
-    text-decoration: none;
-}
 
 .tier-row {
     margin-bottom: 36px;
@@ -1410,7 +1327,6 @@ a.btn-view-all {
         gap: var(--space-stack-gap);
     }
 }
-
 
 /* =============================================================================
    5. 선택 사이드바 (멤버 공지 · 개인 전적 · 티어표)
@@ -1504,7 +1420,6 @@ a.btn-view-all {
 }
 .avatar-bar,
 .donut-text,
-.home-hero-kicker,
 .live-thumb-overlay,
 .match-badge,
 .mv-order-num,
@@ -1979,7 +1894,6 @@ a.btn-view-all {
     .selection-layout > .is-dragging .tier-bar-item { pointer-events: none; }
 }
 
-
 /* =============================================================================
    6. 홈
    ============================================================================= */
@@ -2426,8 +2340,6 @@ a.home-notice-card:hover {
     .home-carousel-slide > .page-header-main { width: 100%; }
     .home-carousel-slide > .home-carousel-preview { display: none; }
 }
-
-
 
 /* =============================================================================
    7. 일정 (캘린더)
@@ -3032,7 +2944,6 @@ html[data-theme="dark"] .cal-longterm-bar {
     }
 }
 
-
 /* 연혁 탭 (history.js) ---------------------------------------------------------
    왼쪽 세로선 위에 종류별 색 점, 오른쪽에 카드. 카드 오른쪽에는 사진이나 유튜브 썸네일(누르면 크게/재생). */
 .hist-year { margin-top: var(--space-block-gap); }
@@ -3323,8 +3234,6 @@ body.media-lightbox-open { overflow: hidden; }
     .hist-media { flex: none; width: 100%; align-self: stretch; }
 }
 
-
-
 /* =============================================================================
    8. 멤버 · 공지 · 프로필 모달
    ============================================================================= */
@@ -3533,7 +3442,6 @@ body.media-lightbox-open { overflow: hidden; }
 .member-card .member-card-body { padding: var(--space-card-pad-y) var(--space-card-pad-x) 0; }
 .member-card-body .member-card-tags { margin: var(--space-label-gap) 0 0; }
 
-
 .featured-post {
     flex: 1 1 0;
     min-width: 300px;
@@ -3716,25 +3624,6 @@ body.media-lightbox-open { overflow: hidden; }
 }
 @media (pointer: coarse) { .profile-modal-close { width: 44px; height: 44px; } }
 
-.activity-label {
-    color: var(--color-text-sub);
-    font-size: var(--fs-body);
-    font-weight: 700;
-}
-
-.profile-info-table td.profile-info-label {
-    color: var(--color-text-sub);
-    width: 90px;
-    font-weight: 700;
-    border-color: var(--color-bg-subtle);
-    padding-left: 0;
-}
-.profile-info-table td.profile-info-value { border-color: var(--color-bg-subtle); }
-.profile-info-table {
-    --bs-table-bg: transparent;
-    --bs-table-color: var(--color-text-main);
-}
-
 /* 지난 공지 목록 박스: 스크롤바가 생겨도 박스 폭과 잘린 모서리가 아래 '더 불러오기' 박스와 같게 보이도록
    목록 자체에 카드 바탕을 깔고(스크롤바 자리까지 흰색), 스크롤바는 잘린 모서리 아래에서 시작한다. */
 #news-past-list {
@@ -3776,7 +3665,6 @@ body.media-lightbox-open { overflow: hidden; }
     }
 }
 
-
 /* =============================================================================
    9. 전적
    ============================================================================= */
@@ -3800,12 +3688,7 @@ body.media-lightbox-open { overflow: hidden; }
     --color-donut-track: var(--panel-line);
 }
 .stat-card-box .donut-text { font-size: 14px; }
-.stat-card-arrow {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    transition: color 0.15s;
-}
+
 .stat-card-box {
     position: relative;
     height: 100%;
@@ -3860,16 +3743,6 @@ body.media-lightbox-open { overflow: hidden; }
     background: var(--panel-control);
     color: var(--panel-muted);
 }
-.stat-card-box .stat-card-arrow { color: var(--panel-muted); }
-.stat-card-arrow.i-arrow,
-.stat-table .ext-arrow.i-arrow,
-.tool-card-ext.i-arrow,
-.ext-arrow.i-arrow {
-    width: 10px;
-    height: 10px;
-    font-size: 0;
-}
-.stat-card-box:hover .stat-card-arrow { color: #fff; }
 
 .wl {
     clip-path: var(--notch-sm);
@@ -3886,10 +3759,6 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-faint);
     font-family: "Pretendard", sans-serif;
     font-weight: 600;
-}
-.wl.wl-cell {
-    height: 18px;
-    font-size: 10px;
 }
 
 .match-row:hover { background: var(--color-row-hover); }
@@ -3960,45 +3829,6 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-line2, #d3dbe8);
     font-size: 12px;
 }
-
-.profile-head {
-    gap: 20px;
-    flex-wrap: wrap;
-}
-.profile-head .profile-avatar { flex: none; }
-.profile-head .profile-name {
-    color: var(--panel-text);
-    font-size: 23px;
-    letter-spacing: -0.03em;
-}
-.profile-head-stats {
-    display: flex;
-    gap: 24px;
-    margin-left: auto;
-    text-align: right;
-    flex: none;
-}
-.profile-head-label {
-    font-family: "Pretendard", sans-serif;
-    font-size: var(--fs-eyebrow);
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    color: var(--panel-muted);
-    text-transform: uppercase;
-}
-.profile-head-value {
-    font-size: 23px;
-    font-weight: 700;
-    line-height: 1.15;
-    font-variant-numeric: tabular-nums;
-    margin-top: 4px;
-}
-.profile-head-value small {
-    font-size: 12px;
-    color: var(--panel-muted);
-    font-family: "Pretendard", sans-serif;
-}
-.profile-head-rate { color: var(--panel-accent); }
 
 .head-plate { padding: 20px 22px 22px; }
 .head-plate-value {
@@ -4071,10 +3901,7 @@ body.media-lightbox-open { overflow: hidden; }
 }
 .record-recent-header .filter-item.active::after,
 .h2h-period .filter-item.active::after { display: none; }
-.record-recent-header .btn-view-all {
-    flex: none;
-    margin-left: auto;
-}
+
 .record-recent-header .filter-nav,
 .h2h-period {
     width: fit-content;
@@ -4118,14 +3945,6 @@ body.media-lightbox-open { overflow: hidden; }
     .stat-card-box .label { justify-self: start; }
     .stat-card-box .wl { width: 100%; }
 
-    .profile-head-stats {
-        margin-left: 0;
-        width: 100%;
-        text-align: left;
-        padding-top: 14px;
-        border-top: 1px solid var(--color-ink-3, var(--panel-line));
-    }
-
     .head-plate { padding: 16px 16px 18px; }
     .head-plate-value { font-size: 24px; }
 }
@@ -4142,9 +3961,7 @@ body.media-lightbox-open { overflow: hidden; }
         padding: 0 6px;
         font-size: 11px;
     }
-    .record-recent-header .btn-view-all { font-size: 11px; }
 }
-
 
 /* =============================================================================
    10. 티어표
@@ -4283,7 +4100,6 @@ body.media-lightbox-open { overflow: hidden; }
     }
     .tier-card-team-name { font-size: 10px; }
 }
-
 
 /* ----- 상대전적 (티어표 서브탭) ----- */
 .h2h-topbar {
@@ -4426,73 +4242,7 @@ body.media-lightbox-open { overflow: hidden; }
     color: var(--color-text-sub);
 }
 /* 고른 선수 카드 */
-.h2h-card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 46px;
-    padding: 12px 14px;
-    background: var(--color-card);
-    clip-path: var(--notch-md);
-}
-.h2h-card-avatar {
-    flex: none;
-    width: 52px;
-    height: 52px;
-    overflow: hidden;
-    border-radius: 50%;
-    background: var(--color-placeholder-bg);
-}
-.h2h-card-avatar-img {
-    display: grid;
-    place-items: center;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    font-size: 20px;
-}
-.h2h-card-body {
-    flex: 1;
-    min-width: 0;
-}
-.h2h-card-nameline {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.h2h-card-name {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--color-text-strong);
-}
-.h2h-card-sub {
-    margin-top: 2px;
-    font-size: var(--fs-meta);
-    color: var(--color-text-sub);
-}
-.h2h-card-rec {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--color-text-sub);
-}
-.h2h-card-rec strong {
-    font-family: "Pretendard", sans-serif;
-    font-size: 13px;
-    color: var(--color-text-main);
-}
-.h2h-card-rate {
-    margin-left: auto;
-    font-family: "Pretendard", sans-serif;
-    font-weight: 700;
-    color: var(--color-text-main);
-}
+
 .h2h-win { color: var(--color-win); font-weight: 700; }
 .h2h-lose { color: var(--color-lose); font-weight: 700; }
 .h2h-card-clear {
@@ -4787,7 +4537,6 @@ body.media-lightbox-open { overflow: hidden; }
     .analysis-donut-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 4px; }
 }
 
-
 @media (max-width: 767.98px) {
     .h2h-pick {
         grid-template-columns: minmax(0, 1fr);
@@ -4827,7 +4576,6 @@ body.media-lightbox-open { overflow: hidden; }
     .h2h-map { padding: 8px 10px; }
 }
 
-
 /* =============================================================================
    11. 방송통계
    ============================================================================= */
@@ -4843,7 +4591,6 @@ body.media-lightbox-open { overflow: hidden; }
 .synergy-value { line-height: 1.25; }
 
 .synergy-val-text { display: block; }
-
 
 /* =============================================================================
    12. 영상 (팬튜브 · 보자)
@@ -5144,7 +4891,6 @@ body.media-lightbox-open { overflow: hidden; }
     .video-short { flex-basis: 42%; min-width: 0; }
 }
 
-
 /* =============================================================================
    13. 도구 · 멀티뷰어 · 캄몬라이더
    ============================================================================= */
@@ -5283,13 +5029,7 @@ html[data-theme="dark"] .mv-order-row {
     height: 30px;
     object-fit: contain;
 }
-.tool-card-ext {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    color: var(--navy-on-muted);
-}
-.tool-card:hover .tool-card-ext { color: #fff; }
+
 .tool-card-body {
     min-width: 0;
     padding: var(--space-card-pad-y) var(--space-card-pad-x) 0;
@@ -5777,7 +5517,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     #page-tools .mv-run-btn { min-height: 48px; }
 }
 
-
 /* =============================================================================
    14. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
    ============================================================================= */
@@ -5870,12 +5609,10 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     background-image: var(--hero-glow), var(--navy-pattern);
 }
 
-
 /* 네이비 박스 면: 요약 박스 · 프로필 머리 · 사이드바 · 멀티뷰어 설정칸 · 오늘 일정 카드.
    카드 토큰(--color-card · --color-card-hover)까지 네이비로 바꿔서 .clean-card 호버도 면 색을 유지한다. */
 .stat-card-box,
 .head-plate,
-.profile-head,
 #statContent .clean-card:has(.donut-wrap),
 .analysis-panel,
 .mv-console,
@@ -6140,7 +5877,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-label-fields { display:contents; }
 .entry-label-fields .h2h-slot-label { white-space: nowrap; }
 
-
 .entry-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .entry-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 /* 검색 추천 상자를 떠 있는 팝업이 아니라 제자리 목록으로 쓴다 */
@@ -6295,28 +6031,5 @@ html:not([data-theme="dark"]) .entry-map-option.is-picked { background:var(--nav
     .entry-analysis-total { white-space:normal; text-align:right; }
 }
 
-
 /* External-link square icon: keep the northeast arrow optically centered. */
-.external-link-icon,
-.link-square-icon,
-.icon-external,
-.action-external,
-a[class*="external"] .icon-box,
-button[class*="external"] .icon-box {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  text-align: center;
-}
 
-.external-link-icon svg,
-.link-square-icon svg,
-.icon-external svg,
-.action-external svg,
-a[class*="external"] .icon-box svg,
-button[class*="external"] .icon-box svg {
-  display: block;
-  margin: 0;
-  flex: 0 0 auto;
-}
