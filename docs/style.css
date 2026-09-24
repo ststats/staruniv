@@ -551,7 +551,7 @@ a {
     width: 100%;
     position: relative;
     overflow: hidden;
-    padding: 48px max(32px, calc((100vw - 1240px) / 2 + 40px)) 60px;
+    padding: 48px max(32px, calc((100vw - 1280px) / 2 + 40px)) 60px;
     background: var(--panel-bg);
 }
 .page-header > * {
@@ -639,7 +639,7 @@ a {
 .container {
     padding-left: 32px;
     padding-right: 32px;
-    max-width: 1240px;
+    max-width: 1280px;
 }
 
 .section-title {
@@ -2243,8 +2243,8 @@ a.home-notice-card:hover {
     line-height: 1;
     clip-path: var(--notch-sm);
 }
-.home-carousel-controls > button:first-child { left: max(0px, calc((100vw - 1240px) / 4)); }
-.home-carousel-controls > button:last-child { right: max(0px, calc((100vw - 1240px) / 4)); }
+.home-carousel-controls > button:first-child { left: max(0px, calc((100vw - 1280px) / 4)); }
+.home-carousel-controls > button:last-child { right: max(0px, calc((100vw - 1280px) / 4)); }
 .home-carousel-dots {
     position: absolute;
     bottom: 22px;
@@ -2266,7 +2266,7 @@ a.home-notice-card:hover {
     position: absolute;
     top: 48px;
     bottom: 60px;
-    right: max(32px, calc((100vw - 1240px) / 2 + 40px));
+    right: max(32px, calc((100vw - 1280px) / 2 + 40px));
     width: 360px;
     overflow: hidden;
     padding: 12px 20px;

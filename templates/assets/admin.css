@@ -123,7 +123,7 @@ body.admin-mode > .top-navbar { top: var(--admin-bar-h); }
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 0 max(16px, calc((100vw - 1240px) / 2 + 32px));
+    padding: 0 max(16px, calc((100vw - 1280px) / 2 + 32px));
     background-color: var(--navy);
     background-image: var(--navy-pattern);
     border-bottom: var(--head-line-w) solid var(--head-line);
@@ -1004,7 +1004,7 @@ body.admin-drawer-open { overflow: hidden; }
     color: var(--navy);
 }
 .admin-card-action { top: 8px; right: 8px; }
-.admin-home-edit { position: absolute; z-index: 20; top: 18px; right: max(16px, calc((100vw - 1240px) / 2 + 32px)); min-height: 32px; }
+.admin-home-edit { position: absolute; z-index: 20; top: 18px; right: max(16px, calc((100vw - 1280px) / 2 + 32px)); min-height: 32px; }
 .admin-section-eye { top: 0; right: 0; }
 .video-card,
 .tool-card,
@@ -1044,7 +1044,7 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-dedicated-active .page-section { display: none !important; }
 .admin-dedicated-active #adminDedicatedRoot { display: block !important; }
 .admin-dedicated-shell {
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 0 32px var(--space-page-bottom);
 }
