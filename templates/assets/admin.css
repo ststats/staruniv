@@ -28,6 +28,7 @@ body.admin-mode {
     --admin-ico-plus-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='white' stroke-width='2.2'/%3E%3C/svg%3E");
     --admin-ico-edit-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
     --admin-ico-refresh-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M13 3v3.5H9.5M3 13V9.5h3.5M12.6 6.4A5 5 0 0 0 3.6 5M3.4 9.6a5 5 0 0 0 9 1.4' fill='none' stroke='white' stroke-width='1.7'/%3E%3C/svg%3E");
+    padding-top: var(--admin-bar-h);
 }
 html[data-theme="dark"] body.admin-mode {
     --admin-ink: #e9ecf1;
@@ -108,7 +109,7 @@ html[data-theme="dark"] body.admin-mode {
 /* =============================================================================
    3. 편집 바 (화면 맨 위 네이비 띠)
    ============================================================================= */
-body.admin-mode { padding-top: var(--admin-bar-h); }
+
 body.admin-mode > .top-navbar { top: var(--admin-bar-h); }
 
 .admin-inline-bar {

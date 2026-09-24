@@ -347,6 +347,7 @@ a {
     padding: 12px 56px;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-card);
+    border-radius: 0;
 }
 .modal-header .btn-close {
     position: absolute;
@@ -380,10 +381,6 @@ a {
 .btn { border-radius: 0; }
 
 .btn-close { border-radius: 0; }
-
-.modal-header {
-    border-radius: 0;
-}
 
 /* =============================================================================
    3. 공통 레이아웃: 상단바 · 페이지 머리 · 탭 · 섹션 제목
@@ -1126,6 +1123,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     vertical-align: middle;
     margin-right: 4px;
     flex-shrink: 0;
+    border-radius: 0;
+    clip-path: var(--notch-xs);
 }
 
 .m-arrow {
@@ -1167,6 +1166,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     min-height: 0;
     max-height: calc(var(--news-past-item-h) * 5);   /* 공지 카드 5개가 보이는 높이 */
     border-radius: var(--radius-card);
+    background: var(--color-card);
+    clip-path: var(--notch-lg);
 }
 
 .gap-block {
@@ -1242,10 +1243,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     text-overflow: ellipsis;
 }
 
-.team-logo-fallback {
-    border-radius: 0;
-    clip-path: var(--notch-xs);
-}
 /* 사람 아바타는 원형. 사진이 없을 때 쓰는 대체 글자 칸은 .team-logo-fallback을 같이 달기 때문에 그 뒤에 둔다 */
 .home-notice-avatar,
 .live-card-avatar,
@@ -1341,8 +1338,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     align-items: center;
     gap: var(--bar-gap);
     padding: var(--bar-pad-y) var(--bar-pad-x);
+    background: var(--color-card);
 }
-.avatar-bar { background: var(--color-card); }
 
 /* 카드 공통: 테두리 없이 옅은 그림자, 호버 때 바탕만 한 단계 바뀐다.
    네이비 면 안의 카드는 면이 --color-card · --color-card-hover를 네이비로 바꿔서 따라간다. */
@@ -1411,6 +1408,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .tier-card {
     content-visibility: auto;
     contain-intrinsic-size: auto var(--tier-card-h, 184px);
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s, filter 0.15s, opacity 0.15s;
 }
 /* 맨 앞 카드 하나만 건너뛰지 않는다. 그린 직후에 진짜 카드 높이를 잴 기준이 하나는
    있어야 하기 때문이다(위의 --tier-card-h). 건너뛰는 카드를 재면 방금 넣어준 예상
@@ -1558,6 +1557,9 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 .selection-layout > .avatar-bar .avatar-select-all {
     border-bottom: 1px solid var(--panel-line);
     clip-path: var(--notch-sm);
+    display: flex;
+    height: 42px;
+    justify-content: space-between;
 }
 .selection-layout > .avatar-bar .avatar-selector-scroll {
     width: 100%;
@@ -1577,6 +1579,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     height: 38px;
     padding: 0 13px;
     justify-content: flex-start;
+    border-left: 3px solid transparent;
 }
 .selection-layout > .avatar-bar .avatar-select-item:hover { background: var(--panel-control); }
 .selection-layout > .avatar-bar .avatar-select-name {
@@ -1634,6 +1637,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     padding: 7px 0;
     overflow-x: hidden;
     scrollbar-gutter: auto;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 .selection-layout > .tier-bar .tier-bar-item {
     display: flex;
@@ -1760,12 +1765,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         justify-content: flex-start;
     }
 }
-.selection-layout > .avatar-bar .avatar-select-all {
-    display: flex;
-    height: 42px;
-    justify-content: space-between;
-}
-.selection-layout > .avatar-bar .avatar-select-item { border-left: 3px solid transparent; }
 
 @media (max-width: 920px) {
     .selection-layout > .tier-bar {
@@ -1792,10 +1791,6 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         padding: 6px 0;
         overflow-x: hidden;
     }
-}
-.selection-layout > .tier-bar .tier-bar-list {
-    padding-left: 10px;
-    padding-right: 10px;
 }
 
 @media (max-width: 920px) {
@@ -1852,6 +1847,8 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;
+        scrollbar-width: none;
+        scrollbar-gutter: auto;
     }
     .selection-layout > .avatar-bar .avatar-selector-list {
         flex-direction: row;
@@ -1879,11 +1876,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
     /* 넘치는 목록: 스크롤바 없이 마우스로 끌어서 넘긴다(core.js attachBarScroll).
        고른 항목은 목록 가운데로 온다(centerBarItem). */
-    .selection-layout > .avatar-bar .avatar-selector-scroll,
-    .selection-layout > .tier-bar .tier-bar-list {
-        scrollbar-width: none;
-        scrollbar-gutter: auto;
-    }
+
     .selection-layout > .avatar-bar .avatar-selector-scroll::-webkit-scrollbar,
     .selection-layout > .tier-bar .tier-bar-list::-webkit-scrollbar { display: none; }
     .selection-layout > .is-scrollable .avatar-selector-scroll,
@@ -2738,7 +2731,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 #page-schedule .cal-day-card-today { border: 0; }
 #page-schedule .cal-day-card-today .cal-no-schedule { color: var(--panel-muted); }
 #page-schedule .cal-day-card-today .cal-offair-section { border-top-color: var(--panel-line); }
-#page-schedule .cal-offair-section { padding: 12px 0; }
+#page-schedule .cal-offair-section { padding: 12px 0; gap: 13px; }
 #page-schedule .cal-day-card-today .cal-offair-chip { background: var(--panel-control); }
 #page-schedule .cal-today-card,
 #page-schedule .cal-selected-card {
@@ -2801,7 +2794,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     min-height: 26px;
 }
 /* 칩이 시작하는 자리도 일정 줄(.cal-card-main)의 두 번째 칸과 같은 간격으로 */
-#page-schedule .cal-offair-section { gap: 13px; }
+
 #page-schedule .cal-selected-card-wrapper > .cal-day-card { background-color: var(--panel-bg); }
 #page-schedule .cal-sidebar .cal-card-person,
 #page-schedule .cal-sidebar .cal-card-desc,
@@ -3626,10 +3619,7 @@ body.media-lightbox-open { overflow: hidden; }
 
 /* 지난 공지 목록 박스: 스크롤바가 생겨도 박스 폭과 잘린 모서리가 아래 '더 불러오기' 박스와 같게 보이도록
    목록 자체에 카드 바탕을 깔고(스크롤바 자리까지 흰색), 스크롤바는 잘린 모서리 아래에서 시작한다. */
-#news-past-list {
-    background: var(--color-card);
-    clip-path: var(--notch-lg);
-}
+
 /* 크롬·엣지·사파리: 표준 scrollbar-width/color를 풀어야 아래 ::-webkit-scrollbar 규칙(위아래 화살표 없음,
    잘린 모서리만큼 내려서 시작)이 먹는다. 파이어폭스는 원래대로 얇은 표준 스크롤바를 쓴다. */
 @supports selector(::-webkit-scrollbar) {
@@ -3991,10 +3981,6 @@ body.media-lightbox-open { overflow: hidden; }
     gap: var(--space-compact-gap);
 }
 
-.tier-card {
-    overflow: hidden;
-    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s, filter 0.15s, opacity 0.15s;
-}
 .tier-card:hover { transform: translateY(-2px); }
 .tier-card-thumb {
     width: 100%;
@@ -4422,13 +4408,17 @@ body.media-lightbox-open { overflow: hidden; }
     text-align: center;
     font-size: var(--fs-body);
     color: var(--color-text-sub);
+    background:var(--navy);
+    background-image:var(--navy-pattern);
+    color:var(--navy-on-muted);
 }
 .h2h-empty-title {
     font-size: var(--fs-card-title);
     font-weight: 700;
     color: var(--color-text-main);
+    color:var(--navy-on-text);
 }
-.h2h-empty-sub { font-size: 12px; color: var(--color-text-muted); }
+.h2h-empty-sub { font-size: 12px; color: var(--color-text-muted); color:var(--navy-on-muted); }
 
 /* 분석 탭 - 전적 페이지의 개인 프로필과 같은 틀을 쓰고, 분석 전용 부품만 여기서 더한다 */
 
@@ -4442,13 +4432,17 @@ body.media-lightbox-open { overflow: hidden; }
     padding: 12px 16px;
     background: var(--color-card);
     clip-path: var(--notch-md);
+    flex-wrap:nowrap;
+    gap:10px;
 }
 .analysis-formline-label {
     font-size: 12px;
     font-weight: 800;
     color: var(--color-text-sub);
+    flex:none;
+    white-space:nowrap;
 }
-.analysis-formline-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.analysis-formline-badges { display: flex; flex-wrap: wrap; gap: 4px; flex:1; flex-wrap:nowrap; min-width:0; }
 .analysis-formline-badges .match-badge { width: 26px; height: 20px; font-size: 11px; }
 
 /* 형식별 도넛은 6개지만 한 번에 3개만 보여주고 화살표로 넘긴다(page-analysis.js).
@@ -4755,8 +4749,9 @@ body.media-lightbox-open { overflow: hidden; }
     text-overflow: ellipsis;
     font-size: var(--fs-meta);
     color: var(--color-text-sub);
+    margin-top: 3px;
 }
-.video-card-meta { margin-top: 3px; }
+
 /* 채널 이름 · 조회수 · 올린 때 사이의 구분점 */
 .video-meta-dot {
     margin: 0 5px;
@@ -5747,11 +5742,10 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .player-summary-wl small { font-size:inherit; }
 .player-summary-rate { color:#68b5ff; }
 .player-summary .h2h-card-clear { color:var(--navy-on-muted); top:3px; right:3px; }
-.h2h-empty { background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-muted); }
+
 /* 맞대결이 없을 때의 안내 상자는 바로 위 점수판에 붙어 버려서 한 칸 띄운다 */
 .h2h-empty-spaced { margin-top:var(--space-block-gap); }
-.h2h-empty-title { color:var(--navy-on-text); }
-.h2h-empty-sub { color:var(--navy-on-muted); }
+
 #analysis-search { margin-bottom:var(--space-block-gap); }
 /* 레이팅 그래프를 못 그릴 때(그 기간에 점이 하나뿐) 자리만 지키는 안내.
    높이를 그래프 카드와 맞춰 옆의 월별 전적과 어긋나지 않게 한다. */
@@ -5816,9 +5810,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .match-pagination-info { position:absolute; right:14px; font-family:"Pretendard",sans-serif; font-size:11px; color:var(--color-text-muted); }
 
 /* 최근 10경기(폼) 띠 - 오른쪽 요약 글은 없앴다(좁은 화면에서 두 줄로 접혔다) */
-.analysis-formline { flex-wrap:nowrap; gap:10px; }
-.analysis-formline-label { flex:none; white-space:nowrap; }
-.analysis-formline-badges { flex:1; flex-wrap:nowrap; min-width:0; }
 
 @media (max-width:991.98px) {
     .match-pagination-info { display:none; }
@@ -5884,11 +5875,11 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-list .h2h-suggest-item { min-width: 0; }
 /* 뱃지가 이름 뒤에 바로 붙게 - 오른쪽 끝(출전 횟수)만 밀어 둔다 */
 .entry-list .h2h-suggest-item .tag-badge { flex: none; }
-.entry-list .h2h-suggest-name { flex: 0 1 auto; }
+.entry-list .h2h-suggest-name { flex: 0 1 auto; flex: 0 1 auto; min-width: 2.5em; overflow: hidden; text-overflow: ellipsis; }
 /* 종족은 이름 왼쪽, 티어는 줄 오른쪽 끝에 맞춘다 */
 .entry-list .h2h-suggest-item .tier-badge { margin-left: auto; }
 /* 칸이 좁을 때는 소속이 먼저 줄어들고 이름은 끝까지 남긴다 */
-.entry-list .h2h-suggest-name { flex: 0 1 auto; min-width: 2.5em; overflow: hidden; text-overflow: ellipsis; }
+
 .entry-list .h2h-suggest-team { flex: 1 1 0; min-width: 0; }
 .entry-list .h2h-suggest-item.is-picked { background: var(--select-on-light); }
 .entry-list .h2h-suggest-item.is-picked .h2h-suggest-name,
@@ -5930,11 +5921,11 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .entry-match-badges { display: flex; gap: 3px; }
 .entry-match-side.is-b .entry-match-who { align-items: flex-end; }
 .entry-match .tag-badge { flex: none; white-space: nowrap; }
-.entry-match .h2h-rival-avatar { flex: none; }
+.entry-match .h2h-rival-avatar { flex: none; grid-column: auto; grid-row: auto; }
 /* 가져다 쓴 .h2h-rival-* 는 원래 카드의 칸 번호(grid-column/row)를 달고 있다 - 여기선 풀어 준다 */
 .entry-match .h2h-rival-rec { grid-column: auto; grid-row: auto; justify-self: center; }
 .entry-match .h2h-rival-name { grid-column: auto; grid-row: auto; }
-.entry-match .h2h-rival-avatar { grid-column: auto; grid-row: auto; }
+
 .entry-match .h2h-rival-bar { margin-top: 8px; }
 .entry-match-none { color: var(--color-text-faint); }
 /* '14 VS 11' - 상대전적 스코어판(.h2h-score-num)의 색 규칙을 카드 크기로 줄였다 */
