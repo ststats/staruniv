@@ -58,7 +58,10 @@ def run_chrome(chrome: str, height: int, *args: str) -> subprocess.CompletedProc
         "--force-device-scale-factor=1", f"--window-size={WIDTH},{height}",
         "--virtual-time-budget=30000", *shlex.split(os.getenv("CHROME_FLAGS", "")), *args, URL,
     ]
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    # 달력의 '오늘'은 브라우저 시계로 정해진다. GitHub 러너는 UTC라 한국 자정~오전 9시에 돌리면
+    # 전날이 오늘로 찍힌다 - 크롬을 한국 시간으로 띄운다.
+    env = {**os.environ, "TZ": os.getenv("CAPTURE_TZ", "Asia/Seoul")}
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
 
 
 def crop_png_height(path: Path, height: int) -> None:
