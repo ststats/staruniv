@@ -1457,3 +1457,24 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-tu-review > .admin-field { flex: 0 0 200px; }
 .admin-tu-choice { display: flex; flex-wrap: wrap; gap: 6px; flex: 2 1 320px !important; }
 .admin-tu-choice .admin-input { width: auto; min-width: 110px; flex: 1 1 110px; }
+.admin-tu-box .admin-section-head b { flex: 0 0 auto; white-space: nowrap; }
+/* 폰: 변동 표를 카드처럼 세로로 쌓는다(체크 | 카드 조각 · 선수 · 바뀌는 내용) */
+@media (max-width: 700px) {
+    .admin-tu-table { min-width: 0 !important; }
+    .admin-tu-table thead { display: none; }
+    .admin-tu-table,
+    .admin-tu-table tbody { display: block; }
+    .admin-tu-table tr {
+        display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 6px 10px;
+        padding: 12px 4px; border-bottom: 1px solid var(--color-border);
+    }
+    .admin-tu-table td { display: block; padding: 0 !important; border: 0 !important; text-align: left !important; }
+    .admin-tu-table td:first-child { grid-row: span 3; padding-top: 2px !important; }
+    .admin-tu-table td:empty { display: none; }
+    .admin-tu-table td:nth-child(n+2) { grid-column: 2; }
+    .admin-tu-thumb { max-width: 100%; }
+    .admin-tu-review > select,
+    .admin-tu-review > .admin-field { flex: 1 1 100%; }
+    .admin-tu-apply { justify-content: stretch; }
+    .admin-tu-apply .admin-field { flex: 1 1 auto; }
+}

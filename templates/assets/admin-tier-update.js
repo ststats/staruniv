@@ -206,7 +206,7 @@
   function diffText(c){
     const parts=[];
     if(c.diff.affiliation)parts.push(`소속 ${esc(c.diff.affiliation[0]||'-')} → <b>${esc(teamName(c.diff.affiliation[1]))}</b>`);
-    if(c.diff.tier)parts.push(`티어 ${esc(tierText(c.diff.tier[0]))} → <b>${esc(tierText(c.diff.tier[1]))}</b>`);
+    if(c.diff.tier)parts.push(`티어 ${esc(tierText(c.diff.tier[0])||"-")} → <b>${esc(tierText(c.diff.tier[1]))}</b>`);
     if(c.diff.race)parts.push(`종족 ${esc(c.diff.race[0]||'-')} → <b>${esc(c.diff.race[1])}</b>`);
     return parts.join('<br>');
   }
@@ -228,7 +228,9 @@
         <label class="admin-field"><span>FA 명단 글</span><textarea class="admin-input admin-textarea" id="tuFa" rows="5" placeholder="갓티어｜ T 이재호 유영진  Z 이제동  P 송병구">${esc(U.form.fa)}</textarea></label>
         <div class="admin-tu-actions"><button class="admin-btn primary" id="tuRequest"${U.busy?' disabled':''}>분석 요청</button>
         <a class="admin-btn" href="${esc(bm)}" id="tuBookmarklet" title="북마크바로 끌어다 놓기">펨코 글에서 가져오기</a>
-        <small class="admin-help">오른쪽 버튼을 북마크바로 끌어다 놓고, 펨코 티어표 글에서 누르면 두 칸이 채워진 채로 이 화면이 열립니다</small></div>
+        <button type="button" class="admin-btn" id="tuBmCopy">북마크 코드 복사</button></div>
+        <small class="admin-help">PC: '펨코 글에서 가져오기'를 북마크바로 끌어다 놓고, 펨코 티어표 글에서 누르면 두 칸이 채워진 채로 이 화면이 열립니다<br>
+        폰: '북마크 코드 복사' → 아무 페이지나 북마크 추가 → 북마크 주소를 복사한 코드로 바꾸고 이름을 '티어표'로 저장 → 펨코 글에서 주소창에 '티어표'를 쳐서 북마크를 누릅니다(크롬). 번거로우면 이미지를 길게 눌러 '이미지 주소 복사'하고 FA 글을 복사해 붙여 넣어도 됩니다</small>
       </div>
     </section>`;
   }
@@ -314,7 +316,12 @@
     const on=(sel,ev,fn)=>el.querySelectorAll(sel).forEach(n=>n[ev]=()=>fn(n));
     el.querySelector('#tuRequest')?.addEventListener('click',request);
     el.querySelector('#tuApply')?.addEventListener('click',apply);
-    el.querySelector('#tuBookmarklet')?.addEventListener('click',ev=>{ev.preventDefault();C().toast('북마크바로 끌어다 놓아 쓰는 버튼입니다');});
+    const bmLink=el.querySelector('#tuBookmarklet');
+    bmLink?.addEventListener('click',ev=>{ev.preventDefault();C().toast('북마크바로 끌어다 놓아 쓰는 버튼입니다');});
+    el.querySelector('#tuBmCopy')?.addEventListener('click',async()=>{
+      try{await navigator.clipboard.writeText(bmLink.getAttribute('href'));C().toast('북마크 코드를 복사했습니다');}
+      catch(e){prompt('아래 코드를 복사하세요',bmLink.getAttribute('href'));}
+    });
     ['tuImg','tuFa'].forEach(id=>{const n=el.querySelector('#'+id);if(n)n.oninput=()=>{U.form[id==='tuImg'?'img':'fa']=n.value;};});
     const date=el.querySelector('#tuDate');if(date)date.onchange=()=>{U.date=date.value;};
     on('[data-tu-job]','onclick',n=>openJob(Number(n.dataset.tuJob)).catch(e=>C().toast(C().errorText(e),'error')));
