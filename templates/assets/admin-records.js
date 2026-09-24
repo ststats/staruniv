@@ -19,15 +19,17 @@
     if(match.final_result&&resultKind(match.final_result)&&resultKind(match.final_result)!==resultKind(final))mismatches.push(`결과 ${match.final_result} ↔ ${final}`);
     return {w,l,score,final,mismatches};
   }
-  function memberOptions(selected){
-    return [['','선택']].concat(S.members.map(m=>[m.name||m.nickname,m.name||m.nickname])).map(([v,l])=>`<option value="${esc(v)}"${String(v)===String(selected||'')?' selected':''}>${esc(l)}</option>`).join('');
+  // 캄몬 선수는 용병이 뛰는 경우도 있어 자유 입력이다. 멤버 이름은 자동완성으로만 제안한다.
+  function memberDatalist(){
+    const names=[...new Set(S.members.map(m=>m.name||m.nickname).filter(Boolean))];
+    return `<datalist id="ar_member_names">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   }
   function roundRow(r={},idx=0){
     return `<tr class="admin-round-row" data-round-index="${idx}">
       <td><input class="admin-input" data-k="source_order" type="number" value="${esc(r.source_order??idx+1)}"></td>
       <td><input class="admin-input" data-k="set_name" value="${esc(r.set_name||'')}"></td>
       <td><input class="admin-input" data-k="round_name" value="${esc(r.round_name||'')}"></td>
-      <td><select class="admin-input" data-k="our_player">${memberOptions(r.our_player)}</select></td>
+      <td><input class="admin-input" data-k="our_player" list="ar_member_names" placeholder="멤버 또는 용병" value="${esc(r.our_player||'')}"></td>
       <td><input class="admin-input" data-k="our_race" value="${esc(r.our_race||'')}"></td>
       <td><input class="admin-input" data-k="our_tier" value="${esc(r.our_tier||'')}"></td>
       <td><input class="admin-input" data-k="opponent_player" value="${esc(r.opponent_player||'')}"></td>
@@ -51,7 +53,7 @@
         ${C().field('세트 수',C().input('ar_sets',rounds.length,'number','readonly'))}
       </div>
       <div class="admin-section-head"><b>세트</b><button type="button" class="admin-btn" id="ar_add_round">+ 세트 추가</button></div>
-      <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th>순서</th><th>세트명</th><th>라운드명</th><th>캄몬 선수</th><th>캄몬 종족</th><th>캄몬 티어</th><th>상대 선수</th><th>상대 종족</th><th>상대 티어</th><th>맵</th><th>결과</th><th>관리</th></tr></thead><tbody id="ar_rounds">${rounds.map(roundRow).join('')}</tbody></table></div>`;
+      <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th>순서</th><th>세트명</th><th>라운드명</th><th>캄몬 선수</th><th>캄몬 종족</th><th>캄몬 티어</th><th>상대 선수</th><th>상대 종족</th><th>상대 티어</th><th>맵</th><th>결과</th><th>관리</th></tr></thead><tbody id="ar_rounds">${rounds.map(roundRow).join('')}</tbody></table></div>${memberDatalist()}`;
   }
   function collectRounds(){
     return [...document.querySelectorAll('#ar_rounds .admin-round-row')].map((tr,i)=>{
