@@ -241,6 +241,26 @@ function siteDataRequest(part) {
         : { url: `data/site_${part}.json`, cache: 'no-cache' };
 }
 
+// Supabase는 한 번에 1000줄까지만 준다. 1000줄씩 끊어 받는 조회를 한 쪽씩 기다리지 않고
+// 여러 쪽(parallel, 표 크기에 맞춰 고른다)을 동시에 요청한다 - 8천 줄이면 8번 차례로 기다리던 게 1번이 된다.
+// 끝을 넘은 쪽은 빈 목록으로 오므로 그대로 멈추면 된다.
+// makeQuery(from, to)는 .range(from, to)까지 붙인 요청(또는 {data, error}를 주는 Promise)을 돌려준다.
+async function fetchAllPages(makeQuery, { pageSize = 1000, parallel = 2 } = {}) {
+    const rows = [];
+    for (let from = 0; ; from += pageSize * parallel) {
+        const results = await Promise.all(Array.from({ length: parallel }, (_, i) => {
+            const start = from + i * pageSize;
+            return makeQuery(start, start + pageSize - 1);
+        }));
+        for (const { data, error } of results) {
+            if (error) throw error;
+            const batch = Array.isArray(data) ? data : [];
+            rows.push(...batch);
+            if (batch.length < pageSize) return rows;
+        }
+    }
+}
+
 async function loadSiteData(parts) {
     const requested = (Array.isArray(parts) ? parts : ['shell'])
         .filter(part => !SiteDataLoad.loaded.has(part));
@@ -884,21 +904,13 @@ function fetchSynergyData() {
             .filter(Boolean);
         if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다.');
 
-        const rows = [];
-        const pageSize = 1000;
-        for (let from = 0; ; from += pageSize) {
-            const { data: batch, error } = await client
-                .from('daily_member_stats')
-                .select('stat_date,soop_id,elo_id,nickname,role,affiliation,race,tier,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at,sponsor_updated_at')
-                .eq('stat_date', latestDate)
-                .in('soop_id', memberIds)
-                .order('soop_id', { ascending: true })
-                .range(from, from + pageSize - 1);
-            if (error) throw error;
-            const chunk = Array.isArray(batch) ? batch : [];
-            rows.push(...chunk);
-            if (chunk.length < pageSize) break;
-        }
+        const rows = await fetchAllPages((from, to) => client
+            .from('daily_member_stats')
+            .select('stat_date,soop_id,elo_id,nickname,role,affiliation,race,tier,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at,sponsor_updated_at')
+            .eq('stat_date', latestDate)
+            .in('soop_id', memberIds)
+            .order('soop_id', { ascending: true })
+            .range(from, to), { parallel: 1 });
         if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다.`);
 
         SynergyState.data = rows
@@ -1005,14 +1017,43 @@ function runtimeSectionEnabled(key, fallback=true) {
     return !!sections[key];
 }
 
+// 메뉴·서브탭 표시 설정(site_config.nav). 페이지 초기화가 이 값(서브탭 기본값 등)을 쓰므로
+// 처음에는 기다려야 하지만, 모든 페이지가 요청 한 번을 통째로 기다리던 걸 줄이려고 마지막 값을
+// 브라우저에 기억해 두고 바로 쓴다. 새 값은 뒤에서 받아 달라졌을 때만 다시 적용한다.
+// (관리자 화면은 편집 결과가 곧바로 보여야 하므로 기억해 둔 값을 쓰지 않는다.)
+const NAV_CACHE_KEY = 'staruniv-nav-config';
+async function fetchNavConfig() {
+    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+    if (!client) throw new Error('Supabase browser client is not configured');
+    const { data: row, error } = await client.from('site_config')
+        .select('config_value').eq('config_key','nav').maybeSingle();
+    if (error) throw error;
+    const data = row?.config_value || {};
+    try { localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(data)); } catch (_) {}
+    return data;
+}
+
 async function applyNavVisibility() {
+    let cached = null;
+    if (!document.body.classList.contains('admin-mode')) {
+        try { cached = JSON.parse(localStorage.getItem(NAV_CACHE_KEY) || 'null'); } catch (_) {}
+    }
+    const fresh = fetchNavConfig();
+    if (cached && typeof cached === 'object') {
+        applyNavConfig(cached);
+        fresh.then(data => { if (JSON.stringify(data) !== JSON.stringify(cached)) applyNavConfig(data); })
+            .catch(e => console.warn('사이트 표시 설정을 새로 받지 못했습니다.', e));
+        return;
+    }
+    let data = null;
+    try { data = await fresh; }
+    catch (e) { console.warn('사이트 표시 설정을 불러오지 못했습니다.', e); }
+    if (data) applyNavConfig(data);
+    delete document.documentElement.dataset.navPending;
+}
+
+function applyNavConfig(data) {
     try {
-        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-        if (!client) throw new Error('Supabase browser client is not configured');
-        const { data: row, error } = await client.from('site_config')
-            .select('config_value').eq('config_key','nav').maybeSingle();
-        if (error) throw error;
-        const data = row?.config_value || {};
         SiteRuntimeConfig = data;
 
         const isAdmin = document.body.classList.contains('admin-mode');
@@ -1095,7 +1136,7 @@ async function applyNavVisibility() {
         if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
         document.dispatchEvent(new CustomEvent('site:config', {detail:data}));
     } catch (e) {
-        console.warn('사이트 표시 설정을 불러오지 못했습니다.', e);
+        console.warn('사이트 표시 설정을 적용하지 못했습니다.', e);
     } finally {
         delete document.documentElement.dataset.navPending;
     }
@@ -1115,8 +1156,11 @@ function bootPage(init, opts) {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
-        await applyNavVisibility();   // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다
-        if (siteDataParts.length) await loadSiteData(siteDataParts);
+        // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
+        await Promise.all([
+            applyNavVisibility(),
+            siteDataParts.length ? loadSiteData(siteDataParts) : null,
+        ]);
         safeInit('페이지', init);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

@@ -42,19 +42,11 @@ async function analysisLoadRating() {
         AnalysisState.ratingLoading = (async () => {
             const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
             if (!client) return { months: [], players: {} };
-            const rows = [];
-            const pageSize = 1000;
-            for (let from = 0; ; from += pageSize) {
-                const { data, error } = await client.from('elo_rating_history')
-                    .select('elo_id,month_end,rating')
-                    .order('month_end', { ascending: true })
-                    .order('elo_id', { ascending: true })
-                    .range(from, from + pageSize - 1);
-                if (error) throw error;
-                const batch = Array.isArray(data) ? data : [];
-                rows.push(...batch);
-                if (batch.length < pageSize) break;
-            }
+            const rows = await fetchAllPages((from, to) => client.from('elo_rating_history')
+                .select('elo_id,month_end,rating')
+                .order('month_end', { ascending: true })
+                .order('elo_id', { ascending: true })
+                .range(from, to), { parallel: 8 });   // 약 8천 줄(선수 × 달)
             const months = [...new Set(rows.map(r => String(r.month_end || '').slice(0, 7)).filter(Boolean))].sort();
             const monthIndex = new Map(months.map((month, index) => [month, index]));
             const players = {};

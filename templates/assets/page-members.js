@@ -222,20 +222,15 @@ function loadProfileAnalysisIndex() {
     if (!client) return Promise.resolve(null);
     profileAnalysisIndexPromise = (async () => {
         const bySoop = new Map();
-        const size = 1000;
-        for (let from = 0; ; from += size) {
-            const { data, error } = await client.from('elo_public_players')
-                .select('elo_id,soop_id')
-                .not('soop_id', 'is', null)
-                .order('elo_id', { ascending: true })
-                .range(from, from + size - 1);
-            if (error) throw error;
-            (data || []).forEach(row => {
-                const key = String(row.soop_id || '').trim().toLowerCase();
-                if (key && !bySoop.has(key)) bySoop.set(key, String(row.elo_id));
-            });
-            if (!data || data.length < size) break;
-        }
+        const rows = await fetchAllPages((from, to) => client.from('elo_public_players')
+            .select('elo_id,soop_id')
+            .not('soop_id', 'is', null)
+            .order('elo_id', { ascending: true })
+            .range(from, to));
+        rows.forEach(row => {
+            const key = String(row.soop_id || '').trim().toLowerCase();
+            if (key && !bySoop.has(key)) bySoop.set(key, String(row.elo_id));
+        });
         return bySoop;
     })().catch(() => { profileAnalysisIndexPromise = null; return null; });
     return profileAnalysisIndexPromise;

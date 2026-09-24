@@ -87,15 +87,8 @@
     });
   }
   async function loadFilterOptions(){
-    const all=[], size=1000;
-    for(let from=0;;from+=size){
-      const {data,error}=await C().state.client.from('tier_members')
-        .select('tier,affiliation,race').order('id',{ascending:true}).range(from,from+size-1);
-      if(error)throw error;
-      const batch=data||[];
-      all.push(...batch);
-      if(batch.length<size)break;
-    }
+    const all=await fetchAllPages((from,to)=>C().state.client.from('tier_members')
+      .select('tier,affiliation,race').order('id',{ascending:true}).range(from,to),{parallel:1});
     const clean=key=>[...new Set(all.map(r=>String(r[key]||'').trim()).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,'ko',{numeric:true,sensitivity:'base'}));
     const tiers=clean('tier').sort((a,b)=>tierRank(a)-tierRank(b)||a.localeCompare(b,'ko'));
@@ -168,15 +161,8 @@
   // ---------------------------------------------------------------------------
   // 티어 랭킹 보기: ststat가 계산한 활성 스냅샷 전체(순위에 오른 모든 선수)
   // ---------------------------------------------------------------------------
-  async function pagedSelect(table,cols,order){
-    const out=[],size=1000;
-    for(let from=0;;from+=size){
-      const {data,error}=await C().state.client.from(table).select(cols).order(order,{ascending:true}).range(from,from+size-1);
-      if(error)throw error;
-      out.push(...(data||[]));
-      if(!data||data.length<size)break;
-    }
-    return out;
+  function pagedSelect(table,cols,order){
+    return fetchAllPages((from,to)=>C().state.client.from(table).select(cols).order(order,{ascending:true}).range(from,to));
   }
   async function loadRanking(){
     if(R.loaded)return;

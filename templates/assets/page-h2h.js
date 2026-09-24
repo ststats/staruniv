@@ -101,22 +101,11 @@ async function h2hLoadIndexFromSupabase() {
     const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
     if (!client) throw new Error('Supabase browser client is not configured');
 
-    const playersData = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-        const request = client
-            .from('elo_public_players')
-            .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
-            .order('elo_id', { ascending: true })
-            .range(from, from + pageSize - 1);
-
-        const { data, error } = await h2hWithTimeout(request, '선수 목록');
-        if (error) throw error;
-
-        const batch = Array.isArray(data) ? data : [];
-        playersData.push(...batch);
-        if (batch.length < pageSize) break;
-    }
+    const playersData = await fetchAllPages((from, to) => h2hWithTimeout(client
+        .from('elo_public_players')
+        .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
+        .order('elo_id', { ascending: true })
+        .range(from, to), '선수 목록'));
     if (!playersData.length) throw new Error('Elo public player view is empty');
 
     const players = {};

@@ -49,18 +49,8 @@ function entryWithTimeout(promise, label) {
 }
 
 async function entryPagedQuery(makeQuery, label) {
-    const rows = [];
-    for (let from = 0; ; from += ENTRY_PAGE_SIZE) {
-        const { data, error } = await entryWithTimeout(
-            makeQuery(from, from + ENTRY_PAGE_SIZE - 1),
-            label
-        );
-        if (error) throw error;
-        const batch = Array.isArray(data) ? data : [];
-        rows.push(...batch);
-        if (batch.length < ENTRY_PAGE_SIZE) break;
-    }
-    return rows;
+    return fetchAllPages((from, to) => entryWithTimeout(makeQuery(from, to), label),
+        { pageSize: ENTRY_PAGE_SIZE });
 }
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
 const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];

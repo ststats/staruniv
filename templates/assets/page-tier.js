@@ -68,19 +68,11 @@ async function fetchTierMembers() {
     try {
         const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
         if (!client) throw new Error('Supabase browser client is not configured');
-        const data = [];
-        const pageSize = 1000;
-        for (let from = 0; ; from += pageSize) {
-            const { data: batch, error } = await client.from('tier_members')
-                .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
-                .order('source_order', { ascending: true })
-                .order('soop_id', { ascending: true })
-                .range(from, from + pageSize - 1);
-            if (error) throw error;
-            const rows = asArray(batch);
-            data.push(...rows);
-            if (rows.length < pageSize) break;
-        }
+        const data = await fetchAllPages((from, to) => client.from('tier_members')
+            .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
+            .order('source_order', { ascending: true })
+            .order('soop_id', { ascending: true })
+            .range(from, to), { parallel: 1 });   // 수백 명이라 한 쪽이면 끝난다
         const members = asArray(data).map(r => ({
             id: String(r.soop_id || '').trim(),
             nickname: String(r.nickname || '').trim(),
