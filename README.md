@@ -85,7 +85,6 @@ npm test                              # node --test (의존성 없음)
 
 - **EloBoard 요청 간격은 최소 2초**(운영자 요청). ststat 코드에서 2초 미만으로 못 내리게 막혀 있습니다.
 - `calendar.png` 파일 이름·주소는 외부 자동화가 쓰므로 바꾸지 않습니다.
-- `.github/workflows/squash-history.yml`은 커밋 기록을 통째로 지우는 작업이라 손으로만 실행합니다(빌드 결과를 더 이상 커밋하지 않아 거의 필요 없음).
 
 ## 참고 문서
 
