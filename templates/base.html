@@ -9,6 +9,7 @@
     <base href="{{ root }}">
     {%- endif %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <title>{{ full_title }}</title>
     <meta name="description" content="{{ description }}">
     {#- 카카오톡/디스코드 등에 링크를 붙였을 때 보이는 미리보기 #}
@@ -42,7 +43,9 @@
     <script src="supabase-config.js"></script>
     {%- block head_scripts %}{% endblock %}
     <link rel="icon" type="image/webp" href="images/%ED%8C%8C%EB%B9%84%EC%BD%98.webp">
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    {#- 글꼴은 화면에 나온 글자가 든 조각만 받는다(dynamic subset). 예전 pretendard.css는 굵기마다
+        한글 전체(약 770KB)를 받아서 첫 방문에 글꼴만 3MB가 넘었다. #}
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
     {#- 글꼴은 Pretendard 하나로 통일한다(예전에는 숫자·라틴 라벨에 Chakra Petch를 따로 썼는데,
         한글과 섞이는 자리에서 자간이 어긋나 보였다). 표 자리수는 font-variant-numeric으로 맞춘다. #}
     <link rel="stylesheet" href="{{ asset_url('style.css') }}">

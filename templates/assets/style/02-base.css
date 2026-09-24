@@ -1,6 +1,50 @@
 /* =============================================================================
    2. 기본 요소 · 부트스트랩 보정
    ============================================================================= */
+/* Pretendard는 화면에 나온 글자 조각만 받는 dynamic subset을 쓴다(base.html). 그 조각들에
+   빠져 있는 기호(− ☀ ✓)만 따로 뽑아 둔 작은 파일(각 1KB, templates/static/fonts/)을 같은 이름에 붙인다.
+   이게 없으면 이 기호들만 다른 글꼴로 보인다. */
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url(fonts/pretendard-extra-400.woff2) format("woff2");
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500;
+    src: url(fonts/pretendard-extra-500.woff2) format("woff2");
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 600;
+    src: url(fonts/pretendard-extra-600.woff2) format("woff2");
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 700;
+    src: url(fonts/pretendard-extra-700.woff2) format("woff2");
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 800;
+    src: url(fonts/pretendard-extra-800.woff2) format("woff2");
+    unicode-range: U+2212, U+2600, U+2713;
+}
+
 *,
 *::before,
 *::after {
