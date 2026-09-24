@@ -17,8 +17,12 @@ on:
       - 'package.json'
       - 'package-lock.json'
 
+# 빌드 결과(docs/)를 저장소에 커밋하지 않고 GitHub Pages에 바로 배포한다
+# (저장소 설정 → Pages → Source: GitHub Actions). 예전처럼 봇 커밋이 쌓이지 않는다.
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: staruniv-web-build
@@ -30,12 +34,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_TOKEN || github.token }}
-
-      - name: Sync latest main
-        run: |
-          git pull --rebase origin main
 
       - uses: actions/setup-python@v5
         with:
@@ -70,23 +68,27 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY }}
         run: python scripts/write_supabase_browser_config.py
 
+      - id: pages
+        uses: actions/configure-pages@v5
+
       # 외부 자동화가 가져가는 docs/data/calendar.png. 러너에 깔린 크롬으로 찍는다(Node·puppeteer 불필요).
+      # 캡처가 실패해도 사진 주소가 비지 않게, 먼저 지금 배포돼 있는 사진을 받아 둔다.
+      - name: Keep last published calendar image
+        run: curl -fsSL "${{ steps.pages.outputs.base_url }}/data/calendar.png" -o docs/data/calendar.png || true
       - name: Capture calendar image
         continue-on-error: true
         run: python scripts/capture_calendar.py
 
-      - name: Commit generated web files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
 
-          git add -A data
-          git add -A docs
-
-          if git diff --cached --quiet; then
-            echo "No generated changes"
-            exit 0
-          fi
-
-          git commit -m "Build StarUniv web"
-          git push origin main
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

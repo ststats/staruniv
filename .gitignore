@@ -8,7 +8,7 @@ __pycache__/
 .venv/
 venv/
 
-# Node (capture.js/puppeteer)
+# Node(테스트용)
 node_modules/
 
 # 원자적 쓰기(os.replace) 도중 남을 수 있는 임시 파일. 정상 실행이면 곧바로 교체되어
@@ -24,3 +24,10 @@ Thumbs.db
 
 # Supabase elo_*가 원본이다. 이 파일은 Actions/로컬 빌드 때 DB에서 재생성하는 호환 캐시.
 data/eloboard.json
+
+# 빌드 결과. GitHub Actions가 빌드해서 Pages에 바로 배포한다(저장소에 커밋하지 않음).
+# 로컬 확인은 python scripts/build_html.py 뒤 docs/를 열면 된다.
+docs/
+# 빌드 캐시(Supabase export)
+data/db.json
+data/render_stats.json

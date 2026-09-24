@@ -22,7 +22,12 @@
 | ststat 파이프라인(`run-pipeline.yml`) | 외부 크론 | `workflow_dispatch` |
 
 빌드는 30초 안팎입니다: Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
-달력을 캡처합니다(`scripts/capture_calendar.py`, 러너에 깔린 크롬 사용, 한국 시간 기준).
+달력을 캡처하고(`scripts/capture_calendar.py`, 러너에 깔린 크롬 사용, 한국 시간 기준) →
+결과(`docs/`)를 GitHub Pages에 바로 배포합니다. **빌드 결과는 저장소에 커밋하지 않습니다**
+(저장소 Settings → Pages → Source: GitHub Actions). 사이트: https://ststats.github.io/staruniv/
+
+달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`이고, 커뮤니티용 Cloudflare Worker가
+이 주소를 가져갑니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 배포합니다.
 
 ## 관리자
 
@@ -49,7 +54,7 @@ python scripts/write_site_data.py     # docs/data/site_shell.json · site_record
 npm test                              # node --test (의존성 없음)
 ```
 
-- 원본은 `templates/`입니다. `docs/`는 빌드 결과라 직접 고치지 않습니다(`templates/static/`은 그대로 복사).
+- 원본은 `templates/`입니다. `docs/`는 빌드 결과(저장소에 없음, `.gitignore`)라 직접 고치지 않습니다. `templates/static/`은 그대로 복사됩니다.
 - 티어 순서·직책 순서는 `templates/assets/core.js` 맨 위 `SITE_ORDER` 한 곳에서만 고칩니다(파이썬 빌드도 읽음).
 - 스타일은 `templates/assets/style.css`(공개)·`admin.css`(어드민)입니다.
 
@@ -59,7 +64,6 @@ npm test                              # node --test (의존성 없음)
 |---|---|---|
 | `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
-| `GH_TOKEN` | Actions secret | 빌드가 저장소에 결과를 커밋할 때 |
 | `github_actions_token` | Supabase Vault | "달력 사진 갱신" 버튼 |
 
 ## Supabase SQL
@@ -72,7 +76,7 @@ npm test                              # node --test (의존성 없음)
 
 - **EloBoard 요청 간격은 최소 2초**(운영자 요청). ststat 코드에서 2초 미만으로 못 내리게 막혀 있습니다.
 - `calendar.png` 파일 이름·주소는 외부 자동화가 쓰므로 바꾸지 않습니다.
-- `.github/workflows/squash-history.yml`은 커밋 기록을 통째로 지우는 작업이라 손으로만 실행합니다.
+- `.github/workflows/squash-history.yml`은 커밋 기록을 통째로 지우는 작업이라 손으로만 실행합니다(빌드 결과를 더 이상 커밋하지 않아 거의 필요 없음).
 
 ## 참고 문서
 
