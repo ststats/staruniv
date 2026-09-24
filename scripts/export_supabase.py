@@ -17,6 +17,20 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = ROOT / "data" / "db.json"
 
 
+def gender_text(value):
+    """공개 페이지는 성별을 '남자'/'여자'로 비교한다(홈 방송 카드, 방송통계 남녀 표).
+    관리자에서 '남'/'여' 같은 줄임말로 저장된 값도 같은 표기로 맞춘다."""
+    raw = empty(value)
+    if raw is None:
+        return raw
+    text = str(raw).strip()
+    if text in ("남", "남성", "남자") or text.upper() in ("M", "MALE"):
+        return "남자"
+    if text in ("여", "여성", "여자") or text.upper() in ("F", "FEMALE"):
+        return "여자"
+    return raw
+
+
 def fetch(conn, query):
     from psycopg.rows import dict_row
     with conn.cursor(row_factory=dict_row) as cur:
@@ -47,7 +61,7 @@ def build_db(settings, teams, members, matches, rounds, tier_members):
                 "이름": empty(r["nickname"]),
                 "SOOP ID": number_or_text(r["soop_id"]),
                 "생년월일": empty(r["birth_date"]),
-                "성별": empty(r["gender"]),
+                "성별": gender_text(r["gender"]),
                 "종족": empty(r["race"]),
                 "입단 티어": number_or_text(r["join_tier"]),
                 "티어": number_or_text(r["tier"]),
