@@ -184,7 +184,7 @@
     });
   }
 
-  // 운영 현황: 파이프라인 갱신 상태 · ELO DB 범위 · 테이블 건수(ststat migration 010의 admin_dashboard_stats 한 번).
+  // 운영 현황: 파이프라인 갱신 상태 · ELO DB 범위 · 테이블 건수(ststat migration 012의 admin_dashboard_stats 한 번).
   // 예전 독립 관리자(admin.html + page-admin.js)에만 있던 대시보드를 홈 맨 위 접기 카드로 옮겼다.
   const OPS_TABLES=[['members','멤버'],['matches','팀 경기'],['tier_members','티어 선수'],['calendar_events','일정'],
     ['calendar_off_air','휴방'],['videos','수집 영상'],['video_picks','추천 영상'],['elo_players','ELO 선수']];
@@ -213,13 +213,15 @@
     const f=data.freshness||{}, elo=data.elo||{}, counts=data.counts||{};
     const status=String(f.last_job_status||'unknown');
     const total=Number(counts.elo_matches||elo.total||0);
+    // 경기 수는 표 전체를 세면 시간 초과라 DB 통계 추정치(ststat migration 012).
+    const totalText=(elo.total_estimated?'약 ':'')+total.toLocaleString();
     box.innerHTML=`
-      <summary class="admin-rank-explain-head"><b>운영 현황</b><span>ELO ${total.toLocaleString()}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
+      <summary class="admin-rank-explain-head"><b>운영 현황</b><span>ELO ${totalText}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
       <div class="admin-ops-grid">
         <div${status==='failed'?' class="is-error"':''}><span>최근 파이프라인</span><b>${esc(f.last_job_name||'-')} · ${esc(status)}</b><small>${esc(kst(f.last_job_finished_at))}</small></div>
         <div><span>ELO 기준일</span><b>${esc(f.elo_as_of||'-')}</b><small>${esc(kst(f.elo_activated_at))}</small></div>
         <div><span>방송통계 기준일</span><b>${esc(f.daily_stat_date||'-')}</b><small>${esc(kst(f.daily_updated_at))}</small></div>
-        <div><span>ELO 경기</span><b>${total.toLocaleString()}</b><small>ID ${esc(elo.min_match_id??'-')}–${esc(elo.max_match_id??'-')}</small></div>
+        <div><span>ELO 경기</span><b>${totalText}</b><small>ID ${esc(elo.min_match_id??'-')}–${esc(elo.max_match_id??'-')}</small></div>
         <div><span>ELO 경기 날짜</span><b>${esc(elo.first_match_date||'-')}</b><small>~ ${esc(elo.last_match_date||'-')}</small></div>
         ${OPS_TABLES.map(([t,l])=>`<div><span>${esc(l)}</span><b>${Number(counts[t]||0).toLocaleString()}</b></div>`).join('')}
       </div>`;
