@@ -42,7 +42,10 @@
            html[data-nav-pending] #synergy-metric-filter { visibility: hidden; }</style>
     {#- 공개 사이트 운영 데이터는 Supabase에서 직접 읽는다. publishable key는 브라우저 공개용이고,
         실제 공개 범위는 RLS + 컬럼 권한으로 제한한다. #}
+    {#- 공개 페이지는 core.js의 작은 읽기 클라이언트를 쓴다. 로그인이 필요한 관리자 화면만 supabase-js를 받는다. #}
+    {%- if admin_mode %}
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    {%- endif %}
     <script src="supabase-config.js"></script>
     {%- block head_scripts %}{% endblock %}
     <link rel="icon" type="image/webp" href="images/%ED%8C%8C%EB%B9%84%EC%BD%98.webp">

@@ -908,15 +908,75 @@ function initEdgeFades(root) {
 // ststat -> Supabase daily_member_stats 를 직접 읽고 우리 로스터만 추린다.
 // =====================================================================
 let _publicSupabaseClient = null;
+// 공개 페이지는 Supabase 표를 읽기만 한다. 그래서 supabase-js(213KB)를 받지 않고, 쓰는 조회
+// (select·eq·in·not·order·range·limit·maybeSingle)만 같은 주소 형식으로 직접 만든다 - 주소와
+// 헤더가 supabase-js와 한 글자까지 같아서 서버 쪽에서 보면 차이가 없다. 결과도 똑같이 {data, error}.
+// 로그인이 필요한 관리자 화면은 진짜 supabase-js를 따로 받는다(base.html).
+class SupabaseReadQuery {
+    constructor(restUrl, table, key) {
+        this.url = new URL(`${restUrl}/${table}`);
+        this.key = key;
+        this.maybeOne = false;
+    }
+    select(columns = '*') {
+        let quoted = false;
+        const cleaned = String(columns).split('')
+            .map(ch => (/\s/.test(ch) && !quoted ? '' : (ch === '"' && (quoted = !quoted), ch))).join('');
+        this.url.searchParams.set('select', cleaned);
+        return this;
+    }
+    eq(column, value) { this.url.searchParams.append(column, `eq.${value}`); return this; }
+    not(column, operator, value) { this.url.searchParams.append(column, `not.${operator}.${value}`); return this; }
+    in(column, values) {
+        const list = Array.from(new Set(values))
+            .map(v => (typeof v === 'string' && /[,()]/.test(v) ? `"${v}"` : `${v}`)).join(',');
+        this.url.searchParams.append(column, `in.(${list})`);
+        return this;
+    }
+    order(column, { ascending = true, nullsFirst } = {}) {
+        const prev = this.url.searchParams.get('order');
+        const nulls = nullsFirst === undefined ? '' : (nullsFirst ? '.nullsfirst' : '.nullslast');
+        this.url.searchParams.set('order', `${prev ? `${prev},` : ''}${column}.${ascending ? 'asc' : 'desc'}${nulls}`);
+        return this;
+    }
+    limit(count) { this.url.searchParams.set('limit', `${count}`); return this; }
+    range(from, to) {
+        this.url.searchParams.set('offset', `${from}`);
+        this.url.searchParams.set('limit', `${to - from + 1}`);
+        return this;
+    }
+    maybeSingle() { this.maybeOne = true; return this; }
+    async run() {
+        try {
+            const res = await fetch(this.url.href, {
+                headers: { apikey: this.key, Authorization: `Bearer ${this.key}` },
+            });
+            const text = await res.text();
+            let body = null;
+            if (text) {
+                try { body = JSON.parse(text); } catch (_) { return { data: null, error: { message: text }, status: res.status }; }
+            }
+            if (!res.ok) return { data: null, error: body || { message: res.statusText }, status: res.status };
+            if (this.maybeOne && Array.isArray(body)) {
+                if (body.length > 1) {
+                    return { data: null, status: 406, error: { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' } };
+                }
+                body = body.length ? body[0] : null;
+            }
+            return { data: body, error: null, status: res.status };
+        } catch (e) {
+            return { data: null, error: { message: `${e?.name ?? 'FetchError'}: ${e?.message}` }, status: 0 };
+        }
+    }
+    then(onFulfilled, onRejected) { return this.run().then(onFulfilled, onRejected); }
+}
+
 function publicSupabaseClient() {
     if (_publicSupabaseClient) return _publicSupabaseClient;
     const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
-    if (!cfg.url || !cfg.key || !window.supabase || typeof window.supabase.createClient !== 'function') {
-        return null;
-    }
-    _publicSupabaseClient = window.supabase.createClient(cfg.url, cfg.key, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-    });
+    if (!cfg.url || !cfg.key) return null;
+    const restUrl = new URL('rest/v1', cfg.url.endsWith('/') ? cfg.url : `${cfg.url}/`).href;
+    _publicSupabaseClient = { from: table => new SupabaseReadQuery(restUrl, table, cfg.key) };
     return _publicSupabaseClient;
 }
 

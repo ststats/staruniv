@@ -67,6 +67,7 @@ npm test                              # node --test (의존성 없음)
 - 공개 CSS는 `templates/assets/style/`의 섹션 파일(`01-tokens.css` … `18-tools-entry.css`)이고, 빌드가 이름 순서대로
   합쳐 `docs/style.css`로 냅니다. **번호 순서가 곧 우선순위**라, 부품을 고칠 때는 뒤에 새 규칙을 덧붙이지 말고
   그 부품 파일의 원래 규칙을 고칩니다. `14-surfaces.css`는 남색 면의 색 변수만 두는 곳입니다. 어드민 CSS는 `admin.css`.
+- 공개 페이지는 supabase-js를 받지 않고 `core.js`의 작은 읽기 클라이언트(`publicSupabaseClient`, select·eq·in·not·order·range·limit·maybeSingle)를 씁니다. 다른 조회 방식이 필요하면 거기에 추가합니다. 관리자 화면만 로그인 때문에 supabase-js를 받습니다.
 - Bootstrap은 CDN으로 받지 않습니다. 쓰는 규칙만 뽑은 `style/00-vendor-bootstrap.css`와, 모달·접기만 따로 만든
   `core.js`의 `showModal`/`hideModal`/`toggleCollapse`를 씁니다(`data-bs-dismiss`, `data-bs-toggle="collapse"`는 그대로 동작).
   Bootstrap 클래스를 새로 쓰기 시작하면 그 규칙이 빠져 있을 수 있으니 확인합니다.
