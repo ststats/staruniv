@@ -185,8 +185,7 @@
       // 표준오차는 랭킹 v4(ststat migration 011)부터 있다. 없으면 칸만 비운다.
       let se={};
       try{(await pagedSelect('elo_player_ratings','elo_id,rating_se','elo_id')).forEach(r=>{se[r.elo_id]=r.rating_se;});}catch(e){se={};}
-      let metaRes=await C().state.client.from('elo_ranking_meta').select('as_of,tier_levels,tier_counts,race_matchup').order('as_of',{ascending:false}).limit(1);
-      if(metaRes.error)metaRes=await C().state.client.from('elo_ranking_meta').select('as_of,tier_levels,tier_counts').order('as_of',{ascending:false}).limit(1);
+      const metaRes=await C().state.client.from('elo_ranking_meta').select('as_of').order('as_of',{ascending:false}).limit(1);
       if(metaRes.error)throw metaRes.error;
       const who={};people.forEach(p=>{who[p.elo_id]=p;});
       R.rows=ranks.filter(r=>r.tier_rank!=null).map(r=>({...r,...(who[r.elo_id]||{}),se:se[r.elo_id]??null}))
@@ -215,18 +214,25 @@
     // tier_gap > 0: 데이터상 더 높은 티어(승급 후보), < 0: 더 낮은 티어
     return `<span class="admin-wl ${gap>0?'wl-w':'wl-l'}">${esc(tierLabel(r.data_tier))} ${gap>0?'↑':'↓'}${Math.abs(gap)}</span>`;
   }
-  function rankingSummary(){
-    const m=R.meta||{};const levels=m.tier_levels||{};const race=m.race_matchup||{};
-    const levelText=TIER_ORDER.filter(t=>levels[t]!=null).map(t=>`<span><b>${esc(tierLabel(t))}</b> ${Number(levels[t]).toFixed(0)}</span>`).join('');
-    const raceText=Object.keys(race).length
-      ?[['TZ','테란→저그'],['ZP','저그→프로토스'],['PT','프로토스→테란']].map(([k,l])=>`<span><b>${l}</b> ${Number(race[k])>=0?'+':''}${Number(race[k]||0).toFixed(1)}</span>`).join('')
-      :'<span>랭킹 v4 반영 전</span>';
-    return `<div class="admin-rank-summary">
-      <div><em>기준일</em><span>${esc(m.as_of||'—')}</span></div>
-      <div><em>순위 인원</em><span>${R.rows.length.toLocaleString()}명</span></div>
-      <div class="admin-rank-levels"><em>티어 기준선</em>${levelText||'<span>—</span>'}</div>
-      <div class="admin-rank-levels"><em>종족 상성(점)</em>${raceText}</div>
-    </div>`;
+  // 티어 랭킹 계산식 설명. "이 순위 어떻게 나온 거야?"에 그대로 답할 수 있게 쓴다.
+  function rankingExplain(){
+    const steps=[
+      ['실력 점수','선수마다 하나의 실력 점수(레이팅)를 둡니다. <b>레이팅 = 티어 기준점 + 개인 편차</b>입니다. 티어 기준점은 그 티어의 평균 실력, 개인 편차는 같은 티어 안에서 얼마나 위·아래인지입니다.'],
+      ['승리 확률','두 선수의 레이팅 차이로 승률을 정합니다(Elo와 같은 식). <code>A가 이길 확률 = 1 / (1 + 10^(−(A − B) / 400))</code> — 차이 0점이면 50%, 100점이면 약 64%, 200점이면 약 76%입니다.'],
+      ['점수 맞추기','EloBoard의 모든 1대1 경기 결과를 가장 잘 설명하는 레이팅을 한꺼번에 계산합니다. 그래서 <b>강한 상대를 이기면 크게 오르고, 약한 상대에게 지면 크게 떨어집니다</b>. 경기 순서에 따라 점수가 달라지는 일반 Elo와 달리, 같은 기록이면 늘 같은 점수가 나옵니다.'],
+      ['경기 비중','경기 형식과 최근성으로 경기마다 비중을 곱합니다. 형식: <b>대회 1.0 › 대학대전 0.9 › 미니 0.8 › 리그·CK 0.7 › 스폰 0.6</b>. 최근성: 개인 편차는 <b>90일</b>마다 비중이 절반(최근 3개월 폼), 티어 기준점은 <b>540일</b>마다 절반(티어 간격은 천천히 변함).'],
+      ['종족 상성','테란·저그·프로토스 사이의 공통 유불리를 따로 계산해 빼고, 순수한 개인 실력만 비교합니다.'],
+      ['적은 기록','경기가 적은 선수는 몇 판의 운으로 튀지 않게 티어 평균 쪽으로 당겨집니다. 많이 둘수록 자기 성적대로 자리를 잡습니다.'],
+      ['승급한 선수','티어 기준점은 경기 당시 티어로 계산하고, 개인 편차는 지금 티어 기준으로 계산합니다. 그래서 막 승급한 선수가 옛 티어에서 번 성적만으로 새 티어 1위에 오르지 않습니다.'],
+      ['순위 매기기','지금 티어가 있고, <b>최근 1년에 10판 이상</b> 뒀고, 휴면이 아닌 선수만 같은 티어 안에서 레이팅 순서로 줄 세웁니다.'],
+      ['데이터 티어','레이팅이 오차 범위까지 고려해도 옆 티어 기준을 확실히 넘으면 ↑(더 높은 티어) · ↓(더 낮은 티어)로 표시합니다. 티어표 조정 검토용이며 순위에는 영향이 없습니다.'],
+    ];
+    let open=false;
+    try{open=localStorage.getItem('admin-rank-explain-open')==='1';}catch(e){}
+    return `<details class="admin-rank-explain" id="rankExplain"${open?' open':''}>
+      <summary class="admin-rank-explain-head"><b>티어 랭킹 계산 방식</b><span>ststat가 4시간마다 EloBoard 전체 경기로 다시 계산합니다</span></summary>
+      <ol>${steps.map(([t,d])=>`<li><strong>${t}</strong><p>${d}</p></li>`).join('')}</ol>
+    </details>`;
   }
   function renderRanking(){
     const root=document.getElementById('adminDedicatedRoot');
@@ -258,8 +264,8 @@
         <td>${recordCell(r.recent_30_games,r.recent_30_wins)}</td>
       </tr>`;}).join('');
     const loading=!R.loaded;
-    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">티어 랭킹</h1><p class="page-header-subtitle">ststat가 계산한 전체 티어 랭킹입니다. 같은 티어 안에서 레이팅 순서이고, 데이터 티어는 전적이 가리키는 티어입니다(승급·강등 검토용).</p></div>${viewTabs()}</div><div class="admin-dedicated-shell" id="rankBody">
-      ${loading?'<div class="admin-empty">티어 랭킹을 불러오는 중...</div>':`${rankingSummary()}
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">티어 랭킹</h1><p class="page-header-subtitle">ststat가 계산한 전체 티어 랭킹입니다. 같은 티어 안에서 레이팅 순서이고, 데이터 티어는 전적이 가리키는 티어입니다(승급·강등 검토용).${R.meta&&R.meta.as_of?` · ${esc(R.meta.as_of)} 기준`:''}</p></div>${viewTabs()}</div><div class="admin-dedicated-shell" id="rankBody">
+      ${loading?'<div class="admin-empty">티어 랭킹을 불러오는 중...</div>':`${rankingExplain()}
       <div class="admin-rank-tools">
         <div class="admin-rank-chips">${chips}</div>
         <input class="admin-input" id="rankQ" placeholder="닉네임 · 소속 검색" value="${esc(R.q)}">
@@ -272,6 +278,8 @@
     root.querySelectorAll('[data-rank-tier]').forEach(b=>b.onclick=()=>{R.tier=b.dataset.rankTier;renderRanking();});
     const qEl=root.querySelector('#rankQ');
     if(qEl)qEl.oninput=()=>{R.q=qEl.value;const pos=qEl.selectionStart;renderRanking();const again=document.getElementById('rankQ');again.focus();again.setSelectionRange(pos,pos);};
+    const explain=root.querySelector('#rankExplain');
+    if(explain)explain.ontoggle=()=>{try{localStorage.setItem('admin-rank-explain-open',explain.open?'1':'0');}catch(e){}};
     const gapEl=root.querySelector('#rankGap');
     if(gapEl)gapEl.onchange=()=>{R.gapOnly=gapEl.checked;renderRanking();};
   }

@@ -1035,27 +1035,77 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-filter-grid .admin-btn { min-height: 42px; padding: 0 20px; }
 
 /* 티어 랭킹 보기 (티어표 관리 > 티어 랭킹) */
-.admin-rank-summary {
-    display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr);
-    gap: 10px 28px;
-    margin-bottom: 14px;
-    padding: 16px 18px;
+.admin-rank-explain {
+    margin-bottom: 16px;
+    padding: 0 20px;
     background: var(--admin-field);
     clip-path: var(--notch-md);
-    font-size: 13px;
 }
-.admin-rank-summary > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-width: 0; }
-.admin-rank-summary em {
+.admin-rank-explain-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    padding: 15px 0;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+.admin-rank-explain-head::-webkit-details-marker { display: none; }
+/* 오른쪽 끝 펼침 표시(▾ / ▴) */
+.admin-rank-explain-head::after {
+    content: "펼치기 ▾";
+    margin-left: auto;
     color: var(--color-text-muted);
-    font-size: 11px;
-    font-style: normal;
+    font-size: 12px;
     font-weight: 700;
 }
-.admin-rank-summary > div > span { color: var(--color-text-strong); font-weight: 700; }
-.admin-rank-levels { grid-column: 1 / -1; }
-.admin-rank-levels span { color: var(--color-text-main) !important; font-weight: 500 !important; font-variant-numeric: tabular-nums; }
-.admin-rank-levels b { margin-right: 3px; color: var(--color-text-strong); }
+.admin-rank-explain[open] > .admin-rank-explain-head::after { content: "접기 ▴"; }
+.admin-rank-explain[open] > .admin-rank-explain-head { margin-bottom: 12px; border-bottom: 1px solid var(--admin-line); }
+.admin-rank-explain-head:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.admin-rank-explain > ol { padding-bottom: 8px !important; }
+.admin-rank-explain-head b { color: var(--color-text-strong); font-size: 15px; font-weight: 800; }
+.admin-rank-explain-head span { color: var(--color-text-muted); font-size: 12px; }
+.admin-rank-explain ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px 22px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: rank-step;
+}
+.admin-rank-explain li { counter-increment: rank-step; margin-bottom: 12px; }
+.admin-rank-explain strong {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+    color: var(--color-text-strong);
+    font-size: 13px;
+    font-weight: 800;
+}
+.admin-rank-explain strong::before {
+    content: counter(rank-step);
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    background: var(--admin-ink);
+    color: var(--admin-on-ink);
+    clip-path: var(--notch-xs);
+    font-size: 11px;
+    font-weight: 800;
+}
+.admin-rank-explain p { margin: 0; color: var(--color-text-sub); font-size: 12.5px; line-height: 1.65; }
+.admin-rank-explain p b { color: var(--color-text-strong); }
+.admin-rank-explain code {
+    padding: 1px 5px;
+    background: var(--admin-soft);
+    color: var(--color-text-strong);
+    font-size: 12px;
+    white-space: nowrap;
+}
 
 .admin-rank-tools {
     display: grid;
@@ -1282,12 +1332,13 @@ body.admin-drawer-open { overflow: hidden; }
    10. 반응형
    ============================================================================= */
 @media (max-width: 1100px) {
+    .admin-rank-explain ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .admin-filter-grid > :first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 767.98px) {
-    .admin-rank-summary { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .admin-rank-explain ol { grid-template-columns: minmax(0, 1fr); }
     .admin-rank-tools { grid-template-columns: minmax(0, 1fr); }
     body.admin-mode { --admin-bar-h: 44px; }
     .admin-inline-bar { padding: 0 12px; gap: 8px; }
