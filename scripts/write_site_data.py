@@ -32,7 +32,7 @@ SITE_PLAYER_STAT_FIELDS = [
 ]
 
 # 멤버 순서: 멤버 현황 페이지(page-members.js)와 같다 - 감독 → 코치 → 선수 → 그 밖의 직책,
-# 같은 직책 안에서는 티어 높은 순, 같은 티어면 이름순. 선택 바(멤버 공지·개인 전적)가 이 순서를 그대로 쓴다.
+# 같은 직책 안에서는 티어 높은 순, 같은 티어면 입단순(같은 날이면 이름순). 선택 바(멤버 공지·개인 전적)가 이 순서를 그대로 쓴다.
 # (예전 키는 총장/교수였고 티어도 '3티어' 꼴만 알아서, 감독이 맨 뒤로 가고 선수는 티어순이 안 됐다.)
 ROLE_ORDER = {"감독": 0, "코치": 1, "선수": 2}
 
@@ -61,6 +61,7 @@ def sort_members(rows: list[dict]) -> list[dict]:
         key=lambda row: (
             ROLE_ORDER.get(str(row.get("직책") or "선수"), len(ROLE_ORDER)),
             tier_index(row.get("티어")),
+            str(row.get("입단일") or "9999"),
             str(row.get("이름") or ""),
         ),
     )

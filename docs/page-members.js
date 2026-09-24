@@ -69,7 +69,9 @@ const ROLE_EN = { '감독': 'HEAD COACH', '코치': 'COACH', '선수': 'PLAYER',
 function renderMemberGroup(title, members) {
     if (members.length === 0) return '';
     const sorted = [...members].sort((a, b) =>
-        tierIndex(a['티어']) - tierIndex(b['티어']) || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
+        tierIndex(a['티어']) - tierIndex(b['티어'])
+        || String(a['입단일'] || '9999').localeCompare(String(b['입단일'] || '9999'))
+        || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
 
     return `
         <div class="section-title" data-en="${ROLE_EN[title] || 'ROSTER'}"><span class="section-title-label">${escapeHTML(title)}</span><span class="title-count">${sorted.length}명</span></div>
