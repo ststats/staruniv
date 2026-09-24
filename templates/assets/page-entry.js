@@ -7,18 +7,22 @@
  * 맞대결 기록은 고른 선수에 대해서만 공개 경기 뷰에서 가져온다.
  *
  * [승률]
- * ststat가 로짓을 400/ln10 배율로 펴서 저장하므로, 화면에서는 그냥
- * 표준 Elo 식이 된다:
+ * ststat가 로짓을 400/ln10 배율로 펴서 저장하므로, 중심값은 표준 Elo 식에 종족 상성을
+ * 더한 것이다:
  *
- *     P(A가 이김) = 1 / (1 + 10^((Rb - Ra) / 400))
+ *     P(A가 이김) = 1 / (1 + 10^(-(Ra - Rb + 종족상성) / 400))
  *
- * 레이팅이 없는 선수(최근 1년 10판 미만 등)는 자기 티어의 기준선을 쓴다. 티어도 없으면
- * 사다리 한가운데로 둔다 - 없는 정보를 지어내느니 '평균'이라고 말하는 편이 낫다.
+ * 레이팅은 ststat가 맞춘 전 선수 θ를 쓴다(순위 밖 선수 포함). 그게 없으면 자기 티어의
+ * 기준선, 티어도 없으면 사다리 한가운데로 둔다 - 없는 정보를 지어내느니 '평균'이 낫다.
  *
- * [맞대결을 섞는 법]
+ * [맞대결 · 종족전 · 맵]
  * 두 사이트(호사가·캄몬허브)는 맞대결 원본을 그대로 보여준다. 그러면 2승 0패가 20승 18패보다
- * 강해 보이는 함정에 그대로 걸린다. 여기서는 맞대결을 '레이팅 쪽으로 끌어당겨' 섞는다:
- * 판 수가 적으면 거의 레이팅 그대로, 많아질수록 맞대결 쪽으로 간다(H2H_PRIOR 참고).
+ * 강해 보이는 함정에 그대로 걸린다. 여기서는 레이팅이 이미 설명한 부분을 빼고 남은
+ * '실제 - 기대' 잔차만, 표본이 적을수록 0으로 당겨 로짓에 더한다(entryWinProb 주석).
+ *
+ * [시리즈]
+ * 세트 승률로 N선승 결과를 정확히 굴리되, 같은 날 팀 컨디션처럼 세트끼리 함께 움직이는
+ * 요인을 작은 공통 흔들림으로 넣어 한쪽 쏠림(과신)을 줄인다(entrySeriesSim 주석).
  */
 
 // 소속이 이 값이면 지금 쉬는 사람이라 명단에 안 올린다.
@@ -58,9 +62,6 @@ async function entryPagedQuery(makeQuery, label) {
     }
     return rows;
 }
-// 맞대결을 레이팅과 섞을 때의 '가상 판 수'. 실제 맞대결이 이만큼 쌓여야 반반이 된다.
-// 10으로 두면 3판짜리 맞대결은 23%만 반영되고, 30판이면 75%가 반영된다.
-const ENTRY_H2H_PRIOR = 10;
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
 const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
 const ENTRY_POSTER_W = 1200;      // 저장되는 포스터 가로(px)
@@ -140,6 +141,8 @@ async function entryLoadIndexFromSupabase() {
             k: null,
             rawRating: null,
             rating: null,
+            theta: null,
+            thetaSE: null,
         };
     });
 
@@ -148,7 +151,7 @@ async function entryLoadIndexFromSupabase() {
         players,
         maps: {},
         recentMaps: [],
-        ranking: { tierCounts: {}, tierLevels: {} },
+        ranking: { asOf: '', tierCounts: {}, tierLevels: {}, raceMatchup: {} },
     };
 }
 
@@ -176,22 +179,46 @@ async function entryLoadRatingMetaInBackground() {
             if (!EntryState.index.syncedAt && row.as_of) EntryState.index.syncedAt = String(row.as_of);
         });
 
-        const { data: metaRows, error: metaError } = await entryWithTimeout(
-            client
-                .from('elo_ranking_meta')
-                .select('as_of,tier_counts,tier_levels')
-                .order('as_of', { ascending: false })
-                .limit(1),
+        // 랭킹 v4(ststat migration 011)부터 종족 상성이 메타에 들어간다. 아직 적용 전인
+        // DB에서는 그 열이 없어 요청이 실패하므로 옛 열만으로 한 번 더 묻는다.
+        const metaQuery = cols => entryWithTimeout(
+            client.from('elo_ranking_meta').select(cols).order('as_of', { ascending: false }).limit(1),
             '랭킹 기준선'
         );
-        if (metaError) throw metaError;
+        let metaRes = await metaQuery('as_of,tier_counts,tier_levels,race_matchup');
+        if (metaRes.error) metaRes = await metaQuery('as_of,tier_counts,tier_levels');
+        if (metaRes.error) throw metaRes.error;
 
-        const meta = Array.isArray(metaRows) && metaRows.length ? metaRows[0] : {};
+        const meta = Array.isArray(metaRes.data) && metaRes.data.length ? metaRes.data[0] : {};
         EntryState.index.ranking = {
+            // 반감기 기준일. 예전엔 이 값을 채우지 않아 늘 오늘 날짜로 계산했다.
+            asOf: meta.as_of ? String(meta.as_of) : '',
             tierCounts: meta.tier_counts || {},
             tierLevels: meta.tier_levels || {},
+            raceMatchup: meta.race_matchup || {},
         };
         if (!EntryState.index.syncedAt && meta.as_of) EntryState.index.syncedAt = String(meta.as_of);
+
+        // 순위 밖 선수(최근 10판 미만 · 티어 없음)까지 포함한 전 선수 레이팅. v4 이전 DB엔
+        // 표가 없으니 실패하면 그냥 넘어가고, 순위 선수의 rawRating과 티어 기준선을 쓴다.
+        try {
+            const ratingRows = await entryPagedQuery(
+                (from, to) => client
+                    .from('elo_player_ratings')
+                    .select('elo_id,rating,rating_se')
+                    .order('elo_id', { ascending: true })
+                    .range(from, to),
+                '전 선수 레이팅'
+            );
+            ratingRows.forEach(row => {
+                const player = EntryState.index?.players?.[String(row.elo_id)];
+                if (!player || row.rating == null) return;
+                player.theta = Number(row.rating);
+                player.thetaSE = row.rating_se == null ? null : Number(row.rating_se);
+            });
+        } catch (e) {
+            console.info('전 선수 레이팅이 아직 없어 순위 선수 레이팅만 씁니다:', e.message || e);
+        }
 
         renderEntry();
     } catch (e) {
@@ -226,10 +253,6 @@ async function entryEnsureLoaded() {
         renderEntryMapDatalist();
         renderEntryPeriod();
         renderEntry();
-        if (!EntryState.ratingMetaLoading) {
-            EntryState.ratingMetaLoading = entryLoadRatingMetaInBackground()
-                .finally(() => { EntryState.ratingMetaLoading = null; });
-        }
         if (!EntryState.ratingMetaLoading) {
             EntryState.ratingMetaLoading = entryLoadRatingMetaInBackground()
                 .finally(() => { EntryState.ratingMetaLoading = null; });
@@ -320,9 +343,11 @@ function renderEntryMapDatalist() {
     list.innerHTML = entryMapList().map(name => `<option value="${escapeHTML(name)}"></option>`).join('');
 }
 
-// 선수 한 명의 레이팅. 없으면 티어 기준선 -> 그것도 없으면 사다리 한가운데.
+// 선수 한 명의 레이팅(Elo 점수). 전 선수 θ(ststat v4) -> 순위 선수 rawRating ->
+// 티어 기준선 -> 그것도 없으면 사다리 한가운데.
 function entryRating(p) {
     if (!p) return null;
+    if (Number.isFinite(p.theta)) return { value: p.theta, exact: true };
     if (Number.isFinite(p.rawRating)) return { value: p.rawRating, exact: true };
     const levels = entryTierLevels();
     const byTier = levels[String(p.t)];
@@ -332,26 +357,62 @@ function entryRating(p) {
     return { value: all.reduce((s, x) => s + x, 0) / all.length, exact: false };
 }
 
-// 표준 Elo. build_ranking.py가 400/ln10 배율로 내보내서 그대로 맞아떨어진다.
+// Elo 점수 차이 <-> 로짓. ststat가 400/ln10 배율로 내보내서 그대로 맞아떨어진다.
+const ENTRY_ELO_TO_LOGIT = Math.LN10 / 400;
+function entrySigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 function entryEloProb(ra, rb) {
-    return 1 / (1 + Math.pow(10, (rb - ra) / 400));
+    return entrySigmoid((ra - rb) * ENTRY_ELO_TO_LOGIT);
+}
+
+// 종족 상성(Elo 점수): x 종족이 y 종족을 상대로 가진 공통 우위. ststat 메타의
+// raceMatchup {TZ, ZP, PT}에서 읽고, 반대 방향은 부호만 바꾼다. 없으면 0.
+function entryRaceEdge(xRace, yRace) {
+    const table = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.raceMatchup) || {};
+    const x = entryNormalizeRace(xRace), y = entryNormalizeRace(yRace);
+    if (!x || !y || x === y) return 0;
+    const direct = Number(table[x + y]);
+    if (Number.isFinite(direct)) return direct;
+    const reverse = Number(table[y + x]);
+    return Number.isFinite(reverse) ? -reverse : 0;
+}
+
+// 두 선수의 모델 로짓(레이팅 차이 + 종족 상성). 예측의 중심값이다.
+function entryModelLogit(aPid, bPid) {
+    const players = entryPlayers();
+    const a = players[aPid], b = players[bPid];
+    const ra = entryRating(a), rb = entryRating(b);
+    if (!ra || !rb) return null;
+    return (ra.value - rb.value + entryRaceEdge(a && a.r, b && b.r)) * ENTRY_ELO_TO_LOGIT;
 }
 
 function entryH2hKey(a, b) { return `${a}|${b}`; }
 
-// 예측승률은 레이팅을 중심값으로 두고, 최근 데이터가 충분할 때만 맞대결/종족전/맵으로
-// 조금씩 움직인다. 조건부 전적은 선수 전체 폼 대비 얼마나 더 잘/못했는지를 보므로
-// 레이팅에 이미 반영된 '선수 자체의 강함'을 이중 계산하지 않는다.
+// 예측승률 = 모델(레이팅 + 종족 상성) + 맞대결 · 종족전 · 맵 보정, 모두 로짓에서 더한다.
+//
+// [보정은 '실제 결과 - 모델 기대'의 잔차로 잰다]
+// 예전엔 '그 종족 상대 승률 - 평소 승률'을 썼는데, 그러면 상대가 우연히 약했던 종족전이
+// 종족 강점으로 읽혔다(상대 강도 미보정). 맞대결은 레이팅 계산에 이미 들어간 경기를
+// 또 더하는 셈이었다. 지금은 경기마다 모델이 준 기대승률 p̂과 실제 결과를 비교해,
+// 레이팅이 설명하지 못한 부분만 보정한다:
+//     보정(로짓) = Σ w·(결과 - p̂) / (Σ w·p̂(1-p̂) + τ)
+// 가우스 prior를 둔 로지스틱 오프셋의 한 걸음 추정이다. τ가 표본이 적을 때 0으로 당긴다.
+//
+// [확률이 아니라 로짓에서 더한다]
+// 예전엔 확률에 %p를 더하고 10~90%로 잘랐다. 80%에 +18%p면 98%가 돼 잘렸고, 표시된
+// 숫자를 확률로 믿기 어려웠다. 로짓에서 더하면 자르지 않아도 0~1 안에 머문다.
 const ENTRY_FORM_HALF_LIFE = 90;
 // 기간 탭은 전적을 탐색하는 표시 필터다. 예측 입력까지 잘라버리면 같은 대진의
 // 확률이 탭을 누를 때마다 바뀐다. 예측은 통산 데이터를 쓰되 90일 반감기로
 // 최근 경기의 영향만 자연스럽게 크게 둔다.
 const ENTRY_PREDICTION_PERIOD = 'all';
-const ENTRY_RACE_PRIOR = 14;
-const ENTRY_MAP_PRIOR = 18;
-const ENTRY_MAX_H2H_ADJ = 0.08;
-const ENTRY_MAX_RACE_ADJ = 0.05;
-const ENTRY_MAX_MAP_ADJ = 0.05;
+// τ(prior 정밀도). 한 판의 정보량이 p̂(1-p̂)≈0.25라, τ=2.5면 가중 10판에서 보정이 절반만
+// 반영된다. 예전 prior 판 수(맞대결 10 · 종족 14 · 맵 18)와 같은 수축 세기로 옮겼다.
+const ENTRY_H2H_TAU = 2.5;
+const ENTRY_RACE_TAU = 3.5;
+const ENTRY_MAP_TAU = 4.5;
+// 데이터 이상치(같은 상대와 이상하게 많은 기록 등)에 대비한 보정별 상한(로짓).
+// 50% 근처에서 ±0.6은 약 ±15%p다.
+const ENTRY_MAX_ADJ_LOGIT = 0.6;
 const ENTRY_ANALYSIS_SMALL_SAMPLE = 5;
 const ENTRY_ANALYSIS_GOOD_SAMPLE = 12;
 
@@ -372,27 +433,25 @@ function entryRowAgeDays(dateText) {
 function entryRecentWeight(dateText) {
     return Math.pow(0.5, entryRowAgeDays(dateText) / ENTRY_FORM_HALF_LIFE);
 }
-function entryWeightedRecord(pid, predicate, period) {
-    const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
-    let w = 0, l = 0, rw = 0, rl = 0;
+
+// pid 선수의 경기 중 predicate에 맞는 것만 모아 '결과 - 모델 기대' 잔차로 보정을 낸다.
+// 행 형식: [날짜, 상대id, 이김(1/0), 맵, 형식]. 상대 레이팅이 없는 경기는 기대를 못 세우니 뺀다.
+function entryResidualEdge(pid, predicate, tau) {
+    const rows = entryRowsInPeriod(EntryState.rows[pid] || [], ENTRY_PREDICTION_PERIOD);
+    let num = 0, info = 0, rawW = 0, rawL = 0;
     rows.forEach(r => {
         if (predicate && !predicate(r)) return;
-        const weight = entryRecentWeight(r[0]);
-        if (Number(r[2]) === 1) { w += weight; rw += 1; }
-        else { l += weight; rl += 1; }
+        const logit = entryModelLogit(pid, String(r[1]));
+        if (logit === null) return;
+        const p = entrySigmoid(logit);
+        const w = entryRecentWeight(r[0]);
+        const won = Number(r[2]) === 1;
+        num += w * ((won ? 1 : 0) - p);
+        info += w * p * (1 - p);
+        if (won) rawW += 1; else rawL += 1;
     });
-    return { w, l, m: w + l, rawW: rw, rawL: rl, rawM: rw + rl };
-}
-function entryWeightedH2hRecord(aPid, bPid, period) {
-    const rows = entryRowsInPeriod(EntryState.rows[aPid] || [], period);
-    let w = 0, l = 0, rawW = 0, rawL = 0;
-    rows.forEach(r => {
-        if (String(r[1]) !== String(bPid)) return;
-        const weight = entryRecentWeight(r[0]);
-        if (Number(r[2]) === 1) { w += weight; rawW += 1; }
-        else { l += weight; rawL += 1; }
-    });
-    return { w, l, m: w + l, rawW, rawL, rawM: rawW + rawL };
+    const edge = entryClamp(num / (info + tau), -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
+    return { edge, info, rawW, rawL, rawM: rawW + rawL };
 }
 
 function entrySampleLabel(n) {
@@ -408,18 +467,6 @@ function entryRaceLabel(code) {
     return ({ T:'테란', Z:'저그', P:'프로토스' })[key] || key || '미상';
 }
 
-function entrySmoothedRate(rec, priorRate, priorN) {
-    const n = rec ? rec.m : 0;
-    return (n + priorN) > 0 ? ((rec ? rec.w : 0) + priorRate * priorN) / (n + priorN) : priorRate;
-}
-function entryConditionalEdge(pid, predicate, period, priorN) {
-    const overall = entryWeightedRecord(pid, null, period);
-    const baseRate = overall.m ? overall.w / overall.m : 0.5;
-    const specific = entryWeightedRecord(pid, predicate, period);
-    const rate = entrySmoothedRate(specific, baseRate, priorN);
-    return { edge: rate - baseRate, rate, baseRate, specific, overall };
-}
-
 function entryWinProb(aPid, bPid, mapName) {
     const players = entryPlayers();
     const a = players[aPid], b = players[bPid];
@@ -427,51 +474,47 @@ function entryWinProb(aPid, bPid, mapName) {
     const rb = entryRating(b);
     if (!ra || !rb) return null;
 
-    const base = entryEloProb(ra.value, rb.value);
-    let p = base;
-    const factors = [];
+    const baseLogit = entryModelLogit(aPid, bPid);
+    const base = entrySigmoid(baseLogit);
+    // 화면의 '+x%p'는 각 보정을 기본 승률에 혼자 얹었을 때의 변화량이다.
+    const asPp = adj => entrySigmoid(baseLogit + adj) - base;
 
-    // 1) 직접 맞대결: 레이팅 승률을 prior로 삼아 작은 표본을 자동으로 수축한다.
-    const rec = entryWeightedH2hRecord(aPid, bPid, ENTRY_PREDICTION_PERIOD);
-    const n = rec.m;
-    let h2hAdj = 0;
-    if (n) {
-        const smoothed = (rec.w + ENTRY_H2H_PRIOR * base) / (n + ENTRY_H2H_PRIOR);
-        h2hAdj = entryClamp(smoothed - base, -ENTRY_MAX_H2H_ADJ, ENTRY_MAX_H2H_ADJ);
-        p += h2hAdj;
-    }
-    factors.push({ key:'h2h', adj:h2hAdj, n, w:rec.w, l:rec.l, rawW:rec.rawW, rawL:rec.rawL, rawM:rec.rawM });
+    // 1) 맞대결: a가 b를 상대로 레이팅 기대보다 얼마나 더/덜 이겼나.
+    const h2h = entryResidualEdge(aPid, r => String(r[1]) === String(bPid), ENTRY_H2H_TAU);
+    const h2hLogit = h2h.edge;
 
-    // 2) 종족전: 각 선수가 '평소 승률 대비 해당 종족에게 얼마나 더 강한지'를 양쪽에서 비교.
-    let raceAdj = 0, raceA = null, raceB = null;
+    // 2) 종족전: 각자가 상대 종족에게 레이팅 + 공통 상성 기대보다 얼마나 더 강한지, 양쪽 차이.
+    let raceLogit = 0, raceA = null, raceB = null;
     if (a && b && a.r && b.r) {
-        raceA = entryConditionalEdge(aPid, row => {
-            const opp = players[row[1]]; return opp && String(opp.r || '') === String(b.r || '');
-        }, ENTRY_PREDICTION_PERIOD, ENTRY_RACE_PRIOR);
-        raceB = entryConditionalEdge(bPid, row => {
-            const opp = players[row[1]]; return opp && String(opp.r || '') === String(a.r || '');
-        }, ENTRY_PREDICTION_PERIOD, ENTRY_RACE_PRIOR);
-        raceAdj = entryClamp((raceA.edge - raceB.edge) * 0.5, -ENTRY_MAX_RACE_ADJ, ENTRY_MAX_RACE_ADJ);
-        p += raceAdj;
+        raceA = entryResidualEdge(aPid, row => {
+            const opp = players[row[1]]; return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(b.r);
+        }, ENTRY_RACE_TAU);
+        raceB = entryResidualEdge(bPid, row => {
+            const opp = players[row[1]]; return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(a.r);
+        }, ENTRY_RACE_TAU);
+        raceLogit = entryClamp(raceA.edge - raceB.edge, -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
     }
-    factors.push({ key:'race', adj:raceAdj, a:raceA, b:raceB });
 
-    // 3) 선택 맵: 개인 맵 성적도 '평소 폼 대비 맵 특화 성적'만 보정한다.
+    // 3) 선택 맵: 각자 그 맵에서 기대보다 얼마나 더 잘했는지, 양쪽 차이.
     const normalizedMap = entryNormalizeMapName(mapName);
-    let mapAdj = 0, mapA = null, mapB = null;
+    let mapLogit = 0, mapA = null, mapB = null;
     if (normalizedMap) {
-        mapA = entryConditionalEdge(aPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_PREDICTION_PERIOD, ENTRY_MAP_PRIOR);
-        mapB = entryConditionalEdge(bPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_PREDICTION_PERIOD, ENTRY_MAP_PRIOR);
-        mapAdj = entryClamp((mapA.edge - mapB.edge) * 0.5, -ENTRY_MAX_MAP_ADJ, ENTRY_MAX_MAP_ADJ);
-        p += mapAdj;
+        mapA = entryResidualEdge(aPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_MAP_TAU);
+        mapB = entryResidualEdge(bPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_MAP_TAU);
+        mapLogit = entryClamp(mapA.edge - mapB.edge, -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
     }
-    factors.push({ key:'map', adj:mapAdj, a:mapA, b:mapB, map:entryMapName(mapName) });
 
-    // 극단값은 피한다. 화면에서 98:2 같은 과신을 보여주는 것보다 90:10 상한이 낫다.
-    p = entryClamp(p, 0.10, 0.90);
+    const p = entrySigmoid(baseLogit + h2hLogit + raceLogit + mapLogit);
+    const h2hAdj = asPp(h2hLogit), raceAdj = asPp(raceLogit), mapAdj = asPp(mapLogit);
+    const factors = [
+        { key:'h2h', adj:h2hAdj, logit:h2hLogit, n:h2h.rawM, rawW:h2h.rawW, rawL:h2h.rawL, rawM:h2h.rawM },
+        { key:'race', adj:raceAdj, logit:raceLogit, a:raceA, b:raceB },
+        { key:'map', adj:mapAdj, logit:mapLogit, a:mapA, b:mapB, map:entryMapName(mapName) },
+    ];
     return {
-        p, base, n, w:rec.rawW, l:rec.rawL, exact:ra.exact && rb.exact,
-        factors, h2hAdj, raceAdj, mapAdj
+        p, base, n:h2h.rawM, w:h2h.rawW, l:h2h.rawL, exact:ra.exact && rb.exact,
+        factors, h2hAdj, raceAdj, mapAdj,
+        raceEdge: entryRaceEdge(a && a.r, b && b.r),
     };
 }
 
@@ -707,7 +750,11 @@ function entryAnalysisHtml(match, wp) {
     const h2hDetail = h2hN
         ? `${entryPeriodLabel()} ${displayH2h.w}승 ${displayH2h.l}패 · ${entrySampleLabel(h2hN)}`
         : '맞대결 표본 없음';
-    const ratingDetail = `${escapeHTML(a.n)} ${ra ? ra.value.toFixed(0) : '—'} · ${escapeHTML(b.n)} ${rb ? rb.value.toFixed(0) : '—'} · 최근 90일 가중`;
+    const raceEdge = Number(wp.raceEdge) || 0;
+    const raceEdgeText = Math.abs(raceEdge) >= 0.5
+        ? ` · 종족 상성 ${raceEdge > 0 ? escapeHTML(a.n) : escapeHTML(b.n)} +${Math.abs(raceEdge).toFixed(0)}점`
+        : '';
+    const ratingDetail = `${escapeHTML(a.n)} ${ra ? ra.value.toFixed(0) : '—'} · ${escapeHTML(b.n)} ${rb ? rb.value.toFixed(0) : '—'}${raceEdgeText} · 최근 90일 가중`;
     return `<div class="entry-analysis-panel">
         <div class="entry-analysis-head">
             <div><span class="entry-analysis-eyebrow">WIN PROBABILITY</span><strong>${escapeHTML(a.n)} ${(wp.p*100).toFixed(1)}%</strong><span class="entry-analysis-vs">${escapeHTML(b.n)} ${((1-wp.p)*100).toFixed(1)}%</span></div>
@@ -720,7 +767,7 @@ function entryAnalysisHtml(match, wp) {
             ${entryAnalysisStat('종족전', wp.raceAdj || 0, raceDetail, raceN && raceN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
             ${entryAnalysisStat('선택 맵', wp.mapAdj || 0, mapDetail, mapN && mapN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
         </div>
-        <div class="entry-analysis-foot">승률은 기간 탭과 무관하게 통산 데이터에 90일 반감기를 적용합니다. 기간 탭은 위 전적 설명만 바꿉니다.</div>
+        <div class="entry-analysis-foot">보정은 레이팅이 설명하지 못한 '실제 − 기대' 차이만 반영합니다. 승률은 기간 탭과 무관하게 통산 데이터에 90일 반감기를 적용하고, 기간 탭은 위 전적 설명만 바꿉니다.</div>
     </div>`;
 }
 
@@ -941,7 +988,36 @@ async function entryRefreshProbs() {
 // 결과는 5:0 ~ 5:4 꼴로 나온다. 골라 둔 대진이 경기 수보다 적으면(9경기에 7개) 남은
 // 자리는 핀볼로 기존 대진 중 하나가 다시 나온다고 보고, 그 자리 승률은 골라 둔 대진의
 // 평균으로 둔다.
+// 세트끼리 함께 움직이는 요인(같은 날 팀 컨디션 · 준비한 전략)을 모든 세트에 똑같이 더해지는
+// 로짓 흔들림 s ~ N(0, σ²)로 보고, 그 위에서 평균을 낸다. 세트를 완전히 독립으로 굴리면
+// 시리즈 승률이 실제보다 한쪽으로 쏠린다. σ는 데이터로 맞춘 값이 아니라 작게 잡은
+// 가정이다(0.25 로짓 = 50% 근처 세트에서 약 ±6%p).
+const ENTRY_SERIES_FORM_SIGMA = 0.25;
+// 표준정규 N(0,1) 기대값용 5점 가우스-에르미트 마디와 가중치
+const ENTRY_GH_NODES = [-2.0201828705, -0.9585724646, 0, 0.9585724646, 2.0201828705];
+const ENTRY_GH_WEIGHTS = [0.0112574113, 0.2220759220, 0.5333333333, 0.2220759220, 0.0112574113];
+
 function entrySeriesSim(ps, games) {
+    const logit = p => Math.log(entryClamp(p, 1e-6, 1 - 1e-6) / (1 - entryClamp(p, 1e-6, 1 - 1e-6)));
+    const mixed = { pA: 0, pB: 0, eA: 0, eB: 0 };
+    const scores = new Map();
+    let first = null;
+    ENTRY_GH_NODES.forEach((z, i) => {
+        const shift = z * ENTRY_SERIES_FORM_SIGMA;
+        const run = entrySeriesSimIndependent(ps.map(p => entrySigmoid(logit(p) + shift)), games);
+        const w = ENTRY_GH_WEIGHTS[i];
+        if (!first) first = run;
+        mixed.pA += w * run.pA; mixed.pB += w * run.pB;
+        mixed.eA += w * run.eA; mixed.eB += w * run.eB;
+        run.all.forEach(([a, b, v]) => { const k = `${a}|${b}`; scores.set(k, (scores.get(k) || 0) + w * v); });
+    });
+    const all = [...scores.entries()].map(([k, v]) => { const [a, b] = k.split('|').map(Number); return [a, b, v]; })
+        .sort((x, y) => y[2] - x[2]);
+    return { need: first.need, ...mixed, top: all.slice(0, 2), filled: first.filled };
+}
+
+// 세트를 서로 독립으로 보고 정확히 굴린다(위 entrySeriesSim이 흔들림마다 부른다).
+function entrySeriesSimIndependent(ps, games) {
     const need = Math.floor(games / 2) + 1;
     const avg = ps.length ? ps.reduce((sum, p) => sum + p, 0) / ps.length : 0.5;
     const seq = Array.from({ length: games }, (_, i) => (i < ps.length ? ps[i] : avg));
@@ -969,7 +1045,7 @@ function entrySeriesSim(ps, games) {
         scores.push([a, b, v]);
     });
     scores.sort((x, y) => y[2] - x[2]);
-    return { need, pA, pB, eA, eB, top: scores.slice(0, 2), filled: games - Math.min(ps.length, games) };
+    return { need, pA, pB, eA, eB, all: scores, top: scores.slice(0, 2), filled: games - Math.min(ps.length, games) };
 }
 
 // 검색은 소속 안이 아니라 씬 전체를 뒤진다. 여기서 짜는 게 늘 대학대전인 것도 아니고
