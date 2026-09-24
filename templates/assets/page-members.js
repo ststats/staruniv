@@ -6,7 +6,7 @@
 
 const MEMBER_TABS = { status: ['tab-member-status', 'view-member-status'], news: ['tab-member-news', 'view-member-news'] };
 
-const ROLE_ORDER_BASE = ['감독', '코치', '선수'];
+const ROLE_ORDER_BASE = SITE_ORDER.roles;   // core.js 공통 순서
 // 현황 탭에서 먼저 완료된 방송 상태 조회 결과를 공지 탭 사이드바가
 // 나중에 렌더링될 때도 재사용한다.
 let MEMBER_LIVE_IDS = [];

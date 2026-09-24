@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from match_link import load_linked_db
@@ -34,13 +35,18 @@ SITE_PLAYER_STAT_FIELDS = [
 # 멤버 순서: 멤버 현황 페이지(page-members.js)와 같다 - 감독 → 코치 → 선수 → 그 밖의 직책,
 # 같은 직책 안에서는 티어 높은 순, 같은 티어면 입단순(같은 날이면 이름순). 선택 바(멤버 공지·개인 전적)가 이 순서를 그대로 쓴다.
 # (예전 키는 총장/교수였고 티어도 '3티어' 꼴만 알아서, 감독이 맨 뒤로 가고 선수는 티어순이 안 됐다.)
-ROLE_ORDER = {"감독": 0, "코치": 1, "선수": 2}
+def load_site_order() -> dict:
+    """core.js 맨 위 SITE_ORDER 블록(티어·직책 순서)을 읽는다 - 순서는 거기 한 곳에서만 고친다."""
+    text = (ROOT / "templates" / "assets" / "core.js").read_text(encoding="utf-8")
+    match = re.search(r"const SITE_ORDER = (\{.*?\n\});", text, re.S)
+    if not match:
+        raise SystemExit("core.js에서 SITE_ORDER를 찾지 못했습니다.")
+    return json.loads(match.group(1))
 
-# core.js의 TIER_ORDER와 같다. DB에는 '3'처럼 숫자만 들어 있다.
-TIER_ORDER = [
-    "갓", "킹", "잭", "조커", "스페이드",
-    "0", "1", "2", "3", "4", "5", "6", "7", "8", "베이비",
-]
+
+SITE_ORDER = load_site_order()
+ROLE_ORDER = {role: i for i, role in enumerate(SITE_ORDER["roles"])}
+TIER_ORDER = SITE_ORDER["tiers"]   # DB에는 '3'처럼 숫자만 들어 있다
 
 
 def pick(row: dict, fields: list[str]) -> dict:

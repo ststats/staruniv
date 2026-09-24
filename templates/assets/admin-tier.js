@@ -3,11 +3,11 @@
   const C=()=>window.AdminCore;
   const S={view:new URLSearchParams(location.search).get('view')==='ranking'?'ranking':'members',page:0,size:50,count:0,rows:[],sort:'source_order',asc:true,selected:new Set(),filters:{q:'',tier:'',aff:'',race:''},options:{tiers:[],affs:[],races:[]}};
   const PROMO=[8,7,6,5,4,3,2,1,0];
-  // 티어 사다리(ststat TIER_ORDER와 같은 순서)
-  const TIER_ORDER=['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
+  // 티어 사다리: core.js의 공통 순서(SITE_ORDER.tiers). ststat의 티어 순서와도 같아야 한다.
+  const LADDER=SITE_ORDER.tiers;
   const tierLabel=t=>/^\d$/.test(String(t))?`${t}티어`:(String(t)==='체크'?'미분류':`${t}`);
   // 사다리에 없는 값(체크 = 아직 티어를 안 매긴 사람 등)은 맨 끝으로 보낸다
-  const tierRank=t=>{const i=TIER_ORDER.indexOf(String(t));return i<0?TIER_ORDER.length:i;};
+  const tierRank=t=>{const i=LADDER.indexOf(String(t));return i<0?LADDER.length:i;};
   // 티어 랭킹 보기 상태. 활성 Elo 스냅샷을 한 번 읽어 두고 화면에서만 거른다.
   const R={loaded:false,loading:null,rows:[],meta:{},tier:'',q:'',gapOnly:false};
 
@@ -247,7 +247,7 @@
     const rows=R.rows.filter(r=>(!R.tier||String(r.tier)===R.tier)
       &&(!R.gapOnly||Number(r.tier_gap))
       &&(!q||[r.nickname,r.elo_name,r.affiliation].some(v=>String(v||'').toLowerCase().includes(q))));
-    const chips=[['','전체',R.rows.length],...TIER_ORDER.filter(t=>counts[t]).map(t=>[t,tierLabel(t),counts[t]])]
+    const chips=[['','전체',R.rows.length],...LADDER.filter(t=>counts[t]).map(t=>[t,tierLabel(t),counts[t]])]
       .map(([k,l,n])=>`<button type="button" class="admin-rank-chip${R.tier===k?' is-on':''}" data-rank-tier="${esc(k)}">${esc(l)}<span>${n}</span></button>`).join('');
     let lastTier=null;
     const body=rows.map(r=>{

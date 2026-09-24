@@ -467,7 +467,13 @@ function teamCellInnerHtml(teamName) {
     return `<span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
 }
 
-const TIER_ORDER = ['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
+// 사이트 공통 순서 - 여기 한 곳만 고친다. 티어는 높은 순, 직책은 멤버 목록 순서.
+// scripts/write_site_data.py도 이 블록을 JSON으로 읽어 같은 순서를 쓴다(큰따옴표 JSON 형식 유지).
+const SITE_ORDER = {
+    "tiers": ["갓", "킹", "잭", "조커", "스페이드", "0", "1", "2", "3", "4", "5", "6", "7", "8", "베이비"],
+    "roles": ["감독", "코치", "선수"]
+};
+const TIER_ORDER = SITE_ORDER.tiers;
 // DB에서 '체크'는 아직 티어를 매기지 않은 사람이다 - 화면에서는 미분류로 다룬다.
 const TIER_UNRANKED = new Set(['체크', '미분류']);
 
