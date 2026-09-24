@@ -1962,9 +1962,8 @@ a.btn-view-all {
     .selection-layout > .tier-bar .tier-scope-btn { height: 34px; }
     .selection-layout > .tier-bar .tier-bar-heading { display: none; }
 
-    /* 넘치는 목록: 기본 스크롤바는 숨기고(바마다 높이가 달라 '전체' 칸과 줄이 어긋났다)
-       바 맨 아래 전체 폭에 트랙을, 목록 구간에 손잡이를 직접 그린다(core.js attachBarScroll).
-       목록은 마우스로 끌어서도 넘긴다. */
+    /* 넘치는 목록: 스크롤바 없이 마우스로 끌어서 넘긴다(core.js attachBarScroll).
+       고른 항목은 목록 가운데로 온다(centerBarItem). */
     .selection-layout > .avatar-bar .avatar-selector-scroll,
     .selection-layout > .tier-bar .tier-bar-list {
         scrollbar-width: none;
@@ -1972,40 +1971,13 @@ a.btn-view-all {
     }
     .selection-layout > .avatar-bar .avatar-selector-scroll::-webkit-scrollbar,
     .selection-layout > .tier-bar .tier-bar-list::-webkit-scrollbar { display: none; }
-    .selection-layout > .is-scrollable { padding-bottom: 4px; }
     .selection-layout > .is-scrollable .avatar-selector-scroll,
     .selection-layout > .is-scrollable .tier-bar-list { cursor: grab; }
     .selection-layout > .is-dragging .avatar-selector-scroll,
     .selection-layout > .is-dragging .tier-bar-list { cursor: grabbing; user-select: none; }
     .selection-layout > .is-dragging .avatar-select-item,
     .selection-layout > .is-dragging .tier-bar-item { pointer-events: none; }
-    .selection-layout > .is-scrollable .bar-scrollbar { display: block; }
 }
-.bar-scrollbar {
-    display: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 4px;
-    background: var(--panel-control);
-}
-.bar-scrollbar-thumb {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    background: var(--panel-muted);
-    cursor: grab;
-    transition: background 0.15s;
-}
-/* 손잡이는 4px라 잡기 어렵다 - 눈에 안 보이는 위아래 여유를 줘서 잡히는 범위를 넓힌다 */
-.bar-scrollbar-thumb::before {
-    content: "";
-    position: absolute;
-    inset: -6px 0 0;
-}
-.bar-scrollbar-thumb:hover,
-.is-dragging .bar-scrollbar-thumb { background: #fff; }
 
 
 /* =============================================================================

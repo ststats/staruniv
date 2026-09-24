@@ -355,6 +355,7 @@ function onTierBarClick(event) {
     bar.classList.add('is-closed');
     bar.querySelector('.tier-bar-pick')?.setAttribute('aria-expanded', 'false');
     syncTierBarHeight();
+    scrollTierBarItemIntoView(btn);
     scrollTierIntoPlace(target);
 }
 
@@ -426,25 +427,7 @@ function highlightTierBar() {
 // scrollIntoView 대신 바 자체의 scrollLeft만 건드린다 - scrollIntoView는 조상 요소까지
 // 같이 움직여서, 사용자가 스크롤하는 중에 페이지가 세로로 튀는 일이 생길 수 있다.
 function scrollTierBarItemIntoView(btn) {
-    const list = document.getElementById('tier-bar-list');
-    if (!list || list.scrollWidth <= list.clientWidth) return;
-    // 보이는 범위 안에 "들어오기만" 하면 되는 게 아니라 가운데로 데려온다. 휴대폰에서는
-    // 왼쪽 전환 버튼이 먹고 남은 폭이 좁아서, 가장자리에 걸쳐 놓으면 다음 티어로 넘어가는
-    // 순간 바로 화면 밖으로 밀린다. 가운데면 앞뒤 티어도 같이 보인다.
-    // (목록의 처음/끝에서는 더 갈 데가 없으므로 자연스럽게 왼쪽/오른쪽 끝에 붙는다.)
-    //
-    // [주의] 여기서 offsetLeft를 쓰면 안 된다. offsetLeft는 "스크롤되는 목록"이 아니라
-    // offsetParent 기준인데, .tier-bar가 position:sticky라 그게 offsetParent가 된다.
-    // 그래서 칩 위치에 왼쪽 전환 버튼 폭까지 얹혀서 계산되고, 딱 그만큼 어긋난 자리로
-    // 스크롤됐다(폭이 좁은 휴대폰에서 티가 크게 났다). 목록 기준 좌표를 직접 구한다.
-    const listRect = list.getBoundingClientRect();
-    const btnRect = btn.getBoundingClientRect();
-    const btnLeft = btnRect.left - listRect.left + list.scrollLeft;  // 목록 내용 기준 x
-    const centered = btnLeft - (list.clientWidth - btnRect.width) / 2;
-    const maxLeft = list.scrollWidth - list.clientWidth;
-    const left = Math.max(0, Math.min(centered, maxLeft));
-    if (Math.abs(left - list.scrollLeft) < 1) return;
-    list.scrollTo({ left, behavior: 'smooth' });
+    centerBarItem(btn);   // core.js - 개인 전적·멤버 공지 바와 같은 가운데 맞춤
 }
 
 // [리디자인] 티어 제목 위에 붙는 라틴 라벨. 이름 티어는 대응 영문을, 숫자 티어는 T0~T8로.
