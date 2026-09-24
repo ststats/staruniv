@@ -134,7 +134,7 @@
     await refresh();
     const row=document.getElementById('video-channel-row');
     if(row&&!document.getElementById('adminVideoChannels')){
-      const b=document.createElement('button');b.type='button';b.id='adminVideoChannels';b.className='admin-floating-add';b.dataset.icon='edit';b.textContent='팬튜브 채널 관리';b.onclick=openChannelList;row.parentElement?.insertBefore(b,row);
+      const b=document.createElement('button');b.type='button';b.id='adminVideoChannels';b.className='admin-floating-add';b.dataset.icon='edit';b.textContent='팬튜브 채널 관리';b.onclick=openChannelList;const at=row.closest('.section-title')||row;at.parentElement?.insertBefore(b,at);
     }
     const pick=document.getElementById('view-video-pick');
     if(pick&&!document.getElementById('adminVideoPickAdd')){

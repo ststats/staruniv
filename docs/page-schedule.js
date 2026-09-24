@@ -46,9 +46,23 @@ async function renderHistory() {
         return;
     }
     const data = await histLoadData();
-    const items = histMergeItems(data, SiteData.members, false);
-    histRegisterItems(items);
-    root.innerHTML = histTimelineHtml(items, { members: SiteData.members, avatarUrl: getProfileImgUrl });
+    historyItems = histMergeItems(data, SiteData.members, false);
+    histRegisterItems(historyItems);
+    drawHistory();
+}
+
+let historyItems = [];
+let historyType = '';
+function drawHistory() {
+    const root = document.getElementById('history-root');
+    const shown = historyType ? historyItems.filter(x => x.type === historyType) : historyItems;
+    root.innerHTML = histHeadHtml(historyItems, historyType, 'pickHistoryType')
+        + histTimelineHtml(shown, { members: SiteData.members, avatarUrl: getProfileImgUrl });
+    if (typeof initEdgeFades === 'function') initEdgeFades(root);
+}
+function pickHistoryType(type) {
+    historyType = HISTORY_TYPES[type] ? type : '';
+    drawHistory();
 }
 
 bootPage(() => {

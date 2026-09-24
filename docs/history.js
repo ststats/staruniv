@@ -170,6 +170,17 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
     return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${histEscape(name)}</span>${noteHtml}</span>`;
 }
 
+// 맨 위 '연혁' 제목 줄. 오른쪽 형식 필터는 연혁에 실제로 있는 형식만 보여준다.
+// active: 고른 형식 키('' = 전체), onPick: 누를 때 부를 전역 함수 이름
+function histHeadHtml(items, active, onPick) {
+    const types = Object.keys(HISTORY_TYPES).filter(t => items.some(x => x.type === t));
+    const item = (key, label) => `<button type="button" class="filter-item${active === key ? ' active' : ''}" aria-pressed="${active === key}" onclick="${onPick}('${key}')">${label}</button>`;
+    const nav = types.length > 1
+        ? `<div class="filter-nav tab-scroll" role="group" aria-label="연혁 형식">${item('', '전체')}${types.map(t => item(t, HISTORY_TYPES[t])).join('')}</div>`
+        : '';
+    return `<div class="section-title record-recent-header hist-head" data-en="HISTORY"><span class="record-recent-title section-title-label">연혁</span>${nav}</div>`;
+}
+
 const HIST_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 // 타임라인 HTML. opts: { members, avatarUrl(soopId), admin: true면 수정 버튼과 숨김 표시 }
@@ -184,7 +195,7 @@ function histTimelineHtml(items, opts) {
     });
     let html = '';
     byYear.forEach((list, year) => {
-        html += `<div class="section-title hist-year" data-en="HISTORY"><span class="section-title-label">${histEscape(year)}</span><span class="title-count">${list.length}건</span></div>`;
+        html += `<div class="section-title-sm hist-year"><span>${histEscape(year)}</span><span class="title-count">${list.length}건</span></div>`;
         html += '<ol class="hist-list">';
         list.forEach((item, i) => {
             html += histItemHtml(item, {

@@ -197,11 +197,8 @@ function renderVideoChannels() {
     if (!row) return;
     const keys = VideoState.channelKeys;
     row.hidden = keys.length < 2;   // 채널이 하나뿐이면 거를 게 없다
-    const chip = (key, label, avatar) => `
-        <button type="button" class="video-channel-chip${VideoState.channel === key ? ' active' : ''}" aria-pressed="${VideoState.channel === key}" onclick="selectVideoChannel('${jsAttr(key)}')">
-            ${avatar}<span>${escapeHTML(label)}</span>
-        </button>`;
-    row.innerHTML = chip('', '전체', '') + keys.map(k => chip(k, videoChannelName(videoChannel(k)), videoChannelAvatar(videoChannel(k), 'video-chip-avatar'))).join('');
+    const item = (key, label) => `<button type="button" class="filter-item${VideoState.channel === key ? ' active' : ''}" aria-pressed="${VideoState.channel === key}" onclick="selectVideoChannel('${jsAttr(key)}')">${escapeHTML(label)}</button>`;
+    row.innerHTML = item('', '전체') + keys.map(k => item(k, videoChannelName(videoChannel(k)))).join('');
 }
 
 function renderFantube() {
@@ -233,7 +230,7 @@ function renderFantube() {
     document.getElementById('video-more-wrap').hidden = normal.length <= VideoState.shown;
 
     // 위 섹션이 비어 숨겨지면 처음 보이는 제목의 윗여백을 뺀다
-    const titles = [...document.querySelectorAll('#view-video-fantube .section-title')];
+    const titles = [...document.querySelectorAll('#view-video-fantube .video-sub')];
     const first = titles.find(t => !t.closest('[hidden]'));
     titles.forEach(t => t.classList.toggle('is-first', t === first));
 
