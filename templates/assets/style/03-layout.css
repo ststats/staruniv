@@ -427,14 +427,19 @@
         padding-right: 18px;
     }
 
+    /* 손가락으로 누르는 화면이라 PC보다 오히려 크게 둔다(예전 26×22·30×24는 자주 빗나갔다) */
     .theme-toggle button {
-        width: 26px;
-        height: 22px;
+        width: 32px;
+        height: 28px;
     }
 
     .logo-sub { display: none; }
 
-    .nav-drawer-btn { display: flex; }
+    .nav-drawer-btn {
+        display: flex;
+        width: 36px;
+        height: 30px;
+    }
 }
 
 @media (max-width: 767.98px) {

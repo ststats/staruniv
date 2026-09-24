@@ -280,12 +280,13 @@
 
     .head-plate { padding: 16px 16px 18px; }
     .head-plate-value { font-size: 24px; }
+    .h2h-period { height: 34px; }
 }
 
 @media (max-width: 600px) {
     .record-recent-header { column-gap: 10px; }
     .record-recent-header .filter-nav {
-        height: 26px;
+        height: 32px;
         padding: 2px;
         gap: 1px;
     }
