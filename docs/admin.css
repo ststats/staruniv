@@ -839,6 +839,16 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-table td .admin-btn + .admin-btn { margin-left: 4px; }
 .admin-table td .admin-input { min-width: 80px; height: 34px; padding: 0 8px; font-size: 12px; clip-path: var(--notch-sm); }
 .admin-table tr.has-warning > td { background: color-mix(in srgb, #f59f00 7%, var(--color-card)); }
+/* 넓은 표는 가로로 스크롤되므로 마지막 관리 열을 오른쪽에 고정해 수정 버튼이 늘 보이게 한다 */
+.admin-table-wide > * > tr > :last-child {
+    position: sticky;
+    right: 0;
+    box-shadow: inset 1px 0 0 var(--color-border);
+}
+.admin-table-wide > thead > tr > th:last-child { z-index: 2; }
+.admin-table-wide > tbody > tr > td:last-child { background: var(--color-card); }
+.admin-table-wide > tbody > tr:hover > td:last-child { background: var(--color-row-hover); }
+.admin-table-wide > tbody > tr.has-warning > td:last-child { background: color-mix(in srgb, #f59f00 7%, var(--color-card)); }
 
 .admin-sort {
     padding: 0;
