@@ -178,12 +178,110 @@ function isTabActive(tabId) {
     return !!tab && tab.classList.contains('active');
 }
 
-// 부트스트랩 모달 열기. new bootstrap.Modal()을 열 때마다 만들면 같은 요소에 인스턴스와
-// 이벤트 리스너가 계속 쌓이므로(누수) 기존 인스턴스를 재사용한다.
+// 모달·접기: 예전엔 부트스트랩 JS(80KB)를 받아 이 두 가지만 썼다. 같은 클래스(.modal .show
+// .modal-backdrop .collapsing)와 같은 속성(data-bs-dismiss, data-bs-toggle="collapse")을 그대로
+// 쓰므로 모양과 동작은 같다. CSS는 style/00-vendor-bootstrap.css에 있다.
+const UI_FADE_MS = 300;
+let openModalEl = null;
+let modalBackdrop = null;
+
+function afterTransition(el, fn) {
+    let done = false;
+    const finish = () => { if (done) return; done = true; el.removeEventListener('transitionend', finish); fn(); };
+    el.addEventListener('transitionend', finish);
+    setTimeout(finish, UI_FADE_MS + 50);   // 애니메이션을 끈 환경에서는 transitionend가 안 온다
+}
+
 function showModal(id) {
     const el = document.getElementById(id);
-    if (el) bootstrap.Modal.getOrCreateInstance(el).show();
+    if (!el || el === openModalEl) return;
+    if (openModalEl) hideModal(openModalEl, true);
+    openModalEl = el;
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
+    if (!modalBackdrop) {
+        modalBackdrop = document.createElement('div');
+        modalBackdrop.className = 'modal-backdrop fade';
+        document.body.appendChild(modalBackdrop);
+        void modalBackdrop.offsetWidth;
+        modalBackdrop.classList.add('show');
+    }
+    el.style.display = 'block';
+    el.removeAttribute('aria-hidden');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('role', 'dialog');
+    void el.offsetWidth;
+    el.classList.add('show');
+    afterTransition(el, () => { if (openModalEl === el) el.focus({ preventScroll: true }); });
 }
+
+function hideModal(el, keepBackdrop) {
+    if (!el || !el.classList.contains('show')) return;
+    // 모달 안에 포커스가 남은 채로 aria-hidden을 씌우면 크롬 접근성 경고가 뜬다 - 먼저 뺀다
+    if (el.contains(document.activeElement)) document.activeElement.blur();
+    el.classList.remove('show');
+    if (openModalEl === el) openModalEl = null;
+    afterTransition(el, () => {
+        if (el.classList.contains('show')) return;
+        el.style.display = 'none';
+        el.setAttribute('aria-hidden', 'true');
+        el.removeAttribute('aria-modal');
+        el.removeAttribute('role');
+    });
+    if (keepBackdrop || !modalBackdrop) return;
+    const backdrop = modalBackdrop;
+    modalBackdrop = null;
+    backdrop.classList.remove('show');
+    afterTransition(backdrop, () => backdrop.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+}
+
+function toggleCollapse(target, trigger) {
+    if (!target || target.classList.contains('collapsing')) return;
+    const opening = !target.classList.contains('show');
+    if (trigger) {
+        trigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        trigger.classList.toggle('collapsed', !opening);
+    }
+    if (opening) {
+        target.classList.remove('collapse');
+        target.classList.add('collapsing');
+        target.style.height = '0px';
+        void target.offsetHeight;
+        target.style.height = `${target.scrollHeight}px`;
+    } else {
+        target.style.height = `${target.getBoundingClientRect().height}px`;
+        void target.offsetHeight;
+        target.classList.add('collapsing');
+        target.classList.remove('collapse', 'show');
+        target.style.height = '0px';
+    }
+    afterTransition(target, () => {
+        target.classList.remove('collapsing');
+        target.classList.add('collapse');
+        if (opening) target.classList.add('show');
+        target.style.height = '';
+    });
+}
+
+document.addEventListener('click', ev => {
+    const dismiss = ev.target.closest('[data-bs-dismiss="modal"]');
+    if (dismiss) { hideModal(dismiss.closest('.modal')); return; }
+    // 대화상자 바깥(어두운 바탕)을 누르면 닫는다
+    if (openModalEl && ev.target === openModalEl) { hideModal(openModalEl); return; }
+    const toggle = ev.target.closest('[data-bs-toggle="collapse"]');
+    if (toggle) {
+        ev.preventDefault();
+        toggleCollapse(document.querySelector(toggle.dataset.bsTarget || toggle.getAttribute('href')), toggle);
+    }
+});
+document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && openModalEl) hideModal(openModalEl);
+});
 
 // 초기화 단계 하나가 실패해도(스크립트 로드 실패, 예상 못한 데이터 형태 등) 그 아래
 // 단계들까지 통째로 멈추지 않도록 각 단계를 격리한다. async 함수가 넘어오면 반환된
@@ -864,14 +962,6 @@ function formatKstDateTime(value, includeTime) {
 }
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
-
-// 모달이 닫히기 시작할 때 그 안에 포커스가 남아있으면 부트스트랩이 aria-hidden을 씌우면서
-// 크롬 접근성 경고가 뜬다. 닫히기 직전에 포커스를 미리 빼주면 경고 자체가 안 뜬다.
-staticAll('.modal').forEach(modalEl => {
-    modalEl.addEventListener('hide.bs.modal', () => {
-        if (modalEl.contains(document.activeElement)) document.activeElement.blur();
-    });
-});
 
 // 방송통계 데이터를 한 번만 받아온다(여러 곳에서 불러도 요청은 1번). 실패하면 다음 호출 때 다시 시도.
 let _synergyRequest = null;

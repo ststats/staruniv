@@ -12,7 +12,8 @@ const ASSETS = path.join(ROOT, 'templates', 'assets');
 
 function cssSources() {
     const dir = path.join(ASSETS, 'style');
-    const parts = fs.readdirSync(dir).filter(f => f.endsWith('.css')).sort()
+    // 00-vendor-*.css는 외부 라이브러리에서 뽑아 온 것이라 검사하지 않는다
+    const parts = fs.readdirSync(dir).filter(f => f.endsWith('.css') && !f.startsWith('00-vendor')).sort()
         .map(f => fs.readFileSync(path.join(dir, f), 'utf8'));
     return { 'style.css': parts.join(''), 'admin.css': fs.readFileSync(path.join(ASSETS, 'admin.css'), 'utf8') };
 }
