@@ -487,6 +487,7 @@
     flex:none;
     white-space:nowrap;
 }
+.analysis-formline-hint { flex: none; font-size: 11px; font-weight: 700; color: var(--color-text-muted); white-space: nowrap; }
 .analysis-formline-badges { display: flex; flex-wrap: wrap; gap: 4px; flex:1; flex-wrap:nowrap; min-width:0; }
 .analysis-formline-badges .match-badge { width: 26px; height: 20px; font-size: 11px; }
 

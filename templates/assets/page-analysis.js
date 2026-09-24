@@ -298,6 +298,7 @@ function analysisRaceHtml(e) {
 // 최근 10경기: 한 줄짜리 W/L 배지 띠. 표 하나를 더 두는 것보다 이 쪽이 한눈에 들어온다.
 // 배지는 사이트 공용 .match-badge(노치 사각형)를 그대로 쓴다.
 // 오른쪽에 요약 글(몇승 몇패 · 연승)을 붙이면 휴대폰에서 줄이 두 줄로 접혀서 뺐다.
+// 어느 쪽이 최신인지만 짧게 붙인다(320px 폰에서도 한 줄에 들어감).
 function analysisFormHtml(rows) {
     if (!rows.length) return '';
     const recent = rows.slice(0, ANALYSIS_FORM_COUNT).reverse();   // 로그가 최신순이다
@@ -309,6 +310,7 @@ function analysisFormHtml(rows) {
                     <span class="match-badge ${win ? 'badge-win' : 'badge-lose'}"
                           title="${escapeHTML(shortMatchDate(date))} vs ${escapeHTML(h2hName(String(opp)))}">${win ? 'W' : 'L'}</span>`).join('')}
             </span>
+            <span class="analysis-formline-hint">← 최신</span>
         </div>`;
 }
 
