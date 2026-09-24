@@ -54,10 +54,19 @@
       ${C().field('소속',C().input('ati_aff',r.affiliation||'','text','placeholder="소속 / FA / 휴면"'))}
       ${C().field('직책',C().input('ati_role',r.role||''))}
       ${C().field('수정일',C().input('ati_modified',r.modified_at||''))}
-    </div><div class="admin-section-head"><b>승급 이력</b></div><div class="admin-form-grid">${promo}</div>`;
+      ${C().field('시작',C().input('ati_started',r.started_on||''))}
+      ${C().field('ELO 등록',C().input('ati_elo_registered',r.elo_registered||''))}
+      ${C().field('티어표 등록',C().input('ati_table_registered',r.tier_table_registered||''))}
+    </div><div class="admin-section-head"><b>연혁</b></div>
+    ${C().field('팀 이동 등 연혁',C().textarea('ati_history',r.history||'','rows="5"'))}
+    <div class="admin-section-head"><b>승급 이력</b></div><div class="admin-form-grid">${promo}</div>`;
   }
   function collect(r={}){
     const p={name:C().empty(C().value('ati_name')),nickname:C().value('ati_nick').trim(),soop_id:C().empty(C().value('ati_soop')),elo_id:C().intOrNull(C().value('ati_elo')),gender:C().empty(C().value('ati_gender')),race:C().empty(C().value('ati_race')),birth_date:C().empty(C().value('ati_birth')),tier:C().empty(C().value('ati_tier')),affiliation:C().empty(C().value('ati_aff')),role:C().empty(C().value('ati_role')),modified_at:C().empty(C().value('ati_modified'))||new Date().toISOString()};
+    p.history=C().empty(C().value('ati_history'));
+    p.started_on=C().empty(C().value('ati_started'));
+    p.elo_registered=C().empty(C().value('ati_elo_registered'));
+    p.tier_table_registered=C().empty(C().value('ati_table_registered'));
     PROMO.forEach(n=>p[`promoted_tier_${n}`]=C().empty(C().value(`ati_p${n}`)));
     return p;
   }
