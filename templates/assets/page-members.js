@@ -336,6 +336,17 @@ function newsItemKey(item) {
     return soopId + '_' + item.post.titleNo;
 }
 
+// 멤버를 바꾸면 새 글을 받는 동안 '불러오는 중' 한 줄만 남아 페이지가 짧아지고, 그 바람에
+// 브라우저가 스크롤을 위로 끌어올렸다(맨 위로 튀는 것처럼 보였다). 받는 동안은 지금 높이를
+// 붙잡아 두고, 새 글을 그린 뒤 풀어서 개인 전적처럼 보던 자리가 그대로 남게 한다.
+function showNewsLoading(content) {
+    content.style.minHeight = `${content.offsetHeight}px`;
+    content.innerHTML = emptyStateHtml('불러오는 중...');
+}
+function releaseNewsHeight(content) {
+    content.style.minHeight = '';
+}
+
 async function showNewsAll(skipHashUpdate) {
     setActiveAvatarItem('news-avatar-list', document.getElementById('news-side-btn-all'));
     document.getElementById('news-content-title').innerText = '전체 공지';
@@ -349,7 +360,7 @@ async function showNewsAll(skipHashUpdate) {
         content.setAttribute('aria-busy', 'false');
         return;
     }
-    content.innerHTML = emptyStateHtml('불러오는 중...');
+    showNewsLoading(content);
     const token = ++NewsState.requestSeq;
 
     // 멤버별로 최근 글 후보를 모아서(공지+일반글 합친 것) 전체를 한 번에 날짜순으로 다시 정렬.
@@ -373,6 +384,7 @@ async function showNewsAll(skipHashUpdate) {
     NewsState.items = NewsState.allPool.slice(0, NewsState.allShownCount);
     NewsState.hasMore = NewsState.allShownCount < NewsState.allPool.length || newsAnyMemberHasMorePages();
     renderNewsLayout(content);
+    releaseNewsHeight(content);
     content.setAttribute('aria-busy', 'false');
 }
 
@@ -389,7 +401,7 @@ function selectNewsPlayer(name, skipHashUpdate) {
 
     const content = document.getElementById('news-feed-content');
     content.setAttribute('aria-busy', 'true');
-    content.innerHTML = emptyStateHtml('불러오는 중...');
+    showNewsLoading(content);
     loadNewsFeed();
 }
 
@@ -410,9 +422,11 @@ async function loadNewsFeed() {
         NewsState.items = posts.map(post => ({ member, post }));
         NewsState.hasMore = NewsState.memberPage < NewsState.memberTotalPages;
         renderNewsLayout(content);
+        releaseNewsHeight(content);
         content.setAttribute('aria-busy', 'false');
     } catch (e) {
         if (token === NewsState.requestSeq) {
+            releaseNewsHeight(content);
             content.innerHTML = emptyStateHtml('글을 불러오지 못했습니다.');
             content.setAttribute('aria-busy', 'false');
         }
