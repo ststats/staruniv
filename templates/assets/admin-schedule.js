@@ -126,7 +126,7 @@
 
   // 달력 사진 갱신: 스타유니브 빌드를 실행해 docs/data/calendar.png를 새로 찍는다(외부 자동화가 가져가는 사진).
   // GitHub 토큰은 브라우저에 두지 않는다 - Supabase 함수가 Vault의 토큰으로 GitHub에 요청한다
-  // (supabase/calendar_capture.sql). 요청 뒤 GitHub 응답 코드를 잠깐 확인해서 실패하면 알려 준다.
+  // (supabase/staruniv.sql 5절). 요청 뒤 GitHub 응답 코드를 잠깐 확인해서 실패하면 알려 준다.
   async function requestCalendarCapture(btn) {
     if (btn.disabled) return;
     const label = btn.querySelector('span');
@@ -138,7 +138,7 @@
       const { data: requestId, error } = await client.rpc('admin_request_calendar_capture');
       if (error) {
         if (/admin_request_calendar_capture/.test(error.message || '') && /(find|exist)/i.test(error.message || ''))
-          throw new Error('Supabase에 supabase/calendar_capture.sql을 먼저 실행해야 합니다');
+          throw new Error('Supabase에 supabase/staruniv.sql을 먼저 실행해야 합니다');
         throw error;
       }
       let status = null, detail = '';

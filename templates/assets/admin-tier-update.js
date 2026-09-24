@@ -1,6 +1,6 @@
 // 티어표 관리 > 티어표 갱신: 펨코 티어표 이미지 + FA 명단 글을 분석(GitHub Actions)하고,
 // 결과를 사람이 확인해 tier_members에 반영한다. 분석은 scripts/tier_table.py, DB 쪽은
-// supabase/tier_table_update.sql. 반영한 카드는 다음 분석 때 기억(학습)에 더해진다.
+// supabase/staruniv.sql 6절. 반영한 카드는 다음 분석 때 기억(학습)에 더해진다.
 (function () {
   'use strict';
   const C=()=>window.AdminCore;
@@ -413,7 +413,7 @@
     }catch(e){
       console.error('티어표 갱신 작업 조회 실패:',e);
       const el=root();
-      if(el)el.insertAdjacentHTML('beforeend',`<div class="admin-empty">작업 목록을 불러오지 못했습니다<br><small>${esc(C().errorText(e))} · supabase/tier_table_update.sql을 실행했는지 확인하세요</small></div>`);
+      if(el)el.insertAdjacentHTML('beforeend',`<div class="admin-empty">작업 목록을 불러오지 못했습니다<br><small>${esc(C().errorText(e))} · supabase/staruniv.sql을 실행했는지 확인하세요</small></div>`);
     }
   }
   window.AdminTierUpdate={show};

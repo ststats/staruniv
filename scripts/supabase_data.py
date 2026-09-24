@@ -40,7 +40,7 @@ def as_int_or_none(value):
 def db_rows(db):
     """data/db.json -> {table_name: [tuple, ...]}.
 
-    tuple 순서는 supabase/setup.sql 및 TABLE_COLUMNS와 반드시 같아야 한다.
+    tuple 순서는 supabase/staruniv.sql 및 TABLE_COLUMNS와 반드시 같아야 한다.
     """
     out = {}
 

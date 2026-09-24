@@ -46,7 +46,7 @@ test('records use atomic match RPC and validate set results before save', () => 
   const admin = read('templates/assets/admin-records.js');
   assert.match(admin, /rpc\('admin_save_match'/);
   assert.match(admin, /validateScore\(p_match,p_rounds\)/);
-  const sql = read('supabase/setup.sql');
+  const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_save_match/);
   assert.match(sql, /delete from public\.rounds where match_no = v_match_no/);
 });
@@ -56,7 +56,7 @@ test('tier editor checks duplicate ELO IDs and bulk update is admin-only RPC', (
   assert.match(tier, /function duplicateElo/);
   assert.match(tier, /\.eq\('elo_id',elo\)/);
   assert.match(tier, /admin_bulk_update_tier_members/);
-  const migration = read('supabase/admin_inline_editor.sql');
+  const migration = read('supabase/staruniv.sql');
   assert.match(migration, /if not public\.is_admin\(\) then raise exception 'admin only'/);
   assert.match(migration, /admin_audit_log/);
 });
