@@ -12,26 +12,34 @@
   const R={loaded:false,loading:null,rows:[],meta:{},tier:'',q:'',gapOnly:false};
 
   function esc(v){return C().esc(v);}
+  // 승급일 칸은 글자다. 초기 티어표에는 강등이 있어서 같은 티어에 두 번 이상 오른 선수는
+  // '2021-07-13, 2021-10-26'처럼 날짜를 쉼표로 이어 적는다(99칸 정도). 한 칸 = 날짜 여러 개로 읽는다.
+  const promoDates=v=>String(v||'').split(/[,\s/]+/).map(x=>x.trim()).filter(Boolean);
+  function promotionEvents(r){
+    return PROMO.flatMap(n=>promoDates(r[`promoted_tier_${n}`]).map(date=>({n,date})))
+      .sort((a,b)=>a.date.localeCompare(b.date));
+  }
   function latestPromotion(r){
-    const pairs=PROMO.map(n=>[n,r[`promoted_tier_${n}`]]).filter(x=>x[1]);
-    if(!pairs.length)return '';
-    return pairs.sort((a,b)=>String(b[1]).localeCompare(String(a[1])))[0][1];
+    const events=promotionEvents(r);
+    return events.length?events[events.length-1].date:'';
   }
   function promotionWarnings(r){
-    const warnings=[], dated=PROMO.map(n=>({n,date:r[`promoted_tier_${n}`]})).filter(x=>x.date);
-    const chrono=[...dated].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-    for(let i=1;i<chrono.length;i++){
+    const warnings=[], chrono=promotionEvents(r);
+    // 강등이 섞인 선수(같은 티어에 날짜가 여럿)는 순서가 거꾸로 가는 게 정상이라 순서 검사를 하지 않는다
+    const demoted=PROMO.some(n=>promoDates(r[`promoted_tier_${n}`]).length>1);
+    for(let i=1;i<chrono.length&&!demoted;i++){
       if(chrono[i].n>chrono[i-1].n)warnings.push('승급일 순서가 티어 진행 방향과 맞지 않을 수 있습니다');
     }
-    if(dated.length){
-      const latest=[...dated].sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0].n;
+    if(chrono.length){
+      const latest=chrono[chrono.length-1].n;
       const tier=String(r.tier||'').replace('티어','').trim();
       if(/^[0-8]$/.test(tier)&&Number(tier)!==latest)warnings.push(`현재 티어(${r.tier})와 마지막 승급 티어(${latest}티어)가 다릅니다`);
     }
     return [...new Set(warnings)];
   }
   function historyHtml(r){
-    const rows=PROMO.filter(n=>r[`promoted_tier_${n}`]).map(n=>`<tr><td>${n}티어</td><td>${esc(r[`promoted_tier_${n}`])}</td></tr>`).join('');
+    // 날짜 순으로 한 줄씩. 강등 뒤 다시 오른 경우도 순서대로 보인다
+    const rows=promotionEvents(r).map(e=>`<tr><td>${esc(e.date)}</td><td>${e.n}티어 승급</td></tr>`).join('');
     return rows?`<table class="admin-mini-table"><tbody>${rows}</tbody></table>`:'승급 이력이 없습니다';
   }
   async function duplicateElo(elo,id){
@@ -41,7 +49,8 @@
     const {data,error}=await q;if(error)throw error;return data?.[0]||null;
   }
   function fields(r={}){
-    const promo=PROMO.map(n=>C().field(`${n}티어 승급일`,C().input(`ati_p${n}`,r[`promoted_tier_${n}`]||'','date'))).join('');
+    // 날짜 입력기(type=date)는 날짜 하나만 받아서, 여러 날짜가 든 칸이 빈칸으로 보이고 저장하면 지워졌다
+    const promo=PROMO.map(n=>C().field(`${n}티어 승급일`,C().input(`ati_p${n}`,r[`promoted_tier_${n}`]||'','text','placeholder="YYYY-MM-DD" inputmode="numeric"'))).join('');
     return `<div class="admin-form-grid">
       ${C().field('이름',C().input('ati_name',r.name||''))}
       ${C().field('닉네임',C().input('ati_nick',r.nickname||'','text','required'))}
@@ -59,7 +68,7 @@
       ${C().field('티어표 등록',C().input('ati_table_registered',r.tier_table_registered||''))}
     </div><div class="admin-section-head"><b>연혁</b></div>
     ${C().field('팀 이동 등 연혁',C().textarea('ati_history',r.history||'','rows="5"'))}
-    <div class="admin-section-head"><b>승급 이력</b></div><div class="admin-form-grid">${promo}</div>`;
+    <div class="admin-section-head"><b>승급 이력</b><small>강등 뒤 다시 올랐으면 날짜를 쉼표로 이어 적습니다(예: 2021-07-13, 2021-10-26)</small></div><div class="admin-form-grid">${promo}</div>`;
   }
   function collect(r={}){
     const p={name:C().empty(C().value('ati_name')),nickname:C().value('ati_nick').trim(),soop_id:C().empty(C().value('ati_soop')),elo_id:C().intOrNull(C().value('ati_elo')),gender:C().empty(C().value('ati_gender')),race:C().empty(C().value('ati_race')),birth_date:C().empty(C().value('ati_birth')),tier:C().empty(C().value('ati_tier')),affiliation:C().empty(C().value('ati_aff')),role:C().empty(C().value('ati_role')),modified_at:C().empty(C().value('ati_modified'))||new Date().toISOString()};
@@ -67,7 +76,12 @@
     p.started_on=C().empty(C().value('ati_started'));
     p.elo_registered=C().empty(C().value('ati_elo_registered'));
     p.tier_table_registered=C().empty(C().value('ati_table_registered'));
-    PROMO.forEach(n=>p[`promoted_tier_${n}`]=C().empty(C().value(`ati_p${n}`)));
+    PROMO.forEach(n=>{
+      const dates=promoDates(C().value(`ati_p${n}`));
+      const bad=dates.find(d=>!/^\d{4}-\d{2}-\d{2}$/.test(d));
+      if(bad)throw new Error(`${n}티어 승급일 '${bad}'는 YYYY-MM-DD 형식이어야 합니다(여러 번이면 쉼표로 구분)`);
+      p[`promoted_tier_${n}`]=dates.length?dates.sort().join(', '):null;
+    });
     return p;
   }
   function open(r){

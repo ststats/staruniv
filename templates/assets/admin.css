@@ -696,6 +696,7 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
     border-bottom: 1px solid var(--color-border);
 }
 .admin-section-head b { color: var(--color-text-strong); font-size: 14px; font-weight: 800; }
+.admin-section-head small { color: var(--color-text-muted); font-size: 12px; text-align: right; }
 
 .admin-mini-table { width: 100%; font-size: 12px; }
 .admin-mini-table td {
