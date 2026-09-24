@@ -1,9 +1,8 @@
 {
   "trailingSlash": true,
   "rewrites": [
-    {
-      "source": "/:path*",
-      "destination": "https://ststats.github.io/staruniv/:path*"
-    }
+    { "source": "/", "destination": "https://ststats.github.io/staruniv/index.html" },
+    { "source": "/:path*/", "destination": "https://ststats.github.io/staruniv/:path*/index.html" },
+    { "source": "/:path*", "destination": "https://ststats.github.io/staruniv/:path*" }
   ]
 }
