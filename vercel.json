@@ -1,18 +1,7 @@
 {
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
-  "trailingSlash": true,
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "https://ststats.github.io/staruniv/index.html"
-    },
-    {
-      "source": "/:path*/",
-      "destination": "https://ststats.github.io/staruniv/:path*/index.html"
-    },
-    {
-      "source": "/:path*",
-      "destination": "https://ststats.github.io/staruniv/:path*"
-    }
+  "routes": [
+    { "src": "^/((?:[^/]+/)*[^/.]+)$", "status": 308, "headers": { "Location": "/$1/" } },
+    { "src": "^/(.*)$", "dest": "https://ststats.github.io/staruniv/$1" }
   ]
 }

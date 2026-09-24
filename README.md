@@ -30,7 +30,7 @@
 GitHub Pages로 넘깁니다(rewrite). 그래서 늘 Pages와 같은 최신 내용입니다. Vercel 프로젝트 설정(Root Directory가
 `docs`인지 저장소 루트인지)에 따라 읽는 위치가 달라서 `vercel.json`과 `docs/vercel.json`을 똑같이 둡니다.
 Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand`로 이 파일이 바뀐 커밋만 배포하게 해 두었습니다.
-폴더 주소(`/`, `/members/`)는 `…/index.html`로 따로 넘깁니다(`/:path*` 하나로는 안 맞음).
+`rewrites`가 아니라 `routes`를 씁니다. `rewrites`는 Vercel이 먼저 자기 파일을 찾아 폴더 주소(`/`, `/members/`)에서 404를 내기 때문입니다.
 
 달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`이고, 커뮤니티용 Cloudflare Worker가
 이 주소를 가져갑니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 배포합니다.
