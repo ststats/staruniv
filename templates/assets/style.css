@@ -2781,10 +2781,6 @@ html[data-theme="dark"] .cal-longterm-bar {
 .cal-day-cell.other-month:hover {
     background: var(--calendar-outside-bg);
 }
-.cal-day-cell.selected,
-.cal-day-cell.selected:hover {
-    background: var(--color-primary-tint);
-}
 
 .cal-month-id { min-width: 0; }
 .cal-month-year {
