@@ -129,6 +129,9 @@ def load_inputs():
         return json.load(f)
 
 
+STATIC_OWNED_DIRS = {'images'}
+
+
 def copy_static_assets():
     """정적 자산(CSS/JS 등)은 데이터와 무관하게 그대로 복사.
     templates/assets/ 아래에 두고 소스로 관리, 빌드마다 docs/로 동기화.
@@ -152,11 +155,14 @@ def copy_static_assets():
             target = os.path.join(OUT_DIR, name)
             if os.path.isdir(source):
                 os.makedirs(target, exist_ok=True)
-                source_files = set(os.listdir(source))
-                for stale in set(os.listdir(target)) - source_files:
-                    stale_path = os.path.join(target, stale)
-                    if os.path.isfile(stale_path):
-                        os.unlink(stale_path)
+                # 원본에 없는 파일을 지우는 건 통째로 templates/static 소유인 폴더(images)만이다.
+                # data처럼 빌드가 다른 파일(site_*.json, calendar.png)도 쓰는 폴더는 건드리지 않는다.
+                if name in STATIC_OWNED_DIRS:
+                    source_files = set(os.listdir(source))
+                    for stale in set(os.listdir(target)) - source_files:
+                        stale_path = os.path.join(target, stale)
+                        if os.path.isfile(stale_path):
+                            os.unlink(stale_path)
                 shutil.copytree(source, target, dirs_exist_ok=True)
             elif os.path.isfile(source):
                 shutil.copyfile(source, target)
