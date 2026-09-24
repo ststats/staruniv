@@ -5,7 +5,9 @@
   const PROMO=[8,7,6,5,4,3,2,1,0];
   // 티어 사다리(ststat TIER_ORDER와 같은 순서)
   const TIER_ORDER=['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
-  const tierLabel=t=>/^\d$/.test(String(t))?`${t}티어`:`${t}`;
+  const tierLabel=t=>/^\d$/.test(String(t))?`${t}티어`:(String(t)==='체크'?'미분류':`${t}`);
+  // 사다리에 없는 값(체크 = 아직 티어를 안 매긴 사람 등)은 맨 끝으로 보낸다
+  const tierRank=t=>{const i=TIER_ORDER.indexOf(String(t));return i<0?TIER_ORDER.length:i;};
   // 티어 랭킹 보기 상태. 활성 Elo 스냅샷을 한 번 읽어 두고 화면에서만 거른다.
   const R={loaded:false,loading:null,rows:[],meta:{},tier:'',q:'',gapOnly:false};
 
@@ -96,7 +98,8 @@
     }
     const clean=key=>[...new Set(all.map(r=>String(r[key]||'').trim()).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,'ko',{numeric:true,sensitivity:'base'}));
-    S.options={tiers:clean('tier'),affs:clean('affiliation'),races:clean('race')};
+    const tiers=clean('tier').sort((a,b)=>tierRank(a)-tierRank(b)||a.localeCompare(b,'ko'));
+    S.options={tiers,affs:clean('affiliation'),races:clean('race')};
   }
 
   async function load(page=0){
@@ -150,7 +153,7 @@
     const selected=(value,current)=>String(value)===String(current||'')?' selected':'';
     root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">티어표 관리</h1><div class="admin-hero-actions"><button class="admin-btn" id="tierBulk">일괄 수정</button><button class="admin-btn primary" id="tierAdd">+ 새 선수</button></div><p class="page-header-subtitle">선수 정보와 승급 이력을 관리합니다. 체크한 선수는 일괄 수정으로 소속·티어를 한 번에 바꿀 수 있습니다.</p></div>${viewTabs()}</div><div class="admin-dedicated-shell">
       <div class="admin-filter-grid"><input class="admin-input" id="tierQ" placeholder="이름 · 닉네임 · SOOP ID · ELO ID" value="${esc(S.filters.q)}">
-      <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.tier)}>${esc(x)}</option>`).join('')}</select>
+      <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.tier)}>${esc(tierLabel(x))}</option>`).join('')}</select>
       <select class="admin-input" id="tierAff"><option value="">전체 소속</option>${affs.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.aff)}>${esc(x)}</option>`).join('')}</select>
       <select class="admin-input" id="tierRace"><option value="">전체 종족</option>${races.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.race)}>${esc(x)}</option>`).join('')}</select><button class="admin-btn primary" id="tierSearch">조회</button></div>
       <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th></th>${[['name','이름'],['nickname','닉네임'],['soop_id','SOOP ID'],['elo_id','ELO ID'],['gender','성별'],['race','종족'],['birth_date','생년월일'],['tier','티어'],['affiliation','소속'],['role','직책'],['promoted_tier_0','최근 승급일'],['modified_at','수정일']].map(([k,l])=>`<th><button class="admin-sort" data-sort="${k}">${l}</button></th>`).join('')}<th>관리</th></tr></thead><tbody>${S.rows.map(r=>{const warn=promotionWarnings(r);return`<tr data-tier-id="${r.id}" class="${warn.length?'has-warning':''}"><td><input type="checkbox" data-select-id="${r.id}"${S.selected.has(r.id)?' checked':''}></td><td>${esc(r.name)}</td><td><b>${esc(r.nickname)}</b>${warn.length?`<span class="admin-warning" title="${esc(warn.join(' / '))}">!</span>`:''}</td><td>${esc(r.soop_id)}</td><td>${esc(r.elo_id)}</td><td>${esc(r.gender)}</td><td>${esc(r.race)}</td><td>${esc(r.birth_date)}</td><td>${esc(r.tier)}</td><td>${esc(r.affiliation)}</td><td>${esc(r.role)}</td><td>${esc(latestPromotion(r))}</td><td>${esc(r.modified_at)}</td><td><button class="admin-btn" data-edit-tier="${r.id}">수정</button><button class="admin-btn" data-history-tier="${r.id}">이력</button></td></tr>`}).join('')||'<tr><td colspan="14">검색 결과가 없습니다.</td></tr>'}</tbody></table></div>
@@ -189,7 +192,7 @@
       if(metaRes.error)throw metaRes.error;
       const who={};people.forEach(p=>{who[p.elo_id]=p;});
       R.rows=ranks.filter(r=>r.tier_rank!=null).map(r=>({...r,...(who[r.elo_id]||{}),se:se[r.elo_id]??null}))
-        .sort((a,b)=>TIER_ORDER.indexOf(String(a.tier))-TIER_ORDER.indexOf(String(b.tier))||a.tier_rank-b.tier_rank);
+        .sort((a,b)=>tierRank(a.tier)-tierRank(b.tier)||a.tier_rank-b.tier_rank);
       R.meta=(metaRes.data||[])[0]||{};
       R.loaded=true;
     })().finally(()=>{R.loading=null;});
