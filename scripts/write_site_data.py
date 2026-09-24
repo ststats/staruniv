@@ -98,7 +98,8 @@ def main() -> None:
     shell_payload = {
         "members": [pick(row, SITE_MEMBER_FIELDS) for row in members],
         "matchCount": len(matches),
-        "roundCount": len(rounds),
+        # 내전은 양쪽 선수 기록을 위해 세트를 뒤집은 복제본(_mirrored)이 한 벌 더 있다 - 세트 수에서는 뺀다
+        "roundCount": sum(1 for row in rounds if not row.get("_mirrored")),
     }
     records_payload = {
         "matches": [pick(row, SITE_MATCH_FIELDS) for row in matches],

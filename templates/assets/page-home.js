@@ -37,7 +37,8 @@ async function fetchHomePreviewData(path) {
 // 캄몬스타즈 전적만 센다. SiteData는 Supabase에서 이미 받아둔 값을 재사용한다.
 function renderHomeRecordsPreview(box) {
     const rows = [
-        ['누적 인원', (SiteData.members || []).length, '명'],
+        // 같은 사람이 이름을 바꿔 다시 들어오면 멤버 행이 둘이 된다 - SOOP ID로 한 명으로 센다
+        ['누적 인원', new Set((SiteData.members || []).map(m => m['SOOP ID'] || m['이름'])).size, '명'],
         ['누적 매치', Number(SiteData.matchCount || 0), '경기'],
         ['누적 세트', Number(SiteData.roundCount || 0), '세트'],
     ];
