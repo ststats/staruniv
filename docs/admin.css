@@ -1,1801 +1,998 @@
-body {
-  min-width: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
+/* =============================================================================
+   스타대학 admin.css
+   관리자 화면은 공개 페이지(style.css) 위에 편집 도구만 얹는다. 그래서 여기서는 새 색·글자
+   크기·모서리를 고르지 않고 style.css의 토큰과 부품 모양을 그대로 빌려 쓴다.
+     입력칸  = .h2h-input      (42px · notch-md · 바탕색으로 포커스 표시)
+     라벨    = .h2h-slot-label (9px 대문자 눈썹 라벨)
+     버튼    = .sub-tab / .entry-auto-apply (회청 바탕 · 주요 동작은 네이비 무늬 면)
+     보조 동작 = .text-action
+     표      = .stat-table     (네이비 무늬 머리글 · 13px · 줄 호버)
+     제목    = .section-title  (영문 눈썹 + 굵은 제목 + 밑줄)
+   구성: 토큰 → 로그인 → 편집 바 → 버튼 → 폼 → 편집 서랍 → 공개 화면 위 편집 버튼
+         → 전용 관리 화면(전적·티어표) → 연혁 → 반응형
+   ============================================================================= */
+
+
+/* =============================================================================
+   1. 토큰
+   ============================================================================= */
+body.admin-mode {
+    --admin-bar-h: 40px;
+    --sidebar-top: calc(84px + var(--admin-bar-h));
 }
 
-.admin-site-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
+.admin-hidden.admin-hidden { display: none !important; }
 
-.admin-site-nav .nav-menu .nav-item {
-  appearance: none;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font-family: inherit;
-}
 
-.admin-hero {
-  background: var(--color-head-bg);
-  color: var(--color-head-text);
-  border-bottom: 3px solid var(--color-primary);
+/* =============================================================================
+   2. 로그인 · 권한 없음 · 설정 오류
+   ============================================================================= */
+.admin-login-wrap {
+    display: grid;
+    place-items: center;
+    min-height: calc(100dvh - 68px - var(--admin-bar-h, 0px));
+    padding: var(--space-page-top) 16px var(--space-page-bottom);
 }
-
-.admin-hero-inner {
-  min-height: 132px;
-  padding-top: 24px;
-  padding-bottom: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 28px;
-}
-
-.admin-eyebrow {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--color-primary-light);
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: .16em;
-}
-
-.admin-hero h1 {
-  margin: 0;
-  font-size: clamp(32px, 4vw, 52px);
-  font-weight: 900;
-  letter-spacing: -.04em;
-}
-
-.admin-hero p {
-  margin: 8px 0 0;
-  color: color-mix(in srgb, var(--color-head-text) 72%, transparent);
-  font-size: 14px;
-}
-
-.admin-shell {
-  padding-top: 32px;
-  padding-bottom: 64px;
-}
-
-#adminView:not(.admin-hidden) {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  align-items: start;
-}
-.admin-public-page {
-  display: block;
-  width: 100%;
-  height: calc(100dvh - var(--navbar-h));
-  border: 0;
-}
-.admin-edit-surface {
-  min-width: 0;
-  max-height: calc(100dvh - var(--navbar-h));
-  overflow: auto;
-  padding: 20px 16px;
-  background: var(--color-bg);
-}
-.admin-edit-surface .admin-hero { background: transparent; border: 0; color: var(--color-text-main); }
-.admin-edit-surface .admin-hero-inner { min-height: 0; padding: 0; gap: 12px; }
-.admin-edit-surface .admin-hero-inner > div:first-child,
-.admin-edit-surface .admin-user,
-.admin-edit-surface .admin-calendar-main,
-.admin-edit-surface .cal-selected-card-wrapper { display: none; }
-.admin-edit-surface .admin-subtabs { margin: 0 0 16px; }
-.admin-edit-surface .admin-subtabs .sub-tab { color: var(--color-text-sub); background: var(--color-bg-subtle); }
-.admin-edit-surface .admin-subtabs .sub-tab.active { color: #fff; background: var(--select-on-light); }
-.admin-edit-surface .admin-shell { padding: 0; }
-.admin-edit-surface .admin-calendar-layout { grid-template-columns: minmax(0, 1fr); }
-.admin-edit-surface .admin-calendar-side { position: static; max-height: none; overflow: visible; }
-.admin-edit-surface .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
-.admin-edit-surface .admin-field.span-2,
-.admin-edit-surface .admin-field.span-3 { grid-column: auto; }
-.admin-edit-surface .admin-card:has(> .admin-editor:not(.hidden)) { display: block; }
-.admin-edit-surface .admin-card > .admin-editor { position: static; max-height: none; margin-top: 16px; }
-.admin-edit-surface .admin-card:has(> .admin-editor:not(.hidden)) > .admin-table-wrap { display: none; }
-.admin-edit-surface .admin-search { min-width: 0; }
-.admin-edit-surface .admin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 960px) {
-  #adminView:not(.admin-hidden) { grid-template-columns: minmax(0, 1fr); }
-  .admin-public-page { height: 65dvh; }
-  .admin-edit-surface { max-height: none; overflow: visible; padding: 24px 18px; }
-}
-
-.admin-subtabs {
-  flex-basis: 100%;
-  margin-top: 2px;
-}
-
-.admin-subtabs[hidden] {
-  display: none;
-}
-
-.admin-subtabs .sub-tab {
-  appearance: none;
-  border: 1px solid transparent;
-  font-family: inherit;
-  background: color-mix(in srgb, var(--color-head-text) 9%, transparent);
-  color: color-mix(in srgb, var(--color-head-text) 72%, transparent);
-}
-
-.admin-subtabs .sub-tab.active {
-  border-color: var(--color-head-text);
-  background: var(--color-head-text);
-  color: var(--color-head-bg);
-}
-
-.admin-subtabs .sub-tab:hover:not(.active) {
-  background: color-mix(in srgb, var(--color-head-text) 20%, transparent);
-  color: var(--color-head-text);
-}
-
-.admin-user,
-.admin-toolbar,
-.admin-toolbar-left,
-.admin-toolbar-right,
-.admin-row-actions,
-.admin-form-actions,
-.admin-pager {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.admin-user {
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-.admin-pill {
-  padding: 7px 11px;
-  border: 1px solid color-mix(in srgb, var(--color-head-text) 25%, transparent);
-  clip-path: var(--notch-xs);
-  background: color-mix(in srgb, var(--color-head-text) 9%, transparent);
-  color: var(--color-head-text);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.admin-grid {
-  display: block;
-  min-width: 0;
-}
-
-.admin-panel {
-  display: none;
-  min-width: 0;
-}
-
-.admin-panel.active {
-  display: block;
-}
-
-.admin-panel-actions {
-  display: flex;
-  justify-content: flex-end;
-  min-height: 28px;
-  margin-bottom: var(--space-compact-gap);
-}
-
-.admin-calendar-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-  gap: 18px;
-  align-items: start;
-}
-
-.admin-calendar-main,
-.admin-calendar-side {
-  min-width: 0;
-}
-
-.admin-calendar-main .cal-today-card-wrapper {
-  margin-bottom: 18px;
-}
-
-.admin-calendar-side {
-  position: sticky;
-  top: 84px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
-}
-
-.admin-editor-heading {
-  margin: 0;
-}
-
-.admin-offair-editor {
-  box-shadow: none;
-}
-
-.admin-table-compact {
-  min-width: 0;
-}
-
-.cal-card-actions {
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.cal-card-actions button {
-  padding: 2px 4px;
-  border: 0;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.cal-card-actions .edit-btn { color: var(--color-primary); }
-.cal-card-actions .delete-btn { color: var(--color-lose); }
 
 .admin-card {
-  padding: 18px;
-  border: 0;
-  clip-path: var(--notch-lg);
-  background: var(--color-card);
-  box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
-}
-
-.admin-card:has(> .admin-table-wrap) {
-  padding: 0;
-  clip-path: none;
-  background: transparent;
-  box-shadow: none;
-}
-
-.admin-card:has(> .admin-table-wrap) > .admin-table-wrap {
-  clip-path: var(--notch-lg);
-  background: var(--color-card);
-  box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
-}
-
-.admin-card + .admin-card {
-  margin-top: 14px;
-}
-
-.admin-card > .admin-note {
-  margin: 6px 0 0;
-}
-
-.admin-section-title {
-  margin-bottom: 14px;
-  padding-bottom: 9px;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.admin-section-title > div {
-  position: relative;
-}
-
-.admin-section-title h2,
-.admin-section-title h3 {
-  margin: 0;
-  color: var(--color-text);
-  font-weight: 900;
-  letter-spacing: -.025em;
-}
-
-.admin-section-title h2 {
-  font-size: 22px;
-}
-
-.admin-section-title h3 {
-  font-size: 17px;
-}
-
-.admin-section-title p {
-  margin: 4px 0 0;
-  color: var(--color-text-sub);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.admin-section-title > div::after {
-  position: absolute;
-  right: 0;
-  bottom: -10px;
-  left: 0;
-  height: 2px;
-  background: var(--color-primary);
-  content: "";
-}
-
-.admin-section-title > .admin-btn,
-.admin-section-title > .admin-btn.primary {
-  min-height: 28px;
-  padding: 0 var(--space-inline-gap);
-  border: 0;
-  clip-path: none;
-  background: transparent;
-  color: var(--color-text-sub);
-  font-size: var(--fs-meta);
-  font-weight: 700;
-}
-
-.admin-section-title > .admin-btn:hover,
-.admin-section-title > .admin-btn.primary:hover {
-  background: var(--color-row-hover);
-  color: var(--color-primary);
-}
-
-.admin-toolbar {
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.admin-toolbar-left,
-.admin-toolbar-right {
-  flex-wrap: wrap;
-}
-
-.admin-input,
-.admin-select,
-.admin-textarea {
-  width: 100%;
-  min-height: 40px;
-  padding: 9px 11px;
-  border: 0;
-  border-radius: 0;
-  clip-path: var(--notch-sm);
-  background: var(--color-bg-subtle);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 13px;
-  outline: none;
-}
-
-.admin-input:focus,
-.admin-select:focus,
-.admin-textarea:focus {
-  background: var(--color-card);
-  box-shadow: inset 0 -2px var(--color-primary);
-}
-
-.admin-search {
-  min-width: 280px;
-}
-
-.admin-btn {
-  min-height: 38px;
-  padding: 8px 13px;
-  border: 0;
-  border-radius: 0;
-  clip-path: var(--notch-xs);
-  background: var(--color-bg-subtle);
-  color: var(--color-text);
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.admin-btn:hover {
-  background: var(--color-row-hover);
-  color: var(--color-primary);
-}
-
-.admin-btn.primary {
-  background: var(--select-on-light);
-  color: #fff;
-}
-
-.admin-btn.danger {
-  background: color-mix(in srgb, var(--color-lose) 8%, var(--color-card));
-  color: var(--color-lose);
-}
-
-.admin-btn-on-dark {
-  border-color: color-mix(in srgb, var(--color-head-text) 30%, transparent);
-  background: transparent;
-  color: var(--color-head-text);
-}
-
-.admin-btn-on-dark:hover {
-  border-color: var(--color-head-text);
-  color: var(--color-head-text);
-}
-
-.admin-btn:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-}
-
-.admin-table-wrap {
-  max-width: 100%;
-  overflow: auto;
-  border: 0;
-}
-
-.admin-table {
-  width: 100%;
-  min-width: 880px;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.admin-table th,
-.admin-table td {
-  padding: 10px;
-  border-bottom: 1px solid var(--panel-line);
-  white-space: nowrap;
-  text-align: left;
-}
-
-.admin-table th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--color-head-bg);
-  color: var(--color-head-text);
-  font-weight: 800;
-}
-
-.admin-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.admin-table tbody tr:hover {
-  background: var(--color-card-hover);
-}
-
-.admin-form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.admin-field label,
-.admin-field > span {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--color-text-sub);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.admin-field.span-2 {
-  grid-column: span 2;
-}
-
-.admin-field.span-3 {
-  grid-column: 1 / -1;
-}
-
-.admin-form-actions {
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.admin-editor {
-  margin-top: 16px;
-  background: var(--color-card);
-}
-
-/* 예전 관리자처럼 목록과 편집기를 같은 화면에 둔다. 편집을 열면 목록은 왼쪽,
-   저장 폼은 오른쪽에 붙어 보여 행을 확인하면서 바로 수정할 수 있다. */
-.admin-card:has(> .admin-editor:not(.hidden)) {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
-  grid-template-rows: auto 1fr;
-  gap: 0 16px;
-  align-items: start;
-}
-
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-toolbar,
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-section-title {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-table-wrap {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor {
-  position: sticky;
-  top: 84px;
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  max-height: calc(100vh - 100px);
-  margin-top: 0;
-  overflow: auto;
-}
-
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-form-grid {
-  grid-template-columns: 1fr;
-}
-
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-field.span-2,
-.admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-field.span-3 {
-  grid-column: auto;
-}
-
-.admin-editor.hidden,
-.admin-hidden.admin-hidden {
-  display: none;
-}
-
-.admin-note {
-  color: var(--color-text-sub);
-  font-size: 12px;
-  line-height: 1.65;
-}
-
-.admin-status {
-  display: none;
-  margin-bottom: 14px;
-  padding: 11px 13px;
-  border-left: 3px solid currentColor;
-  background: var(--color-card);
-  font-size: 12px;
-}
-
-.admin-status.show {
-  display: block;
-}
-
-.admin-status.ok { color: #198754; }
-.admin-status.error { color: var(--color-lose); }
-.admin-status.info { color: var(--color-primary); }
-
-.admin-login-wrap {
-  min-height: calc(100vh - 68px);
-  display: grid;
-  place-items: center;
-  padding: 40px 20px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-head-bg) 96%, transparent), color-mix(in srgb, var(--color-primary) 18%, var(--color-head-bg)));
+    background: var(--color-card);
+    clip-path: var(--notch-lg);
 }
 
 .admin-login {
-  width: min(440px, 100%);
-  padding: 28px;
+    width: min(400px, 100%);
+    padding: 0 24px 24px;
 }
-
-.admin-login::before {
-  content: "ADMIN CONSOLE";
-  display: block;
-  margin-bottom: 10px;
-  color: var(--color-primary);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .14em;
-}
-
+/* 로그인 상자 머리는 공개 사이트의 네이비 면(달력 월 표시칸)과 같은 모양 */
 .admin-login h1 {
-  margin: 0 0 6px;
-  font-size: 26px;
-  font-weight: 900;
+    margin: 0 -24px 20px;
+    padding: 18px 24px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: var(--navy-on-text);
+    font-size: var(--fs-heading);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+.admin-login h1::before {
+    content: "ADMIN";
+    display: block;
+    margin-bottom: 5px;
+    color: var(--navy-on-muted);
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+}
+.admin-login .admin-btn { width: 100%; margin-top: 4px; }
+
+.admin-note {
+    margin: 0 0 16px;
+    color: var(--color-text-sub);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.admin-note code {
+    padding: 1px 4px;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-main);
+    font-size: 11px;
+}
+.admin-status:empty { display: none; }
+.admin-status {
+    margin-bottom: 12px;
+    padding: 9px 12px;
+    background: color-mix(in srgb, var(--color-lose) 9%, var(--color-card));
+    color: var(--color-lose);
+    clip-path: var(--notch-sm);
+    font-size: var(--fs-meta);
+    font-weight: 700;
 }
 
-.admin-login .admin-field {
-  margin-top: 14px;
+
+/* =============================================================================
+   3. 편집 바 (화면 맨 위 네이비 띠)
+   ============================================================================= */
+body.admin-mode { padding-top: var(--admin-bar-h); }
+body.admin-mode > .top-navbar { top: var(--admin-bar-h); }
+
+.admin-inline-bar {
+    position: fixed;
+    z-index: 1200;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--admin-bar-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 max(16px, calc((100vw - 1240px) / 2 + 32px));
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    border-bottom: var(--head-line-w) solid var(--head-line);
+    color: var(--navy-on-text);
+}
+.admin-inline-left,
+.admin-inline-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.admin-inline-actions { gap: 2px; }
+.admin-edit-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    background: var(--color-primary);
+    color: #fff;
+    clip-path: var(--notch-xs);
+    font-size: var(--fs-eyebrow);
+    font-weight: 800;
+    letter-spacing: 0.16em;
+}
+.admin-inline-left strong {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.admin-save-state {
+    padding-left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--navy-on-muted);
+    font-size: var(--fs-meta);
+    font-weight: 600;
+}
+.admin-save-state[data-kind="dirty"],
+.admin-save-state[data-kind="saving"] { color: #ffd479; }
+.admin-save-state[data-kind="error"] { color: #ff8a8a; }
+
+/* 바 안의 버튼은 네이비 면 위의 .text-action과 같은 모양 */
+.admin-inline-bar .admin-btn {
+    min-height: 28px;
+    padding: 0 var(--space-inline-gap);
+    background: transparent;
+    color: var(--navy-on-muted);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+}
+.admin-inline-bar .admin-btn:hover,
+.admin-inline-bar .admin-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+/* 편집 모드 켜짐 = 네이비 면 위 선택 표시(흰 바탕 + 네이비 글씨) */
+.admin-inline-bar #adminEditModeButton[aria-pressed="true"] {
+    background: #fff;
+    color: var(--navy);
 }
 
-.admin-login .admin-btn {
-  width: 100%;
-  margin-top: 16px;
+.admin-toast {
+    position: fixed;
+    z-index: 1400;
+    top: calc(var(--admin-bar-h) + 12px);
+    right: 16px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 12px 16px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    border-left: 3px solid var(--color-primary);
+    clip-path: var(--notch-sm);
+    color: var(--navy-on-text);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.5;
+    box-shadow: var(--shadow-card-hover);
+}
+.admin-toast[data-kind="error"] { border-left-color: var(--color-lose); }
+
+
+/* =============================================================================
+   4. 버튼 (.sub-tab과 같은 면 버튼)
+   ============================================================================= */
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-label-gap);
+    min-height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 0;
+    clip-path: var(--notch-sm);
+    background: var(--panel-control);
+    color: var(--color-text-sub);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .15s, color .15s;
+}
+.admin-btn:hover,
+.admin-btn:focus-visible {
+    background: var(--color-row-hover);
+    color: var(--color-primary);
+    outline: 0;
+}
+/* 주요 동작(저장·추가)은 엔트리 '자동 매칭 적용'과 같은 네이비 무늬 면 */
+.admin-btn.primary {
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: var(--navy-on-text);
+}
+.admin-btn.primary:hover,
+.admin-btn.primary:focus-visible {
+    color: #fff;
+    filter: brightness(1.12);
+}
+html[data-theme="dark"] .admin-btn.primary { background-color: var(--color-primary); color: #fff; }
+.admin-btn.danger {
+    background: color-mix(in srgb, var(--color-lose) 9%, var(--color-card));
+    color: var(--color-lose);
+}
+.admin-btn.danger:hover {
+    background: var(--color-lose);
+    color: #fff;
+}
+.admin-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    filter: none;
+}
+.admin-btn-compact {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: var(--fs-meta);
+    clip-path: var(--notch-xs);
+}
+
+.admin-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 0;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
+    clip-path: var(--notch-sm);
+    font-size: 16px;
+    cursor: pointer;
+}
+.admin-icon-btn:hover {
+    background: color-mix(in srgb, var(--color-lose) 9%, var(--color-card));
+    color: var(--color-lose);
+}
+
+
+/* =============================================================================
+   5. 폼 (입력칸 = .h2h-input, 라벨 = .h2h-slot-label)
+   ============================================================================= */
+.admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-compact-gap);
+}
+.admin-form-grid > .admin-field { min-width: 0; }
+
+.admin-field {
+    display: flex;
+    flex-direction: column;
+    margin: 0 0 var(--space-card-gap);
+}
+.admin-field > span,
+.admin-field > label:not(.admin-check) {
+    display: block;
+    margin-bottom: var(--space-label-gap);
+    color: var(--color-text-sub);
+    font-size: var(--fs-eyebrow);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 16px;
+}
+.admin-field > small {
+    margin-top: 5px;
+    color: var(--color-text-muted);
+    font-size: var(--fs-meta);
+}
+
+.admin-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-bg-subtle);
+    clip-path: var(--notch-md);
+    color: var(--color-text-main);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: background-color .15s, box-shadow .15s;
+}
+.admin-input::placeholder { color: var(--color-text-faint); }
+/* 외곽선은 노치에 잘려 모서리에서 끊겨 보인다 - 바탕색 + 밑줄로 표시한다 */
+.admin-input:focus {
+    background: var(--color-primary-tint);
+    box-shadow: inset 0 -2px var(--color-primary);
+}
+select.admin-input { padding-right: 30px; cursor: pointer; }
+input[type="file"].admin-input {
+    height: auto;
+    padding: 9px 13px;
+    font-size: 12px;
+}
+input[type="file"].admin-input::file-selector-button {
+    margin-right: 10px;
+    padding: 6px 10px;
+    border: 0;
+    background-color: var(--navy);
+    color: var(--navy-on-text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.admin-textarea,
+textarea.admin-input {
+    height: auto;
+    min-height: 96px;
+    padding: 11px 13px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.admin-help {
+    margin: 0 0 var(--space-card-gap);
+    color: var(--color-text-muted);
+    font-size: var(--fs-meta);
+    line-height: 1.6;
+}
+
+.admin-check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-label-gap);
+    min-height: 42px;
+    margin: 0;
+    color: var(--color-text-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.admin-mode input[type="checkbox"],
+.admin-mode input[type="radio"] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+/* 일정 색상: 달력 이벤트 색(.cal-color-*)을 그대로 견본으로 쓴다 */
+.admin-color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+.admin-color-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 10px;
+    background: var(--color-bg-subtle);
+    clip-path: var(--notch-sm);
+    cursor: pointer;
+}
+.admin-color-option input { position: absolute; opacity: 0; pointer-events: none; }
+.admin-color-option b { color: var(--color-text-sub); font-size: var(--fs-meta); font-weight: 700; }
+.admin-color-swatch {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    clip-path: var(--notch-xs);
+}
+.admin-color-swatch.cal-color-red { background: #ff2538; }
+.admin-color-swatch.cal-color-orange { background: #ff8a00; }
+.admin-color-swatch.cal-color-yellow { background: #ffd43b; }
+.admin-color-swatch.cal-color-green { background: #16c75b; }
+.admin-color-swatch.cal-color-blue { background: #1677ff; }
+.admin-color-swatch.cal-color-indigo { background: #3346b5; }
+.admin-color-swatch.cal-color-purple { background: #7c3aed; }
+.admin-color-swatch.cal-color-light_gray { background: #e5e7eb; }
+.admin-color-option:hover { background: var(--color-row-hover); }
+.admin-color-option:has(input:checked) { background: var(--select-on-light); }
+.admin-color-option:has(input:checked) b { color: #fff; }
+
+.admin-preview-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-compact-gap);
+    margin-bottom: var(--space-card-gap);
+}
+.admin-preview-row b {
+    display: block;
+    margin-bottom: var(--space-label-gap);
+    color: var(--color-text-sub);
+    font-size: var(--fs-eyebrow);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+.admin-media-preview {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--color-placeholder-bg);
+    clip-path: var(--notch-md);
+}
+.admin-media-preview:empty::after {
+    content: "없음";
+    color: var(--color-text-faint);
+    font-size: var(--fs-meta);
+}
+.admin-media-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 연혁 참여 인원 */
+.admin-participants { display: flex; flex-direction: column; gap: 6px; }
+.admin-participant-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px;
+    gap: 6px;
+}
+.admin-participant-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+.admin-participant-tools .admin-help { margin: 0; }
+
+/* 목록형 설정 (메뉴 순서 · 서브탭 · 채널) */
+.admin-order-list,
+.admin-list { display: flex; flex-direction: column; gap: 4px; }
+.admin-list { margin-top: var(--space-compact-gap); }
+.admin-order-row,
+.admin-setting-row,
+.admin-list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-compact-gap);
+    min-height: 46px;
+    padding: 0 8px 0 14px;
+    border: 0;
+    background: var(--color-bg-subtle);
+    clip-path: var(--notch-sm);
+    color: var(--color-text-main);
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+}
+.admin-order-row b,
+.admin-setting-row b,
+.admin-list-row b { flex: 1; min-width: 0; font-weight: 700; }
+.admin-setting-row { margin-bottom: 4px; }
+.admin-list-row { cursor: pointer; }
+.admin-list-row span { color: var(--color-text-muted); font-size: var(--fs-meta); }
+.admin-list-row:hover { background: var(--color-row-hover); color: var(--color-primary); }
+.admin-order-handle { color: var(--color-text-faint); }
+.admin-order-actions { display: flex; gap: 2px; }
+.admin-order-actions button {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    background: var(--color-card);
+    color: var(--color-text-sub);
+    clip-path: var(--notch-xs);
+    cursor: pointer;
+}
+.admin-order-actions button:hover { color: var(--color-primary); }
+
+/* 폼 안의 작은 제목 (세트 · 승급 이력): .section-title-sm */
+.admin-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: var(--space-content-gap) 0 var(--space-compact-gap);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+.admin-section-head b { color: var(--color-text-strong); font-size: 14px; font-weight: 800; }
+
+.admin-mini-table { width: 100%; font-size: 12px; }
+.admin-mini-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+
+/* =============================================================================
+   6. 편집 서랍 (오른쪽에서 열리는 편집 창 - 공개 사이트의 모달과 같은 머리)
+   ============================================================================= */
+.admin-drawer {
+    position: fixed;
+    z-index: 1300;
+    inset: 0;
+    pointer-events: none;
+}
+.admin-drawer[aria-hidden="false"] { pointer-events: auto; }
+.admin-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 10, 20, .45);
+    opacity: 0;
+    transition: opacity .2s;
+}
+.admin-drawer[aria-hidden="false"] .admin-drawer-backdrop { opacity: 1; }
+.admin-drawer-sheet {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(520px, 100vw);
+    height: 100%;
+    background: var(--color-card);
+    transform: translateX(100%);
+    transition: transform .22s ease;
+}
+.admin-drawer[aria-hidden="false"] .admin-drawer-sheet { transform: none; }
+body.admin-drawer-open { overflow: hidden; }
+
+.admin-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: var(--navy-on-text);
+}
+.admin-drawer-eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--navy-on-muted);
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+.admin-drawer-head h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+.admin-drawer-close {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--navy-on-text);
+    clip-path: var(--notch-xs);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+.admin-drawer-close:hover { background: #fff; color: var(--navy); }
+
+.admin-drawer-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.admin-drawer-form > #adminDrawerBody {
+    flex: 1;
+    overflow: auto;
+    padding: 20px 20px 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+}
+.admin-drawer-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-card);
+}
+.admin-drawer-spacer { flex: 1; }
+.admin-drawer-actions .admin-btn { min-height: 40px; padding: 0 18px; }
+
+
+/* =============================================================================
+   7. 공개 화면 위 편집 버튼
+   공개 화면을 가리지 않도록 작고 조용하게 둔다. 평소엔 .text-action 모양이고,
+   카드 위에 뜨는 것만 파랑 칩으로 눈에 띄게 한다.
+   ============================================================================= */
+.admin-inline-edit,
+.admin-inline-add,
+.admin-nav-manage,
+.admin-subtab-manage,
+.admin-floating-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 26px;
+    padding: 0 9px;
+    border: 0;
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+    clip-path: var(--notch-xs);
+    font-family: inherit;
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s, color .15s;
+}
+.admin-inline-edit:hover,
+.admin-inline-add:hover,
+.admin-nav-manage:hover,
+.admin-subtab-manage:hover,
+.admin-floating-add:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+/* 카드 오른쪽 위에 떠 있는 편집 · 숨김 버튼 */
+.admin-card-action,
+.admin-home-edit,
+.admin-section-eye {
+    position: absolute;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    min-height: 24px;
+    padding: 0 8px;
+    border: 0;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: var(--navy-on-text);
+    clip-path: var(--notch-xs);
+    font-family: inherit;
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    cursor: pointer;
+}
+.admin-card-action:hover,
+.admin-home-edit:hover,
+.admin-section-eye:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+.admin-card-action { top: 8px; right: 8px; }
+.admin-home-edit { top: 18px; right: max(16px, calc((100vw - 1240px) / 2 + 32px)); background: #fff; color: var(--navy); }
+.admin-section-eye { top: 0; right: 0; }
+.video-card,
+.tool-card,
+.home-carousel-slide,
+.home-live-broadcast,
+.home-notice-list { position: relative; }
+
+.admin-floating-add {
+    min-height: 32px;
+    margin: 0 0 var(--space-compact-gap);
+    padding: 0 12px;
+}
+
+/* 상단 메뉴 · 서브탭 안의 표시/숨김 눈 */
+.admin-eye-toggle,
+.admin-subtab-eye {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 5px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-faint);
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+.admin-eye-toggle:hover,
+.admin-subtab-eye:hover { color: var(--color-primary); }
+.page-header .admin-subtab-eye { color: inherit; opacity: .6; }
+.page-header .admin-subtab-eye:hover { opacity: 1; }
+.admin-nav-manage { margin: 0 12px 0 8px; flex: none; }
+.admin-subtab-manage {
+    align-self: center;
+    margin-left: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--navy-on-text);
+}
+.admin-subtab-manage:hover { background: #fff; color: var(--navy); }
+
+/* 숨긴 항목은 관리자에게만 반투명하게 보인다 */
+.admin-config-hidden { opacity: .38 !important; filter: grayscale(.5); }
+.admin-config-hidden[hidden] { display: initial !important; }
+.nav-item.admin-config-hidden[hidden],
+.sub-tab.admin-config-hidden[hidden] { display: flex !important; }
+.admin-default-subtab { box-shadow: inset 0 -2px var(--navy-accent); }
+
+.admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
+    .admin-section-eye, .admin-eye-toggle, .admin-subtab-eye, .admin-nav-manage,
+    .admin-subtab-manage, .admin-floating-add, .hist-admin-content-head .admin-btn, .hist-admin-bar) {
+    display: none !important;
+}
+
+
+/* =============================================================================
+   8. 전용 관리 화면 (전적 · 티어표): 공개 화면 대신 표를 보여 준다
+   ============================================================================= */
+.admin-dedicated-active .page-section { display: none !important; }
+.admin-dedicated-active #adminDedicatedRoot { display: block !important; }
+.admin-dedicated {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: var(--space-page-top) 32px var(--space-page-bottom);
+}
+
+/* 머리: .section-title과 같은 짜임 (영문 눈썹 → 제목 → 밑줄) */
+.admin-dedicated-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: var(--space-title-gap);
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--color-border);
+}
+.admin-dedicated-head > div:first-child { position: relative; }
+.admin-dedicated-head > div:first-child::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -10px;
+    height: 2px;
+    background: var(--navy-deco);
+}
+.admin-dedicated-head span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--title-eyebrow);
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+}
+.admin-dedicated-head h1 {
+    margin: 0;
+    color: var(--color-text-strong);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+.admin-dedicated-head > div:last-child:not(:first-child) { display: flex; gap: 6px; }
+
+.admin-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)) auto;
+    gap: 6px;
+    margin-bottom: var(--space-content-gap);
+}
+.admin-filter-grid .admin-input { background: var(--color-card); }
+.admin-filter-grid .admin-input:focus { background: var(--color-primary-tint); }
+.admin-filter-grid .admin-btn { min-height: 42px; padding: 0 20px; }
+
+/* 표: .stat-table과 같은 네이비 무늬 머리글 */
+.admin-table-wrap {
+    max-width: 100%;
+    overflow: auto;
+    background: var(--color-card);
+    clip-path: var(--notch-md);
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+}
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--color-text-body);
+    font-size: var(--fs-body);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.admin-table-wide { min-width: 1180px; }
+.admin-table th,
+.admin-table td {
+    padding: 10px 12px;
+    line-height: 20px;
+    text-align: center;
+    vertical-align: middle;
+}
+.admin-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--color-head-bg);
+    background-image: var(--navy-pattern);
+    color: var(--color-head-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+.admin-table td { border-bottom: 1px solid var(--color-border); }
+.admin-table td b { color: var(--color-text-strong); font-weight: 700; }
+.admin-table tbody tr:hover > td { background: var(--color-row-hover); }
+.admin-table tbody tr[data-match],
+.admin-table tbody tr[data-tier-id] { cursor: pointer; }
+.admin-table td .admin-btn { min-height: 28px; padding: 0 10px; font-size: var(--fs-meta); clip-path: var(--notch-xs); }
+.admin-table td .admin-btn + .admin-btn { margin-left: 4px; }
+.admin-table td .admin-input { min-width: 80px; height: 34px; padding: 0 8px; font-size: 12px; clip-path: var(--notch-sm); }
+.admin-table tr.has-warning > td { background: color-mix(in srgb, #f59f00 7%, var(--color-card)); }
+
+.admin-sort {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.admin-sort:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+
+.admin-expand-row > td {
+    padding: 12px;
+    background: var(--color-bg-subtle);
+}
+.admin-expand-row:hover > td { background: var(--color-bg-subtle) !important; }
+.admin-expand-row .admin-table th { font-size: var(--fs-meta); }
+.admin-expand-row .admin-table td { padding: 7px 10px; font-size: 12px; }
+
+.admin-warning {
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 5px;
+    background: #f59f00;
+    color: #fff;
+    clip-path: var(--notch-xs);
+    font-size: 10px;
+    font-weight: 800;
+    vertical-align: middle;
 }
 
 .admin-pager {
-  justify-content: flex-end;
-  margin-top: 12px;
-  color: var(--color-text-sub);
-  font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: var(--space-content-gap);
+    color: var(--color-text-sub);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
+.admin-pager .admin-btn { background: var(--color-card); }
 
-.admin-rounds {
-  margin-top: 16px;
-}
-
-.admin-round {
-  display: grid;
-  grid-template-columns: 70px 70px 1.3fr 70px 80px 90px 1.3fr 70px 80px 1.1fr 38px;
-  gap: 6px;
-  align-items: end;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--panel-line);
-}
-
-.admin-round .admin-field label {
-  font-size: 9px;
-}
-
-.admin-round .admin-input,
-.admin-round .admin-select {
-  min-height: 34px;
-  padding: 7px 6px;
-  font-size: 11px;
-}
-
-.admin-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.admin-kpi {
-  padding: 17px;
-  border-top: 3px solid var(--color-primary);
-}
-
-.admin-kpi b {
-  display: block;
-  font-size: 26px;
-  font-weight: 900;
-}
-
-.admin-kpi span {
-  color: var(--color-text-sub);
-  font-size: 11px;
-}
-
-.admin-kpi small {
-  display: block;
-  margin-top: 5px;
-  color: var(--color-lose);
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.admin-kpi.is-error {
-  border-top-color: var(--color-lose);
-}
-
-@media (max-width: 960px) {
-  .admin-hero-inner {
-    min-height: 160px;
-  }
-
-  .admin-form-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-calendar-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-calendar-side {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .admin-card:has(> .admin-editor:not(.hidden)) {
-    display: block;
-  }
-
-  .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor {
-    position: static;
-    max-height: none;
-    margin-top: 16px;
-    overflow: visible;
-  }
-
-  .admin-field.span-3 {
-    grid-column: 1 / -1;
-  }
-
-  .admin-round {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 12px;
-    border: 0;
-    clip-path: var(--notch-md);
+.admin-empty {
+    padding: 48px 16px;
     background: var(--color-card);
-    box-shadow: 0 9px 20px rgba(20, 24, 33, 0.1);
-    margin-bottom: 8px;
-  }
-
-  .admin-round .round-remove {
-    grid-column: 1 / -1;
-  }
-
-  .admin-kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .admin-hero-inner {
-    min-height: 0;
-    padding-top: 24px;
-    padding-bottom: 24px;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .admin-user {
-    justify-content: flex-start;
-  }
-
-  .admin-shell {
-    padding-top: 22px;
-    padding-bottom: 44px;
-  }
-
-  .admin-card {
-    padding: 14px;
-  }
-
-  .admin-section-title {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .admin-section-title > .admin-btn {
-    align-self: flex-start;
-  }
-
-  .admin-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-field.span-2,
-  .admin-field.span-3 {
-    grid-column: auto;
-  }
-
-  .admin-search {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .admin-toolbar-left,
-  .admin-toolbar-right {
-    width: 100%;
-  }
-
-  .admin-kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* ========================================================================== */
-/* ADMIN CONSOLE V2 — public-site aligned editor redesign                     */
-/* ========================================================================== */
-
-:root {
-  --admin-console-w: 430px;
-  --admin-console-bg: color-mix(in srgb, var(--color-bg) 94%, var(--color-primary) 6%);
-  --admin-console-panel: var(--color-card);
-  --admin-console-line: color-mix(in srgb, var(--color-border) 78%, transparent);
-  --admin-console-muted: var(--color-text-sub);
-  --admin-console-head: var(--color-head-bg);
-}
-
-/* The public page remains live on the left; the editor becomes a dedicated
-   right-side console. No extra preview iframe, no duplicated page chrome. */
-body.admin-mode {
-  min-width: 0;
-  padding-right: var(--admin-console-w);
-  background: var(--color-bg);
-}
-
-body.admin-mode > .top-navbar {
-  right: var(--admin-console-w);
-  width: auto;
-  box-shadow: 0 1px 0 var(--admin-console-line);
-}
-
-body.admin-mode #adminView:not(.admin-hidden) {
-  display: block;
-  min-width: 0;
-}
-
-body.admin-mode #adminWorkbench.container {
-  position: fixed;
-  z-index: 1200;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: var(--admin-console-w);
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  border-left: 1px solid var(--admin-console-line);
-  background: var(--admin-console-bg);
-  box-shadow: -18px 0 48px rgba(10, 18, 32, .10);
-}
-
-body.admin-mode .admin-edit-surface {
-  display: block;
-  width: 100%;
-  height: 100dvh;
-  max-height: none;
-  padding: 0 16px 34px;
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  background: transparent;
-}
-
-/* Console header / context actions */
-body.admin-mode .admin-workbar {
-  position: sticky;
-  z-index: 40;
-  top: 0;
-  display: grid;
-  gap: 12px;
-  margin: 0 -16px 16px;
-  padding: 14px 16px 13px;
-  border-bottom: 3px solid var(--color-primary);
-  background: var(--admin-console-head);
-  color: var(--color-head-text);
-  box-shadow: 0 8px 24px rgba(7, 15, 30, .14);
-}
-
-body.admin-mode .admin-workbar::before {
-  content: "ADMIN · EDITOR";
-  display: block;
-  color: var(--color-primary-light);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .15em;
-}
-
-body.admin-mode .admin-context-actions {
-  display: flex;
-  min-width: 0;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: none;
-}
-
-body.admin-mode .admin-context-actions::-webkit-scrollbar {
-  display: none;
-}
-
-body.admin-mode .admin-context-actions .sub-tab,
-body.admin-mode .admin-context-actions button {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 7px 10px;
-  border: 1px solid color-mix(in srgb, var(--color-head-text) 18%, transparent);
-  border-radius: 0;
-  clip-path: var(--notch-xs);
-  background: color-mix(in srgb, var(--color-head-text) 8%, transparent);
-  color: color-mix(in srgb, var(--color-head-text) 78%, transparent);
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-body.admin-mode .admin-context-actions .sub-tab:hover,
-body.admin-mode .admin-context-actions button:hover {
-  background: color-mix(in srgb, var(--color-head-text) 16%, transparent);
-  color: var(--color-head-text);
-}
-
-body.admin-mode .admin-context-actions .sub-tab.active,
-body.admin-mode .admin-context-actions button.active {
-  border-color: var(--color-primary-light);
-  background: var(--color-primary);
-  color: #fff;
-}
-
-body.admin-mode .admin-workbar .admin-user {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 8px;
-  align-items: center;
-  justify-content: stretch;
-  color: color-mix(in srgb, var(--color-head-text) 75%, transparent);
-  font-size: 10px;
-}
-
-body.admin-mode .admin-workbar #adminIdentity,
-body.admin-mode .admin-workbar #adminRole {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-body.admin-mode .admin-workbar #adminRole {
-  display: none;
-}
-
-body.admin-mode .admin-workbar .text-action {
-  color: color-mix(in srgb, var(--color-head-text) 78%, transparent);
-  white-space: nowrap;
-}
-
-body.admin-mode .admin-workbar .text-action:hover {
-  color: var(--color-primary-light);
-}
-
-/* Status becomes an obvious save / failure banner. */
-body.admin-mode .admin-status {
-  position: sticky;
-  z-index: 35;
-  top: 114px;
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 0;
-  border-left: 3px solid currentColor;
-  clip-path: var(--notch-xs);
-  background: var(--admin-console-panel);
-  box-shadow: 0 8px 20px rgba(20, 24, 33, .08);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-/* Panels read like a compact control center, not a second full website. */
-body.admin-mode .admin-panel {
-  min-width: 0;
-}
-
-body.admin-mode .admin-panel.active {
-  animation: admin-panel-in .16s ease-out;
-}
-
-@keyframes admin-panel-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-body.admin-mode .admin-panel-actions {
-  min-height: 0;
-  margin: 0 0 8px;
-  padding: 0;
-}
-
-body.admin-mode .admin-panel-actions .text-action {
-  min-height: 32px;
-  padding: 6px 10px;
-  clip-path: var(--notch-xs);
-  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-card));
-  color: var(--color-primary);
-  font-size: 11px;
-  font-weight: 900;
-}
-
-body.admin-mode .admin-card {
-  margin: 0 0 12px;
-  padding: 14px;
-  border: 1px solid var(--admin-console-line);
-  clip-path: var(--notch-md);
-  background: var(--admin-console-panel);
-  box-shadow: none;
-}
-
-body.admin-mode .admin-card + .admin-card {
-  margin-top: 0;
-}
-
-body.admin-mode .admin-card:has(> .admin-table-wrap) {
-  padding: 0;
-  border: 1px solid var(--admin-console-line);
-  clip-path: var(--notch-md);
-  background: var(--admin-console-panel);
-}
-
-body.admin-mode .admin-card:has(> .admin-table-wrap) > .admin-table-wrap {
-  clip-path: none;
-  background: transparent;
-  box-shadow: none;
-}
-
-body.admin-mode .admin-section-title {
-  align-items: flex-start;
-  margin-bottom: 12px;
-  padding: 0 0 10px;
-  border-bottom: 1px solid var(--admin-console-line);
-}
-
-body.admin-mode .admin-section-title > div::after {
-  bottom: -11px;
-  width: 42px;
-  right: auto;
-}
-
-body.admin-mode .admin-section-title h2,
-body.admin-mode .admin-section-title h3 {
-  font-size: 15px;
-  line-height: 1.25;
-}
-
-body.admin-mode .admin-section-title p {
-  margin-top: 4px;
-  font-size: 10px;
-  line-height: 1.55;
-}
-
-/* Dashboard: dense, glanceable and consistent with public-site cards. */
-body.admin-mode .admin-kpi-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-body.admin-mode .admin-kpi {
-  min-height: 94px;
-  padding: 13px;
-  border: 1px solid var(--admin-console-line);
-  border-top: 3px solid var(--color-primary);
-  clip-path: var(--notch-sm);
-  background: var(--admin-console-panel);
-  box-shadow: none;
-}
-
-body.admin-mode .admin-kpi b {
-  margin-top: 3px;
-  font-size: 23px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-body.admin-mode .admin-kpi span {
-  display: block;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-body.admin-mode .admin-kpi small {
-  font-size: 9px;
-  line-height: 1.4;
-}
-
-body.admin-mode .admin-db-grid {
-  grid-template-columns: 1fr;
-  gap: 7px;
-}
-
-body.admin-mode .admin-db-stat,
-body.admin-mode .admin-db-stat-wide {
-  grid-column: auto;
-  padding: 10px 11px;
-  border: 1px solid var(--admin-console-line);
-  clip-path: var(--notch-xs);
-  background: var(--color-bg-subtle);
-}
-
-body.admin-mode .admin-db-stat b {
-  font-size: 14px;
-}
-
-/* Search / form controls */
-body.admin-mode .admin-toolbar,
-body.admin-mode .admin-toolbar-left,
-body.admin-mode .admin-toolbar-right {
-  gap: 7px;
-}
-
-body.admin-mode .admin-toolbar {
-  align-items: stretch;
-  margin: 0;
-  padding: 10px;
-  border-bottom: 1px solid var(--admin-console-line);
-}
-
-body.admin-mode .admin-toolbar-left {
-  flex: 1 1 180px;
-  min-width: 0;
-}
-
-body.admin-mode .admin-toolbar-right {
-  flex: 0 0 auto;
-}
-
-body.admin-mode .admin-search {
-  min-width: 0;
-}
-
-body.admin-mode .admin-input,
-body.admin-mode .admin-select,
-body.admin-mode .admin-textarea {
-  min-height: 38px;
-  padding: 9px 10px;
-  border: 1px solid transparent;
-  clip-path: var(--notch-xs);
-  background: var(--color-bg-subtle);
-  font-size: 12px;
-  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease;
-}
-
-body.admin-mode .admin-textarea,
-body.admin-mode textarea.admin-input {
-  min-height: 112px;
-  resize: vertical;
-  line-height: 1.55;
-}
-
-body.admin-mode .admin-input:hover,
-body.admin-mode .admin-select:hover,
-body.admin-mode .admin-textarea:hover {
-  border-color: var(--admin-console-line);
-}
-
-body.admin-mode .admin-input:focus,
-body.admin-mode .admin-select:focus,
-body.admin-mode .admin-textarea:focus {
-  border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
-  background: var(--color-card);
-  box-shadow: inset 0 -2px var(--color-primary);
-}
-
-body.admin-mode .admin-field label,
-body.admin-mode .admin-field > span {
-  margin-bottom: 5px;
-  color: var(--admin-console-muted);
-  font-size: 10px;
-  font-weight: 800;
-}
-
-body.admin-mode .admin-form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+    clip-path: var(--notch-md);
+    color: var(--color-text-sub);
+    font-size: 13px;
+    text-align: center;
 }
+.admin-empty small { color: var(--color-lose); }
 
-body.admin-mode .admin-field.span-3,
-body.admin-mode .admin-field.span-2 {
-  grid-column: 1 / -1;
-}
-
-body.admin-mode .admin-btn {
-  min-height: 34px;
-  padding: 7px 10px;
-  clip-path: var(--notch-xs);
-  font-size: 11px;
-}
-
-body.admin-mode .admin-btn.primary {
-  background: var(--select-on-light);
-  color: #fff;
-}
-
-body.admin-mode .admin-btn.primary:hover {
-  filter: brightness(1.05);
-  color: #fff;
-}
-
-/* Data tables are horizontal data grids inside the console. */
-body.admin-mode .admin-table-wrap {
-  max-height: min(48dvh, 520px);
-  overflow: auto;
-  scrollbar-gutter: stable;
-}
-
-body.admin-mode .admin-table {
-  min-width: 760px;
-  font-size: 10px;
-}
-
-body.admin-mode .admin-table th,
-body.admin-mode .admin-table td {
-  padding: 8px 9px;
-}
-
-body.admin-mode .admin-table th {
-  top: 0;
-  background: color-mix(in srgb, var(--color-head-bg) 96%, var(--color-primary));
-  font-size: 9px;
-  letter-spacing: .02em;
-}
-
-body.admin-mode .admin-table td b {
-  font-size: 11px;
-}
-
-body.admin-mode .admin-row-actions {
-  gap: 4px;
-}
-
-body.admin-mode .admin-row-actions .admin-btn {
-  min-height: 28px;
-  padding: 5px 7px;
-  font-size: 9px;
-}
-
-/* Editors open as the main focus card inside the console. */
-body.admin-mode .admin-editor {
-  margin: 0;
-  padding: 14px;
-  border: 0;
-  border-top: 3px solid var(--color-primary);
-  clip-path: var(--notch-md);
-  background: var(--color-card);
-  box-shadow: 0 12px 28px rgba(18, 27, 44, .10);
-}
-
-body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
-}
-
-body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-toolbar,
-body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-section-title,
-body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-table-wrap {
-  display: none;
-}
-
-body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor {
-  position: static;
-  width: 100%;
-  max-height: none;
-  margin: 0;
-  overflow: visible;
-}
-
-body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-body.admin-mode .admin-form-actions {
-  position: sticky;
-  z-index: 5;
-  bottom: -34px;
-  justify-content: stretch;
-  gap: 8px;
-  margin: 16px -14px -14px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--admin-console-line);
-  background: color-mix(in srgb, var(--color-card) 94%, transparent);
-  backdrop-filter: blur(10px);
-}
-
-body.admin-mode .admin-form-actions .admin-btn {
-  flex: 1 1 0;
-}
-
-body.admin-mode .admin-form-actions .admin-btn.primary {
-  flex: 1.5 1 0;
-}
-
-/* Match round editor becomes readable instead of an 11-column micro grid. */
-body.admin-mode .admin-rounds {
-  display: grid;
-  gap: 8px;
-}
-
-body.admin-mode .admin-round {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  padding: 11px;
-  border: 1px solid var(--admin-console-line);
-  clip-path: var(--notch-sm);
-  background: var(--color-bg-subtle);
-}
-
-body.admin-mode .admin-round .round-remove {
-  grid-column: 1 / -1;
-  justify-self: end;
-}
-
-/* Checkboxes are easier to scan in navigation / metric settings. */
-body.admin-mode .admin-field:has(input[type="checkbox"]) {
-  display: flex;
-  min-height: 42px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 10px;
-  border: 1px solid var(--admin-console-line);
-  clip-path: var(--notch-xs);
-  background: var(--color-bg-subtle);
-}
-
-body.admin-mode .admin-field:has(input[type="checkbox"]) > span {
-  margin: 0;
-  color: var(--color-text);
-}
-
-body.admin-mode input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--color-primary);
-}
-
-/* Calendar editor side is intentionally compact; the public calendar remains
-   visible on the left, so the console only needs the editing controls. */
-body.admin-mode .admin-calendar-layout {
-  grid-template-columns: 1fr;
-}
-
-body.admin-mode .admin-calendar-main {
-  display: none;
-}
-
-body.admin-mode .admin-calendar-side {
-  position: static;
-  display: block;
-  max-height: none;
-  overflow: visible;
-}
-
-body.admin-mode .admin-offair-editor {
-  margin-top: 10px;
-}
-
-/* Login / denied state — same language as the public hero, but calmer. */
-body.admin-mode .admin-login-wrap,
-.admin-login-wrap {
-  min-height: 100dvh;
-  padding: 28px 18px;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--color-head-bg) 98%, transparent), color-mix(in srgb, var(--color-primary) 16%, var(--color-head-bg)));
-}
-
-.admin-login {
-  width: min(420px, 100%);
-  padding: 26px;
-  border: 1px solid color-mix(in srgb, var(--color-head-text) 14%, transparent);
-  background: color-mix(in srgb, var(--color-card) 96%, transparent);
-  box-shadow: 0 28px 70px rgba(0, 0, 0, .18);
-}
-
-.admin-login::before {
-  margin-bottom: 12px;
-  letter-spacing: .18em;
-}
-
-/* Narrow screens: editor becomes a normal full-width section after preview. */
-@media (max-width: 1100px) {
-  :root { --admin-console-w: 390px; }
-}
-
-@media (max-width: 860px) {
-  body.admin-mode {
-    padding-right: 0;
-  }
-
-  body.admin-mode > .top-navbar {
-    right: 0;
-  }
-
-  body.admin-mode #adminWorkbench.container {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    border-top: 3px solid var(--color-primary);
-    border-left: 0;
-    box-shadow: none;
-  }
-
-  body.admin-mode .admin-edit-surface {
-    height: auto;
-    min-height: 55dvh;
-    padding: 0 18px 40px;
-    overflow: visible;
-  }
-
-  body.admin-mode .admin-workbar {
-    top: var(--navbar-h);
-  }
-
-  body.admin-mode .admin-status {
-    top: calc(var(--navbar-h) + 112px);
-  }
-
-  body.admin-mode .admin-table-wrap {
-    max-height: 460px;
-  }
-}
-
-@media (max-width: 560px) {
-  body.admin-mode .admin-workbar {
-    margin-right: -18px;
-    margin-left: -18px;
-    padding-right: 14px;
-    padding-left: 14px;
-  }
-
-  body.admin-mode .admin-workbar .admin-user {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  body.admin-mode .admin-workbar .admin-user > a {
-    display: none;
-  }
-
-  body.admin-mode .admin-kpi-grid,
-  body.admin-mode .admin-form-grid,
-  body.admin-mode .admin-card:has(> .admin-editor:not(.hidden)) > .admin-editor .admin-form-grid,
-  body.admin-mode .admin-round {
-    grid-template-columns: 1fr;
-  }
-
-  body.admin-mode .admin-field.span-2,
-  body.admin-mode .admin-field.span-3,
-  body.admin-mode .admin-round .round-remove {
-    grid-column: auto;
-  }
-
-  body.admin-mode .admin-toolbar,
-  body.admin-mode .admin-toolbar-left,
-  body.admin-mode .admin-toolbar-right {
-    width: 100%;
-  }
-
-  body.admin-mode .admin-toolbar-right .admin-btn,
-  body.admin-mode .admin-toolbar > .admin-btn {
-    width: 100%;
-  }
-
-  body.admin-mode .admin-link-card {
-    align-items: stretch;
-    flex-direction: column;
-  }
-}
-
-/* Current-main dashboard helpers (kept for compatibility with latest page-admin.js). */
-.admin-kpi-emphasis { border-top-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 6%, var(--color-card)); }
-.admin-kpi-emphasis small { color: var(--color-primary); }
-.admin-db-card { margin-top: 14px; }
-.admin-db-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-.admin-db-stat { min-width:0; padding:14px; border:1px solid var(--color-border); clip-path:var(--notch-sm); background:var(--color-bg-subtle); }
-.admin-db-stat-wide { grid-column:1/-1; }
-.admin-db-stat span,.admin-db-stat small { display:block; color:var(--color-text-sub); font-size:10px; font-weight:700; }
-.admin-db-stat b { display:block; margin:4px 0; color:var(--color-text); font-size:18px; font-weight:900; letter-spacing:-.02em; overflow-wrap:anywhere; }
-.admin-link-card { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.admin-link-card .admin-note { margin-bottom:0; }
-.admin-empty-state { grid-column:1/-1; padding:16px; color:var(--color-text-sub); font-size:12px; text-align:center; }
-.admin-empty-state.is-error { color:var(--color-lose); }
-body.admin-mode .admin-db-grid { grid-template-columns: 1fr; gap: 7px; }
-body.admin-mode .admin-db-stat,
-body.admin-mode .admin-db-stat-wide { grid-column: auto; padding: 10px 11px; border: 1px solid var(--admin-console-line); clip-path: var(--notch-xs); background: var(--color-bg-subtle); }
-body.admin-mode .admin-db-stat b { font-size: 14px; }
-
-
-
-/* Inline public-page admin mode */
-.admin-hidden{display:none!important}
-body.admin-mode{padding-top:52px}
-.admin-inline-bar{position:fixed;z-index:1200;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;background:#0f172a;color:#fff;border-bottom:1px solid rgba(255,255,255,.14)}
-.admin-inline-left,.admin-inline-actions{display:flex;align-items:center;gap:10px;min-width:0}
-.admin-edit-badge{font-size:11px;font-weight:800;letter-spacing:.12em;color:#93c5fd}
-.admin-save-state{font-size:12px;color:#cbd5e1}.admin-save-state[data-kind="dirty"]{color:#fde68a}.admin-save-state[data-kind="error"]{color:#fca5a5}
-.admin-btn{border:1px solid #cbd5e1;background:#fff;color:#0f172a;border-radius:6px;padding:7px 11px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.admin-btn:hover{background:#f8fafc}.admin-btn:disabled{opacity:.45;cursor:not-allowed}.admin-btn.primary{background:#1677ff;border-color:#1677ff;color:#fff}.admin-btn.danger{border-color:#fecaca;color:#b91c1c;background:#fff}.admin-btn-ghost{background:transparent;color:#fff;border-color:#475569;text-decoration:none}
-.admin-toast{position:fixed;z-index:1400;top:62px;right:18px;max-width:min(420px,calc(100vw - 36px));padding:11px 14px;border-radius:8px;background:#0f172a;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.2)}
-.admin-toast[data-kind="error"]{background:#991b1b}
-.admin-drawer{position:fixed;z-index:1300;inset:0;pointer-events:none}.admin-drawer[aria-hidden="false"]{pointer-events:auto}.admin-drawer-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.28);opacity:0;transition:.16s}.admin-drawer[aria-hidden="false"] .admin-drawer-backdrop{opacity:1}
-.admin-drawer-sheet{position:absolute;top:0;right:0;width:min(560px,92vw);height:100%;background:var(--bs-body-bg,#fff);box-shadow:-16px 0 40px rgba(15,23,42,.2);transform:translateX(102%);transition:.18s;display:flex;flex-direction:column}
-.admin-drawer[aria-hidden="false"] .admin-drawer-sheet{transform:none}
-.admin-drawer-head{display:flex;justify-content:space-between;gap:16px;padding:20px 20px 12px;border-bottom:1px solid #e5e7eb}.admin-drawer-head h2{margin:2px 0 0;font-size:22px}.admin-drawer-eyebrow{font-size:11px;letter-spacing:.14em;color:#64748b;font-weight:800}.admin-drawer-close{border:0;background:transparent;font-size:30px;line-height:1;cursor:pointer;color:inherit}
-.admin-drawer-form{min-height:0;display:flex;flex-direction:column;flex:1}.admin-drawer-form>#adminDrawerBody{overflow:auto;padding:18px 20px 28px}.admin-drawer-actions{display:flex;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid #e5e7eb;background:var(--bs-body-bg,#fff)}.admin-drawer-spacer{flex:1}
-.admin-field{display:flex;flex-direction:column;gap:6px;margin:0 0 14px}.admin-field>span,.admin-field>label{font-size:12px;font-weight:800;color:#475569}.admin-field small,.admin-help{font-size:12px;color:#64748b}.admin-input{width:100%;min-height:38px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;background:var(--bs-body-bg,#fff);color:inherit}.admin-textarea{resize:vertical}.admin-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.admin-check{display:inline-flex;align-items:center;gap:8px;min-height:38px}.admin-check input{width:16px;height:16px}
-.admin-preview-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}.admin-media-preview{min-height:90px;border:1px dashed #cbd5e1;border-radius:8px;display:grid;place-items:center;overflow:hidden}.admin-media-preview img{width:100%;max-height:220px;object-fit:cover}
-.admin-color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.admin-color-option{display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;border-radius:7px;padding:7px}.admin-color-option input{margin:0}.admin-color-swatch{width:18px;height:18px;border-radius:4px;border:1px solid rgba(15,23,42,.15)}.cal-color-red{background:#ff2538}.cal-color-orange{background:#ff8a00}.cal-color-yellow{background:#ffd43b}.cal-color-green{background:#16c75b}.cal-color-blue{background:#1677ff}.cal-color-indigo{background:#3346b5}.cal-color-purple{background:#7c3aed}.cal-color-light_gray{background:#e5e7eb}
-.admin-inline-edit,.admin-inline-add,.admin-card-action,.admin-home-edit,.admin-section-eye,.admin-eye-toggle,.admin-subtab-eye,.admin-nav-manage,.admin-subtab-manage,.admin-floating-add{position:relative;z-index:20;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;border-radius:5px;padding:4px 7px;font-size:11px;font-weight:800;cursor:pointer}
-.admin-inline-add,.admin-floating-add{padding:7px 10px;margin:6px 0}.admin-card-action{position:absolute;top:8px;right:8px}.video-card,.tool-card,.home-carousel-slide,.cal-selected-card,.cal-today-card{position:relative}
-.admin-config-hidden{opacity:.38!important;filter:grayscale(.4)}.admin-config-hidden[hidden]{display:initial!important}.nav-item.admin-config-hidden[hidden]{display:flex!important}.sub-tab.admin-config-hidden[hidden]{display:flex!important}
-.admin-eye-toggle,.admin-subtab-eye{margin-left:6px;padding:2px 4px}.admin-nav-manage{margin-left:8px}.admin-subtab-manage{margin-left:auto}.admin-default-subtab{outline:1px dashed #60a5fa;outline-offset:2px}
-.admin-home-edit{position:absolute;top:18px;right:18px}.admin-section-eye{position:absolute;top:6px;right:6px}.home-live-broadcast,.home-notice-list{position:relative}
-.admin-member-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:220px;overflow:auto;border:1px solid #e2e8f0;border-radius:7px;padding:8px}.admin-member-checks label{display:flex;gap:6px;align-items:center;font-size:12px}
-.admin-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}.admin-list-row{display:flex;justify-content:space-between;gap:12px;text-align:left;border:1px solid #e2e8f0;background:transparent;border-radius:7px;padding:10px;color:inherit}
-.admin-order-list{display:flex;flex-direction:column;gap:6px}.admin-order-row,.admin-setting-row{display:flex;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:7px;padding:9px}.admin-order-row b{flex:1}.admin-order-handle{color:#94a3b8}.admin-order-actions{display:flex;gap:4px}.admin-order-actions button{border:1px solid #cbd5e1;background:#fff;border-radius:4px}.admin-section-head{display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px}
-.admin-dedicated{max-width:1600px;margin:0 auto;padding:24px 18px 60px}.admin-dedicated-shell{background:var(--bs-body-bg,#fff)}.admin-dedicated-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}.admin-dedicated-head span{font-size:11px;letter-spacing:.15em;color:#64748b;font-weight:800}.admin-dedicated-head h1{margin:4px 0 0;font-size:28px}.admin-dedicated-active .page-section{display:none!important}.admin-dedicated-active #adminDedicatedRoot{display:block!important}
-.admin-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px;margin-bottom:12px}.admin-table-wrap{overflow:auto}.admin-table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}.admin-table th,.admin-table td{padding:9px 10px;border-bottom:1px solid #e2e8f0;text-align:left}.admin-table tbody tr[data-match],.admin-table tbody tr[data-tier-id]{cursor:pointer}.admin-table tbody tr:hover{background:rgba(59,130,246,.05)}.admin-table-wide{min-width:1180px}.admin-mini-table td{padding:5px 8px;border-bottom:1px solid #e2e8f0}.admin-sort{border:0;background:transparent;color:inherit;font-weight:800;padding:0}.admin-pager{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:14px}.admin-expand-row>td{background:#f8fafc;padding:12px}.admin-warning{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#fef3c7;color:#92400e;font-size:11px;margin-left:5px}
-.admin-edit-disabled .admin-inline-edit,.admin-edit-disabled .admin-inline-add,.admin-edit-disabled .admin-card-action,.admin-edit-disabled .admin-home-edit,.admin-edit-disabled .admin-section-eye,.admin-edit-disabled .admin-eye-toggle,.admin-edit-disabled .admin-subtab-eye,.admin-edit-disabled .admin-nav-manage,.admin-edit-disabled .admin-subtab-manage,.admin-edit-disabled .admin-floating-add{display:none!important}
-
-@media(max-width:760px){
-  body.admin-mode{padding-top:50px}.admin-inline-bar{height:50px;padding:0 8px}.admin-inline-actions{gap:4px}.admin-btn{padding:6px 8px}.admin-btn-ghost{display:none}.admin-drawer-sheet{width:100vw}.admin-drawer-head{padding:16px}.admin-drawer-form>#adminDrawerBody{padding:14px 14px 24px}.admin-drawer-actions{padding:10px 14px}.admin-form-grid,.admin-preview-row{grid-template-columns:1fr}.admin-color-grid{grid-template-columns:repeat(2,1fr)}.admin-member-checks{grid-template-columns:repeat(2,1fr)}.admin-filter-grid{grid-template-columns:1fr 1fr}.admin-dedicated{padding:16px 8px 50px}.admin-dedicated-head{align-items:flex-start;flex-direction:column}
-}
-
-
-/* =========================================================
-   Inline admin polish — reuse StarUniv public visual language
-   ========================================================= */
-body.admin-mode {
-  --admin-surface: var(--color-card);
-  --admin-surface-soft: var(--color-bg-subtle);
-  --admin-line: var(--color-border);
-  --admin-line-strong: var(--color-border-strong);
-  --admin-text: var(--color-text-main);
-  --admin-muted: var(--color-text-muted);
-  --admin-accent: var(--color-primary);
-  --admin-accent-soft: var(--color-primary-tint);
-}
-
-.admin-inline-bar {
-  height: 46px;
-  padding: 0 max(12px, calc((100vw - 1280px) / 2));
-  background: color-mix(in srgb, var(--color-head-bg) 94%, transparent);
-  border-bottom: 1px solid var(--head-line);
-  box-shadow: none;
-  backdrop-filter: blur(12px);
-}
-body.admin-mode { padding-top: 46px; }
-.admin-edit-badge {
-  color: var(--navy-accent);
-  font-size: var(--fs-eyebrow);
-  letter-spacing: .14em;
-}
-.admin-inline-left strong { font-size: 12px; }
-.admin-save-state {
-  padding-left: 8px;
-  border-left: 1px solid var(--head-line);
-  color: var(--navy-on-muted);
-  font-size: 11px;
-}
-
-body.admin-mode .admin-btn,
-body.admin-mode .admin-inline-edit,
-body.admin-mode .admin-inline-add,
-body.admin-mode .admin-card-action,
-body.admin-mode .admin-home-edit,
-body.admin-mode .admin-section-eye,
-body.admin-mode .admin-eye-toggle,
-body.admin-mode .admin-subtab-eye,
-body.admin-mode .admin-nav-manage,
-body.admin-mode .admin-subtab-manage,
-body.admin-mode .admin-floating-add {
-  min-height: 30px;
-  border: 1px solid var(--admin-line-strong);
-  border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
-  background: var(--admin-surface);
-  color: var(--admin-text);
-  padding: 5px 9px;
-  font-size: 11px;
-  font-weight: 800;
-  box-shadow: none;
-}
-body.admin-mode .admin-btn:hover,
-body.admin-mode .admin-inline-edit:hover,
-body.admin-mode .admin-card-action:hover,
-body.admin-mode .admin-floating-add:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-tint);
-  color: var(--color-primary);
-}
-body.admin-mode .admin-btn.primary {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff;
-}
-body.admin-mode .admin-btn.danger {
-  border-color: color-mix(in srgb, var(--color-lose) 38%, var(--admin-line));
-  color: var(--color-lose);
-  background: var(--admin-surface);
-}
-body.admin-mode .admin-btn-ghost {
-  border-color: rgba(255,255,255,.2);
-  background: transparent;
-  color: var(--navy-on-text);
-}
-.admin-btn-compact { min-height: 28px !important; padding: 4px 8px !important; }
-
-.admin-drawer-backdrop { background: rgba(5,10,20,.34); }
-.admin-drawer-sheet {
-  width: min(520px, 92vw);
-  background: var(--admin-surface);
-  color: var(--admin-text);
-  box-shadow: -18px 0 36px rgba(11,18,32,.16);
-  border-left: 1px solid var(--admin-line);
-}
-.admin-drawer-head {
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid var(--admin-line);
-  background: var(--admin-surface);
-}
-.admin-drawer-head h2 {
-  margin: 2px 0 0;
-  font-size: 18px;
-  font-weight: 900;
-}
-.admin-drawer-eyebrow {
-  color: var(--title-eyebrow);
-  font-size: var(--fs-eyebrow);
-}
-.admin-drawer-close {
-  width: 30px;
-  height: 30px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--admin-line);
-  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
-  font-size: 20px;
-}
-.admin-drawer-form > #adminDrawerBody { padding: 16px 18px 24px; }
-.admin-drawer-actions {
-  padding: 10px 18px;
-  border-top: 1px solid var(--admin-line);
-  background: var(--admin-surface);
-}
-
-body.admin-mode .admin-field { gap: 5px; margin-bottom: 12px; }
-body.admin-mode .admin-field > span,
-body.admin-mode .admin-field > label {
-  color: var(--color-text-sub);
-  font-size: 11px;
-  letter-spacing: -.01em;
-}
-body.admin-mode .admin-input {
-  min-height: 36px;
-  padding: 7px 9px;
-  border: 1px solid var(--admin-line-strong);
-  border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
-  background: var(--admin-surface);
-  color: var(--admin-text);
-  font-size: 12px;
-  outline: none;
-}
-body.admin-mode .admin-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: inset 3px 0 0 var(--color-primary);
-}
-body.admin-mode .admin-textarea { min-height: 88px; }
-body.admin-mode .admin-form-grid {
-  gap: 10px;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: 1px solid var(--admin-line);
-  background: var(--admin-surface-soft);
-  clip-path: var(--notch-xs);
-}
-body.admin-mode .admin-preview-row {
-  gap: 10px;
-  margin: 10px 0 14px;
-}
-body.admin-mode .admin-media-preview {
-  min-height: 84px;
-  border: 1px solid var(--admin-line);
-  border-radius: 0;
-  clip-path: var(--notch-xs);
-  background: var(--admin-surface-soft);
-}
-body.admin-mode .admin-help { color: var(--admin-muted); font-size: 11px; }
-
-.admin-toast {
-  top: 56px;
-  border-radius: 0;
-  clip-path: var(--notch-sm);
-  background: var(--color-head-bg);
-  border: 1px solid var(--head-line);
-}
 
-/* Timeline editing belongs inside the real history content. */
+/* =============================================================================
+   9. 연혁 편집 (일정 > 연혁 타임라인 안)
+   ============================================================================= */
 .hist-admin-content-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--admin-line);
-  background: var(--admin-surface-soft);
-  clip-path: var(--notch-xs);
-}
-.hist-admin-content-head > div {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: var(--space-content-gap);
+    padding: 12px 16px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    clip-path: var(--notch-md);
+    color: var(--navy-on-text);
 }
 .hist-admin-kicker {
-  color: var(--title-eyebrow);
-  font-size: var(--fs-eyebrow);
-  font-weight: 900;
-  letter-spacing: .12em;
+    display: block;
+    margin-bottom: 4px;
+    color: var(--navy-on-muted);
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.16em;
 }
-.hist-admin-content-head strong { font-size: 13px; }
+.hist-admin-content-head strong { color: #fff; font-size: 14px; font-weight: 800; }
+.hist-admin-content-head .admin-btn.primary { background: #fff; color: var(--navy); filter: none; }
+.hist-admin-content-head .admin-btn.primary:hover { background: var(--color-primary); color: #fff; }
+
 .hist-admin-bar {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: wrap;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
 }
+.hist-admin-bar .hist-move { display: inline-flex; gap: 2px; margin-right: auto; }
 .hist-admin-bar button {
-  border: 1px solid var(--admin-line-strong);
-  border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
-  background: var(--admin-surface);
-  color: var(--admin-text);
-  min-height: 26px;
-  padding: 3px 7px;
-  font-size: 10px;
-  font-weight: 800;
+    min-width: 26px;
+    min-height: 24px;
+    padding: 0 8px;
+    border: 0;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-sub);
+    clip-path: var(--notch-xs);
+    font-family: inherit;
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    cursor: pointer;
 }
-.hist-admin-bar .edit-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
-.hist-admin-bar .delete-btn:hover { border-color: var(--color-lose); color: var(--color-lose); }
+.hist-admin-bar button:disabled { opacity: .35; cursor: default; }
+.hist-admin-bar .edit-btn:hover,
+.hist-admin-bar .hist-move button:hover:not(:disabled) { background: var(--color-primary-tint); color: var(--color-primary); }
+.hist-admin-bar .delete-btn:hover { background: color-mix(in srgb, var(--color-lose) 9%, var(--color-card)); color: var(--color-lose); }
+.hist-admin-bar .hist-auto {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 7px;
+    background: var(--color-badge-format);
+    color: #fff;
+    clip-path: var(--notch-xs);
+    font-size: var(--fs-badge-sm);
+    font-weight: 700;
+}
+.hist-admin-bar .hist-auto.is-hidden { background: var(--color-draw); }
 
-/* History participants: linked member suggestions + arbitrary guests + per-person note. */
-.admin-participants {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.admin-participant-row {
-  display: grid;
-  grid-template-columns: minmax(0,1.1fr) minmax(0,1fr) 30px;
-  gap: 6px;
-  align-items: center;
-}
-.admin-participant-row .admin-input { margin: 0; }
-.admin-participant-tools {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-.admin-icon-btn {
-  width: 30px;
-  height: 30px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--admin-line-strong);
-  background: var(--admin-surface);
-  color: var(--color-text-sub);
-  border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
-  cursor: pointer;
-}
-.admin-icon-btn:hover { color: var(--color-lose); border-color: var(--color-lose); }
 
-@media (max-width: 760px) {
-  body.admin-mode { padding-top: 46px; }
-  .admin-inline-bar { height: 46px; }
-  .admin-drawer-sheet { width: 100vw; }
-  .hist-admin-content-head { align-items: flex-start; }
-  .admin-participant-row { grid-template-columns: 1fr 1fr 30px; }
-  .admin-participant-tools { align-items: flex-start; flex-direction: column; }
+/* =============================================================================
+   10. 반응형
+   ============================================================================= */
+@media (max-width: 1100px) {
+    .admin-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .admin-filter-grid > :first-child { grid-column: 1 / -1; }
 }
 
-/* Admin compact visual pass v2 */
-body.admin-mode{--admin-notch-control:var(--notch-xs);--admin-notch-card:var(--notch-sm);--admin-notch-sheet:var(--notch-md);padding-top:40px}
-body.admin-mode .admin-inline-bar{height:40px;padding-inline:max(12px,calc((100vw - 1240px)/2));border:0;background:var(--color-head-bg);box-shadow:0 1px 0 color-mix(in srgb,var(--head-line) 70%,transparent)}
-body.admin-mode .admin-inline-left,body.admin-mode .admin-inline-right{gap:6px}
-body.admin-mode .admin-inline-left strong{font-size:11px;line-height:1.2;letter-spacing:-.015em}
-body.admin-mode .admin-edit-badge{font-size:8px;line-height:1;letter-spacing:.16em}
-body.admin-mode .admin-save-state{font-size:10px;padding-left:7px}
-body.admin-mode .admin-btn,body.admin-mode .admin-inline-edit,body.admin-mode .admin-inline-add,body.admin-mode .admin-card-action,body.admin-mode .admin-home-edit,body.admin-mode .admin-section-eye,body.admin-mode .admin-eye-toggle,body.admin-mode .admin-subtab-eye,body.admin-mode .admin-nav-manage,body.admin-mode .admin-subtab-manage,body.admin-mode .admin-floating-add{min-height:26px;padding:4px 7px;border:0!important;border-radius:0;clip-path:var(--admin-notch-control);background:var(--panel-control);color:var(--color-text-sub);box-shadow:none;font-size:10px;line-height:1.1;font-weight:700;letter-spacing:-.01em}
-body.admin-mode .admin-btn:hover,body.admin-mode .admin-inline-edit:hover,body.admin-mode .admin-inline-add:hover,body.admin-mode .admin-card-action:hover,body.admin-mode .admin-floating-add:hover{border:0!important;background:var(--color-row-hover);color:var(--color-primary)}
-body.admin-mode .admin-btn.primary{border:0!important;background:var(--color-primary);color:#fff}
-body.admin-mode .admin-btn.danger{border:0!important;background:color-mix(in srgb,var(--color-lose) 9%,var(--panel-control));color:var(--color-lose)}
-body.admin-mode .admin-btn-compact{min-height:24px!important;padding:3px 7px!important;font-size:10px!important}
-body.admin-mode .admin-drawer-sheet{width:min(460px,90vw);border:0;clip-path:var(--admin-notch-sheet);background:var(--color-card);box-shadow:-12px 0 30px rgba(10,18,32,.13)}
-body.admin-mode .admin-drawer-head{padding:13px 15px 10px;border-bottom:1px solid var(--color-border)}
-body.admin-mode .admin-drawer-head h2{margin-top:1px;font-size:16px;line-height:1.2;letter-spacing:-.025em}
-body.admin-mode .admin-drawer-eyebrow{font-size:8px;line-height:1;letter-spacing:.16em}
-body.admin-mode .admin-drawer-close{width:26px;height:26px;border:0;clip-path:var(--admin-notch-control);background:var(--panel-control);font-size:16px}
-body.admin-mode .admin-drawer-form>#adminDrawerBody{padding:12px 15px 18px}
-body.admin-mode .admin-drawer-actions{padding:8px 15px;border-top:1px solid var(--color-border)}
-body.admin-mode .admin-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 8px;padding:8px;margin-bottom:9px;border:0;clip-path:var(--admin-notch-card);background:var(--color-bg-subtle)}
-body.admin-mode .admin-field{gap:4px;margin-bottom:8px}
-body.admin-mode .admin-field>span,body.admin-mode .admin-field>label{font-size:10px;line-height:1.2;font-weight:700;letter-spacing:-.015em;color:var(--color-text-sub)}
-body.admin-mode .admin-input{min-height:31px;padding:5px 7px;border:0!important;border-radius:0;clip-path:var(--admin-notch-control);background:var(--panel-control);color:var(--color-text-main);box-shadow:none;font-size:11px;line-height:1.25;letter-spacing:-.012em}
-body.admin-mode select.admin-input{padding-right:24px}
-body.admin-mode .admin-input:focus{border:0!important;outline:0;background:color-mix(in srgb,var(--color-primary) 7%,var(--panel-control));box-shadow:inset 2px 0 0 var(--color-primary)}
-body.admin-mode .admin-textarea{min-height:72px;line-height:1.5}
-body.admin-mode .admin-help{font-size:10px;line-height:1.45}
-body.admin-mode .admin-filter-grid{gap:6px}
-body.admin-mode .admin-table-wrap,body.admin-mode .admin-dedicated-shell{border:0;clip-path:var(--admin-notch-card)}
-body.admin-mode .admin-table{font-size:10px}
-body.admin-mode .admin-table th{font-size:9px;letter-spacing:.02em}
-body.admin-mode .admin-table th,body.admin-mode .admin-table td{padding:7px 8px}
-body.admin-mode .admin-dedicated-head{padding-bottom:9px;margin-bottom:10px;border-bottom:1px solid var(--color-border)}
-body.admin-mode .admin-dedicated-head h1{font-size:18px;letter-spacing:-.025em}
-body.admin-mode .admin-dedicated-head>div>span{font-size:8px;letter-spacing:.16em}
-body.admin-mode .hist-admin-content-head{margin-bottom:10px;padding:7px 9px;border:0;clip-path:var(--admin-notch-card);background:var(--color-bg-subtle)}
-body.admin-mode .hist-admin-kicker{font-size:8px;letter-spacing:.15em}
-body.admin-mode .hist-admin-content-head strong{font-size:12px}
-body.admin-mode .hist-admin-bar{gap:4px;margin-top:6px}
-body.admin-mode .hist-admin-bar button{min-height:23px;padding:3px 6px;border:0;clip-path:var(--admin-notch-control);background:var(--panel-control);font-size:9px;line-height:1}
-body.admin-mode .admin-participant-row{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr) 26px;gap:5px}
-body.admin-mode .admin-icon-btn{width:26px;height:26px;border:0;clip-path:var(--admin-notch-control);background:var(--panel-control);font-size:13px}
-@media(max-width:760px){body.admin-mode{padding-top:40px}body.admin-mode .admin-inline-bar{height:40px}body.admin-mode .admin-drawer-sheet{width:100vw;clip-path:none}body.admin-mode .admin-form-grid{grid-template-columns:1fr}}
+@media (max-width: 767.98px) {
+    body.admin-mode { --admin-bar-h: 44px; }
+    .admin-inline-bar { padding: 0 12px; gap: 8px; }
+    .admin-save-state { display: none; }
+    .admin-inline-actions .admin-btn-ghost { display: none; }
+    .admin-inline-bar .admin-btn { min-height: 32px; }
+
+    .admin-drawer-head { padding: 14px 16px; }
+    .admin-drawer-form > #adminDrawerBody { padding: 16px 16px 4px; }
+    .admin-drawer-actions { padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+    .admin-color-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-preview-row { grid-template-columns: minmax(0, 1fr); }
+
+    .admin-dedicated { padding: 16px 16px var(--space-page-bottom); }
+    .admin-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-table { font-size: 12px; }
+    .admin-table th,
+    .admin-table td { padding: 8px; }
+    .admin-home-edit { right: 16px; }
+    .admin-nav-manage { display: none; }
+}
+
+@media (max-width: 480px) {
+    .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
+    .admin-inline-left strong { display: none; }
+}
