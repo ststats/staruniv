@@ -37,28 +37,39 @@
     document.getElementById('adminHistoryAdd')?.addEventListener('click',()=>open(null));
   }
 
-  function participantRows(selected) {
+  function participantRows(selected,locked) {
     const rows=(selected||[]).map(entry=>{
       const parsed=typeof histParseMember==='function'?histParseMember(entry):{name:String(entry||''),note:''};
       return {name:parsed.name||'',note:parsed.note||''};
     });
-    if(!rows.length) rows.push({name:'',note:''});
+    if(!rows.length&&!locked) rows.push({name:'',note:''});
     return `
-      <div class="admin-participants" id="ahParticipants">
-        ${rows.map((r,i)=>participantRowHtml(r,i)).join('')}
+      <div class="admin-participants${locked?' is-locked':''}" id="ahParticipants">
+        ${rows.map((r,i)=>participantRowHtml(r,i,locked)).join('')}
       </div>
       <div class="admin-participant-tools">
-        <button type="button" class="admin-btn admin-btn-compact" id="ahAddParticipant">참여 인원 추가</button>
-        <span class="admin-help">멤버가 아니어도 직접 입력할 수 있고, 설명은 이름 뒤 괄호로 표시됩니다.</span>
+        ${locked?'':'<button type="button" class="admin-btn admin-btn-compact" id="ahAddParticipant">참여 인원 추가</button>'}
+        <span class="admin-help">${locked
+          ?'자동 항목의 인원은 멤버 데이터(입단일·퇴단일)로 정해집니다. 이름 뒤 괄호 설명만 붙일 수 있습니다.'
+          :'멤버가 아니어도 직접 입력할 수 있고, 설명은 이름 뒤 괄호로 표시됩니다.'}</span>
       </div>`;
   }
 
-  function participantRowHtml(row,index) {
+  function participantRowHtml(row,index,locked) {
     return `<div class="admin-participant-row" data-participant-row>
-      <input class="admin-input" name="ah_member_name" value="${C().esc(row.name||'')}" placeholder="이름" list="ahMemberNames" aria-label="참여 인원 이름">
+      <input class="admin-input" name="ah_member_name" value="${C().esc(row.name||'')}" placeholder="이름" list="ahMemberNames" aria-label="참여 인원 이름"${locked?' readonly':''}>
       <input class="admin-input" name="ah_member_note" value="${C().esc(row.note||'')}" placeholder="설명 (예: 게스트, 코치)" aria-label="참여 인원 설명">
-      <button type="button" class="admin-icon-btn" data-remove-participant aria-label="참여 인원 삭제">×</button>
+      ${locked?'<span></span>':'<button type="button" class="admin-icon-btn" data-remove-participant aria-label="참여 인원 삭제">×</button>'}
     </div>`;
+  }
+
+  // 형식: 공개 화면 뱃지(HISTORY_TYPES · .hist-type-*)와 같은 이름·색으로 고른다
+  const TYPE_ORDER=['founding','join','leave','match','event','broadcast','other'];
+  function typePicker(selected){
+    const labels=(typeof HISTORY_TYPES==='object'&&HISTORY_TYPES)||{};
+    const key=TYPE_ORDER.includes(selected)?selected:'event';
+    return `<div class="admin-type-grid">${TYPE_ORDER.map(t=>
+      `<label class="admin-type-option"><input type="radio" name="ah_type" value="${t}"${t===key?' checked':''}><span class="admin-type-dot admin-type-${t}"></span><b>${C().esc(labels[t]||t)}</b></label>`).join('')}</div>`;
   }
 
   function collectParticipants() {
@@ -99,15 +110,16 @@
   }
 
   function open(row) {
+    if(row&&row.auto)return openAuto(row);
     row=row||{entry_kind:'manual',date:'',type:'event',title:'',desc:'',members:[],youtube:'',image:'',order:0,hidden:false};
     C().openDrawer({
       eyebrow:'HISTORY', title:row.id?'연혁 수정':'연혁 추가',
       html:`
         <div class="admin-form-grid">
           ${C().field('날짜',C().input('ah_date',row.date,'date','required'))}
-          ${C().field('형식',C().input('ah_type',row.type,'text','placeholder="대회, 입단, 이벤트"'))}
           ${C().field('숨김',C().checkbox('ah_hidden',row.hidden,'공개 화면에서 숨김'))}
         </div>
+        <div class="admin-field"><span>형식</span>${typePicker(row.type)}</div>
         ${C().field('제목',C().input('ah_title',row.title,'text','required maxlength="120"'))}
         ${C().field('설명',C().textarea('ah_desc',row.desc,'rows="4"'))}
         <div class="admin-field"><span>참여 인원</span>${participantRows(row.members)}</div>
@@ -132,7 +144,7 @@
           order=day.length?Math.max(...day.map((x,i)=>Number.isFinite(x.ord)?x.ord:i))+1:0;
         }
         const payload={
-          id,entry_kind:'manual',event_date:eventDate,event_type:C().empty(C().value('ah_type')),
+          id,entry_kind:'manual',event_date:eventDate,event_type:document.querySelector('input[name="ah_type"]:checked')?.value||'event',
           title:C().value('ah_title').trim(),description:C().empty(C().value('ah_desc')),
           members:collectParticipants(),
           youtube_url:C().empty(C().value('ah_youtube')),image_path:image,
@@ -154,6 +166,10 @@
       }:null
     });
     bindParticipantEditor();
+    bindMediaPreview();
+  }
+
+  function bindMediaPreview(){
     const yt=document.getElementById('ah_youtube');
     const img=document.getElementById('ah_image');
     const refreshYt=()=>{
@@ -163,6 +179,46 @@
     };
     yt?.addEventListener('input',refreshYt);refreshYt();
     img?.addEventListener('change',()=>{const f=img.files?.[0],box=document.getElementById('ahImagePreview');if(f&&box)box.innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`;});
+  }
+
+  // 자동 항목(멤버 입단·퇴단 등) 편집: 날짜·형식·인원은 멤버 데이터가 정하므로 고정하고,
+  // 제목·설명·인원 설명·영상·사진·숨김만 override 줄에 덮어쓴다. 예전엔 '수정'이 새 항목 추가 창을 열었다.
+  function openAuto(item){
+    const labels=(typeof HISTORY_TYPES==='object'&&HISTORY_TYPES)||{};
+    C().openDrawer({
+      eyebrow:'HISTORY · 자동', title:'자동 연혁 수정',
+      html:`
+        <p class="admin-help">멤버 데이터에서 자동으로 만들어진 항목입니다. 날짜·형식·인원은 멤버의 입단일·퇴단일을 따르고, 여기서는 보이는 내용만 바꿉니다.</p>
+        <div class="admin-form-grid">
+          ${C().field('날짜',C().input('ah_date',item.date,'date','readonly'))}
+          ${C().field('형식',C().input('ah_type_label',labels[item.type]||item.type,'text','readonly'))}
+        </div>
+        ${C().field('숨김',C().checkbox('ah_hidden',item.hidden,'공개 화면에서 숨김'))}
+        ${C().field('제목',C().input('ah_title',item.title,'text','maxlength="120"'))}
+        ${C().field('설명',C().textarea('ah_desc',item.desc,'rows="4"'))}
+        <div class="admin-field"><span>참여 인원</span>${participantRows(item.members,true)}</div>
+        ${C().field('YouTube 링크',C().input('ah_youtube',item.youtube,'url','placeholder="https://..."'))}
+        <div class="admin-preview-row">
+          <div><b>YouTube 미리보기</b><div id="ahYoutubePreview" class="admin-media-preview"></div></div>
+          <div><b>사진 미리보기</b><div id="ahImagePreview" class="admin-media-preview">${item.image?`<img src="${C().esc(C().mediaUrl(item.image)||item.image)}" alt="">`:''}</div></div>
+        </div>
+        ${C().field('사진',`<input class="admin-input" id="ah_image" type="file" accept="image/*">`)}
+      `,
+      onSubmit:async()=>{
+        let image=item.image||null;
+        const file=document.getElementById('ah_image')?.files?.[0];
+        if(file) image=await C().uploadMedia(file,'history',item.id);
+        await saveItem(item,{
+          title:C().empty(C().value('ah_title').trim()),description:C().empty(C().value('ah_desc')),
+          members:collectParticipants(),youtube_url:C().empty(C().value('ah_youtube')),image_path:image,
+          hidden:!!document.getElementById('ah_hidden')?.checked
+        });
+        C().toast('자동 연혁을 수정했습니다.');
+        await load();
+      }
+    });
+    bindParticipantEditor();
+    bindMediaPreview();
   }
 
   // 화면에 보이는 그날의 항목들(자동 항목 포함), 화면과 같은 순서
@@ -207,7 +263,13 @@
   async function init(){
     if(document.body.dataset.adminPage!=='schedule')return;
     await C().loadMembers();
-    window.histAdminEdit=id=>open(rows.find(x=>String(x.id)===String(id)));
+    window.histAdminEdit=async id=>{
+      const manual=rows.find(x=>String(x.id)===String(id)&&x.entry_kind==='manual');
+      if(manual)return open(manual);
+      const all=histMergeItems(await histLoadData(), SiteData.members, true);
+      const item=all.find(x=>String(x.id)===String(id));
+      if(item)open(item);
+    };
     window.histAdminRemove=id=>toggle(id);
     window.histAdminMove=(id,dir)=>move(id,dir).catch(e=>C().toast(C().errorText(e),'error'));
     await load();

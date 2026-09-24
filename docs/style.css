@@ -3075,6 +3075,7 @@ html[data-theme="dark"] .cal-longterm-bar {
 .hist-item.hist-type-match { --hist-color: var(--color-lose); }
 .hist-item.hist-type-broadcast { --hist-color: var(--color-race-z); }
 .hist-item.hist-type-event { --hist-color: var(--color-badge-format); }
+.hist-item.hist-type-other { --hist-color: var(--color-text-muted); }
 .hist-item.is-hidden { opacity: 0.5; }
 .hist-main {
     flex: 1;
