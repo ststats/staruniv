@@ -1034,6 +1034,72 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-filter-grid .admin-input { background: var(--admin-field); }
 .admin-filter-grid .admin-btn { min-height: 42px; padding: 0 20px; }
 
+/* 티어 랭킹 보기 (티어표 관리 > 티어 랭킹) */
+.admin-rank-summary {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: 10px 28px;
+    margin-bottom: 14px;
+    padding: 16px 18px;
+    background: var(--admin-field);
+    clip-path: var(--notch-md);
+    font-size: 13px;
+}
+.admin-rank-summary > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-width: 0; }
+.admin-rank-summary em {
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+}
+.admin-rank-summary > div > span { color: var(--color-text-strong); font-weight: 700; }
+.admin-rank-levels { grid-column: 1 / -1; }
+.admin-rank-levels span { color: var(--color-text-main) !important; font-weight: 500 !important; font-variant-numeric: tabular-nums; }
+.admin-rank-levels b { margin-right: 3px; color: var(--color-text-strong); }
+
+.admin-rank-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.admin-rank-tools .admin-input { background: var(--admin-field); }
+.admin-rank-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.admin-rank-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 10px;
+    border: 0;
+    background: var(--admin-field);
+    color: var(--color-text-main);
+    clip-path: var(--notch-xs);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.admin-rank-chip span { color: var(--color-text-muted); font-weight: 600; }
+.admin-rank-chip:hover { background: var(--admin-line); }
+.admin-rank-chip.is-on { background: var(--admin-ink); color: var(--admin-on-ink); }
+.admin-rank-chip.is-on span { color: inherit; opacity: .7; }
+.admin-rank-gap-label { color: var(--color-text-main); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.admin-rank-table td { padding-top: 8px; padding-bottom: 8px; }
+.admin-rank-rate { color: var(--color-text-muted); font-size: 11px; }
+.admin-rank-none { color: var(--color-text-faint); }
+.admin-rank-group > td {
+    padding: 7px 14px !important;
+    background: var(--admin-soft) !important;
+    color: var(--color-text-strong);
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left !important;
+}
+.admin-rank-table tr.has-gap > td { background: color-mix(in srgb, #f59f00 6%, var(--color-card)); }
+
 /* 표: .stat-table과 같은 네이비 무늬 머리글 */
 .admin-table-wrap {
     max-width: 100%;
@@ -1221,6 +1287,8 @@ body.admin-drawer-open { overflow: hidden; }
 }
 
 @media (max-width: 767.98px) {
+    .admin-rank-summary { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .admin-rank-tools { grid-template-columns: minmax(0, 1fr); }
     body.admin-mode { --admin-bar-h: 44px; }
     .admin-inline-bar { padding: 0 12px; gap: 8px; }
     .admin-save-state { display: none; }

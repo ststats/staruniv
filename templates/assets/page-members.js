@@ -210,24 +210,46 @@ function openMemberProfile(name) {
     showModal('memberProfileModal');
 }
 
-// 분석 탭은 별도의 선수 ID를 사용하므로 SOOP ID로 정확히 연결한다.
+// 분석 탭은 EloBoard 선수 ID(elo_id)를 쓰므로 SOOP ID로 정확히 연결한다.
+// 예전엔 정적 파일 data/h2h/index.json에서 찾았는데, 전적 데이터가 Supabase로 옮겨 가며
+// 그 파일이 없어져 버튼이 늘 숨겨졌다. 지금은 공개 뷰에서 SOOP ID가 있는 선수만 한 번 받아 둔다.
 let profileAnalysisIndexPromise = null;
+function loadProfileAnalysisIndex() {
+    if (profileAnalysisIndexPromise) return profileAnalysisIndexPromise;
+    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+    if (!client) return Promise.resolve(null);
+    profileAnalysisIndexPromise = (async () => {
+        const bySoop = new Map();
+        const size = 1000;
+        for (let from = 0; ; from += size) {
+            const { data, error } = await client.from('elo_public_players')
+                .select('elo_id,soop_id')
+                .not('soop_id', 'is', null)
+                .order('elo_id', { ascending: true })
+                .range(from, from + size - 1);
+            if (error) throw error;
+            (data || []).forEach(row => {
+                const key = String(row.soop_id || '').trim().toLowerCase();
+                if (key && !bySoop.has(key)) bySoop.set(key, String(row.elo_id));
+            });
+            if (!data || data.length < size) break;
+        }
+        return bySoop;
+    })().catch(() => { profileAnalysisIndexPromise = null; return null; });
+    return profileAnalysisIndexPromise;
+}
+
 async function updateMemberAnalysisLink(member) {
     const link = document.getElementById('mp-analysis-link');
     link.hidden = true;
     link.removeAttribute('href');
     const soopId = String(member['SOOP ID'] || '').trim().toLowerCase();
     if (!isValidSoopId(soopId)) return;
-    if (!profileAnalysisIndexPromise) {
-        profileAnalysisIndexPromise = fetch('data/h2h/index.json', { cache: 'no-cache' })
-            .then(response => { if (!response.ok) throw new Error('분석 명단 로드 실패'); return response.json(); })
-            .catch(() => { profileAnalysisIndexPromise = null; return null; });
-    }
-    const data = await profileAnalysisIndexPromise;
-    if (_profileMember !== member || !data) return;
-    const found = Object.entries(data.players || {}).find(([, player]) => String(player.s || '').trim().toLowerCase() === soopId);
-    if (!found) return;
-    link.href = 'tier/?view=analysis&p=' + encodeURIComponent(found[0]);
+    const bySoop = await loadProfileAnalysisIndex();
+    if (_profileMember !== member || !bySoop) return;
+    const eloId = bySoop.get(soopId);
+    if (!eloId) return;
+    link.href = 'tier/?view=analysis&p=' + encodeURIComponent(eloId);
     link.hidden = false;
 }
 
