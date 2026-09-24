@@ -191,7 +191,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `calendar-${calTodayStr()}.png`;
+      a.download = 'calendar.png';   // 외부 자동화가 이 이름을 쓴다 - 날짜를 붙이지 말 것
       document.body.appendChild(a);
       a.click();
       a.remove();
