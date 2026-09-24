@@ -433,3 +433,12 @@
     .nav-drawer-btn { display: flex; }
 }
 
+/* (14-surfaces.css에서 옮김) */
+@media (max-width: 767.98px) {
+    .page-header {
+            margin-top: -22px;
+            padding: 34px 24px 56px;
+            background-image: var(--hero-glow), var(--navy-pattern);
+        }
+}
+

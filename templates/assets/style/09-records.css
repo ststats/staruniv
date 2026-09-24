@@ -296,3 +296,14 @@
     }
 }
 
+/* (14-surfaces.css에서 옮김) */
+.head-plate-label {
+    font-family: "Pretendard", sans-serif;
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--label-accent);
+}
+#statContent .clean-card:has(.donut-wrap) .donut-sub { color: var(--navy-on-muted); }
+

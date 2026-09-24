@@ -506,3 +506,15 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     }
 }
 
+/* (14-surfaces.css에서 옮김) */
+.stat-table thead th {
+    font-family: "Pretendard", sans-serif;
+    text-transform: uppercase;
+    background-color: var(--color-head-bg);
+    color: var(--color-head-text);
+    border: 0;
+    letter-spacing: 0;
+    background-image: var(--navy-pattern);
+    background-attachment: fixed;
+}
+
