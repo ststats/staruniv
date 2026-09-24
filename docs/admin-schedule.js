@@ -126,7 +126,7 @@
 
   // 달력 이미지 저장: 공개 일정의 캡처 화면(schedule/?capture=calendar)을 화면 밖 폭 804px iframe에
   // 열어 그대로 PNG로 만든다. iframe 안에서는 페이지가 '폭 804px 화면'으로 그려지므로 폰에서 눌러도
-  // 서버 캡처(capture.js → docs/data/calendar.png)와 같은 배치가 나온다. 높이는 내용에 맞춰 잰다.
+  // 서버 캡처(scripts/capture_calendar.py → docs/data/calendar.png)와 같은 배치가 나온다. 높이는 내용에 맞춰 잰다.
   const CAPTURE_WIDTH = 804;
   const HTML_TO_IMAGE = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js';
   const BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';

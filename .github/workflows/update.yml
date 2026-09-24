@@ -13,7 +13,7 @@ on:
       - 'scripts/match_link.py'
       - 'scripts/write_site_data.py'
       - 'scripts/write_supabase_browser_config.py'
-      - 'capture.js'
+      - 'scripts/capture_calendar.py'
       - 'package.json'
       - 'package-lock.json'
 
@@ -70,17 +70,10 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY }}
         run: python scripts/write_supabase_browser_config.py
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      - name: Install Node dependencies
-        run: npm ci
-
+      # 외부 자동화가 가져가는 docs/data/calendar.png. 러너에 깔린 크롬으로 찍는다(Node·puppeteer 불필요).
       - name: Capture calendar image
         continue-on-error: true
-        run: node capture.js
+        run: python scripts/capture_calendar.py
 
       - name: Commit generated web files
         run: |

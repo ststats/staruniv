@@ -20,12 +20,24 @@ window.calOffAirExtra = (dateStr, type) => {
 };
 
 // 정적 캘린더 이미지 생성도 실제 페이지 DOM과 CSS를 그대로 사용한다.
-// 캡처 전용 쿼리는 표시할 영역만 고정하며, capture.js가 런타임 스타일을 덮어쓰지 않게 한다.
+// 캡처 전용 쿼리는 표시할 영역만 고정한다(scripts/capture_calendar.py가 이 주소를 찍는다).
 // 어드민의 '달력 이미지 저장'도 같은 주소를 폭 804px 틀(iframe)에 열어 찍으므로, 기기·테마와
 // 상관없이 서버 캡처(calendar.png)와 같은 모양이 나온다. 캡처는 늘 라이트 테마로 찍는다.
 if (new URLSearchParams(location.search).get('capture') === 'calendar') {
     document.body.classList.add('calendar-capture');
     if (typeof applyTheme === 'function') applyTheme('light');
+    // 서버 캡처(scripts/capture_calendar.py)는 크롬을 두 번 띄운다: 먼저 DOM을 받아 아래 높이를 읽고,
+    // 그 높이로 창을 맞춰 찍는다. 일정·오늘 카드·사진이 다 그려진 뒤에만 높이를 적는다.
+    const markCaptureReady = setInterval(() => {
+        const days = document.getElementById('daysGrid');
+        const today = document.getElementById('todayList');
+        const layout = document.querySelector('.cal-main-layout');
+        if (!layout || days?.getAttribute('aria-busy') !== 'false' || today?.getAttribute('aria-busy') !== 'false'
+            || !days.querySelector('.cal-day-cell') || ![...document.images].every(img => img.complete)) return;
+        clearInterval(markCaptureReady);
+        document.body.dataset.captureHeight = String(Math.ceil(layout.getBoundingClientRect().bottom));
+        document.body.dataset.captureViewport = `${window.innerWidth}x${window.innerHeight}`;
+    }, 200);
 }
 
 const SCHEDULE_TABS = { calendar: ['tab-calendar', 'view-calendar'], history: ['tab-history', 'view-history'] };
