@@ -134,11 +134,11 @@
     await refresh();
     const row=document.getElementById('video-channel-row');
     if(row&&!document.getElementById('adminVideoChannels')){
-      const b=document.createElement('button');b.type='button';b.id='adminVideoChannels';b.className='admin-inline-add';b.textContent='채널 관리';b.onclick=openChannelList;row.parentElement?.insertBefore(b,row);
+      const b=document.createElement('button');b.type='button';b.id='adminVideoChannels';b.className='admin-floating-add';b.dataset.icon='edit';b.textContent='팬튜브 채널 관리';b.onclick=openChannelList;row.parentElement?.insertBefore(b,row);
     }
     const pick=document.getElementById('view-video-pick');
     if(pick&&!document.getElementById('adminVideoPickAdd')){
-      const b=document.createElement('button');b.type='button';b.id='adminVideoPickAdd';b.className='admin-floating-add';b.textContent='+ 보자 영상';b.onclick=()=>openPick(null);pick.prepend(b);
+      const b=document.createElement('button');b.type='button';b.id='adminVideoPickAdd';b.className='admin-floating-add';b.dataset.icon='plus';b.textContent='보자 영상 추가';b.onclick=()=>openPick(null);pick.prepend(b);
     }
     document.addEventListener('click',ev=>{
       const p=ev.target.closest('[data-admin-pick]');if(p){ev.preventDefault();ev.stopPropagation();openPick(picks.find(x=>String(x.id)===p.dataset.adminPick));return;}

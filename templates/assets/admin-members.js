@@ -95,7 +95,7 @@
     await load();
     const container=document.getElementById('members-groups');
     if(container&&!document.getElementById('adminMemberAdd')){
-      const b=document.createElement('button');b.id='adminMemberAdd';b.type='button';b.className='admin-floating-add';b.textContent='+ 멤버 추가';b.onclick=()=>open(null);
+      const b=document.createElement('button');b.id='adminMemberAdd';b.type='button';b.className='admin-floating-add';b.dataset.icon='plus';b.textContent='멤버 추가';b.onclick=()=>open(null);
       container.parentElement?.prepend(b);
     }
     document.addEventListener('click',ev=>{

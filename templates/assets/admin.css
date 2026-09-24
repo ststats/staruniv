@@ -285,14 +285,14 @@ html[data-theme="dark"] .admin-btn.primary { background-color: var(--color-prima
     flex-direction: column;
     margin: 0 0 var(--space-card-gap);
 }
+/* 라벨은 한글이라 자간을 벌리지 않고 12px로 또렷하게 */
 .admin-field > span,
 .admin-field > label:not(.admin-check) {
     display: block;
-    margin-bottom: var(--space-label-gap);
+    margin-bottom: 7px;
     color: var(--color-text-sub);
-    font-size: var(--fs-eyebrow);
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.1em;
     line-height: 16px;
 }
 .admin-field > small {
@@ -347,10 +347,13 @@ textarea.admin-input {
 }
 
 .admin-help {
-    margin: 0 0 var(--space-card-gap);
-    color: var(--color-text-muted);
-    font-size: var(--fs-meta);
-    line-height: 1.6;
+    margin: 0 0 16px;
+    padding: 11px 14px;
+    background: var(--color-bg-subtle);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+    color: var(--color-text-sub);
+    font-size: 12.5px;
+    line-height: 1.65;
 }
 
 .admin-check {
@@ -455,45 +458,136 @@ textarea.admin-input {
 }
 .admin-participant-tools .admin-help { margin: 0; }
 
-/* 목록형 설정 (메뉴 순서 · 서브탭 · 채널) */
+/* 목록형 설정 (메뉴 순서 · 서브탭 · 채널): 번호 · 이름 · 스위치 · 순서 버튼 한 줄 */
 .admin-order-list,
-.admin-list { display: flex; flex-direction: column; gap: 4px; }
+.admin-list { display: flex; flex-direction: column; gap: 6px; }
 .admin-list { margin-top: var(--space-compact-gap); }
 .admin-order-row,
 .admin-setting-row,
 .admin-list-row {
     display: flex;
     align-items: center;
-    gap: var(--space-compact-gap);
-    min-height: 46px;
-    padding: 0 8px 0 14px;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 10px 0 12px;
     border: 0;
     background: var(--color-bg-subtle);
     clip-path: var(--notch-sm);
     color: var(--color-text-main);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 14px;
     text-align: left;
+    transition: background-color .15s, opacity .15s;
 }
 .admin-order-row b,
 .admin-setting-row b,
-.admin-list-row b { flex: 1; min-width: 0; font-weight: 700; }
-.admin-setting-row { margin-bottom: 4px; }
+.admin-list-row b { flex: 1; min-width: 0; color: var(--color-text-strong); font-weight: 700; }
+.admin-setting-row { margin-bottom: 6px; }
 .admin-list-row { cursor: pointer; }
 .admin-list-row span { color: var(--color-text-muted); font-size: var(--fs-meta); }
 .admin-list-row:hover { background: var(--color-row-hover); color: var(--color-primary); }
-.admin-order-handle { color: var(--color-text-faint); }
-.admin-order-actions { display: flex; gap: 2px; }
-.admin-order-actions button {
+.admin-order-row.is-off { background: transparent; box-shadow: inset 0 0 0 1px var(--color-border); }
+.admin-order-row.is-off b { color: var(--color-text-faint); text-decoration: line-through; }
+.admin-order-num {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
     width: 30px;
     height: 30px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: var(--navy-on-text);
+    clip-path: var(--notch-xs);
+    font-size: 11px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.admin-order-row.is-off .admin-order-num { background: var(--color-border); color: var(--color-text-muted); }
+.admin-order-actions { display: flex; gap: 4px; order: 9; }
+.admin-order-actions button {
+    width: 32px;
+    height: 32px;
     border: 0;
     background: var(--color-card);
     color: var(--color-text-sub);
     clip-path: var(--notch-xs);
     cursor: pointer;
 }
-.admin-order-actions button:hover { color: var(--color-primary); }
+.admin-order-actions button::before {
+    content: "";
+    display: block;
+    width: 12px;
+    height: 12px;
+    margin: auto;
+    background: currentColor;
+    -webkit-mask: var(--admin-ico-up) center / contain no-repeat;
+    mask: var(--admin-ico-up) center / contain no-repeat;
+}
+.admin-order-actions button[data-dir="1"]::before { transform: rotate(180deg); }
+.admin-order-actions button:hover { background: var(--color-primary); color: #fff; }
+.admin-order-row:first-child .admin-order-actions button[data-dir="-1"],
+.admin-order-row:last-child .admin-order-actions button[data-dir="1"] { opacity: .3; pointer-events: none; }
+
+/* 켜기/끄기 스위치 (체크박스) */
+.admin-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+.admin-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.admin-switch-track {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    background: var(--color-border-strong, #c5cddb);
+    border-radius: 11px;
+    transition: background-color .15s;
+}
+.admin-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    transition: transform .15s;
+}
+.admin-switch input:checked + .admin-switch-track { background: var(--color-primary); }
+.admin-switch input:checked + .admin-switch-track::after { transform: translateX(16px); }
+.admin-switch input:focus-visible + .admin-switch-track { box-shadow: 0 0 0 2px var(--color-primary-tint); }
+.admin-switch-text { min-width: 24px; color: var(--color-text-muted); font-size: 12px; font-weight: 700; }
+.admin-switch-text::after { content: "숨김"; }
+.admin-switch input:checked ~ .admin-switch-text { color: var(--color-primary); }
+.admin-switch input:checked ~ .admin-switch-text::after { content: "표시"; }
+
+/* 기본 서브탭 고르기 (라디오): 고른 것만 네이비 칩 */
+.admin-default-pick { margin: 0; cursor: pointer; }
+.admin-default-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.admin-default-pick span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 10px;
+    background: var(--color-card);
+    color: var(--color-text-muted);
+    clip-path: var(--notch-xs);
+    font-size: 12px;
+    font-weight: 700;
+}
+.admin-default-pick:hover span { color: var(--color-primary); }
+.admin-default-pick input:checked + span {
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: #fff;
+}
+.admin-default-pick input:checked + span::before { content: "✓"; }
 
 /* 폼 안의 작은 제목 (세트 · 승급 이력): .section-title-sm */
 .admin-section-head {
@@ -538,13 +632,13 @@ textarea.admin-input {
     right: 0;
     display: flex;
     flex-direction: column;
-    width: min(520px, 100vw);
+    width: min(540px, 100vw);
     height: 100%;
     background: var(--color-card);
     transform: translateX(100%);
     transition: transform .22s ease;
 }
-.admin-drawer[aria-hidden="false"] .admin-drawer-sheet { transform: none; }
+.admin-drawer[aria-hidden="false"] .admin-drawer-sheet { transform: none; box-shadow: -12px 0 40px rgba(5, 10, 20, .18); }
 body.admin-drawer-open { overflow: hidden; }
 
 .admin-drawer-head {
@@ -552,7 +646,7 @@ body.admin-drawer-open { overflow: hidden; }
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 18px 20px;
+    padding: 22px 24px 20px;
     background-color: var(--navy);
     background-image: var(--navy-pattern);
     color: var(--navy-on-text);
@@ -569,7 +663,7 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-drawer-head h2 {
     margin: 0;
     color: #fff;
-    font-size: 18px;
+    font-size: 21px;
     font-weight: 800;
     letter-spacing: -0.025em;
 }
@@ -597,7 +691,7 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-drawer-form > #adminDrawerBody {
     flex: 1;
     overflow: auto;
-    padding: 20px 20px 8px;
+    padding: 24px 24px 12px;
     scrollbar-width: thin;
     scrollbar-color: var(--scroll-thumb) transparent;
 }
@@ -605,24 +699,39 @@ body.admin-drawer-open { overflow: hidden; }
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 12px 20px;
+    padding: 14px 24px;
     border-top: 1px solid var(--color-border);
     background: var(--color-card);
 }
 .admin-drawer-spacer { flex: 1; }
-.admin-drawer-actions .admin-btn { min-height: 40px; padding: 0 18px; }
+.admin-drawer-actions .admin-btn { min-height: 44px; padding: 0 22px; font-size: 13px; }
 
 
 /* =============================================================================
-   7. 공개 화면 위 편집 버튼
-   공개 화면을 가리지 않도록 작고 조용하게 둔다. 평소엔 .text-action 모양이고,
-   카드 위에 뜨는 것만 파랑 칩으로 눈에 띄게 한다.
+   7. 공개 화면 위 편집 도구
+   편집 도구는 상단 바의 EDIT 배지와 같은 파랑으로 통일한다. 공개 사이트 요소(네이비)와
+   한눈에 구분되게 하려는 것. 아이콘은 currentColor 마스크라 글자색을 따른다.
    ============================================================================= */
+:root {
+    --admin-ico-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='black' stroke-width='2.2'/%3E%3C/svg%3E");
+    --admin-ico-edit: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --admin-ico-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 10.5l5-5 5 5' fill='none' stroke='black' stroke-width='2.2'/%3E%3C/svg%3E");
+}
+:is(.admin-nav-manage, .admin-subtab-manage, .admin-floating-add)[data-icon="plus"] { --admin-ico: var(--admin-ico-plus); }
+:is(.admin-nav-manage, .admin-subtab-manage, .admin-floating-add)[data-icon="edit"] { --admin-ico: var(--admin-ico-edit); }
+:is(.admin-nav-manage, .admin-subtab-manage)[data-icon]::before {
+    content: "";
+    flex: none;
+    width: 12px;
+    height: 12px;
+    background: currentColor;
+    -webkit-mask: var(--admin-ico) center / contain no-repeat;
+    mask: var(--admin-ico) center / contain no-repeat;
+}
+
+/* 카드 · 달력 안의 작은 칩 (수정 · + 휴방) */
 .admin-inline-edit,
-.admin-inline-add,
-.admin-nav-manage,
-.admin-subtab-manage,
-.admin-floating-add {
+.admin-inline-add {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -642,13 +751,107 @@ body.admin-drawer-open { overflow: hidden; }
     transition: background-color .15s, color .15s;
 }
 .admin-inline-edit:hover,
-.admin-inline-add:hover,
-.admin-nav-manage:hover,
-.admin-subtab-manage:hover,
-.admin-floating-add:hover {
+.admin-inline-add:hover {
     background: var(--color-primary);
     color: #fff;
 }
+
+/* 헤더 '메뉴 편집': 테마 버튼과 같은 높이의 파랑 버튼 */
+.admin-nav-manage {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    height: 30px;
+    margin: 0 12px 0 8px;
+    padding: 0 12px;
+    border: 0;
+    background: var(--color-primary);
+    color: #fff;
+    clip-path: var(--notch-xs);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.admin-nav-manage:hover { filter: brightness(1.12); }
+
+/* 히어로 '서브탭 편집': 서브탭과 같은 높이, 점선 테두리로 '편집용'임을 드러낸다 */
+.admin-subtab-manage {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: none;
+    height: 40px;
+    margin-left: 10px;
+    padding: 0 15px;
+    border: 1px dashed rgba(255, 255, 255, .35);
+    background: transparent;
+    color: var(--navy-accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s, color .15s, border-color .15s;
+}
+.admin-subtab-manage:hover { border-color: var(--navy-accent); background: rgba(255, 255, 255, .08); color: #fff; }
+
+/* 페이지 관리 막대 (멤버 추가 · 채널 관리 · 보자 영상 추가 · 도구 추가)
+   섹션 맨 위에 가로로 꽉 차게 놓는다: [EDIT] 이름 ................ [아이콘] */
+.admin-floating-add {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 54px;
+    margin: 0 0 var(--space-content-gap);
+    padding: 0 9px 0 16px;
+    border: 0;
+    background: var(--color-card);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+    color: var(--color-text-strong);
+    clip-path: var(--notch-md);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .15s;
+}
+.admin-floating-add::before {
+    content: "EDIT";
+    flex: none;
+    padding: 4px 6px;
+    background: var(--color-primary);
+    color: #fff;
+    clip-path: var(--notch-xs);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    line-height: 1;
+}
+.admin-floating-add::after {
+    content: "";
+    flex: none;
+    width: 36px;
+    height: 36px;
+    margin-left: auto;
+    background-color: var(--color-primary);
+    clip-path: var(--notch-sm);
+    /* 아이콘을 흰색으로 칠하려고 마스크 대신 흰 선 SVG를 겹친다 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='white' stroke-width='2.2'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 14px;
+    transition: filter .15s;
+}
+.admin-floating-add[data-icon="edit"]::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.admin-floating-add:hover { background: var(--color-row-hover); color: var(--color-primary); }
+.admin-floating-add:hover::after { filter: brightness(1.12); }
 
 /* 카드 오른쪽 위에 떠 있는 편집 · 숨김 버튼 */
 .admin-card-action,
@@ -687,50 +890,27 @@ body.admin-drawer-open { overflow: hidden; }
 .home-live-broadcast,
 .home-notice-list { position: relative; }
 
-.admin-floating-add {
-    min-height: 32px;
-    margin: 0 0 var(--space-compact-gap);
-    padding: 0 12px;
-}
-
-/* 상단 메뉴 · 서브탭 안의 표시/숨김 눈 */
-.admin-eye-toggle,
-.admin-subtab-eye {
-    display: inline-grid;
-    place-items: center;
-    width: 18px;
-    height: 18px;
+/* 숨긴 항목은 관리자에게만 흐리게 + '숨김' 꼬리표로 보인다 */
+.admin-config-hidden { opacity: .45 !important; filter: grayscale(.5); }
+.nav-item.admin-config-hidden::before,
+.sub-tab.admin-config-hidden::before {
+    content: "숨김";
+    order: 2;
     margin-left: 5px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--color-text-faint);
-    font-size: 11px;
+    padding: 2px 4px;
+    background: var(--color-text-muted);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
     line-height: 1;
-    cursor: pointer;
 }
-.admin-eye-toggle:hover,
-.admin-subtab-eye:hover { color: var(--color-primary); }
-.page-header .admin-subtab-eye { color: inherit; opacity: .6; }
-.page-header .admin-subtab-eye:hover { opacity: 1; }
-.admin-nav-manage { margin: 0 12px 0 8px; flex: none; }
-.admin-subtab-manage {
-    align-self: center;
-    margin-left: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--navy-on-text);
-}
-.admin-subtab-manage:hover { background: #fff; color: var(--navy); }
-
-/* 숨긴 항목은 관리자에게만 반투명하게 보인다 */
-.admin-config-hidden { opacity: .38 !important; filter: grayscale(.5); }
 .admin-config-hidden[hidden] { display: initial !important; }
 .nav-item.admin-config-hidden[hidden],
 .sub-tab.admin-config-hidden[hidden] { display: flex !important; }
 .admin-default-subtab { box-shadow: inset 0 -2px var(--navy-accent); }
 
 .admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
-    .admin-section-eye, .admin-eye-toggle, .admin-subtab-eye, .admin-nav-manage,
+    .admin-section-eye, .admin-nav-manage,
     .admin-subtab-manage, .admin-floating-add, .hist-admin-content-head .admin-btn, .hist-admin-bar) {
     display: none !important;
 }

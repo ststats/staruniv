@@ -41,7 +41,7 @@
     window.toolCardAdminExtra=tool=>C().state.editMode?`<button type="button" class="admin-card-action" data-admin-tool="${C().esc(tool.id)}">편집</button>`:'';
     await load();
     const ext=document.getElementById('view-tools-external');
-    if(ext&&!document.getElementById('adminToolAdd')){const b=document.createElement('button');b.id='adminToolAdd';b.type='button';b.className='admin-floating-add';b.textContent='+ 도구/사이트 추가';b.onclick=()=>open(null);ext.prepend(b);}
+    if(ext&&!document.getElementById('adminToolAdd')){const b=document.createElement('button');b.id='adminToolAdd';b.type='button';b.className='admin-floating-add';b.dataset.icon='plus';b.textContent='외부 도구·사이트 추가';b.onclick=()=>open(null);ext.prepend(b);}
     document.addEventListener('click',ev=>{const b=ev.target.closest('[data-admin-tool]');if(!b)return;ev.preventDefault();ev.stopPropagation();open(rows.find(r=>String(r.id)===b.dataset.adminTool));},true);
   }
   document.addEventListener('admin:ready',init);

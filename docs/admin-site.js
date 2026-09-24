@@ -27,8 +27,18 @@
     enhance();
   }
 
-  function eyeButton(hidden,page){
-    return `<span role="button" tabindex="0" class="admin-eye-toggle${hidden?' is-hidden':''}" data-admin-nav-toggle="${C().esc(page)}" aria-label="${hidden?'표시':'숨김'}">${hidden?'◉':'◌'}</span>`;
+  // 표시/숨김·순서는 '메뉴 편집'/'서브탭 편집' 서랍에서만 바꾼다. 화면에는 숨김 상태만 흐리게 보여 준다.
+  function subtabLabel(page,key){
+    const el=[...document.querySelectorAll('.sub-tabs .sub-tab[id]')].find(x=>subKeyFromId(x.id)===key);
+    return (el?.firstChild?.textContent||el?.textContent||key).trim()||key;
+  }
+
+  function orderRow(i,label,attrs,visible,extra=''){
+    return `<div class="admin-order-row${visible?'':' is-off'}" ${attrs}>
+      <span class="admin-order-num">${String(i+1).padStart(2,'0')}</span><b>${C().esc(label)}</b>
+      ${extra}
+      <label class="admin-switch"><input type="checkbox" data-visible${visible?' checked':''}><span class="admin-switch-track"></span><span class="admin-switch-text"></span></label>
+    </div>`;
   }
 
   async function enhanceNav(){
@@ -37,7 +47,7 @@
     document.querySelectorAll('#mainMenu .nav-item[data-page]').forEach(el=>{
       el.hidden=false;
       el.classList.toggle('admin-config-hidden',hidden.has(el.dataset.page));
-      if(!el.querySelector('.admin-eye-toggle')) el.insertAdjacentHTML('beforeend',eyeButton(hidden.has(el.dataset.page),el.dataset.page));
+      el.querySelector('.admin-eye-toggle')?.remove();
     });
   }
 
@@ -62,9 +72,7 @@
       if(!ids.includes(key))return;
       el.hidden=false;
       el.classList.toggle('admin-config-hidden',hidden.has(key));
-      if(!el.querySelector('.admin-subtab-eye')){
-        el.insertAdjacentHTML('beforeend',`<button type="button" class="admin-subtab-eye" data-admin-subtab-toggle="${C().esc(key)}" aria-label="표시 전환">◉</button>`);
-      }
+      el.querySelector('.admin-subtab-eye')?.remove();
       el.classList.toggle('admin-default-subtab',String(sub.default||ids[0])===key);
       el.title=String(sub.default||ids[0])===key?'기본 서브탭':'';
     });
@@ -75,13 +83,9 @@
     const order=cfg.order.filter(x=>NAV_LABELS[x]).concat(Object.keys(NAV_LABELS).filter(x=>!cfg.order.includes(x)));
     C().openDrawer({
       eyebrow:'SITE',title:'상단 메뉴 편집',
-      html:`<p class="admin-help">표시 여부와 순서를 저장합니다. 숨긴 메뉴도 관리자 모드에서는 반투명하게 보입니다.</p>
-        <div class="admin-order-list" id="an_order">${order.map((id,i)=>`
-          <div class="admin-order-row" data-nav="${id}">
-            <span class="admin-order-handle">↕</span><b>${C().esc(NAV_LABELS[id])}</b>
-            <label class="admin-check"><input type="checkbox" data-visible="${id}"${cfg.hidden.includes(id)?'':' checked'}><span>표시</span></label>
-            <span class="admin-order-actions"><button type="button" data-move="${id}" data-dir="-1">↑</button><button type="button" data-move="${id}" data-dir="1">↓</button></span>
-          </div>`).join('')}</div>`,
+      html:`<p class="admin-help">상단 메뉴의 순서와 표시 여부를 정합니다. 숨긴 메뉴는 방문자에게 보이지 않고, 관리자 화면에서만 흐리게 보입니다.</p>
+        <div class="admin-order-list" id="an_order">${order.map((id,i)=>orderRow(i,NAV_LABELS[id],`data-nav="${id}"`,!cfg.hidden.includes(id),
+          `<span class="admin-order-actions"><button type="button" data-dir="-1" aria-label="위로"></button><button type="button" data-dir="1" aria-label="아래로"></button></span>`)).join('')}</div>`,
       onSubmit:async()=>{
         const rows=[...document.querySelectorAll('#an_order [data-nav]')];
         cfg.order=rows.map(x=>x.dataset.nav);
@@ -89,13 +93,16 @@
         await save(cfg);
       }
     });
-    document.getElementById('an_order')?.addEventListener('click',ev=>{
-      const b=ev.target.closest('[data-move]');if(!b)return;
+    const list=document.getElementById('an_order');
+    const renumber=()=>list.querySelectorAll('.admin-order-num').forEach((el,i)=>el.textContent=String(i+1).padStart(2,'0'));
+    list?.addEventListener('click',ev=>{
+      const b=ev.target.closest('[data-dir]');if(!b)return;
       ev.preventDefault();
       const row=b.closest('[data-nav]'), dir=Number(b.dataset.dir), sib=dir<0?row.previousElementSibling:row.nextElementSibling;
       if(sib) row.parentElement.insertBefore(dir<0?row:sib,dir<0?sib:row);
-      C().markDirty(true);
+      renumber();C().markDirty(true);
     });
+    list?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row)row.classList.toggle('is-off',!ev.target.checked);});
   }
 
   async function openSubtabManager(){
@@ -103,17 +110,17 @@
     const cfg=configDefaults(await C().loadSiteConfig()), sub=cfg.subtabs[page]||{hidden:[],default:ids[0]};
     C().openDrawer({
       eyebrow:'SUBTAB',title:'서브탭 편집',
-      html:`${ids.map(key=>`<div class="admin-setting-row"><b>${C().esc(key)}</b>
-        <label class="admin-check"><input type="checkbox" data-sub-visible="${key}"${(sub.hidden||[]).includes(key)?'':' checked'}><span>표시</span></label>
-        <label class="admin-check"><input type="radio" name="sub_default" value="${key}"${String(sub.default||ids[0])===key?' checked':''}><span>기본</span></label>
-      </div>`).join('')}`,
+      html:`<p class="admin-help">이 페이지 서브탭의 표시 여부와, 처음 열릴 때 보여 줄 기본 탭을 정합니다. 기본 탭은 숨길 수 없습니다.</p>
+        <div class="admin-order-list" id="as_subtabs">${ids.map((key,i)=>orderRow(i,subtabLabel(page,key),`data-sub="${C().esc(key)}"`,!(sub.hidden||[]).includes(key),
+          `<label class="admin-default-pick"><input type="radio" name="sub_default" value="${C().esc(key)}"${String(sub.default||ids[0])===key?' checked':''}><span>기본</span></label>`)).join('')}</div>`,
       onSubmit:async()=>{
-        sub.hidden=ids.filter(key=>!document.querySelector(`[data-sub-visible="${CSS.escape(key)}"]`)?.checked);
+        sub.hidden=ids.filter(key=>!document.querySelector(`[data-sub="${CSS.escape(key)}"] [data-visible]`)?.checked);
         sub.default=document.querySelector('input[name="sub_default"]:checked')?.value||ids[0];
         if(sub.hidden.includes(sub.default))throw new Error('기본 서브탭은 표시 상태여야 합니다.');
         cfg.subtabs[page]=sub;await save(cfg);
       }
     });
+    document.getElementById('as_subtabs')?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row&&ev.target.matches('[data-visible]'))row.classList.toggle('is-off',!ev.target.checked);});
   }
 
   async function openHomeSlide(index){
@@ -172,7 +179,8 @@
       el.hidden=false;
       const enabled=cfg.homeSections[key]!==false;
       el.classList.toggle('admin-config-hidden',!enabled);
-      if(!el.querySelector(':scope > .admin-section-eye'))el.insertAdjacentHTML('afterbegin',`<button type="button" class="admin-section-eye" data-admin-home-section="${key}">${enabled?'◌':'◉'}</button>`);
+      el.querySelector(':scope > .admin-section-eye')?.remove();
+      el.insertAdjacentHTML('afterbegin',`<button type="button" class="admin-section-eye" data-admin-home-section="${key}">${enabled?'숨기기':'보이기'}</button>`);
     });
   }
 
@@ -182,12 +190,12 @@
     await enhanceHome();
     const menu=document.getElementById('mainMenu');
     if(menu&&!document.getElementById('adminNavManage')){
-      const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.onclick=openNavManager;
+      const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.dataset.icon='edit';b.onclick=openNavManager;
       menu.after(b);
     }
     const tabs=document.querySelector('.sub-tabs');
     if(tabs&&SUBTAB_IDS[document.body.dataset.adminPage]&&!document.getElementById('adminSubtabManage')){
-      const b=document.createElement('button');b.id='adminSubtabManage';b.type='button';b.className='admin-subtab-manage';b.textContent='서브탭 편집';b.onclick=openSubtabManager;
+      const b=document.createElement('button');b.id='adminSubtabManage';b.type='button';b.className='admin-subtab-manage';b.textContent='서브탭 편집';b.dataset.icon='edit';b.onclick=openSubtabManager;
       tabs.appendChild(b);
     }
   }
@@ -197,21 +205,6 @@
     await enhance();
     document.addEventListener('click',async ev=>{
       if(!C().state.editMode)return;
-      const nav=ev.target.closest('[data-admin-nav-toggle]');
-      if(nav){
-        ev.preventDefault();ev.stopPropagation();
-        const cfg=configDefaults(await C().loadSiteConfig()),id=nav.dataset.adminNavToggle;
-        const hidden=new Set(cfg.hidden);hidden.has(id)?hidden.delete(id):hidden.add(id);cfg.hidden=[...hidden];await save(cfg);return;
-      }
-      const sub=ev.target.closest('[data-admin-subtab-toggle]');
-      if(sub){
-        ev.preventDefault();ev.stopPropagation();
-        const page=document.body.dataset.adminPage,cfg=configDefaults(await C().loadSiteConfig());
-        const ids=SUBTAB_IDS[page]||[],s=cfg.subtabs[page]||{hidden:[],default:ids[0]},hidden=new Set(s.hidden||[]);
-        const key=sub.dataset.adminSubtabToggle;hidden.has(key)?hidden.delete(key):hidden.add(key);
-        if(hidden.has(s.default)){C().toast('기본 서브탭은 숨길 수 없습니다.','error');return;}
-        s.hidden=[...hidden];cfg.subtabs[page]=s;await save(cfg);return;
-      }
       const slide=ev.target.closest('[data-admin-home-slide]');if(slide){ev.preventDefault();ev.stopPropagation();openHomeSlide(Number(slide.dataset.adminHomeSlide));return;}
       const section=ev.target.closest('[data-admin-home-section]');if(section){ev.preventDefault();ev.stopPropagation();await toggleHomeSection(section.dataset.adminHomeSection);}
     },true);
