@@ -12,6 +12,9 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <title>{{ full_title }}</title>
     <meta name="description" content="{{ description }}">
+    {%- if admin_mode %}
+    <meta name="robots" content="noindex, nofollow">
+    {%- endif %}
     {#- 카카오톡/디스코드 등에 링크를 붙였을 때 보이는 미리보기 #}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="스타대학">

@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import shutil
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader
@@ -189,6 +190,22 @@ def copy_static_assets():
         print(f"✅ 정적 폴더를 templates/static에서 docs/로 동기화했습니다.")
 
 
+def write_search_files():
+    """검색엔진용 sitemap.xml·robots.txt. 관리자 화면(admin*.html)은 검색에 안 나오게 막는다.
+    GitHub Pages 프로젝트 주소(/staruniv/)의 robots.txt는 검색엔진이 읽지 않으므로(도메인 맨 위만 읽는다)
+    관리자 화면에는 base.html의 noindex도 함께 붙인다. robots.txt는 Vercel 주소에서 쓰인다."""
+    today = datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d')
+    urls = ''.join(
+        f'  <url><loc>{SITE_URL}/{page_url_path(page_id)}</loc><lastmod>{today}</lastmod></url>\n'
+        for page_id, *_ in PAGES)
+    write_text_atomic(os.path.join(OUT_DIR, 'sitemap.xml'),
+                      '<?xml version="1.0" encoding="UTF-8"?>\n'
+                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + '</urlset>\n')
+    write_text_atomic(os.path.join(OUT_DIR, 'robots.txt'),
+                      'User-agent: *\nDisallow: /admin\nDisallow: /staruniv/admin\n'
+                      f'Sitemap: {SITE_URL}/sitemap.xml\n')
+
+
 def main():
     stats_data = load_inputs()
 
@@ -217,6 +234,7 @@ def main():
         admin_name = 'admin.html' if page_id == 'home' else f'admin-{page_id}.html'
         write_text_atomic(os.path.join(OUT_DIR, admin_name), admin_output)
     print(f"✅ 페이지 {len(PAGES)}개 생성: {', '.join(page_output_path(p[0]) for p in PAGES)}")
+    write_search_files()
 
     copy_static_assets()
     # 독립 관리자/멀티뷰어/캄몬라이더도 docs를 직접 원본으로 두지 않는다.
