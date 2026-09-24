@@ -220,7 +220,9 @@
   function requestHtml(){
     const admin=`${location.origin}${location.pathname}?view=update`;
     // 펨코 글에서 누르면 티어표 이미지 주소와 FA 명단 줄만 뽑아 이 화면을 연다
-    const bm=`javascript:(()=>{const a=document.querySelector('.xe_content,article')||document.body;let b=null,h=0;a.querySelectorAll('img').forEach(i=>{const s=i.getAttribute('data-original')||i.currentSrc||i.src||'';const v=i.naturalHeight||i.offsetHeight||0;if(/image\\.fmkorea\\.com/.test(s)&&v>=h){h=v;b=new URL(s,location.href).href.replace(/^http:/,'https:');}});const f=a.innerText.split('\\n').filter(l=>/[｜|]/.test(l)||/^\\s*[TZP]\\s/.test(l)||/FA 인원/.test(l)).join('\\n');if(!b){alert('티어표 이미지를 찾지 못했습니다');return;}open('${admin}#tier-update?img='+encodeURIComponent(b)+'&fa='+encodeURIComponent(f));})()`;
+    const code=`(()=>{const a=document.querySelector('.xe_content,article')||document.body;let b=null,h=0;a.querySelectorAll('img').forEach(i=>{const s=i.getAttribute('data-original')||i.currentSrc||i.src||'';const v=i.naturalHeight||i.offsetHeight||0;if(/image\\.fmkorea\\.com/.test(s)&&v>=h){h=v;b=new URL(s,location.href).href.replace(/^http:/,'https:');}});const f=a.innerText.split('\\n').filter(l=>/[｜|]/.test(l)||/^\\s*[TZP]\\s/.test(l)||/FA 인원/.test(l)).join('\\n');if(!b){alert('티어표 이미지를 찾지 못했습니다');return;}open('${admin}#tier-update?img='+encodeURIComponent(b)+'&fa='+encodeURIComponent(f));})()`;
+    // 폰 북마크 주소칸은 공백·한글을 받지 않는다: 코드 전체를 URL 인코딩한다(실행할 때 브라우저가 풀어 준다)
+    const bm='javascript:'+encodeURIComponent(code);
     return `<section class="admin-tu-box">
       <div class="admin-section-head"><b>분석 요청</b><small>펨코 티어표 글의 이미지 주소와 FA 명단 글을 넣습니다</small></div>
       <div class="admin-tu-form">
