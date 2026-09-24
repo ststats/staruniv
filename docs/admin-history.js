@@ -106,7 +106,6 @@
         <div class="admin-form-grid">
           ${C().field('날짜',C().input('ah_date',row.date,'date','required'))}
           ${C().field('형식',C().input('ah_type',row.type,'text','placeholder="대회, 입단, 이벤트"'))}
-          ${C().field('같은 날짜 내 순서',C().input('ah_order',row.order,'number','min="0"'))}
           ${C().field('숨김',C().checkbox('ah_hidden',row.hidden,'공개 화면에서 숨김'))}
         </div>
         ${C().field('제목',C().input('ah_title',row.title,'text','required maxlength="120"'))}
@@ -124,12 +123,20 @@
         let image=row.image||null;
         const file=document.getElementById('ah_image')?.files?.[0];
         if(file) image=await C().uploadMedia(file,'history',id);
+        const eventDate=C().value('ah_date');
+        // 같은 날 안의 순서는 카드의 ▲▼로 정한다. 기존 항목은 날짜가 그대로면 자리를 지키고,
+        // 새 항목이거나 날짜를 옮긴 항목은 그날의 맨 뒤에 붙인다.
+        let order=row.order;
+        if(!row.id||row.date!==eventDate){
+          const day=(await dayItems(eventDate)).filter(x=>String(x.id)!==String(row.id));
+          order=day.length?Math.max(...day.map((x,i)=>Number.isFinite(x.ord)?x.ord:i))+1:0;
+        }
         const payload={
-          id,entry_kind:'manual',event_date:C().value('ah_date'),event_type:C().empty(C().value('ah_type')),
+          id,entry_kind:'manual',event_date:eventDate,event_type:C().empty(C().value('ah_type')),
           title:C().value('ah_title').trim(),description:C().empty(C().value('ah_desc')),
           members:collectParticipants(),
           youtube_url:C().empty(C().value('ah_youtube')),image_path:image,
-          sort_order:Number(C().value('ah_order')||0),hidden:!!document.getElementById('ah_hidden')?.checked,
+          sort_order:order,hidden:!!document.getElementById('ah_hidden')?.checked,
           updated_at:new Date().toISOString()
         };
         if(!payload.event_date||!payload.title) throw new Error('날짜와 제목은 필수입니다.');
@@ -158,20 +165,41 @@
     img?.addEventListener('change',()=>{const f=img.files?.[0],box=document.getElementById('ahImagePreview');if(f&&box)box.innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`;});
   }
 
+  // 화면에 보이는 그날의 항목들(자동 항목 포함), 화면과 같은 순서
+  async function dayItems(date){
+    const merged=histMergeItems(await histLoadData(), SiteData.members, true);
+    return merged.filter(x=>x.date===date);
+  }
+  // 한 항목의 같은 날 순서/숨김을 저장한다. 자동 항목(입단·퇴단 등)은 원본이 멤버 데이터라
+  // 'override' 줄에 덮어쓸 값만 둔다(없는 칸은 원래 값을 그대로 쓴다).
+  async function saveItem(item,fields){
+    const q=C().state.client.from('history_entries');
+    const now=new Date().toISOString();
+    const {error}=item.auto
+      ?await q.upsert({id:item.id,entry_kind:'override',event_date:item.date,...fields,updated_at:now},{onConflict:'id'})
+      :await q.update({...fields,updated_at:now}).eq('id',item.id);
+    if(error)throw error;
+  }
+  // ▲▼: 화면에 보이는 순서 그대로 옆 항목과 자리를 바꾸고, 그날 항목 전체를 0,1,2...로 다시 번호 매긴다.
+  // (예전엔 DB 행끼리 sort_order 값만 맞바꿔서, 값이 모두 0이면 아무 일도 안 일어났고
+  //  자동 항목은 목록에 없어 무시됐다.)
   async function move(id,dir){
-    const row=rows.find(x=>String(x.id)===String(id));if(!row)return;
-    const same=rows.filter(x=>x.date===row.date).sort((a,b)=>Number(a.order)-Number(b.order));
-    const idx=same.findIndex(x=>String(x.id)===String(id)), other=same[idx+dir];if(!other)return;
-    const a=row.order,b=other.order;
-    const r1=await C().state.client.from('history_entries').update({sort_order:b}).eq('id',row.id);
-    const r2=await C().state.client.from('history_entries').update({sort_order:a}).eq('id',other.id);
-    if(r1.error||r2.error)throw r1.error||r2.error;
+    const all=histMergeItems(await histLoadData(), SiteData.members, true);
+    const item=all.find(x=>String(x.id)===String(id));if(!item)return;
+    const day=all.filter(x=>x.date===item.date);
+    const idx=day.findIndex(x=>String(x.id)===String(id)), to=idx+dir;
+    if(to<0||to>=day.length)return;
+    [day[idx],day[to]]=[day[to],day[idx]];
+    for(let i=0;i<day.length;i++){
+      if(day[i].ord!==i)await saveItem(day[i],{sort_order:i});
+    }
     await load();
   }
   async function toggle(id){
-    const row=rows.find(x=>String(x.id)===String(id));if(!row)return;
-    const {error}=await C().state.client.from('history_entries').update({hidden:!row.hidden,updated_at:new Date().toISOString()}).eq('id',id);
-    if(error)throw error;await load();
+    const all=histMergeItems(await histLoadData(), SiteData.members, true);
+    const item=all.find(x=>String(x.id)===String(id));if(!item)return;
+    await saveItem(item,{hidden:!item.hidden});
+    await load();
   }
 
   window.StarUnivAdminHistory={render,openNew:()=>open(null)};
