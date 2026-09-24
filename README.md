@@ -1,22 +1,79 @@
-# StarUniv
+# StarUniv (스타대학)
 
-StarUniv 관리자와 정적 웹사이트 저장소입니다.
+캄몬스타즈 공개 사이트와 관리자 화면 저장소입니다. 데이터는 공유 Supabase에 있고,
+외부 데이터 수집·계산은 [`ststat`](https://github.com/ststats/ststat) 저장소가 맡습니다.
 
-- 관리자는 공유 Supabase의 일정, 멤버, 경기, 로스터, 영상 설정을 편집합니다.
-- `ststat`가 EloBoard, Poonggo, YouTube 데이터와 파생 통계를 갱신합니다.
-- 브라우저는 변동이 큰 티어·Elo·방송·영상 데이터를 Supabase에서 직접 읽습니다.
-- 일반 화면은 작은 `docs/data/site_shell.json`을 사용하고, 전적 화면만 `docs/data/site_records.json`을 추가로 읽습니다.
+## 한눈에 보기
 
-## 웹 빌드
+| 무엇 | 어디서 | 사이트 반영 |
+|---|---|---|
+| 일정·휴방, 연혁, 티어표, 티어 랭킹, 영상, 방송통계(시너지) | Supabase를 브라우저가 바로 읽음 | 저장 즉시 |
+| 멤버 목록, 캄몬 전적(매치·세트), 홈 누적 수치 | 빌드 때 `docs/data/site_shell.json`·`site_records.json`으로 만듦 | 스타유니브 빌드 후 |
+| 달력 사진 `docs/data/calendar.png`(외부 자동화가 가져감) | 빌드 때 크롬으로 캡처 | 스타유니브 빌드 후 |
+| EloBoard 경기·티어 랭킹 계산, 풍고 방송통계, 유튜브 영상 수집 | `ststat` 파이프라인 | 파이프라인 후 |
 
-```powershell
+## 자동 실행
+
+| 무엇 | 언제 | 방법 |
+|---|---|---|
+| 스타유니브 빌드(`.github/workflows/update.yml`) | 매일 00:05·12:05(한국 시간) | 외부 크론이 `workflow_dispatch` 호출 |
+| 〃 | `templates/`·`scripts/` 등을 main에 올릴 때 | push |
+| 〃 | 어드민 일정 화면 **"달력 사진 갱신"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
+| ststat 파이프라인(`run-pipeline.yml`) | 외부 크론 | `workflow_dispatch` |
+
+빌드는 30초 안팎입니다: Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
+달력을 캡처합니다(`scripts/capture_calendar.py`, 러너에 깔린 크롬 사용, 한국 시간 기준).
+
+## 관리자
+
+- 주소: 공개 페이지 이름 앞에 `admin-`(홈은 `admin.html`). 공개 페이지를 어드민 모드로 빌드한 것이고, Supabase 로그인 후 관리자만 편집할 수 있습니다.
+- 어드민 홈 맨 위 **운영 현황**: 최근 파이프라인 결과, ELO 경기 수·범위, 테이블 건수.
+- 멤버·전적을 고친 뒤 공개 사이트에 바로 보이게 하려면 빌드를 한 번 돌리세요(Actions → Build StarUniv web → Run workflow, 또는 "달력 사진 갱신" 버튼).
+
+### "달력 사진 갱신" 버튼 설정(한 번만)
+
+1. GitHub에서 fine-grained 토큰 발급: 저장소 `ststats/staruniv`만, 권한 **Actions: Read and write**
+2. Supabase SQL 편집기: `select vault.create_secret('<토큰>', 'github_actions_token');`
+3. `supabase/calendar_capture.sql` 실행
+
+토큰 교체: `select vault.update_secret((select id from vault.secrets where name = 'github_actions_token'), '<새 토큰>');`
+
+## 로컬에서 빌드·확인
+
+```bash
 python -m pip install -r requirements.txt
-python scripts/export_supabase.py
+python scripts/export_supabase.py     # SUPABASE_DB_URL 필요. 없으면 data/db.json 캐시를 그대로 씀
 python scripts/generate_stats.py
-python scripts/build_html.py
-python scripts/write_site_data.py
+python scripts/build_html.py          # templates → docs (HTML, 자산 복사, 캐시용 ?v=해시)
+python scripts/write_site_data.py     # docs/data/site_shell.json · site_records.json
+npm test                              # node --test (의존성 없음)
 ```
 
-GitHub Actions는 수동 실행과 관련 소스 변경으로 웹을 다시 빌드합니다. 운영 주기 실행은 외부 크론이 `workflow_dispatch`를 호출합니다. 필요한 설정은 `SUPABASE_DB_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`입니다.
+- 원본은 `templates/`입니다. `docs/`는 빌드 결과라 직접 고치지 않습니다(`templates/static/`은 그대로 복사).
+- 티어 순서·직책 순서는 `templates/assets/core.js` 맨 위 `SITE_ORDER` 한 곳에서만 고칩니다(파이썬 빌드도 읽음).
+- 스타일은 `templates/assets/style.css`(공개)·`admin.css`(어드민)입니다.
 
-공유 DB의 파이프라인 스키마와 공개 뷰는 `ststat/migrations`에서 관리합니다. 이 저장소의 `supabase/setup.sql`은 StarUniv 관리자 기본 테이블과 RPC의 초기 설치용입니다.
+## GitHub·Supabase 설정 값
+
+| 이름 | 종류 | 쓰는 곳 |
+|---|---|---|
+| `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
+| `GH_TOKEN` | Actions secret | 빌드가 저장소에 결과를 커밋할 때 |
+| `github_actions_token` | Supabase Vault | "달력 사진 갱신" 버튼 |
+
+## Supabase SQL
+
+- 공유 DB의 파이프라인 스키마와 공개 뷰: `ststat/migrations`
+- 이 저장소 `supabase/`: `setup.sql`(관리자 테이블·RPC 초기 설치), `public_read.sql`(공개 읽기 권한),
+  `admin_inline_editor.sql`, `admin_elo_stats.sql`, `calendar_capture.sql`(달력 사진 갱신 버튼)
+
+## 지켜야 할 것
+
+- **EloBoard 요청 간격은 최소 2초**(운영자 요청). ststat 코드에서 2초 미만으로 못 내리게 막혀 있습니다.
+- `calendar.png` 파일 이름·주소는 외부 자동화가 쓰므로 바꾸지 않습니다.
+- `.github/workflows/squash-history.yml`은 커밋 기록을 통째로 지우는 작업이라 손으로만 실행합니다.
+
+## 참고 문서
+
+분석·설계 기록은 [`notes/`](notes/)에 있습니다(구조 분석, 성능·어드민 검토, 티어 랭킹 모델).
