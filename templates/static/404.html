@@ -5,35 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>페이지를 찾을 수 없습니다 | 스타대학</title>
 <meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
 <!--
-    [변경] 예전엔 이 파일이 GitHub Pages에서 SPA 경로(/records 등)를 index.html로 되돌리는
-    우회 장치였다(rafgraph/spa-github-pages 패턴). 이제 메뉴마다 실제 페이지(docs/records/index.html
-    등)가 있어서 그 우회가 필요 없고, 이 파일은 정말로 없는 주소에만 보이는 안내 페이지다.
-    어느 경로에서 보여질지 모르므로 외부 CSS/이미지 없이 이 파일 안에서 모양을 정한다.
+    정말로 없는 주소에만 보이는 안내 페이지(GitHub Pages가 내준다).
+    어느 경로에서 보여질지 모르므로 사이트 CSS를 불러오지 않고, 색·모양은 style/01-tokens.css 값을 옮겨 적는다
+    (남색 머리 + 사선 무늬 + 모서리 잘린 버튼). 테마는 사이트와 같은 저장값(staruniv-theme)을 따른다.
 -->
 <style>
-    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f4f7fc; color: #222; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
-    main { text-align: center; padding: 24px; }
-    .code { font-size: 56px; font-weight: 800; letter-spacing: -2px; color: #2979ff; }
-    h1 { font-size: 20px; margin: 8px 0; }
-    p { color: #888; font-size: 14px; margin: 0 0 24px; }
-    a { display: inline-block; padding: 10px 20px; border-radius: 8px; background: #2979ff; color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+    :root {
+        --bg: #eef2f8; --card: #fff; --text: #050a14; --muted: #7a8596; --line: #e2e6ee;
+        --navy: #14264a; --navy-text: #e6ecf7; --navy-muted: #b3c2de; --accent: #5a95ff; --blue: #1f6fff;
+        --chip: #e4e9f2; --chip-text: #2a3445;
+        --pattern: repeating-linear-gradient(135deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 8px);
+        --glow: none;
+        --notch-sm: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+        --notch-md: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+    html[data-theme="dark"] {
+        --bg: #07090d; --card: #11151d; --text: #fff; --muted: #98a0ad; --line: #232a36;
+        --navy: #0f1a31; --chip: #1b212c; --chip-text: #dbe0e8; --blue: #5a95ff;
+        --glow: radial-gradient(120% 140% at 100% 0%, rgba(59, 130, 255, .22), transparent 55%);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text);
+        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    .bar { display: flex; align-items: center; height: 64px; padding: 0 max(20px, calc((100vw - 1280px) / 2 + 40px)); background: var(--card); border-bottom: 1px solid var(--line); }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+    .logo b { color: var(--blue); font-weight: 800; }
+    .hero {
+        position: relative; overflow: hidden; padding: 56px max(20px, calc((100vw - 1280px) / 2 + 40px)) 64px;
+        background: var(--navy); background-image: var(--glow), var(--pattern); color: var(--navy-text);
+    }
+    .eyebrow { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .18em; color: var(--navy-muted); }
+    .code { margin: 6px 0 0; font-size: clamp(72px, 16vw, 132px); font-weight: 800; line-height: 1; letter-spacing: -.04em; }
+    .code span { color: var(--accent); }
+    h1 { margin: 18px 0 8px; font-size: clamp(22px, 4vw, 30px); font-weight: 800; letter-spacing: -.02em; }
+    .hero .desc { margin: 0; max-width: 560px; font-size: 15px; line-height: 1.6; color: var(--navy-muted); word-break: keep-all; }
+    .body { flex: 1; padding: 32px max(20px, calc((100vw - 1280px) / 2 + 40px)) 48px; }
+    .home {
+        display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 22px;
+        background: var(--navy); background-image: var(--pattern); color: #fff; font-size: 15px; font-weight: 800;
+        clip-path: var(--notch-md);
+    }
+    html[data-theme="dark"] .home { background: #e9ecf1; color: #111a2c; }
+    .label { margin: 32px 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--muted); }
+    .menu { display: flex; flex-wrap: wrap; gap: 8px; }
+    .menu a {
+        display: inline-flex; align-items: center; height: 38px; padding: 0 16px;
+        background: var(--chip); color: var(--chip-text); font-size: 14px; font-weight: 700; clip-path: var(--notch-sm);
+    }
+    .menu a:hover, .home:hover { filter: brightness(1.08); }
+    @media (max-width: 560px) {
+        .bar { height: 56px; }
+        .hero { padding: 40px 20px 48px; }
+        .body { padding: 24px 20px 40px; }
+        .home { width: 100%; justify-content: center; }
+    }
 </style>
+<script>
+    // 사이트와 같은 테마(저장값 → 없으면 기기 설정)
+    try {
+        var t = localStorage.getItem('staruniv-theme') ||
+            (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light';
+    } catch (e) {}
+</script>
 </head>
 <body>
-<main>
-    <div class="code">404</div>
+<header class="bar"><a class="logo" data-root href="/">스타<b>대학</b></a></header>
+<section class="hero">
+    <p class="eyebrow">PAGE NOT FOUND</p>
+    <p class="code">4<span>0</span>4</p>
     <h1>페이지를 찾을 수 없습니다</h1>
-    <p>주소가 바뀌었거나 없는 페이지입니다</p>
-    <a id="home-link" href="/">스타대학 홈으로</a>
+    <p class="desc">주소가 바뀌었거나 없는 페이지입니다<br>잠시 뒤에 다시 열거나 아래 메뉴로 이동해 주세요</p>
+</section>
+<main class="body">
+    <a class="home" data-root href="/">스타대학 홈으로</a>
+    <p class="label">바로 가기</p>
+    <nav class="menu">
+        <a data-root="schedule/" href="/schedule/">일정</a>
+        <a data-root="members/" href="/members/">멤버</a>
+        <a data-root="records/" href="/records/">전적</a>
+        <a data-root="tier/" href="/tier/">티어표</a>
+        <a data-root="video/" href="/video/">영상</a>
+        <a data-root="stats/" href="/stats/">방송통계</a>
+        <a data-root="tools/" href="/tools/">도구</a>
+    </nav>
 </main>
 <script>
     // GitHub Pages 프로젝트 페이지(https://ststats.github.io/staruniv/)는 첫 경로 조각(저장소 이름)까지가
     // 사이트 루트이고, 그 외(Vercel 등 루트 배포, 커스텀 도메인)는 "/"가 루트다.
     (function () {
         var segs = location.pathname.split('/').filter(Boolean);
-        var isProjectPage = /\.github\.io$/.test(location.hostname) && segs.length > 0;
-        document.getElementById('home-link').href = isProjectPage ? '/' + segs[0] + '/' : '/';
+        var root = /\.github\.io$/.test(location.hostname) && segs.length > 0 ? '/' + segs[0] + '/' : '/';
+        document.querySelectorAll('[data-root]').forEach(function (a) { a.href = root + a.getAttribute('data-root'); });
     })();
 </script>
 </body>
