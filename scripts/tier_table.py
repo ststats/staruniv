@@ -368,7 +368,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             name_img = cut_badge(im.crop((tx, y + 26, tx + tw, y + 50)))
             race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
             tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
-            card = {'row': row, 'col': col, 'bg': '%02x%02x%02x' % bg,
+            card = {'row': row, 'col': col, 'x': x, 'y': y, 'side': side, 'bg': '%02x%02x%02x' % bg,
                     'tier_feat': pack_feat(tier_f), 'race_feat': pack_feat(race_f), 'photo': photo_hash(photo),
                     'photo_shifts': [photo_hash(im.crop((x + dx, y + dy, x + side + dx, y + side + dy)).resize((PHOTO, PHOTO)))
                                      for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2) if dx or dy]}
@@ -488,6 +488,79 @@ def learn(memory, confirmed):
 
 
 # ---------------------------------------------------------------------------
+# Actions 작업 모드: tier_update_jobs에서 요청을 읽고 결과를 쓴다(SUPABASE_DB_URL)
+# ---------------------------------------------------------------------------
+def db_connect():
+    import psycopg
+    dsn = os.environ.get('SUPABASE_DB_URL')
+    if not dsn:
+        raise SystemExit('SUPABASE_DB_URL 환경변수가 필요합니다')
+    return psycopg.connect(dsn, autocommit=True)
+
+
+def load_db_sql(conn):
+    cur = conn.execute('select id, nickname, soop_id, race, tier, affiliation from public.tier_members')
+    cols = [c.name for c in cur.description]
+    return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def load_memory_sql(conn):
+    """DB의 기억을 읽는다. 처음(비어 있음)이면 저장소의 기억 파일로 채워 넣는다."""
+    memory = {'tier': [], 'race': [], 'photos': []}
+    for kind, value, feat, bg in conn.execute('select kind, value, feat, bg from public.tier_memory_glyphs order by id'):
+        memory[kind].append({'value': value, 'feat': feat, 'bg': bg})
+    cur = conn.execute('select soop_id, nickname, hash, tier, race, tier_feat, race_feat from public.tier_memory_photos order by id')
+    cols = [c.name for c in cur.description]
+    memory['photos'] = [dict(zip(cols, row)) for row in cur.fetchall()]
+    if not memory['photos'] and not memory['tier'] and MEMORY_PATH.exists():
+        seed = load_memory(MEMORY_PATH)
+        with conn.cursor() as c:
+            c.executemany('insert into public.tier_memory_glyphs (kind, value, feat, bg) values (%s, %s, %s, %s)',
+                          [(k, t['value'], t['feat'], t.get('bg')) for k in ('tier', 'race') for t in seed[k]])
+            c.executemany('insert into public.tier_memory_photos (soop_id, nickname, hash, tier, race, tier_feat, race_feat) '
+                          'values (%s, %s, %s, %s, %s, %s, %s)',
+                          [(p.get('soop_id'), p['nickname'], p['hash'], p.get('tier'), p.get('race'),
+                            p.get('tier_feat'), p.get('race_feat')) for p in seed['photos']])
+        print(f"기억을 저장소 파일로 처음 채움: 사진 {len(seed['photos'])}", file=sys.stderr)
+        return seed
+    return memory
+
+
+def run_job(job_id: int):
+    from psycopg.types.json import Jsonb
+    conn = db_connect()
+    row = conn.execute('update public.tier_update_jobs set status = %s, started_at = now(), error = null '
+                       'where id = %s and status in (%s, %s) returning image_url, fa_text',
+                       ('running', job_id, 'queued', 'failed')).fetchone()
+    if not row:
+        raise SystemExit(f'작업 {job_id}이 없거나 이미 처리 중입니다')
+    image_url, fa_text = row
+    try:
+        im = load_image(image_url)
+        scale = im.width / 1100
+        if im.width != 1100:
+            im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
+        memory = load_memory_sql(conn)
+        sections = read_image(im, memory)
+        fa = read_fa_text(fa_text or '')
+        db = load_db_sql(conn)
+        result = compare(sections, fa, db)
+        # 반영 때 기억할 사진·글씨 특징만 남긴다(±2px 지문 24개는 읽을 때만 쓰므로 뺀다)
+        result['sections'] = [{'y': s['y'], 'cards': [{k: v for k, v in c.items() if k not in ('photo_shifts', 'raw')}
+                                                       for c in s['cards']]} for s in sections]
+        result['fa'] = fa
+        result['image'] = {'url': image_url, 'scale': scale}
+        conn.execute('update public.tier_update_jobs set status = %s, result = %s, finished_at = now() where id = %s',
+                     ('done', Jsonb(result), job_id))
+        print(f"작업 {job_id}: 카드 {sum(len(s['cards']) for s in sections)}장, 변동 {len(result['changes'])}건, "
+              f"확인 {len(result['review'])}건", file=sys.stderr)
+    except Exception as e:  # 실패도 작업에 남겨 관리자 화면에서 보이게
+        conn.execute('update public.tier_update_jobs set status = %s, error = %s, finished_at = now() where id = %s',
+                     ('failed', f'{type(e).__name__}: {e}'[:1000], job_id))
+        raise
+
+
+# ---------------------------------------------------------------------------
 # FA 명단 글
 # ---------------------------------------------------------------------------
 FA_TIER = {'갓티어': '갓', '킹티어': '킹', '잭티어': '잭', '조커요': '조커', '조커티어': '조커',
@@ -563,9 +636,9 @@ def match_sections(sections, db):
 
 
 def compare(sections, fa, db):
-    changes, review, missing = [], [], []
+    changes, review, missing, matches = [], [], [], []
     matched_ids = set()
-    for sec in match_sections(sections, db):
+    for si, sec in enumerate(match_sections(sections, db)):
         team = sec['team']
         for i, card in enumerate(sec['cards']):
             hit = sec['match'].get(i)
@@ -575,10 +648,14 @@ def compare(sections, fa, db):
                 if similarity(card['nickname_ocr'], best['nickname']) >= 0.75:
                     hit = (best, 0)
                 else:
-                    review.append({'type': '신규 또는 인식 실패', 'team': team, 'card': card})
+                    review.append({'type': '신규 또는 인식 실패', 'team': team, 'ref': [si, i], 'card': brief_card(card)})
                     continue
             r = hit[0]
             matched_ids.add(id(r))
+            # 이 카드를 이 선수로 본 짝(반영할 때 사진·글씨를 기억하는 데 쓴다)
+            matches.append({'ref': [si, i], 'id': r.get('id'), 'soop_id': r.get('soop_id'), 'nickname': r['nickname'],
+                            'db_tier': str(r['tier']), 'db_race': r['race'], 'card_tier': card['tier'],
+                            'card_race': card['race'], 'by_photo': bool(card.get('known')), 'team': team})
             diff = {}
             if r['affiliation'] != team:
                 diff['affiliation'] = [r['affiliation'], team]
@@ -587,13 +664,13 @@ def compare(sections, fa, db):
             if card['race'] and r['race'] != card['race']:
                 diff['race'] = [r['race'], card['race']]
             if diff:
-                changes.append({'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team, 'diff': diff,
-                                'ocr': card['nickname_ocr']})
+                changes.append({'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team,
+                                'diff': diff, 'ocr': card['nickname_ocr'], 'ref': [si, i]})
         missing += [(team, r) for r in sec['missing']]
     # 다른 구역에서 찾은 선수(이적)는 원래 대학에서 '빠짐'으로 보이지 않게
     for team, r in missing:
         if id(r) not in matched_ids:
-            review.append({'type': '표에서 빠짐', 'team': team, 'nickname': r['nickname'], 'tier': r['tier']})
+            review.append({'type': '표에서 빠짐', 'team': team, 'id': r.get('id'), 'nickname': r['nickname'], 'tier': r['tier']})
     fa_rows = [r for r in db if r['affiliation'] == 'FA']
     fa_seen = set()
     for f in fa:
@@ -611,17 +688,23 @@ def compare(sections, fa, db):
         if r['race'] != f['race']:
             diff['race'] = [r['race'], f['race']]
         if diff:
-            changes.append({'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': 'FA', 'diff': diff})
+            changes.append({'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': 'FA', 'diff': diff})
     if fa:
         for r in fa_rows:
             if id(r) not in fa_seen and id(r) not in matched_ids:
-                review.append({'type': 'FA 명단에서 빠짐', 'nickname': r['nickname'], 'tier': r['tier']})
-    return {'changes': changes, 'review': review}
+                review.append({'type': 'FA 명단에서 빠짐', 'id': r.get('id'), 'nickname': r['nickname'], 'tier': r['tier']})
+    return {'changes': changes, 'review': review, 'matches': matches}
+
+
+def brief_card(card):
+    """결과에 싣는 카드 요약(관리자 화면 표시용). 사진·글씨 특징은 sections에 따로 있다."""
+    return {k: card.get(k) for k in ('row', 'col', 'x', 'y', 'side', 'tier', 'race', 'role', 'nickname_ocr')}
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--image', required=True, help='티어표 이미지 주소 또는 파일')
+    ap.add_argument('--image', help='티어표 이미지 주소 또는 파일')
+    ap.add_argument('--job', help='tier_update_jobs 작업 번호(GitHub Actions에서 실행, SUPABASE_DB_URL 필요)')
     ap.add_argument('--fa-text', help='FA 명단 글(텍스트 파일)')
     ap.add_argument('--out', help='결과 JSON 파일')
     ap.add_argument('--memory', default=str(MEMORY_PATH), help='기억 파일(사진 지문·글씨 모양)')
@@ -629,6 +712,13 @@ def main():
                     help='이번 결과 중 확실한 짝(이름 유사도 0.8 이상·사진 일치)을 기억에 더한다. '
                          '변동이 맞는지 확인한 뒤에 쓴다(관리자 화면에서는 반영 때 자동)')
     args = ap.parse_args()
+    if args.job:
+        if not re.fullmatch(r'\d+', args.job):
+            raise SystemExit('작업 번호는 숫자여야 합니다')
+        run_job(int(args.job))
+        return
+    if not args.image:
+        ap.error('--image 또는 --job이 필요합니다')
     im = load_image(args.image)
     if im.width != 1100:
         im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
@@ -650,9 +740,8 @@ def main():
         Path(args.out).write_text(text, encoding='utf-8')
     for c in result['changes']:
         print('변동', c['team'], c['nickname'], c['diff'])
-    brief = lambda c: {k: c[k] for k in ('row', 'col', 'tier', 'race', 'role', 'nickname_ocr') if k in c}
     for r in result['review']:
-        print('확인', {k: (brief(v) if k == 'card' else v) for k, v in r.items()})
+        print('확인', r)
     print(f"카드 {sum(len(s['cards']) for s in sections)}장, FA {len(fa)}명, 변동 {len(result['changes'])}건, 확인 {len(result['review'])}건",
           file=sys.stderr)
 
