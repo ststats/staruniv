@@ -524,7 +524,7 @@ alter table public.history_entries enable row level security;
 
 -- 공개 Storage 버킷. URL은 공개지만 쓰기/삭제는 관리자만 가능하다.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('staruniv-media','staruniv-media',true,10485760,array['image/jpeg','image/png','image/webp','image/gif'])
+values ('staruniv-media','staruniv-media',true,10485760,array['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'])
 on conflict (id) do update set public=excluded.public, file_size_limit=excluded.file_size_limit, allowed_mime_types=excluded.allowed_mime_types;
 
 drop policy if exists "staruniv_media_public_read" on storage.objects;
@@ -1443,11 +1443,12 @@ grant execute on function public.admin_set_main_elo(bigint, integer) to authenti
 -- 입단 기록 정보(그때 닉네임·종족·입단 티어·직책·입단일·퇴단일·MBTI·사진·YouTube·그때 쓴 ELO 계정)는 멤버 줄에만 있다.
 alter table public.members
   add column if not exists tier_member_id bigint references public.tier_members(id) on delete set null;
--- 대표 영상(방송통계 TOP 칸)은 DB가 아니라 저장소 파일(templates/static/media/members/<SOOP ID>.mp4)로 둔다.
--- 잠깐 두었던 업로드·서버 편집용 칸·표·함수는 지운다.
+-- 대표 사진·영상(방송통계 TOP 칸). 어드민 멤버 수정에서 올린다(PC 브라우저가 720×404 MP4로 줄여 올림).
+-- 없으면 저장소 파일 templates/static/media/members/<SOOP ID>.mp4를 쓴다.
+alter table public.members add column if not exists photo_path text;
+-- 잠깐 두었던 서버 영상 편집(모바일용) 표·함수는 쓰지 않는다
 drop function if exists public.admin_request_member_video(bigint, text);
 drop table if exists public.media_jobs;
-alter table public.members drop column if exists photo_path;
 create index if not exists members_tier_member_idx on public.members (tier_member_id);
 
 -- 처음 한 번: SOOP ID가 같은 티어표 선수에 잇는다(이미 이어진 줄은 건드리지 않는다). 이후엔 아래 트리거가 한다

@@ -93,6 +93,8 @@ def build_db(settings, teams, members, matches, rounds, tier_members):
                 "퇴단일": empty(r["left_date"]),
                 "MBTI": empty(r["mbti"]),
                 "YouTube": empty(r.get("youtube_url")),
+                # 어드민에서 올린 방송통계 TOP 대표 사진·영상(Storage staruniv-media 안 경로)
+                "대표 사진": empty(r.get("photo_path")),
             }
             for r in members
         ],

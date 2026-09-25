@@ -157,6 +157,17 @@ test('stats TOP card uses repo media files (media/members/<SOOP ID>), no DB uplo
   assert.match(js, /\^media\\\/members\\\//);
   assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
   assert.match(read('scripts/write_site_data.py'), /MEMBER_MEDIA_DIR = ROOT \/ "templates" \/ "static" \/ "media" \/ "members"/);
-  assert.doesNotMatch(read('templates/assets/admin-members.js'), /photo_path|encodeClip/);
-  assert.match(read('supabase/staruniv.sql'), /alter table public\.members drop column if exists photo_path/);
+  assert.match(js, /storageMediaUrl\(raw\)/);
+  assert.match(read('scripts/write_site_data.py'), /row\.get\("대표 사진"\) or member_media_url/);
+});
+
+test('admin upload of feature photo/video stays: PC browser re-encodes video, no server encoding', () => {
+  const js = read('templates/assets/admin-members.js');
+  assert.match(js, /const CLIP=\{w:720,h:404,fps:30,maxSec:6/);
+  assert.match(js, /encoder:'avc1\.4d401f',muxer:'avc'/);
+  assert.doesNotMatch(js, /admin_request_member_video|members-photo-raw/);
+  assert.match(read('templates/base.html'), /asset_url\('mp4-muxer\.js'\)/);
+  const sql = read('supabase/staruniv.sql');
+  assert.match(sql, /alter table public\.members add column if not exists photo_path text/);
+  assert.match(sql, /'video\/mp4','video\/webm'\]/);
 });

@@ -12,7 +12,7 @@ DB_PATH = ROOT / "data" / "db.json"
 STATS_PATH = ROOT / "data" / "render_stats.json"
 OUT_DIR = ROOT / "docs" / "data"
 # 방송통계 TOP 대표 영상·사진: 저장소 파일 templates/static/media/members/<SOOP ID>.<확장자>(빌드 때 docs/로 복사).
-# DB에는 두지 않는다. 파일을 넣고 커밋하면 다음 빌드부터 그 멤버의 '대표 사진'이 된다.
+# 어드민에서 올린 대표 사진(members.photo_path)이 있으면 그쪽이 먼저다.
 MEMBER_MEDIA_DIR = ROOT / "templates" / "static" / "media" / "members"
 MEMBER_MEDIA_EXTS = (".mp4", ".webm", ".webp", ".gif", ".jpg", ".jpeg", ".png")
 OUT_PATHS = {
@@ -106,7 +106,8 @@ def main() -> None:
 
     members = sort_members(db_data.get("members", []))
     for row in members:
-        row["대표 사진"] = member_media_url(row.get("SOOP ID"))
+        # 어드민에서 올린 것(Storage 경로)이 먼저, 없으면 저장소 파일
+        row["대표 사진"] = row.get("대표 사진") or member_media_url(row.get("SOOP ID"))
     matches = sorted(
         linked_matches,
         key=lambda row: str(row.get("날짜", "")),

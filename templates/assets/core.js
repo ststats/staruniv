@@ -577,6 +577,13 @@ const LOGO_CACHE_KEY = 'staruniv-logos-v1';
 function teamLogoSrc(name) {
     return TeamLogos.map[name] || '';
 }
+// Storage(staruniv-media)에 올린 파일의 공개 주소. 경로가 이상하면 빈 문자열.
+function storageMediaUrl(path) {
+    const p = String(path || '').trim();
+    const base = String((window.STARUNIV_SUPABASE_CONFIG || {}).url || '').replace(/\/$/, '');
+    if (!p || !base || /^[a-z]+:/i.test(p) || p.includes('..')) return '';
+    return `${base}/storage/v1/object/public/staruniv-media/${p.split('/').map(encodeURIComponent).join('/')}`;
+}
 function setTeamLogos(rows) {
     const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
     const base = String(cfg.url || '').replace(/\/$/, '');
