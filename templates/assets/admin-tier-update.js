@@ -66,7 +66,7 @@
     (r.changes||[]).forEach((c,i)=>{d.changes[i]=!c.uncertain;if(c.diff?.nickname)d.nick[i]=c.diff.nickname[1];});
     (r.review||[]).forEach((x,i)=>{
       if(x.type==='새 대학')d.teams[i]={name:x.team};
-      else if(x.type==='신규 또는 인식 실패')d.cards[i]={mode:'skip',pick:'',nick:x.card?.nickname_ocr||'',rename:'',tier:x.card?.tier||'',race:x.card?.race||''};
+      else if(x.type==='신규 또는 인식 실패')d.cards[i]={mode:'skip',pick:'',nick:x.card?.nickname_ocr||'',rename:'',tier:x.card?.tier||'',race:x.card?.race||'',cand:'',elo:'',soop:''};
       else if(x.type==='표에서 빠짐')d.missing[i]='keep';
       else if(x.type&&x.type.startsWith('FA 명단에만 있음'))d.faOnly[i]={mode:'skip',pick:''};
     });
@@ -110,7 +110,8 @@
         }else if(dc.mode==='new'){
           if(!dc.nick.trim())throw new Error('새 선수 닉네임을 적어 주세요');
           confirmed.push({ref:x.ref,insert:inserts.length});
-          inserts.push({nickname:dc.nick.trim(),tier:dc.tier,race:dc.race,affiliation:team});
+          inserts.push({nickname:dc.nick.trim(),tier:dc.tier,race:dc.race,affiliation:team,
+            elo_id:String(dc.elo||'').trim()||null,soop_id:String(dc.soop||'').trim()||null});
         }
       }else if(x.type==='표에서 빠짐'){
         const v=U.decide.missing[i];
@@ -333,9 +334,12 @@
     }
     if(x.type==='신규 또는 인식 실패'){
       const dc=d.cards[i];
-      return `<div class="admin-tu-review">${cardThumb(x.ref)}<div><b>모르는 카드</b> · ${esc(teamName(x.team))}<br><small>글씨: ${esc(x.card?.nickname_ocr||'못 읽음')} · ${esc(tierText(x.card?.tier)||'티어 ?')} · ${esc(x.card?.race||'종족 ?')}</small></div>
+      return `<div class="admin-tu-review">${cardThumb(x.ref)}<div><b>모르는 카드</b> · ${esc(teamName(x.team))}<br><small>글씨: ${esc(x.card?.nickname_ocr||'못 읽음')} · ${esc(tierText(x.card?.tier)||'티어 ?')} · ${esc(x.card?.race||'종족 ?')}</small>${x.suggest?.length?`<br><small>ELO 대기 명단에 비슷한 선수 ${x.suggest.length}명 - '새 선수 추가'에서 고를 수 있습니다</small>`:''}</div>
         <div class="admin-tu-choice"><select class="admin-input" data-tu-card-mode="${i}">${[['skip','보류(반영 안 함)'],['pick','기존 선수'],['new','새 선수 추가']].map(([k,l])=>`<option value="${k}"${dc.mode===k?' selected':''}>${l}</option>`).join('')}</select>
         ${dc.mode==='pick'?pickInput(`card-${i}`,dc.pick)+`<input class="admin-input" data-tu-card-rename="${i}" value="${esc(dc.rename||'')}" placeholder="닉네임이 바뀌었으면 새 닉네임">`:''}
+        ${dc.mode==='new'&&x.suggest?.length?`<select class="admin-input" data-tu-card-cand="${i}"><option value="">ELO 대기 명단에서 고르기(없으면 직접 입력)</option>${x.suggest.map((c,k)=>`<option value="${k}"${String(dc.cand)===String(k)?' selected':''}>${esc(c.nickname)} · ${esc(c.affiliation||'-')} · ${esc(tierText(c.tier)||'-')} · ELO ${esc(c.elo_id)}</option>`).join('')}</select>`:''}
+        ${dc.mode==='new'?`<input class="admin-input" data-tu-card-elo="${i}" value="${esc(dc.elo)}" placeholder="ELO ID(모르면 비움)" inputmode="numeric">
+          <input class="admin-input" data-tu-card-soop="${i}" value="${esc(dc.soop)}" placeholder="SOOP ID(EloBoard 값은 틀릴 수 있음)">`:''}
         ${dc.mode==='new'?`<input class="admin-input" data-tu-card-nick="${i}" value="${esc(dc.nick)}" placeholder="닉네임">
           <select class="admin-input" data-tu-card-tier="${i}">${optionList(['',...SITE_ORDER.tiers],dc.tier)}</select>
           <select class="admin-input" data-tu-card-race="${i}">${optionList(['',...RACES],dc.race)}</select>`:''}</div></div>`;
@@ -387,6 +391,15 @@
     on('[data-tu-card-mode]','onchange',n=>{U.decide.cards[n.dataset.tuCardMode].mode=n.value;render();});
     on('[data-tu-card-nick]','oninput',n=>{U.decide.cards[n.dataset.tuCardNick].nick=n.value;});
     on('[data-tu-card-rename]','oninput',n=>{U.decide.cards[n.dataset.tuCardRename].rename=n.value;});
+    on('[data-tu-card-elo]','oninput',n=>{U.decide.cards[n.dataset.tuCardElo].elo=n.value;});
+    on('[data-tu-card-soop]','oninput',n=>{U.decide.cards[n.dataset.tuCardSoop].soop=n.value;});
+    // ELO 대기 명단에서 고르면 ELO ID·SOOP ID와 함께 이름·티어·종족도 그 값으로 채운다(카드 글씨보다 정확)
+    on('[data-tu-card-cand]','onchange',n=>{
+      const i=n.dataset.tuCardCand,dc=U.decide.cards[i],c=(U.job.result.review[i].suggest||[])[n.value];
+      dc.cand=n.value;
+      if(c){dc.elo=String(c.elo_id);dc.soop=c.soop_id||'';dc.nick=c.nickname||dc.nick;if(c.tier)dc.tier=c.tier;if(c.race)dc.race=c.race;}
+      render();
+    });
     on('[data-tu-nick]','oninput',n=>{U.decide.nick[n.dataset.tuNick]=n.value;});
     on('[data-tu-card-tier]','onchange',n=>{U.decide.cards[n.dataset.tuCardTier].tier=n.value;});
     on('[data-tu-card-race]','onchange',n=>{U.decide.cards[n.dataset.tuCardRace].race=n.value;});

@@ -1166,7 +1166,7 @@ grant execute on function public.admin_tier_job_dispatch_status(bigint) to authe
 
 -- 반영: 관리자 화면에서 고른 변동을 tier_members에 한 번에 적용한다.
 --   p_updates   [{id, affiliation?, tier?, race?, nickname?}]  바뀌는 칸만
---   p_inserts   [{nickname, tier, race, affiliation, soop_id?}] 새 선수
+--   p_inserts   [{nickname, tier, race, affiliation, soop_id?, elo_id?}] 새 선수
 --   p_confirmed [{ref:[구역,카드], id} 또는 {ref, insert:새 선수 순번(0부터)}]  이 카드가 이 선수로 확인됨(학습용)
 --   p_date      승급일로 적을 날짜(보통 티어표 글 날짜)
 -- 소속이 대학으로 바뀌면 연혁 끝에 대학을 붙이고, 숫자 티어로 오르면 그 티어 승급일에 날짜를 더한다
@@ -1256,9 +1256,12 @@ begin
       raise exception '새 선수 닉네임이 비었습니다.';
     end if;
     next_order := next_order + 1;
-    insert into public.tier_members (source_order, nickname, soop_id, tier, race, affiliation, history,
+    -- ELO 대기 명단에서 고른 새 선수는 ELO ID(·SOOP ID)까지 넣어 전적·방송통계와 바로 이어진다
+    insert into public.tier_members (source_order, nickname, soop_id, elo_id, tier, race, affiliation, history,
                                      modified_at, tier_table_registered)
-    values (next_order, btrim(u->>'nickname'), nullif(btrim(u->>'soop_id'), ''), nullif(u->>'tier', ''),
+    values (next_order, btrim(u->>'nickname'), nullif(btrim(u->>'soop_id'), ''),
+            case when coalesce(u->>'elo_id', '') ~ '^[0-9]+$' then (u->>'elo_id')::int end,
+            nullif(u->>'tier', ''),
             nullif(u->>'race', ''), nullif(u->>'affiliation', ''),
             case when u->>'affiliation' in ('FA', '휴면') then null else nullif(u->>'affiliation', '') end,
             stamp, d)

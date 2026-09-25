@@ -633,6 +633,36 @@ def load_db_sql(conn):
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def load_candidates_sql(conn):
+    """ststat이 모아 둔 ELO 대기 명단(EloBoard에는 있고 우리 명단엔 없는 선수). 표가 없으면 빈 목록."""
+    try:
+        cur = conn.execute("select elo_id, nickname, soop_id, race, tier, affiliation from public.tier_member_candidates "
+                           "where status = 'pending' and elo_id is not null")
+    except Exception:
+        conn.rollback()
+        return []
+    cols = [c.name for c in cur.description]
+    return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def suggest_candidates(card, team, candidates, n=3):
+    """모르는 카드와 이름이 비슷한 ELO 대기 명단 선수(같은 대학이면 가산). 고르면 ELO ID까지 넣어 추가한다."""
+    ocr = card.get('nickname_ocr') or ''
+    if not ocr or not candidates:
+        return []
+    scored = []
+    for c in candidates:
+        sim = similarity(ocr, str(c.get('nickname') or ''))
+        if c.get('affiliation') and c['affiliation'] == team:
+            sim += 0.15
+        if sim >= 0.5:
+            scored.append((sim, c))
+    scored.sort(key=lambda x: -x[0])
+    return [{'elo_id': c['elo_id'], 'nickname': c.get('nickname') or '', 'soop_id': c.get('soop_id') or '',
+             'tier': c.get('tier') or '', 'race': c.get('race') or '', 'affiliation': c.get('affiliation') or '',
+             'score': round(sim, 2)} for sim, c in scored[:n]]
+
+
 def load_memory_sql(conn):
     """DB의 기억을 읽는다. 처음(비어 있음)이면 저장소의 기억 파일로 채워 넣는다."""
     memory = {'tier': [], 'race': [], 'photos': []}
@@ -722,7 +752,7 @@ def run_job(job_id: int):
         sections = read_image(im, memory)
         fa = read_fa_text(fa_text or '')
         db = load_db_sql(conn)
-        result = compare(sections, fa, db)
+        result = compare(sections, fa, db, load_candidates_sql(conn))
         # 반영 때 기억할 사진·글씨 특징만 남긴다(±2px 지문 24개는 읽을 때만 쓰므로 뺀다)
         result['sections'] = [{'y': s['y'], 'cards': [{k: v for k, v in c.items() if k not in ('photo_shifts', 'raw')}
                                                        for c in s['cards']]} for s in sections]
@@ -860,7 +890,7 @@ def match_sections(sections, db):
     return results
 
 
-def compare(sections, fa, db):
+def compare(sections, fa, db, candidates=None):
     """카드·FA 명단을 DB와 비교한다.
     changes: 반영할 변동(관리자 화면에서 기본 체크). uncertain이면 기본 체크 해제.
     review: 사람이 골라야 하는 것(새 얼굴·새 대학 등)."""
@@ -883,7 +913,8 @@ def compare(sections, fa, db):
                     hit = (best, 0)
                 else:
                     unknown_in[team] += 1
-                    review.append({'type': '신규 또는 인식 실패', 'team': team, 'ref': [si, i], 'card': brief_card(card)})
+                    review.append({'type': '신규 또는 인식 실패', 'team': team, 'ref': [si, i], 'card': brief_card(card),
+                                   'suggest': suggest_candidates(card, team, candidates or [])})
                     continue
             r = hit[0]
             matched_ids.add(id(r))
