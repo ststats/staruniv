@@ -84,3 +84,12 @@ test('tier admin has a new-player (ELO candidates) view with add and ignore', ()
   assert.match(tier, /setCandidateStatus\(find\(b\.dataset\.candIgnore\),'ignored'\)/);
   assert.match(tier, /from\('tier_member_candidates'\)\.delete\(\)\.eq\('id',c\.id\)/);
 });
+
+test('other-race ELO accounts are linked, and duplicate SOOP IDs are blocked in the DB', () => {
+  const tier = read('templates/assets/admin-tier.js');
+  assert.match(tier, /from\('tier_member_elo_links'\)\.insert/);
+  assert.match(tier, /data-cand-link/);
+  const sql = read('supabase/staruniv.sql');
+  assert.match(sql, /create table if not exists public\.tier_member_elo_links/);
+  assert.match(sql, /create trigger tier_members_guard_ids before insert or update of soop_id, elo_id on public\.tier_members/);
+});

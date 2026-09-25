@@ -83,6 +83,7 @@
       ${C().field('티어표 등록',C().input('ati_table_registered',r.tier_table_registered||''))}
     </div><div class="admin-section-head"><b>연혁</b></div>
     ${C().field('팀 이동 등 연혁',C().textarea('ati_history',r.history||'','rows="5"'))}
+    ${r.id?`<div class="admin-section-head"><b>연결된 ELO 계정</b><small>종족 변경 등으로 생긴 다른 계정. 신규 인원에서 연결합니다(전적은 합치지 않음)</small></div><div id="ati_links" class="admin-help">불러오는 중</div>`:''}
     <div class="admin-section-head"><b>승급 이력</b><small>강등 뒤 다시 올랐으면 날짜를 쉼표로 이어 적습니다(예: 2021-07-13, 2021-10-26)</small></div><div class="admin-form-grid">${promo}</div>`;
   }
   function collect(r={}){
@@ -112,6 +113,21 @@
         if(error)throw error;C().toast('티어 선수를 저장했습니다');if(after)await after(p);else await load(S.page);
       },
       onDelete:r.id?async()=>{const {error}=await C().state.client.from('tier_members').delete().eq('id',r.id);if(error)throw error;await C().audit('delete','tier_members',r.id,{nickname:r.nickname,elo_id:r.elo_id});await load(S.page);}:null
+    });
+    if(r.id)showLinks(r.id);
+  }
+  // 수정 창의 '연결된 ELO 계정'. 해제하면 그 계정은 다음 동기화 때 신규 인원에 다시 뜬다.
+  async function showLinks(memberId){
+    const box=document.getElementById('ati_links');if(!box)return;
+    const {data,error}=await C().state.client.from('tier_member_elo_links').select('elo_id,elo_name,race').eq('tier_member_id',memberId).order('elo_id');
+    if(!box.isConnected)return;
+    if(error){box.textContent=`연결 계정을 불러오지 못했습니다: ${C().errorText(error)}`;return;}
+    box.innerHTML=(data||[]).length?data.map(l=>`<span style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 6px 0">ELO ${esc(l.elo_id)}${l.elo_name?` · ${esc(l.elo_name)}`:''}${l.race?` · ${esc(l.race)}`:''} <button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></span>`).join(' '):'없음';
+    box.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=async()=>{
+      if(!confirm(`ELO ${b.dataset.unlink} 연결을 해제할까요? 다음 동기화 때 신규 인원에 다시 뜹니다`))return;
+      const {error}=await C().state.client.from('tier_member_elo_links').delete().eq('elo_id',Number(b.dataset.unlink));
+      if(error)return C().toast(C().errorText(error),'error');
+      showLinks(memberId);
     });
   }
   async function bulk(){
@@ -323,6 +339,7 @@
   // 무시한 선수는 ststat이 다시 올리지 않는다(같은 ELO ID 줄이 남아 있으므로).
   // ---------------------------------------------------------------------------
   async function loadCandidates(){
+    N.members=await fetchAllPages((from,to)=>C().state.client.from('tier_members').select('id,nickname,name,soop_id,elo_id,race,affiliation').order('id').range(from,to));
     N.rows=await fetchAllPages((from,to)=>C().state.client.from('tier_member_candidates')
       .select('id,nickname,elo_id,soop_id,gender,race,tier,affiliation,source,found_at,last_seen_at,status')
       .eq('status',N.status).order('found_at',{ascending:false,nullsFirst:false}).order('id').range(from,to));
@@ -349,6 +366,33 @@
       N.rows=N.rows.filter(x=>x.id!==c.id);membersLoaded=false;renderCandidates();
     });
   }
+  // 명단에 이미 있는 같은 사람일 수 있는 선수(같은 SOOP ID 또는 같은 이름). 종족 변경 계정이면 '연결'한다.
+  function sameMember(c){
+    const low=v=>String(v||'').trim().toLowerCase();
+    const soop=low(c.soop_id),name=low(c.nickname);
+    return (N.members||[]).find(m=>soop&&low(m.soop_id)===soop)||(N.members||[]).find(m=>name&&(low(m.nickname)===name||low(m.name)===name))||null;
+  }
+  function memberLabel(m){return `${m.nickname}${m.affiliation?` · ${m.affiliation}`:''}${m.race?` · ${m.race}`:''}${m.elo_id?` · ELO ${m.elo_id}`:''}`;}
+  function linkCandidate(c){
+    const hint=sameMember(c);
+    const opts=(N.members||[]).map(m=>`<option value="${esc(memberLabel(m))}"></option>`).join('');
+    C().openDrawer({
+      eyebrow:'LINK',title:`${c.nickname} (ELO ${c.elo_id}) 기존 선수에 연결`,
+      html:`<p class="admin-help">종족 변경 등으로 생긴 같은 사람의 다른 계정이면 연결하세요. 연결하면 신규 인원에 다시 뜨지 않고, 선수 정보(소속·SOOP ID 등)와 전적은 바뀌지 않습니다</p>
+        ${C().field('연결할 선수',`<input class="admin-input" id="atl_member" list="atl_members" value="${esc(hint?memberLabel(hint):'')}" placeholder="닉네임으로 찾기" autocomplete="off"><datalist id="atl_members">${opts}</datalist>`)}`,
+      onSubmit:async()=>{
+        const label=C().value('atl_member').trim();
+        const m=(N.members||[]).find(x=>memberLabel(x)===label)||(N.members||[]).find(x=>x.nickname===label);
+        if(!m)throw new Error('목록에서 선수를 고르세요');
+        const {error}=await C().state.client.from('tier_member_elo_links').insert({elo_id:c.elo_id,tier_member_id:m.id,elo_name:c.nickname,race:c.race});
+        if(error)throw error;
+        const del=await C().state.client.from('tier_member_candidates').delete().eq('id',c.id);
+        if(del.error)throw del.error;
+        C().toast(`${m.nickname} 선수에 연결했습니다`);
+        N.rows=N.rows.filter(x=>x.id!==c.id);renderCandidates();
+      }
+    });
+  }
   function renderCandidates(){
     if(S.view!=='candidates')return;
     const root=document.getElementById('adminDedicatedRoot');
@@ -358,9 +402,9 @@
     const q=N.q.trim().toLowerCase();
     const rows=(N.rows||[]).filter(c=>!q||[c.nickname,c.soop_id,c.affiliation,c.elo_id].some(v=>String(v??'').toLowerCase().includes(q)));
     const pending=N.status==='pending';
-    const body=rows.map(c=>`<tr><td><b>${esc(c.nickname)}</b></td><td>${esc(c.elo_id)}</td><td>${esc(c.soop_id)}</td><td>${esc(c.race)}</td><td>${esc(c.tier)}</td><td>${esc(c.affiliation)}</td><td>${esc(c.found_at)}</td><td>${esc(c.source==='ststat_sync_eloboard'?'경기 기록':'티어 목록')}</td>
-      <td>${pending?`<button class="admin-btn primary" data-cand-add="${esc(c.id)}">선수로 추가</button><button class="admin-btn" data-cand-ignore="${esc(c.id)}">무시</button>`:`<button class="admin-btn" data-cand-restore="${esc(c.id)}">되돌리기</button>`}</td></tr>`).join('');
-    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">신규 인원</h1><p class="page-header-subtitle">EloBoard에는 있지만 명단에 없는 선수입니다(ELO ID 기준). 선수로 추가하면 여기서 빠지고, 무시한 선수는 다시 올라오지 않습니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell" id="candBody">
+    const body=rows.map(c=>{const same=sameMember(c);return`<tr><td><b>${esc(c.nickname)}</b>${same?`<div class="admin-help">⚠ ${esc(same.nickname)} 선수와 ${String(same.soop_id||'').trim().toLowerCase()===String(c.soop_id||'').trim().toLowerCase()&&c.soop_id?'SOOP ID가':'이름이'} 같음 · 종족 변경 계정이면 연결</div>`:''}</td><td>${esc(c.elo_id)}</td><td>${esc(c.soop_id)}</td><td>${esc(c.race)}</td><td>${esc(c.tier)}</td><td>${esc(c.affiliation)}</td><td>${esc(c.found_at)}</td><td>${esc(c.source==='ststat_sync_eloboard'?'경기 기록':'티어 목록')}</td>
+      <td>${pending?`<button class="admin-btn${same?'':' primary'}" data-cand-add="${esc(c.id)}">선수로 추가</button><button class="admin-btn${same?' primary':''}" data-cand-link="${esc(c.id)}">기존 선수에 연결</button><button class="admin-btn" data-cand-ignore="${esc(c.id)}">무시</button>`:`<button class="admin-btn" data-cand-restore="${esc(c.id)}">되돌리기</button>`}</td></tr>`;}).join('');
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">신규 인원</h1><p class="page-header-subtitle">EloBoard에는 있지만 명단에 없는 선수입니다(ELO ID 기준). 선수로 추가하거나 기존 선수에 연결(종족 변경 등 같은 사람의 다른 계정)하면 여기서 빠지고, 무시한 선수는 다시 올라오지 않습니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell" id="candBody">
       ${N.rows===null?'<div class="admin-empty">신규 인원을 불러오는 중</div>':`<div class="admin-rank-tools">
         <div class="admin-rank-chips">${[['pending','대기'],['ignored','무시함']].map(([k,l])=>`<button type="button" class="admin-rank-chip${N.status===k?' is-on':''}" data-cand-status="${k}">${l}${N.status===k?`<span>${N.rows.length}</span>`:''}</button>`).join('')}</div>
         <input class="admin-input" id="candQ" placeholder="닉네임 · SOOP ID · 소속 · ELO ID" value="${esc(N.q)}">
@@ -374,6 +418,7 @@
     const act=fn=>async b=>{b.disabled=true;try{await fn();}catch(err){b.disabled=false;C().toast(C().errorText(err),'error');}};
     root.querySelectorAll('[data-cand-status]').forEach(b=>b.onclick=()=>{N.status=b.dataset.candStatus;showCandidates();});
     root.querySelectorAll('[data-cand-add]').forEach(b=>b.onclick=()=>addCandidate(find(b.dataset.candAdd)));
+    root.querySelectorAll('[data-cand-link]').forEach(b=>b.onclick=()=>linkCandidate(find(b.dataset.candLink)));
     root.querySelectorAll('[data-cand-ignore]').forEach(b=>b.onclick=()=>act(()=>setCandidateStatus(find(b.dataset.candIgnore),'ignored'))(b));
     root.querySelectorAll('[data-cand-restore]').forEach(b=>b.onclick=()=>act(()=>setCandidateStatus(find(b.dataset.candRestore),'pending'))(b));
     const qEl=root.querySelector('#candQ');

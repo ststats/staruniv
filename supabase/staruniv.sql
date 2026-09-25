@@ -1319,3 +1319,77 @@ create policy university_logos_admin_write on public.university_logos for all to
 revoke all on public.university_logos from anon;
 grant select on public.university_logos to anon;
 grant select, insert, update, delete on public.university_logos to authenticated;
+
+-- ############################################################################
+-- 8. 한 선수의 다른 ELO 계정(종족 변경 등)
+-- ############################################################################
+
+-- EloBoard는 종족마다 계정(ELO ID)이 따로라 종족을 바꾸면 새 ELO ID가 생긴다. tier_members.elo_id는 지금 쓰는
+-- 계정이고, 예전·다른 종족 계정은 여기에 '연결'만 해 둔다. 연결된 계정은 신규 인원에 다시 뜨지 않는다.
+-- 전적·방송통계는 합치지 않는다(계정별 그대로).
+create table if not exists public.tier_member_elo_links (
+  elo_id integer primary key,
+  tier_member_id bigint not null references public.tier_members(id) on delete cascade,
+  elo_name text,
+  race text,
+  created_at timestamptz not null default now()
+);
+create index if not exists tier_member_elo_links_member_idx on public.tier_member_elo_links (tier_member_id);
+alter table public.tier_member_elo_links enable row level security;
+drop policy if exists tier_member_elo_links_admin on public.tier_member_elo_links;
+create policy tier_member_elo_links_admin on public.tier_member_elo_links for all to authenticated
+  using ((select public.is_admin())) with check ((select public.is_admin()));
+revoke all on public.tier_member_elo_links from anon, authenticated;
+grant select, insert, update, delete on public.tier_member_elo_links to authenticated;
+
+-- 같은 ELO ID가 '지금 계정'과 '연결 계정'에 동시에 있으면 안 된다.
+-- 같은 SOOP ID가 두 선수에 있으면 방송통계 일일 저장이 통째로 멈춘다(SOOP ID가 방송통계의 키).
+-- 새로 넣거나 그 칸을 바꿀 때만 검사하므로, 이 파일을 다시 실행해도 기존 행 때문에 실패하지 않는다.
+create or replace function public.tier_members_guard_ids()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare other text;
+begin
+  if new.soop_id is not null and btrim(new.soop_id) <> ''
+     and (tg_op = 'INSERT' or lower(btrim(new.soop_id)) is distinct from lower(btrim(coalesce(old.soop_id, '')))) then
+    select nickname into other from public.tier_members
+    where lower(btrim(soop_id)) = lower(btrim(new.soop_id)) and id <> coalesce(new.id, -1) limit 1;
+    if found then
+      raise exception 'SOOP ID %는 이미 % 선수가 쓰고 있습니다(같은 사람이면 새 선수를 만들지 말고 기존 선수를 고치세요)', new.soop_id, other;
+    end if;
+  end if;
+  if new.elo_id is not null and (tg_op = 'INSERT' or new.elo_id is distinct from old.elo_id) then
+    select m.nickname into other from public.tier_member_elo_links l join public.tier_members m on m.id = l.tier_member_id
+    where l.elo_id = new.elo_id and l.tier_member_id <> coalesce(new.id, -1) limit 1;
+    if found then
+      raise exception 'ELO ID %는 % 선수의 연결 계정입니다', new.elo_id, other;
+    end if;
+    -- 자기 연결 계정을 '지금 계정'으로 올리면 연결 목록에서는 뺀다
+    delete from public.tier_member_elo_links where elo_id = new.elo_id and tier_member_id = new.id;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists tier_members_guard_ids on public.tier_members;
+create trigger tier_members_guard_ids before insert or update of soop_id, elo_id on public.tier_members
+  for each row execute function public.tier_members_guard_ids();
+
+create or replace function public.tier_member_elo_links_guard()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare other text;
+begin
+  select nickname into other from public.tier_members where elo_id = new.elo_id limit 1;
+  if found then
+    raise exception 'ELO ID %는 이미 % 선수의 지금 계정입니다', new.elo_id, other;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists tier_member_elo_links_guard on public.tier_member_elo_links;
+create trigger tier_member_elo_links_guard before insert or update of elo_id on public.tier_member_elo_links
+  for each row execute function public.tier_member_elo_links_guard();
