@@ -291,7 +291,7 @@ create policy "admin_users_read_self"
 on public.admin_users
 for select
 to authenticated
-using (user_id = auth.uid());
+using (user_id = (select auth.uid()));
 
 grant select on public.admin_users to authenticated;
 
@@ -304,7 +304,7 @@ begin
   loop
     execute format('drop policy if exists %I on public.%I', 'admins_all_' || t, t);
     execute format(
-      'create policy %I on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())',
+      'create policy %I on public.%I for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()))',
       'admins_all_' || t,
       t
     );
@@ -324,7 +324,7 @@ begin
   loop
     execute format('drop policy if exists %I on public.%I', 'admins_read_' || t, t);
     execute format(
-      'create policy %I on public.%I for select to authenticated using (public.is_admin())',
+      'create policy %I on public.%I for select to authenticated using ((select public.is_admin()))',
       'admins_read_' || t,
       t
     );
@@ -495,7 +495,7 @@ begin
   loop
     execute format('drop policy if exists %I on public.%I', 'admins_all_' || t, t);
     execute format(
-      'create policy %I on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())',
+      'create policy %I on public.%I for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()))',
       'admins_all_' || t, t
     );
   end loop;
@@ -530,11 +530,11 @@ on conflict (id) do update set public=excluded.public, file_size_limit=excluded.
 drop policy if exists "staruniv_media_public_read" on storage.objects;
 create policy "staruniv_media_public_read" on storage.objects for select to public using (bucket_id='staruniv-media');
 drop policy if exists "staruniv_media_admin_insert" on storage.objects;
-create policy "staruniv_media_admin_insert" on storage.objects for insert to authenticated with check (bucket_id='staruniv-media' and public.is_admin());
+create policy "staruniv_media_admin_insert" on storage.objects for insert to authenticated with check (bucket_id='staruniv-media' and (select public.is_admin()));
 drop policy if exists "staruniv_media_admin_update" on storage.objects;
-create policy "staruniv_media_admin_update" on storage.objects for update to authenticated using (bucket_id='staruniv-media' and public.is_admin()) with check (bucket_id='staruniv-media' and public.is_admin());
+create policy "staruniv_media_admin_update" on storage.objects for update to authenticated using (bucket_id='staruniv-media' and (select public.is_admin())) with check (bucket_id='staruniv-media' and (select public.is_admin()));
 drop policy if exists "staruniv_media_admin_delete" on storage.objects;
-create policy "staruniv_media_admin_delete" on storage.objects for delete to authenticated using (bucket_id='staruniv-media' and public.is_admin());
+create policy "staruniv_media_admin_delete" on storage.objects for delete to authenticated using (bucket_id='staruniv-media' and (select public.is_admin()));
 
 -- 현재 history.json 메타데이터를 최초 1회 시드한다. 운영 DB에 이미 같은 id가 있으면 건드리지 않는다.
 
@@ -625,7 +625,7 @@ alter table public.video_picks enable row level security;
 do $$ declare t text; begin
   foreach t in array array['video_channels','videos','video_picks'] loop
     execute format('drop policy if exists %I on public.%I', 'admins_all_' || t, t);
-    execute format('create policy %I on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', 'admins_all_' || t, t);
+    execute format('create policy %I on public.%I for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()))', 'admins_all_' || t, t);
   end loop;
 end $$;
 grant select,insert,update,delete on public.video_channels,public.videos,public.video_picks to authenticated;
@@ -663,7 +663,7 @@ alter table public.external_tools enable row level security;
 -- 관리자 CRUD
 drop policy if exists admins_all_external_tools on public.external_tools;
 create policy admins_all_external_tools on public.external_tools for all to authenticated
-using (public.is_admin()) with check (public.is_admin());
+using ((select public.is_admin())) with check ((select public.is_admin()));
 grant select,insert,update,delete on public.external_tools to authenticated;
 grant usage,select on sequence public.external_tools_id_seq to authenticated;
 
@@ -824,7 +824,7 @@ alter table public.admin_audit_log enable row level security;
 drop policy if exists admins_read_audit_log on public.admin_audit_log;
 create policy admins_read_audit_log
 on public.admin_audit_log for select to authenticated
-using (public.is_admin());
+using ((select public.is_admin()));
 
 revoke all on public.admin_audit_log from public, anon;
 grant select on public.admin_audit_log to authenticated;
@@ -1065,7 +1065,7 @@ alter table public.tier_update_jobs add column if not exists dispatch_request bi
 alter table public.tier_update_jobs enable row level security;
 drop policy if exists tier_update_jobs_admin_read on public.tier_update_jobs;
 create policy tier_update_jobs_admin_read on public.tier_update_jobs
-  for select to authenticated using (public.is_admin());
+  for select to authenticated using ((select public.is_admin()));
 revoke all on public.tier_update_jobs from anon;
 grant select on public.tier_update_jobs to authenticated;
 
@@ -1312,7 +1312,7 @@ drop policy if exists university_logos_public_read on public.university_logos;
 create policy university_logos_public_read on public.university_logos for select to anon, authenticated using (true);
 drop policy if exists university_logos_admin_write on public.university_logos;
 create policy university_logos_admin_write on public.university_logos for all to authenticated
-  using (public.is_admin()) with check (public.is_admin());
+  using ((select public.is_admin())) with check ((select public.is_admin()));
 revoke all on public.university_logos from anon;
 grant select on public.university_logos to anon;
 grant select, insert, update, delete on public.university_logos to authenticated;
