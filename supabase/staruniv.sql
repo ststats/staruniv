@@ -1445,7 +1445,7 @@ alter table public.members
   add column if not exists tier_member_id bigint references public.tier_members(id) on delete set null;
 create index if not exists members_tier_member_idx on public.members (tier_member_id);
 
--- 처음 한 번: SOOP ID가 같은 티어표 선수에 잇는다(이미 이어진 줄은 건드리지 않는다)
+-- 처음 한 번: SOOP ID가 같은 티어표 선수에 잇는다(이미 이어진 줄은 건드리지 않는다). 이후엔 아래 트리거가 한다
 update public.members m
 set tier_member_id = t.id
 from (select distinct on (lower(btrim(soop_id))) id, lower(btrim(soop_id)) as k
@@ -1463,7 +1463,8 @@ where t.id = m.tier_member_id
   and ((t.birth_date is null and m.birth_date is not null)
        or (coalesce(btrim(t.gender), '') = '' and m.gender is not null));
 
--- 멤버 줄을 넣거나 연결을 바꿀 때: 사람 정보를 티어표 값으로 채운다
+-- 연동 기준은 SOOP ID: 멤버 줄에 SOOP ID를 적으면 SOOP ID가 같은 티어표 선수에 자동으로 이어진다
+-- (새로 넣을 때, 아직 안 이어진 줄, SOOP ID를 다른 값으로 고칠 때). 이어진 뒤에는 사람 정보를 티어표 값으로 채운다.
 create or replace function public.members_fill_from_tier()
 returns trigger
 language plpgsql
@@ -1471,6 +1472,12 @@ set search_path = public
 as $$
 declare t public.tier_members%rowtype;
 begin
+  if coalesce(btrim(new.soop_id), '') <> ''
+     and (new.tier_member_id is null
+          or (tg_op = 'UPDATE' and lower(btrim(new.soop_id)) is distinct from lower(btrim(coalesce(old.soop_id, ''))))) then
+    select id into new.tier_member_id from public.tier_members
+    where lower(btrim(soop_id)) = lower(btrim(new.soop_id)) order by id limit 1;
+  end if;
   if new.tier_member_id is null then return new; end if;
   select * into t from public.tier_members where id = new.tier_member_id;
   if not found then return new; end if;

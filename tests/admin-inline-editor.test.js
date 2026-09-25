@@ -115,7 +115,8 @@ test('member rows link to tier players; person fields come from the tier table',
   assert.match(sql, /create trigger members_fill_from_tier before insert or update on public\.members/);
   assert.match(sql, /create trigger tier_members_sync_members after update of soop_id, birth_date, gender, tier on public\.tier_members/);
   const admin = read('templates/assets/admin-members.js');
-  assert.match(admin, /payload\.tier_member_id=person\?person\.id:null/);
+  assert.match(admin, /function linkStatus\(list,soop\)/);
+  assert.match(sql, /where lower\(btrim\(soop_id\)\) = lower\(btrim\(new\.soop_id\)\) order by id limit 1/);
   assert.match(admin, /rows\.find\(r=>r\.nickname===name\)\|\|rows\.find\(r=>r\.name===name\)/);
   const page = read('templates/assets/page-members.js');
   assert.match(page, /\['입단 티어', joinTier \? tierLabel\(joinTier\) : ''\]/);
