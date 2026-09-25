@@ -48,6 +48,11 @@ ROLES = ('이사장', '부총장', '총장', '교수', '코치', '대장', '수�
 # 바뀌어도 그대로 읽힌다. 구역 머리(대학 로고·인원 수)는 위쪽 HEADER px 안에 있어 사진 찾기에서 뺀다.
 PHOTO, HEADER = 80, 125
 TIER_BOX, RACE_BOX = (120, 24), (120, 23)   # 티어·종족 글씨 칸(폭, 높이): 늘리지 않고 원본 크기로 비교
+NAME_BOX = (125, 24)   # 닉네임 칸(폭, 높이). 뱃지를 자르기 전 그대로를 그림으로 기억한다
+# 닉네임 칸 그림이 지난번과 이만큼 이하로 다르면 같은 이름이다(글씨를 읽지 않는다).
+# 2026-09-25 티어표로 잰 값: 같은 카드를 다시 압축한 차이는 219장 중 209장이 0.10 이하(최대 0.18),
+# 서로 다른 닉네임은 가장 비슷한 쌍도 0.13(김병수·김범수). 0.10을 넘으면 글씨로 판단한다.
+NAME_SAME = 0.10
 DIGIT_W = 22                                # 숫자 티어의 숫자 부분 폭
 
 
@@ -143,6 +148,19 @@ def glyph_feat(crop: Image.Image, bg, width: int) -> np.ndarray:
     out = np.zeros((f.shape[0], width), dtype=np.float32)
     out[:, :min(width, f.shape[1])] = f[:, :width]
     return out
+
+
+def name_distance(a: np.ndarray, b: np.ndarray) -> float:
+    """두 닉네임 칸 그림의 차이: 다른 잉크 양 ÷ 전체 잉크 양(±1px 어긋남 허용). 칸 대부분이 빈 바탕이라
+    평균 차이로는 글자 하나 차이가 묻힌다 - 잉크 양으로 나눠야 이름이 달라진 게 드러난다."""
+    best = 9.0
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            sh = np.roll(np.roll(b, dy, 0), dx, 1)
+            num = np.abs(a - sh)[2:-2, 2:-2].sum()
+            den = (a[2:-2, 2:-2].sum() + sh[2:-2, 2:-2].sum()) / 2
+            best = min(best, float(num / max(den, 1e-6)))
+    return best
 
 
 def pack_feat(f: np.ndarray) -> str:
@@ -427,10 +445,12 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             tx = x + side + 5
             tier_img = im.crop((tx, y + 2, tx + tw, y + 2 + TIER_BOX[1]))
             name_img = im.crop((tx, y + 26, tx + tw, y + 50))
+            name_f = glyph_feat(name_img, bg, NAME_BOX[0])
             race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
             tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
             card = {'row': row, 'col': col, 'x': x, 'y': y, 'side': side, 'bg': '%02x%02x%02x' % bg,
-                    'tier_feat': pack_feat(tier_f), 'race_feat': pack_feat(race_f), 'photo': photo_hash(photo),
+                    'tier_feat': pack_feat(tier_f), 'race_feat': pack_feat(race_f), 'name_feat': pack_feat(name_f),
+                    'photo': photo_hash(photo),
                     'photo_shifts': [photo_hash(im.crop((x + dx, y + dy, x + side + dx, y + side + dy)).resize((PHOTO, PHOTO)))
                                      for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2) if dx or dy]}
             mem = memory or {}
@@ -444,11 +464,19 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             # 놓친다. 같은 카드 그림은 매번 같게 읽히므로, 지난번에 이 선수 카드를 읽은 글씨(name_read)와 같으면
             # 글자 인식이 조금 틀렸더라도 바뀐 게 아니다(기억한 닉네임을 쓴다). 다르면 읽은 글씨를 그대로 넘겨
             # 비교 단계에서 '닉네임 변경' 후보가 된다.
-            role, nick, name_raw = read_name(name_img, bg)
-            card['name_read'] = nick
-            if known and nick and known.get('name_read') == nick:
-                nick = known['nickname']
+            # 아는 선수이고 닉네임 칸 그림이 지난번과 같으면 이름도 같다 - 글씨를 읽지 않는다.
+            # 그림이 다르면(또는 기억한 그림이 없으면) 읽어서, 지난번에 읽은 글씨와 비교한다.
+            if known and known.get('name_feat') and name_distance(
+                    name_f, unpack_feat(known['name_feat'], (NAME_BOX[1], NAME_BOX[0]))) <= NAME_SAME:
+                role, nick, name_raw = '', known['nickname'], ''
+                card['name_read'] = known.get('name_read') or ''
                 card['name_unchanged'] = True
+            else:
+                role, nick, name_raw = read_name(name_img, bg)
+                card['name_read'] = nick
+                if known and nick and known.get('name_read') == nick:
+                    nick = known['nickname']
+                    card['name_unchanged'] = True
             card.update({'tier': tier or read_tier(tier_raw), 'race': race or read_race(race_raw),
                          'role': role, 'nickname_ocr': nick or (known['nickname'] if known else ''),
                          'raw': {'tier': tier_raw, 'name': name_raw, 'race': race_raw}})
@@ -584,7 +612,7 @@ def learn(memory, confirmed):
         memory['photos'].append({'hash': card['photo'], 'soop_id': r.get('soop_id'), 'nickname': r['nickname'],
                                  'tier': str(r['tier']), 'race': r['race'],
                                  'tier_feat': card.get('tier_feat'), 'race_feat': card.get('race_feat'),
-                                 'name_read': card.get('name_read')})
+                                 'name_read': card.get('name_read'), 'name_feat': card.get('name_feat')})
     return memory
 
 
