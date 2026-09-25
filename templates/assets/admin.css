@@ -703,6 +703,17 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
     padding: 7px 8px;
     border-bottom: 1px solid var(--color-border);
 }
+/* 선수 수정 창의 연결 ELO 계정: 윗줄 번호·이름·종족, 아랫줄 버튼(한 줄에 다 넣으면 540px 창에서 잘렸다) */
+.admin-link-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 118px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+.admin-link-id { color: var(--color-text-strong); font-size: 13px; white-space: nowrap; }
+.admin-link-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 6px; }
 
 /* =============================================================================
    6. 편집 서랍 (오른쪽에서 열리는 편집 창 - 공개 사이트의 모달과 같은 머리)

@@ -121,15 +121,15 @@
     // 연결 계정마다 이름(EloBoard 이름 등 구분용)·종족을 고칠 수 있다. 전적·랭킹에는 쓰지 않는 메모 성격의 값이다.
     const RACES=['테란','저그','프로토스'];
     const raceOf=v=>({T:'테란',Z:'저그',P:'프로토스'})[String(v||'').trim().toUpperCase()]||String(v||'').trim();
-    box.innerHTML=(data||[]).length?`<table class="admin-mini-table"><tbody>${data.map(l=>{const race=raceOf(l.race);return`<tr data-link-row="${esc(l.elo_id)}">
-      <td>ELO ${esc(l.elo_id)}</td>
-      <td><input class="admin-input" data-link-name value="${esc(l.elo_name||'')}" placeholder="이름" style="min-width:8em"></td>
-      <td><select class="admin-input" data-link-race>${['',...RACES,...(race&&!RACES.includes(race)?[race]:[])].map(r=>`<option value="${esc(r)}"${r===race?' selected':''}>${esc(r||'종족')}</option>`).join('')}</select></td>
-      <td><button type="button" class="admin-btn" data-link-save="${esc(l.elo_id)}">저장</button><button type="button" class="admin-btn" data-main-elo="${esc(l.elo_id)}">메인으로</button><button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></td></tr>`;}).join('')}</tbody></table>`:'없음';
+    box.innerHTML=(data||[]).length?data.map(l=>{const race=raceOf(l.race);return`<div class="admin-link-row" data-link-row="${esc(l.elo_id)}">
+      <b class="admin-link-id">ELO ${esc(l.elo_id)}</b>
+      <input class="admin-input" data-link-name value="${esc(l.elo_name||'')}" placeholder="이름">
+      <select class="admin-input" data-link-race>${['',...RACES,...(race&&!RACES.includes(race)?[race]:[])].map(r=>`<option value="${esc(r)}"${r===race?' selected':''}>${esc(r||'종족')}</option>`).join('')}</select>
+      <div class="admin-link-actions"><button type="button" class="admin-btn" data-link-save="${esc(l.elo_id)}">저장</button><button type="button" class="admin-btn" data-main-elo="${esc(l.elo_id)}">메인으로</button><button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></div></div>`;}).join(''):'없음';
     // 이 칸들에서 Enter를 눌러도 선수 수정 창 전체가 저장되지 않게 한다
-    box.querySelectorAll('[data-link-name]').forEach(i=>i.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();i.closest('tr').querySelector('[data-link-save]').click();}});
+    box.querySelectorAll('[data-link-name]').forEach(i=>i.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();i.closest('[data-link-row]').querySelector('[data-link-save]').click();}});
     box.querySelectorAll('[data-link-save]').forEach(b=>b.onclick=async()=>{
-      const tr=b.closest('tr');
+      const tr=b.closest('[data-link-row]');
       const payload={elo_name:tr.querySelector('[data-link-name]').value.trim()||null,race:tr.querySelector('[data-link-race]').value||null};
       b.disabled=true;
       const {error}=await C().state.client.from('tier_member_elo_links').update(payload).eq('elo_id',Number(b.dataset.linkSave));
