@@ -1485,19 +1485,24 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-tu-log-row b { color: var(--color-text-strong); }
 
-/* 대학 로고 (티어표 관리 > 대학 로고) */
+/* 팀 관리 > 로고 (admin-teams.js) */
 .admin-tl-import { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--admin-line); border-radius: 6px; background: var(--admin-soft); font-size: 13px; }
-.admin-tl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
-.admin-tl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--admin-line); border-radius: 6px; }
 .admin-tl-logo { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--admin-soft); overflow: hidden; }
 .admin-tl-logo img { max-width: 40px; max-height: 40px; object-fit: contain; }
 .admin-tl-initial { font-size: 18px; font-weight: 800; color: var(--color-text-muted); }
-.admin-tl-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.admin-tl-meta b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-tl-meta small { color: var(--color-text-muted); font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
 .admin-tl-color { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
-.admin-tl-actions { display: flex; gap: 6px; flex: none; }
-.admin-tl-actions .admin-btn { cursor: pointer; }
-.admin-tl-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.admin-tl-add .admin-input { flex: 1 1 200px; }
-.admin-tl-add .admin-btn { cursor: pointer; }
+.admin-tl-logo.is-sm { width: 32px; height: 32px; border-radius: 6px; }
+.admin-tl-logo.is-sm img { max-width: 28px; max-height: 28px; }
+.admin-tl-logo.is-sm .admin-tl-initial { font-size: 13px; }
+.admin-tl-logo.is-xs { width: 22px; height: 22px; border-radius: 4px; }
+.admin-tl-logo.is-xs img { max-width: 20px; max-height: 20px; }
+.admin-tl-logo.is-xs .admin-tl-initial { font-size: 11px; }
+.admin-tm-table td { vertical-align: middle; }
+.admin-tm-note { max-width: 260px; white-space: pre-wrap; font-size: 12px; color: var(--color-text-sub); }
+.admin-tm-extra { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-tm-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px; border: 1px solid var(--admin-line); border-radius: 6px; background: var(--card-bg, #fff); cursor: pointer; font-size: 13px; color: var(--color-text); }
+.admin-tm-chip small { color: var(--color-text-muted); font-size: 11px; }
+.admin-tm-chip:hover { border-color: var(--admin-ink); }
+.admin-tm-logo-edit { display: flex; align-items: center; gap: 12px; }
+.admin-tm-logo-edit > div:last-child { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.admin-tm-logo-edit small { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-muted); font-size: 12px; }

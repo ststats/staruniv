@@ -1,7 +1,8 @@
 (function () {
   'use strict';
   const C=()=>window.AdminCore;
-  const S={page:0,size:25,count:0,rows:[],expanded:new Map(),members:[],roundCounts:{}};
+  const S={page:0,size:25,count:0,rows:[],expanded:new Map(),members:[],roundCounts:{},
+    view:new URLSearchParams(location.search).get('view')==='teams'?'teams':'matches',loaded:false};
 
   function esc(v){return C().esc(v);}
   function resultKind(v){
@@ -120,10 +121,35 @@
   }
   // 승/패는 공개 전적 페이지와 같은 파랑·빨강으로 구분한다
   function wl(v){const t=String(v??'');const c=t.includes('승')?'wl-w':t.includes('패')?'wl-l':'';return c?`<span class="admin-wl ${c}">${esc(t)}</span>`:esc(t);}
+  // 서브탭: 매치 관리 / 팀 관리(admin-teams.js). 공개 페이지 서브탭과 같은 모양
+  function viewTabs(){
+    return `<div class="sub-tabs tab-scroll" role="tablist">${[['matches','매치 관리'],['teams','팀 관리']].map(([k,l])=>
+      `<div class="sub-tab${S.view===k?' active':''}" role="tab" tabindex="0" aria-selected="${S.view===k}" data-records-view="${k}">${l}</div>`).join('')}</div>`;
+  }
+  function bindViewTabs(root){
+    root.querySelectorAll('[data-records-view]').forEach(el=>el.onclick=()=>setView(el.dataset.recordsView));
+  }
+  function setView(view){
+    if(S.view===view)return;
+    S.view=view;
+    const url=new URL(location.href);
+    if(view==='teams')url.searchParams.set('view','teams');else url.searchParams.delete('view');
+    history.replaceState(null,'',url);
+    show();
+  }
+  async function show(){
+    if(S.view==='teams'){window.AdminTeams?.show({tabs:viewTabs,bindTabs:bindViewTabs});return;}
+    render();
+    if(S.loaded)return;
+    S.loaded=true;
+    try{if(!S.members.length)S.members=await C().loadMembers();await load(0);}
+    catch(e){S.loaded=false;C().toast(`전적 조회 실패: ${C().errorText(e)}`,'error');}
+  }
   function render(){
+    if(S.view!=='matches')return;
     const root=document.getElementById('adminDedicatedRoot');root.hidden=false;document.body.classList.add('admin-dedicated-active');
     const pages=Math.max(1,Math.ceil(S.count/S.size));
-    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><div class="admin-hero-actions"><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다</p></div></div><div class="admin-dedicated-shell">
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><div class="admin-hero-actions"><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell">
       <div class="admin-toolbar admin-filter-grid">
         <input class="admin-input" id="recordsDate" type="date" value="${esc(C().value('recordsDate'))}">
         <input class="admin-input" id="recordsOpponent" placeholder="상대 대학" value="${esc(C().value('recordsOpponent'))}">
@@ -133,6 +159,7 @@
       </div>
       <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>세트 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${wl(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다</td></tr>'}</tbody></table></div>
       <div class="admin-pager"><button class="admin-btn" id="recordsPrev"${S.page<=0?' disabled':''}>이전</button><span>${S.page+1} / ${pages} · ${S.count}경기</span><button class="admin-btn" id="recordsNext"${S.page>=pages-1?' disabled':''}>다음</button></div></div>`;
+    bindViewTabs(root);
     root.querySelector('#recordsAdd').onclick=()=>openEditor(null);
     root.querySelector('#recordsSearch').onclick=()=>load(0);
     root.querySelector('#recordsPrev').onclick=()=>load(S.page-1);root.querySelector('#recordsNext').onclick=()=>load(S.page+1);
@@ -142,7 +169,7 @@
   }
   async function init(){
     if(document.body.dataset.adminPage!=='records')return;
-    S.members=await C().loadMembers();render();await load(0);
+    await show();
   }
   document.addEventListener('admin:ready',init);
 }());
