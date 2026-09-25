@@ -119,7 +119,7 @@ test('member rows link to tier players; person fields come from the tier table',
   assert.match(sql, /where lower\(btrim\(soop_id\)\) = lower\(btrim\(new\.soop_id\)\) order by id limit 1/);
   assert.match(admin, /rows\.find\(r=>r\.nickname===name\)\|\|rows\.find\(r=>r\.name===name\)/);
   const page = read('templates/assets/page-members.js');
-  assert.match(page, /\['입단 티어', joinTier \? tierLabel\(joinTier\) : ''\]/);
+  assert.match(page, /getElementById\('mp-join-tier'\)\.textContent = joinTier \? tierLabel\(joinTier\) : '-'/);
 });
 
 test('linked ELO accounts: name and race are editable in the player drawer', () => {
@@ -132,4 +132,11 @@ test('admin shows members by nickname (same as the public site), not by the base
   assert.match(read('templates/assets/admin-members.js'), /'이름':r\.nickname\|\|r\.name\|\|''/);
   assert.match(read('templates/assets/admin-history.js'), /m\.nickname\|\|m\.name/);
   assert.match(read('templates/assets/admin-records.js'), /m=>m\.nickname\|\|m\.name/);
+});
+
+test('site member data keeps join tier and ELO ID for the profile', () => {
+  const s = read('scripts/write_site_data.py');
+  assert.match(s, /"ELO ID"/);
+  assert.match(s, /"입단 티어"/);
+  assert.match(read('templates/partials/profile_modal.html'), /id="mp-join-tier"/);
 });

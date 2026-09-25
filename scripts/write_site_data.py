@@ -15,8 +15,9 @@ OUT_PATHS = {
     "records": OUT_DIR / "site_records.json",
 }
 
+# '입단 티어'는 프로필 활동기간 줄, 'ELO ID'는 프로필 전적 분석 버튼이 쓴다(빠지면 둘 다 안 보인다)
 SITE_MEMBER_FIELDS = [
-    "이름", "SOOP ID", "생년월일", "성별", "종족", "티어",
+    "이름", "SOOP ID", "ELO ID", "생년월일", "성별", "종족", "티어", "입단 티어",
     "직책", "입단일", "퇴단일", "MBTI", "YouTube",
 ]
 SITE_MATCH_FIELDS = [

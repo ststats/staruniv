@@ -15,7 +15,8 @@
             <div class="modal-body profile-modal-body">
                 <div class="section-title profile-modal-section" data-en="PROFILE"><h3 class="section-title-label">기본 정보</h3></div>
                 <dl class="profile-modal-facts" id="mp-info-body"></dl>
-                <div class="profile-modal-period"><div><div class="profile-modal-label">활동기간</div><div id="mp-period">-</div></div><span class="profile-modal-days" id="mp-days" hidden></span></div>
+                {#- 입단 티어(이 입단 때 티어)는 활동기간과 한 줄: 위 기본 정보 첫 칸(성별) 폭에 맞춘다 -#}
+                <div class="profile-modal-period"><div><div class="profile-modal-label">입단 티어</div><div id="mp-join-tier">-</div></div><div class="profile-modal-period-main"><div><div class="profile-modal-label">활동기간</div><div id="mp-period">-</div></div><span class="profile-modal-days" id="mp-days" hidden></span></div></div>
                 <div class="section-title profile-modal-section" data-en="MONTHLY ACTIVITY"><h3 class="section-title-label">이번 달 방송 활동</h3></div>
                 <div class="profile-modal-status" id="mp-activity-status" role="status">데이터 준비중</div>
                 <div class="profile-modal-metrics">

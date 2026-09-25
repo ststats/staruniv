@@ -215,9 +215,10 @@ function openMemberProfile(name) {
     const daysEl = document.getElementById('mp-days');
     daysEl.hidden = days === null || !Number.isFinite(days);
     daysEl.textContent = daysEl.hidden ? '' : days.toLocaleString('ko-KR') + (active ? '일째' : '일 활동');
-    // 위 티어 뱃지는 지금 티어(티어표), 입단 티어는 이 입단 때 티어(프로필에서만 보인다)
+    // 위 티어 뱃지는 지금 티어(티어표), 입단 티어는 이 입단 때 티어(프로필 활동기간 줄에서만 보인다)
     const joinTier = String(m['입단 티어'] ?? '').trim();
-    const rows = [['입단 티어', joinTier ? tierLabel(joinTier) : ''], ['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
+    document.getElementById('mp-join-tier').textContent = joinTier ? tierLabel(joinTier) : '-';
+    const rows = [['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
     document.getElementById('mp-info-body').innerHTML = rows.map(([label, value]) =>
         '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>').join('');
     const station = document.getElementById('mp-station-link');
