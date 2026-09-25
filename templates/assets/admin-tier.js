@@ -122,7 +122,17 @@
     const {data,error}=await C().state.client.from('tier_member_elo_links').select('elo_id,elo_name,race').eq('tier_member_id',memberId).order('elo_id');
     if(!box.isConnected)return;
     if(error){box.textContent=`연결 계정을 불러오지 못했습니다: ${C().errorText(error)}`;return;}
-    box.innerHTML=(data||[]).length?data.map(l=>`<span style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 6px 0">ELO ${esc(l.elo_id)}${l.elo_name?` · ${esc(l.elo_name)}`:''}${l.race?` · ${esc(l.race)}`:''} <button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></span>`).join(' '):'없음';
+    box.innerHTML=(data||[]).length?data.map(l=>`<span style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 6px 0">ELO ${esc(l.elo_id)}${l.elo_name?` · ${esc(l.elo_name)}`:''}${l.race?` · ${esc(l.race)}`:''} <button type="button" class="admin-btn" data-main-elo="${esc(l.elo_id)}">메인으로</button><button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></span>`).join(' '):'없음';
+    // 메인 종족이 바뀐 경우: 이 계정을 메인으로, 옛 메인은 연결 계정으로(한 번에). 창의 ELO ID 칸과 어긋나지 않게 창을 닫는다.
+    box.querySelectorAll('[data-main-elo]').forEach(b=>b.onclick=async()=>{
+      const elo=Number(b.dataset.mainElo);
+      if(!confirm(`ELO ${elo}를 메인 계정으로 바꿀까요?\n지금 메인 계정은 연결 계정으로 옮겨지고, 오늘부터 방송통계가 새 계정으로 세집니다.${C().state.dirty?'\n이 창에서 고친 내용은 저장되지 않습니다.':''}`))return;
+      b.disabled=true;
+      const {error}=await C().state.client.rpc('admin_set_main_elo',{p_member_id:memberId,p_elo_id:elo});
+      if(error){b.disabled=false;return C().toast(C().errorText(error),'error');}
+      C().toast(`ELO ${elo}를 메인 계정으로 바꿨습니다. 종족이 바뀌었으면 종족 칸도 고치세요`);
+      C().closeDrawer(true);await load(S.page);
+    });
     box.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=async()=>{
       if(!confirm(`ELO ${b.dataset.unlink} 연결을 해제할까요? 다음 동기화 때 신규 인원에 다시 뜹니다`))return;
       const {error}=await C().state.client.from('tier_member_elo_links').delete().eq('elo_id',Number(b.dataset.unlink));
@@ -366,11 +376,13 @@
       N.rows=N.rows.filter(x=>x.id!==c.id);membersLoaded=false;renderCandidates();
     });
   }
-  // 명단에 이미 있는 같은 사람일 수 있는 선수(같은 SOOP ID 또는 같은 이름). 종족 변경 계정이면 '연결'한다.
+  // 명단에 이미 있는 같은 사람일 수 있는 선수(같은 SOOP ID 또는 같은 이름). 다른 계정이면 '연결'한다.
+  // EloBoard는 한 사람의 계정들을 '진땅콩.', '진땅콩..', '진땅콩,'처럼 점·쉼표를 붙여 구분하므로 이름은 점·쉼표·공백을 빼고 비교한다.
+  const baseName=v=>String(v||'').toLowerCase().replace(/[.,·\s]+/g,'');
   function sameMember(c){
     const low=v=>String(v||'').trim().toLowerCase();
-    const soop=low(c.soop_id),name=low(c.nickname);
-    return (N.members||[]).find(m=>soop&&low(m.soop_id)===soop)||(N.members||[]).find(m=>name&&(low(m.nickname)===name||low(m.name)===name))||null;
+    const soop=low(c.soop_id),name=baseName(c.nickname);
+    return (N.members||[]).find(m=>soop&&low(m.soop_id)===soop)||(N.members||[]).find(m=>name&&(baseName(m.nickname)===name||baseName(m.name)===name))||null;
   }
   function memberLabel(m){return `${m.nickname}${m.affiliation?` · ${m.affiliation}`:''}${m.race?` · ${m.race}`:''}${m.elo_id?` · ELO ${m.elo_id}`:''}`;}
   function linkCandidate(c){
@@ -402,7 +414,7 @@
     const q=N.q.trim().toLowerCase();
     const rows=(N.rows||[]).filter(c=>!q||[c.nickname,c.soop_id,c.affiliation,c.elo_id].some(v=>String(v??'').toLowerCase().includes(q)));
     const pending=N.status==='pending';
-    const body=rows.map(c=>{const same=sameMember(c);return`<tr><td><b>${esc(c.nickname)}</b>${same?`<div class="admin-help">⚠ ${esc(same.nickname)} 선수와 ${String(same.soop_id||'').trim().toLowerCase()===String(c.soop_id||'').trim().toLowerCase()&&c.soop_id?'SOOP ID가':'이름이'} 같음 · 종족 변경 계정이면 연결</div>`:''}</td><td>${esc(c.elo_id)}</td><td>${esc(c.soop_id)}</td><td>${esc(c.race)}</td><td>${esc(c.tier)}</td><td>${esc(c.affiliation)}</td><td>${esc(c.found_at)}</td><td>${esc(c.source==='ststat_sync_eloboard'?'경기 기록':'티어 목록')}</td>
+    const body=rows.map(c=>{const same=sameMember(c);return`<tr><td><b>${esc(c.nickname)}</b>${same?`<div class="admin-help">⚠ ${esc(same.nickname)} 선수와 ${String(same.soop_id||'').trim().toLowerCase()===String(c.soop_id||'').trim().toLowerCase()&&c.soop_id?'SOOP ID가':'이름이'} 같음 · 같은 사람의 다른 계정이면 연결</div>`:''}</td><td>${esc(c.elo_id)}</td><td>${esc(c.soop_id)}</td><td>${esc(c.race)}</td><td>${esc(c.tier)}</td><td>${esc(c.affiliation)}</td><td>${esc(c.found_at)}</td><td>${esc(c.source==='ststat_sync_eloboard'?'경기 기록':'티어 목록')}</td>
       <td>${pending?`<button class="admin-btn${same?'':' primary'}" data-cand-add="${esc(c.id)}">선수로 추가</button><button class="admin-btn${same?' primary':''}" data-cand-link="${esc(c.id)}">기존 선수에 연결</button><button class="admin-btn" data-cand-ignore="${esc(c.id)}">무시</button>`:`<button class="admin-btn" data-cand-restore="${esc(c.id)}">되돌리기</button>`}</td></tr>`;}).join('');
     root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">신규 인원</h1><p class="page-header-subtitle">EloBoard에는 있지만 명단에 없는 선수입니다(ELO ID 기준). 선수로 추가하거나 기존 선수에 연결(종족 변경 등 같은 사람의 다른 계정)하면 여기서 빠지고, 무시한 선수는 다시 올라오지 않습니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell" id="candBody">
       ${N.rows===null?'<div class="admin-empty">신규 인원을 불러오는 중</div>':`<div class="admin-rank-tools">

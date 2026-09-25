@@ -1393,3 +1393,39 @@ $$;
 drop trigger if exists tier_member_elo_links_guard on public.tier_member_elo_links;
 create trigger tier_member_elo_links_guard before insert or update of elo_id on public.tier_member_elo_links
   for each row execute function public.tier_member_elo_links_guard();
+
+-- 메인 계정 바꾸기(메인 종족이 바뀐 경우): 연결 계정 하나를 메인으로 올리고, 옛 메인은 연결 계정으로 내린다.
+-- 한 번에 처리해 옛 계정이 신규 인원에 다시 뜨지 않는다. 수정일은 오늘(그날부터 방송통계가 새 계정으로 센다).
+-- 종족 칸은 바꾸지 않는다(티어표 갱신이나 선수 수정에서 고친다).
+create or replace function public.admin_set_main_elo(p_member_id bigint, p_elo_id integer)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare m public.tier_members%rowtype;
+begin
+  if not public.is_admin() then raise exception 'admin only'; end if;
+  select * into m from public.tier_members where id = p_member_id for update;
+  if not found then raise exception '선수 번호 %이 없습니다', p_member_id; end if;
+  if not exists (select 1 from public.tier_member_elo_links where elo_id = p_elo_id and tier_member_id = p_member_id) then
+    raise exception 'ELO ID %는 이 선수의 연결 계정이 아닙니다', p_elo_id;
+  end if;
+  -- 메인을 바꾸면 트리거가 새 메인을 연결 목록에서 뺀다
+  update public.tier_members
+  set elo_id = p_elo_id,
+      modified_at = to_char(timezone('Asia/Seoul', now()), 'YYYY-MM-DD HH24:MI:SS')
+  where id = p_member_id;
+  if m.elo_id is not null then
+    -- 옛 메인 계정의 EloBoard 이름·종족(수집해 둔 원본). 없으면 비워 둔다.
+    insert into public.tier_member_elo_links (elo_id, tier_member_id, elo_name, race)
+    select m.elo_id, p_member_id, p.name, p.race
+    from (select 1) one left join public.elo_players p on p.elo_id = m.elo_id
+    on conflict (elo_id) do nothing;
+  end if;
+  perform public.admin_write_audit('set_main_elo', 'tier_members', p_member_id::text,
+    jsonb_build_object('from', m.elo_id, 'to', p_elo_id, 'nickname', m.nickname));
+end;
+$$;
+revoke all on function public.admin_set_main_elo(bigint, integer) from public, anon;
+grant execute on function public.admin_set_main_elo(bigint, integer) to authenticated;
