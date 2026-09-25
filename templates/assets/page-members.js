@@ -237,49 +237,14 @@ function openMemberProfile(name) {
     showModal('memberProfileModal');
 }
 
-// 분석 탭은 EloBoard 선수 ID(elo_id)를 쓰므로 SOOP ID로 정확히 연결한다.
-// 예전엔 정적 파일 data/h2h/index.json에서 찾았는데, 전적 데이터가 Supabase로 옮겨 가며
-// 그 파일이 없어져 버튼이 늘 숨겨졌다. 지금은 공개 뷰에서 SOOP ID가 있는 선수만 한 번 받아 둔다.
-let profileAnalysisIndexPromise = null;
-function loadProfileAnalysisIndex() {
-    if (profileAnalysisIndexPromise) return profileAnalysisIndexPromise;
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) return Promise.resolve(null);
-    profileAnalysisIndexPromise = (async () => {
-        const bySoop = new Map();
-        const rows = await fetchAllPages((from, to) => client.from('elo_public_players')
-            .select('elo_id,soop_id')
-            .not('soop_id', 'is', null)
-            .order('elo_id', { ascending: true })
-            .range(from, to));
-        rows.forEach(row => {
-            const key = String(row.soop_id || '').trim().toLowerCase();
-            if (key && !bySoop.has(key)) bySoop.set(key, String(row.elo_id));
-        });
-        return bySoop;
-    })().catch(() => { profileAnalysisIndexPromise = null; return null; });
-    return profileAnalysisIndexPromise;
-}
-
-async function updateMemberAnalysisLink(member) {
+// 전적 분석 버튼: 멤버 줄의 ELO ID(이 입단 때 쓴 계정)로만 간다. 비어 있으면 버튼을 숨긴다
+// (티어표의 메인 계정으로 대신 가지 않는다 - 같은 사람의 다른 계정이 섞이지 않게).
+function updateMemberAnalysisLink(member) {
     const link = document.getElementById('mp-analysis-link');
-    link.hidden = true;
+    const eloId = String(member['ELO ID'] ?? '').trim();
+    link.hidden = !/^\d+$/.test(eloId);
     link.removeAttribute('href');
-    // 멤버 줄에 이 입단 때 쓴 ELO 계정이 있으면 그것(예: '진땅콩 T'는 테란 계정), 없으면 SOOP ID로 찾은 메인 계정
-    const own = String(member['ELO ID'] ?? '').trim();
-    if (/^\d+$/.test(own)) {
-        link.href = 'tier/?view=analysis&p=' + encodeURIComponent(own);
-        link.hidden = false;
-        return;
-    }
-    const soopId = String(member['SOOP ID'] || '').trim().toLowerCase();
-    if (!isValidSoopId(soopId)) return;
-    const bySoop = await loadProfileAnalysisIndex();
-    if (_profileMember !== member || !bySoop) return;
-    const eloId = bySoop.get(soopId);
-    if (!eloId) return;
-    link.href = 'tier/?view=analysis&p=' + encodeURIComponent(eloId);
-    link.hidden = false;
+    if (!link.hidden) link.href = 'tier/?view=analysis&p=' + encodeURIComponent(eloId);
 }
 
 // 프로필 팝업의 "이번 달 방송 활동"을 시너지표(ststats)에서 가져온 데이터로 채운다.
