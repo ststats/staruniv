@@ -126,7 +126,7 @@
     // 메인 종족이 바뀐 경우: 이 계정을 메인으로, 옛 메인은 연결 계정으로(한 번에). 창의 ELO ID 칸과 어긋나지 않게 창을 닫는다.
     box.querySelectorAll('[data-main-elo]').forEach(b=>b.onclick=async()=>{
       const elo=Number(b.dataset.mainElo);
-      if(!confirm(`ELO ${elo}를 메인 계정으로 바꿀까요?\n지금 메인 계정은 연결 계정으로 옮겨지고, 오늘부터 방송통계가 새 계정으로 세집니다.${C().state.dirty?'\n이 창에서 고친 내용은 저장되지 않습니다.':''}`))return;
+      if(!confirm(`ELO ${elo}를 메인 계정으로 바꿀까요?\n지금 메인 계정은 연결 계정으로 옮겨지고, 오늘부터 방송통계가 새 계정으로 세집니다${C().state.dirty?'\n이 창에서 고친 내용은 저장되지 않습니다':''}`))return;
       b.disabled=true;
       const {error}=await C().state.client.rpc('admin_set_main_elo',{p_member_id:memberId,p_elo_id:elo});
       if(error){b.disabled=false;return C().toast(C().errorText(error),'error');}
