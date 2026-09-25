@@ -14,14 +14,14 @@
 
 .synergy-val-text { display: block; }
 
-/* 요약: PC(992px~)는 왼쪽 TOP 사진 카드(16:9) + 오른쪽 타일 세 개 세로.
+/* 요약: PC(992px~)는 왼쪽 TOP 사진 카드(16:9) + 오른쪽 타일 세 개 세로(두 칸 너비 같음).
    그보다 좁으면 사진 아래 낮은 줄 세 개(왼쪽 이름표 · 오른쪽 값) -
    방송시간 합계('18,112시간 52분')처럼 값이 길어 한 줄 세 칸엔 안 들어간다. */
 .synergy-summary { display: grid; gap: 12px; }
 .synergy-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .synergy-tiles > * { min-width: 0; }
 @media (min-width: 992px) {
-    .synergy-summary { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+    .synergy-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 사진 카드와 요약 타일 같은 너비 */
     .synergy-tiles { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
 }
 /* PC보다 좁으면 타일은 낮은 줄 세 개(왼쪽 이름표 · 오른쪽 값) */
