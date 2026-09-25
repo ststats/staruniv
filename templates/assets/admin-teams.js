@@ -8,11 +8,7 @@
   const sb=()=>C().state.client;
   const SIZE=96;
   const NO_TEAM=new Set(['FA','휴면','체크','미분류','']);
-  // 예전에 저장소에 파일로 두던 로고(한 번에 옮기기용). 원본이 큰 시너지 파일을 먼저 쓴다.
-  const OLD_LOGOS=['BGM','DM','HM','JSA','YB','거성대','노적단','뉴캣슬','늪지대','더블비','드림즈','마범대','섭이대','소림사',
-    '수술대','신세계','씨나인','엠비대','영정','와플대','우끼끼즈','이노대','장독대','정선대','캄몬스타즈','케이대','흑카데미'];
-  const SYNERGY_RAW='https://raw.githubusercontent.com/ststats/synergy/main/';
-  const T={teams:[],logos:{},count:{},busy:false,progress:''};
+  const T={teams:[],logos:{},count:{}};
 
   const root=()=>document.getElementById('tmRoot');
   const clearLogoCache=()=>{try{localStorage.removeItem('staruniv-logos-v1');}catch(e){}};
@@ -92,32 +88,6 @@
     T.logos[to]={...T.logos[from],name:to};delete T.logos[from];clearLogoCache();
   }
 
-  // 예전 로고 파일을 한 번에 옮긴다. 시너지가 쓰던 색은 그대로 가져온다(원본에서 뽑은 값).
-  async function importOld(){
-    const todo=OLD_LOGOS.filter(n=>!T.logos[n]);
-    if(!todo.length)return C().toast('옮길 로고가 없습니다');
-    if(!confirm(`예전 로고 ${todo.length}개를 옮길까요`))return;
-    T.busy=true;
-    let colors={};
-    try{const r=await fetch(SYNERGY_RAW+'data/team_logo_colors_cache.json',{cache:'no-store'});if(r.ok)colors=await r.json();}catch(e){}
-    let done=0;const failed=[];
-    for(const name of todo){
-      T.progress=`로고 옮기는 중 ${done+failed.length+1}/${todo.length} · ${name}`;render();
-      try{
-        let blob=null;
-        for(const url of [SYNERGY_RAW+'assets/logos/'+encodeURIComponent(name)+'.webp','images/'+encodeURIComponent(name)+'.webp']){
-          const r=await fetch(url,{cache:'no-store'}).catch(()=>null);
-          if(r&&r.ok){blob=await r.blob();break;}
-        }
-        if(!blob)throw new Error('파일 없음');
-        await saveLogo(name,blob,colors[name]&&colors[name].color);
-        done++;
-      }catch(e){console.error(name,e);failed.push(name);}
-    }
-    T.busy=false;T.progress='';
-    await load();render();
-    C().toast(`로고 ${done}개를 옮겼습니다${failed.length?` · 실패 ${failed.join(', ')}`:''}`,failed.length?'error':'ok');
-  }
 
   // ---------------------------------------------------------------------------
   // 팀 편집
@@ -188,17 +158,13 @@
     const names=new Set(T.teams.map(t=>t.team_name));
     // 팀 목록에 없지만 티어표에 선수가 있거나 로고가 있는 이름
     const extra=[...new Set([...Object.keys(T.count),...Object.keys(T.logos)])].filter(n=>!names.has(n)).sort((a,b)=>a.localeCompare(b,'ko'));
-    const missing=T.logoError?0:OLD_LOGOS.filter(n=>!T.logos[n]).length;
     el.innerHTML=`
       ${T.logoError?`<div class="admin-tl-import"><span>대학 로고 표가 아직 없습니다. supabase/staruniv.sql을 실행해 주세요</span></div>`:''}
-      ${missing?`<div class="admin-tl-import"><span>예전 로고 파일 ${missing}개가 아직 옮겨지지 않았습니다(스타유니브·시너지가 같이 쓰도록 한 곳으로)</span><button class="admin-btn primary" id="tlImport"${T.busy?' disabled':''}>한 번에 옮기기</button></div>`:''}
-      ${T.progress?`<div class="admin-empty">${esc(T.progress)}</div>`:''}
       <div class="admin-table-wrap"><table class="admin-table admin-tm-table"><thead><tr><th>로고</th><th>팀</th><th>설립자</th><th>창단일</th><th>해체일</th><th>우승</th><th>비고</th><th>티어표 인원</th><th>관리</th></tr></thead><tbody>
       ${T.teams.map(t=>`<tr><td>${logoBox(t.team_name,'admin-tl-logo is-sm')}</td><td><b>${esc(t.team_name)}</b></td><td>${esc(t.founders)}</td><td>${esc(t.founded_date)}</td><td>${esc(t.disbanded_date)}</td><td>${esc(t.championship)}</td><td class="admin-tm-note">${esc(t.note)}</td><td>${T.count[t.team_name]||''}</td><td><button class="admin-btn" data-tm-edit="${t.id}">수정</button></td></tr>`).join('')||'<tr><td colspan="9">팀이 없습니다</td></tr>'}
       </tbody></table></div>
       ${extra.length?`<div class="admin-section-head"><b>팀 목록에 없는 대학 ${extra.length}</b><small>티어표에 선수가 있거나 로고만 있는 이름입니다. 누르면 팀으로 추가합니다</small></div>
       <div class="admin-tm-extra">${extra.map(n=>`<button type="button" class="admin-tm-chip" data-tm-add="${esc(n)}">${logoBox(n,'admin-tl-logo is-xs')}<span>${esc(n)}</span><small>${T.count[n]?`${T.count[n]}명`:'로고만'}</small></button>`).join('')}</div>`:''}`;
-    el.querySelector('#tlImport')?.addEventListener('click',()=>importOld().catch(e=>{T.busy=false;T.progress='';render();C().toast(C().errorText(e),'error');}));
     el.querySelectorAll('[data-tm-edit]').forEach(b=>b.onclick=()=>openTeam(T.teams.find(t=>String(t.id)===b.dataset.tmEdit)));
     el.querySelectorAll('[data-tm-add]').forEach(b=>b.onclick=()=>openTeam({team_name:b.dataset.tmAdd}));
   }

@@ -569,12 +569,12 @@ function teamLogoFallback(imgEl, teamName) {
 // (예전 SPA에서는 전적 표가 처음엔 숨겨져 있어 로고를 늦게 불러오는 바람에 우연히 안 드러났던 경쟁 상태)
 document.querySelectorAll('img[data-logo-failed]').forEach(img => teamLogoFallback(img, img.dataset.team));
 
-// 대학 로고 주소. 어드민(티어표 > 대학 로고)에서 올린 로고는 Supabase(university_logos 표 + Storage)에
-// 있고 시너지와 같이 쓴다. 페이지를 열 때 bootPage가 목록을 받아 두며, 목록에 없으면 예전 정적 파일을 쓴다.
+// 대학 로고 주소. 로고는 어드민(전적 > 팀 관리)에서 올리고 Supabase(university_logos 표 + Storage)에
+// 있으며 시너지와 같이 쓴다. 페이지를 열 때 bootPage가 목록을 받아 둔다. 목록에 없으면 '' (배지로 대신).
 const TeamLogos = { map: {} };
 const LOGO_CACHE_KEY = 'staruniv-logos-v1';
 function teamLogoSrc(name) {
-    return TeamLogos.map[name] || `images/${encodeURIComponent(name)}.webp`;
+    return TeamLogos.map[name] || '';
 }
 function setTeamLogos(rows) {
     const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
@@ -603,7 +603,7 @@ async function loadTeamLogos() {
         return;
     }
     try { setTeamLogos(await fresh); }
-    catch (e) { console.warn('대학 로고 목록을 불러오지 못했습니다. 기본 로고 파일을 씁니다.', e); }
+    catch (e) { console.warn('대학 로고 목록을 불러오지 못했습니다. 이름 첫 글자 배지로 대신합니다.', e); }
 }
 
 function teamLogoHtml(teamName, sizePx) {
@@ -611,9 +611,15 @@ function teamLogoHtml(teamName, sizePx) {
     if (!name) return '';
     const fileName = (name === '내전') ? '캄몬스타즈' : name;
     const size = sizePx || 16;
+    const src = teamLogoSrc(fileName);
+    // 로고가 없는 팀은 이미지를 요청하지 않고 바로 배지(teamLogoFallback과 같은 모양)
+    if (!src) {
+        const initial = escapeHTML(Array.from(name)[0] || '?');
+        return `<span class="team-logo-fallback" style="width:${size}px;height:${size}px;font-size:${Math.max(8, Math.round(size * 0.5))}px;">${initial}</span>`;
+    }
     // 팀 이름을 onerror 안의 JS 문자열로 직접 꽂지 않고 data 속성으로 넘긴다(이스케이프 문제 원천 차단).
     // 크기는 대체 배지(teamLogoFallback)가 그대로 물려받아야 해서 인라인으로 둔다.
-    return `<img src="${escapeHTML(teamLogoSrc(fileName))}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
+    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용

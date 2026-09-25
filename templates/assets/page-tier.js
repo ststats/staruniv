@@ -123,11 +123,12 @@ function tierThumbUrl(broadNo) {
     return `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broadNo)}?t=${Math.floor(Date.now() / 60000)}`;
 }
 
-// 팀 로고 주소는 core.js의 teamLogoSrc(어드민에서 올린 로고 → 없으면 예전 정적 파일).
-// 로고가 없는 팀도 있으므로 실패하면 이미지만 조용히 숨긴다 - 팀 이름은 남는다.
+// 팀 로고 주소는 core.js의 teamLogoSrc(어드민 전적 > 팀 관리에서 올린 로고).
+// 로고가 없는 팀은 그리지 않고, 불러오기에 실패하면 이미지만 조용히 숨긴다 - 팀 이름은 남는다.
 function tierTeamLogoHtml(team) {
     if (!team) return '';
     const src = teamLogoSrc(team);
+    if (!src) return '';
     return `<img class="team-logo-icon tier-card-team-logo" src="${escapeHTML(src)}" alt=""
                  loading="lazy" onerror="this.remove();">`;
 }
