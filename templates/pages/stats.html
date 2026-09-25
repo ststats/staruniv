@@ -30,25 +30,26 @@
     </div>
     <div class="container">
     <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 요약</span></div>
-    {#- [리디자인] 시안대로 표 위에 잉크 요약 타일 3개. 지금 고른 지표의 합계 / 1위 /
-        집계 인원을 보여준다. 숫자는 page-stats.js가 표를 그릴 때 같이 채운다.
-        (합계는 남녀 표를 합친 값이다 - 표는 나눠 보지만 크루 전체 규모는 하나로 읽는 게 맞다) #}
-    <div class="row g-3 mb-block" id="synergy-summary">
-        <div class="col-md-4"><div class="clean-card head-plate">
-            <div class="head-plate-label" id="synergy-sum-label">TOTAL</div>
-            <div class="head-plate-value" id="synergy-sum-total">-</div>
-            <div class="head-plate-sub">이번 달 합계</div>
-        </div></div>
-        <div class="col-md-4"><div class="clean-card head-plate">
-            <div class="head-plate-label">TOP</div>
-            <div class="head-plate-value" id="synergy-sum-top">-</div>
-            <div class="head-plate-sub" id="synergy-sum-top-name">1위</div>
-        </div></div>
-        <div class="col-md-4"><div class="clean-card head-plate">
-            <div class="head-plate-label">MEMBERS</div>
-            <div class="head-plate-value" id="synergy-sum-count">-</div>
-            <div class="head-plate-sub">집계 인원</div>
-        </div></div>
+    {#- 맨 위 TOP 칸: 지금 고른 지표의 1위(남녀 합쳐서) 대표 사진·이름·값. 사진은 어드민 멤버 수정의
+        '대표 사진'(가로 16:9 움짤 WebP)이 카드를 꽉 채운다. 없으면 SOOP 프로필 사진. 그 아래 합계 / 평균 / 멤버수 타일 3개.
+        (남녀 표를 합친 값이다 - 표는 나눠 보지만 크루 전체 규모는 하나로 읽는 게 맞다) #}
+    <div id="synergy-summary" class="synergy-summary mb-block">
+        <div class="clean-card head-plate synergy-top">
+            <div class="synergy-top-photo" id="synergy-top-photo"></div>
+            <div class="synergy-top-body">
+                <div class="head-plate-label">TOP · <span id="synergy-top-metric">별풍선</span></div>
+                <div class="synergy-top-name" id="synergy-sum-top">-</div>
+                <div class="synergy-top-value" id="synergy-sum-top-value">-</div>
+            </div>
+        </div>
+        <div class="synergy-tiles">
+            {%- for tile_id, tile_label in [('synergy-sum-total', 'TOTAL'), ('synergy-sum-avg', 'AVERAGE'), ('synergy-sum-count', 'MEMBERS')] %}
+            <div class="clean-card head-plate synergy-tile">
+                <div class="synergy-tile-label">{{ tile_label }}</div>
+                <div class="head-plate-value" id="{{ tile_id }}">-</div>
+            </div>
+            {%- endfor %}
+        </div>
     </div>
     <div class="row gap-block mb-block">
         {%- for gender_key, gender_label in [('male', '남자 멤버'), ('female', '여자 멤버')] %}

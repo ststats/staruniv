@@ -1443,6 +1443,8 @@ grant execute on function public.admin_set_main_elo(bigint, integer) to authenti
 -- 입단 기록 정보(그때 닉네임·종족·입단 티어·직책·입단일·퇴단일·MBTI·사진·YouTube·그때 쓴 ELO 계정)는 멤버 줄에만 있다.
 alter table public.members
   add column if not exists tier_member_id bigint references public.tier_members(id) on delete set null;
+-- 대표 사진(방송통계 TOP 칸). 프로필 원형 사진(avatar_path·SOOP 사진)과 따로, 잘 나온 사진 한 장.
+alter table public.members add column if not exists photo_path text;
 create index if not exists members_tier_member_idx on public.members (tier_member_id);
 
 -- 처음 한 번: SOOP ID가 같은 티어표 선수에 잇는다(이미 이어진 줄은 건드리지 않는다). 이후엔 아래 트리거가 한다

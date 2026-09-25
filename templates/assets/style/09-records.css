@@ -175,14 +175,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.head-plate-sub {
-    font-size: var(--fs-meta);
-    color: var(--panel-muted);
-    margin-top: 9px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 .wl-block {
     grid-area: wl;
