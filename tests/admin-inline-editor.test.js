@@ -51,11 +51,11 @@ test('records use atomic match RPC and validate set results before save', () => 
   assert.match(sql, /delete from public\.rounds where match_no = v_match_no/);
 });
 
-test('tier editor checks duplicate ELO IDs and old bulk update is removed', () => {
+test('tier editor checks duplicate ELO IDs and bulk update is admin-only RPC', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, /function duplicateElo/);
   assert.match(tier, /\.eq\('elo_id',elo\)/);
-  assert.doesNotMatch(tier, /admin_bulk_update_tier_members/);
+  assert.match(tier, /admin_bulk_update_tier_members/);
   const migration = read('supabase/staruniv.sql');
   assert.match(migration, /if not public\.is_admin\(\) then raise exception 'admin only'/);
   assert.match(migration, /admin_audit_log/);

@@ -853,8 +853,41 @@ $$;
 revoke all on function public.admin_write_audit(text,text,text,jsonb) from public;
 grant execute on function public.admin_write_audit(text,text,text,jsonb) to authenticated;
 
--- 일괄 수정은 티어표 갱신(admin_apply_tier_update)으로 대체됐다
-drop function if exists public.admin_bulk_update_tier_members(bigint[],text,text);
+-- ---------------------------------------------------------------------------
+-- Atomic bulk tier edits with audit
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_bulk_update_tier_members(
+  p_ids bigint[],
+  p_affiliation text default null,
+  p_tier text default null
+)
+returns integer
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare v_count integer;
+begin
+  if not public.is_admin() then raise exception 'admin only'; end if;
+  if coalesce(array_length(p_ids,1),0)=0 then return 0; end if;
+  if p_affiliation is null and p_tier is null then raise exception 'nothing to update'; end if;
+
+  update public.tier_members
+  set affiliation=coalesce(p_affiliation,affiliation),
+      tier=coalesce(p_tier,tier),
+      modified_at=to_char(timezone('Asia/Seoul',now()),'YYYY-MM-DD HH24:MI:SS')
+  where id=any(p_ids);
+  get diagnostics v_count = row_count;
+
+  perform public.admin_write_audit(
+    'bulk_update','tier_members',array_to_string(p_ids,','),
+    jsonb_build_object('affiliation',p_affiliation,'tier',p_tier,'count',v_count)
+  );
+  return v_count;
+end;
+$$;
+revoke all on function public.admin_bulk_update_tier_members(bigint[],text,text) from public;
+grant execute on function public.admin_bulk_update_tier_members(bigint[],text,text) to authenticated;
 
 -- Keep site config shape backwards compatible while establishing inline-editor defaults.
 insert into public.site_config(config_key,config_value,updated_at)
