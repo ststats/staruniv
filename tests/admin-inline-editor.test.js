@@ -140,3 +140,11 @@ test('site member data keeps join tier and ELO ID for the profile', () => {
   assert.match(s, /"입단 티어"/);
   assert.match(read('templates/partials/profile_modal.html'), /id="mp-join-tier"/);
 });
+
+test('tier section latin label adds TIER only once', () => {
+  const src = read('templates/assets/page-tier.js');
+  assert.match(src, /data-en="\$\{tierLatinLabel\(sec\.tier\)\}"/);
+  const body = src.slice(src.indexOf('const TIER_EN'), src.indexOf('// 화면 밖 카드'));
+  const tierLatinLabel = new Function(body + ';return tierLatinLabel;')();
+  assert.deepEqual(['갓', '1', 0, '8티어', '미분류'].map(tierLatinLabel), ['GOD TIER', '1 TIER', '0 TIER', '8 TIER', 'UNRANKED TIER']);
+});

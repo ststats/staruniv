@@ -242,7 +242,7 @@ function renderTierGroups() {
     document.getElementById('tier-root').innerHTML = TierState.sections.length
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
-                <div class="section-title" data-en="${tierLatinLabel(sec.tier)} TIER">
+                <div class="section-title" data-en="${tierLatinLabel(sec.tier)}">
                     <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span><span class="title-count">${sec.count}명</span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
@@ -423,14 +423,15 @@ function scrollTierBarItemIntoView(btn) {
     centerBarItem(btn);   // core.js - 개인 전적·멤버 공지 바와 같은 가운데 맞춤
 }
 
-// [리디자인] 티어 제목 위에 붙는 라틴 라벨. 이름 티어는 대응 영문을, 숫자 티어는 T0~T8로.
+// [리디자인] 티어 제목 위에 붙는 라틴 라벨: 'GOD TIER', '1 TIER'처럼 끝에 TIER를 한 번만 붙인다
+// (예전엔 숫자 티어에 여기서 한 번, 제목에서 또 붙여 '1 TIER TIER'로 나왔다).
 const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE',
                  '베이비': 'BABY', '미분류': 'UNRANKED' };
 function tierLatinLabel(tier) {
     // 0티어가 있어서 `tier || ''`로 읽으면 안 된다(0은 falsy라 통째로 사라진다).
     const key = ((tier === null || tier === undefined) ? '' : String(tier)).replace('티어', '').trim();
-    if (TIER_EN[key]) return TIER_EN[key];
-    return /^\d+$/.test(key) ? key + ' TIER' : 'TIER';
+    const word = TIER_EN[key] || (/^\d+$/.test(key) ? key : '');
+    return word ? word + ' TIER' : 'TIER';
 }
 
 // 화면 밖 카드를 건너뛰게 하려면(style.css의 content-visibility) 아직 안 그린 카드의
