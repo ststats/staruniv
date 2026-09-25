@@ -16,3 +16,18 @@ jobs:
         with:
           node-version: '20'
       - run: npm test
+
+  # 일회성: 지운 임시 워크플로(Probe fmkorea, OCR bench)의 실행 기록 삭제. 다음 커밋에서 뺀다.
+  cleanup-old-runs:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in 366099365 366744580; do
+            for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?per_page=100" --jq '.workflow_runs[].id'); do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/runs/$id" && echo "삭제: $id"
+            done
+          done
