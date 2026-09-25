@@ -14,6 +14,16 @@
   // 티어 랭킹 보기 상태. 활성 Elo 스냅샷을 한 번 읽어 두고 화면에서만 거른다.
   const R={loaded:false,loading:null,rows:[],meta:{},tier:'',q:'',gapOnly:false};
 
+  // 수정일 = '한국 날짜 + 저장한 시각'(예: 2026-09-25 01:30:12). ststat이 앞 10자리 날짜부터 지난
+  // 방송통계에 소급 반영하고, 반영이 끝나면 자기가 읽은 값과 같을 때만 지운다. 저장할 때마다 시각이
+  // 새로 붙으므로, 반영 도중 다시 고쳐도 값이 달라 표시가 남아 다음 실행에서 새 내용으로 다시 반영된다.
+  // (예전엔 UTC 시각이라 한국 시간 새벽에 고치면 전날부터 소급됐다.)
+  function modifiedStamp(day){
+    const kst=new Date(Date.now()+9*3600e3).toISOString();
+    const d=/^\d{4}-\d{2}-\d{2}$/.test(String(day||''))?day:kst.slice(0,10);
+    return d+' '+kst.slice(11,19);
+  }
+
   function esc(v){return C().esc(v);}
   // 승급일 칸은 글자다. 초기 티어표에는 강등이 있어서 같은 티어에 두 번 이상 오른 선수는
   // '2021-07-13, 2021-10-26'처럼 날짜를 쉼표로 이어 적는다(99칸 정도). 한 칸 = 날짜 여러 개로 읽는다.
@@ -65,7 +75,7 @@
       ${C().field('티어',C().input('ati_tier',r.tier||''))}
       ${C().field('소속',C().input('ati_aff',r.affiliation||'','text','placeholder="소속 / FA / 휴면"'))}
       ${C().field('직책',C().input('ati_role',r.role||''))}
-      ${C().field('수정일',C().input('ati_modified',r.modified_at||''))}
+      ${C().field('수정일(방송통계 소급 시작일)',C().input('ati_modified',String(r.modified_at||'').slice(0,10),'date'))}
       ${C().field('시작',C().input('ati_started',r.started_on||''))}
       ${C().field('ELO 등록',C().input('ati_elo_registered',r.elo_registered||''))}
       ${C().field('티어표 등록',C().input('ati_table_registered',r.tier_table_registered||''))}
@@ -74,7 +84,7 @@
     <div class="admin-section-head"><b>승급 이력</b><small>강등 뒤 다시 올랐으면 날짜를 쉼표로 이어 적습니다(예: 2021-07-13, 2021-10-26)</small></div><div class="admin-form-grid">${promo}</div>`;
   }
   function collect(r={}){
-    const p={name:C().empty(C().value('ati_name')),nickname:C().value('ati_nick').trim(),soop_id:C().empty(C().value('ati_soop')),elo_id:C().intOrNull(C().value('ati_elo')),gender:C().empty(C().value('ati_gender')),race:C().empty(C().value('ati_race')),birth_date:C().empty(C().value('ati_birth')),tier:C().empty(C().value('ati_tier')),affiliation:C().empty(C().value('ati_aff')),role:C().empty(C().value('ati_role')),modified_at:C().empty(C().value('ati_modified'))||new Date().toISOString()};
+    const p={name:C().empty(C().value('ati_name')),nickname:C().value('ati_nick').trim(),soop_id:C().empty(C().value('ati_soop')),elo_id:C().intOrNull(C().value('ati_elo')),gender:C().empty(C().value('ati_gender')),race:C().empty(C().value('ati_race')),birth_date:C().empty(C().value('ati_birth')),tier:C().empty(C().value('ati_tier')),affiliation:C().empty(C().value('ati_aff')),role:C().empty(C().value('ati_role')),modified_at:modifiedStamp(C().value('ati_modified'))};
     p.history=C().empty(C().value('ati_history'));
     p.started_on=C().empty(C().value('ati_started'));
     p.elo_registered=C().empty(C().value('ati_elo_registered'));

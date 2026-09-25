@@ -8,13 +8,34 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import date
 from pathlib import Path
-
-
-from supabase_data import empty, number_or_text
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = ROOT / "data" / "db.json"
+
+
+def empty(value):
+    """DB NULL -> 기존 JSON의 빈 문자열."""
+    if value is None:
+        return ""
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
+
+
+def number_or_text(value):
+    """DB에 text로 둔 혼합형 칼럼을 기존 JSON의 int/string 형태로 복원한다."""
+    value = empty(value)
+    if value == "":
+        return ""
+    s = str(value).strip()
+    if s and (s.isdigit() or (s.startswith("-") and s[1:].isdigit())):
+        try:
+            return int(s)
+        except ValueError:
+            pass
+    return value
 
 
 def gender_text(value):
@@ -150,6 +171,10 @@ def main():
     import psycopg
 
     with psycopg.connect(dsn) as conn:
+        # 여러 표를 한 읽기 시점에서 읽는다(내보내는 도중 관리자가 경기·라운드를 고쳐도
+        # 경기는 옛 값, 라운드는 새 값처럼 섞이지 않게). 읽기만 하므로 read only.
+        conn.isolation_level = psycopg.IsolationLevel.REPEATABLE_READ
+        conn.read_only = True
         settings = fetch(conn, "select * from public.settings order by source_order")
         teams = fetch(conn, "select * from public.teams order by source_order")
         members = fetch(conn, "select * from public.members order by source_order")

@@ -51,11 +51,6 @@ SITE_URL = os.environ.get('SITE_URL', 'https://ststats.github.io/staruniv').rstr
 def og_image_path(page_id):
     return f'images/share/{page_id}.png'
 
-def load_nav_config():
-    """런타임 Supabase 설정을 사용하므로 빌드 시에는 모두 표시한다."""
-    return set(), set()
-
-
 def page_output_path(page_id):
     return os.path.join(OUT_DIR, 'index.html') if page_id == 'home' else os.path.join(OUT_DIR, page_id, 'index.html')
 
@@ -215,18 +210,14 @@ def main():
     common = {'crew_stats': stats_data['crew_stats']}
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
-    hidden_nav_ids, hidden_stats_tabs = load_nav_config()
-    if hidden_nav_ids:
-        print(f"ℹ️ 상단 메뉴에서 숨김: {', '.join(sorted(hidden_nav_ids))}")
-    if hidden_stats_tabs:
-        print(f"ℹ️ 방송통계 지표 탭에서 숨김: {', '.join(sorted(hidden_stats_tabs))}")
+    # 메뉴·방송통계 탭 숨김은 런타임에 core.js가 Supabase 설정으로 처리하므로 빌드는 모두 표시한다
     for page_id, _, title, description in PAGES:
         html_output = env.get_template(f'pages/{page_id}.html').render(
-            **common, **page_context(page_id, title, description, hidden_nav_ids, hidden_stats_tabs))
+            **common, **page_context(page_id, title, description))
         out_path = page_output_path(page_id)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         write_text_atomic(out_path, html_output)
-        admin_context = page_context(page_id, title, description, hidden_nav_ids, hidden_stats_tabs)
+        admin_context = page_context(page_id, title, description)
         admin_context.update(admin_mode=True, root='', public_href=page_url_path(page_id) or './')
         for nav in admin_context['nav_items']:
             nav['href'] = f"admin-{nav['id']}.html"
