@@ -108,3 +108,15 @@ test('tier date columns include demotions: no order warning, and tier update rec
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /강등으로 내려간 날도 그 티어 칸에 적는다/);
 });
+
+test('member rows link to tier players; person fields come from the tier table', () => {
+  const sql = read('supabase/staruniv.sql');
+  assert.match(sql, /add column if not exists tier_member_id bigint references public\.tier_members\(id\) on delete set null/);
+  assert.match(sql, /create trigger members_fill_from_tier before insert or update on public\.members/);
+  assert.match(sql, /create trigger tier_members_sync_members after update of soop_id, birth_date, gender, tier on public\.tier_members/);
+  const admin = read('templates/assets/admin-members.js');
+  assert.match(admin, /payload\.tier_member_id=person\?person\.id:null/);
+  assert.match(admin, /rows\.find\(r=>r\.nickname===name\)\|\|rows\.find\(r=>r\.name===name\)/);
+  const page = read('templates/assets/page-members.js');
+  assert.match(page, /\['입단 티어', joinTier \? tierLabel\(joinTier\) : ''\]/);
+});

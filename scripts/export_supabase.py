@@ -81,6 +81,8 @@ def build_db(settings, teams, members, matches, rounds, tier_members):
                 # 기존 사이트에서 members의 "이름"은 표시 닉네임으로 사용한다.
                 "이름": empty(r["nickname"]),
                 "SOOP ID": number_or_text(r["soop_id"]),
+                # 이 입단 때 쓴 ELO 계정(비어 있으면 프로필이 SOOP ID로 티어표의 메인 계정을 찾는다)
+                "ELO ID": empty(r.get("elo_id")),
                 "생년월일": empty(r["birth_date"]),
                 "성별": gender_text(r["gender"]),
                 "종족": empty(r["race"]),

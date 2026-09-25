@@ -2,6 +2,13 @@
   'use strict';
   const C=()=>window.AdminCore;
   let rows=[];
+  let people=null;   // 티어표 선수(연결용): {id,nickname,soop_id,tier}
+  async function loadPeople(){
+    if(people)return people;
+    people=await fetchAllPages((from,to)=>C().state.client.from('tier_members').select('id,nickname,soop_id,tier').order('id').range(from,to));
+    return people;
+  }
+  const personLabel=p=>`${p.nickname}${p.soop_id?` · ${p.soop_id}`:''} · #${p.id}`;
 
   function toPublic(r){
     return {
@@ -44,18 +51,23 @@
     return raw;
   }
 
-  function open(row){
+  async function open(row){
     row=row||{};
+    const list=await loadPeople().catch(()=>[]);
+    // 이미 연결된 줄은 그 선수, 아직 안 된 줄은 SOOP ID가 같은 선수를 먼저 채워 둔다(저장해야 연결됨)
+    const low=v=>String(v||'').trim().toLowerCase();
+    const linked=list.find(p=>p.id===row.tier_member_id)||(!row.id||row.tier_member_id?null:list.find(p=>low(row.soop_id)&&low(p.soop_id)===low(row.soop_id)))||null;
     C().openDrawer({
       eyebrow:'MEMBER',title:row.id?'멤버 수정':'멤버 추가',
       html:`
         <div class="admin-form-grid">
+          ${C().field('티어표 선수',`<input class="admin-input" id="am_person" list="am_people" autocomplete="off" placeholder="닉네임으로 찾기(비우면 연결 안 함)" value="${C().esc(linked?personLabel(linked):'')}"><datalist id="am_people">${list.map(p=>`<option value="${C().esc(personLabel(p))}"></option>`).join('')}</datalist>`)}
           ${C().field('이름',C().input('am_name',row.name||'','text','required'))}
           ${C().field('닉네임',C().input('am_nick',row.nickname||'','text','required'))}
           ${C().field('SOOP ID',C().input('am_soop',row.soop_id||''))}
-          ${C().field('ELO ID',C().input('am_elo',row.elo_id??'','number','min="1"'))}
+          ${C().field('ELO ID(이 입단 때 계정)',C().input('am_elo',row.elo_id??'','number','min="1" placeholder="비우면 티어표의 메인 계정"'))}
           ${C().field('직책',C().input('am_role',row.role||''))}
-          ${C().field('티어',C().input('am_tier',row.tier||''))}
+          ${C().field('티어(지금)',C().input('am_tier',row.tier||''))}
           ${C().field('입단 티어',C().input('am_join_tier',row.join_tier||''))}
           ${C().field('종족',`<select class="admin-input" id="am_race">${opts(['','테란','저그','프로토스'],row.race)}</select>`)}
           ${C().field('성별',`<select class="admin-input" id="am_gender">${opts(['','남자','여자'],normalizeGender(row.gender))}</select>`)}
@@ -65,6 +77,7 @@
           ${C().field('퇴단일',C().input('am_left',row.left_date||'','date'))}
           ${C().field('YouTube',C().input('am_youtube',row.youtube_url||'','text','placeholder="https://www.youtube.com/@채널 또는 @핸들"'))}
         </div>
+        <p class="admin-help">티어표 선수에 연결하면 SOOP ID·생년월일·성별·지금 티어는 티어표 값으로 자동으로 맞춰집니다(여기서 고쳐도 티어표 값이 우선). 닉네임·종족·입단 티어·직책·입단일·퇴단일은 이 입단 기록의 값입니다</p>
         <p class="admin-help">활동 상태는 별도 필드 없이 퇴단일 유무로 판단합니다. 일반적인 운영에서는 삭제 대신 퇴단일을 입력하세요</p>
         <div class="admin-preview-row"><div><b>현재 프로필</b><div class="admin-media-preview">${row.avatar_path?`<img src="${C().esc(C().mediaUrl(row.avatar_path))}" alt="">`:''}</div></div></div>
         ${C().field('프로필 사진',`<input class="admin-input" id="am_avatar" type="file" accept="image/*">`)}
@@ -77,6 +90,10 @@
           birth_date:C().empty(C().value('am_birth')),mbti:C().empty(C().value('am_mbti')),joined_date:C().empty(C().value('am_joined')),
           left_date:C().empty(C().value('am_left')),youtube_url:youtubeUrl(C().value('am_youtube')),avatar_path:row.avatar_path||null
         };
+        const pick=C().value('am_person').trim();
+        const person=pick?list.find(p=>personLabel(p)===pick):null;
+        if(pick&&!person)throw new Error('티어표 선수는 목록에서 고르세요(연결하지 않으려면 비우세요)');
+        payload.tier_member_id=person?person.id:null;
         if(!payload.name||!payload.nickname)throw new Error('이름과 닉네임은 필수입니다');
         const file=document.getElementById('am_avatar')?.files?.[0];
         if(file)payload.avatar_path=await C().uploadMedia(file,'members',payload.soop_id||payload.nickname);
@@ -118,7 +135,7 @@
       if(!card)return;
       ev.preventDefault();ev.stopPropagation();
       const name=card.dataset.member;
-      const row=rows.find(r=>r.name===name||r.nickname===name);
+      const row=rows.find(r=>r.nickname===name)||rows.find(r=>r.name===name);
       if(row)open(row);
     },true);
   }

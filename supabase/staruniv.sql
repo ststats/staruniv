@@ -1432,3 +1432,74 @@ end;
 $$;
 revoke all on function public.admin_set_main_elo(bigint, integer) from public, anon;
 grant execute on function public.admin_set_main_elo(bigint, integer) to authenticated;
+
+-- ############################################################################
+-- 9. 멤버 ↔ 티어표 선수 연동
+-- ############################################################################
+
+-- 멤버 표 한 줄 = 한 번의 입단 기록(같은 사람이 두 번 들어오면 두 줄: 예 '진땅콩 T'·'진땅콩').
+-- 사람 정보(SOOP ID·생년월일·성별·지금 티어)는 티어표 선수 명단(tier_members)이 원본이고, 연결된 멤버 줄의
+-- 같은 칸은 DB가 자동으로 맞춘다(사이트·멀티뷰·빌드는 지금처럼 members 칸을 읽으면 된다).
+-- 입단 기록 정보(그때 닉네임·종족·입단 티어·직책·입단일·퇴단일·MBTI·사진·YouTube·그때 쓴 ELO 계정)는 멤버 줄에만 있다.
+alter table public.members
+  add column if not exists tier_member_id bigint references public.tier_members(id) on delete set null;
+create index if not exists members_tier_member_idx on public.members (tier_member_id);
+
+-- 처음 한 번: SOOP ID가 같은 티어표 선수에 잇는다(이미 이어진 줄은 건드리지 않는다)
+update public.members m
+set tier_member_id = t.id
+from (select distinct on (lower(btrim(soop_id))) id, lower(btrim(soop_id)) as k
+      from public.tier_members where coalesce(btrim(soop_id), '') <> '' order by lower(btrim(soop_id)), id) t
+where m.tier_member_id is null and coalesce(btrim(m.soop_id), '') <> '' and lower(btrim(m.soop_id)) = t.k;
+
+-- 티어표에 비어 있고 멤버 표에만 있던 생년월일·성별은 티어표로 옮겨 둔다(원본을 한 곳으로)
+update public.tier_members t
+set birth_date = coalesce(t.birth_date, m.birth_date),
+    gender = coalesce(nullif(btrim(t.gender), ''), m.gender)
+from (select distinct on (tier_member_id) tier_member_id, birth_date, nullif(btrim(gender), '') as gender
+      from public.members where tier_member_id is not null
+      order by tier_member_id, (birth_date is null), source_order) m
+where t.id = m.tier_member_id
+  and ((t.birth_date is null and m.birth_date is not null)
+       or (coalesce(btrim(t.gender), '') = '' and m.gender is not null));
+
+-- 멤버 줄을 넣거나 연결을 바꿀 때: 사람 정보를 티어표 값으로 채운다
+create or replace function public.members_fill_from_tier()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare t public.tier_members%rowtype;
+begin
+  if new.tier_member_id is null then return new; end if;
+  select * into t from public.tier_members where id = new.tier_member_id;
+  if not found then return new; end if;
+  new.soop_id := coalesce(nullif(btrim(t.soop_id), ''), new.soop_id);
+  new.birth_date := coalesce(t.birth_date, new.birth_date);
+  new.gender := coalesce(nullif(btrim(t.gender), ''), new.gender);
+  new.tier := coalesce(nullif(btrim(t.tier), ''), new.tier);
+  return new;
+end;
+$$;
+drop trigger if exists members_fill_from_tier on public.members;
+create trigger members_fill_from_tier before insert or update on public.members
+  for each row execute function public.members_fill_from_tier();
+
+-- 티어표에서 사람 정보가 바뀌면(티어표 갱신·선수 수정) 연결된 멤버 줄에도 바로 반영한다
+create or replace function public.tier_members_sync_members()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  update public.members set tier_member_id = tier_member_id   -- 위 트리거가 새 값으로 채운다
+  where tier_member_id = new.id;
+  return null;
+end;
+$$;
+drop trigger if exists tier_members_sync_members on public.tier_members;
+create trigger tier_members_sync_members after update of soop_id, birth_date, gender, tier on public.tier_members
+  for each row execute function public.tier_members_sync_members();
+
+-- 처음 한 번 전체 맞추기(연결된 줄만)
+update public.members set tier_member_id = tier_member_id where tier_member_id is not null;

@@ -215,7 +215,9 @@ function openMemberProfile(name) {
     const daysEl = document.getElementById('mp-days');
     daysEl.hidden = days === null || !Number.isFinite(days);
     daysEl.textContent = daysEl.hidden ? '' : days.toLocaleString('ko-KR') + (active ? '일째' : '일 활동');
-    const rows = [['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
+    // 위 티어 뱃지는 지금 티어(티어표), 입단 티어는 이 입단 때 티어(프로필에서만 보인다)
+    const joinTier = String(m['입단 티어'] ?? '').trim();
+    const rows = [['입단 티어', joinTier ? tierLabel(joinTier) : ''], ['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
     document.getElementById('mp-info-body').innerHTML = rows.map(([label, value]) =>
         '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>').join('');
     const station = document.getElementById('mp-station-link');
@@ -263,6 +265,13 @@ async function updateMemberAnalysisLink(member) {
     const link = document.getElementById('mp-analysis-link');
     link.hidden = true;
     link.removeAttribute('href');
+    // 멤버 줄에 이 입단 때 쓴 ELO 계정이 있으면 그것(예: '진땅콩 T'는 테란 계정), 없으면 SOOP ID로 찾은 메인 계정
+    const own = String(member['ELO ID'] ?? '').trim();
+    if (/^\d+$/.test(own)) {
+        link.href = 'tier/?view=analysis&p=' + encodeURIComponent(own);
+        link.hidden = false;
+        return;
+    }
     const soopId = String(member['SOOP ID'] || '').trim().toLowerCase();
     if (!isValidSoopId(soopId)) return;
     const bySoop = await loadProfileAnalysisIndex();
