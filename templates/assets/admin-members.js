@@ -2,10 +2,10 @@
   'use strict';
   const C=()=>window.AdminCore;
   let rows=[];
-  let people=null;   // 티어표 선수(연결용): {id,nickname,soop_id,tier}
+  let people=null;   // 티어표 선수(연결용): {id,nickname,soop_id,tier,elo_id}
   async function loadPeople(){
     if(people)return people;
-    people=await fetchAllPages((from,to)=>C().state.client.from('tier_members').select('id,nickname,soop_id,tier').order('id').range(from,to));
+    people=await fetchAllPages((from,to)=>C().state.client.from('tier_members').select('id,nickname,soop_id,tier,elo_id').order('id').range(from,to));
     return people;
   }
   const low=v=>String(v||'').trim().toLowerCase();
@@ -13,7 +13,7 @@
   function linkStatus(list,soop){
     if(!low(soop))return 'SOOP ID를 적으면 같은 SOOP ID의 티어표 선수와 연동됩니다';
     const p=list.find(x=>low(x.soop_id)===low(soop));
-    return p?`티어표 연동: <b>${C().esc(p.nickname)}</b>${p.tier?` · ${C().esc(p.tier)}${/^\d$/.test(p.tier)?'티어':''}`:''} (SOOP ID·생년월일·성별·지금 티어는 티어표 값을 씁니다)`
+    return p?`티어표 연동: <b>${C().esc(p.nickname)}</b>${p.tier?` · ${C().esc(p.tier)}${/^\d$/.test(p.tier)?'티어':''}`:''}${p.elo_id?` · 메인 ELO ${C().esc(p.elo_id)}`:' · 메인 ELO 없음'} (SOOP ID·생년월일·성별·지금 티어는 티어표 값을 씁니다)`
       :'이 SOOP ID는 티어표에 없어 연동되지 않습니다(여기 적은 값을 그대로 씁니다)';
   }
 
@@ -68,7 +68,7 @@
           ${C().field('이름',C().input('am_name',row.name||'','text','required'))}
           ${C().field('닉네임',C().input('am_nick',row.nickname||'','text','required'))}
           ${C().field('SOOP ID',C().input('am_soop',row.soop_id||''))}
-          ${C().field('ELO ID(이 입단 때 계정)',C().input('am_elo',row.elo_id??'','number','min="1" placeholder="비우면 티어표의 메인 계정"'))}
+          ${C().field('ELO ID(이 입단 때 계정)',C().input('am_elo',row.elo_id??'','number','min="1" placeholder="비우면 티어표의 메인 ELO(아래 연동 줄)"'))}
           ${C().field('직책',C().input('am_role',row.role||''))}
           ${C().field('티어(지금)',C().input('am_tier',row.tier||''))}
           ${C().field('입단 티어',C().input('am_join_tier',row.join_tier||''))}
