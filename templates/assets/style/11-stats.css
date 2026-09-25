@@ -24,8 +24,12 @@
     .synergy-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 사진 카드와 요약 타일 같은 너비 */
     .synergy-tiles { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
 }
+/* 이름표 뒤 한글 설명(· 이번 달 합계)은 PC에서만 */
+.synergy-tile-ko i { margin: 0 7px; font-style: normal; opacity: .6; }
+.synergy-tile-ko { letter-spacing: 0; }
 /* PC보다 좁으면 타일은 낮은 줄 세 개(왼쪽 이름표 · 오른쪽 값) */
 @media (max-width: 991.98px) {
+    .synergy-tile-ko { display: none; }
     .synergy-tiles { grid-template-columns: 1fr; gap: 6px; }
     .synergy-summary .synergy-tile { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; }
     .synergy-summary .synergy-tile .head-plate-value { margin-top: 0; font-size: 20px; }
