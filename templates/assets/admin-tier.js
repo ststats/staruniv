@@ -377,8 +377,8 @@
     });
   }
   // 명단에 이미 있는 같은 사람일 수 있는 선수(같은 SOOP ID 또는 같은 이름). 다른 계정이면 '연결'한다.
-  // EloBoard는 한 사람의 계정들을 '진땅콩.', '진땅콩..', '진땅콩,'처럼 점·쉼표를 붙여 구분하므로 이름은 점·쉼표·공백을 빼고 비교한다.
-  const baseName=v=>String(v||'').toLowerCase().replace(/[.,·\s]+/g,'');
+  // EloBoard는 한 사람의 계정들을 '진땅콩.', '진땅콩..'처럼 점을 붙여 구분하므로 이름은 점·공백을 빼고 비교한다.
+  const baseName=v=>String(v||'').toLowerCase().replace(/[.\s]+/g,'');
   function sameMember(c){
     const low=v=>String(v||'').trim().toLowerCase();
     const soop=low(c.soop_id),name=baseName(c.nickname);

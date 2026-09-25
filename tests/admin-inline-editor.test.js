@@ -97,7 +97,7 @@ test('other-race ELO accounts are linked, and duplicate SOOP IDs are blocked in 
 test('main ELO account can be switched, and dotted EloBoard names match existing players', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, /rpc\('admin_set_main_elo'/);
-  assert.match(tier, /replace\(\/\[\.,·\\s\]\+\/g,''\)/);
+  assert.match(tier, /replace\(\/\[\.\\s\]\+\/g,''\)/);
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_set_main_elo\(p_member_id bigint, p_elo_id integer\)/);
 });
