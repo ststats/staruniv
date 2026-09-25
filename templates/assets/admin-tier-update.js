@@ -62,11 +62,11 @@
   // ---------------------------------------------------------------------------
   function initDecisions(){
     const r=U.job.result||{};
-    const d={changes:{},teams:{},cards:{},missing:{},faOnly:{}};
-    (r.changes||[]).forEach((c,i)=>{d.changes[i]=!c.uncertain;});
+    const d={changes:{},nick:{},teams:{},cards:{},missing:{},faOnly:{}};
+    (r.changes||[]).forEach((c,i)=>{d.changes[i]=!c.uncertain;if(c.diff?.nickname)d.nick[i]=c.diff.nickname[1];});
     (r.review||[]).forEach((x,i)=>{
       if(x.type==='새 대학')d.teams[i]={name:x.team};
-      else if(x.type==='신규 또는 인식 실패')d.cards[i]={mode:'skip',pick:'',nick:x.card?.nickname_ocr||'',tier:x.card?.tier||'',race:x.card?.race||''};
+      else if(x.type==='신규 또는 인식 실패')d.cards[i]={mode:'skip',pick:'',nick:x.card?.nickname_ocr||'',rename:'',tier:x.card?.tier||'',race:x.card?.race||''};
       else if(x.type==='표에서 빠짐')d.missing[i]='keep';
       else if(x.type&&x.type.startsWith('FA 명단에만 있음'))d.faOnly[i]={mode:'skip',pick:''};
     });
@@ -89,12 +89,14 @@
       Object.entries(fields).forEach(([k,v])=>{if(v!=null&&v!==''&&String(cur[k]??'')!==String(v))u[k]=v;});
     };
     (r.changes||[]).forEach((c,i)=>{
-      if(!U.decide.changes[i]){if(c.ref)unchecked.add(c.ref.join(','));return;}
+      // 닉네임 줄은 글씨만 확인하는 것이라(같은 사람인지는 이미 맞춤) 체크를 안 해도 카드 학습은 막지 않는다
+      if(!U.decide.changes[i]){if(c.ref&&!c.diff.nickname)unchecked.add(c.ref.join(','));return;}
       if(c.id==null)return;
       const f={};
       if(c.diff.affiliation)f.affiliation=teamName(c.diff.affiliation[1]);
       if(c.diff.tier)f.tier=String(c.diff.tier[1]);
       if(c.diff.race)f.race=c.diff.race[1];
+      if(c.diff.nickname){const v=String(U.decide.nick[i]||'').trim();if(v)f.nickname=v;}
       put(c.id,f);
     });
     (r.review||[]).forEach((x,i)=>{
@@ -103,7 +105,7 @@
         if(dc.mode==='pick'){
           const id=U.pickIndex[dc.pick];
           if(!id)throw new Error(`'${x.card?.nickname_ocr||'카드'}' 기존 선수를 목록에서 골라 주세요`);
-          put(id,{affiliation:team,tier:x.card?.tier,race:x.card?.race});
+          put(id,{affiliation:team,tier:x.card?.tier,race:x.card?.race,nickname:String(dc.rename||'').trim()||null});
           confirmed.push({ref:x.ref,id});
         }else if(dc.mode==='new'){
           if(!dc.nick.trim())throw new Error('새 선수 닉네임을 적어 주세요');
@@ -203,8 +205,10 @@
     // 펨코 이미지 서버는 다른 사이트 Referer를 막고 Referer가 없으면 보여 준다
     return `<div class="admin-tu-thumb" style="width:${next-x-2}px"><img src="${esc(img)}" referrerpolicy="no-referrer" alt="" style="transform:translate(${-x}px,${-y}px)"></div>`;
   }
-  function diffText(c){
+  function diffText(c,i){
     const parts=[];
+    if(c.diff.nickname)parts.push(`닉네임 ${esc(c.diff.nickname[0]||'-')} → ${i==null?`<b>${esc(c.diff.nickname[1])}</b>`
+      :`<input class="admin-input admin-tu-nick" data-tu-nick="${i}" value="${esc(U.decide.nick[i]??c.diff.nickname[1])}">`}`);
     if(c.diff.affiliation)parts.push(`소속 ${esc(c.diff.affiliation[0]||'-')} → <b>${esc(teamName(c.diff.affiliation[1]))}</b>`);
     if(c.diff.tier)parts.push(`티어 ${esc(tierText(c.diff.tier[0])||"-")} → <b>${esc(tierText(c.diff.tier[1]))}</b>`);
     if(c.diff.race)parts.push(`종족 ${esc(c.diff.race[0]||'-')} → <b>${esc(c.diff.race[1])}</b>`);
@@ -261,7 +265,7 @@
     const changes=(r.changes||[]).map((c,i)=>{
       return `<tr class="${c.uncertain?'is-uncertain':''}"><td><input type="checkbox" data-tu-change="${i}"${U.decide.changes[i]?' checked':''}></td>
         <td>${cardThumb(c.ref)}</td><td><b>${esc(c.nickname)}</b>${c.ocr&&c.ocr!==c.nickname?`<br><small>카드 글씨: ${esc(c.ocr)}</small>`:''}</td>
-        <td>${diffText(c)}${c.reason?`<br><small>${esc(c.reason)}</small>`:''}${c.uncertain?`<br><small class="admin-tu-err">확인 필요: ${esc(c.uncertain)}</small>`:''}</td></tr>`;
+        <td>${diffText(c,i)}${c.reason?`<br><small>${esc(c.reason)}</small>`:''}${c.uncertain?`<br><small class="admin-tu-err">확인 필요: ${esc(c.uncertain)}</small>`:''}</td></tr>`;
     }).join('');
     const reviews=(r.review||[]).map((x,i)=>reviewRow(x,i)).join('');
     return `<section class="admin-tu-box">
@@ -331,7 +335,7 @@
       const dc=d.cards[i];
       return `<div class="admin-tu-review">${cardThumb(x.ref)}<div><b>모르는 카드</b> · ${esc(teamName(x.team))}<br><small>글씨: ${esc(x.card?.nickname_ocr||'못 읽음')} · ${esc(tierText(x.card?.tier)||'티어 ?')} · ${esc(x.card?.race||'종족 ?')}</small></div>
         <div class="admin-tu-choice"><select class="admin-input" data-tu-card-mode="${i}">${[['skip','보류(반영 안 함)'],['pick','기존 선수'],['new','새 선수 추가']].map(([k,l])=>`<option value="${k}"${dc.mode===k?' selected':''}>${l}</option>`).join('')}</select>
-        ${dc.mode==='pick'?pickInput(`card-${i}`,dc.pick):''}
+        ${dc.mode==='pick'?pickInput(`card-${i}`,dc.pick)+`<input class="admin-input" data-tu-card-rename="${i}" value="${esc(dc.rename||'')}" placeholder="닉네임이 바뀌었으면 새 닉네임">`:''}
         ${dc.mode==='new'?`<input class="admin-input" data-tu-card-nick="${i}" value="${esc(dc.nick)}" placeholder="닉네임">
           <select class="admin-input" data-tu-card-tier="${i}">${optionList(['',...SITE_ORDER.tiers],dc.tier)}</select>
           <select class="admin-input" data-tu-card-race="${i}">${optionList(['',...RACES],dc.race)}</select>`:''}</div></div>`;
@@ -382,6 +386,8 @@
     on('[data-tu-team]','onchange',()=>render());
     on('[data-tu-card-mode]','onchange',n=>{U.decide.cards[n.dataset.tuCardMode].mode=n.value;render();});
     on('[data-tu-card-nick]','oninput',n=>{U.decide.cards[n.dataset.tuCardNick].nick=n.value;});
+    on('[data-tu-card-rename]','oninput',n=>{U.decide.cards[n.dataset.tuCardRename].rename=n.value;});
+    on('[data-tu-nick]','oninput',n=>{U.decide.nick[n.dataset.tuNick]=n.value;});
     on('[data-tu-card-tier]','onchange',n=>{U.decide.cards[n.dataset.tuCardTier].tier=n.value;});
     on('[data-tu-card-race]','onchange',n=>{U.decide.cards[n.dataset.tuCardRace].race=n.value;});
     on('[data-tu-missing]','onchange',n=>{U.decide.missing[n.dataset.tuMissing]=n.value;});

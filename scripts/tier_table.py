@@ -804,6 +804,13 @@ def compare(sections, fa, db):
             if diff:
                 changes.append({'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team,
                                 'diff': diff, 'ocr': card['nickname_ocr'], 'ref': [si, i]})
+            # 닉네임 변경(예: 박쭈이 → 쭈이). 카드는 사진·비슷한 이름·티어로 같은 사람으로 맞췄지만 글씨가 다르다.
+            # 글씨 인식이 틀렸을 수도 있어 따로 한 줄로 두고 기본은 체크 해제 - 카드 사진을 보고 고르게 한다.
+            ocr_nick = (card.get('nickname_ocr') or '').strip()
+            if ocr_nick and ''.join(ocr_nick.split()) != ''.join(str(r['nickname']).split()):
+                changes.append({'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team,
+                                'diff': {'nickname': [r['nickname'], ocr_nick]}, 'ocr': ocr_nick, 'ref': [si, i],
+                                'uncertain': '카드 글씨로 읽은 닉네임입니다. 카드와 같으면 체크하세요(틀린 글자는 고쳐서)'})
         missing += [(team, r) for r in sec['missing']]
 
     # 표에서 없어진 대학. 새 대학 선수 대부분이 그 대학 출신이면 이름이 바뀐 것일 수 있다고 알려 준다
