@@ -158,3 +158,10 @@ test('stats page: full-photo TOP card, then total / average / members tiles', ()
   assert.match(read('scripts/write_site_data.py'), /"대표 사진"/);
   assert.match(read('supabase/staruniv.sql'), /alter table public\.members add column if not exists photo_path text/);
 });
+
+test('stats TOP accepts mp4/webm video (muted autoplay loop) and the bucket allows video', () => {
+  const js = read('templates/assets/page-stats.js');
+  assert.match(js, /\\\.\(mp4\|webm\)/);
+  assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
+  assert.match(read('supabase/staruniv.sql'), /'video\/mp4','video\/webm'/);
+});

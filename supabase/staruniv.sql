@@ -523,8 +523,9 @@ create table if not exists public.history_entries (
 alter table public.history_entries enable row level security;
 
 -- 공개 Storage 버킷. URL은 공개지만 쓰기/삭제는 관리자만 가능하다.
+-- 영상(mp4·webm)은 방송통계 TOP 대표 사진용(움짤보다 가볍고 부드럽다).
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('staruniv-media','staruniv-media',true,10485760,array['image/jpeg','image/png','image/webp','image/gif'])
+values ('staruniv-media','staruniv-media',true,10485760,array['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'])
 on conflict (id) do update set public=excluded.public, file_size_limit=excluded.file_size_limit, allowed_mime_types=excluded.allowed_mime_types;
 
 drop policy if exists "staruniv_media_public_read" on storage.objects;

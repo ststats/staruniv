@@ -85,9 +85,9 @@
         <p class="admin-help">활동 상태는 별도 필드 없이 퇴단일 유무로 판단합니다. 일반적인 운영에서는 삭제 대신 퇴단일을 입력하세요</p>
         <div class="admin-preview-row"><div><b>현재 프로필</b><div class="admin-media-preview">${row.avatar_path?`<img src="${C().esc(C().mediaUrl(row.avatar_path))}" alt="">`:''}</div></div></div>
         ${C().field('프로필 사진',`<input class="admin-input" id="am_avatar" type="file" accept="image/*">`)}
-        <div class="admin-preview-row"><div><b>대표 사진(방송통계 TOP)</b><div class="admin-media-preview">${row.photo_path?`<img src="${C().esc(C().mediaUrl(row.photo_path))}" alt="">`:''}</div></div></div>
-        ${C().field('대표 사진',`<input class="admin-input" id="am_photo" type="file" accept="image/webp,image/gif,image/png,image/jpeg">`)}
-        <p class="admin-help">가로 16:9 960×540 움짤 WebP 권장(3~5초, 2MB 이하). PC에서는 위아래가 조금 잘리니 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
+        <div class="admin-preview-row"><div><b>대표 사진·영상(방송통계 TOP)</b><div class="admin-media-preview">${row.photo_path?(/\.(mp4|webm)$/i.test(row.photo_path)?`<video src="${C().esc(C().mediaUrl(row.photo_path))}" muted loop autoplay playsinline></video>`:`<img src="${C().esc(C().mediaUrl(row.photo_path))}" alt="">`):''}</div></div></div>
+        ${C().field('대표 사진·영상',`<input class="admin-input" id="am_photo" type="file" accept="video/mp4,video/webm,image/webp,image/gif,image/png,image/jpeg">`)}
+        <p class="admin-help">MP4 영상 권장: 가로 16:9 720×405, 2~5초, 소리 없음, 1MB 이하(움짤 WebP보다 가볍고 부드럽습니다). 사진·움짤도 됩니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
       `,
       onSubmit:async()=>{
         const payload={
