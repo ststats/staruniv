@@ -76,3 +76,11 @@ test('public runtime site config comes from Supabase rather than raw nav json', 
   assert.match(core, /\.from\('site_config'\)/);
   assert.doesNotMatch(core, /fetch\('data\/nav\.json'/);
 });
+
+test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
+  const tier = read('templates/assets/admin-tier.js');
+  assert.match(tier, /\['candidates','신규 인원'\]/);
+  assert.match(tier, /from\('tier_member_candidates'\)/);
+  assert.match(tier, /setCandidateStatus\(find\(b\.dataset\.candIgnore\),'ignored'\)/);
+  assert.match(tier, /from\('tier_member_candidates'\)\.delete\(\)\.eq\('id',c\.id\)/);
+});

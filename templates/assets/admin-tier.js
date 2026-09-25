@@ -1,8 +1,8 @@
 (function () {
   'use strict';
   const C=()=>window.AdminCore;
-  // 보기: 선수 관리 / 티어 랭킹 / 티어표 갱신(북마클릿은 #tier-update로 연다)
-  const VIEWS=['members','ranking','update'];
+  // 보기: 선수 관리 / 신규 인원 / 티어 랭킹 / 티어표 갱신(북마클릿은 #tier-update로 연다)
+  const VIEWS=['members','candidates','ranking','update'];
   const startView=location.hash.startsWith('#tier-update')?'update':new URLSearchParams(location.search).get('view');
   const S={view:VIEWS.includes(startView)?startView:'members',page:0,size:50,count:0,rows:[],sort:'source_order',asc:true,selected:new Set(),filters:{q:'',tier:'',aff:'',race:''},options:{tiers:[],affs:[],races:[]}};
   const PROMO=[8,7,6,5,4,3,2,1,0];
@@ -13,6 +13,8 @@
   const tierRank=t=>{const i=LADDER.indexOf(String(t));return i<0?LADDER.length:i;};
   // 티어 랭킹 보기 상태. 활성 Elo 스냅샷을 한 번 읽어 두고 화면에서만 거른다.
   const R={loaded:false,loading:null,rows:[],meta:{},tier:'',q:'',gapOnly:false};
+  // 신규 인원 보기: ststat이 EloBoard에서 찾은, 명단에 없는 선수(ELO ID 기준 대기 명단)
+  const N={rows:null,status:'pending',q:''};
 
   // 수정일 = '한국 날짜 + 저장한 시각'(예: 2026-09-25 01:30:12). ststat이 앞 10자리 날짜부터 지난
   // 방송통계에 소급 반영하고, 반영이 끝나면 자기가 읽은 값과 같을 때만 지운다. 저장할 때마다 시각이
@@ -97,7 +99,8 @@
     });
     return p;
   }
-  function open(r){
+  // after: 새로 저장한 뒤 할 일(신규 인원에서 추가하면 대기 명단 줄을 지운다)
+  function open(r,after){
     r=r||{};
     C().openDrawer({
       eyebrow:'TIER',title:r.id?'티어 선수 수정':'새 선수 추가',html:fields(r),
@@ -106,7 +109,7 @@
         const dup=await duplicateElo(p.elo_id,r.id);if(dup)throw new Error(`ELO ID ${p.elo_id}는 이미 ${dup.nickname}에게 사용 중입니다`);
         const warnings=promotionWarnings({...r,...p});if(warnings.length&&!confirm(`${warnings.join('\n')}\n그래도 저장할까요?`))throw new Error('검증 경고로 저장을 취소했습니다');
         let error;if(r.id)({error}=await C().state.client.from('tier_members').update(p).eq('id',r.id));else{p.source_order=await C().nextSourceOrder('tier_members');({error}=await C().state.client.from('tier_members').insert(p));}
-        if(error)throw error;C().toast('티어 선수를 저장했습니다');await load(S.page);
+        if(error)throw error;C().toast('티어 선수를 저장했습니다');if(after)await after(p);else await load(S.page);
       },
       onDelete:r.id?async()=>{const {error}=await C().state.client.from('tier_members').delete().eq('id',r.id);if(error)throw error;await C().audit('delete','tier_members',r.id,{nickname:r.nickname,elo_id:r.elo_id});await load(S.page);}:null
     });
@@ -156,7 +159,7 @@
   }
   // 히어로의 보기 전환 탭(공개 페이지 서브탭과 같은 모양)
   function viewTabs(){
-    return `<div class="sub-tabs tab-scroll" role="tablist">${[['members','선수 관리'],['ranking','티어 랭킹'],['update','티어표 갱신']].map(([k,l])=>
+    return `<div class="sub-tabs tab-scroll" role="tablist">${[['members','선수 관리'],['candidates','신규 인원'],['ranking','티어 랭킹'],['update','티어표 갱신']].map(([k,l])=>
       `<div class="sub-tab${S.view===k?' active':''}" role="tab" tabindex="0" aria-selected="${S.view===k}" data-tier-view="${k}">${l}</div>`).join('')}</div>`;
   }
   function bindViewTabs(root){
@@ -168,7 +171,7 @@
     const url=new URL(location.href);
     if(view==='members')url.searchParams.delete('view');else url.searchParams.set('view',view);
     history.replaceState(null,'',url);
-    if(view==='ranking')showRanking();else if(view==='update')showUpdate();else showMembers();
+    if(view==='ranking')showRanking();else if(view==='update')showUpdate();else if(view==='candidates')showCandidates();else showMembers();
   }
 
   function showUpdate(){
@@ -177,6 +180,7 @@
   function render(){
     if(S.view==='update')return;
     if(S.view==='ranking')return renderRanking();
+    if(S.view==='candidates')return renderCandidates();
     const root=document.getElementById('adminDedicatedRoot');
     if(!root){console.error('티어 관리 영역을 찾지 못했습니다.');return;}
     root.hidden=false;
@@ -314,10 +318,73 @@
     if(gapEl)gapEl.onchange=()=>{R.gapOnly=gapEl.checked;renderRanking();};
   }
 
+  // ---------------------------------------------------------------------------
+  // 신규 인원 보기: EloBoard에는 있고 우리 명단엔 없는 선수. 선수로 추가하거나 무시한다.
+  // 무시한 선수는 ststat이 다시 올리지 않는다(같은 ELO ID 줄이 남아 있으므로).
+  // ---------------------------------------------------------------------------
+  async function loadCandidates(){
+    N.rows=await fetchAllPages((from,to)=>C().state.client.from('tier_member_candidates')
+      .select('id,nickname,elo_id,soop_id,gender,race,tier,affiliation,source,found_at,last_seen_at,status')
+      .eq('status',N.status).order('found_at',{ascending:false,nullsFirst:false}).order('id').range(from,to));
+  }
+  async function showCandidates(){
+    N.rows=null;renderCandidates();
+    try{await loadCandidates();renderCandidates();}
+    catch(err){
+      console.error('신규 인원 조회 실패:',err);
+      const box=document.getElementById('candBody');
+      if(box)box.innerHTML=`<div class="admin-empty">신규 인원을 불러오지 못했습니다<br><small>${esc(C().errorText(err))}</small></div>`;
+    }
+  }
+  async function setCandidateStatus(c,status){
+    const {error}=await C().state.client.from('tier_member_candidates').update({status,updated_at:new Date().toISOString()}).eq('id',c.id);
+    if(error)throw error;
+    N.rows=N.rows.filter(x=>x.id!==c.id);renderCandidates();
+  }
+  function addCandidate(c){
+    const tier=String(c.tier||'').replace('티어','').trim();
+    open({nickname:c.nickname,elo_id:c.elo_id,soop_id:c.soop_id,gender:c.gender,race:c.race,tier:tier||null,affiliation:c.affiliation},async()=>{
+      const {error}=await C().state.client.from('tier_member_candidates').delete().eq('id',c.id);
+      if(error)throw error;
+      N.rows=N.rows.filter(x=>x.id!==c.id);membersLoaded=false;renderCandidates();
+    });
+  }
+  function renderCandidates(){
+    if(S.view!=='candidates')return;
+    const root=document.getElementById('adminDedicatedRoot');
+    if(!root)return;
+    root.hidden=false;
+    document.body.classList.add('admin-dedicated-active');
+    const q=N.q.trim().toLowerCase();
+    const rows=(N.rows||[]).filter(c=>!q||[c.nickname,c.soop_id,c.affiliation,c.elo_id].some(v=>String(v??'').toLowerCase().includes(q)));
+    const pending=N.status==='pending';
+    const body=rows.map(c=>`<tr><td><b>${esc(c.nickname)}</b></td><td>${esc(c.elo_id)}</td><td>${esc(c.soop_id)}</td><td>${esc(c.race)}</td><td>${esc(c.tier)}</td><td>${esc(c.affiliation)}</td><td>${esc(c.found_at)}</td><td>${esc(c.source==='ststat_sync_eloboard'?'경기 기록':'티어 목록')}</td>
+      <td>${pending?`<button class="admin-btn primary" data-cand-add="${esc(c.id)}">선수로 추가</button><button class="admin-btn" data-cand-ignore="${esc(c.id)}">무시</button>`:`<button class="admin-btn" data-cand-restore="${esc(c.id)}">되돌리기</button>`}</td></tr>`).join('');
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">신규 인원</h1><p class="page-header-subtitle">EloBoard에는 있지만 명단에 없는 선수입니다(ELO ID 기준). 선수로 추가하면 여기서 빠지고, 무시한 선수는 다시 올라오지 않습니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell" id="candBody">
+      ${N.rows===null?'<div class="admin-empty">신규 인원을 불러오는 중</div>':`<div class="admin-rank-tools">
+        <div class="admin-rank-chips">${[['pending','대기'],['ignored','무시함']].map(([k,l])=>`<button type="button" class="admin-rank-chip${N.status===k?' is-on':''}" data-cand-status="${k}">${l}${N.status===k?`<span>${N.rows.length}</span>`:''}</button>`).join('')}</div>
+        <input class="admin-input" id="candQ" placeholder="닉네임 · SOOP ID · 소속 · ELO ID" value="${esc(N.q)}">
+      </div>
+      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>EloBoard 이름</th><th>ELO ID</th><th>SOOP ID</th><th>종족</th><th>티어</th><th>소속</th><th>발견일</th><th>출처</th><th>관리</th></tr></thead>
+      <tbody>${body||`<tr><td colspan="9">${pending?'대기 중인 신규 인원이 없습니다':'무시한 선수가 없습니다'}</td></tr>`}</tbody></table></div>
+      <p class="admin-help">SOOP ID는 EloBoard에 적힌 값이라 틀릴 수 있습니다. 추가하기 전에 확인하세요</p>`}
+    </div>`;
+    bindViewTabs(root);
+    const find=id=>N.rows.find(c=>c.id===id);
+    const act=fn=>async b=>{b.disabled=true;try{await fn();}catch(err){b.disabled=false;C().toast(C().errorText(err),'error');}};
+    root.querySelectorAll('[data-cand-status]').forEach(b=>b.onclick=()=>{N.status=b.dataset.candStatus;showCandidates();});
+    root.querySelectorAll('[data-cand-add]').forEach(b=>b.onclick=()=>addCandidate(find(b.dataset.candAdd)));
+    root.querySelectorAll('[data-cand-ignore]').forEach(b=>b.onclick=()=>act(()=>setCandidateStatus(find(b.dataset.candIgnore),'ignored'))(b));
+    root.querySelectorAll('[data-cand-restore]').forEach(b=>b.onclick=()=>act(()=>setCandidateStatus(find(b.dataset.candRestore),'pending'))(b));
+    const qEl=root.querySelector('#candQ');
+    if(qEl)qEl.oninput=()=>{N.q=qEl.value;const pos=qEl.selectionStart;renderCandidates();const again=document.getElementById('candQ');again.focus();again.setSelectionRange(pos,pos);};
+  }
+
   async function init(){
     if(document.body.dataset.adminPage!=='tier')return;
     if(S.view==='ranking'){showRanking();return;}
     if(S.view==='update'){showUpdate();return;}
+    if(S.view==='candidates'){showCandidates();return;}
     await showMembers();
   }
 
