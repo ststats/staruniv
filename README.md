@@ -100,7 +100,7 @@ npm test                              # node --test (의존성 없음)
 
 ## Supabase SQL
 
-- 공유 DB의 파이프라인 스키마와 공개 뷰: `ststat/migrations`
+- 공유 DB의 파이프라인 스키마와 공개 뷰: `ststat/supabase/ststat.sql`
 - 이 저장소: **`supabase/staruniv.sql` 한 파일**(사이트·관리자 표, 권한, 달력 사진 갱신, 티어표 갱신).
   SQL 편집기에 통째로 붙여 넣고 실행하면 되고, 여러 번 실행해도 됩니다. 표·열은 없을 때만 만들고
   함수·정책·권한은 최신으로 다시 쓰며, 운영 데이터(일정·휴방·연혁·메뉴 설정·영상·선수)는 건드리지 않습니다.
