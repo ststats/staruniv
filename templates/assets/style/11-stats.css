@@ -14,3 +14,54 @@
 
 .synergy-val-text { display: block; }
 
+/* 합계 / 평균 / 멤버수: 휴대폰에서도 한 줄 세 칸 */
+.synergy-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.synergy-tiles > div { min-width: 0; }
+
+/* 맨 위 TOP 칸: 대표 사진(가로 16:9 움짤 WebP)이 카드를 꽉 채우고, 아래쪽 어둡게 깐 위에 지표 · 이름 · 값.
+   PC는 카드가 넓어서 21:9로 낮게 자른다(위아래가 조금 잘림 - 얼굴은 가운데~위쪽 1/3에 오게 찍는다). */
+.synergy-top { position: relative; margin-bottom: 12px; padding: 0; overflow: hidden; }
+.synergy-top-photo {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--panel-control);
+}
+@media (min-width: 768px) { .synergy-top-photo { aspect-ratio: 21 / 9; max-height: 440px; } }
+.synergy-top-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
+/* 대표 사진이 없어 SOOP 프로필 사진(작은 정사각형)을 쓸 때: 크게 늘리면 뭉개져서 가운데 원으로 둔다 */
+.synergy-top-photo.is-fallback { display: grid; place-items: center; }
+.synergy-top-photo.is-fallback img { width: 42%; max-width: 180px; height: auto; aspect-ratio: 1 / 1; border-radius: 50%; }
+.synergy-top-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-width: 0;
+    padding: 48px 24px 20px;
+    background: linear-gradient(transparent, rgba(5, 10, 30, .88));
+}
+.synergy-top-name {
+    margin-top: 8px;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+}
+.synergy-top-value {
+    margin-top: 8px;
+    color: var(--panel-accent);
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+@media (max-width: 575.98px) {
+    .synergy-top-body { padding: 36px 16px 14px; }
+    .synergy-top-name { font-size: 26px; margin-top: 6px; }
+    .synergy-top-value { font-size: 16px; margin-top: 6px; }
+    /* 휴대폰에서 타일 3개를 한 줄에 두면 좁다 - 글씨만 줄인다 */
+    .synergy-tiles { gap: 8px; }
+    #synergy-summary .synergy-tiles .head-plate { padding: 12px 10px 14px; }
+    #synergy-summary .synergy-tiles .head-plate-value { font-size: 17px; margin-top: 8px; }
+}
+

@@ -148,3 +148,13 @@ test('tier section latin label adds TIER only once', () => {
   const tierLatinLabel = new Function(body + ';return tierLatinLabel;')();
   assert.deepEqual(['갓', '1', 0, '8티어', '미분류'].map(tierLatinLabel), ['GOD TIER', '1 TIER', '0 TIER', '8 TIER', 'UNRANKED TIER']);
 });
+
+test('stats page: full-photo TOP card, then total / average / members tiles', () => {
+  const html = read('templates/pages/stats.html');
+  assert.match(html, /id="synergy-top-photo"/);
+  assert.match(html, /id="synergy-sum-avg"/);
+  const js = read('templates/assets/page-stats.js');
+  assert.match(js, /storageMediaUrl\(ours\['대표 사진'\]\)/);
+  assert.match(read('scripts/write_site_data.py'), /"대표 사진"/);
+  assert.match(read('supabase/staruniv.sql'), /alter table public\.members add column if not exists photo_path text/);
+});
