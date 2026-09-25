@@ -2,7 +2,7 @@
   'use strict';
   const C=()=>window.AdminCore;
   // 보기: 선수 관리 / 티어 랭킹 / 티어표 갱신(북마클릿은 #tier-update로 연다)
-  const VIEWS=['members','ranking','update'];
+  const VIEWS=['members','ranking','update','logos'];
   const startView=location.hash.startsWith('#tier-update')?'update':new URLSearchParams(location.search).get('view');
   const S={view:VIEWS.includes(startView)?startView:'members',page:0,size:50,count:0,rows:[],sort:'source_order',asc:true,selected:new Set(),filters:{q:'',tier:'',aff:'',race:''},options:{tiers:[],affs:[],races:[]}};
   const PROMO=[8,7,6,5,4,3,2,1,0];
@@ -146,7 +146,7 @@
   }
   // 히어로의 보기 전환 탭(공개 페이지 서브탭과 같은 모양)
   function viewTabs(){
-    return `<div class="sub-tabs tab-scroll" role="tablist">${[['members','선수 관리'],['ranking','티어 랭킹'],['update','티어표 갱신']].map(([k,l])=>
+    return `<div class="sub-tabs tab-scroll" role="tablist">${[['members','선수 관리'],['ranking','티어 랭킹'],['update','티어표 갱신'],['logos','대학 로고']].map(([k,l])=>
       `<div class="sub-tab${S.view===k?' active':''}" role="tab" tabindex="0" aria-selected="${S.view===k}" data-tier-view="${k}">${l}</div>`).join('')}</div>`;
   }
   function bindViewTabs(root){
@@ -158,14 +158,17 @@
     const url=new URL(location.href);
     if(view==='members')url.searchParams.delete('view');else url.searchParams.set('view',view);
     history.replaceState(null,'',url);
-    if(view==='ranking')showRanking();else if(view==='update')showUpdate();else showMembers();
+    if(view==='ranking')showRanking();else if(view==='update')showUpdate();else if(view==='logos')showLogos();else showMembers();
   }
 
   function showUpdate(){
     window.AdminTierUpdate?.show({tabs:viewTabs,bindTabs:bindViewTabs});
   }
+  function showLogos(){
+    window.AdminTierLogos?.show({tabs:viewTabs,bindTabs:bindViewTabs});
+  }
   function render(){
-    if(S.view==='update')return;
+    if(S.view==='update'||S.view==='logos')return;
     if(S.view==='ranking')return renderRanking();
     const root=document.getElementById('adminDedicatedRoot');
     if(!root){console.error('티어 관리 영역을 찾지 못했습니다.');return;}
@@ -308,6 +311,7 @@
     if(document.body.dataset.adminPage!=='tier')return;
     if(S.view==='ranking'){showRanking();return;}
     if(S.view==='update'){showUpdate();return;}
+    if(S.view==='logos'){showLogos();return;}
     await showMembers();
   }
 

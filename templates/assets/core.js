@@ -548,9 +548,8 @@ function profileAvatarInnerHtml(soopId) {
     return url ? `<img src="${url}" alt="" onerror="this.parentElement.innerHTML='👤';">` : '👤';
 }
 
-// 상대팀 로고: docs/images/{팀이름}.webp 로 관리. '내전'(자체 스크림)은 상대가 우리 팀
-// 자신이므로 캄몬스타즈.webp를 대신 쓴다(build_html.py의 team_logo_src 필터와 같은 규칙).
-// 로고 파일이 없는 팀은 원형 배지에 팀 이름 첫 글자를 넣어 대신 보여준다.
+// 상대팀 로고: teamLogoSrc(아래). '내전'(자체 스크림)은 상대가 우리 팀 자신이므로 캄몬스타즈 로고를 쓴다.
+// 로고가 없는 팀은 원형 배지에 팀 이름 첫 글자를 넣어 대신 보여준다.
 function teamLogoFallback(imgEl, teamName) {
     const initial = String(teamName || '').trim().charAt(0) || '?';
     const span = document.createElement('span');
@@ -570,6 +569,43 @@ function teamLogoFallback(imgEl, teamName) {
 // (예전 SPA에서는 전적 표가 처음엔 숨겨져 있어 로고를 늦게 불러오는 바람에 우연히 안 드러났던 경쟁 상태)
 document.querySelectorAll('img[data-logo-failed]').forEach(img => teamLogoFallback(img, img.dataset.team));
 
+// 대학 로고 주소. 어드민(티어표 > 대학 로고)에서 올린 로고는 Supabase(university_logos 표 + Storage)에
+// 있고 시너지와 같이 쓴다. 페이지를 열 때 bootPage가 목록을 받아 두며, 목록에 없으면 예전 정적 파일을 쓴다.
+const TeamLogos = { map: {} };
+const LOGO_CACHE_KEY = 'staruniv-logos-v1';
+function teamLogoSrc(name) {
+    return TeamLogos.map[name] || `images/${encodeURIComponent(name)}.webp`;
+}
+function setTeamLogos(rows) {
+    const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
+    const base = String(cfg.url || '').replace(/\/$/, '');
+    const map = {};
+    (Array.isArray(rows) ? rows : []).forEach(r => {
+        if (r && r.name && r.path) map[r.name] = `${base}/storage/v1/object/public/staruniv-media/${r.path}`;
+    });
+    TeamLogos.map = map;
+}
+async function loadTeamLogos() {
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || 'null'); } catch (_) {}
+    const fresh = (async () => {
+        const client = publicSupabaseClient();
+        if (!client) return null;
+        const { data, error } = await client.from('university_logos').select('name,path');
+        if (error) throw error;
+        try { localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(data || [])); } catch (_) {}
+        return data || [];
+    })();
+    // 전에 받아 둔 목록이 있으면 바로 쓰고 새 목록은 뒤에서 받는다(다음 화면부터 반영)
+    if (Array.isArray(cached)) {
+        setTeamLogos(cached);
+        fresh.catch(e => console.warn('대학 로고 목록을 새로 받지 못했습니다.', e));
+        return;
+    }
+    try { setTeamLogos(await fresh); }
+    catch (e) { console.warn('대학 로고 목록을 불러오지 못했습니다. 기본 로고 파일을 씁니다.', e); }
+}
+
 function teamLogoHtml(teamName, sizePx) {
     const name = String(teamName || '').trim();
     if (!name) return '';
@@ -577,7 +613,7 @@ function teamLogoHtml(teamName, sizePx) {
     const size = sizePx || 16;
     // 팀 이름을 onerror 안의 JS 문자열로 직접 꽂지 않고 data 속성으로 넘긴다(이스케이프 문제 원천 차단).
     // 크기는 대체 배지(teamLogoFallback)가 그대로 물려받아야 해서 인라인으로 둔다.
-    return `<img src="images/${encodeURIComponent(fileName)}.webp" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
+    return `<img src="${escapeHTML(teamLogoSrc(fileName))}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
@@ -1314,6 +1350,7 @@ function bootPage(init, opts) {
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
         await Promise.all([
             applyNavVisibility(),
+            loadTeamLogos(),
             siteDataParts.length ? loadSiteData(siteDataParts) : null,
         ]);
         safeInit('페이지', init);

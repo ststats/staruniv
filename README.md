@@ -48,6 +48,12 @@ Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand
 
 토큰 교체: `select vault.update_secret((select id from vault.secrets where name = 'github_actions_token'), '<새 토큰>');`
 
+### 대학 로고(스타유니브·시너지 공용)
+
+어드민 티어표 → **대학 로고** 탭에서 올립니다. 브라우저가 긴 변 96px로 줄이고 대표 색(시너지 카드 윗줄)을 뽑아
+Supabase Storage(`staruniv-media/logos/`)와 `university_logos` 표에 저장하고, 두 사이트가 페이지를 열 때 이 표를 읽습니다
+(다시 빌드할 필요 없음). 표에 없는 대학은 예전 정적 로고 파일을, 그것도 없으면 이름 첫 글자 배지를 보여 줍니다.
+
 ### 티어표 갱신(반자동)
 
 어드민 티어표 → **티어표 갱신** 탭. 펨코 티어표 이미지 주소와 FA 명단 글을 넣고 분석을 요청하면

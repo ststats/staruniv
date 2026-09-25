@@ -1484,3 +1484,20 @@ body.admin-drawer-open { overflow: hidden; }
     padding: 10px 4px; border-bottom: 1px solid var(--color-border); font-size: 13px; line-height: 1.6;
 }
 .admin-tu-log-row b { color: var(--color-text-strong); }
+
+/* 대학 로고 (티어표 관리 > 대학 로고) */
+.admin-tl-import { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--admin-line); border-radius: 6px; background: var(--admin-soft); font-size: 13px; }
+.admin-tl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.admin-tl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--admin-line); border-radius: 6px; }
+.admin-tl-logo { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--admin-soft); overflow: hidden; }
+.admin-tl-logo img { max-width: 40px; max-height: 40px; object-fit: contain; }
+.admin-tl-initial { font-size: 18px; font-weight: 800; color: var(--color-text-muted); }
+.admin-tl-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.admin-tl-meta b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-tl-meta small { color: var(--color-text-muted); font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
+.admin-tl-color { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.admin-tl-actions { display: flex; gap: 6px; flex: none; }
+.admin-tl-actions .admin-btn { cursor: pointer; }
+.admin-tl-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.admin-tl-add .admin-input { flex: 1 1 200px; }
+.admin-tl-add .admin-btn { cursor: pointer; }

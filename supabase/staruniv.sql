@@ -16,7 +16,7 @@
 --      바꿀 때: select vault.update_secret((select id from vault.secrets where name = 'github_actions_token'), '<새 토큰>');
 --
 -- 구성(순서대로): 1 기본 스키마·관리자 권한·영상·도구 → 2 공개 읽기 권한 → 3 어드민 편집 보조
---                 → 4 어드민 ELO 통계 → 5 달력 사진 갱신 → 6 티어표 갱신
+--                 → 4 어드민 ELO 통계 → 5 달력 사진 갱신 → 6 티어표 갱신 → 7 대학 로고
 
 
 -- ############################################################################
@@ -1290,3 +1290,26 @@ end;
 $$;
 revoke all on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date) from public, anon;
 grant execute on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date) to authenticated;
+
+
+-- ############################################################################
+-- 7. 대학 로고(스타유니브·시너지 공용)
+-- ############################################################################
+
+-- 어드민 티어표 > 대학 로고에서 올린다. 브라우저가 긴 변 96px로 줄여 Storage(staruniv-media/logos/)에
+-- 두고, 원본에서 뽑은 대표 색(시너지 카드 윗줄)을 함께 적는다. 두 사이트가 페이지를 열 때 이 표를 읽는다.
+create table if not exists public.university_logos (
+  name text primary key,
+  path text not null,
+  color text check (color is null or color ~ '^#[0-9a-f]{6}$'),
+  updated_at timestamptz not null default now()
+);
+alter table public.university_logos enable row level security;
+drop policy if exists university_logos_public_read on public.university_logos;
+create policy university_logos_public_read on public.university_logos for select to anon, authenticated using (true);
+drop policy if exists university_logos_admin_write on public.university_logos;
+create policy university_logos_admin_write on public.university_logos for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+revoke all on public.university_logos from anon;
+grant select on public.university_logos to anon;
+grant select, insert, update, delete on public.university_logos to authenticated;
