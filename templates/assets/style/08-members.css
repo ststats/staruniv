@@ -354,7 +354,8 @@
 .profile-modal-facts > div { min-width: 0; }
 .profile-modal-facts dt, .profile-modal-label { margin-bottom: 5px; color: var(--color-text-sub); font-size: var(--fs-meta); font-weight: 500; }
 .profile-modal-facts dd { margin: 0; font-size: var(--fs-body); font-weight: 700; overflow-wrap: anywhere; }
-.profile-modal-period { display: grid; grid-template-columns: .8fr 2.2fr; gap: 12px; align-items: center; padding: 14px 0 22px; font-size: 12px; font-weight: 600; }
+/* 값 글씨는 위 기본 정보(dd)와 같게 - 예전엔 12px로 작았다 */
+.profile-modal-period { display: grid; grid-template-columns: .8fr 2.2fr; gap: 12px; align-items: center; padding: 14px 0 22px; font-size: var(--fs-body); font-weight: 700; }
 .profile-modal-period > div { min-width: 0; }
 .profile-modal-period-main { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 .profile-modal-days { padding: 3px 7px; background: var(--navy); color: var(--navy-on-text); clip-path: var(--notch-xs); font-size: var(--fs-meta); white-space: nowrap; }
