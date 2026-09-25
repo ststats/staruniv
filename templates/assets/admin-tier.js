@@ -118,7 +118,25 @@
     const {data,error}=await C().state.client.from('tier_member_elo_links').select('elo_id,elo_name,race').eq('tier_member_id',memberId).order('elo_id');
     if(!box.isConnected)return;
     if(error){box.textContent=`연결 계정을 불러오지 못했습니다: ${C().errorText(error)}`;return;}
-    box.innerHTML=(data||[]).length?data.map(l=>`<span style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 6px 0">ELO ${esc(l.elo_id)}${l.elo_name?` · ${esc(l.elo_name)}`:''}${l.race?` · ${esc(l.race)}`:''} <button type="button" class="admin-btn" data-main-elo="${esc(l.elo_id)}">메인으로</button><button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></span>`).join(' '):'없음';
+    // 연결 계정마다 이름(EloBoard 이름 등 구분용)·종족을 고칠 수 있다. 전적·랭킹에는 쓰지 않는 메모 성격의 값이다.
+    const RACES=['테란','저그','프로토스'];
+    const raceOf=v=>({T:'테란',Z:'저그',P:'프로토스'})[String(v||'').trim().toUpperCase()]||String(v||'').trim();
+    box.innerHTML=(data||[]).length?`<table class="admin-mini-table"><tbody>${data.map(l=>{const race=raceOf(l.race);return`<tr data-link-row="${esc(l.elo_id)}">
+      <td>ELO ${esc(l.elo_id)}</td>
+      <td><input class="admin-input" data-link-name value="${esc(l.elo_name||'')}" placeholder="이름" style="min-width:8em"></td>
+      <td><select class="admin-input" data-link-race>${['',...RACES,...(race&&!RACES.includes(race)?[race]:[])].map(r=>`<option value="${esc(r)}"${r===race?' selected':''}>${esc(r||'종족')}</option>`).join('')}</select></td>
+      <td><button type="button" class="admin-btn" data-link-save="${esc(l.elo_id)}">저장</button><button type="button" class="admin-btn" data-main-elo="${esc(l.elo_id)}">메인으로</button><button type="button" class="admin-btn" data-unlink="${esc(l.elo_id)}">해제</button></td></tr>`;}).join('')}</tbody></table>`:'없음';
+    // 이 칸들에서 Enter를 눌러도 선수 수정 창 전체가 저장되지 않게 한다
+    box.querySelectorAll('[data-link-name]').forEach(i=>i.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();i.closest('tr').querySelector('[data-link-save]').click();}});
+    box.querySelectorAll('[data-link-save]').forEach(b=>b.onclick=async()=>{
+      const tr=b.closest('tr');
+      const payload={elo_name:tr.querySelector('[data-link-name]').value.trim()||null,race:tr.querySelector('[data-link-race]').value||null};
+      b.disabled=true;
+      const {error}=await C().state.client.from('tier_member_elo_links').update(payload).eq('elo_id',Number(b.dataset.linkSave));
+      b.disabled=false;
+      if(error)return C().toast(C().errorText(error),'error');
+      C().toast(`ELO ${b.dataset.linkSave} 연결 계정을 저장했습니다`);
+    });
     // 메인 종족이 바뀐 경우: 이 계정을 메인으로, 옛 메인은 연결 계정으로(한 번에). 창의 ELO ID 칸과 어긋나지 않게 창을 닫는다.
     box.querySelectorAll('[data-main-elo]').forEach(b=>b.onclick=async()=>{
       const elo=Number(b.dataset.mainElo);

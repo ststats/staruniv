@@ -121,3 +121,9 @@ test('member rows link to tier players; person fields come from the tier table',
   const page = read('templates/assets/page-members.js');
   assert.match(page, /\['입단 티어', joinTier \? tierLabel\(joinTier\) : ''\]/);
 });
+
+test('linked ELO accounts: name and race are editable in the player drawer', () => {
+  const tier = read('templates/assets/admin-tier.js');
+  assert.match(tier, /from\('tier_member_elo_links'\)\.update\(payload\)\.eq\('elo_id'/);
+  assert.match(tier, /data-link-race/);
+});
