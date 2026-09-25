@@ -234,7 +234,9 @@
     const ext = String(file.name || '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') || 'bin';
     const safeStem = String(stem || Date.now()).replace(/[^a-zA-Z0-9_-]/g,'-');
     const path = `${folder}/${safeStem}-${Date.now()}.${ext}`;
-    const { error } = await state.client.storage.from('staruniv-media').upload(path, file, { upsert: false });
+    // 경로에 올린 시각이 붙어 파일마다 주소가 달라서, 브라우저가 1년 동안 다시 받지 않게 해도 된다
+    // (기본 1시간이면 방송통계 움짤 같은 큰 파일을 한 시간마다 다시 받는다)
+    const { error } = await state.client.storage.from('staruniv-media').upload(path, file, { upsert: false, cacheControl: '31536000' });
     if (error) throw error;
     return path;
   }

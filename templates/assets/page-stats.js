@@ -129,12 +129,32 @@ function renderSynergyTopPhoto(top) {
     if (!box) return;
     const ours = top ? top.ourMember : null;
     // 대표 사진(움짤 WebP 등) → 없으면 SOOP 프로필 사진 → 그것도 없으면 빈 칸
-    const src = (ours && storageMediaUrl(ours['대표 사진'])) || (ours && getProfileImgUrl(ours['SOOP ID'])) || '';
-    const key = src || 'none';
+    const photo = (ours && storageMediaUrl(ours['대표 사진'])) || '';
+    const avatar = (ours && getProfileImgUrl(ours['SOOP ID'])) || '';
+    const key = photo || avatar || 'none';
     if (box.dataset.src === key) return;          // 같은 사진이면 다시 그리지 않는다(움짤이 처음부터 다시 돌지 않게)
     box.dataset.src = key;
-    box.classList.toggle('is-fallback', !!ours && !storageMediaUrl(ours['대표 사진']));
-    box.innerHTML = src ? `<img src="${escapeHTML(src)}" alt="${escapeHTML((ours && ours['이름']) || '')}" onerror="this.remove()">` : '';
+    box.innerHTML = '';
+    const alt = (ours && ours['이름']) || '';
+    const show = (src, fallback) => {
+        // 움짤은 1~2MB라 받는 중에 붙이면 끊기며 그려진다. 다 받고 풀어 둔 뒤(decode) 붙여서 부드럽게 나타나게 한다.
+        const img = new Image();
+        img.alt = alt;
+        img.decoding = 'async';
+        img.src = src;
+        const ready = img.decode ? img.decode() : new Promise((ok, no) => { img.onload = ok; img.onerror = no; });
+        ready.then(() => {
+            if (box.dataset.src !== key) return;       // 그사이 다른 지표·1위로 바뀌었으면 버린다
+            box.classList.toggle('is-fallback', fallback);
+            box.replaceChildren(img);
+            requestAnimationFrame(() => img.classList.add('is-in'));
+        }).catch(() => {
+            if (box.dataset.src === key && !fallback && avatar) show(avatar, true);   // 대표 사진이 깨지면 SOOP 사진
+        });
+    };
+    box.classList.remove('is-fallback');
+    if (photo) show(photo, false);
+    else if (avatar) show(avatar, true);
 }
 
 function renderSynergySummary(rows) {
