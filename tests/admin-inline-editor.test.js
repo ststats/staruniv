@@ -165,3 +165,10 @@ test('stats TOP accepts mp4/webm video (muted autoplay loop) and the bucket allo
   assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
   assert.match(read('supabase/staruniv.sql'), /'video\/mp4','video\/webm'/);
 });
+
+test('member feature video is re-encoded in the browser to 720x405 30fps H.264 MP4', () => {
+  const js = read('templates/assets/admin-members.js');
+  assert.match(js, /const CLIP=\{w:720,h:405,fps:30,maxSec:6/);
+  assert.match(js, /encoder:'avc1\.4d401f',muxer:'avc'/);
+  assert.match(read('templates/base.html'), /asset_url\('mp4-muxer\.js'\)/);
+});

@@ -58,6 +58,59 @@
     return raw;
   }
 
+  // 대표 영상 자동 편집: 올린 영상을 브라우저에서 720×405(16:9, 가운데 기준으로 잘라 맞춤) · 30fps ·
+  // 소리 없음 · 최대 6초 MP4(H.264)로 다시 만든다. 원본 1.5MB → 300KB 안팎이라 방송통계에서 끊기지 않는다.
+  // WebCodecs(VideoEncoder)와 mp4-muxer.js를 쓴다. 브라우저가 못 하면 null(원본을 그대로 올릴지 묻는다).
+  // 코덱은 H.264만 쓴다(아이폰 사파리까지 어디서나 재생). 크롬·엣지는 지원, 못 하는 브라우저면 원본을 올릴지 묻는다.
+  const CLIP={w:720,h:405,fps:30,maxSec:6,bitrate:1_000_000,codecs:[{encoder:'avc1.4d401f',muxer:'avc',extra:{avc:{format:'avc'}}}]};
+  async function pickCodec(){
+    for(const c of CLIP.codecs){
+      const config={codec:c.encoder,width:CLIP.w,height:CLIP.h,bitrate:CLIP.bitrate,framerate:CLIP.fps,...c.extra};
+      try{if((await VideoEncoder.isConfigSupported(config)).supported)return {config,muxer:c.muxer};}catch(e){}
+    }
+    return null;
+  }
+  async function encodeClip(file,onProgress){
+    if(typeof VideoEncoder==='undefined'||typeof VideoFrame==='undefined'||!window.Mp4Muxer)return null;
+    const codec=await pickCodec();
+    if(!codec)return null;
+    const config=codec.config;
+    const url=URL.createObjectURL(file);
+    const video=document.createElement('video');
+    video.muted=true;video.playsInline=true;video.preload='auto';video.src=url;
+    try{
+      await new Promise((ok,no)=>{video.onloadeddata=ok;video.onerror=()=>no(new Error('이 브라우저에서 열 수 없는 영상입니다'));});
+      const vw=video.videoWidth,vh=video.videoHeight;
+      if(!vw||!vh)throw new Error('영상 크기를 읽지 못했습니다');
+      // 16:9가 아니면 가운데를 16:9로 잘라 쓴다(사진 칸도 가운데 기준으로 채운다)
+      const scale=Math.max(CLIP.w/vw,CLIP.h/vh),sw=CLIP.w/scale,sh=CLIP.h/scale,sx=(vw-sw)/2,sy=(vh-sh)/2;
+      const canvas=document.createElement('canvas');canvas.width=CLIP.w;canvas.height=CLIP.h;
+      const ctx=canvas.getContext('2d');
+      const muxer=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(),video:{codec:codec.muxer,width:CLIP.w,height:CLIP.h,frameRate:CLIP.fps},fastStart:'in-memory'});
+      let failure=null;
+      const encoder=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>{failure=e;}});
+      encoder.configure(config);
+      const total=Math.max(1,Math.floor(Math.min(video.duration||0,CLIP.maxSec)*CLIP.fps));
+      for(let i=0;i<total;i++){
+        if(failure)throw failure;
+        const t=i/CLIP.fps;
+        await new Promise(ok=>{video.onseeked=ok;video.currentTime=Math.min(t,Math.max(0,video.duration-0.001));});
+        ctx.drawImage(video,sx,sy,sw,sh,0,0,CLIP.w,CLIP.h);
+        const frame=new VideoFrame(canvas,{timestamp:Math.round(t*1e6),duration:Math.round(1e6/CLIP.fps)});
+        encoder.encode(frame,{keyFrame:i%(CLIP.fps*2)===0});
+        frame.close();
+        if(encoder.encodeQueueSize>10)await new Promise(ok=>setTimeout(ok,0));
+        onProgress?.((i+1)/total);
+      }
+      await encoder.flush();
+      if(failure)throw failure;
+      encoder.close();
+      muxer.finalize();
+      const stem=String(file.name||'clip').replace(/\.[^.]+$/,'');
+      return new File([muxer.target.buffer],`${stem}.mp4`,{type:'video/mp4'});
+    }finally{URL.revokeObjectURL(url);}
+  }
+
   async function open(row){
     row=row||{};
     const list=await loadPeople().catch(()=>[]);
@@ -87,7 +140,8 @@
         ${C().field('프로필 사진',`<input class="admin-input" id="am_avatar" type="file" accept="image/*">`)}
         <div class="admin-preview-row"><div><b>대표 사진·영상(방송통계 TOP)</b><div class="admin-media-preview">${row.photo_path?(/\.(mp4|webm)$/i.test(row.photo_path)?`<video src="${C().esc(C().mediaUrl(row.photo_path))}" muted loop autoplay playsinline></video>`:`<img src="${C().esc(C().mediaUrl(row.photo_path))}" alt="">`):''}</div></div></div>
         ${C().field('대표 사진·영상',`<input class="admin-input" id="am_photo" type="file" accept="video/mp4,video/webm,image/webp,image/gif,image/png,image/jpeg">`)}
-        <p class="admin-help">MP4 영상 권장: 가로 16:9 720×405, 2~5초, 소리 없음, 1MB 이하(움짤 WebP보다 가볍고 부드럽습니다). 사진·움짤도 됩니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
+        <p class="admin-help" id="am_photo_status"></p>
+        <p class="admin-help">영상(MP4 등)을 고르면 저장할 때 자동으로 720×405 · 30fps · 소리 없음 · 최대 6초 MP4로 줄여서 올립니다(16:9가 아니면 가운데를 잘라 맞춤). 사진·움짤은 그대로 올라갑니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
       `,
       onSubmit:async()=>{
         const payload={
@@ -104,7 +158,16 @@
         if(!payload.name||!payload.nickname)throw new Error('이름과 닉네임은 필수입니다');
         const file=document.getElementById('am_avatar')?.files?.[0];
         if(file)payload.avatar_path=await C().uploadMedia(file,'members',payload.soop_id||payload.nickname);
-        const photo=document.getElementById('am_photo')?.files?.[0];
+        let photo=document.getElementById('am_photo')?.files?.[0];
+        if(photo&&/^video\//.test(photo.type)){
+          const status=document.getElementById('am_photo_status');
+          const say=t=>{if(status)status.textContent=t;};
+          say('영상 편집 중(720×405 · 30fps · 소리 없음)');
+          const before=photo.size;
+          const clip=await encodeClip(photo,p=>say(`영상 편집 중 ${Math.round(p*100)}%`)).catch(e=>{throw new Error(`영상 편집 실패: ${C().errorText(e)}`);});
+          if(clip){photo=clip;say(`편집 완료: ${Math.round(before/1024)}KB → ${Math.round(clip.size/1024)}KB`);}
+          else if(!confirm('이 브라우저는 영상 자동 편집을 지원하지 않습니다(최신 크롬·엣지 권장). 원본을 그대로 올릴까요?'))throw new Error('영상 올리기를 취소했습니다');
+        }
         if(photo){
           if(photo.size>10*1024*1024)throw new Error('대표 사진은 10MB 이하만 올릴 수 있습니다(2MB 이하 권장)');
           payload.photo_path=await C().uploadMedia(photo,'members-photo',payload.soop_id||payload.nickname);
