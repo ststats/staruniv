@@ -1,0 +1,37 @@
+name: Member video
+
+# 어드민 멤버 수정에서 브라우저가 직접 줄이지 못한 영상(모바일 등)을 Supabase(admin_request_member_video)가
+# 이 워크플로로 넘긴다. ffmpeg로 720×404·30fps·소리 없음·최대 6초 MP4로 줄여 대표 영상으로 등록한다.
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'media_jobs 작업 번호'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staruniv-member-video
+  cancel-in-progress: false
+
+jobs:
+  encode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: Install ffmpeg
+        run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - run: pip install 'psycopg[binary]>=3.2,<4'
+      - name: Encode and register
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: python scripts/member_video.py

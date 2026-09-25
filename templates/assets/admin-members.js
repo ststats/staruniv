@@ -58,11 +58,11 @@
     return raw;
   }
 
-  // 대표 영상 자동 편집: 올린 영상을 브라우저에서 720×405(16:9, 가운데 기준으로 잘라 맞춤) · 30fps ·
+  // 대표 영상 자동 편집: 올린 영상을 브라우저에서 720×404(16:9, 가운데 기준으로 잘라 맞춤) · 30fps ·
   // 소리 없음 · 최대 6초 MP4(H.264)로 다시 만든다. 원본 1.5MB → 300KB 안팎이라 방송통계에서 끊기지 않는다.
   // WebCodecs(VideoEncoder)와 mp4-muxer.js를 쓴다. 브라우저가 못 하면 null(원본을 그대로 올릴지 묻는다).
   // 코덱은 H.264만 쓴다(아이폰 사파리까지 어디서나 재생). 크롬·엣지는 지원, 못 하는 브라우저면 원본을 올릴지 묻는다.
-  const CLIP={w:720,h:405,fps:30,maxSec:6,bitrate:1_000_000,codecs:[{encoder:'avc1.4d401f',muxer:'avc',extra:{avc:{format:'avc'}}}]};
+  const CLIP={w:720,h:404,fps:30,maxSec:6,bitrate:1_000_000,codecs:[{encoder:'avc1.4d401f',muxer:'avc',extra:{avc:{format:'avc'}}}]};
   async function pickCodec(){
     for(const c of CLIP.codecs){
       const config={codec:c.encoder,width:CLIP.w,height:CLIP.h,bitrate:CLIP.bitrate,framerate:CLIP.fps,...c.extra};
@@ -78,8 +78,13 @@
     const url=URL.createObjectURL(file);
     const video=document.createElement('video');
     video.muted=true;video.playsInline=true;video.preload='auto';video.src=url;
+    // 모바일(특히 아이폰)은 영상을 미리 불러오지 않아 여기서 멈출 수 있다 - 제한 시간을 두고, 재생을 한 번 걸어 불러오게 한다
+    const within=(promise,ms,msg)=>Promise.race([promise,new Promise((_,no)=>setTimeout(()=>no(new Error(msg)),ms))]);
     try{
-      await new Promise((ok,no)=>{video.onloadeddata=ok;video.onerror=()=>no(new Error('이 브라우저에서 열 수 없는 영상입니다'));});
+      const loaded=new Promise((ok,no)=>{video.onloadeddata=ok;video.onerror=()=>no(new Error('이 브라우저에서 열 수 없는 영상입니다'));});
+      video.load();
+      video.play().then(()=>video.pause()).catch(()=>{});
+      await within(loaded,10000,'영상을 불러오지 못했습니다(시간 초과)');
       const vw=video.videoWidth,vh=video.videoHeight;
       if(!vw||!vh)throw new Error('영상 크기를 읽지 못했습니다');
       // 16:9가 아니면 가운데를 16:9로 잘라 쓴다(사진 칸도 가운데 기준으로 채운다)
@@ -94,7 +99,7 @@
       for(let i=0;i<total;i++){
         if(failure)throw failure;
         const t=i/CLIP.fps;
-        await new Promise(ok=>{video.onseeked=ok;video.currentTime=Math.min(t,Math.max(0,video.duration-0.001));});
+        await within(new Promise(ok=>{video.onseeked=ok;video.currentTime=Math.min(t,Math.max(0,video.duration-0.001));}),5000,'영상 장면을 읽지 못했습니다(시간 초과)');
         ctx.drawImage(video,sx,sy,sw,sh,0,0,CLIP.w,CLIP.h);
         const frame=new VideoFrame(canvas,{timestamp:Math.round(t*1e6),duration:Math.round(1e6/CLIP.fps)});
         encoder.encode(frame,{keyFrame:i%(CLIP.fps*2)===0});
@@ -139,9 +144,9 @@
         <div class="admin-preview-row"><div><b>현재 프로필</b><div class="admin-media-preview">${row.avatar_path?`<img src="${C().esc(C().mediaUrl(row.avatar_path))}" alt="">`:''}</div></div></div>
         ${C().field('프로필 사진',`<input class="admin-input" id="am_avatar" type="file" accept="image/*">`)}
         <div class="admin-preview-row"><div><b>대표 사진·영상(방송통계 TOP)</b><div class="admin-media-preview">${row.photo_path?(/\.(mp4|webm)$/i.test(row.photo_path)?`<video src="${C().esc(C().mediaUrl(row.photo_path))}" muted loop autoplay playsinline></video>`:`<img src="${C().esc(C().mediaUrl(row.photo_path))}" alt="">`):''}</div></div></div>
-        ${C().field('대표 사진·영상',`<input class="admin-input" id="am_photo" type="file" accept="video/mp4,video/webm,image/webp,image/gif,image/png,image/jpeg">`)}
+        ${C().field('대표 사진·영상',`<input class="admin-input" id="am_photo" type="file" accept="video/*,image/webp,image/gif,image/png,image/jpeg">`)}
         <p class="admin-help" id="am_photo_status"></p>
-        <p class="admin-help">영상(MP4 등)을 고르면 저장할 때 자동으로 720×405 · 30fps · 소리 없음 · 최대 6초 MP4로 줄여서 올립니다(16:9가 아니면 가운데를 잘라 맞춤). 사진·움짤은 그대로 올라갑니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
+        <p class="admin-help">영상을 고르면 저장할 때 자동으로 720×404 · 30fps · 소리 없음 · 최대 6초 MP4로 줄여서 올립니다(16:9가 아니면 가운데를 잘라 맞춤). PC 크롬·엣지는 바로, 모바일은 서버에서 1분 안팎 걸립니다. 사진·움짤은 그대로 올라갑니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
       `,
       onSubmit:async()=>{
         const payload={
@@ -159,27 +164,42 @@
         const file=document.getElementById('am_avatar')?.files?.[0];
         if(file)payload.avatar_path=await C().uploadMedia(file,'members',payload.soop_id||payload.nickname);
         let photo=document.getElementById('am_photo')?.files?.[0];
+        let serverVideo=null;
         if(photo&&/^video\//.test(photo.type)){
           const status=document.getElementById('am_photo_status');
           const say=t=>{if(status)status.textContent=t;};
-          say('영상 편집 중(720×405 · 30fps · 소리 없음)');
+          say('영상 편집 중(720×404 · 30fps · 소리 없음)');
           const before=photo.size;
-          const clip=await encodeClip(photo,p=>say(`영상 편집 중 ${Math.round(p*100)}%`)).catch(e=>{throw new Error(`영상 편집 실패: ${C().errorText(e)}`);});
+          let why='';
+          const clip=await encodeClip(photo,p=>say(`영상 편집 중 ${Math.round(p*100)}%`)).catch(e=>{why=C().errorText(e);return null;});
           if(clip){photo=clip;say(`편집 완료: ${Math.round(before/1024)}KB → ${Math.round(clip.size/1024)}KB`);}
-          else if(!confirm('이 브라우저는 영상 자동 편집을 지원하지 않습니다(최신 크롬·엣지 권장). 원본을 그대로 올릴까요?'))throw new Error('영상 올리기를 취소했습니다');
+          else{
+            // 이 브라우저가 못 줄이면(모바일 등) 원본을 서버로 넘긴다: 저장 뒤 원본을 올리고 GitHub Actions가 줄여 등록한다
+            if(why)console.warn('브라우저 영상 편집 실패, 서버 편집으로 넘김:',why);
+            if(photo.size>10*1024*1024)throw new Error('원본 영상은 10MB 이하만 올릴 수 있습니다(짧게 잘라서 올려 주세요)');
+            serverVideo=photo;photo=null;
+            say('이 기기에서는 직접 줄이지 못해 서버에서 편집합니다(저장 후 1분 안팎)');
+          }
         }
         if(photo){
           if(photo.size>10*1024*1024)throw new Error('대표 사진은 10MB 이하만 올릴 수 있습니다(2MB 이하 권장)');
           payload.photo_path=await C().uploadMedia(photo,'members-photo',payload.soop_id||payload.nickname);
         }
-        let error;
+        let error,memberId=row.id;
         if(row.id)({error}=await C().state.client.from('members').update(payload).eq('id',row.id));
         else{
           payload.source_order=await C().nextSourceOrder('members');
-          ({error}=await C().state.client.from('members').insert(payload));
+          let data;
+          ({data,error}=await C().state.client.from('members').insert(payload).select('id').single());
+          memberId=data?.id;
         }
         if(error)throw error;
-        C().toast('멤버를 저장했습니다');
+        if(serverVideo&&memberId){
+          const raw=await C().uploadMedia(serverVideo,'members-photo-raw',payload.soop_id||payload.nickname);
+          const {error:jobErr}=await C().state.client.rpc('admin_request_member_video',{p_member_id:memberId,p_raw_path:raw});
+          if(jobErr)throw new Error(`멤버는 저장했지만 영상 서버 편집을 시작하지 못했습니다: ${C().errorText(jobErr)}`);
+          C().toast('멤버를 저장했습니다. 영상은 서버에서 줄여서 1분 안팎에 대표 영상으로 등록됩니다');
+        }else C().toast('멤버를 저장했습니다');
         await load();
       },
       onDelete:row.id?async()=>{
