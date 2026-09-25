@@ -76,7 +76,7 @@
     const current = new Set(calOffAirForDate(date));
     const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || current.has(m.soop_id)));
     if (!members.length) return '<p class="admin-help">선택할 수 있는 멤버가 없습니다</p>';
-    return members.map(m => `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${current.has(m.soop_id)?' checked':''}><span>${C().esc(m.name || m.nickname || m.soop_id)}</span></label>`).join('');
+    return members.map(m => `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${current.has(m.soop_id)?' checked':''}><span>${C().esc(m.nickname || m.name || m.soop_id)}</span></label>`).join('');
   }
 
   function openOffAir(date) {

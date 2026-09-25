@@ -22,7 +22,7 @@
   }
   // 캄몬 선수는 용병이 뛰는 경우도 있어 자유 입력이다. 멤버 이름은 자동완성으로만 제안한다.
   function memberDatalist(){
-    const names=[...new Set(S.members.map(m=>m.name||m.nickname).filter(Boolean))];
+    const names=[...new Set(S.members.map(m=>m.nickname||m.name).filter(Boolean))];
     return `<datalist id="ar_member_names">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   }
   function roundRow(r={},idx=0){

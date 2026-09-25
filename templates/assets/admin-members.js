@@ -19,7 +19,7 @@
 
   function toPublic(r){
     return {
-      '이름':r.name||r.nickname||'','닉네임':r.nickname||r.name||'','SOOP ID':r.soop_id||'','ELO ID':r.elo_id??'',
+      '이름':r.nickname||r.name||'','닉네임':r.nickname||r.name||'','SOOP ID':r.soop_id||'','ELO ID':r.elo_id??'',
       '직책':r.role||'','티어':r.tier||'','입단 티어':r.join_tier||'','종족':r.race||'','성별':normalizeGender(r.gender),
       '생년월일':r.birth_date||'','MBTI':r.mbti||'','YouTube':r.youtube_url||'','입단일':r.joined_date||'','퇴단일':r.left_date||'','프로필 사진':r.avatar_path||''
     };
@@ -109,7 +109,7 @@
         await load();
       },
       onDelete:row.id?async()=>{
-        const {count,error:countErr}=await C().state.client.from('rounds').select('*',{head:true,count:'exact'}).ilike('our_player',row.name||row.nickname||'');
+        const {count,error:countErr}=await C().state.client.from('rounds').select('*',{head:true,count:'exact'}).ilike('our_player',row.nickname||row.name||'');
         if(countErr)throw countErr;
         if(Number(count||0)>0&&!confirm(`이 멤버 이름이 연결된 세트가 ${count}개 있습니다. 그래도 실제 삭제할까요?`))return;
         const {error}=await C().state.client.from('members').delete().eq('id',row.id);

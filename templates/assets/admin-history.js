@@ -88,7 +88,7 @@
     const add=document.getElementById('ahAddParticipant');
     const datalist=document.createElement('datalist');
     datalist.id='ahMemberNames';
-    datalist.innerHTML=(C().state.members||[]).map(m=>`<option value="${C().esc(m.name||m.nickname||'')}"></option>`).join('');
+    datalist.innerHTML=(C().state.members||[]).map(m=>`<option value="${C().esc(m.nickname||m.name||'')}"></option>`).join('');
     box?.after(datalist);
     const bindRemove=()=>box?.querySelectorAll('[data-remove-participant]').forEach(btn=>{
       btn.onclick=()=>{

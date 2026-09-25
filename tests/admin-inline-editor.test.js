@@ -127,3 +127,9 @@ test('linked ELO accounts: name and race are editable in the player drawer', () 
   assert.match(tier, /from\('tier_member_elo_links'\)\.update\(payload\)\.eq\('elo_id'/);
   assert.match(tier, /data-link-race/);
 });
+
+test('admin shows members by nickname (same as the public site), not by the base name', () => {
+  assert.match(read('templates/assets/admin-members.js'), /'이름':r\.nickname\|\|r\.name\|\|''/);
+  assert.match(read('templates/assets/admin-history.js'), /m\.nickname\|\|m\.name/);
+  assert.match(read('templates/assets/admin-records.js'), /m=>m\.nickname\|\|m\.name/);
+});
