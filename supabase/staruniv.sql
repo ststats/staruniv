@@ -70,8 +70,11 @@ create table if not exists public.members (
   joined_date date,
   left_date date,
   mbti text,
-  avatar_path text
+  avatar_path text,
+  -- 유튜브 채널 주소(있는 사람만). 프로필의 YouTube 버튼에 쓴다.
+  youtube_url text
 );
+alter table public.members add column if not exists youtube_url text;
 create index if not exists members_name_idx on public.members (name);
 create index if not exists members_nickname_idx on public.members (nickname);
 create index if not exists members_soop_id_idx on public.members (soop_id);
@@ -548,7 +551,7 @@ revoke all on public.matches from anon;
 revoke all on public.rounds from anon;
 revoke all on public.tier_members from anon;
 
-grant select (source_order, nickname, soop_id, birth_date, gender, race, tier, role, joined_date, left_date, mbti, avatar_path)
+grant select (source_order, nickname, soop_id, birth_date, gender, race, tier, role, joined_date, left_date, mbti, avatar_path, youtube_url)
   on public.members to anon;
 grant select (team_name, logo_path) on public.teams to anon;
 grant select (source_order, match_no, match_date, opponent_team, match_format, method, final_result, set_result)
@@ -684,7 +687,7 @@ revoke all on public.matches from anon;
 revoke all on public.rounds from anon;
 revoke all on public.tier_members from anon;
 
-grant select (source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path) on public.members to anon;
+grant select (source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path,youtube_url) on public.members to anon;
 grant select (source_order,team_name,logo_path) on public.teams to anon;
 grant select (source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result) on public.matches to anon;
 grant select (source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name) on public.rounds to anon;

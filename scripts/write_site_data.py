@@ -17,7 +17,7 @@ OUT_PATHS = {
 
 SITE_MEMBER_FIELDS = [
     "이름", "SOOP ID", "생년월일", "성별", "종족", "티어",
-    "직책", "입단일", "퇴단일", "MBTI",
+    "직책", "입단일", "퇴단일", "MBTI", "YouTube",
 ]
 SITE_MATCH_FIELDS = [
     "매치 번호", "날짜", "상대팀", "형식", "방식",

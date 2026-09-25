@@ -69,6 +69,7 @@ def build_db(settings, teams, members, matches, rounds, tier_members):
                 "입단일": empty(r["joined_date"]),
                 "퇴단일": empty(r["left_date"]),
                 "MBTI": empty(r["mbti"]),
+                "YouTube": empty(r.get("youtube_url")),
             }
             for r in members
         ],

@@ -176,6 +176,23 @@ function toggleFormerMembersSection() {
     if (label) label.textContent = nowOpen ? '접기' : '보기';
 }
 
+// 어드민에 적은 유튜브 주소가 실제 youtube.com / youtu.be 주소일 때만 버튼을 띄운다.
+// "@핸들"만 적어도 채널 주소로 바꿔 준다.
+function memberYoutubeUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^@[\w.\-]+$/.test(raw)) return 'https://www.youtube.com/' + raw;
+    try {
+        const url = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+        const host = url.hostname.toLowerCase().replace(/^(www|m)\./, '');
+        if (host !== 'youtube.com' && host !== 'youtu.be') return '';
+        url.protocol = 'https:';
+        return url.href;
+    } catch (e) {
+        return '';
+    }
+}
+
 let _profileMember = null; // 지금 프로필 팝업에 떠 있는 멤버(방송 활동 데이터가 늦게 오면 다시 채우기용)
 
 function openMemberProfile(name) {
@@ -205,6 +222,12 @@ function openMemberProfile(name) {
     station.hidden = !isValidSoopId(m['SOOP ID']);
     station.removeAttribute('href');
     if (!station.hidden) station.href = 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim());
+    const youtube = document.getElementById('mp-youtube-link');
+    const youtubeUrl = memberYoutubeUrl(m['YouTube']);
+    youtube.hidden = !youtubeUrl;
+    youtube.removeAttribute('href');
+    if (youtubeUrl) youtube.href = youtubeUrl;
+    document.getElementById('mp-external-links').hidden = station.hidden && youtube.hidden;
     document.getElementById('mp-records-link').href = 'records/?view=solo&member=' + encodeURIComponent(name);
     updateMemberAnalysisLink(m);
 

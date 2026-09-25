@@ -375,10 +375,12 @@
 .profile-modal-link { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 12px 14px; background: var(--color-bg-subtle); color: var(--color-text-main); clip-path: var(--notch-sm); text-decoration: none; font-size: var(--fs-body); font-weight: 700; }
 .profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
-/* 방송국은 사이트 밖으로 나가는 링크라 안쪽 바로가기 두 개와 줄을 나눈다 */
-.profile-modal-station { flex: 1 1 100%; background: var(--navy); color: var(--navy-on-text); }
+/* 방송국·유튜브는 사이트 밖으로 나가는 링크라 안쪽 바로가기와 줄을 나눈다(있는 것만 보이고 폭을 나눠 가짐) */
+.profile-modal-station { background: var(--navy); color: var(--navy-on-text); }
 .profile-modal-station:hover { background: var(--color-primary); color: #fff; }
-.profile-modal-link[hidden], .profile-modal-days[hidden] { display: none; }
+.profile-modal-youtube { background: #ff0033; color: #fff; }
+.profile-modal-youtube:hover { background: #d9002b; color: #fff; }
+.profile-modal-link[hidden], .profile-modal-days[hidden], .profile-modal-external[hidden] { display: none; }
 @media (max-width: 380px) {
     .profile-modal-hero { padding: 16px 18px 20px; }
     .profile-dialog .profile-modal-body { padding: 20px 18px; }

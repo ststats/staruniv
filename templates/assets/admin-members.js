@@ -7,7 +7,7 @@
     return {
       '이름':r.name||r.nickname||'','닉네임':r.nickname||r.name||'','SOOP ID':r.soop_id||'','ELO ID':r.elo_id??'',
       '직책':r.role||'','티어':r.tier||'','입단 티어':r.join_tier||'','종족':r.race||'','성별':normalizeGender(r.gender),
-      '생년월일':r.birth_date||'','MBTI':r.mbti||'','입단일':r.joined_date||'','퇴단일':r.left_date||'','프로필 사진':r.avatar_path||''
+      '생년월일':r.birth_date||'','MBTI':r.mbti||'','YouTube':r.youtube_url||'','입단일':r.joined_date||'','퇴단일':r.left_date||'','프로필 사진':r.avatar_path||''
     };
   }
 
@@ -21,6 +21,19 @@
 
   function opts(values,selected){
     return values.map(v=>`<option value="${C().esc(v)}"${String(v)===String(selected||'')?' selected':''}>${C().esc(v||'선택')}</option>`).join('');
+  }
+
+  // 비워 두면 null. "@핸들"은 채널 주소로 바꾸고, 유튜브 주소가 아니면 저장하지 않는다.
+  function youtubeUrl(value){
+    const raw=String(value||'').trim();
+    if(!raw)return null;
+    if(/^@[\w.\-]+$/.test(raw))return 'https://www.youtube.com/'+raw;
+    let url;
+    try{url=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);}catch(e){throw new Error('YouTube 주소 형식이 올바르지 않습니다');}
+    const host=url.hostname.toLowerCase().replace(/^(www|m)\./,'');
+    if(host!=='youtube.com'&&host!=='youtu.be')throw new Error('YouTube 칸에는 youtube.com 주소나 @핸들만 넣을 수 있습니다');
+    url.protocol='https:';
+    return url.href;
   }
 
   function normalizeGender(value){
@@ -50,6 +63,7 @@
           ${C().field('MBTI',C().input('am_mbti',row.mbti||'','text','maxlength="8"'))}
           ${C().field('입단일',C().input('am_joined',row.joined_date||'','date'))}
           ${C().field('퇴단일',C().input('am_left',row.left_date||'','date'))}
+          ${C().field('YouTube',C().input('am_youtube',row.youtube_url||'','text','placeholder="https://www.youtube.com/@채널 또는 @핸들"'))}
         </div>
         <p class="admin-help">활동 상태는 별도 필드 없이 퇴단일 유무로 판단합니다. 일반적인 운영에서는 삭제 대신 퇴단일을 입력하세요</p>
         <div class="admin-preview-row"><div><b>현재 프로필</b><div class="admin-media-preview">${row.avatar_path?`<img src="${C().esc(C().mediaUrl(row.avatar_path))}" alt="">`:''}</div></div></div>
@@ -61,7 +75,7 @@
           elo_id:C().intOrNull(C().value('am_elo')),role:C().empty(C().value('am_role')),tier:C().empty(C().value('am_tier')),
           join_tier:C().empty(C().value('am_join_tier')),race:C().empty(C().value('am_race')),gender:C().empty(C().value('am_gender')),
           birth_date:C().empty(C().value('am_birth')),mbti:C().empty(C().value('am_mbti')),joined_date:C().empty(C().value('am_joined')),
-          left_date:C().empty(C().value('am_left')),avatar_path:row.avatar_path||null
+          left_date:C().empty(C().value('am_left')),youtube_url:youtubeUrl(C().value('am_youtube')),avatar_path:row.avatar_path||null
         };
         if(!payload.name||!payload.nickname)throw new Error('이름과 닉네임은 필수입니다');
         const file=document.getElementById('am_avatar')?.files?.[0];
