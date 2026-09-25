@@ -1324,7 +1324,7 @@ grant select, insert, update, delete on public.university_logos to authenticated
 -- 8. 한 선수의 다른 ELO 계정(종족 변경 등)
 -- ############################################################################
 
--- EloBoard는 종족마다 계정(ELO ID)이 따로라 종족을 바꾸면 새 ELO ID가 생긴다. tier_members.elo_id는 지금 쓰는
+-- EloBoard는 종족마다 계정(ELO ID)이 따로라 종족을 바꾸면 새 ELO ID가 생긴다. tier_members.elo_id는 메인 종족
 -- 계정이고, 예전·다른 종족 계정은 여기에 '연결'만 해 둔다. 연결된 계정은 신규 인원에 다시 뜨지 않는다.
 -- 전적·방송통계는 합치지 않는다(계정별 그대로).
 create table if not exists public.tier_member_elo_links (
@@ -1342,7 +1342,7 @@ create policy tier_member_elo_links_admin on public.tier_member_elo_links for al
 revoke all on public.tier_member_elo_links from anon, authenticated;
 grant select, insert, update, delete on public.tier_member_elo_links to authenticated;
 
--- 같은 ELO ID가 '지금 계정'과 '연결 계정'에 동시에 있으면 안 된다.
+-- 같은 ELO ID가 '메인 계정'과 '연결 계정'에 동시에 있으면 안 된다.
 -- 같은 SOOP ID가 두 선수에 있으면 방송통계 일일 저장이 통째로 멈춘다(SOOP ID가 방송통계의 키).
 -- 새로 넣거나 그 칸을 바꿀 때만 검사하므로, 이 파일을 다시 실행해도 기존 행 때문에 실패하지 않는다.
 create or replace function public.tier_members_guard_ids()
@@ -1366,7 +1366,7 @@ begin
     if found then
       raise exception 'ELO ID %는 % 선수의 연결 계정입니다', new.elo_id, other;
     end if;
-    -- 자기 연결 계정을 '지금 계정'으로 올리면 연결 목록에서는 뺀다
+    -- 자기 연결 계정을 '메인 계정'으로 올리면 연결 목록에서는 뺀다
     delete from public.tier_member_elo_links where elo_id = new.elo_id and tier_member_id = new.id;
   end if;
   return new;
@@ -1385,7 +1385,7 @@ declare other text;
 begin
   select nickname into other from public.tier_members where elo_id = new.elo_id limit 1;
   if found then
-    raise exception 'ELO ID %는 이미 % 선수의 지금 계정입니다', new.elo_id, other;
+    raise exception 'ELO ID %는 이미 % 선수의 메인 계정입니다', new.elo_id, other;
   end if;
   return new;
 end;

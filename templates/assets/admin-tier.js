@@ -70,7 +70,7 @@
       ${C().field('이름',C().input('ati_name',r.name||''))}
       ${C().field('닉네임',C().input('ati_nick',r.nickname||'','text','required'))}
       ${C().field('SOOP ID',C().input('ati_soop',r.soop_id||''))}
-      ${C().field('ELO ID',C().input('ati_elo',r.elo_id??'','number','min="1"'))}
+      ${C().field('ELO ID(메인 종족 계정)',C().input('ati_elo',r.elo_id??'','number','min="1"'))}
       ${C().field('성별',C().input('ati_gender',r.gender||''))}
       ${C().field('종족',C().input('ati_race',r.race||''))}
       ${C().field('생년월일',C().input('ati_birth',r.birth_date||'','date'))}
@@ -83,7 +83,7 @@
       ${C().field('티어표 등록',C().input('ati_table_registered',r.tier_table_registered||''))}
     </div><div class="admin-section-head"><b>연혁</b></div>
     ${C().field('팀 이동 등 연혁',C().textarea('ati_history',r.history||'','rows="5"'))}
-    ${r.id?`<div class="admin-section-head"><b>연결된 ELO 계정</b><small>종족 변경 등으로 생긴 다른 계정. 신규 인원에서 연결합니다(전적은 합치지 않음)</small></div><div id="ati_links" class="admin-help">불러오는 중</div>`:''}
+    ${r.id?`<div class="admin-section-head"><b>연결된 ELO 계정</b><small>메인 종족이 아닌 다른 계정. 신규 인원에서 연결합니다(전적·방송통계는 메인 계정만)</small></div><div id="ati_links" class="admin-help">불러오는 중</div>`:''}
     <div class="admin-section-head"><b>승급 이력</b><small>강등 뒤 다시 올랐으면 날짜를 쉼표로 이어 적습니다(예: 2021-07-13, 2021-10-26)</small></div><div class="admin-form-grid">${promo}</div>`;
   }
   function collect(r={}){
@@ -378,7 +378,7 @@
     const opts=(N.members||[]).map(m=>`<option value="${esc(memberLabel(m))}"></option>`).join('');
     C().openDrawer({
       eyebrow:'LINK',title:`${c.nickname} (ELO ${c.elo_id}) 기존 선수에 연결`,
-      html:`<p class="admin-help">종족 변경 등으로 생긴 같은 사람의 다른 계정이면 연결하세요. 연결하면 신규 인원에 다시 뜨지 않고, 선수 정보(소속·SOOP ID 등)와 전적은 바뀌지 않습니다</p>
+      html:`<p class="admin-help">같은 사람의 다른 종족 계정이면 연결하세요. 연결하면 신규 인원에 다시 뜨지 않고, 선수 정보(메인 ELO ID·소속·SOOP ID 등)와 전적은 바뀌지 않습니다. 수정일도 필요 없습니다</p>
         ${C().field('연결할 선수',`<input class="admin-input" id="atl_member" list="atl_members" value="${esc(hint?memberLabel(hint):'')}" placeholder="닉네임으로 찾기" autocomplete="off"><datalist id="atl_members">${opts}</datalist>`)}`,
       onSubmit:async()=>{
         const label=C().value('atl_member').trim();
