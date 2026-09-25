@@ -101,3 +101,10 @@ test('main ELO account can be switched, and dotted EloBoard names match existing
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_set_main_elo\(p_member_id bigint, p_elo_id integer\)/);
 });
+
+test('tier date columns include demotions: no order warning, and tier update records demotion dates', () => {
+  const tier = read('templates/assets/admin-tier.js');
+  assert.doesNotMatch(tier, /승급일 순서가 티어 진행 방향과/);
+  const sql = read('supabase/staruniv.sql');
+  assert.match(sql, /강등으로 내려간 날도 그 티어 칸에 적는다/);
+});

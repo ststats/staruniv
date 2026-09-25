@@ -38,23 +38,19 @@
     const events=promotionEvents(r);
     return events.length?events[events.length-1].date:'';
   }
+  // 'N티어 승급' 칸은 그 티어가 된 날짜다(강등으로 내려간 날짜도 여기 적는다). 그래서 날짜순으로 티어가
+  // 내려가는 건 정상이고, 가장 최근 날짜의 티어가 지금 티어와 다를 때만 알린다(기록 안 된 변동이 있다).
   function promotionWarnings(r){
-    const warnings=[], chrono=promotionEvents(r);
-    // 강등이 섞인 선수(같은 티어에 날짜가 여럿)는 순서가 거꾸로 가는 게 정상이라 순서 검사를 하지 않는다
-    const demoted=PROMO.some(n=>promoDates(r[`promoted_tier_${n}`]).length>1);
-    for(let i=1;i<chrono.length&&!demoted;i++){
-      if(chrono[i].n>chrono[i-1].n)warnings.push('승급일 순서가 티어 진행 방향과 맞지 않을 수 있습니다');
-    }
-    if(chrono.length){
-      const latest=chrono[chrono.length-1].n;
-      const tier=String(r.tier||'').replace('티어','').trim();
-      if(/^[0-8]$/.test(tier)&&Number(tier)!==latest)warnings.push(`현재 티어(${r.tier})와 마지막 승급 티어(${latest}티어)가 다릅니다`);
-    }
-    return [...new Set(warnings)];
+    const chrono=promotionEvents(r);
+    if(!chrono.length)return [];
+    const latest=chrono[chrono.length-1].n;
+    const tier=String(r.tier||'').replace('티어','').trim();
+    return /^[0-8]$/.test(tier)&&Number(tier)!==latest?[`현재 티어(${r.tier})와 가장 최근 날짜의 티어(${latest}티어)가 다릅니다. 승급·강등 날짜가 빠졌을 수 있습니다`]:[];
   }
   function historyHtml(r){
     // 날짜 순으로 한 줄씩. 강등 뒤 다시 오른 경우도 순서대로 보인다
-    const rows=promotionEvents(r).map(e=>`<tr><td>${esc(e.date)}</td><td>${e.n}티어 승급</td></tr>`).join('');
+    // 앞 기록보다 숫자가 커지면(8에 가까워지면) 강등이다
+    const rows=promotionEvents(r).map((e,i,all)=>`<tr><td>${esc(e.date)}</td><td>${e.n}티어 ${i&&e.n>all[i-1].n?'강등':i?'승급':'시작'}</td></tr>`).join('');
     return rows?`<table class="admin-mini-table"><tbody>${rows}</tbody></table>`:'승급 이력이 없습니다';
   }
   async function duplicateElo(elo,id){
@@ -84,7 +80,7 @@
     </div><div class="admin-section-head"><b>연혁</b></div>
     ${C().field('팀 이동 등 연혁',C().textarea('ati_history',r.history||'','rows="5"'))}
     ${r.id?`<div class="admin-section-head"><b>연결된 ELO 계정</b><small>메인 종족이 아닌 다른 계정. 신규 인원에서 연결합니다(전적·방송통계는 메인 계정만)</small></div><div id="ati_links" class="admin-help">불러오는 중</div>`:''}
-    <div class="admin-section-head"><b>승급 이력</b><small>강등 뒤 다시 올랐으면 날짜를 쉼표로 이어 적습니다(예: 2021-07-13, 2021-10-26)</small></div><div class="admin-form-grid">${promo}</div>`;
+    <div class="admin-section-head"><b>승급 이력</b><small>그 티어가 된 날짜입니다. 강등으로 내려간 날도 그 티어 칸에 적고, 같은 티어가 여러 번이면 쉼표로 이어 적습니다(예: 2021-07-13, 2021-10-26)</small></div><div class="admin-form-grid">${promo}</div>`;
   }
   function collect(r={}){
     const p={name:C().empty(C().value('ati_name')),nickname:C().value('ati_nick').trim(),soop_id:C().empty(C().value('ati_soop')),elo_id:C().intOrNull(C().value('ati_elo')),gender:C().empty(C().value('ati_gender')),race:C().empty(C().value('ati_race')),birth_date:C().empty(C().value('ati_birth')),tier:C().empty(C().value('ati_tier')),affiliation:C().empty(C().value('ati_aff')),role:C().empty(C().value('ati_role')),modified_at:modifiedStamp(C().value('ati_modified'))};

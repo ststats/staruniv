@@ -1223,11 +1223,14 @@ begin
        and btrim(regexp_replace(coalesce(hist, ''), '^.*,', '')) is distinct from new_aff then
       hist := case when coalesce(btrim(hist), '') = '' then new_aff else hist || ', ' || new_aff end;
     end if;
-    if new_tier is distinct from r.tier and new_tier ~ '^[0-8]$'
-       and array_position(ladder, new_tier) < coalesce(array_position(ladder, r.tier), 999) then
+    -- 'N티어 승급' 칸 = 그 티어가 된 날. 승급뿐 아니라 강등으로 내려간 날도 그 티어 칸에 적는다
+    -- (예전엔 승급만 적어서, 강등된 선수는 지금 티어와 마지막 날짜의 티어가 어긋났다).
+    if new_tier is distinct from r.tier and new_tier ~ '^[0-8]$' then
       col := 'promoted_tier_' || new_tier;
       execute format('select %I from public.tier_members where id = $1', col) into cur using r.id;
-      promoted := new_tier;
+      if array_position(ladder, new_tier) < coalesce(array_position(ladder, r.tier), 999) then
+        promoted := new_tier;
+      end if;
       if coalesce(cur, '') not like '%' || d || '%' then
         execute format('update public.tier_members set %I = $1 where id = $2', col)
           using case when coalesce(btrim(cur), '') = '' then d else cur || ', ' || d end, r.id;
