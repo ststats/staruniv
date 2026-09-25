@@ -1444,7 +1444,6 @@ grant execute on function public.admin_set_main_elo(bigint, integer) to authenti
 alter table public.members
   add column if not exists tier_member_id bigint references public.tier_members(id) on delete set null;
 -- 대표 사진·영상(방송통계 TOP 칸). 어드민 멤버 수정에서 올린다(PC 브라우저가 720×404 MP4로 줄여 올림).
--- 없으면 저장소 파일 templates/static/media/members/<SOOP ID>.mp4를 쓴다.
 alter table public.members add column if not exists photo_path text;
 -- 잠깐 두었던 서버 영상 편집(모바일용) 표·함수는 쓰지 않는다
 drop function if exists public.admin_request_member_video(bigint, text);

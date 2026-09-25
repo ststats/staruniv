@@ -149,17 +149,16 @@ test('tier section latin label adds TIER only once', () => {
   assert.deepEqual(['갓', '1', 0, '8티어', '미분류'].map(tierLatinLabel), ['GOD TIER', '1 TIER', '0 TIER', '8 TIER', 'UNRANKED TIER']);
 });
 
-test('stats TOP card uses repo media files (media/members/<SOOP ID>), no DB upload path', () => {
+test('stats TOP card shows the admin-uploaded feature photo/video', () => {
   const html = read('templates/pages/stats.html');
   assert.match(html, /id="synergy-top-photo"/);
   assert.match(html, /'synergy-sum-avg', 'AVERAGE'/);
   const js = read('templates/assets/page-stats.js');
-  assert.match(js, /\^media\\\/members\\\//);
+  assert.match(js, /storageMediaUrl\(ours\['대표 사진'\]\)/);
   assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
-  assert.match(read('scripts/write_site_data.py'), /MEMBER_MEDIA_DIR = ROOT \/ "templates" \/ "static" \/ "media" \/ "members"/);
-  assert.match(js, /storageMediaUrl\(raw\)/);
-  assert.match(read('scripts/write_site_data.py'), /row\.get\("대표 사진"\) or member_media_url/);
+  assert.match(read('scripts/write_site_data.py'), /"대표 사진"/);
 });
+
 
 test('admin upload of feature photo/video stays: PC browser re-encodes video, no server encoding', () => {
   const js = read('templates/assets/admin-members.js');

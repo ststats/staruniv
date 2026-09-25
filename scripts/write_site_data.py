@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from pathlib import Path
@@ -11,10 +10,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "data" / "db.json"
 STATS_PATH = ROOT / "data" / "render_stats.json"
 OUT_DIR = ROOT / "docs" / "data"
-# 방송통계 TOP 대표 영상·사진: 저장소 파일 templates/static/media/members/<SOOP ID>.<확장자>(빌드 때 docs/로 복사).
-# 어드민에서 올린 대표 사진(members.photo_path)이 있으면 그쪽이 먼저다.
-MEMBER_MEDIA_DIR = ROOT / "templates" / "static" / "media" / "members"
-MEMBER_MEDIA_EXTS = (".mp4", ".webm", ".webp", ".gif", ".jpg", ".jpeg", ".png")
 OUT_PATHS = {
     "shell": OUT_DIR / "site_shell.json",
     "records": OUT_DIR / "site_records.json",
@@ -80,19 +75,6 @@ def sort_members(rows: list[dict]) -> list[dict]:
     )
 
 
-def member_media_url(soop_id) -> str:
-    """SOOP ID의 대표 파일 주소(사이트 기준 상대 경로, 내용이 바뀌면 주소도 바뀌게 ?v=해시). 없으면 빈 문자열."""
-    sid = str(soop_id or "").strip().lower()
-    if not re.fullmatch(r"[a-z0-9_-]+", sid):
-        return ""
-    for ext in MEMBER_MEDIA_EXTS:
-        path = MEMBER_MEDIA_DIR / f"{sid}{ext}"
-        if path.is_file():
-            digest = hashlib.sha1(path.read_bytes()).hexdigest()[:10]
-            return f"media/members/{sid}{ext}?v={digest}"
-    return ""
-
-
 def main() -> None:
     if not DB_PATH.exists():
         raise SystemExit(f"missing: {DB_PATH}")
@@ -105,9 +87,6 @@ def main() -> None:
     db_data, linked_matches, linked_rounds = load_linked_db(str(DB_PATH))
 
     members = sort_members(db_data.get("members", []))
-    for row in members:
-        # 어드민에서 올린 것(Storage 경로)이 먼저, 없으면 저장소 파일
-        row["대표 사진"] = row.get("대표 사진") or member_media_url(row.get("SOOP ID"))
     matches = sorted(
         linked_matches,
         key=lambda row: str(row.get("날짜", "")),
