@@ -368,7 +368,8 @@ async function loadSiteData(parts) {
     try {
         const payloads = await Promise.all(requested.map(async part => {
             const { url, cache } = siteDataRequest(part);
-            const res = await fetch(url, { cache });
+            // 사이트 데이터(정적 JSON)도 끝내 안 오면 20초에 끊고 오류 안내로 넘어간다
+            const res = await fetch(url, { cache, signal: AbortSignal.timeout(20000) });
             if (!res.ok) throw new Error(`${part}: HTTP ${res.status}`);
             return [part, await res.json()];
         }));
@@ -489,7 +490,7 @@ async function cachedFetchJson(url, ttlMs) {
     if (_inflightRequests.has(url)) return _inflightRequests.get(url);
 
     const request = (async () => {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (!res.ok) throw new Error('요청 실패: ' + res.status);
         const data = await res.json();
         writeApiCache(url, data);
@@ -950,6 +951,7 @@ function initEdgeFades(root) {
 // ststat -> Supabase daily_member_stats 를 직접 읽고 우리 로스터만 추린다.
 // =====================================================================
 let _publicSupabaseClient = null;
+const SUPABASE_REQUEST_TIMEOUT_MS = 8000;
 // 공개 페이지는 Supabase 표를 읽기만 한다. 그래서 supabase-js(213KB)를 받지 않고, 쓰는 조회
 // (select·eq·in·not·order·range·limit·maybeSingle)만 같은 주소 형식으로 직접 만든다 - 주소와
 // 헤더가 supabase-js와 한 글자까지 같아서 서버 쪽에서 보면 차이가 없다. 결과도 똑같이 {data, error}.
@@ -988,10 +990,22 @@ class SupabaseReadQuery {
         return this;
     }
     maybeSingle() { this.maybeOne = true; return this; }
+    // 응답이 끝내 오지 않으면(연결만 붙고 멈춤 등) 화면이 '불러오는 중'에 머문다. 요청마다 8초 제한을 두고,
+    // 네트워크 오류·시간 초과·일시 서버 오류(5xx·429)는 잠깐 쉬었다 한 번 더 시도한다(읽기라 다시 보내도 안전).
+    // 그래도 안 되면 {error}를 돌려줘 각 화면의 오류 안내로 넘어간다 - 최악 약 17초.
     async run() {
+        const first = await this.runOnce();
+        if (first.status === 0 || first.status === 429 || first.status >= 500) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            return this.runOnce();
+        }
+        return first;
+    }
+    async runOnce() {
         try {
             const res = await fetch(this.url.href, {
                 headers: { apikey: this.key, Authorization: `Bearer ${this.key}` },
+                signal: AbortSignal.timeout(SUPABASE_REQUEST_TIMEOUT_MS),
             });
             const text = await res.text();
             let body = null;
