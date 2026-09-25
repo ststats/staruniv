@@ -1,0 +1,25 @@
+name: OCR bench (one-off)
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: tier table image url
+        required: true
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install Tesseract (Korean)
+        run: sudo apt-get update -q && sudo apt-get install -y -q tesseract-ocr tesseract-ocr-kor
+      - name: Install engines
+        run: |
+          pip install -q numpy pillow pytesseract psycopg[binary]
+          /usr/bin/time -f "easyocr install %e s" pip install -q easyocr torch torchvision --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
+          /usr/bin/time -f "paddle install %e s" pip install -q paddlepaddle paddleocr
+      - name: Bench
+        run: python scripts/ocr_bench.py "${{ inputs.url }}"
