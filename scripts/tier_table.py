@@ -379,8 +379,16 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             race = classify_race(race_f, mem, known)
             tier_raw = ocr(text_mask(tier_img, bg), 'eng+kor') if not tier else ''
             race_raw = ocr(text_mask(race_img, bg), 'eng') if not race else ''
-            name_raw = '' if known else ocr(text_mask(name_img, bg), 'kor')
+            # 닉네임 글씨는 사진으로 아는 선수도 늘 읽는다 - 사진만 보고 넘어가면 닉네임 변경(박쭈이 → 쭈이)을
+            # 놓친다. 같은 카드 그림은 매번 같게 읽히므로, 지난번에 이 선수 카드를 읽은 글씨(name_read)와 같으면
+            # 글자 인식이 조금 틀렸더라도 바뀐 게 아니다(기억한 닉네임을 쓴다). 다르면 읽은 글씨를 그대로 넘겨
+            # 비교 단계에서 '닉네임 변경' 후보가 된다.
+            name_raw = ocr(text_mask(name_img, bg), 'kor')
             role, nick = split_role(name_raw)
+            card['name_read'] = nick
+            if known and nick and known.get('name_read') == nick:
+                nick = known['nickname']
+                card['name_unchanged'] = True
             card.update({'tier': tier or read_tier(tier_raw), 'race': race or read_race(race_raw),
                          'role': role, 'nickname_ocr': nick or (known['nickname'] if known else ''),
                          'raw': {'tier': tier_raw, 'name': name_raw, 'race': race_raw}})
@@ -515,7 +523,8 @@ def learn(memory, confirmed):
                             and not (r.get('soop_id') and p.get('soop_id') == r.get('soop_id'))]
         memory['photos'].append({'hash': card['photo'], 'soop_id': r.get('soop_id'), 'nickname': r['nickname'],
                                  'tier': str(r['tier']), 'race': r['race'],
-                                 'tier_feat': card.get('tier_feat'), 'race_feat': card.get('race_feat')})
+                                 'tier_feat': card.get('tier_feat'), 'race_feat': card.get('race_feat'),
+                                 'name_read': card.get('name_read')})
     return memory
 
 
@@ -807,7 +816,7 @@ def compare(sections, fa, db):
             # 닉네임 변경(예: 박쭈이 → 쭈이). 카드는 사진·비슷한 이름·티어로 같은 사람으로 맞췄지만 글씨가 다르다.
             # 글씨 인식이 틀렸을 수도 있어 따로 한 줄로 두고 기본은 체크 해제 - 카드 사진을 보고 고르게 한다.
             ocr_nick = (card.get('nickname_ocr') or '').strip()
-            if ocr_nick and ''.join(ocr_nick.split()) != ''.join(str(r['nickname']).split()):
+            if ocr_nick and not card.get('name_unchanged') and ''.join(ocr_nick.split()) != ''.join(str(r['nickname']).split()):
                 changes.append({'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team,
                                 'diff': {'nickname': [r['nickname'], ocr_nick]}, 'ocr': ocr_nick, 'ref': [si, i],
                                 'uncertain': '카드 글씨로 읽은 닉네임입니다. 카드와 같으면 체크하세요(틀린 글자는 고쳐서)'})
