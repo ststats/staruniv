@@ -121,47 +121,34 @@ function sortSynergyRows(rows) {
     return rows.slice().sort((a, b) => value(b) - value(a));
 }
 
-// 맨 위 TOP 칸(1위 대표 사진·이름·값)과 요약 타일 3개(합계 / 평균 / 멤버수)를 채운다.
-// 지표마다 단위가 달라서(개, 시간, 명, 판) config.formatValue로 같은 서식을 쓴다.
-// 합계·평균은 정렬 기준값(readValue)으로 센다 - 스폰판수는 승+패 판수다.
-function renderSynergyTopPhoto(top) {
-    const box = document.getElementById('synergy-top-photo');
-    if (!box) return;
-    const ours = top ? top.ourMember : null;
-    // 대표 사진(움짤 WebP 등) → 없으면 SOOP 프로필 사진 → 그것도 없으면 빈 칸
-    const src = (ours && storageMediaUrl(ours['대표 사진'])) || (ours && getProfileImgUrl(ours['SOOP ID'])) || '';
-    const key = src || 'none';
-    if (box.dataset.src === key) return;          // 같은 사진이면 다시 그리지 않는다(움짤이 처음부터 다시 돌지 않게)
-    box.dataset.src = key;
-    box.classList.toggle('is-fallback', !!ours && !storageMediaUrl(ours['대표 사진']));
-    box.innerHTML = src ? `<img src="${escapeHTML(src)}" alt="${escapeHTML((ours && ours['이름']) || '')}" onerror="this.remove()">` : '';
-}
-
+// [리디자인] 표 위 요약 타일 3개(합계 / 1위 / 집계 인원)를 채운다.
+// 지표마다 단위가 달라서(개, 시간, 명, 전적) config.format을 그대로 쓴다.
+// 합계는 정렬 기준값(readValue)을 더한다 - 스폰판수는 승+패 판수의 합이다.
 function renderSynergySummary(rows) {
     const box = document.getElementById('synergy-summary');
     if (!box) return;
     const config = synergyMetricConfig(SynergyState.metric) || SYNERGY_METRICS.sponsor;
     const readValue = config.sortValue ? config.sortValue : (row => row[SynergyState.metric] || 0);
-    const fmt = v => (config.formatValue ? config.formatValue(v) : Number(v).toLocaleString('ko-KR'));
 
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
-    setText('synergy-top-metric', config.label || '');
+    setText('synergy-sum-label', (config.label || 'TOTAL'));
     setText('synergy-sum-count', rows.length ? `${rows.length}명` : '-');
 
     if (!rows.length) {
-        ['synergy-sum-total', 'synergy-sum-avg', 'synergy-sum-top', 'synergy-sum-top-value'].forEach(id => setText(id, '-'));
-        renderSynergyTopPhoto(null);
+        setText('synergy-sum-total', '-');
+        setText('synergy-sum-top', '-');
+        setText('synergy-sum-top-name', '1위');
         return;
     }
 
     const total = rows.reduce((acc, m) => acc + (Number(readValue(m)) || 0), 0);
-    setText('synergy-sum-total', fmt(total));
-    setText('synergy-sum-avg', fmt(Math.round(total / rows.length)));
+    // 합계도 각 행과 같은 서식으로 보여준다(시간이면 '421시간', 스폰판수면 '128판' 처럼).
+    setText('synergy-sum-total', config.formatValue ? config.formatValue(total) : total.toLocaleString('ko-KR'));
 
+    // 1위 칸은 이름을 크게, 값을 작게 쓴다(모든 지표 공통).
     const top = rows[0];
     setText('synergy-sum-top', top.ourMember['이름'] || top.nickname || '-');
-    setText('synergy-sum-top-value', config.format(top));
-    renderSynergyTopPhoto(top);
+    setText('synergy-sum-top-name', config.format(top));
 }
 
 function renderSynergyTable() {

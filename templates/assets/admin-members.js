@@ -21,7 +21,7 @@
     return {
       '이름':r.nickname||r.name||'','닉네임':r.nickname||r.name||'','SOOP ID':r.soop_id||'','ELO ID':r.elo_id??'',
       '직책':r.role||'','티어':r.tier||'','입단 티어':r.join_tier||'','종족':r.race||'','성별':normalizeGender(r.gender),
-      '생년월일':r.birth_date||'','MBTI':r.mbti||'','YouTube':r.youtube_url||'','입단일':r.joined_date||'','퇴단일':r.left_date||'','프로필 사진':r.avatar_path||'','대표 사진':r.photo_path||''
+      '생년월일':r.birth_date||'','MBTI':r.mbti||'','YouTube':r.youtube_url||'','입단일':r.joined_date||'','퇴단일':r.left_date||'','프로필 사진':r.avatar_path||''
     };
   }
 
@@ -85,9 +85,6 @@
         <p class="admin-help">활동 상태는 별도 필드 없이 퇴단일 유무로 판단합니다. 일반적인 운영에서는 삭제 대신 퇴단일을 입력하세요</p>
         <div class="admin-preview-row"><div><b>현재 프로필</b><div class="admin-media-preview">${row.avatar_path?`<img src="${C().esc(C().mediaUrl(row.avatar_path))}" alt="">`:''}</div></div></div>
         ${C().field('프로필 사진',`<input class="admin-input" id="am_avatar" type="file" accept="image/*">`)}
-        <div class="admin-preview-row"><div><b>대표 사진(방송통계 TOP)</b><div class="admin-media-preview">${row.photo_path?`<img src="${C().esc(C().mediaUrl(row.photo_path))}" alt="">`:''}</div></div></div>
-        ${C().field('대표 사진',`<input class="admin-input" id="am_photo" type="file" accept="image/webp,image/gif,image/png,image/jpeg">`)}
-        <p class="admin-help">가로 16:9 960×540 움짤 WebP 권장(3~5초, 2MB 이하). PC에서는 위아래가 조금 잘리니 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
       `,
       onSubmit:async()=>{
         const payload={
@@ -97,18 +94,10 @@
           birth_date:C().empty(C().value('am_birth')),mbti:C().empty(C().value('am_mbti')),joined_date:C().empty(C().value('am_joined')),
           left_date:C().empty(C().value('am_left')),youtube_url:youtubeUrl(C().value('am_youtube')),avatar_path:row.avatar_path||null
         };
-        // 대표 사진 칸(photo_path)은 SQL을 돌린 뒤에 생긴다. 칸이 없는 DB에 보내면 멤버 저장 자체가 실패하니
-        // 칸이 있을 때(읽은 줄에 키가 있음)나 사진을 올릴 때만 보낸다.
-        if(Object.prototype.hasOwnProperty.call(row,'photo_path'))payload.photo_path=document.getElementById('am_photo_clear')?.checked?null:(row.photo_path||null);
 
         if(!payload.name||!payload.nickname)throw new Error('이름과 닉네임은 필수입니다');
         const file=document.getElementById('am_avatar')?.files?.[0];
         if(file)payload.avatar_path=await C().uploadMedia(file,'members',payload.soop_id||payload.nickname);
-        const photo=document.getElementById('am_photo')?.files?.[0];
-        if(photo){
-          if(photo.size>10*1024*1024)throw new Error('대표 사진은 10MB 이하만 올릴 수 있습니다(2MB 이하 권장)');
-          payload.photo_path=await C().uploadMedia(photo,'members-photo',payload.soop_id||payload.nickname);
-        }
         let error;
         if(row.id)({error}=await C().state.client.from('members').update(payload).eq('id',row.id));
         else{
