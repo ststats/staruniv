@@ -198,6 +198,67 @@ def ocr(img: Image.Image, lang: str) -> str:
     return pytesseract.image_to_string(img, lang=lang, config='--psm 7').strip()
 
 
+def _word_spans(a, bg):
+    """글씨가 있는 열을 단어(묶음) 단위 [시작, 끝) 목록으로. 3px 넘게 비면 다른 단어."""
+    ink = np.abs(a - bg).sum(axis=2) > 150
+    cols = ink.any(axis=0)
+    spans, x, W = [], 0, a.shape[1]
+    while x < W:
+        if cols[x]:
+            s = x
+            while x < W and cols[x:x + 3].any():
+                x += 1
+            spans.append((s, x))
+        x += 1
+    return spans
+
+
+def strip_badge(crop: Image.Image, bg) -> Image.Image:
+    """닉네임 뒤 '학생회장'·'인턴' 뱃지(검은 글씨 + 밝은 테두리)를 잘라 낸다.
+    이름 글씨가 밝은 구역에서, 뒤쪽 단어에 바탕보다 어두운 점이 많으면 뱃지다. 이름 글씨 자체가
+    어두운 구역(노란 바탕 등)은 뱃지를 구분할 수 없어 그대로 둔다(그 구역엔 앞에 직책이 붙는다)."""
+    a = np.asarray(crop.convert('RGB')).astype(int)
+    bgv = np.array(bg)
+    lum = a.mean(axis=2)
+    spans = _word_spans(a, bgv)
+    if len(spans) < 2:
+        return crop
+    dark = lambda s, e: int((lum[:, s:e] < bgv.mean() - 40).sum())
+    if dark(*spans[0]) >= 30:
+        return crop
+    for s, e in spans[1:]:
+        if dark(s, e) >= 60:
+            return crop.crop((0, 0, max(1, s - 2), crop.height))
+    return crop
+
+
+def name_ink(crop: Image.Image, bg, scale=4) -> Image.Image:
+    """닉네임 OCR용: 흑백으로 딱 자르지 않고 바탕과 다른 정도를 회색 농도로 남긴 채 4배로 키운다.
+    작은 한글은 글자 가장자리의 흐린 점이 획을 구분하는 단서라, 이진화(text_mask)보다 훨씬 잘 읽는다
+    (2026-09-25 티어표 219장: 정답률 63% → 95%, 시간 같음)."""
+    a = np.asarray(crop.convert('RGB')).astype(np.float32)
+    dist = np.abs(a - np.array(bg, dtype=np.float32)).sum(axis=2)
+    g = np.clip(255 - dist * 255 / max(200.0, float(np.percentile(dist, 98))), 0, 255).astype(np.uint8)
+    im = Image.fromarray(g, 'L').resize((crop.width * scale, crop.height * scale), Image.LANCZOS)
+    return ImageOps.expand(im, border=16, fill=255)
+
+
+_HANGUL = re.compile('[가-힣]')
+
+
+def read_name(crop: Image.Image, bg):
+    """(직책, 닉네임, 읽은 글씨). 한 줄로 못 읽으면(짧은 이름이 빈칸으로 나오는 경우) 읽는 방식을 바꿔 다시 본다."""
+    img = name_ink(strip_badge(cut_badge(crop), bg), bg)
+    raw, role, nick = '', '', ''
+    for psm in (7, 8, 13):
+        raw = pytesseract.image_to_string(img, lang='kor', config=f'--psm {psm}').strip() if pytesseract else ''
+        role, nick = split_role(raw)
+        nick = ''.join(ch for ch in nick if _HANGUL.match(ch) or ch.isalnum())
+        if _HANGUL.search(nick):
+            break
+    return role, nick, raw
+
+
 def cut_badge(crop: Image.Image) -> Image.Image:
     """닉네임 뒤에 붙는 흰 상자 뱃지(인턴·학생회장)를 잘라 낸다."""
     px = crop.load()
@@ -365,7 +426,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
                 photo = photo.resize((PHOTO, PHOTO), Image.LANCZOS)
             tx = x + side + 5
             tier_img = im.crop((tx, y + 2, tx + tw, y + 2 + TIER_BOX[1]))
-            name_img = cut_badge(im.crop((tx, y + 26, tx + tw, y + 50)))
+            name_img = im.crop((tx, y + 26, tx + tw, y + 50))
             race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
             tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
             card = {'row': row, 'col': col, 'x': x, 'y': y, 'side': side, 'bg': '%02x%02x%02x' % bg,
@@ -383,8 +444,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             # 놓친다. 같은 카드 그림은 매번 같게 읽히므로, 지난번에 이 선수 카드를 읽은 글씨(name_read)와 같으면
             # 글자 인식이 조금 틀렸더라도 바뀐 게 아니다(기억한 닉네임을 쓴다). 다르면 읽은 글씨를 그대로 넘겨
             # 비교 단계에서 '닉네임 변경' 후보가 된다.
-            name_raw = ocr(text_mask(name_img, bg), 'kor')
-            role, nick = split_role(name_raw)
+            role, nick, name_raw = read_name(name_img, bg)
             card['name_read'] = nick
             if known and nick and known.get('name_read') == nick:
                 nick = known['nickname']
