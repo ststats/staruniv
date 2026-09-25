@@ -128,8 +128,8 @@ function renderSynergyTopPhoto(top) {
     const box = document.getElementById('synergy-top-photo');
     if (!box) return;
     const ours = top ? top.ourMember : null;
-    // 대표 사진(움짤 WebP 등) → 없으면 SOOP 프로필 사진 → 그것도 없으면 빈 칸
-    const photo = (ours && storageMediaUrl(ours['대표 사진'])) || '';
+    // 대표 영상·사진(저장소 media/members/<SOOP ID> 파일, 사이트 데이터의 '대표 사진') → 없으면 SOOP 프로필 사진
+    const photo = (ours && /^media\/members\/[a-z0-9_-]+\.[a-z0-9]+(\?v=[0-9a-f]+)?$/.test(ours['대표 사진'] || '') && ours['대표 사진']) || '';
     const avatar = (ours && getProfileImgUrl(ours['SOOP ID'])) || '';
     const key = photo || avatar || 'none';
     if (box.dataset.src === key) return;          // 같은 사진이면 다시 그리지 않는다(움짤이 처음부터 다시 돌지 않게)

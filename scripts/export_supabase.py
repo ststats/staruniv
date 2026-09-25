@@ -93,8 +93,6 @@ def build_db(settings, teams, members, matches, rounds, tier_members):
                 "퇴단일": empty(r["left_date"]),
                 "MBTI": empty(r["mbti"]),
                 "YouTube": empty(r.get("youtube_url")),
-                # 방송통계 TOP 칸 사진(Storage staruniv-media 안 경로)
-                "대표 사진": empty(r.get("photo_path")),
             }
             for r in members
         ],

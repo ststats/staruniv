@@ -149,29 +149,14 @@ test('tier section latin label adds TIER only once', () => {
   assert.deepEqual(['갓', '1', 0, '8티어', '미분류'].map(tierLatinLabel), ['GOD TIER', '1 TIER', '0 TIER', '8 TIER', 'UNRANKED TIER']);
 });
 
-test('stats page: full-photo TOP card, then total / average / members tiles', () => {
+test('stats TOP card uses repo media files (media/members/<SOOP ID>), no DB upload path', () => {
   const html = read('templates/pages/stats.html');
   assert.match(html, /id="synergy-top-photo"/);
   assert.match(html, /'synergy-sum-avg', 'AVERAGE'/);
   const js = read('templates/assets/page-stats.js');
-  assert.match(js, /storageMediaUrl\(ours\['대표 사진'\]\)/);
-  assert.match(read('scripts/write_site_data.py'), /"대표 사진"/);
-  assert.match(read('supabase/staruniv.sql'), /alter table public\.members add column if not exists photo_path text/);
-});
-
-test('stats TOP accepts mp4/webm video (muted autoplay loop) and the bucket allows video', () => {
-  const js = read('templates/assets/page-stats.js');
-  assert.match(js, /\\\.\(mp4\|webm\)/);
+  assert.match(js, /\^media\\\/members\\\//);
   assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
-  assert.match(read('supabase/staruniv.sql'), /'video\/mp4','video\/webm'/);
-});
-
-test('member feature video: browser re-encodes to 720x404 H.264 MP4, otherwise the server does', () => {
-  const js = read('templates/assets/admin-members.js');
-  assert.match(js, /const CLIP=\{w:720,h:404,fps:30,maxSec:6/);
-  assert.match(js, /encoder:'avc1\.4d401f',muxer:'avc'/);
-  assert.match(read('templates/base.html'), /asset_url\('mp4-muxer\.js'\)/);
-  assert.match(js, /rpc\('admin_request_member_video'/);
-  assert.match(read('supabase/staruniv.sql'), /workflows\/member-video\.yml\/dispatches/);
-  assert.match(read('scripts/member_video.py'), /crop=720:404/);
+  assert.match(read('scripts/write_site_data.py'), /MEMBER_MEDIA_DIR = ROOT \/ "templates" \/ "static" \/ "media" \/ "members"/);
+  assert.doesNotMatch(read('templates/assets/admin-members.js'), /photo_path|encodeClip/);
+  assert.match(read('supabase/staruniv.sql'), /alter table public\.members drop column if exists photo_path/);
 });
