@@ -76,11 +76,14 @@ let SynergyMonths = [];
 // 요청이 겹칠 때(달을 빨리 여러 번 누름) 마지막으로 고른 달의 결과만 그린다.
 let _synergyLoadSeq = 0;
 
+// 결과를 받은 뒤 이 요청이 마지막으로 고른 달일 때만 상태에 적용하고 그린다. 늦게 온 옛 달의 응답(또는 실패)은
+// 상태·화면·주소를 건드리지 않는다.
 async function loadSynergyData(month = SynergyState.month) {
     const seq = ++_synergyLoadSeq;
     try {
-        await fetchSynergyData(month);
+        const result = await fetchSynergyResult(month);
         if (seq !== _synergyLoadSeq) return;
+        applySynergyResult(month, result);
         // [리디자인] 머리 오른쪽 UPDATED 칸에 들어간다 - 라벨이 이미 'UPDATED'라 접두어를 뺀다.
         document.getElementById('synergy-updated').innerText = formatKstDateTime(SynergyState.updatedAt, false) || '-';
         renderSynergyMonthText();
@@ -88,6 +91,7 @@ async function loadSynergyData(month = SynergyState.month) {
         renderSynergyTable();
     } catch (e) {
         if (seq !== _synergyLoadSeq) return;
+        SynergyState.failed = true;
         console.error(e);
         const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다');
         document.getElementById('synergy-tbody-male').innerHTML = errRow;

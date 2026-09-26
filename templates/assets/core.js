@@ -1143,11 +1143,19 @@ function memberInMonth(m, month) {
 // 방송통계 데이터를 달마다 한 번만 받아온다(여러 곳에서 불러도 요청은 1번). 실패하면 다음 호출 때 다시 시도.
 // month를 비우면 가장 최근 날짜(이번 달 누적)이고, 활동 중인 멤버만 active다.
 // 지난 달(YYYY-MM)은 그달 마지막 날짜의 누적을 읽고, 그 달에 팀에 있던 멤버만 담는다.
+// fetchSynergyResult는 결과({ data, statDate, updatedAt })만 돌려주고 SynergyState는 건드리지 않는다 -
+// 달을 빨리 바꾸면 먼저 보낸 요청이 늦게 올 수 있어서, 상태는 부르는 쪽이 '마지막으로 고른 달'인지 확인한 뒤
+// applySynergyResult로 적용한다(page-stats.js loadSynergyData). 달을 바꾸지 않는 화면(멤버 프로필)은
+// fetchSynergyData()로 최근 달을 받아 바로 적용한다.
 const _synergyRequests = new Map();
 function fetchSynergyData(month = '') {
-    if (_synergyRequests.has(month)) {
-        return _synergyRequests.get(month).then(result => applySynergyResult(month, result));
-    }
+    return fetchSynergyResult(month).then(
+        result => applySynergyResult(month, result),
+        err => { SynergyState.failed = true; throw err; });
+}
+
+function fetchSynergyResult(month = '') {
+    if (_synergyRequests.has(month)) return _synergyRequests.get(month);
 
     const request = (async () => {
         const client = publicSupabaseClient();
@@ -1230,11 +1238,8 @@ function fetchSynergyData(month = '') {
     })();
 
     _synergyRequests.set(month, request);
-    request.catch(() => {
-        SynergyState.failed = true;
-        _synergyRequests.delete(month);
-    });
-    return request.then(result => applySynergyResult(month, result));
+    request.catch(() => { _synergyRequests.delete(month); });   // 실패한 달은 다음에 다시 받는다
+    return request;
 }
 
 function applySynergyResult(month, result) {
