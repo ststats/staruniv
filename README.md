@@ -16,12 +16,18 @@
 
 | 무엇 | 언제 | 방법 |
 |---|---|---|
-| 스타유니브 빌드(`.github/workflows/build.yml`) | 매일 00:05·12:05(한국 시간) | 외부 크론이 `workflow_dispatch` 호출 |
+| 스타유니브 빌드(`.github/workflows/build.yml`) | 매일 00:05·12:05(한국 시간) | cron-job.org가 `workflow_dispatch` 호출 |
 | 〃 | `templates/`·`scripts/` 등을 main에 올릴 때 | push |
 | 〃 | 어드민 일정 화면 **"달력 사진 갱신"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
-| ststat 파이프라인(`pipeline.yml`) | 외부 크론 | `workflow_dispatch` |
-| 시너지 빌드(synergy `build.yml`) | 하루 2번 | 외부 크론이 `workflow_dispatch` 호출 |
+| ststat 파이프라인(`pipeline.yml`) | 매일 03:50·07:50·11:50·15:50·19:50·23:50(4시간마다) | cron-job.org가 `workflow_dispatch` 호출 |
+| 시너지 빌드(synergy `build.yml`) | 매일 00:05·12:05 | cron-job.org가 `workflow_dispatch` 호출 |
 | 방송 중 표시(`live_broadcasts`) | 2분마다 | Supabase pg_cron이 Edge Function `live-status` 호출(ststat 저장소) |
+
+cron-job.org 작업은 `POST https://api.github.com/repos/ststats/<저장소>/actions/workflows/<워크플로 파일>/dispatches`(본문 `{"ref":"main"}`)를
+GitHub 토큰으로 부릅니다(스타유니브 `build.yml`, 시너지 `build.yml`, ststat `pipeline.yml`). 실행이 안 보이면
+cron-job.org 실행 기록(응답 204가 정상) → 각 저장소 Actions 탭 순서로 확인합니다.
+Build·Pipeline은 먼저 테스트(`test.yml`)를 돌리고, 테스트가 실패하면 정기 실행이라도 배포·수집하지 않습니다
+(Actions 탭에 빨갛게 남음). 그동안 페이지가 Supabase에서 바로 읽는 데이터(일정·티어·방송통계 등)는 그대로 갱신됩니다.
 
 빌드는 30초 안팎입니다: Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
 달력을 캡처하고(`scripts/capture_calendar.py`, 러너에 깔린 크롬 사용, 한국 시간 기준) →

@@ -519,6 +519,10 @@ grant usage,select on sequence public.external_tools_id_seq to authenticated;
 
 -- 공개 방문자(anon)의 읽기 권한은 여기 한 곳에서만 관리한다(1번의 표 정의 쪽에는 두지 않는다).
 -- 표마다 전부 회수한 뒤 화면에 실제로 쓰는 열만 다시 준다. 쓰기는 1번의 관리자 정책만 허용한다.
+-- 운영 결정(2026-09-26):
+--   · hidden은 '화면에서 빼기'다(비공개 아님). 숨긴 영상·영상 추천·연혁도 API로는 읽히고, 페이지가 거른다.
+--   · 생일·성별은 공개 정보다. tier_members에서는 열을 주지 않지만 시너지 프로필이 쓰는
+--     daily_member_stats(ststat.sql 5·9번)와 members에서는 공개한다.
 
 revoke all on public.members from anon;
 revoke all on public.teams from anon;
