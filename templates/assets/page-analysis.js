@@ -1,7 +1,10 @@
 const ANALYSIS_PAGE_SIZE = 10;         // 최근 전적 한 페이지에 보여줄 경기 수
 const ANALYSIS_SUGGEST_STEP = 40;
 const ANALYSIS_FORM_COUNT = 10;        // '최근 10경기'
-const ANALYSIS_CHART_MONTHS = 18;      // 월별 그래프에 보여줄 최근 개월 수
+// 월별 전적에 보여줄 달 수(이번 달 포함). 기간 칩은 날짜로 자르지만(최근 365일 등) 월별 막대는 달 단위라,
+// 날짜로 자른 경기를 그대로 묶으면 첫 달이 며칠치만 든 채 한 칸 더 생겼다(1년 → 13개월). 그래서 이 그래프는
+// 칩에 맞는 '최근 N개월 전체'를 보여 준다.
+const ANALYSIS_MONTH_WINDOW = { all: 18, 365: 12, 90: 3, 30: 1 };
 const ANALYSIS_RATE_MIN = 5;           // 월별 승률 선을 그릴 최소 표본(이 미만인 달은 선을 끊는다)
 const ANALYSIS_MAP_STEP = 8;           // '맵별 전적' 한 번에 보여줄 개수(4열 x 2줄)
 const ANALYSIS_RIVAL_STEP = 8;         // '동티어 맞대결' 한 번에 보여줄 상대 수
@@ -316,7 +319,8 @@ function analysisFormHtml(rows) {
 // 월별 전적
 // ---------------------------------------------------------------------------
 function analysisMonthlyHtml(rows) {
-    if (rows.length < 2) return '';
+    // rows는 기간으로 자르지 않은 전체 경기다(달 단위로 자르려고).
+    if (!rows.length) return '';
     const byMonth = new Map();
     rows.forEach(r => {
         const key = String(r[0]).slice(0, 7);
@@ -327,15 +331,20 @@ function analysisMonthlyHtml(rows) {
     // 사이에 낀 빈 달도 자리를 남긴다 - 쉬었던 구간이 그래프에서 그대로 보이게.
     const months = [];
     const [sy, sm] = keys[0].split('-').map(Number);
-    const [ey, em] = keys[keys.length - 1].split('-').map(Number);
+    // 기간을 고르면 이번 달까지 그린다(최근에 쉬었으면 빈 달로 보인다). 전체는 마지막 경기 달까지.
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const lastKey = AnalysisState.period === 'all' || keys[keys.length - 1] > thisMonth ? keys[keys.length - 1] : thisMonth;
+    const [ey, em] = lastKey.split('-').map(Number);
     for (let y = sy, m = sm; y < ey || (y === ey && m <= em); m === 12 ? (y++, m = 1) : m++) {
         months.push(`${y}-${String(m).padStart(2, '0')}`);
     }
-    const data = months.slice(-ANALYSIS_CHART_MONTHS).map(key => {
+    const want = ANALYSIS_MONTH_WINDOW[AnalysisState.period] || ANALYSIS_MONTH_WINDOW.all;
+    const data = months.slice(-want).map(key => {
         const [w, l] = byMonth.get(key) || [0, 0];
         return { key, w, l, total: w + l };
     });
-    if (!data.length) return '';
+    if (data.reduce((n, d) => n + d.total, 0) < 2) return '';
 
     // 왼쪽에 경기 수, 오른쪽에 승률(%) 축을 따로 둔다. 예전엔 눈금이 하나도 없어서
     // 막대 높이도 승률 선 높이도 눈대중으로만 읽어야 했다.
@@ -442,7 +451,6 @@ const RATING_HELP = {
         ['승급', '티어 기준선은 당시 티어, 개인 폼은 지금 티어 기준'],
         ['표본', '기록이 적으면 티어 기준선 쪽으로 당겨짐'],
         ['비교', '같은 티어 순위와 개인 변화 확인용'],
-        ['구간', '전체 18개월 · 1년 12 · 90일 3 · 30일 1'],
         ['기간 칩', '가로축만 자릅니다 (계산은 동일)'],
     ],
     note: '그 시점에 최근 1년 기록이 없으면 선이 끊깁니다',
@@ -673,7 +681,7 @@ function analysisProfileHtml(pid) {
             <div class="col-lg-6">${analysisRaceHtml(e)}</div>
         </div>
         <div class="row g-3">
-            <div class="col-lg-6">${analysisMonthlyHtml(rows)}</div>
+            <div class="col-lg-6">${analysisMonthlyHtml(AnalysisState.rows[pid] || [])}</div>
             <div class="col-lg-6">${analysisRatingHtml(pid)}</div>
         </div>
         ${analysisMapHtml(rows)}
