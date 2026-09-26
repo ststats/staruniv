@@ -79,6 +79,21 @@ jobs:
       - name: Capture calendar image
         continue-on-error: true
         run: python scripts/capture_calendar.py
+      # 게시판이 쓰는 주소(staruniv.vercel.app/calendar.png)는 Supabase Storage의 이 사진을 보여준다
+      # (docs/vercel.json). 늘 같은 경로에 덮어쓰고, 캐시하지 않게 올린다.
+      - name: Upload calendar image to Supabase Storage
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ ! -s docs/data/calendar.png ]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY 또는 달력 사진이 없어 건너뜀"; exit 0
+          fi
+          curl -fsS -X POST "${SUPABASE_URL%/}/storage/v1/object/staruniv-media/calendar.png" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: image/png" -H "x-upsert: true" -H "cache-control: no-cache" \
+            --data-binary @docs/data/calendar.png
 
       - uses: actions/upload-pages-artifact@v5
         with:

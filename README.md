@@ -33,8 +33,10 @@ GitHub Pages로 넘깁니다. 그래서 늘 Pages와 같은 최신 내용입니�
 Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand`로 이 파일이 바뀐 커밋만 배포하게 해 두었습니다.
 `rewrites`가 아니라 `routes`를 씁니다. `rewrites`는 Vercel이 먼저 자기 파일을 찾아 폴더 주소(`/`, `/members/`)에서 404를 내기 때문입니다.
 
-달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`이고, 커뮤니티용 Cloudflare Worker가
-이 주소를 가져갑니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 배포합니다.
+달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`입니다. 빌드는 같은 사진을 Supabase Storage
+(`staruniv-media/calendar.png`, 캐시 없음)에도 덮어쓰고, 커뮤니티는 `https://staruniv.vercel.app/calendar.png`
+(`docs/vercel.json`이 Storage 사진을 캐시 금지 헤더와 함께 넘김)를 씁니다. Storage에 올리려면 저장소 Secrets에
+`SUPABASE_SERVICE_ROLE_KEY`가 있어야 합니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 씁니다.
 
 ## 관리자
 
