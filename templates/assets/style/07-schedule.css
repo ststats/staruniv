@@ -384,7 +384,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: #fff;
 }
 .cal-month-bar .cal-month-name { color: #fff; }
-/* 밝은 제목 줄 오른쪽의 달 이동(방송통계 '전체 요약'). 버튼은 제목 줄 개수 뱃지와 같은 네이비 바탕 */
+/* 밝은 제목 줄 오른쪽의 달 이동(방송통계 요약 제목 줄). 버튼은 제목 줄 개수 뱃지와 같은 네이비 바탕 */
 .section-title .cal-nav-group {
     gap: 6px;
     padding: 0;

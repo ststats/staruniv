@@ -31,7 +31,9 @@
     <div class="container">
     {#- 제목 줄 오른쪽 달 이동(일정 달력과 같은 모양): 방송통계가 있는 달(synergy_daily_dates) 사이를 오간다.
         달이 하나뿐이면 숨긴다. 지난 달은 그달 마지막 날짜의 누적(= 그달 최종 기록)을 보여 준다. #}
-    <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 요약</span>
+    {#- 제목은 고른 지표에 따라 '방송시간 요약'·'스폰판수 요약'처럼 바뀐다(page-stats.js). 처음엔 보이는 첫 지표로 #}
+    {%- set first_label = (stats_tabs | selectattr(0, 'equalto', visible_tabs[0]) | map(attribute=1) | first) if visible_tabs else '전체' %}
+    <div class="section-title" data-en="SUMMARY"><span class="section-title-label" id="synergy-summary-title">{{ first_label }} 요약</span><span id="synergy-summary-help"></span>
         <div class="cal-nav-group" id="synergy-month-nav" hidden>
             <button type="button" class="cal-nav-btn" id="synergy-month-prev" onclick="stepSynergyMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
             <div class="cal-nav-badge" id="synergy-month-title" aria-live="polite"></div>

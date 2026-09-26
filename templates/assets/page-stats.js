@@ -7,6 +7,8 @@
 // (예전엔 라벨·URL 변환표 2개·표시 if문·정렬 if문이 4군데에 흩어져 있었다)
 // [리디자인] formatValue는 요약 타일의 '합계'용이다. format은 행 하나(멤버 객체)를 받지만
 // 합계는 숫자 하나를 받으므로 서식 함수가 따로 필요하다.
+// 스폰승률 순위에 올리는 최소 판수(이보다 적으면 승률 순위 뒤로)
+const SPONSOR_RATE_MIN = 10;
 const SYNERGY_METRICS = {
     balloons: {
         label: '별풍선', url: 'balloons',
@@ -40,6 +42,18 @@ const SYNERGY_METRICS = {
             return games * 1e-6;
         },
         tiles: { total: ['전체 승률', '승률'], avg: ['평균 승률', '평균'] },
+        // 요약 제목 옆 도움말(분석 페이지와 같은 배지)
+        help: {
+            title: '스폰승률',
+            lead: '고른 달의 스폰 경기 승패와 승률입니다',
+            rows: [
+                ['순위', `${SPONSOR_RATE_MIN}판 이상 둔 멤버를 승률순으로, 그보다 적은 멤버는 그 뒤에 판수순`],
+                ['0판', '표에 - 로 표시'],
+                ['전체 승률', '모든 멤버의 승 합 ÷ 판 합'],
+                ['평균 승률', `${SPONSOR_RATE_MIN}판 이상 둔 멤버 승률의 평균`],
+            ],
+            note: `판수가 적으면 승률이 크게 흔들려(1전 1승 = 100%) 순위 기준을 ${SPONSOR_RATE_MIN}판으로 뒀습니다`,
+        },
         summarize: rows => {
             const wins = rows.reduce((n, m) => n + (m.sponsor_wins || 0), 0);
             const games = rows.reduce((n, m) => n + sponsorGames(m), 0);
@@ -52,8 +66,6 @@ const SYNERGY_METRICS = {
         },
     },
 };
-// 스폰승률 순위에 올리는 최소 판수(이보다 적으면 승률 순위 뒤로)
-const SPONSOR_RATE_MIN = 10;
 // 합계·평균 칸 이름표 기본값: [긴 이름(앞에 '이번 달'·'8월'이 붙음), 좁은 화면용]
 const SYNERGY_TILE_LABELS = { total: ['합계', '합계'], avg: ['평균', '평균'] };
 
@@ -323,6 +335,13 @@ function renderSynergySummary(rows) {
 
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
     setText('synergy-top-metric', config.label || '');
+    setText('synergy-summary-title', `${config.label || '전체'} 요약`);
+    // 도움말이 있는 지표만 배지를 단다. 지표가 바뀔 때만 다시 그린다(열어 둔 설명이 데이터 갱신에 닫히지 않게)
+    const helpBox = document.getElementById('synergy-summary-help');
+    if (helpBox && helpBox.dataset.metric !== SynergyState.metric) {
+        helpBox.dataset.metric = SynergyState.metric;
+        helpBox.innerHTML = config.help ? helpBadgeHtml(config.help) : '';
+    }
     setText('synergy-sum-count', rows.length ? `${rows.length}명` : '-');
 
     if (!rows.length) {

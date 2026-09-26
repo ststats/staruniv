@@ -114,3 +114,14 @@ test('실패한 달은 다시 고르면 새로 받는다', async () => {
     assert.equal(ctx.SynergyState.failed, false);
     assert.equal(ctx.SynergyState.data[0].balloons, 700);
 });
+
+test('page-stats.js 전체가 오류 없이 읽힌다(지표 설정이 아래 상수를 먼저 쓰는 실수 방지)', () => {
+    const ctx = vm.createContext({
+        console, formatCount: (v, u) => `${v}${u}`, formatSecondsToHM: v => `${v}`,
+        formatSponsorRecord: (w, l) => `${w}-${l}`, hasOwn: (o, k) => Object.prototype.hasOwnProperty.call(o, k),
+        bootPage() {},
+    });
+    vm.runInContext(read('templates/assets/page-stats.js'), ctx);
+    const help = vm.runInContext('SYNERGY_METRICS.sponsor_rate.help', ctx);
+    assert.match(help.rows[0][1], /^10판 이상/);
+});
