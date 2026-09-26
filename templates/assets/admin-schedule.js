@@ -124,57 +124,8 @@
     });
   }
 
-  // 달력 사진 갱신: 스타유니브 빌드를 실행해 docs/data/calendar.png를 새로 찍는다(외부 자동화가 가져가는 사진).
-  // GitHub 토큰은 브라우저에 두지 않는다 - Supabase 함수가 Vault의 토큰으로 GitHub에 요청한다
-  // (supabase/staruniv.sql 5절). 요청 뒤 GitHub 응답 코드를 잠깐 확인해서 실패하면 알려 준다.
-  async function requestCalendarCapture(btn) {
-    if (btn.disabled) return;
-    const label = btn.querySelector('span');
-    const idle = label.textContent;
-    btn.disabled = true;
-    label.textContent = '요청 중';
-    try {
-      const client = C().state.client;
-      const { data: requestId, error } = await client.rpc('admin_request_calendar_capture');
-      if (error) {
-        if (/admin_request_calendar_capture/.test(error.message || '') && /(find|exist)/i.test(error.message || ''))
-          throw new Error('Supabase에 supabase/staruniv.sql을 먼저 실행해야 합니다');
-        throw error;
-      }
-      let status = null, detail = '';
-      for (let i = 0; i < 10 && status === null; i++) {
-        await new Promise(r => setTimeout(r, 1000));
-        const res = await client.rpc('admin_calendar_capture_status', { p_request_id: requestId });
-        const row = (res.data || [])[0];
-        if (row && (row.status_code !== null || row.error)) { status = row.status_code; detail = row.error || ''; }
-      }
-      if (status === null && !detail) C().toast('요청을 보냈습니다. 1분쯤 뒤 calendar.png가 바뀝니다');
-      else if (status >= 200 && status < 300) C().toast('빌드를 시작했습니다. 1분쯤 뒤 calendar.png가 바뀝니다');
-      else throw new Error(`GitHub가 요청을 거절했습니다(${status || '응답 없음'}) ${detail}`.trim());
-    } catch (e) {
-      C().toast(C().errorText ? C().errorText(e) : String(e.message || e), 'error');
-    } finally {
-      btn.disabled = false;
-      label.textContent = idle;
-    }
-  }
-
-  function addCaptureButton() {
-    const view = document.getElementById('view-calendar');
-    if (!view || document.getElementById('adminCalendarCapture')) return;
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.id = 'adminCalendarCapture';
-    b.className = 'admin-floating-add';
-    b.dataset.icon = 'refresh';
-    b.innerHTML = '<span>달력 사진 갱신 (calendar.png)</span>';
-    b.onclick = () => requestCalendarCapture(b);
-    view.prepend(b);
-  }
-
   async function init() {
     if (document.body.dataset.adminPage !== 'schedule') return;
-    addCaptureButton();
     await C().loadMembers();
     const publicOffAirExtra = window.calOffAirExtra;
     window.calCardExtra = item => C().state.editMode

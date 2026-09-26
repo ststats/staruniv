@@ -11,12 +11,12 @@
 --        select id, 'owner' from auth.users where email = '관리자 이메일'
 --        on conflict (user_id) do update set role = excluded.role, is_active = true;
 --   2) GitHub 토큰(저장소 ststats/staruniv만, 권한 Actions = Read and write)을 Vault에 넣기
---      ('달력 사진 갱신' 버튼과 '티어표 갱신'이 쓴다. 토큰 값은 이 파일에 적지 말 것):
+--      ('사이트 빌드' 버튼과 '티어표 갱신'이 쓴다. 토큰 값은 이 파일에 적지 말 것):
 --        select vault.create_secret('<토큰>', 'github_actions_token');
 --      바꿀 때: select vault.update_secret((select id from vault.secrets where name = 'github_actions_token'), '<새 토큰>');
 --
 -- 구성(순서대로): 1 기본 스키마·관리자 권한·영상·도구 → 2 공개 읽기 권한 → 3 어드민 편집 보조
---                 → 4 어드민 ELO 통계 → 5 달력 사진 갱신 → 6 티어표 갱신 → 7 대학 로고
+--                 → 4 어드민 ELO 통계 → 5 사이트 빌드 버튼 → 6 티어표 갱신 → 7 대학 로고
 
 
 -- ############################################################################
@@ -798,11 +798,11 @@ grant execute on function public.admin_elo_stats() to authenticated;
 
 
 -- ############################################################################
--- 5. 달력 사진 갱신 버튼
+-- 5. 사이트 빌드 버튼
 -- ############################################################################
 
--- 어드민 일정 화면의 '달력 사진 갱신' 버튼이 부르는 함수.
--- 스타유니브 빌드(build.yml)를 실행해 docs/data/calendar.png를 새로 찍는다
+-- 어드민 상단 '사이트 빌드' 버튼이 부르는 함수(예전 일정 화면의 '달력 사진 갱신' 버튼이라 이름이 calendar_capture다).
+-- 스타유니브 빌드(build.yml)를 실행해 멤버·전적·연혁 데이터와 docs/data/calendar.png를 새로 만든다
 -- (외부 자동화가 이 사진 주소를 가져간다). GitHub 토큰은 브라우저에 두지 않고 Vault에서 꺼내 쓴다.
 -- GitHub 토큰 준비는 이 파일 맨 위 참고.
 -- 버튼을 여러 번 눌러도 빌드가 줄줄이 쌓이지 않는다: 워크플로의 concurrency 설정 때문에
@@ -882,7 +882,7 @@ drop function if exists public.request_calendar_capture();
 -- 티어표 갱신(반자동): 펨코 티어표 이미지 주소 + FA 명단 글을 넣으면 GitHub Actions가
 -- scripts/tier_table.py로 읽어 DB와 비교하고, 결과를 tier_update_jobs.result에 넣는다.
 -- 관리자는 결과를 보고 반영할 것만 골라 반영한다(반영 함수는 이 절 아래쪽).
--- '달력 사진 갱신'과 같은 GitHub 토큰(Vault의 github_actions_token)을 쓴다.
+-- '사이트 빌드' 버튼과 같은 GitHub 토큰(Vault의 github_actions_token)을 쓴다.
 
 create extension if not exists pg_net with schema extensions;
 

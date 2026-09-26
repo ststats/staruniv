@@ -266,7 +266,42 @@
     document.dispatchEvent(new CustomEvent('admin:edit-mode', {detail:{enabled:state.editMode}}));
   }
 
+  // 사이트 빌드: 스타유니브 빌드(build.yml)를 바로 실행한다. 멤버·전적·연혁·대표 영상처럼 빌드 때 만드는
+  // 데이터와 달력 사진(calendar.png)이 00:05·12:05 정기 빌드를 기다리지 않고 2~3분 안에 공개 사이트에 반영된다.
+  // GitHub 토큰은 브라우저에 두지 않는다 - Supabase 함수가 Vault의 토큰으로 GitHub에 요청한다
+  // (supabase/staruniv.sql 5절. 함수 이름은 예전 '달력 사진 갱신' 버튼 때 그대로). 응답 코드를 잠깐 확인해 실패를 알린다.
+  async function requestSiteBuild(btn) {
+    if (btn.disabled || !state.client) return;
+    const idle = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '빌드 요청 중';
+    try {
+      const { data: requestId, error } = await state.client.rpc('admin_request_calendar_capture');
+      if (error) {
+        if (/admin_request_calendar_capture/.test(error.message || '') && /(find|exist)/i.test(error.message || ''))
+          throw new Error('Supabase에 supabase/staruniv.sql을 먼저 실행해야 합니다');
+        throw error;
+      }
+      let status = null, detail = '';
+      for (let i = 0; i < 10 && status === null; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        const res = await state.client.rpc('admin_calendar_capture_status', { p_request_id: requestId });
+        const row = (res.data || [])[0];
+        if (row && (row.status_code !== null || row.error)) { status = row.status_code; detail = row.error || ''; }
+      }
+      if (status === null && !detail) toast('빌드를 요청했습니다. 2~3분 뒤 공개 사이트에 반영됩니다');
+      else if (status >= 200 && status < 300) toast('빌드를 시작했습니다. 2~3분 뒤 공개 사이트에 반영됩니다');
+      else throw new Error(`GitHub가 요청을 거절했습니다(${status || '응답 없음'}) ${detail}`.trim());
+    } catch (e) {
+      toast(errorText(e), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = idle;
+    }
+  }
+
   function bindCommonUi() {
+    $('adminBuildButton')?.addEventListener('click', ev => requestSiteBuild(ev.currentTarget));
     $('loginForm')?.addEventListener('submit', login);
     $('adminLogoutButton')?.addEventListener('click', logout);
     $('deniedLogout')?.addEventListener('click', logout);

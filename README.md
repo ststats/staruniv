@@ -18,7 +18,7 @@
 |---|---|---|
 | 스타유니브 빌드(`.github/workflows/build.yml`) | 매일 00:05·12:05(한국 시간) | cron-job.org가 `workflow_dispatch` 호출 |
 | 〃 | `templates/`·`scripts/` 등을 main에 올릴 때 | push |
-| 〃 | 어드민 일정 화면 **"달력 사진 갱신"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
+| 〃 | 어드민 상단 **"사이트 빌드"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
 | ststat 파이프라인(`pipeline.yml`) | 매일 03:50·07:50·11:50·15:50·19:50·23:50(4시간마다) | cron-job.org가 `workflow_dispatch` 호출 |
 | 시너지 빌드(synergy `build.yml`) | 매일 00:05·12:05 | cron-job.org가 `workflow_dispatch` 호출 |
 | 방송 중 표시(`live_broadcasts`) | 2분마다 | Supabase pg_cron이 Edge Function `live-status` 호출(ststat 저장소) |
@@ -48,9 +48,9 @@ Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand
 
 - 주소: 공개 페이지 이름 앞에 `admin-`(홈은 `admin.html`). 공개 페이지를 어드민 모드로 빌드한 것이고, Supabase 로그인 후 관리자만 편집할 수 있습니다.
 - 어드민 홈 맨 위 **운영 현황**: 최근 파이프라인 결과, ELO 경기 수·범위, 테이블 건수.
-- 멤버·전적을 고친 뒤 공개 사이트에 바로 보이게 하려면 빌드를 한 번 돌리세요(Actions → Build → Run workflow, 또는 "달력 사진 갱신" 버튼).
+- 멤버·전적을 고친 뒤 공개 사이트에 바로 보이게 하려면 빌드를 한 번 돌리세요(어드민 상단 "사이트 빌드" 버튼, 또는 Actions → Build → Run workflow).
 
-### "달력 사진 갱신" 버튼 설정(한 번만)
+### "사이트 빌드" 버튼 설정(한 번만)
 
 1. GitHub에서 fine-grained 토큰 발급: 저장소 `ststats/staruniv`만, 권한 **Actions: Read and write**
 2. Supabase SQL 편집기: `select vault.create_secret('<토큰>', 'github_actions_token');`
@@ -106,12 +106,12 @@ npm test                              # node --test (의존성 없음)
 |---|---|---|
 | `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
-| `github_actions_token` | Supabase Vault | "달력 사진 갱신" 버튼, 티어표 갱신 |
+| `github_actions_token` | Supabase Vault | "사이트 빌드" 버튼, 티어표 갱신 |
 
 ## Supabase SQL
 
 - 공유 DB의 파이프라인 스키마와 공개 뷰: `ststat/supabase/ststat.sql`
-- 이 저장소: **`supabase/staruniv.sql` 한 파일**(사이트·관리자 표, 권한, 달력 사진 갱신, 티어표 갱신).
+- 이 저장소: **`supabase/staruniv.sql` 한 파일**(사이트·관리자 표, 권한, 사이트 빌드 버튼, 티어표 갱신).
   SQL 편집기에 통째로 붙여 넣고 실행하면 되고, 여러 번 실행해도 됩니다. 표·열은 없을 때만 만들고
   함수·정책·권한은 최신으로 다시 쓰며, 운영 데이터(일정·휴방·연혁·메뉴 설정·영상·선수)는 건드리지 않습니다.
   SQL을 고칠 때는 이 파일만 고치고, 고친 뒤 한 번 실행하면 됩니다.
