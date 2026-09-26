@@ -429,79 +429,6 @@ $$;
 revoke all on function public.admin_save_match(jsonb, jsonb) from public;
 grant execute on function public.admin_save_match(jsonb, jsonb) to authenticated;
 
--- 관리자 계정 등록 예시
--- 1) Authentication > Users > Add user 로 이메일/비밀번호 계정을 만든 뒤
--- 2) 아래 EMAIL 부분만 바꾸고 실행하세요.
--- insert into public.admin_users (user_id, role)
--- select id, 'owner' from auth.users where email = 'YOUR_ADMIN_EMAIL@example.com'
--- on conflict (user_id) do update set role = excluded.role, is_active = true;
-
--- ============================================================================
--- 캘린더/휴방/메뉴 데이터
--- ============================================================================
-
--- 일정/휴방/메뉴 설정 표(예전 정적 JSON에서 옮겨 왔다)
-
-create table if not exists public.calendar_events (
-  id bigint primary key,
-  source_order integer not null unique,
-  start_date date not null,
-  end_date date not null,
-  event_time text,
-  person text not null default '',
-  description text,
-  detail text,
-  color text
-);
-create index if not exists calendar_events_date_idx on public.calendar_events (start_date, end_date);
-
-create table if not exists public.calendar_off_air (
-  off_date date not null,
-  soop_id text not null,
-  source_order integer not null default 0,
-  primary key (off_date, soop_id)
-);
-create index if not exists calendar_off_air_date_idx on public.calendar_off_air (off_date, source_order);
-
-create table if not exists public.site_config (
-  config_key text primary key,
-  config_value jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.calendar_events enable row level security;
-alter table public.calendar_off_air enable row level security;
-alter table public.site_config enable row level security;
-
-
--- 공개 사이트 읽기 권한
-revoke all on public.calendar_events, public.calendar_off_air, public.site_config from anon;
-grant select (id,source_order,start_date,end_date,event_time,person,description,detail,color) on public.calendar_events to anon;
-grant select (off_date,soop_id,source_order) on public.calendar_off_air to anon;
-grant select (config_key,config_value) on public.site_config to anon;
-
-drop policy if exists "public_read_calendar_events" on public.calendar_events;
-create policy "public_read_calendar_events" on public.calendar_events for select to anon using (true);
-drop policy if exists "public_read_calendar_off_air" on public.calendar_off_air;
-create policy "public_read_calendar_off_air" on public.calendar_off_air for select to anon using (true);
-drop policy if exists "public_read_site_config" on public.site_config;
-create policy "public_read_site_config" on public.site_config for select to anon using (config_key = 'nav');
-
--- 관리자 CRUD. public.is_admin()은 이 통합 설정의 앞부분에서 설치합니다.
-do $$
-declare t text;
-begin
-  foreach t in array array['calendar_events','calendar_off_air','site_config']
-  loop
-    execute format('drop policy if exists %I on public.%I', 'admins_all_' || t, t);
-    execute format(
-      'create policy %I on public.%I for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()))',
-      'admins_all_' || t, t
-    );
-  end loop;
-end $$;
-
-grant select, insert, update, delete on public.calendar_events, public.calendar_off_air, public.site_config to authenticated;
 
 -- ============================================================================
 -- 운영 이미지 Storage (연혁 사진/팀 로고/커스텀 프로필)
@@ -513,14 +440,6 @@ grant select, insert, update, delete on public.calendar_events, public.calendar_
 alter table public.members add column if not exists avatar_path text;
 alter table public.teams add column if not exists logo_path text;
 
-create table if not exists public.history_entries (
-  id text primary key,
-  entry_kind text not null default 'manual' check (entry_kind in ('manual','override')),
-  event_date date, event_type text, title text, description text,
-  members jsonb not null default '[]'::jsonb, youtube_url text, image_path text,
-  sort_order integer, hidden boolean not null default false, updated_at timestamptz not null default now()
-);
-alter table public.history_entries enable row level security;
 
 -- 공개 Storage 버킷. URL은 공개지만 쓰기/삭제는 관리자만 가능하다.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -535,67 +454,6 @@ drop policy if exists "staruniv_media_admin_update" on storage.objects;
 create policy "staruniv_media_admin_update" on storage.objects for update to authenticated using (bucket_id='staruniv-media' and (select public.is_admin())) with check (bucket_id='staruniv-media' and (select public.is_admin()));
 drop policy if exists "staruniv_media_admin_delete" on storage.objects;
 create policy "staruniv_media_admin_delete" on storage.objects for delete to authenticated using (bucket_id='staruniv-media' and (select public.is_admin()));
-
--- 현재 history.json 메타데이터를 최초 1회 시드한다. 운영 DB에 이미 같은 id가 있으면 건드리지 않는다.
-
--- ============================================================================
--- 공개 사이트 읽기 권한
--- ============================================================================
-
--- 공개 사이트가 Supabase를 직접 읽기 위한 최소 권한 설정.
--- 관리자(authenticated)의 CRUD 정책은 이 통합 설정의 관리자 정책을 유지합니다.
-
--- 공개 방문자는 사이트 화면에 실제로 쓰는 컬럼만 SELECT할 수 있습니다.
-revoke all on public.members from anon;
-revoke all on public.matches from anon;
-revoke all on public.rounds from anon;
-revoke all on public.tier_members from anon;
-
-grant select (source_order, nickname, soop_id, birth_date, gender, race, tier, role, joined_date, left_date, mbti, avatar_path, youtube_url)
-  on public.members to anon;
-grant select (team_name, logo_path) on public.teams to anon;
-grant select (source_order, match_no, match_date, opponent_team, match_format, method, final_result, set_result)
-  on public.matches to anon;
-grant select (source_order, match_no, match_date, opponent_team, match_format, set_name, round_name, our_player, our_race, result, opponent_player, opponent_race, map_name)
-  on public.rounds to anon;
-grant select (source_order, nickname, soop_id, race, tier, affiliation, modified_at)
-  on public.tier_members to anon;
-
-drop policy if exists "public_read_teams" on public.teams;
-create policy "public_read_teams" on public.teams for select to anon using (true);
-drop policy if exists "public_read_members" on public.members;
-create policy "public_read_members" on public.members for select to anon using (true);
-drop policy if exists "public_read_matches" on public.matches;
-create policy "public_read_matches" on public.matches for select to anon using (true);
-drop policy if exists "public_read_rounds" on public.rounds;
-create policy "public_read_rounds" on public.rounds for select to anon using (true);
-drop policy if exists "public_read_tier_members" on public.tier_members;
-create policy "public_read_tier_members" on public.tier_members for select to anon using (true);
-
-
--- 일정/휴방/메뉴 설정도 공개 사이트가 직접 읽는다.
-revoke all on public.calendar_events from anon;
-revoke all on public.calendar_off_air from anon;
-revoke all on public.site_config from anon;
-
-grant select (id, source_order, start_date, end_date, event_time, person, description, detail, color)
-  on public.calendar_events to anon;
-grant select (off_date, soop_id, source_order) on public.calendar_off_air to anon;
-grant select (config_key, config_value) on public.site_config to anon;
-
-drop policy if exists "public_read_calendar_events" on public.calendar_events;
-create policy "public_read_calendar_events" on public.calendar_events for select to anon using (true);
-drop policy if exists "public_read_calendar_off_air" on public.calendar_off_air;
-create policy "public_read_calendar_off_air" on public.calendar_off_air for select to anon using (true);
-drop policy if exists "public_read_site_config" on public.site_config;
-create policy "public_read_site_config" on public.site_config for select to anon using (config_key = 'nav');
-
-
--- 연혁은 공개 사이트에서 바로 읽는다.
-revoke all on public.history_entries from anon;
-grant select (id, entry_kind, event_date, event_type, title, description, members, youtube_url, image_path, sort_order, hidden) on public.history_entries to anon;
-drop policy if exists "public_read_history_entries" on public.history_entries;
-create policy "public_read_history_entries" on public.history_entries for select to anon using (true);
 
 
 -- ============================================================================
@@ -630,17 +488,6 @@ do $$ declare t text; begin
 end $$;
 grant select,insert,update,delete on public.video_channels,public.videos,public.video_picks to authenticated;
 
--- 공개 영상 탭 읽기
-revoke all on public.video_channels,public.videos,public.video_picks from anon;
-grant select (channel_url,channel_id,title,display_name,thumb,uploads,source_order,active) on public.video_channels to anon;
-grant select (id,channel_url,title,published,thumb,views,short,hidden) on public.videos to anon;
-grant select (id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order) on public.video_picks to anon;
-drop policy if exists public_read_video_channels on public.video_channels;
-create policy public_read_video_channels on public.video_channels for select to anon using (active=true);
-drop policy if exists public_read_videos on public.videos;
-create policy public_read_videos on public.videos for select to anon using (true);
-drop policy if exists public_read_video_picks on public.video_picks;
-create policy public_read_video_picks on public.video_picks for select to anon using (true);
 -- ============================================================================
 -- 도구 > 외부도구 (기존 어드민 관리 링크)
 -- 멀티뷰어/엔트리/캄몬라이더 자체 기능은 Git에 남고, 여기에는 외부 링크만 저장한다.
@@ -658,8 +505,6 @@ create table if not exists public.external_tools (
 create index if not exists external_tools_category_order_idx on public.external_tools(category, source_order);
 alter table public.external_tools enable row level security;
 
--- 현재 docs/data/tools.json 최초 시드. 이미 같은 URL이 있으면 건드리지 않는다.
-
 -- 관리자 CRUD
 drop policy if exists admins_all_external_tools on public.external_tools;
 create policy admins_all_external_tools on public.external_tools for all to authenticated
@@ -667,19 +512,13 @@ using ((select public.is_admin())) with check ((select public.is_admin()));
 grant select,insert,update,delete on public.external_tools to authenticated;
 grant usage,select on sequence public.external_tools_id_seq to authenticated;
 
--- 공개 사이트 읽기
-revoke all on public.external_tools from anon;
-grant select (id,category,name,url,favicon,source_order,active) on public.external_tools to anon;
-drop policy if exists public_read_external_tools on public.external_tools;
-create policy public_read_external_tools on public.external_tools for select to anon using (active=true);
-
 
 -- ############################################################################
 -- 2. 공개 사이트 읽기 권한
 -- ############################################################################
 
--- Idempotent public read grants for the browser-facing site.
--- Write access remains restricted to the existing authenticated admin policies.
+-- 공개 방문자(anon)의 읽기 권한은 여기 한 곳에서만 관리한다(1번의 표 정의 쪽에는 두지 않는다).
+-- 표마다 전부 회수한 뒤 화면에 실제로 쓰는 열만 다시 준다. 쓰기는 1번의 관리자 정책만 허용한다.
 
 revoke all on public.members from anon;
 revoke all on public.teams from anon;
