@@ -141,13 +141,10 @@ function stepSynergyMonth(delta) {
 // 머리 설명과 합계·평균 이름표: 이번 달이면 '이번 달', 지난 달이면 'N월'
 function renderSynergyMonthText() {
     const month = SynergyState.month;
-    const monthNum = month ? Number(month.split('-')[1]) : 0;
     const sub = document.getElementById('synergy-subtitle');
     if (sub) {
-        // 지난 달은 그달 마지막 집계일까지의 누적이다(보통 말일)
-        const [, mm, dd] = String(SynergyState.statDate).split('-').map(Number);
         sub.innerText = month
-            ? `캄몬스타즈 멤버들의 ${synergyMonthLabel(month)} 방송 통계입니다 (${mm}월 ${dd}일까지)`
+            ? `캄몬스타즈 멤버들의 ${synergyMonthLabel(month)} 방송 통계입니다`
             : '캄몬스타즈 멤버들의 이번 달 방송 통계입니다';
     }
     renderSynergyTileLabels();
