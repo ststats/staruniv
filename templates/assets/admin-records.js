@@ -149,7 +149,8 @@
     if(S.view!=='matches')return;
     const root=document.getElementById('adminDedicatedRoot');root.hidden=false;document.body.classList.add('admin-dedicated-active');
     const pages=Math.max(1,Math.ceil(S.count/S.size));
-    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><div class="admin-hero-actions"><button class="admin-btn primary" id="recordsAdd">+ 새 매치</button></div><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell">
+    root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">전적 관리</h1><p class="page-header-subtitle">캄몬스타즈 매치와 세트 기록을 추가하고 수정합니다. 행을 누르면 세트가 펼쳐집니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell">
+      <div class="admin-action-bars"><button type="button" class="admin-floating-add" id="recordsAdd" data-icon="plus">새 매치</button></div>
       <div class="admin-toolbar admin-filter-grid">
         <input class="admin-input" id="recordsDate" type="date" value="${esc(C().value('recordsDate'))}">
         <input class="admin-input" id="recordsOpponent" placeholder="상대 대학" value="${esc(C().value('recordsOpponent'))}">

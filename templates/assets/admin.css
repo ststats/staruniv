@@ -25,8 +25,6 @@ body.admin-mode {
     --admin-field: var(--color-card);
     --admin-line: #e2e4e8;
     --admin-soft: #f3f4f6;
-    --admin-ico-plus-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='white' stroke-width='2.2'/%3E%3C/svg%3E");
-    --admin-ico-edit-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
     padding-top: var(--admin-bar-h);
 }
 html[data-theme="dark"] body.admin-mode {
@@ -34,8 +32,6 @@ html[data-theme="dark"] body.admin-mode {
     --admin-on-ink: #111a2c;
     --admin-soft: #1b1f27;
     --admin-line: #2b3039;
-    --admin-ico-plus-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='%23111a2c' stroke-width='2.2'/%3E%3C/svg%3E");
-    --admin-ico-edit-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='%23111a2c' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 .admin-hidden.admin-hidden { display: none !important; }
@@ -818,13 +814,15 @@ body.admin-drawer-open { overflow: hidden; }
    한눈에 구분되게 하려는 것. 아이콘은 currentColor 마스크라 글자색을 따른다.
    ============================================================================= */
 :root {
+    --admin-ico-plus-navy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='%2314264a' stroke-width='2.2'/%3E%3C/svg%3E");
+    --admin-ico-edit-navy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='%2314264a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
     --admin-ico-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='black' stroke-width='2.2'/%3E%3C/svg%3E");
     --admin-ico-edit: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
     --admin-ico-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 10.5l5-5 5 5' fill='none' stroke='black' stroke-width='2.2'/%3E%3C/svg%3E");
 }
-:is(.admin-nav-manage, .admin-subtab-manage, .admin-floating-add)[data-icon="plus"] { --admin-ico: var(--admin-ico-plus); }
-:is(.admin-nav-manage, .admin-subtab-manage, .admin-floating-add)[data-icon="edit"] { --admin-ico: var(--admin-ico-edit); }
-:is(.admin-nav-manage, .admin-subtab-manage)[data-icon]::before {
+:is(.admin-nav-manage, .admin-floating-add)[data-icon="plus"] { --admin-ico: var(--admin-ico-plus); }
+:is(.admin-nav-manage, .admin-floating-add)[data-icon="edit"] { --admin-ico: var(--admin-ico-edit); }
+.admin-nav-manage[data-icon]::before {
     content: "";
     flex: none;
     width: 12px;
@@ -892,9 +890,8 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-nav-manage:hover { background: var(--admin-ink); box-shadow: none; color: var(--admin-on-ink); }
 
-/* 네이비 히어로 위 편집 도구 (서브탭 편집 · 전적/티어표 버튼 · 홈 캐러셀 편집) 한 모양:
+/* 네이비 히어로 위 편집 도구 (홈 캐러셀 편집) 한 모양:
    공개 사이트 네이비 면 위 버튼과 같은 흰 반투명 면 + 흰 글씨. 주요 동작만 흰 바탕 */
-.admin-subtab-manage,
 .page-header .admin-btn,
 .admin-home-edit {
     display: inline-flex;
@@ -916,12 +913,10 @@ body.admin-drawer-open { overflow: hidden; }
     cursor: pointer;
     transition: background-color .15s, color .15s;
 }
-.admin-subtab-manage:hover,
 .page-header .admin-btn:hover,
 .admin-home-edit:hover { background: rgba(255, 255, 255, .22); color: #fff; }
 .page-header .admin-btn.primary,
 .page-header .admin-btn.primary:hover { background: #fff; color: var(--navy); }
-.admin-subtab-manage { margin-left: 16px; }
 .admin-home-edit::before {
     content: "";
     width: 12px;
@@ -931,8 +926,9 @@ body.admin-drawer-open { overflow: hidden; }
     mask: var(--admin-ico-edit) center / contain no-repeat;
 }
 
-/* 페이지 관리 막대 (멤버 추가 · 채널 관리 · 보자 영상 추가 · 도구 추가)
-   섹션 맨 위에 가로로 꽉 차게 놓는다: [EDIT] 이름 ................ [아이콘] */
+/* 페이지 관리 막대 (서브탭 편집 · 멤버 추가 · 채널 관리 · 보자 영상 추가 · 도구 추가 · 새 매치 · 새 선수 · 연혁 추가)
+   모든 페이지에서 같은 자리(본문 맨 위)·같은 모양. 공개 사이트의 네이비 사선 박스(페이지 머리 · 요약 칸)와 같은 면:
+   [EDIT] 이름 ................ [흰 칸 아이콘] - 네이비 면 위 주요 동작은 흰 바탕(선택 = 바탕의 반대색) */
 .admin-floating-add {
     display: flex;
     align-items: center;
@@ -940,25 +936,25 @@ body.admin-drawer-open { overflow: hidden; }
     width: 100%;
     min-height: 54px;
     margin: 0 0 var(--space-content-gap);
-    padding: 0 9px 0 16px;
+    padding: 0 10px 0 16px;
     border: 0;
-    background: var(--admin-field);
-    box-shadow: inset 3px 0 0 var(--admin-ink);
-    color: var(--color-text-strong);
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
+    color: var(--navy-on-text);
     clip-path: var(--notch-md);
     font-family: inherit;
     font-size: 14px;
     font-weight: 700;
     text-align: left;
     cursor: pointer;
-    transition: background-color .15s;
+    transition: box-shadow .15s;
 }
 .admin-floating-add::before {
     content: "EDIT";
     flex: none;
     padding: 4px 6px;
-    background: var(--admin-ink);
-    color: var(--admin-on-ink);
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
     clip-path: var(--notch-xs);
     font-size: 9px;
     font-weight: 800;
@@ -968,25 +964,34 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-floating-add::after {
     content: "";
     flex: none;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     margin-left: auto;
-    background-color: var(--admin-ink);
-    background-image: var(--admin-ico-plus-on-ink);
+    background-color: #fff;
+    background-image: var(--admin-ico-plus-navy);
     clip-path: var(--notch-sm);
     background-position: center;
     background-repeat: no-repeat;
     background-size: 14px;
 }
-.admin-floating-add[data-icon="edit"]::after { background-image: var(--admin-ico-edit-on-ink); }
+.admin-floating-add[data-icon="edit"]::after { background-image: var(--admin-ico-edit-navy); }
 .admin-floating-add:disabled { opacity: .6; cursor: wait; }
-.admin-floating-add:hover { background: var(--admin-soft); }
+.admin-floating-add:hover { box-shadow: inset 0 0 0 999px rgba(255, 255, 255, .07); }
+/* 한 페이지에 막대가 여럿이면(티어표: 새 선수 · 일괄 수정) 한 줄에 나란히, 좁으면 아래로 */
+.admin-action-bars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+    margin-bottom: var(--space-content-gap);
+}
+.admin-action-bars > .admin-floating-add { margin: 0; }
 
 /* 카드 오른쪽 위에 떠 있는 편집 · 숨김 버튼 */
-.admin-card-action,
-.admin-section-eye {
+.admin-card-action {
     position: absolute;
     z-index: 20;
+    top: 8px;
+    right: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1003,19 +1008,14 @@ body.admin-drawer-open { overflow: hidden; }
     font-weight: 700;
     cursor: pointer;
 }
-.admin-card-action:hover,
-.admin-section-eye:hover {
+.admin-card-action:hover {
     background: #fff;
     color: var(--navy);
 }
-.admin-card-action { top: 8px; right: 8px; }
 .admin-home-edit { position: absolute; z-index: 20; top: 18px; right: max(16px, calc((100vw - 1280px) / 2 + 32px)); min-height: 32px; }
-.admin-section-eye { top: 0; right: 0; }
 .video-card,
 .tool-card,
-.home-carousel-slide,
-.home-live-broadcast,
-.home-notice-list { position: relative; }
+.home-carousel-slide { position: relative; }
 
 /* 숨긴 항목은 관리자에게만 흐리게 + '숨김' 꼬리표로 보인다 */
 .admin-config-hidden { opacity: .45 !important; filter: grayscale(.5); }
@@ -1037,8 +1037,8 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-default-subtab { box-shadow: inset 0 -2px rgba(255, 255, 255, .7); }
 
 .admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
-    .admin-section-eye, .admin-nav-manage,
-    .admin-subtab-manage, .admin-floating-add, .hist-admin-content-head .admin-btn, .hist-admin-bar) {
+    .admin-nav-manage,
+    .admin-floating-add, .admin-action-bars, .hist-admin-bar) {
     display: none !important;
 }
 
@@ -1051,14 +1051,6 @@ body.admin-drawer-open { overflow: hidden; }
     max-width: 1280px;
     margin: 0 auto;
     padding: 0 32px var(--space-page-bottom);
-}
-
-/* 머리: 공개 페이지와 같은 .page-header 네이비 히어로. 추가 버튼은 오른쪽 통계 자리에 둔다 */
-.admin-hero-actions {
-    grid-column: 2;
-    grid-row: 2;
-    display: flex;
-    gap: 6px;
 }
 
 .admin-filter-grid {
@@ -1321,30 +1313,6 @@ body.admin-drawer-open { overflow: hidden; }
 /* =============================================================================
    9. 연혁 편집 (일정 > 연혁 타임라인 안)
    ============================================================================= */
-.hist-admin-content-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: var(--space-content-gap);
-    padding: 12px 16px;
-    background-color: var(--navy);
-    background-image: var(--navy-pattern);
-    clip-path: var(--notch-md);
-    color: var(--navy-on-text);
-}
-.hist-admin-kicker {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--navy-on-muted);
-    font-size: var(--fs-eyebrow);
-    font-weight: 600;
-    letter-spacing: 0.16em;
-}
-.hist-admin-content-head strong { color: #fff; font-size: 14px; font-weight: 800; }
-.hist-admin-content-head .admin-btn.primary { background: #fff; color: var(--navy); filter: none; }
-.hist-admin-content-head .admin-btn.primary:hover { background: rgba(255, 255, 255, .85); color: var(--navy); }
-
 .hist-admin-bar {
     display: flex;
     align-items: center;
@@ -1408,7 +1376,6 @@ body.admin-drawer-open { overflow: hidden; }
     .admin-preview-row { grid-template-columns: minmax(0, 1fr); }
 
     .admin-dedicated-shell { padding: 0 16px var(--space-page-bottom); }
-    .admin-hero-actions { grid-column: 1 / -1; grid-row: 4; margin-top: 18px; }
     .admin-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-table { font-size: 12px; }
     .admin-table th,

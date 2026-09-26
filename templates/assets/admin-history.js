@@ -28,13 +28,7 @@
     histRenderTypeBar(merged);
     window.histRedraw=render;
     root.innerHTML=`
-      <div class="hist-admin-content-head">
-        <div>
-          <span class="hist-admin-kicker">HISTORY EDIT</span>
-          <strong>연혁 타임라인</strong>
-        </div>
-        <button type="button" class="admin-btn admin-btn-compact primary" id="adminHistoryAdd">연혁 추가</button>
-      </div>
+      <button type="button" class="admin-floating-add" id="adminHistoryAdd" data-icon="plus">연혁 추가</button>
       ${histTimelineHtml(histFilterItems(merged),{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true})}`;
     document.getElementById('adminHistoryAdd')?.addEventListener('click',()=>open(null));
   }

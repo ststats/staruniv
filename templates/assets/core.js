@@ -1309,11 +1309,6 @@ function runtimeSubtabConfig(pageId, fallbackDefault) {
 function runtimeDefaultSubtab(pageId, fallbackDefault) {
     return runtimeSubtabConfig(pageId, fallbackDefault).default || fallbackDefault;
 }
-function runtimeSectionEnabled(key, fallback=true) {
-    const sections = SiteRuntimeConfig?.homeSections;
-    if (!sections || !Object.prototype.hasOwnProperty.call(sections, key)) return fallback;
-    return !!sections[key];
-}
 
 // 메뉴·서브탭 표시 설정(site_config.nav). 페이지 초기화가 이 값(서브탭 기본값 등)을 쓰므로
 // 처음에는 기다려야 하지만, 모든 페이지가 요청 한 번을 통째로 기다리던 걸 줄이려고 마지막 값을
@@ -1411,23 +1406,6 @@ function applyNavConfig(data) {
             if (desc && cfg.description) desc.textContent = trimEndPunct(cfg.description);
             if (link && cfg.href) link.setAttribute('href', cfg.href);
         });
-
-        const liveTitle = document.querySelector('#home-live-broadcast')?.previousElementSibling;
-        const noticeList = document.getElementById('home-notice-list');
-        const noticeTitle = noticeList?.previousElementSibling;
-        const liveWrap = document.getElementById('home-live-broadcast');
-        if (liveWrap) {
-            const enabled = runtimeSectionEnabled('live', true);
-            liveWrap.hidden = !enabled && !isAdmin;
-            liveTitle?.classList.toggle('admin-config-hidden', !enabled && isAdmin);
-            liveWrap.classList.toggle('admin-config-hidden', !enabled && isAdmin);
-        }
-        if (noticeList) {
-            const enabled = runtimeSectionEnabled('notices', true);
-            noticeList.hidden = !enabled && !isAdmin;
-            noticeTitle?.classList.toggle('admin-config-hidden', !enabled && isAdmin);
-            noticeList.classList.toggle('admin-config-hidden', !enabled && isAdmin);
-        }
 
         HiddenStatsTabs = new Set((Array.isArray(data.statsTabs) ? data.statsTabs : []).map(String));
         document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]').forEach(el => {

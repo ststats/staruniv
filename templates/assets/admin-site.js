@@ -16,7 +16,6 @@
     cfg.subtabs=cfg.subtabs&&typeof cfg.subtabs==='object'?cfg.subtabs:{};
     cfg.heroDescriptions=cfg.heroDescriptions&&typeof cfg.heroDescriptions==='object'?cfg.heroDescriptions:{};
     cfg.homeCarousel=cfg.homeCarousel&&typeof cfg.homeCarousel==='object'?cfg.homeCarousel:{};
-    cfg.homeSections=cfg.homeSections&&typeof cfg.homeSections==='object'?cfg.homeSections:{live:true,notices:true};
     return cfg;
   }
 
@@ -159,28 +158,12 @@
     ['ahs_title','ahs_desc','ahs_href'].forEach(id=>document.getElementById(id)?.addEventListener('input',preview));
   }
 
-  async function toggleHomeSection(key){
-    const cfg=configDefaults(await C().loadSiteConfig());
-    cfg.homeSections[key]=!(cfg.homeSections[key]!==false);
-    await save(cfg,`${key==='live'?'방송 중':'최근 공지'} 영역 표시를 변경했습니다`);
-  }
-
   async function enhanceHome(){
     if(document.body.dataset.adminPage!=='home')return;
-    const cfg=configDefaults(await C().loadSiteConfig());
     document.querySelectorAll('.home-carousel-slide').forEach((slide,i)=>{
       if(!slide.querySelector('.admin-home-edit')){
         slide.insertAdjacentHTML('beforeend',`<button type="button" class="admin-home-edit" data-admin-home-slide="${i}">편집</button>`);
       }
-    });
-    const targets=[['live','home-live-broadcast'],['notices','home-notice-list']];
-    targets.forEach(([key,id])=>{
-      const el=document.getElementById(id);if(!el)return;
-      el.hidden=false;
-      const enabled=cfg.homeSections[key]!==false;
-      el.classList.toggle('admin-config-hidden',!enabled);
-      el.querySelector(':scope > .admin-section-eye')?.remove();
-      el.insertAdjacentHTML('afterbegin',`<button type="button" class="admin-section-eye" data-admin-home-section="${key}">${enabled?'숨기기':'보이기'}</button>`);
     });
   }
 
@@ -236,10 +219,13 @@
       const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.dataset.icon='edit';b.onclick=openNavManager;
       menu.after(b);
     }
+    // 서브탭 편집은 다른 페이지 관리 버튼(멤버 추가 등)과 같은 자리·모양: 본문 맨 위 관리 막대.
+    // 예전엔 히어로의 탭 줄 끝에 붙어 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나갔다.
     const tabs=document.querySelector('.sub-tabs');
-    if(tabs&&SUBTAB_IDS[document.body.dataset.adminPage]&&!document.getElementById('adminSubtabManage')){
-      const b=document.createElement('button');b.id='adminSubtabManage';b.type='button';b.className='admin-subtab-manage';b.textContent='서브탭 편집';b.dataset.icon='edit';b.onclick=openSubtabManager;
-      tabs.appendChild(b);
+    const host=tabs?.closest('.page-section')?.querySelector(':scope > .container');
+    if(host&&SUBTAB_IDS[document.body.dataset.adminPage]&&!document.getElementById('adminSubtabManage')){
+      const b=document.createElement('button');b.id='adminSubtabManage';b.type='button';b.className='admin-floating-add';b.textContent='서브탭 편집';b.dataset.icon='edit';b.onclick=openSubtabManager;
+      host.prepend(b);
     }
   }
 
@@ -250,7 +236,6 @@
     document.addEventListener('click',async ev=>{
       if(!C().state.editMode)return;
       const slide=ev.target.closest('[data-admin-home-slide]');if(slide){ev.preventDefault();ev.stopPropagation();openHomeSlide(Number(slide.dataset.adminHomeSlide));return;}
-      const section=ev.target.closest('[data-admin-home-section]');if(section){ev.preventDefault();ev.stopPropagation();await toggleHomeSection(section.dataset.adminHomeSection);}
     },true);
   }
   document.addEventListener('admin:ready',init);
