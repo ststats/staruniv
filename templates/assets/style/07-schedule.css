@@ -384,6 +384,34 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: #fff;
 }
 .cal-month-bar .cal-month-name { color: #fff; }
+/* 밝은 제목 줄 오른쪽의 달 이동(방송통계 '전체 요약'). 버튼은 제목 줄 개수 뱃지와 같은 네이비 바탕 */
+.section-title .cal-nav-group {
+    gap: 6px;
+    padding: 0;
+    margin-left: auto;
+}
+.section-title .cal-nav-btn {
+    width: 26px;
+    height: 26px;
+    clip-path: var(--notch-xs);
+    background: var(--navy-deco-fill);
+    color: #fff;
+}
+.section-title .cal-nav-btn:hover:not(:disabled) {
+    background: var(--navy-deco-fill);
+    color: #fff;
+    opacity: 0.82;
+}
+.section-title .cal-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+.section-title .cal-nav-badge {
+    min-width: 88px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-strong);
+}
 
 #page-schedule .cal-day-card { padding: 20px 20px 0; }
 #page-schedule .cal-day-card-date {

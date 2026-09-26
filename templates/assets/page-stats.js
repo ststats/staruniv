@@ -42,7 +42,7 @@ function synergyMetricConfig(metric) {
     return hasOwn(SYNERGY_METRICS, metric) ? SYNERGY_METRICS[metric] : null;
 }
 
-// 달 칩에 쓰는 목록(최신순, fetchSynergyMonths). 받기 전이나 실패하면 빈 목록 - 칩 줄을 숨긴다.
+// 달 이동에 쓰는 목록(최신순, fetchSynergyMonths). 받기 전이나 실패하면 빈 목록 - 달 이동을 숨긴다.
 let SynergyMonths = [];
 // 요청이 겹칠 때(달을 빨리 여러 번 누름) 마지막으로 고른 달의 결과만 그린다.
 let _synergyLoadSeq = 0;
@@ -55,7 +55,7 @@ async function loadSynergyData(month = SynergyState.month) {
         // [리디자인] 머리 오른쪽 UPDATED 칸에 들어간다 - 라벨이 이미 'UPDATED'라 접두어를 뺀다.
         document.getElementById('synergy-updated').innerText = formatKstDateTime(SynergyState.updatedAt, false) || '-';
         renderSynergyMonthText();
-        renderSynergyMonthFilter();
+        renderSynergyMonthNav();
         renderSynergyTable();
     } catch (e) {
         if (seq !== _synergyLoadSeq) return;
@@ -69,7 +69,7 @@ async function loadSynergyData(month = SynergyState.month) {
 function loadSynergyMonths() {
     return fetchSynergyMonths().then(months => {
         SynergyMonths = months;
-        renderSynergyMonthFilter();
+        renderSynergyMonthNav();
     }, err => console.error(err));
 }
 
@@ -83,16 +83,30 @@ function synergyMonthLabel(month) {
     return `${y}년 ${m}월`;
 }
 
-// 달 칩: 방송통계가 있는 달이 둘 이상일 때만 보인다
-function renderSynergyMonthFilter() {
-    const box = document.getElementById('synergy-month-filter');
+// 제목 줄의 달 이동(◀ 2026년 9월 ▶): 방송통계가 있는 달이 둘 이상일 때만 보인다.
+// SynergyMonths는 최신순이라 '이전 달'은 목록의 다음 칸이다. 끝 달에서는 그쪽 버튼을 끈다.
+function synergyMonthIndex() {
+    const current = SynergyState.month || (SynergyMonths[0] && SynergyMonths[0].month);
+    return SynergyMonths.findIndex(m => m.month === current);
+}
+
+function renderSynergyMonthNav() {
+    const box = document.getElementById('synergy-month-nav');
     if (!box) return;
     box.hidden = SynergyMonths.length < 2;
-    const current = SynergyState.month || (SynergyMonths[0] && SynergyMonths[0].month);
-    box.innerHTML = SynergyMonths.map(({ month }) => {
-        const on = month === current;
-        return `<button type="button" class="filter-item${on ? ' active' : ''}" aria-pressed="${on}" onclick="setSynergyMonth('${escapeHTML(month)}')">${escapeHTML(synergyMonthLabel(month))}</button>`;
-    }).join('');
+    const idx = synergyMonthIndex();
+    const title = document.getElementById('synergy-month-title');
+    if (title) title.innerText = idx >= 0 ? synergyMonthLabel(SynergyMonths[idx].month) : '';
+    const prev = document.getElementById('synergy-month-prev');
+    const next = document.getElementById('synergy-month-next');
+    if (prev) prev.disabled = idx < 0 || idx >= SynergyMonths.length - 1;
+    if (next) next.disabled = idx <= 0;
+}
+
+function stepSynergyMonth(delta) {
+    const idx = synergyMonthIndex();
+    const target = SynergyMonths[idx - delta];
+    if (idx >= 0 && target) setSynergyMonth(target.month);
 }
 
 // 머리 설명과 합계·평균 이름표: 이번 달이면 '이번 달', 지난 달이면 'N월'
@@ -116,7 +130,7 @@ function setSynergyMonth(month) {
     const key = synergyMonthKey(month);
     if (key === SynergyState.month && SynergyState.data) return;
     SynergyState.month = key;
-    renderSynergyMonthFilter();
+    renderSynergyMonthNav();
     syncSynergyUrl();
     loadSynergyData(key);
 }
@@ -306,7 +320,7 @@ bootPage(() => {
         SynergyState.month = month;
         synergyUrlRestored = true;
         setSynergyMetric(synergyMetricFromUrl(params.get('view')));
-        if (changed) { renderSynergyMonthFilter(); loadSynergyData(month); }
+        if (changed) { renderSynergyMonthNav(); loadSynergyData(month); }
     }));
     safeInit('방송통계(시너지)', () => { if (!SynergyState.data) loadSynergyData(); });
     safeInit('방송통계 달 목록', loadSynergyMonths);

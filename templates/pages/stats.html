@@ -29,10 +29,15 @@
         </div>
     </div>
     <div class="container">
-    {#- 달 칩: 방송통계가 있는 달(synergy_daily_dates)을 page-stats.js가 채운다. 달이 하나뿐이면 숨긴다.
-        지난 달은 그달 마지막 날짜의 누적(= 그달 최종 기록)을 보여 준다. #}
-    <div class="filter-nav h2h-period tab-scroll mb-block" id="synergy-month-filter" role="group" aria-label="달 선택" hidden></div>
-    <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 요약</span></div>
+    {#- 제목 줄 오른쪽 달 이동(일정 달력과 같은 모양): 방송통계가 있는 달(synergy_daily_dates) 사이를 오간다.
+        달이 하나뿐이면 숨긴다. 지난 달은 그달 마지막 날짜의 누적(= 그달 최종 기록)을 보여 준다. #}
+    <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 요약</span>
+        <div class="cal-nav-group" id="synergy-month-nav" hidden>
+            <button type="button" class="cal-nav-btn" id="synergy-month-prev" onclick="stepSynergyMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <div class="cal-nav-badge" id="synergy-month-title" aria-live="polite"></div>
+            <button type="button" class="cal-nav-btn" id="synergy-month-next" onclick="stepSynergyMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+    </div>
     {#- 맨 위 TOP 칸: 지금 고른 지표의 1위(남녀 합쳐서) 대표 사진·이름·값. 사진은 어드민 멤버 수정의
         '대표 사진'(가로 16:9 움짤 WebP)이 카드를 꽉 채운다. 없으면 SOOP 프로필 사진. 그 아래 합계 / 평균 / 멤버수 타일 3개.
         (남녀 표를 합친 값이다 - 표는 나눠 보지만 크루 전체 규모는 하나로 읽는 게 맞다) #}
