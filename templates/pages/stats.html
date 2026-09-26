@@ -7,7 +7,7 @@
     <div class="page-header">
         <div class="page-header-main" data-label="BROADCAST ANALYTICS">
             <h1 class="page-header-title">방송통계</h1>
-            <p class="page-header-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다</p>
+            <p class="page-header-subtitle" id="synergy-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다</p>
             <div class="page-header-stats">
                 <div class="head-stat head-stat-wide">
                     <div class="head-stat-label">UPDATED</div>
@@ -29,6 +29,9 @@
         </div>
     </div>
     <div class="container">
+    {#- 달 칩: 방송통계가 있는 달(synergy_daily_dates)을 page-stats.js가 채운다. 달이 하나뿐이면 숨긴다.
+        지난 달은 그달 마지막 날짜의 누적(= 그달 최종 기록)을 보여 준다. #}
+    <div class="filter-nav h2h-period tab-scroll mb-block" id="synergy-month-filter" role="group" aria-label="달 선택" hidden></div>
     <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 요약</span></div>
     {#- 맨 위 TOP 칸: 지금 고른 지표의 1위(남녀 합쳐서) 대표 사진·이름·값. 사진은 어드민 멤버 수정의
         '대표 사진'(가로 16:9 움짤 WebP)이 카드를 꽉 채운다. 없으면 SOOP 프로필 사진. 그 아래 합계 / 평균 / 멤버수 타일 3개.
@@ -44,9 +47,10 @@
         </div>
         <div class="synergy-tiles">
             {#- 이름표: 'TOTAL · 이번 달 합계', 375px보다 좁으면 'TOTAL · 합계', 330px보다 좁으면 'TOTAL'(값과 한 줄에 들어가게) #}
-            {%- for tile_id, tile_label, tile_ko, tile_ko_short in [('synergy-sum-total', 'TOTAL', '이번 달 합계', '합계'), ('synergy-sum-avg', 'AVERAGE', '이번 달 평균', '평균'), ('synergy-sum-count', 'MEMBERS', '집계 인원', '인원')] %}
+            {#- 합계·평균의 긴 이름표는 고른 달에 따라 '이번 달 합계' / '8월 합계'로 바뀐다(data-suffix) #}
+            {%- for tile_id, tile_label, tile_ko, tile_ko_short, tile_suffix in [('synergy-sum-total', 'TOTAL', '이번 달 합계', '합계', '합계'), ('synergy-sum-avg', 'AVERAGE', '이번 달 평균', '평균', '평균'), ('synergy-sum-count', 'MEMBERS', '집계 인원', '인원', '')] %}
             <div class="clean-card head-plate synergy-tile">
-                <div class="synergy-tile-label">{{ tile_label }}<span class="synergy-tile-ko"><i>·</i><span class="synergy-tile-ko-long">{{ tile_ko }}</span><span class="synergy-tile-ko-short">{{ tile_ko_short }}</span></span></div>
+                <div class="synergy-tile-label">{{ tile_label }}<span class="synergy-tile-ko"><i>·</i><span class="synergy-tile-ko-long"{% if tile_suffix %} data-suffix="{{ tile_suffix }}"{% endif %}>{{ tile_ko }}</span><span class="synergy-tile-ko-short">{{ tile_ko_short }}</span></span></div>
                 <div class="head-plate-value" id="{{ tile_id }}">-</div>
             </div>
             {%- endfor %}

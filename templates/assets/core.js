@@ -1065,6 +1065,8 @@ function publicSupabaseClient() {
 const SynergyState = {
     data: null,          // [{ ...외부 필드, ourMember, active }]
     updatedAt: '',
+    month: '',           // 보고 있는 달(YYYY-MM). ''이면 가장 최근 달
+    statDate: '',        // 그 데이터의 날짜(그달 1일부터 이날까지의 누적)
     failed: false,
     metric: 'balloons',
 };
@@ -1105,33 +1107,84 @@ function formatKstDateTime(value, includeTime) {
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
-// 방송통계 데이터를 한 번만 받아온다(여러 곳에서 불러도 요청은 1번). 실패하면 다음 호출 때 다시 시도.
-let _synergyRequest = null;
-function fetchSynergyData() {
-    if (_synergyRequest) return _synergyRequest;
+// 방송통계가 있는 달 목록(최신순): [{ month: 'YYYY-MM', date: 그달 마지막 날짜 }].
+// 하루치 행은 그달 1일부터 그날까지의 누적이라, 지난 달은 마지막 날짜 행이 그달 최종 기록이다.
+let _synergyMonthsRequest = null;
+function fetchSynergyMonths() {
+    if (_synergyMonthsRequest) return _synergyMonthsRequest;
+    _synergyMonthsRequest = (async () => {
+        const client = publicSupabaseClient();
+        if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다');
+        const rows = await fetchAllPages((from, to) => client
+            .from('synergy_daily_dates')
+            .select('stat_date')
+            .order('stat_date', { ascending: false })
+            .range(from, to), { parallel: 1 });
+        const months = [];
+        rows.forEach(r => {
+            const date = String((r && r.stat_date) || '');
+            if (date && (!months.length || months[months.length - 1].month !== date.slice(0, 7))) {
+                months.push({ month: date.slice(0, 7), date });
+            }
+        });
+        return months;
+    })();
+    _synergyMonthsRequest.catch(() => { _synergyMonthsRequest = null; });
+    return _synergyMonthsRequest;
+}
 
-    _synergyRequest = (async () => {
+// 그 달에 팀에 있었는지(입단일~퇴단일이 그 달과 겹치는지). 날짜는 YYYY-MM-DD 문자열이다.
+function memberInMonth(m, month) {
+    const joined = String(m['입단일'] || '').trim() || '0000-00-00';
+    const left = String(m['퇴단일'] || '').trim() || '9999-99-99';
+    return joined.slice(0, 7) <= month && left.slice(0, 7) >= month;
+}
+
+// 방송통계 데이터를 달마다 한 번만 받아온다(여러 곳에서 불러도 요청은 1번). 실패하면 다음 호출 때 다시 시도.
+// month를 비우면 가장 최근 날짜(이번 달 누적)이고, 활동 중인 멤버만 active다.
+// 지난 달(YYYY-MM)은 그달 마지막 날짜의 누적을 읽고, 그 달에 팀에 있던 멤버만 담는다.
+const _synergyRequests = new Map();
+function fetchSynergyData(month = '') {
+    if (_synergyRequests.has(month)) {
+        return _synergyRequests.get(month).then(result => applySynergyResult(month, result));
+    }
+
+    const request = (async () => {
         const client = publicSupabaseClient();
         if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다');
 
-        const { data: dateRows, error: dateError } = await client
-            .from('synergy_daily_dates')
-            .select('stat_date,updated_at')
-            .order('stat_date', { ascending: false })
-            .limit(1);
-        if (dateError) throw dateError;
-
-        const latest = Array.isArray(dateRows) ? dateRows[0] : null;
+        let latest = null;
+        if (month) {
+            const found = (await fetchSynergyMonths()).find(m => m.month === month);
+            if (!found) throw new Error(`${month} 방송통계가 없습니다`);
+            latest = { stat_date: found.date };
+        } else {
+            const { data: dateRows, error: dateError } = await client
+                .from('synergy_daily_dates')
+                .select('stat_date,updated_at')
+                .order('stat_date', { ascending: false })
+                .limit(1);
+            if (dateError) throw dateError;
+            latest = Array.isArray(dateRows) ? dateRows[0] : null;
+        }
         const latestDate = latest && latest.stat_date ? String(latest.stat_date) : '';
         if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다');
 
+        // 같은 SOOP ID로 입단 기록이 여러 개(재입단)일 수 있다. 이번 달은 늘 그랬듯 마지막 기록을,
+        // 지난 달은 그 달과 겹치는 기록을 쓴다(없으면 그 달엔 우리 멤버가 아니었다).
         const idToMember = new Map();
         SiteData.members.forEach(m => {
             const originalId = String(m['SOOP ID'] || '').trim();
             const soopId = originalId.toLowerCase();
-            if (soopId) idToMember.set(soopId, m);
+            if (!soopId) return;
+            if (month && !memberInMonth(m, month)) {
+                if (!idToMember.has(soopId)) idToMember.set(soopId, null);
+                return;
+            }
+            idToMember.set(soopId, m);
         });
         const memberIds = [...idToMember.values()]
+            .filter(Boolean)
             .map(m => String(m['SOOP ID'] || '').trim())
             .filter(Boolean);
         if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다');
@@ -1145,7 +1198,7 @@ function fetchSynergyData() {
             .range(from, to), { parallel: 1 });
         if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다`);
 
-        SynergyState.data = rows
+        const data = rows
             .map(row => {
                 const soopId = String((row && row.soop_id) || '').trim().toLowerCase();
                 const ours = idToMember.get(soopId);
@@ -1164,7 +1217,7 @@ function fetchSynergyData() {
                     sponsor_wins: Number(row.sponsor_wins || 0),
                     sponsor_losses: Number(row.sponsor_losses || 0),
                     ourMember: ours,
-                    active: isActiveMember(ours),
+                    active: month ? true : isActiveMember(ours),
                 };
             })
             .filter(Boolean);
@@ -1173,16 +1226,24 @@ function fetchSynergyData() {
             const value = String(row.updated_at || '');
             return value > acc ? value : acc;
         }, '');
-        SynergyState.updatedAt = latestUpdated || String(latest.updated_at || latestDate);
-        SynergyState.failed = false;
-        return SynergyState.data;
+        return { data, statDate: latestDate, updatedAt: latestUpdated || String(latest.updated_at || latestDate) };
     })();
 
-    _synergyRequest.catch(() => {
+    _synergyRequests.set(month, request);
+    request.catch(() => {
         SynergyState.failed = true;
-        _synergyRequest = null;
+        _synergyRequests.delete(month);
     });
-    return _synergyRequest;
+    return request.then(result => applySynergyResult(month, result));
+}
+
+function applySynergyResult(month, result) {
+    SynergyState.month = month;
+    SynergyState.data = result.data;
+    SynergyState.statDate = result.statDate;
+    SynergyState.updatedAt = result.updatedAt;
+    SynergyState.failed = false;
+    return SynergyState.data;
 }
 
 // =====================================================================

@@ -1,6 +1,6 @@
 /**
  * 방송통계 페이지: 남/여 멤버별 방송 지표 순위표. (core.js → 이 파일)
- * URL: /stats/[?view=hours|viewers|sponsor]
+ * URL: /stats/[?view=hours|viewers|sponsor][&month=YYYY-MM]  (month가 없으면 가장 최근 달)
  */
 
 // 지표별 설정을 한 곳에 모았다: 탭 라벨 / URL에 노출되는 짧은 값 / 표시 형식 / 정렬 기준.
@@ -42,18 +42,93 @@ function synergyMetricConfig(metric) {
     return hasOwn(SYNERGY_METRICS, metric) ? SYNERGY_METRICS[metric] : null;
 }
 
-async function loadSynergyData() {
+// 달 칩에 쓰는 목록(최신순, fetchSynergyMonths). 받기 전이나 실패하면 빈 목록 - 칩 줄을 숨긴다.
+let SynergyMonths = [];
+// 요청이 겹칠 때(달을 빨리 여러 번 누름) 마지막으로 고른 달의 결과만 그린다.
+let _synergyLoadSeq = 0;
+
+async function loadSynergyData(month = SynergyState.month) {
+    const seq = ++_synergyLoadSeq;
     try {
-        await fetchSynergyData();
+        await fetchSynergyData(month);
+        if (seq !== _synergyLoadSeq) return;
         // [리디자인] 머리 오른쪽 UPDATED 칸에 들어간다 - 라벨이 이미 'UPDATED'라 접두어를 뺀다.
         document.getElementById('synergy-updated').innerText = formatKstDateTime(SynergyState.updatedAt, false) || '-';
+        renderSynergyMonthText();
+        renderSynergyMonthFilter();
         renderSynergyTable();
     } catch (e) {
+        if (seq !== _synergyLoadSeq) return;
         console.error(e);
         const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다');
         document.getElementById('synergy-tbody-male').innerHTML = errRow;
         document.getElementById('synergy-tbody-female').innerHTML = errRow;
     }
+}
+
+function loadSynergyMonths() {
+    return fetchSynergyMonths().then(months => {
+        SynergyMonths = months;
+        renderSynergyMonthFilter();
+    }, err => console.error(err));
+}
+
+// 최근 달은 month 값을 비운다(주소에 안 남고, 새 달이 되면 자연히 그 달을 보게).
+function synergyMonthKey(month) {
+    return SynergyMonths.length && month === SynergyMonths[0].month ? '' : (month || '');
+}
+
+function synergyMonthLabel(month) {
+    const [y, m] = String(month).split('-').map(Number);
+    return `${y}년 ${m}월`;
+}
+
+// 달 칩: 방송통계가 있는 달이 둘 이상일 때만 보인다
+function renderSynergyMonthFilter() {
+    const box = document.getElementById('synergy-month-filter');
+    if (!box) return;
+    box.hidden = SynergyMonths.length < 2;
+    const current = SynergyState.month || (SynergyMonths[0] && SynergyMonths[0].month);
+    box.innerHTML = SynergyMonths.map(({ month }) => {
+        const on = month === current;
+        return `<button type="button" class="filter-item${on ? ' active' : ''}" aria-pressed="${on}" onclick="setSynergyMonth('${escapeHTML(month)}')">${escapeHTML(synergyMonthLabel(month))}</button>`;
+    }).join('');
+}
+
+// 머리 설명과 합계·평균 이름표: 이번 달이면 '이번 달', 지난 달이면 'N월'
+function renderSynergyMonthText() {
+    const month = SynergyState.month;
+    const monthNum = month ? Number(month.split('-')[1]) : 0;
+    const sub = document.getElementById('synergy-subtitle');
+    if (sub) {
+        // 지난 달은 그달 마지막 집계일까지의 누적이다(보통 말일)
+        const [, mm, dd] = String(SynergyState.statDate).split('-').map(Number);
+        sub.innerText = month
+            ? `캄몬스타즈 멤버들의 ${synergyMonthLabel(month)} 방송 통계입니다 (${mm}월 ${dd}일까지)`
+            : '캄몬스타즈 멤버들의 이번 달 방송 통계입니다';
+    }
+    staticAll('.synergy-tile-ko-long[data-suffix]').forEach(el => {
+        el.innerText = `${month ? `${monthNum}월` : '이번 달'} ${el.dataset.suffix}`;
+    });
+}
+
+function setSynergyMonth(month) {
+    const key = synergyMonthKey(month);
+    if (key === SynergyState.month && SynergyState.data) return;
+    SynergyState.month = key;
+    renderSynergyMonthFilter();
+    syncSynergyUrl();
+    loadSynergyData(key);
+}
+
+// 주소를 처음 읽기 전(core.js가 숨긴 지표 탭을 먼저 옮기는 경우 등)에는 주소를 건드리지 않는다 -
+// 그러면 주소에 있던 month가 읽히기도 전에 지워진다.
+let synergyUrlRestored = false;
+function syncSynergyUrl() {
+    if (!synergyUrlRestored) return;
+    const config = synergyMetricConfig(SynergyState.metric);
+    const view = config ? config.url : SynergyState.metric;
+    PageState.update({ view: view !== 'balloons' ? view : '', month: SynergyState.month });
 }
 
 // 어드민에서 끈 지표 탭은 고를 수 없다. 숨긴 탭이 요청되면(주소에 남아 있거나 기본값이거나)
@@ -85,8 +160,7 @@ function setSynergyMetric(metric) {
         el.innerText = config ? config.label : '';
     });
     renderSynergyTable();
-    const urlValue = config ? config.url : metric;
-    PageState.update(urlValue !== 'balloons' ? { view: urlValue } : {});
+    syncSynergyUrl();
 }
 
 // 순위·이름·값만 담백하게 보여준다(1~3위 색 플레이트와 비율 막대는 조잡해 보여 뺐다).
@@ -225,8 +299,15 @@ function renderSynergyTable() {
 }
 
 bootPage(() => {
-    safeInit('방송통계(시너지)', loadSynergyData);
+    // 주소의 달을 먼저 읽고 그 달을 받는다(뒤로·앞으로 갈 때도 같은 순서)
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
+        const month = /^\d{4}-\d{2}$/.test(params.get('month') || '') ? params.get('month') : '';
+        const changed = month !== SynergyState.month;
+        SynergyState.month = month;
+        synergyUrlRestored = true;
         setSynergyMetric(synergyMetricFromUrl(params.get('view')));
+        if (changed) { renderSynergyMonthFilter(); loadSynergyData(month); }
     }));
+    safeInit('방송통계(시너지)', () => { if (!SynergyState.data) loadSynergyData(); });
+    safeInit('방송통계 달 목록', loadSynergyMonths);
 });
