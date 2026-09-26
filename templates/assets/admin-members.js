@@ -62,7 +62,14 @@
   // 소리 없음 · 최대 6초 MP4(H.264)로 다시 만든다. 원본 1.5MB → 300KB 안팎이라 방송통계에서 끊기지 않는다.
   // WebCodecs(VideoEncoder)와 mp4-muxer.js를 쓴다. 브라우저가 못 하면 null(원본을 그대로 올릴지 묻는다).
   // 코덱은 H.264만 쓴다(아이폰 사파리까지 어디서나 재생). 크롬·엣지는 지원, 못 하는 브라우저면 원본을 올릴지 묻는다.
-  const CLIP={w:720,h:404,fps:30,maxSec:6,bitrate:1_000_000,codecs:[{encoder:'avc1.4d401f',muxer:'avc',extra:{avc:{format:'avc'}}}]};
+  // 소프트웨어 인코더(크롬·엣지의 OpenH264, Baseline 레벨 3.x)를 먼저 쓴다. 하드웨어 인코더는 올리는 PC의 그래픽 칩마다
+  // 결과가 달라서(윈도우 기본 인코더는 레벨 4.1·CABAC) 그렇게 만든 영상이 PC·휴대폰 사이트에서 첫 장면에 멈춘 적이 있다
+  // (2026-09 변현제 대표 영상). 소프트웨어가 안 되는 브라우저에서만 예전 설정(하드웨어 Main)으로 넘어간다.
+  // OpenH264는 비트레이트를 높게 줘도 6초 250KB 안팎으로 나오는데, 이 크기(720×404)에서는 화질 차이가 눈에 띄지 않는다.
+  const CLIP={w:720,h:404,fps:30,maxSec:6,bitrate:1_000_000,codecs:[
+    {encoder:'avc1.42001f',muxer:'avc',extra:{avc:{format:'avc'},hardwareAcceleration:'prefer-software'}},
+    {encoder:'avc1.4d401f',muxer:'avc',extra:{avc:{format:'avc'}}},
+  ]};
   async function pickCodec(){
     for(const c of CLIP.codecs){
       const config={codec:c.encoder,width:CLIP.w,height:CLIP.h,bitrate:CLIP.bitrate,framerate:CLIP.fps,...c.extra};
