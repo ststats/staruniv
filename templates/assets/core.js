@@ -405,6 +405,29 @@ function findPlayerStats(name) {
     return SiteData.playersStats.find(x => x['이름'] === name) || {};
 }
 
+// 방송 중인 멤버 전체(ststat live-status가 2분마다 SOOP 전체 목록을 훑어 채우는 표).
+// { soop_id(소문자): { broad_no, broad_title, current_sum_viewer, broad_start, category_name, broad_cate_no } }
+// 수집이 5분 넘게 멈추면 뷰가 빈 목록을 준다. 사이드바·티어표가 같이 부르므로 20초 동안은 같은 결과를 쓴다.
+const LIVE_BROADCASTS_TTL_MS = 20 * 1000;
+let _liveBroadcasts = { at: 0, promise: null };
+function fetchLiveBroadcasts() {
+    if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS) return _liveBroadcasts.promise;
+    const client = publicSupabaseClient();
+    if (!client) return Promise.reject(new Error('Supabase 설정 없음'));
+    const promise = client.from('live_broadcasts_current')
+        .select('soop_id,broad_no,broad_title,current_sum_viewer,broad_start,category_name,broad_cate_no')
+        .limit(5000)
+        .then(({ data, error }) => {
+            if (error || !Array.isArray(data)) throw new Error(error?.message || 'Invalid live status');
+            const live = {};
+            data.forEach(row => { if (row.soop_id && row.broad_no) live[String(row.soop_id).toLowerCase()] = row; });
+            return live;
+        });
+    _liveBroadcasts = { at: Date.now(), promise };
+    promise.catch(() => { if (_liveBroadcasts.promise === promise) _liveBroadcasts = { at: 0, promise: null }; });
+    return promise;
+}
+
 // 선택 사이드바가 탭 전환 시 늦게 만들어져도 LIVE 표시를 채운다.
 async function refreshSidebarLiveIndicators() {
     if (typeof checkIsLiveRealtime !== 'function') return;
@@ -419,12 +442,8 @@ async function refreshSidebarLiveIndicators() {
     // 티어표와 같은 일괄 조회를 사용한다. 개별 SOOP 요청 하나가 지연되어도
     // 전체 사이드바가 Promise.all 종료를 기다리며 빈 상태로 남지 않는다.
     try {
-        const res = await fetch(`https://synergy.ststats.workers.dev/?ids=${encodeURIComponent(ids.join(','))}`, { signal: AbortSignal.timeout(6000) });
-        if (!res.ok) throw new Error(`Live status: ${res.status}`);
-        const data = await res.json();
-        if (!data || typeof data.live !== 'object' || data.live === null) throw new Error('Invalid live status');
-        const live = new Set(Object.entries(data.live).filter(([, info]) => info && info.broad_no).map(([id]) => id.toLowerCase()));
-        ids.forEach(id => update(id, live.has(id.toLowerCase())));
+        const live = await fetchLiveBroadcasts();
+        ids.forEach(id => update(id, Boolean(live[id.toLowerCase()])));
     } catch (_) {
         const pending = ids.slice();
         const workers = Array.from({ length: Math.min(6, pending.length) }, async () => {

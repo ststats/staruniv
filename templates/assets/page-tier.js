@@ -7,18 +7,14 @@
  *
  * soop.js의 checkIsLiveRealtime()을 안 쓰는 이유:
  *   그건 한 명씩 bjapi에 묻는 방식이라 "활성 멤버가 소수"일 때만 성립한다. 수백 명에
- *   쓰면 브라우저 연결 한도에 걸려 대부분 조용히 실패한다. 대신 시너지가 이미 운영 중인
- *   클라우드플레어 워커를 쓴다 - 크론이 SOOP 전체 방송 목록을 미리 훑어 KV에 담아두므로
- *   우리는 그걸 한 번 읽기만 하면 된다(우리 쪽에서 SOOP 호출 0회).
+ *   쓰면 브라우저 연결 한도에 걸려 대부분 조용히 실패한다. 대신 ststat의 live-status(Supabase Edge
+ *   Function)가 2분마다 SOOP 전체 방송 목록을 훑어 채우는 live_broadcasts_current를 한 번 읽는다
+ *   (우리 쪽에서 SOOP 호출 0회). 읽기는 core.js fetchLiveBroadcasts().
  */
 
-const TIER_LIVE_PROXY = 'https://synergy.ststats.workers.dev/';
-// 워커 응답은 KV 읽기라 사실상 공짜다. 크론이 2분마다 KV를 채우는데 여기서도 2분마다
-// 받아가면 최악의 경우 "채우기 직전에 받아가서" 2분을 더 기다린다(합계 4분).
-// 짧게 잡아 그 대기를 없앤다.
+// 표가 2분마다 채워지는데 여기서도 2분마다 받아가면 최악의 경우 "채우기 직전에 받아가서"
+// 2분을 더 기다린다(합계 4분). 짧게 잡아 그 대기를 없앤다.
 const TIER_LIVE_REFRESH_MS = 30 * 1000;
-// 수백 명이어도 URL이 7KB 안쪽이고 Cloudflare는 16KB까지 받는다. 나눌 이유가 없다.
-const TIER_LIVE_CHUNK = 600;
 
 // 시너지 명단에는 있지만 티어표에서는 빼는 팀.
 // 여기 없는 값은 전부 통과시킨다 - 'FA'처럼 나중에 새로 생기는 팀이 자동으로 들어오게.
@@ -543,13 +539,13 @@ function restoreTierAnchor(anchor) {
 // ---------------------------------------------------------------------------
 // 카테고리 (스타크래프트인지)
 // ---------------------------------------------------------------------------
-// SOOP 방송 목록이 주는 값을 워커가 그대로 실어준다(category_name: "스타크래프트",
+// SOOP 방송 목록이 주는 값을 live-status가 그대로 실어준다(category_name: "스타크래프트",
 // broad_cate_no: "00040001"). 이름을 먼저 보고, 이름이 없을 때만 번호로 판단한다 -
 // 번호 체계는 SOOP이 언제든 바꿀 수 있지만 이름은 사람이 읽는 값이라 덜 흔들린다.
 const TIER_STARCRAFT_CATE_NOS = new Set(['00040001']);
 const TIER_STARCRAFT_NAME_RE = /스타\s*크래프트|starcraft|브루드\s*워|brood\s*war/i;
 
-// 판단할 근거가 아예 없으면 "스타로 친다"(true). 워커가 아직 카테고리를 안 싣고 있거나
+// 판단할 근거가 아예 없으면 "스타로 친다"(true). 수집이 카테고리를 못 싣거나
 // 필드 이름이 바뀌었을 때 멀쩡한 방송이 전부 회색이 되면 안 된다 - 모를 때는 아무 표시도
 // 안 하는 쪽이 안전하다.
 function isStarcraftCategory(name, no) {
@@ -561,27 +557,16 @@ function isStarcraftCategory(name, no) {
 // ---------------------------------------------------------------------------
 // 방송 상태
 // ---------------------------------------------------------------------------
-function chunkArray(arr, size) {
-    const out = [];
-    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-    return out;
-}
-
 async function refreshTierLive() {
-    const ids = TierState.members.map(m => String(m.id).trim());
-    if (ids.length === 0) return;
+    if (TierState.members.length === 0) return;
 
-    const merged = {};
-    await Promise.all(chunkArray(ids, TIER_LIVE_CHUNK).map(async part => {
-        try {
-            const res = await fetch(`${TIER_LIVE_PROXY}?ids=${encodeURIComponent(part.join(','))}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            Object.assign(merged, (data && data.live) || {});
-        } catch (e) {
-            // 방송 표시는 부가 정보다. 실패해도 명단 자체에는 영향이 없어야 한다.
-        }
-    }));
+    let merged;
+    try {
+        merged = await fetchLiveBroadcasts();
+    } catch (e) {
+        // 방송 표시는 부가 정보다. 실패하면 직전 표시를 그대로 두고 다음 주기에 다시 받는다.
+        return;
+    }
 
     const next = {};
     Object.keys(merged).forEach(id => {
@@ -592,7 +577,7 @@ async function refreshTierLive() {
         const categoryName = String(info.category_name || '').trim();
         const categoryNo = String(info.broad_cate_no || '').trim();
         next[key] = {
-            id,
+            id: info.soop_id || id,
             member,
             broadNo: info.broad_no,
             title: info.broad_title || '',
