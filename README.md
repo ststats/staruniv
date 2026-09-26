@@ -20,6 +20,7 @@
 | 〃 | `templates/`·`scripts/` 등을 main에 올릴 때 | push |
 | 〃 | 어드민 일정 화면 **"달력 사진 갱신"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
 | ststat 파이프라인(`pipeline.yml`) | 외부 크론 | `workflow_dispatch` |
+| 시너지 빌드(synergy `build.yml`) | 하루 2번 | 외부 크론이 `workflow_dispatch` 호출 |
 | 방송 중 표시(`live_broadcasts`) | 2분마다 | Supabase pg_cron이 Edge Function `live-status` 호출(ststat 저장소) |
 
 빌드는 30초 안팎입니다: Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
