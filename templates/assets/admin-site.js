@@ -16,6 +16,7 @@
     cfg.subtabs=cfg.subtabs&&typeof cfg.subtabs==='object'?cfg.subtabs:{};
     cfg.heroDescriptions=cfg.heroDescriptions&&typeof cfg.heroDescriptions==='object'?cfg.heroDescriptions:{};
     cfg.homeCarousel=cfg.homeCarousel&&typeof cfg.homeCarousel==='object'?cfg.homeCarousel:{};
+    cfg.statsTabs=Array.isArray(cfg.statsTabs)?cfg.statsTabs.map(String):[];
     return cfg;
   }
 
@@ -122,6 +123,34 @@
     document.getElementById('as_subtabs')?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row&&ev.target.matches('[data-visible]'))row.classList.toggle('is-off',!ev.target.checked);});
   }
 
+  // 방송통계 지표 탭(별풍선 · 방송시간 · 누적시청자 · 스폰판수 · 스폰승률) 표시. 다른 페이지 서브탭과 달리
+  // site_config.nav.statsTabs(숨긴 지표 목록)에 저장하고, 처음 열리는 탭은 보이는 탭 중 첫 번째다.
+  // (옛 독립 어드민에 있던 기능을 새 어드민으로 옮김)
+  const statsTabRows=()=>[...document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]')]
+    .map(el=>({key:el.dataset.metric,label:el.textContent.trim()}));
+  function markStatsTabs(cfg){
+    const hidden=new Set(cfg.statsTabs||[]);
+    if(typeof HiddenStatsTabs!=='undefined')HiddenStatsTabs=hidden;
+    document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]').forEach(el=>{
+      el.hidden=false;
+      el.classList.toggle('admin-config-hidden',hidden.has(el.dataset.metric));
+    });
+  }
+  async function openStatsTabManager(){
+    const cfg=configDefaults(await C().loadSiteConfig()), rows=statsTabRows(), hidden=new Set(cfg.statsTabs);
+    C().openDrawer({
+      eyebrow:'SUBTAB',title:'서브탭 편집',
+      html:`<p class="admin-help">방송통계 지표 탭의 표시 여부를 정합니다. 숨긴 탭은 방문자에게 보이지 않고 관리자 화면에서만 흐리게 보입니다. 처음 열리는 탭은 보이는 탭 중 첫 번째입니다</p>
+        <div class="admin-order-list" id="as_stats_tabs">${rows.map((r,i)=>orderRow(i,r.label,`data-stats-tab="${C().esc(r.key)}"`,!hidden.has(r.key))).join('')}</div>`,
+      onSubmit:async()=>{
+        const next=rows.map(r=>r.key).filter(key=>!document.querySelector(`[data-stats-tab="${CSS.escape(key)}"] [data-visible]`)?.checked);
+        if(next.length>=rows.length)throw new Error('탭을 하나 이상 보여야 합니다');
+        cfg.statsTabs=next;await save(cfg,'방송통계 탭 표시를 저장했습니다');
+      }
+    });
+    document.getElementById('as_stats_tabs')?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row&&ev.target.matches('[data-visible]'))row.classList.toggle('is-off',!ev.target.checked);});
+  }
+
   async function openHomeSlide(index){
     const cfg=configDefaults(await C().loadSiteConfig());
     const key=['schedule','records','video'][index]; if(!key)return;
@@ -223,6 +252,10 @@
     // 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나갔다.
     if(document.querySelector('.sub-tabs')&&SUBTAB_IDS[document.body.dataset.adminPage]){
       C().addPageTool({id:'adminSubtabManage',label:'서브탭 편집',icon:'edit',onClick:openSubtabManager});
+    }
+    if(document.body.dataset.adminPage==='stats'&&document.getElementById('synergy-metric-filter')){
+      C().addPageTool({id:'adminSubtabManage',label:'서브탭 편집',icon:'edit',onClick:openStatsTabManager});
+      markStatsTabs(configDefaults(await C().loadSiteConfig()));
     }
   }
 

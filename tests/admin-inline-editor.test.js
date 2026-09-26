@@ -173,3 +173,12 @@ test('admin upload of feature photo/video stays: PC browser re-encodes video, no
   assert.match(sql, /alter table public\.members add column if not exists photo_path text/);
   assert.match(sql, /'video\/mp4','video\/webm'\]/);
 });
+
+test('방송통계도 서브탭 편집(지표 탭 표시)을 페이지 관리 상자에서 할 수 있다', () => {
+  const js = read('templates/assets/admin-site.js');
+  assert.match(js, /adminPage==='stats'&&document\.getElementById\('synergy-metric-filter'\)/);
+  assert.match(js, /async function openStatsTabManager\(\)/);
+  assert.match(js, /cfg\.statsTabs=next/);
+  // 페이지 관리 버튼은 모두 공통 상자(addPageTool / pageToolsHtml)로
+  assert.match(read('templates/assets/admin-core.js'), /function addPageTool\(/);
+});
