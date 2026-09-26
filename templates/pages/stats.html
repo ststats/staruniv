@@ -43,7 +43,7 @@
             </div>
         </div>
         <div class="synergy-tiles">
-            {#- 이름표: 'TOTAL · 이번 달 합계', 360px보다 좁으면 'TOTAL · 합계'(값과 한 줄에 들어가게) #}
+            {#- 이름표: 'TOTAL · 이번 달 합계', 375px보다 좁으면 'TOTAL · 합계', 330px보다 좁으면 'TOTAL'(값과 한 줄에 들어가게) #}
             {%- for tile_id, tile_label, tile_ko, tile_ko_short in [('synergy-sum-total', 'TOTAL', '이번 달 합계', '합계'), ('synergy-sum-avg', 'AVERAGE', '이번 달 평균', '평균'), ('synergy-sum-count', 'MEMBERS', '집계 인원', '인원')] %}
             <div class="clean-card head-plate synergy-tile">
                 <div class="synergy-tile-label">{{ tile_label }}<span class="synergy-tile-ko"><i>·</i><span class="synergy-tile-ko-long">{{ tile_ko }}</span><span class="synergy-tile-ko-short">{{ tile_ko_short }}</span></span></div>

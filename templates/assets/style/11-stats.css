@@ -34,17 +34,13 @@
     .synergy-summary .synergy-tile { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; }
     .synergy-summary .synergy-tile .head-plate-value { margin-top: 0; font-size: 20px; }
 }
-/* 폰에서는 이름표 자간·값 글자를 줄여 '1,294시간 21분'도 한글 설명과 한 줄에 들어가게 */
-@media (max-width: 419.98px) {
-    .synergy-summary .synergy-tile { gap: 8px; padding: 12px 14px; }
-    .synergy-tile-label { letter-spacing: 0.06em; }
-    .synergy-tile-ko i { margin: 0 5px; }
-    .synergy-summary .synergy-tile .head-plate-value { font-size: 17px; }
-}
-/* 360px보다 좁은 폰은 그래도 값이 잘려서 한글 설명을 짧게(합계·평균·인원) */
-@media (max-width: 359.98px) {
+/* 375px보다 좁으면 긴 설명에 값이 잘려서 짧게(합계·평균·인원), 330px보다 좁으면(320px 폰) 그것도 잘려서 영문만 */
+@media (max-width: 374.98px) {
     .synergy-tile-ko-long { display: none; }
     .synergy-tile-ko-short { display: inline; }
+}
+@media (max-width: 329.98px) {
+    .synergy-tile-ko { display: none; }
 }
 .synergy-tile { display: flex; flex-direction: column; justify-content: center; }
 /* 타일 머리: TOTAL / AVERAGE / MEMBERS 한 줄(예전엔 영문 머리 + 한글 꼬리 두 줄) */
