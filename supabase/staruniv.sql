@@ -959,7 +959,7 @@ grant execute on function public.admin_elo_stats() to authenticated;
 -- ############################################################################
 
 -- 어드민 일정 화면의 '달력 사진 갱신' 버튼이 부르는 함수.
--- 스타유니브 빌드(Build StarUniv web)를 실행해 docs/data/calendar.png를 새로 찍는다
+-- 스타유니브 빌드(build.yml)를 실행해 docs/data/calendar.png를 새로 찍는다
 -- (외부 자동화가 이 사진 주소를 가져간다). GitHub 토큰은 브라우저에 두지 않고 Vault에서 꺼내 쓴다.
 -- GitHub 토큰 준비는 이 파일 맨 위 참고.
 -- 버튼을 여러 번 눌러도 빌드가 줄줄이 쌓이지 않는다: 워크플로의 concurrency 설정 때문에
@@ -990,7 +990,7 @@ begin
   end if;
 
   select net.http_post(
-    url := 'https://api.github.com/repos/ststats/staruniv/actions/workflows/update.yml/dispatches',
+    url := 'https://api.github.com/repos/ststats/staruniv/actions/workflows/build.yml/dispatches',
     body := jsonb_build_object('ref', 'main'),
     headers := jsonb_build_object(
       'Authorization', 'Bearer ' || token,

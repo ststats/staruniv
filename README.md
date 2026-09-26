@@ -16,10 +16,10 @@
 
 | 무엇 | 언제 | 방법 |
 |---|---|---|
-| 스타유니브 빌드(`.github/workflows/update.yml`) | 매일 00:05·12:05(한국 시간) | 외부 크론이 `workflow_dispatch` 호출 |
+| 스타유니브 빌드(`.github/workflows/build.yml`) | 매일 00:05·12:05(한국 시간) | 외부 크론이 `workflow_dispatch` 호출 |
 | 〃 | `templates/`·`scripts/` 등을 main에 올릴 때 | push |
 | 〃 | 어드민 일정 화면 **"달력 사진 갱신"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
-| ststat 파이프라인(`run-pipeline.yml`) | 외부 크론 | `workflow_dispatch` |
+| ststat 파이프라인(`pipeline.yml`) | 외부 크론 | `workflow_dispatch` |
 | 방송 중 표시(`live_broadcasts`) | 2분마다 | Supabase pg_cron이 Edge Function `live-status` 호출(ststat 저장소) |
 
 빌드는 30초 안팎입니다: Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
@@ -39,7 +39,7 @@ Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand
 
 - 주소: 공개 페이지 이름 앞에 `admin-`(홈은 `admin.html`). 공개 페이지를 어드민 모드로 빌드한 것이고, Supabase 로그인 후 관리자만 편집할 수 있습니다.
 - 어드민 홈 맨 위 **운영 현황**: 최근 파이프라인 결과, ELO 경기 수·범위, 테이블 건수.
-- 멤버·전적을 고친 뒤 공개 사이트에 바로 보이게 하려면 빌드를 한 번 돌리세요(Actions → Build StarUniv web → Run workflow, 또는 "달력 사진 갱신" 버튼).
+- 멤버·전적을 고친 뒤 공개 사이트에 바로 보이게 하려면 빌드를 한 번 돌리세요(Actions → Build → Run workflow, 또는 "달력 사진 갱신" 버튼).
 
 ### "달력 사진 갱신" 버튼 설정(한 번만)
 

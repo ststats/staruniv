@@ -1,4 +1,4 @@
-name: Build StarUniv web
+name: Build
 
 on:
   workflow_dispatch:

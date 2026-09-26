@@ -33,7 +33,7 @@ import hashlib
 import json
 import os
 
-# 파이프라인 중간 산출물 캐시 위치. update.yml은 data/*.json과 docs/ 일부만 git add
+# 파이프라인 중간 산출물 캐시 위치. 빌드 워크플로는 data/*.json과 docs/ 일부만 git add
 # 하므로 build/ 아래 파일은 커밋되지 않는다(저장소 용량이 늘지 않음).
 LINKED_CACHE_PATH = os.path.join('build', 'linked_db.json')
 # 캐시 포맷을 바꾸면 이 값을 올린다 - 버전이 다르면 옛 캐시는 무시하고 다시 계산한다.

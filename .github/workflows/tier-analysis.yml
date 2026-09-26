@@ -1,4 +1,4 @@
-name: Tier table analysis
+name: Tier analysis
 
 # 관리자 화면의 '티어표 갱신'이 Supabase(admin_request_tier_analysis)를 거쳐 실행한다.
 # 펨코 티어표 이미지를 읽어 DB와 비교하고, 결과를 tier_update_jobs에 넣는다(사이트는 바꾸지 않는다).
