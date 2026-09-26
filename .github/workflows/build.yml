@@ -16,7 +16,6 @@ on:
       - 'scripts/capture_calendar.py'
       - 'requirements.txt'
       - 'package.json'
-      - 'package-lock.json'
 
 # 빌드 결과(docs/)를 저장소에 커밋하지 않고 GitHub Pages에 바로 배포한다
 # (저장소 설정 → Pages → Source: GitHub Actions). 예전처럼 봇 커밋이 쌓이지 않는다.
@@ -38,7 +37,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.10'
+          python-version: '3.12'
           cache: pip
 
       - name: Install Python dependencies

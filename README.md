@@ -73,7 +73,7 @@ Supabase(`admin_request_tier_analysis`)가 GitHub Actions(`tier-analysis.yml`)�
 
 ```bash
 python -m pip install -r requirements.txt
-python scripts/export_supabase.py     # SUPABASE_DB_URL 필요. 없으면 data/db.json 캐시를 그대로 씀
+python scripts/export_supabase.py     # SUPABASE_DB_URL 필요. 없으면 이 줄을 건너뛰고 기존 data/db.json 캐시로 빌드
 python scripts/generate_stats.py
 python scripts/build_html.py          # templates → docs (HTML, 자산 복사, 캐시용 ?v=해시)
 python scripts/write_site_data.py     # docs/data/site_shell.json · site_records.json
