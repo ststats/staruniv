@@ -221,11 +221,7 @@
   async function init(){
     if(document.body.dataset.adminPage!=='members')return;
     await load();
-    const container=document.getElementById('members-groups');
-    if(container&&!document.getElementById('adminMemberAdd')){
-      const b=document.createElement('button');b.id='adminMemberAdd';b.type='button';b.className='admin-floating-add';b.dataset.icon='plus';b.textContent='멤버 추가';b.onclick=()=>open(null);
-      container.parentElement?.prepend(b);
-    }
+    if(document.getElementById('members-groups'))C().addPageTool({id:'adminMemberAdd',label:'멤버 추가',icon:'plus',onClick:()=>open(null)});
     document.addEventListener('click',ev=>{
       if(!C().state.editMode)return;
       const card=ev.target.closest('.member-card[data-member]');

@@ -27,10 +27,9 @@
     histRegisterItems(merged);
     histRenderTypeBar(merged);
     window.histRedraw=render;
-    root.innerHTML=`
-      <button type="button" class="admin-floating-add" id="adminHistoryAdd" data-icon="plus">연혁 추가</button>
-      ${histTimelineHtml(histFilterItems(merged),{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true})}`;
-    document.getElementById('adminHistoryAdd')?.addEventListener('click',()=>open(null));
+    root.innerHTML=histTimelineHtml(histFilterItems(merged),{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true});
+    // 연혁 추가는 페이지 관리 상자(서브탭 편집과 같은 상자)에 한 번만 붙인다
+    C().addPageTool({id:'adminHistoryAdd',label:'연혁 추가',icon:'plus',onClick:()=>open(null)});
   }
 
   function participantRows(selected,locked) {

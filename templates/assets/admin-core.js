@@ -300,6 +300,31 @@
     }
   }
 
+  // 페이지 관리 상자: 페이지마다 네이비 사선 상자 하나(본문 맨 위)에 그 페이지의 관리 버튼(서브탭 편집 · 멤버 추가 ·
+  // 채널 관리 · 연혁 추가 등)을 모두 모은다. 어느 페이지에서나 같은 자리·같은 모양이다.
+  // 전용 관리 화면(전적 · 티어표 · 팀)은 화면을 통째로 다시 그리므로 같은 마크업(pageToolsHtml)을 직접 넣는다.
+  function toolButtonHtml({id,label,icon='plus'}){
+    return `<button type="button" class="admin-tool-btn" id="${esc(id)}" data-icon="${esc(icon)}">${esc(label)}</button>`;
+  }
+  function pageToolsHtml(items){
+    return `<div class="admin-page-tools"><span class="admin-page-tools-label">EDIT</span><div class="admin-page-tools-actions">${items.map(toolButtonHtml).join('')}</div></div>`;
+  }
+  function addPageTool({id,label,icon='plus',onClick}){
+    const existing=document.getElementById(id);
+    if(existing)return existing;
+    let box=document.getElementById('adminPageTools');
+    if(!box){
+      const host=document.querySelector('.page-section.active > .container')||document.querySelector('.page-section > .container');
+      if(!host)return null;
+      host.insertAdjacentHTML('afterbegin',pageToolsHtml([]));
+      box=host.firstElementChild;box.id='adminPageTools';
+    }
+    box.querySelector('.admin-page-tools-actions').insertAdjacentHTML('beforeend',toolButtonHtml({id,label,icon}));
+    const b=document.getElementById(id);
+    if(onClick)b.addEventListener('click',onClick);
+    return b;
+  }
+
   function bindCommonUi() {
     $('adminBuildButton')?.addEventListener('click', ev => requestSiteBuild(ev.currentTarget));
     $('loginForm')?.addEventListener('submit', login);
@@ -355,7 +380,7 @@
     state, $, q, qa, esc, value, empty, intOrNull, field, input, textarea, select, checkbox,
     toast, markDirty, setSaveState, openDrawer, closeDrawer, errorText, requireAdmin,
     loadMembers, loadSiteConfig, saveSiteConfig, nextSourceOrder, uploadMedia, mediaUrl,
-    audit, setEditMode
+    audit, setEditMode, addPageTool, pageToolsHtml
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

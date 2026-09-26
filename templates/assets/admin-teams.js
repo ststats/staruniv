@@ -174,7 +174,7 @@
     if(!host)return;
     host.hidden=false;
     document.body.classList.add('admin-dedicated-active');
-    host.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">팀 관리</h1><p class="page-header-subtitle">대학의 창단일·해체일·우승 기록과 로고를 관리합니다. 로고는 시너지에도 똑같이 보입니다</p></div>${opts.tabs()}</div><div class="admin-dedicated-shell"><div class="admin-action-bars"><button type="button" class="admin-floating-add" id="teamsAdd" data-icon="plus">새 팀</button></div><div id="tmRoot"><div class="admin-empty">불러오는 중</div></div></div>`;
+    host.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="RECORDS · ADMIN"><h1 class="page-header-title">팀 관리</h1><p class="page-header-subtitle">대학의 창단일·해체일·우승 기록과 로고를 관리합니다. 로고는 시너지에도 똑같이 보입니다</p></div>${opts.tabs()}</div><div class="admin-dedicated-shell">${C().pageToolsHtml([{id:'teamsAdd',label:'새 팀',icon:'plus'}])}<div id="tmRoot"><div class="admin-empty">불러오는 중</div></div></div>`;
     opts.bindTabs(host);
     host.querySelector('#teamsAdd').onclick=()=>openTeam(null);
     try{await load();render();}

@@ -229,7 +229,7 @@
     const {tiers=[],affs=[],races=[]}=S.options||{};
     const selected=(value,current)=>String(value)===String(current||'')?' selected':'';
     root.innerHTML=`<div class="page-header"><div class="page-header-main" data-label="STARCRAFT TIERS · ADMIN"><h1 class="page-header-title">티어표 관리</h1><p class="page-header-subtitle">선수 정보와 승급 이력을 관리합니다. 체크한 선수는 일괄 수정으로 소속·티어를 한 번에 바꿀 수 있습니다</p></div>${viewTabs()}</div><div class="admin-dedicated-shell">
-      <div class="admin-action-bars"><button type="button" class="admin-floating-add" id="tierAdd" data-icon="plus">새 선수</button><button type="button" class="admin-floating-add" id="tierBulk" data-icon="edit">일괄 수정</button></div>
+      ${C().pageToolsHtml([{id:'tierAdd',label:'새 선수',icon:'plus'},{id:'tierBulk',label:'일괄 수정',icon:'edit'}])}
       <div class="admin-filter-grid"><input class="admin-input" id="tierQ" placeholder="이름 · 닉네임 · SOOP ID · ELO ID" value="${esc(S.filters.q)}">
       <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.tier)}>${esc(tierLabel(x))}</option>`).join('')}</select>
       <select class="admin-input" id="tierAff"><option value="">전체 소속</option>${affs.map(x=>`<option value="${esc(x)}"${selected(x,S.filters.aff)}>${esc(x)}</option>`).join('')}</select>

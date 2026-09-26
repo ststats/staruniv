@@ -219,13 +219,10 @@
       const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.dataset.icon='edit';b.onclick=openNavManager;
       menu.after(b);
     }
-    // 서브탭 편집은 다른 페이지 관리 버튼(멤버 추가 등)과 같은 자리·모양: 본문 맨 위 관리 막대.
-    // 예전엔 히어로의 탭 줄 끝에 붙어 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나갔다.
-    const tabs=document.querySelector('.sub-tabs');
-    const host=tabs?.closest('.page-section')?.querySelector(':scope > .container');
-    if(host&&SUBTAB_IDS[document.body.dataset.adminPage]&&!document.getElementById('adminSubtabManage')){
-      const b=document.createElement('button');b.id='adminSubtabManage';b.type='button';b.className='admin-floating-add';b.textContent='서브탭 편집';b.dataset.icon='edit';b.onclick=openSubtabManager;
-      host.prepend(b);
+    // 서브탭 편집은 페이지 관리 상자(본문 맨 위 네이비 상자)에. 예전엔 히어로의 탭 줄 끝에 붙어
+    // 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나갔다.
+    if(document.querySelector('.sub-tabs')&&SUBTAB_IDS[document.body.dataset.adminPage]){
+      C().addPageTool({id:'adminSubtabManage',label:'서브탭 편집',icon:'edit',onClick:openSubtabManager});
     }
   }
 

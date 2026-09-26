@@ -814,15 +814,13 @@ body.admin-drawer-open { overflow: hidden; }
    한눈에 구분되게 하려는 것. 아이콘은 currentColor 마스크라 글자색을 따른다.
    ============================================================================= */
 :root {
-    --admin-ico-plus-navy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='%2314264a' stroke-width='2.2'/%3E%3C/svg%3E");
-    --admin-ico-edit-navy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='%2314264a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
     --admin-ico-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5v11M2.5 8h11' stroke='black' stroke-width='2.2'/%3E%3C/svg%3E");
     --admin-ico-edit: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 13.5l.7-3.1 7.6-7.6 2.4 2.4-7.6 7.6z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
     --admin-ico-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 10.5l5-5 5 5' fill='none' stroke='black' stroke-width='2.2'/%3E%3C/svg%3E");
 }
-:is(.admin-nav-manage, .admin-floating-add)[data-icon="plus"] { --admin-ico: var(--admin-ico-plus); }
-:is(.admin-nav-manage, .admin-floating-add)[data-icon="edit"] { --admin-ico: var(--admin-ico-edit); }
-.admin-nav-manage[data-icon]::before {
+:is(.admin-nav-manage, .admin-tool-btn)[data-icon="plus"] { --admin-ico: var(--admin-ico-plus); }
+:is(.admin-nav-manage, .admin-tool-btn)[data-icon="edit"] { --admin-ico: var(--admin-ico-edit); }
+:is(.admin-nav-manage, .admin-tool-btn)[data-icon]::before {
     content: "";
     flex: none;
     width: 12px;
@@ -926,31 +924,23 @@ body.admin-drawer-open { overflow: hidden; }
     mask: var(--admin-ico-edit) center / contain no-repeat;
 }
 
-/* 페이지 관리 막대 (서브탭 편집 · 멤버 추가 · 채널 관리 · 보자 영상 추가 · 도구 추가 · 새 매치 · 새 선수 · 연혁 추가)
-   모든 페이지에서 같은 자리(본문 맨 위)·같은 모양. 공개 사이트의 네이비 사선 박스(페이지 머리 · 요약 칸)와 같은 면:
-   [EDIT] 이름 ................ [흰 칸 아이콘] - 네이비 면 위 주요 동작은 흰 바탕(선택 = 바탕의 반대색) */
-.admin-floating-add {
+/* 페이지 관리 상자: 페이지마다 네이비 사선 상자 하나(본문 맨 위)에 그 페이지의 관리 버튼을 모두 모은다
+   (서브탭 편집 · 멤버 추가 · 채널 관리 · 보자 영상 추가 · 도구 추가 · 연혁 추가 · 새 매치 · 새 선수 · 일괄 수정 · 새 팀).
+   공개 사이트의 네이비 사선 면과 같은 면이고, 안의 버튼은 히어로 버튼처럼 흰 반투명 면 + 흰 글씨.
+   [EDIT] ........................ [버튼] [버튼] - 좁으면 버튼이 아래로 줄바꿈된다 */
+.admin-page-tools {
     display: flex;
     align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 54px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
     margin: 0 0 var(--space-content-gap);
-    padding: 0 10px 0 16px;
-    border: 0;
+    padding: 10px 10px 10px 16px;
     background-color: var(--navy);
     background-image: var(--navy-pattern);
     color: var(--navy-on-text);
     clip-path: var(--notch-md);
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 700;
-    text-align: left;
-    cursor: pointer;
-    transition: box-shadow .15s;
 }
-.admin-floating-add::before {
-    content: "EDIT";
+.admin-page-tools-label {
     flex: none;
     padding: 4px 6px;
     background: rgba(255, 255, 255, .14);
@@ -961,30 +951,33 @@ body.admin-drawer-open { overflow: hidden; }
     letter-spacing: .14em;
     line-height: 1;
 }
-.admin-floating-add::after {
-    content: "";
-    flex: none;
-    width: 34px;
-    height: 34px;
-    margin-left: auto;
-    background-color: #fff;
-    background-image: var(--admin-ico-plus-navy);
+.admin-page-tools-actions {
+    display: flex;
+    flex: 1 1 0;               /* EDIT 옆에 남아 그 안에서 줄바꿈된다(EDIT만 한 줄을 차지하지 않게) */
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+}
+.admin-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 13px;
+    border: 0;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
     clip-path: var(--notch-sm);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s, color .15s;
 }
-.admin-floating-add[data-icon="edit"]::after { background-image: var(--admin-ico-edit-navy); }
-.admin-floating-add:disabled { opacity: .6; cursor: wait; }
-.admin-floating-add:hover { box-shadow: inset 0 0 0 999px rgba(255, 255, 255, .07); }
-/* 한 페이지에 막대가 여럿이면(티어표: 새 선수 · 일괄 수정) 한 줄에 나란히, 좁으면 아래로 */
-.admin-action-bars {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 8px;
-    margin-bottom: var(--space-content-gap);
-}
-.admin-action-bars > .admin-floating-add { margin: 0; }
+.admin-tool-btn:hover { background: #fff; color: var(--navy); }
+.admin-tool-btn:disabled { opacity: .6; cursor: wait; }
 
 /* 카드 오른쪽 위에 떠 있는 편집 · 숨김 버튼 */
 .admin-card-action {
@@ -1038,7 +1031,7 @@ body.admin-drawer-open { overflow: hidden; }
 
 .admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
     .admin-nav-manage,
-    .admin-floating-add, .admin-action-bars, .hist-admin-bar) {
+    .admin-page-tools, .hist-admin-bar) {
     display: none !important;
 }
 
