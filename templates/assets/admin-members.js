@@ -58,15 +58,17 @@
     return raw;
   }
 
-  // 대표 영상 자동 편집: 올린 영상을 브라우저에서 720×404(16:9, 가운데 기준으로 잘라 맞춤) · 30fps ·
-  // 소리 없음 · 최대 6초 MP4(H.264)로 다시 만든다. 원본 1.5MB → 300KB 안팎이라 방송통계에서 끊기지 않는다.
+  // 대표 영상 자동 편집: 올린 영상을 브라우저에서 1280×720(16:9, 가운데 기준으로 잘라 맞춤) · 30fps ·
+  // 소리 없음 · 최대 6초 MP4(H.264)로 다시 만든다. 저장소의 다른 대표 영상들과 같은 크기이고, 6초 400~500KB 안팎이라
+  // 방송통계에서 끊기지 않는다(예전 720×404는 TOP 칸에서 흐릿했다).
   // WebCodecs(VideoEncoder)와 mp4-muxer.js를 쓴다. 브라우저가 못 하면 null(원본을 그대로 올릴지 묻는다).
   // 코덱은 H.264만 쓴다(아이폰 사파리까지 어디서나 재생). 크롬·엣지는 지원, 못 하는 브라우저면 원본을 올릴지 묻는다.
   // 소프트웨어 인코더(크롬·엣지의 OpenH264, Baseline 레벨 3.x)를 먼저 쓴다. 하드웨어 인코더는 올리는 PC의 그래픽 칩마다
   // 결과가 달라서(윈도우 기본 인코더는 레벨 4.1·CABAC) 그렇게 만든 영상이 PC·휴대폰 사이트에서 첫 장면에 멈춘 적이 있다
   // (2026-09 변현제 대표 영상). 소프트웨어가 안 되는 브라우저에서만 예전 설정(하드웨어 Main)으로 넘어간다.
-  // OpenH264는 비트레이트를 높게 줘도 6초 250KB 안팎으로 나오는데, 이 크기(720×404)에서는 화질 차이가 눈에 띄지 않는다.
-  const CLIP={w:720,h:404,fps:30,maxSec:6,bitrate:1_000_000,codecs:[
+  // OpenH264는 비트레이트를 높게 줘도(고정·가변 모두) 1280×720 6초에 400~470KB 안팎으로 맞춘다 - 하드웨어보다 조금 부드럽지만
+  // 어느 기기에서나 같은 결과가 나오는 쪽을 택했다. 레벨 3.1이 1280×720 30fps까지 받는다.
+  const CLIP={w:1280,h:720,fps:30,maxSec:6,bitrate:2_500_000,codecs:[
     {encoder:'avc1.42001f',muxer:'avc',extra:{avc:{format:'avc'},hardwareAcceleration:'prefer-software'}},
     {encoder:'avc1.4d401f',muxer:'avc',extra:{avc:{format:'avc'}}},
   ]};
@@ -153,7 +155,7 @@
         <div class="admin-preview-row"><div><b>대표 사진·영상(방송통계 TOP)</b><div class="admin-media-preview">${row.photo_path?(/\.(mp4|webm)$/i.test(row.photo_path)?`<video src="${C().esc(C().mediaUrl(row.photo_path))}" muted loop autoplay playsinline></video>`:`<img src="${C().esc(C().mediaUrl(row.photo_path))}" alt="">`):''}</div></div></div>
         ${C().field('대표 사진·영상',`<input class="admin-input" id="am_photo" type="file" accept="video/mp4,video/webm,video/*,image/webp,image/gif,image/png,image/jpeg">`)}
         <p class="admin-help" id="am_photo_status"></p>
-        <p class="admin-help">영상을 고르면 저장할 때 자동으로 720×404 · 30fps · 소리 없음 · 최대 6초 MP4로 줄여서 올립니다(16:9가 아니면 가운데를 잘라 맞춤). PC 크롬·엣지에서 올려 주세요(모바일은 줄이지 못할 수 있음). 사진·움짤은 그대로 올라갑니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
+        <p class="admin-help">영상을 고르면 저장할 때 자동으로 1280×720 · 30fps · 소리 없음 · 최대 6초 MP4로 줄여서 올립니다(16:9가 아니면 가운데를 잘라 맞춤). PC 크롬·엣지에서 올려 주세요(모바일은 줄이지 못할 수 있음). 사진·움짤은 그대로 올라갑니다. 얼굴이 가운데~위쪽에 오게 해 주세요${row.photo_path?` · <label><input type="checkbox" id="am_photo_clear"> 대표 사진 지우기</label>`:''}</p>
       `,
       onSubmit:async()=>{
         const payload={
@@ -174,7 +176,7 @@
         if(photo&&/^video\//.test(photo.type)){
           const status=document.getElementById('am_photo_status');
           const say=t=>{if(status)status.textContent=t;};
-          say('영상 편집 중(720×404 · 30fps · 소리 없음)');
+          say('영상 편집 중(1280×720 · 30fps · 소리 없음)');
           const before=photo.size;
           let why='';
           const clip=await encodeClip(photo,p=>say(`영상 편집 중 ${Math.round(p*100)}%`)).catch(e=>{why=C().errorText(e);return null;});

@@ -163,7 +163,9 @@ test('stats TOP card uses repo media files (media/members/<SOOP ID>), no DB uplo
 
 test('admin upload of feature photo/video stays: PC browser re-encodes video, no server encoding', () => {
   const js = read('templates/assets/admin-members.js');
-  assert.match(js, /const CLIP=\{w:720,h:404,fps:30,maxSec:6/);
+  assert.match(js, /const CLIP=\{w:1280,h:720,fps:30,maxSec:6/);
+  // 소프트웨어 H.264(Baseline)를 먼저, 안 되면 하드웨어 Main으로
+  assert.match(js, /encoder:'avc1\.42001f',muxer:'avc',extra:\{avc:\{format:'avc'\},hardwareAcceleration:'prefer-software'\}/);
   assert.match(js, /encoder:'avc1\.4d401f',muxer:'avc'/);
   assert.doesNotMatch(js, /admin_request_member_video|members-photo-raw/);
   assert.match(read('templates/base.html'), /asset_url\('mp4-muxer\.js'\)/);
