@@ -19,7 +19,7 @@
             hidden만 붙인다 - core.js가 nav.json을 다시 읽어 바로 되살릴 수 있어야 한다.
             처음 켜져 있는 탭은 '보이는 것 중 첫 번째'다. #}
         {%- set stats_tabs = [('balloons', '별풍선'), ('broadcast_seconds', '방송시간'),
-                              ('cumulative_viewers', '누적시청자'), ('sponsor', '스폰판수')] %}
+                              ('cumulative_viewers', '누적시청자'), ('sponsor', '스폰판수'), ('sponsor_rate', '스폰승률')] %}
         {%- set visible_tabs = stats_tabs | map(attribute=0) | reject('in', hidden_stats_tabs) | list %}
         <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
             {%- for key, label in stats_tabs %}
@@ -52,10 +52,10 @@
         </div>
         <div class="synergy-tiles">
             {#- 이름표: 'TOTAL · 이번 달 합계', 375px보다 좁으면 'TOTAL · 합계', 330px보다 좁으면 'TOTAL'(값과 한 줄에 들어가게) #}
-            {#- 합계·평균의 긴 이름표는 고른 달에 따라 '이번 달 합계' / '8월 합계'로 바뀐다(data-suffix) #}
-            {%- for tile_id, tile_label, tile_ko, tile_ko_short, tile_suffix in [('synergy-sum-total', 'TOTAL', '이번 달 합계', '합계', '합계'), ('synergy-sum-avg', 'AVERAGE', '이번 달 평균', '평균', '평균'), ('synergy-sum-count', 'MEMBERS', '집계 인원', '인원', '')] %}
-            <div class="clean-card head-plate synergy-tile">
-                <div class="synergy-tile-label">{{ tile_label }}<span class="synergy-tile-ko"><i>·</i><span class="synergy-tile-ko-long"{% if tile_suffix %} data-suffix="{{ tile_suffix }}"{% endif %}>{{ tile_ko }}</span><span class="synergy-tile-ko-short">{{ tile_ko_short }}</span></span></div>
+            {#- 합계·평균 칸 이름표는 고른 달·지표에 따라 page-stats.js가 바꾼다('8월 합계', '이번 달 전체 승률' 등, data-tile) #}
+            {%- for tile_id, tile_label, tile_ko, tile_ko_short, tile_key in [('synergy-sum-total', 'TOTAL', '이번 달 합계', '합계', 'total'), ('synergy-sum-avg', 'AVERAGE', '이번 달 평균', '평균', 'avg'), ('synergy-sum-count', 'MEMBERS', '집계 인원', '인원', '')] %}
+            <div class="clean-card head-plate synergy-tile"{% if tile_key %} data-tile="{{ tile_key }}"{% endif %}>
+                <div class="synergy-tile-label">{{ tile_label }}<span class="synergy-tile-ko"><i>·</i><span class="synergy-tile-ko-long">{{ tile_ko }}</span><span class="synergy-tile-ko-short">{{ tile_ko_short }}</span></span></div>
                 <div class="head-plate-value" id="{{ tile_id }}">-</div>
             </div>
             {%- endfor %}

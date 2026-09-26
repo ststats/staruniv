@@ -1,6 +1,6 @@
 /**
  * 방송통계 페이지: 남/여 멤버별 방송 지표 순위표. (core.js → 이 파일)
- * URL: /stats/[?view=hours|viewers|sponsor][&month=YYYY-MM]  (month가 없으면 가장 최근 달)
+ * URL: /stats/[?view=hours|viewers|sponsor|winrate][&month=YYYY-MM]  (month가 없으면 가장 최근 달)
  */
 
 // 지표별 설정을 한 곳에 모았다: 탭 라벨 / URL에 노출되는 짧은 값 / 표시 형식 / 정렬 기준.
@@ -25,12 +25,41 @@ const SYNERGY_METRICS = {
     },
     sponsor: {
         label: '스폰판수', url: 'sponsor',
-        format: m => formatSponsorRecord(m.sponsor_wins, m.sponsor_losses),
-        // 표시는 승패/승률이지만, 정렬과 합계는 판수(승+패) 기준이다 - 승수 기준이 아니다.
-        sortValue: m => (m.sponsor_wins || 0) + (m.sponsor_losses || 0),
+        format: m => formatCount(sponsorGames(m), '판'),
+        sortValue: sponsorGames,
         formatValue: v => formatCount(v, '판'),
     },
+    // 승패·승률. 판수가 적으면 승률이 튀므로(1전 1승 = 100%) SPONSOR_RATE_MIN판 이상인 멤버를 승률순으로
+    // 먼저 세우고, 그보다 적은 멤버는 그 뒤에 판수순으로 둔다. 합계·평균 칸은 전체 승률·평균 승률이다.
+    sponsor_rate: {
+        label: '스폰승률', url: 'winrate',
+        format: m => (sponsorGames(m) ? formatSponsorRecord(m.sponsor_wins, m.sponsor_losses) : '-'),
+        sortValue: m => {
+            const games = sponsorGames(m);
+            if (games >= SPONSOR_RATE_MIN) return 2 + (m.sponsor_wins || 0) / games + games * 1e-9;
+            return games * 1e-6;
+        },
+        tiles: { total: ['전체 승률', '승률'], avg: ['평균 승률', '평균'] },
+        summarize: rows => {
+            const wins = rows.reduce((n, m) => n + (m.sponsor_wins || 0), 0);
+            const games = rows.reduce((n, m) => n + sponsorGames(m), 0);
+            const rated = rows.filter(m => sponsorGames(m) >= SPONSOR_RATE_MIN);
+            const avg = rated.reduce((n, m) => n + (m.sponsor_wins || 0) / sponsorGames(m), 0) / (rated.length || 1);
+            return {
+                total: games ? `${(wins / games * 100).toFixed(1)}%` : '-',
+                avg: rated.length ? `${(avg * 100).toFixed(1)}%` : '-',
+            };
+        },
+    },
 };
+// 스폰승률 순위에 올리는 최소 판수(이보다 적으면 승률 순위 뒤로)
+const SPONSOR_RATE_MIN = 10;
+// 합계·평균 칸 이름표 기본값: [긴 이름(앞에 '이번 달'·'8월'이 붙음), 좁은 화면용]
+const SYNERGY_TILE_LABELS = { total: ['합계', '합계'], avg: ['평균', '평균'] };
+
+function sponsorGames(m) {
+    return (m.sponsor_wins || 0) + (m.sponsor_losses || 0);
+}
 
 // URL의 view 값 -> 내부 지표 키. 모르는 값(또는 'constructor' 같은 프로토타입 이름)은 기본값.
 function synergyMetricFromUrl(urlValue) {
@@ -121,8 +150,20 @@ function renderSynergyMonthText() {
             ? `캄몬스타즈 멤버들의 ${synergyMonthLabel(month)} 방송 통계입니다 (${mm}월 ${dd}일까지)`
             : '캄몬스타즈 멤버들의 이번 달 방송 통계입니다';
     }
-    staticAll('.synergy-tile-ko-long[data-suffix]').forEach(el => {
-        el.innerText = `${month ? `${monthNum}월` : '이번 달'} ${el.dataset.suffix}`;
+    renderSynergyTileLabels();
+}
+
+// 합계·평균 칸 이름표: '이번 달 합계' / '8월 합계', 스폰승률은 '이번 달 전체 승률' 등(지표의 tiles)
+function renderSynergyTileLabels() {
+    const month = SynergyState.month;
+    const prefix = month ? `${Number(month.split('-')[1])}월` : '이번 달';
+    const config = synergyMetricConfig(SynergyState.metric) || {};
+    staticAll('.synergy-tile[data-tile]').forEach(tile => {
+        const [long, short] = (config.tiles || SYNERGY_TILE_LABELS)[tile.dataset.tile] || ['', ''];
+        const longEl = tile.querySelector('.synergy-tile-ko-long');
+        const shortEl = tile.querySelector('.synergy-tile-ko-short');
+        if (longEl) longEl.innerText = `${prefix} ${long}`;
+        if (shortEl) shortEl.innerText = short;
     });
 }
 
@@ -275,6 +316,7 @@ function renderSynergySummary(rows) {
     const box = document.getElementById('synergy-summary');
     if (!box) return;
     const config = synergyMetricConfig(SynergyState.metric) || SYNERGY_METRICS.sponsor;
+    renderSynergyTileLabels();
     const readValue = config.sortValue ? config.sortValue : (row => row[SynergyState.metric] || 0);
     const fmt = v => (config.formatValue ? config.formatValue(v) : Number(v).toLocaleString('ko-KR'));
 
@@ -288,9 +330,15 @@ function renderSynergySummary(rows) {
         return;
     }
 
-    const total = rows.reduce((acc, m) => acc + (Number(readValue(m)) || 0), 0);
-    setText('synergy-sum-total', fmt(total));
-    setText('synergy-sum-avg', fmt(Math.round(total / rows.length)));
+    if (config.summarize) {
+        const sum = config.summarize(rows);
+        setText('synergy-sum-total', sum.total);
+        setText('synergy-sum-avg', sum.avg);
+    } else {
+        const total = rows.reduce((acc, m) => acc + (Number(readValue(m)) || 0), 0);
+        setText('synergy-sum-total', fmt(total));
+        setText('synergy-sum-avg', fmt(Math.round(total / rows.length)));
+    }
 
     const top = rows[0];
     setText('synergy-sum-top', top.ourMember['이름'] || top.nickname || '-');
