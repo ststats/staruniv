@@ -1161,6 +1161,7 @@ body.admin-actions-on:not(.admin-edit-disabled) {
 }
 .admin-ops-grid > div {
     display: grid;
+    min-width: 0;
     align-content: start;
     gap: 4px;
     padding: 14px 16px;
@@ -1171,6 +1172,7 @@ body.admin-actions-on:not(.admin-edit-disabled) {
 .admin-ops-grid span { color: var(--navy-accent); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 .admin-ops-grid b { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .admin-ops-grid small { color: var(--navy-on-muted); font-size: 11px; }
+.admin-ops-grid :is(span, b, small) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .admin-ops-grid .is-error b { color: var(--color-lose); }
 @media (max-width: 767.98px) {
     .admin-ops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -1222,7 +1224,16 @@ body.admin-actions-on:not(.admin-edit-disabled) {
     font-weight: 700;
 }
 .admin-rank-explain[open] > .admin-rank-explain-head::after { content: "접기 ▴"; }
-.admin-rank-explain-head span { grid-column: 1 / -1; grid-row: 3; color: var(--color-text-muted); font-size: 12px; line-height: 1.5; }
+.admin-rank-explain-head span {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: nowrap;          /* 요약은 늘 한 줄(넘치면 끝을 … 로) */
+    text-overflow: ellipsis;
+}
 .admin-rank-explain-head:hover b { color: var(--color-primary); }
 .admin-rank-explain > ol { padding-bottom: 8px !important; }
 .admin-rank-explain ol {

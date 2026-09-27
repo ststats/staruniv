@@ -233,7 +233,13 @@
   // (ststat.sql의 admin_dashboard_stats 한 번).
   const OPS_TABLES=[['members','멤버'],['matches','팀 경기'],['tier_members','티어 선수'],['calendar_events','일정'],
     ['calendar_off_air','휴방'],['videos','수집 영상'],['video_picks','추천 영상'],['elo_players','ELO 선수']];
-  const kst=v=>{if(!v)return '-';const d=new Date(v);return isNaN(d)?String(v):d.toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
+  // 한국 시간 '09.27 18:46' - 요약 줄이 한 줄에 들어가게 짧게
+  const kst=v=>{if(!v)return '-';const d=new Date(v);if(isNaN(d))return String(v);
+    const t=d.toLocaleString('sv-SE',{timeZone:'Asia/Seoul'});return `${t.slice(5,7)}.${t.slice(8,10)} ${t.slice(11,16)}`;};
+  // 파이프라인 작업 이름(sync_jobs.job_name)과 상태를 짧은 한글로
+  const JOB_LABELS={healthcheck:'연결 점검',sync_roster:'명단 동기화',sync_eloboard:'EloBoard 수집',calculate_eloboard_stats:'랭킹 계산',
+    sync_synergy_daily:'방송통계',sync_videos:'영상 수집',audit_match_rounds:'전적 점검'};
+  const STATUS_LABELS={succeeded:'성공',success:'성공',completed:'성공',failed:'실패',running:'실행 중',started:'실행 중',skipped:'건너뜀'};
 
   async function renderOps(){
     if(document.body.dataset.adminPage!=='home')return;
@@ -257,13 +263,14 @@
     }
     const f=data.freshness||{}, elo=data.elo||{}, counts=data.counts||{};
     const status=String(f.last_job_status||'unknown');
+    const statusText=STATUS_LABELS[status]||status, jobText=JOB_LABELS[f.last_job_name]||f.last_job_name||'-';
     const total=Number(counts.elo_matches||elo.total||0);
     // 경기 수는 표 전체를 세면 시간 초과라 DB 통계 추정치(admin_dashboard_stats).
     const totalText=(elo.total_estimated?'약 ':'')+total.toLocaleString();
     box.innerHTML=`
-      <summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>ELO ${totalText}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
+      <summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>ELO ${totalText}경기 · 파이프라인 ${esc(statusText)} · ${esc(kst(f.last_job_finished_at))}</span></summary>
       <div class="admin-ops-grid">
-        <div${status==='failed'?' class="is-error"':''}><span>최근 파이프라인</span><b>${esc(f.last_job_name||'-')} · ${esc(status)}</b><small>${esc(kst(f.last_job_finished_at))}</small></div>
+        <div${status==='failed'?' class="is-error"':''}><span>최근 파이프라인</span><b>${esc(jobText)} · ${esc(statusText)}</b><small>${esc(kst(f.last_job_finished_at))}</small></div>
         <div><span>ELO 기준일</span><b>${esc(f.elo_as_of||'-')}</b><small>${esc(kst(f.elo_activated_at))}</small></div>
         <div><span>방송통계 기준일</span><b>${esc(f.daily_stat_date||'-')}</b><small>${esc(kst(f.daily_updated_at))}</small></div>
         <div><span>ELO 경기</span><b>${totalText}</b><small>ID ${esc(elo.min_match_id??'-')}–${esc(elo.max_match_id??'-')}</small></div>
