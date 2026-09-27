@@ -166,7 +166,7 @@ def link_rounds_to_matches(matches, rounds, members=None):
             return f"no__{no}"
         return f"{row.get('날짜')}__{row.get('상대팀')}__no{no}"
 
-    # 1. 매치에 키 부여 (번호가 있으면 번호로, 없으면 예전 방식대로 등장 순서로)
+    # 1. 매치에 키 부여 (번호가 있으면 번호로, 없으면 등장 순서로)
     match_seq_counter = {}
     match_by_key = {}
     for m, no in zip(matches, match_nos):

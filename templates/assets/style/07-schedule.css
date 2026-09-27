@@ -86,9 +86,8 @@ body.calendar-capture .cal-calendar-inner {
     overflow: visible;
     padding-bottom: 0;
 }
-/* 달력은 칸 폭을 화면에 맞춰 줄인다. 예전에는 최소 770px을 잡아둬서, 달력이 놓이는 자리가
-   그보다 좁은 구간(태블릿 가로 768~890px, 노트북 992~1270px의 2단 배치)에서 가로 스크롤이
-   생겼다. 칸이 좁아지면 일정 칩의 글자만 한 단계 작아지고 내용은 그대로 보인다. */
+/* 달력은 칸 폭을 화면에 맞춰 줄인다(최소 폭을 잡으면 태블릿 가로 768~890px, 노트북 992~1270px의
+   2단 배치에서 가로 스크롤이 생긴다). 칸이 좁아지면 일정 칩의 글자만 한 단계 작아지고 내용은 그대로 보인다. */
 .cal-calendar-scroll-content {
     min-width: 0;
     width: 100%;
@@ -473,9 +472,8 @@ html[data-theme="dark"] .cal-longterm-bar {
 #page-schedule .cal-card-desc {
     line-height: 1.35;
 }
-/* '휴방'은 바로 위 일정 줄의 시간 칸과 같은 자리에 오는 글자다. 예전엔 여기에만
-   자간(0.14em)과 대문자 변환이 걸려 있어서, 같은 13px·700인데도 혼자 벌어져 보이고
-   뒤따르는 칩이 위 줄 내용과 어긋났다. 시간 칸과 똑같이 맞춘다. */
+/* '휴방'은 바로 위 일정 줄의 시간 칸과 같은 자리에 오는 글자라 시간 칸과 똑같이 맞춘다
+   (자간·대문자 변환이 다르면 혼자 벌어져 보이고 뒤따르는 칩이 위 줄 내용과 어긋난다). */
 #page-schedule .cal-offair-label {
     font-size: var(--fs-body);
     line-height: 1.35;

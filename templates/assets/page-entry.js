@@ -169,19 +169,16 @@ async function entryLoadRatingMetaInBackground() {
             if (!EntryState.index.syncedAt && row.as_of) EntryState.index.syncedAt = String(row.as_of);
         });
 
-        // 랭킹 v4(ststat migration 011)부터 종족 상성이 메타에 들어간다. 아직 적용 전인
-        // DB에서는 그 열이 없어 요청이 실패하므로 옛 열만으로 한 번 더 묻는다.
-        const metaQuery = cols => entryWithTimeout(
-            client.from('elo_ranking_meta').select(cols).order('as_of', { ascending: false }).limit(1),
+        const metaRes = await entryWithTimeout(
+            client.from('elo_ranking_meta').select('as_of,tier_counts,tier_levels,race_matchup')
+                .order('as_of', { ascending: false }).limit(1),
             '랭킹 기준선'
         );
-        let metaRes = await metaQuery('as_of,tier_counts,tier_levels,race_matchup');
-        if (metaRes.error) metaRes = await metaQuery('as_of,tier_counts,tier_levels');
         if (metaRes.error) throw metaRes.error;
 
         const meta = Array.isArray(metaRes.data) && metaRes.data.length ? metaRes.data[0] : {};
         EntryState.index.ranking = {
-            // 반감기 기준일. 예전엔 이 값을 채우지 않아 늘 오늘 날짜로 계산했다.
+            // 반감기 기준일(비면 오늘 날짜로 계산하게 된다).
             asOf: meta.as_of ? String(meta.as_of) : '',
             tierCounts: meta.tier_counts || {},
             tierLevels: meta.tier_levels || {},
@@ -375,23 +372,23 @@ function entryModelLogit(aPid, bPid) {
 // 예측승률 = 모델(레이팅 + 종족 상성) + 맞대결 · 종족전 · 맵 보정, 모두 로짓에서 더한다.
 //
 // [보정은 '실제 결과 - 모델 기대'의 잔차로 잰다]
-// 예전엔 '그 종족 상대 승률 - 평소 승률'을 썼는데, 그러면 상대가 우연히 약했던 종족전이
-// 종족 강점으로 읽혔다(상대 강도 미보정). 맞대결은 레이팅 계산에 이미 들어간 경기를
-// 또 더하는 셈이었다. 지금은 경기마다 모델이 준 기대승률 p̂과 실제 결과를 비교해,
-// 레이팅이 설명하지 못한 부분만 보정한다:
+// '그 종족 상대 승률 - 평소 승률'로 재면 상대가 우연히 약했던 종족전이 종족 강점으로
+// 읽히고(상대 강도 미보정), 맞대결은 레이팅 계산에 이미 들어간 경기를 또 더하게 된다.
+// 그래서 경기마다 모델이 준 기대승률 p̂과 실제 결과를 비교해, 레이팅이 설명하지 못한
+// 부분만 보정한다:
 //     보정(로짓) = Σ w·(결과 - p̂) / (Σ w·p̂(1-p̂) + τ)
 // 가우스 prior를 둔 로지스틱 오프셋의 한 걸음 추정이다. τ가 표본이 적을 때 0으로 당긴다.
 //
 // [확률이 아니라 로짓에서 더한다]
-// 예전엔 확률에 %p를 더하고 10~90%로 잘랐다. 80%에 +18%p면 98%가 돼 잘렸고, 표시된
-// 숫자를 확률로 믿기 어려웠다. 로짓에서 더하면 자르지 않아도 0~1 안에 머문다.
+// 확률에 %p를 더하면 80%에 +18%p가 98%가 되는 식으로 범위를 넘어 잘라야 하고, 표시된
+// 숫자를 확률로 믿기 어렵다. 로짓에서 더하면 자르지 않아도 0~1 안에 머문다.
 const ENTRY_FORM_HALF_LIFE = 90;
 // 기간 탭은 전적을 탐색하는 표시 필터다. 예측 입력까지 잘라버리면 같은 대진의
 // 확률이 탭을 누를 때마다 바뀐다. 예측은 통산 데이터를 쓰되 90일 반감기로
 // 최근 경기의 영향만 자연스럽게 크게 둔다.
 const ENTRY_PREDICTION_PERIOD = 'all';
 // τ(prior 정밀도). 한 판의 정보량이 p̂(1-p̂)≈0.25라, τ=2.5면 가중 10판에서 보정이 절반만
-// 반영된다. 예전 prior 판 수(맞대결 10 · 종족 14 · 맵 18)와 같은 수축 세기로 옮겼다.
+// 반영된다(맞대결 10 · 종족 14 · 맵 18판 prior와 같은 수축 세기).
 const ENTRY_H2H_TAU = 2.5;
 const ENTRY_RACE_TAU = 3.5;
 const ENTRY_MAP_TAU = 4.5;

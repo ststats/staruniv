@@ -35,9 +35,8 @@
     <script>
         document.documentElement.dataset.navPending = '';
     </script>
-    {#- Supabase 메뉴 설정을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다. 빌드 때 이미 숨김이 반영돼
-        있지만, 어드민에서 방금 저장한 경우에는 이 파일이 빌드보다 최신이라 잠깐 보였다가
-        사라지는 깜빡임이 생긴다. 자리(높이)는 유지하면서 보이지만 않게 한다. #}
+    {#- Supabase 메뉴 설정을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다(숨긴 메뉴가 잠깐 보였다가
+        사라지는 깜빡임 방지). 자리(높이)는 유지하면서 보이지만 않게 한다. #}
     <style>html[data-nav-pending] #mainMenu,
            html[data-nav-pending] #synergy-metric-filter { visibility: hidden; }</style>
     {#- 공개 사이트 운영 데이터는 Supabase에서 직접 읽는다. publishable key는 브라우저 공개용이고,
@@ -49,18 +48,17 @@
     <script src="supabase-config.js"></script>
     {%- block head_scripts %}{% endblock %}
     <link rel="icon" type="image/webp" href="images/%ED%8C%8C%EB%B9%84%EC%BD%98.webp">
-    {#- 글꼴은 화면에 나온 글자가 든 조각만 받는다(dynamic subset). 예전 pretendard.css는 굵기마다
-        한글 전체(약 770KB)를 받아서 첫 방문에 글꼴만 3MB가 넘었다. #}
+    {#- 글꼴은 화면에 나온 글자가 든 조각만 받는다(dynamic subset). 그냥 pretendard.css는 굵기마다
+        한글 전체(약 770KB)를 받아 첫 방문에 글꼴만 3MB가 넘는다. #}
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-    {#- 글꼴은 Pretendard 하나로 통일한다(예전에는 숫자·라틴 라벨에 Chakra Petch를 따로 썼는데,
-        한글과 섞이는 자리에서 자간이 어긋나 보였다). 표 자리수는 font-variant-numeric으로 맞춘다. #}
+    {#- 글꼴은 Pretendard 하나로 통일한다(숫자·라틴용 글꼴을 따로 쓰면 한글과 섞이는 자리에서 자간이
+        어긋나 보인다). 표 자리수는 font-variant-numeric으로 맞춘다. #}
     <link rel="stylesheet" href="{{ asset_url('style.css') }}">
 {% if admin_mode %}<link rel="stylesheet" href="{{ asset_url('admin.css') }}">{% endif %}
 </head>
 <body{% if admin_mode %} class="admin-mode" data-admin-page="{{ page_id }}"{% endif %}>
 
-{#- [구조] 예전엔 이 파일(index.html) 하나에 모든 메뉴를 넣고 JS로 보였다 숨겼다 했다(SPA).
-    이제 build_html.py가 templates/pages/*.html을 이 레이아웃에 끼워 메뉴마다 실제 페이지
+{#- [구조] build_html.py가 templates/pages/*.html을 이 레이아웃에 끼워 메뉴마다 실제 페이지
     (docs/index.html, docs/records/index.html ...)를 만든다. 상단 메뉴는 진짜 링크(<a href>)라
     새 탭 열기/Ctrl+클릭이 되고, JS 없이도 이동한다.
 

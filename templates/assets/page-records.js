@@ -4,8 +4,8 @@
  */
 
 // 팀 매치 → 세트(라운드) 목록 조회 인덱스.
-// 예전엔 매치 한 줄을 그릴 때마다 전체 라운드를 filter해서 O(매치 수 × 라운드 수)였다.
-// 라운드를 한 번만 훑어 묶음으로 나눠두고 매치마다 그 묶음만 본다.
+// 라운드를 한 번만 훑어 묶음으로 나눠두고 매치마다 그 묶음만 본다(매치마다 전체 라운드를
+// filter하면 O(매치 수 × 라운드 수)).
 //   - 1순위: _match_key(원본 매치 번호로 만들어진 키. match_link.py 참고)로 바로 찾는다.
 //     번호로 연결된 경기는 날짜나 상대팀을 잘못 적어도 정확히 붙는다.
 //   - 2순위: 번호가 없는 과거 데이터를 위해 (날짜, 상대팀) 묶음으로 대체한다.
@@ -427,8 +427,7 @@ function statFor(getText, format) {
 // 카드는 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rival)이다 - 이름 / 전적 /
 // 승률 막대 짜임이 똑같고, 프로필 사진 자리에 팀 로고가 들어간다.
 function readOpponentRows() {
-    // 예전에는 build_html.py가 HTML에 구워 둔 상대 전적 숫자를 다시 읽었다.
-    // 이제 Supabase에서 받은 SiteData.matches가 원본이므로 여기서 즉시 집계한다.
+    // 빌드가 만든 SiteData.matches(site_records.json)로 여기서 바로 집계한다.
     const byTeam = new Map();
     SiteData.matches.forEach(m => {
         const team = String(m['상대팀'] || '').trim();
@@ -461,8 +460,7 @@ function renderOpponentTable() {
     document.getElementById('team-opp-filters').innerHTML =
         summaryFilterHtml(format, 'setTeamOppFormat');
 
-    // 고른 형식에 기록이 있는 상대만, 많이 붙은 순으로. 예전 표는 기록 없는 상대까지
-    // 줄을 차지하며 '—'만 찍었다.
+    // 고른 형식에 기록이 있는 상대만, 많이 붙은 순으로('—'만 찍힌 줄을 만들지 않는다).
     const cards = rows
         .map(r => ({ team: r.team, stat: statFor(f => r.stats[f], format) }))
         .filter(x => x.stat.wins + x.stat.losses > 0)

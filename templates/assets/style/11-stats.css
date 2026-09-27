@@ -43,7 +43,7 @@
     .synergy-tile-ko { display: none; }
 }
 .synergy-tile { display: flex; flex-direction: column; justify-content: center; }
-/* 타일 머리: TOTAL / AVERAGE / MEMBERS 한 줄(예전엔 영문 머리 + 한글 꼬리 두 줄) */
+/* 타일 머리: TOTAL / AVERAGE / MEMBERS 한 줄 */
 .synergy-tile-label {
     color: var(--label-accent);
     font-size: 12px;

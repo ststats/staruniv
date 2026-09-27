@@ -328,8 +328,7 @@
 
 .profile-dialog { max-width: 440px; }
 .profile-modal-hero { position: relative; padding: 20px 24px 24px; background: var(--navy); background-image: var(--navy-pattern); color: var(--navy-on-text); }
-/* 예전엔 이 자리에 'MEMBER PROFILE' 영문 레일이 한 줄 통째로 있었다 - 정보 없이 높이만
-   차지해서 뺐다. 닫기 버튼만 우상단에 얹는다. */
+/* 프로필 창 머리에는 닫기 버튼만 우상단에 얹는다. */
 .profile-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; padding: 0; background-size: 12px; }
 .profile-modal-identity { display: flex; align-items: center; gap: 18px; }
 /* 사진 높이를 오른쪽 글자 덩어리(이름 26px/1.2 + 여백 12px + 뱃지 줄)에 맞춘다.
@@ -354,7 +353,7 @@
 .profile-modal-facts > div { min-width: 0; }
 .profile-modal-facts dt, .profile-modal-label { margin-bottom: 5px; color: var(--color-text-sub); font-size: var(--fs-meta); font-weight: 500; }
 .profile-modal-facts dd { margin: 0; font-size: var(--fs-body); font-weight: 700; overflow-wrap: anywhere; }
-/* 값 글씨는 위 기본 정보(dd)와 같게 - 예전엔 12px로 작았다 */
+/* 값 글씨는 위 기본 정보(dd)와 같게 */
 .profile-modal-period { display: grid; grid-template-columns: .8fr 2.2fr; gap: 12px; align-items: center; padding: 14px 0 22px; font-size: var(--fs-body); font-weight: 700; }
 .profile-modal-period > div { min-width: 0; }
 .profile-modal-period-main { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }

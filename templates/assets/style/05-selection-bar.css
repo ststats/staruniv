@@ -29,7 +29,7 @@
 .edge-T { --profile-race-color: var(--color-race-t); border-left: 3px solid var(--color-race-t); }
 .edge-Z { --profile-race-color: var(--color-race-z); border-left: 3px solid var(--color-race-z); }
 .edge-P { --profile-race-color: var(--color-race-p); border-left: 3px solid var(--color-race-p); }
-/* 카드 자체(요약 카드 포함)의 호버는 예전 그대로 아주 옅은 흰빛이다.
+/* 카드 자체(요약 카드 포함)의 호버는 아주 옅은 흰빛이다.
    '연한 파랑'으로 맞춘 건 줄·칩처럼 고르는 항목들이다. */
 .clean-card:hover,
 .live-broadcast-card:hover,

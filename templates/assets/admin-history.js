@@ -177,7 +177,7 @@
   }
 
   // 자동 항목(멤버 입단·퇴단 등) 편집: 날짜·형식·인원은 멤버 데이터가 정하므로 고정하고,
-  // 제목·설명·인원 설명·영상·사진·숨김만 override 줄에 덮어쓴다. 예전엔 '수정'이 새 항목 추가 창을 열었다.
+  // 제목·설명·인원 설명·영상·사진·숨김만 override 줄에 덮어쓴다.
   function openAuto(item){
     const labels=(typeof HISTORY_TYPES==='object'&&HISTORY_TYPES)||{};
     C().openDrawer({
@@ -231,9 +231,8 @@
       :await q.update({...fields,updated_at:now}).eq('id',item.id);
     if(error)throw error;
   }
-  // ▲▼: 화면에 보이는 순서 그대로 옆 항목과 자리를 바꾸고, 그날 항목 전체를 0,1,2...로 다시 번호 매긴다.
-  // (예전엔 DB 행끼리 sort_order 값만 맞바꿔서, 값이 모두 0이면 아무 일도 안 일어났고
-  //  자동 항목은 목록에 없어 무시됐다.)
+  // ▲▼: 화면에 보이는 순서 그대로 옆 항목과 자리를 바꾸고, 그날 항목 전체를 0,1,2...로 다시 번호 매긴다
+  // (sort_order 값만 맞바꾸면 값이 모두 0일 때 아무 일도 안 일어나고, 자동 항목은 DB 행이 없어 빠진다).
   async function move(id,dir){
     const all=histMergeItems(await histLoadData(), SiteData.members, true);
     const item=all.find(x=>String(x.id)===String(id));if(!item)return;

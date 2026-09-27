@@ -269,7 +269,7 @@
   // 사이트 빌드: 스타유니브 빌드(build.yml)를 바로 실행한다. 멤버·전적·연혁·대표 영상처럼 빌드 때 만드는
   // 데이터와 달력 사진(calendar.png)이 00:05·12:05 정기 빌드를 기다리지 않고 2~3분 안에 공개 사이트에 반영된다.
   // GitHub 토큰은 브라우저에 두지 않는다 - Supabase 함수가 Vault의 토큰으로 GitHub에 요청한다
-  // (supabase/staruniv.sql 5절. 함수 이름은 예전 '달력 사진 갱신' 버튼 때 그대로). 응답 코드를 잠깐 확인해 실패를 알린다.
+  // (supabase/staruniv.sql 5절의 calendar_capture). 응답 코드를 잠깐 확인해 실패를 알린다.
   async function requestSiteBuild(btn) {
     if (btn.disabled || !state.client) return;
     const idle = btn.textContent;

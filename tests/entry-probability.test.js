@@ -89,7 +89,7 @@ test('race matchup from ranking meta shifts the base symmetrically', () => {
 
 test('beating weaker opponents of a race as expected gives no race boost', () => {
   // A(테란)는 저그 상대로 10전 9승인데, 상대가 전부 400점 아래라 기대(약 91%)대로다.
-  // 예전 방식(평소 승률 대비)은 이걸 '저그에 강하다'로 읽었다.
+  // '평소 승률 대비'로 재면 이걸 '저그에 강하다'로 읽는다.
   const rows = [];
   for (let i = 0; i < 10; i++) rows.push(['2026-09-20', 9, i < 9 ? 1 : 0, '', '']);
   for (let i = 0; i < 10; i++) rows.push(['2026-09-20', 8, i < 5 ? 1 : 0, '', '']);

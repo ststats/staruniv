@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block head_scripts %}
     <script>
-        // 예전 SPA 시절 GitHub Pages 404 우회가 만들던 주소(/?/records&view=solo)로 들어오면
-        // 새 실제 페이지 주소(records/?view=solo)로 옮겨준다. (옛 링크 호환용 - 새로 생기지는 않는다)
+        // 한 페이지(SPA) 시절의 공유 링크(/?/records&view=solo)로 들어오면 실제 페이지 주소
+        // (records/?view=solo)로 옮겨준다. 이런 주소는 새로 생기지 않는다.
         (function (l) {
             if (l.search[1] !== '/') return;
             var decoded = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&'); }).join('?');

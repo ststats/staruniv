@@ -299,8 +299,8 @@ function openMultiviewer() {
 
 // ----- 외부 도구 (Supabase external_tools - 어드민 '도구' 탭에서 편집) -----
 // javascript: 같은 스킴이 섞여 들어와도 클릭 시 실행되지 않도록 http(s) 링크만 허용한다.
-// (예전엔 '#'으로 대체했는데, 페이지 <base>가 사이트 루트라 '#'이 홈으로 이동하는 링크가 된다 -
-//  허용되지 않은 주소면 아예 href를 달지 않는다)
+// 허용되지 않은 주소면 아예 href를 달지 않는다('#'으로 두면 페이지 <base>가 사이트 루트라
+// 홈으로 이동하는 링크가 된다).
 function safeHttpUrl(url) {
     const s = String(url || '').trim();
     return /^https?:\/\//i.test(s) ? s : '';

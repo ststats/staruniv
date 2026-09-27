@@ -479,8 +479,7 @@ function h2hTableHtml(rows, showOpponent) {
         ${matchPaginationHtml(rows.length, H2hState.page, H2H_LIST_STEP, "h2hSetPage")}`;
 }
 
-// 맵별 전적: 많이 한 순으로. 두 명을 골랐을 때도 똑같이 8개씩 보여준다
-// (예전엔 맞대결 화면에서만 전부 쏟아내서 목록이 길어졌다).
+// 맵별 전적: 많이 한 순으로. 두 명을 골랐을 때도 똑같이 8개씩 보여준다.
 function h2hMapTableHtml(rows) {
     const byMap = new Map();
     rows.forEach(r => {

@@ -7,25 +7,21 @@ from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader
 
-# [리팩토링 메모]
-# - 출력 HTML은 임시 파일에 다 쓴 뒤 교체(atomic write)해서,
-#   빌드가 중간에 죽어도 반쯤 쓰인 파일이 배포되는 일이 없게 했다.
-# - 정적 자산 복사 시 하위 폴더가 섞여 있으면 shutil.copyfile이 IsADirectoryError로 빌드
-#   전체를 죽이던 문제를 막았다(파일만 복사).
-# - [캐시] 정적 자산 주소에 내용 해시를 붙인다(asset_url: app.js → app.js?v=1a2b3c4d5e).
-#   GitHub Pages는 정적 파일을 약 10분간 캐시하므로, 배포 직후 "새 index.html + 옛 app.js"
-#   조합을 받는 사용자가 생길 수 있었다. 파일 내용이 바뀌면 주소 자체가 바뀌므로 이런 불일치가
-#   생기지 않고, 반대로 안 바뀐 파일은 브라우저 캐시를 그대로 재사용한다.
+# - 출력 파일은 임시 파일에 다 쓴 뒤 교체(atomic write)한다 - 빌드가 중간에 죽어도 반쯤 쓰인 파일이
+#   배포되지 않는다.
+# - [캐시] 정적 자산 주소에 내용 해시를 붙인다(asset_url: core.js → core.js?v=1a2b3c4d5e).
+#   GitHub Pages는 정적 파일을 약 10분간 캐시하므로, 해시가 없으면 배포 직후 "새 HTML + 이전 JS"
+#   조합을 받는 사용자가 생긴다. 파일 내용이 바뀌면 주소 자체가 바뀌고, 안 바뀐 파일은 브라우저 캐시를
+#   그대로 재사용한다.
 
 TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
 STATIC_TREE_SRC = os.path.join(TEMPLATE_DIR, 'static')
 OUT_DIR = 'docs'
-# 메뉴/방송통계 표시 설정은 이제 Supabase site_config에서 런타임에 직접 읽는다.
+# 메뉴/방송통계 표시 설정은 Supabase site_config에서 브라우저가 직접 읽는다(빌드는 모두 표시).
 
 # ----- 페이지 구성 -----
-# [구조 변경] 예전엔 index.html 하나(SPA)였다. 이제 메뉴마다 실제 페이지를 만든다:
-#   docs/index.html(홈), docs/schedule/index.html, docs/members/index.html, ...
+# 메뉴마다 실제 페이지를 만든다: docs/index.html(홈), docs/schedule/index.html, docs/members/index.html, ...
 # 각 페이지는 templates/pages/<id>.html이 templates/base.html(공통 머리/메뉴)을 상속한다.
 # 메뉴를 추가하려면 여기 한 줄 + templates/pages/<id>.html + (필요하면) page-<id>.js만 만들면 된다.
 # (id, 메뉴 이름, 페이지 제목(None이면 사이트 이름만), 검색/링크 미리보기 설명)
@@ -34,7 +30,7 @@ PAGES = [
     ('schedule', '일정', '일정', '캄몬스타즈의 다가올 일정과 지나간 일정입니다'),
     ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다'),
     ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다'),
-    # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다. 명단은 Supabase에서
+    # 티어표는 우리 팀이 아니라 스타 커뮤니티 전체를 보여주는 페이지다.
     # 명단은 브라우저가 Supabase tier_members를, 방송 중 여부는 live_broadcasts_current를 직접 읽는다.
     ('tier', '티어표', '티어표', '스타 커뮤니티 전체 티어표입니다. 지금 방송 중인 인원을 함께 보여줍니다'),
     # 영상은 ststat가 Supabase에 동기화하고 브라우저가 직접 읽는다.

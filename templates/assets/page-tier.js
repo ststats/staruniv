@@ -1,9 +1,8 @@
 /**
  * 티어표 페이지 - 스타 커뮤니티 전체 명단을 티어별로, 티어 안에서는 종족별로 보여준다.
  *
- * 명단은 브라우저가 Supabase의 tier_members에서 직접 읽는다. 예전에는 시너지(ststats)가 매일 올리는 명단을
- * 브라우저가 직접 받아갔는데, 그 명단은 소속이 있는 사람만 담겨 있어서 FA·휴면 선수는
- * 상대전적에서 찾을 수 없었다.
+ * 명단은 브라우저가 Supabase의 tier_members에서 직접 읽는다(시너지 명단은 소속이 있는 사람만 담겨 있어
+ * FA 선수를 찾을 수 없다).
  *
  * soop.js의 checkIsLiveRealtime()을 안 쓰는 이유:
  *   그건 한 명씩 bjapi에 묻는 방식이라 "활성 멤버가 소수"일 때만 성립한다. 수백 명에
@@ -366,9 +365,9 @@ function scrollTierIntoPlace(target, tries) {
 }
 
 // 지금 화면을 차지하고 있는 티어 섹션의 id.
-// 판정선은 고정 바 아래 보이는 영역의 위에서 35% 지점이다. 예전엔 고정 바 바로 아래(16px)라
+// 판정선은 고정 바 아래 보이는 영역의 위에서 35% 지점이다. 고정 바 바로 아래로 잡으면
 // 다음 티어 제목이 화면 맨 위에 닿아야 바뀌어서, 이미 화면 대부분이 다음 티어인데도 이전
-// 티어가 강조돼 있었다.
+// 티어가 강조돼 있다.
 function currentTierSectionId() {
     if (TierState.sections.length === 0) return null;
     const offset = tierStickyOffset();
@@ -424,7 +423,7 @@ function scrollTierBarItemIntoView(btn) {
 }
 
 // [리디자인] 티어 제목 위에 붙는 라틴 라벨: 'GOD TIER', '1 TIER'처럼 끝에 TIER를 한 번만 붙인다
-// (예전엔 숫자 티어에 여기서 한 번, 제목에서 또 붙여 '1 TIER TIER'로 나왔다).
+// (제목 쪽에서는 붙이지 않는다 - 두 번 붙으면 '1 TIER TIER'가 된다).
 const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE',
                  '베이비': 'BABY', '미분류': 'UNRANKED' };
 function tierLatinLabel(tier) {
@@ -464,8 +463,8 @@ function tierStickyOffset() {
 // ---------------------------------------------------------------------------
 // 보기 전환 (전체 / 방송중)
 // ---------------------------------------------------------------------------
-// 예전엔 "512명"이라는 맨 글자 옆에 방송중 토글이 따로 있었다. 둘은 사실 "무엇을 보여줄까"
-// 라는 같은 축의 두 선택지라, 숫자를 각자 달고 있는 세그먼트 컨트롤 하나로 합쳤다.
+// 전체 인원과 방송중은 "무엇을 보여줄까"라는 같은 축의 두 선택지라, 숫자를 각자 달고 있는
+// 세그먼트 컨트롤 하나로 둔다.
 // 누르지 않아도 전체 대비 방송 중 인원이 바로 읽힌다. 두 버튼은 생김새가 완전히 같고,
 // 숫자 색(전체=파랑, 방송중=빨강)만 다르다.
 function renderTierScope() {
@@ -491,7 +490,7 @@ function onTierScopeClick(event) {
     const btn = event.target.closest('.tier-scope-btn');
     if (!btn) return;
     const wantLive = btn.dataset.liveOnly === '1';
-    // '방송중'을 다시 눌러도 꺼지게 둔다(옛 필터 버튼의 습관이 남아 있는 사람용).
+    // '방송중'을 다시 눌러도 꺼지게 둔다(필터 버튼처럼 누르는 사람용).
     const next = wantLive ? !TierState.liveOnly : false;
     if (next === TierState.liveOnly) return;  // 이미 그 보기면 다시 그릴 필요가 없다
     TierState.liveOnly = next;

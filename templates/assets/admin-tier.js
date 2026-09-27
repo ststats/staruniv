@@ -19,7 +19,7 @@
   // 수정일 = '한국 날짜 + 저장한 시각'(예: 2026-09-25 01:30:12). ststat이 앞 10자리 날짜부터 지난
   // 방송통계에 소급 반영하고, 반영이 끝나면 자기가 읽은 값과 같을 때만 지운다. 저장할 때마다 시각이
   // 새로 붙으므로, 반영 도중 다시 고쳐도 값이 달라 표시가 남아 다음 실행에서 새 내용으로 다시 반영된다.
-  // (예전엔 UTC 시각이라 한국 시간 새벽에 고치면 전날부터 소급됐다.)
+  // (UTC 시각으로 적으면 한국 시간 새벽에 고친 것이 전날부터 소급된다.)
   function modifiedStamp(day){
     const kst=new Date(Date.now()+9*3600e3).toISOString();
     const d=/^\d{4}-\d{2}-\d{2}$/.test(String(day||''))?day:kst.slice(0,10);
@@ -256,7 +256,7 @@
         pagedSelect('elo_rankings','elo_id,tier,tier_rank,tier_count,raw_rating,rating,data_tier,tier_gap,recent_365_games,recent_365_wins,recent_90_games,recent_90_wins,recent_30_games,recent_30_wins,as_of','elo_id'),
         pagedSelect('elo_public_players','elo_id,elo_name,nickname,race,affiliation','elo_id'),
       ]);
-      // 표준오차는 랭킹 v4(ststat migration 011)부터 있다. 없으면 칸만 비운다.
+      // 표준오차(elo_player_ratings)를 못 읽으면 칸만 비운다.
       let se={};
       try{(await pagedSelect('elo_player_ratings','elo_id,rating_se','elo_id')).forEach(r=>{se[r.elo_id]=r.rating_se;});}catch(e){se={};}
       const metaRes=await C().state.client.from('elo_ranking_meta').select('as_of').order('as_of',{ascending:false}).limit(1);

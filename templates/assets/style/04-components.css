@@ -218,7 +218,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
 
     /* 좁은 화면: 숫자만 한 단계 작게 남기고 승률 줄은 뺀다 */
 
-    /* 상세로 넘어가는 ↗·⌄ 표시는 표가 작아진 만큼 같이 줄인다(예전엔 글자보다 커 보였다) */
+    /* 상세로 넘어가는 ↗·⌄ 표시는 표가 작아진 만큼 같이 줄인다(글자보다 커 보이지 않게) */
 
     .stat-table .col-arrow { padding-left: 0; padding-right: 2px; }
     .stat-table .col-arrow .m-arrow svg { width: 8px; height: 8px; }

@@ -54,7 +54,7 @@ async function renderTodaySchedulePreview(box) {
         if (!client) throw new Error('Supabase browser client is not configured');
         const now = new Date();
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        // 오늘에 걸친 일정만 받는다(예전엔 전체 일정을 받아 거렀다)
+        // 오늘에 걸친 일정만 받는다
         const { data, error } = await client.from('calendar_events').select('start_date,end_date,event_time,person,description')
             .lte('start_date', today).gte('end_date', today).order('source_order');
         if (error) throw error;
@@ -73,7 +73,7 @@ async function renderTodaySchedulePreview(box) {
 
 
 // 미리보기 칸은 장 안에 하나씩 들어 있다(data-preview="0|1|2"). 그래서 트랙이 밀릴 때
-// 글과 같이 따라 움직인다 - 예전엔 캐러셀 기준 절대배치라 칸만 제자리에 남아 있었다.
+// 글과 같이 따라 움직인다(캐러셀 기준 절대배치면 칸만 제자리에 남는다).
 // 넘길 때마다 다시 그리지 않고 처음에 전부 채운다.
 function renderHomePreviewPanes() {
     document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(box => {

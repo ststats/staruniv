@@ -1,23 +1,21 @@
 /**
  * 멀티뷰어 공용 로직.
  *
- * app.js(도구 탭 - 누구를 볼지 설정만 담당)와 multiview.html(실제 방송 그리드, 자체 창)이
- * "선택 목록(mvOrder)"에 관한 로직을 이름까지 똑같이 각자 구현하고 있던 걸 여기로 뽑았다.
- * 두 페이지 모두 <script src="mv-shared.js">로 이 파일을 불러와 쓴다.
+ * page-tools.js(도구 탭 - 누구를 볼지 설정만 담당)와 multiview.html(실제 방송 그리드, 자체 창)이
+ * 같이 쓰는 "선택 목록(mvOrder)" 로직. 두 페이지 모두 <script src="mv-shared.js">로 불러온다.
  *
  * 그리드를 실제로 유지·조작하는 부분(포커스 대상 전환, 순서 이동, 삭제 시 DOM을 어떻게 다시
  * 그리는지)은 두 페이지의 역할이 근본적으로 달라서 각 페이지에 남겨뒀다. 이 파일에는 두 페이지가
  * 한 글자도 다르지 않게 계산해야 하는 순수 로직만 담는다.
  *
- * [전역 의존성] escapeHTML/jsStrEscape는 각 페이지(app.js, multiview.html)가 이미 전역으로
+ * [전역 의존성] escapeHTML/jsStrEscape는 각 페이지(core.js, multiview.html)가 이미 전역으로
  * 갖고 있는 범용 유틸이라 여기서 다시 정의하지 않는다(정의하면 admin 등 다른 페이지의
  * const 선언과 이름이 부딪힐 수 있다). 대신 아래 mvShared* 래퍼를 거쳐서 호출하므로,
  * 혹시 로드 순서가 꼬여 전역 함수가 없더라도 예외로 멈추지 않고 같은 규칙의 내장
  * 대체 구현으로 동작한다(두 페이지의 escapeHTML/jsStrEscape와 결과가 동일).
  *
- * [보강] 행 클릭 핸들러 onclick="mvSetFocusTarget('...')"에 값을 넣을 때 예전엔
- * jsStrEscape만 거쳐서, 값에 큰따옴표가 섞이면 속성이 끊길 수 있었다. JS 이스케이프 후
- * HTML 이스케이프를 한 번 더 한다(평범한 숲 아이디는 결과가 예전과 같다).
+ * 행 클릭 핸들러 onclick="mvSetFocusTarget('...')"에 값을 넣을 때는 JS 이스케이프 후
+ * HTML 이스케이프를 한 번 더 한다(jsStrEscape만 거치면 값에 큰따옴표가 섞일 때 속성이 끊긴다).
  */
 
 function mvSharedEscapeHTML(str) {

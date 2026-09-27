@@ -804,7 +804,7 @@ grant execute on function public.admin_elo_stats() to authenticated;
 -- 5. 사이트 빌드 버튼
 -- ############################################################################
 
--- 어드민 상단 '사이트 빌드' 버튼이 부르는 함수(예전 일정 화면의 '달력 사진 갱신' 버튼이라 이름이 calendar_capture다).
+-- 어드민 상단 '사이트 빌드' 버튼이 부르는 함수(처음엔 '달력 사진 갱신' 버튼이라 이름이 calendar_capture다).
 -- 스타유니브 빌드(build.yml)를 실행해 멤버·전적·연혁 데이터와 docs/data/calendar.png를 새로 만든다
 -- (외부 자동화가 이 사진 주소를 가져간다). GitHub 토큰은 브라우저에 두지 않고 Vault에서 꺼내 쓴다.
 -- GitHub 토큰 준비는 이 파일 맨 위 참고.
@@ -872,7 +872,7 @@ revoke all on function public.admin_calendar_capture_status(bigint) from public,
 grant execute on function public.admin_request_calendar_capture() to authenticated;
 grant execute on function public.admin_calendar_capture_status(bigint) to authenticated;
 
--- (예전 안) 일정이 바뀔 때마다 자동으로 돌리던 트리거가 있으면 지운다
+-- 일정이 바뀔 때마다 빌드를 돌리던 트리거가 남아 있으면 지운다(빌드는 버튼·정기 실행만)
 drop trigger if exists calendar_events_capture on public.calendar_events;
 drop trigger if exists calendar_off_air_capture on public.calendar_off_air;
 drop function if exists public.request_calendar_capture();
@@ -1070,7 +1070,7 @@ begin
       hist := case when coalesce(btrim(hist), '') = '' then new_aff else hist || ', ' || new_aff end;
     end if;
     -- 'N티어 승급' 칸 = 그 티어가 된 날. 승급뿐 아니라 강등으로 내려간 날도 그 티어 칸에 적는다
-    -- (예전엔 승급만 적어서, 강등된 선수는 지금 티어와 마지막 날짜의 티어가 어긋났다).
+    -- (승급만 적으면 강등된 선수는 지금 티어와 마지막 날짜의 티어가 어긋난다).
     if new_tier is distinct from r.tier and new_tier ~ '^[0-8]$' then
       col := 'promoted_tier_' || new_tier;
       execute format('select %I from public.tier_members where id = $1', col) into cur using r.id;

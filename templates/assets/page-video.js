@@ -68,7 +68,7 @@ function videoThumb(v) {
     return /^https:\/\/i\d?\.ytimg\.com\//.test(t) ? t : `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
 }
 
-// 숲 VOD 항목인지. 예전 데이터(유튜브만 있던 시절)에는 kind가 없다.
+// 숲 VOD 항목인지. 유튜브만 있던 시절의 항목에는 kind가 없다.
 function videoIsSoop(v) {
     return v.kind === 'soop' || /^soop:/.test(String(v.id || ''));
 }
@@ -262,7 +262,7 @@ function videoShowMore() {
 
 // ----- 보자 -----
 // 분류(group)가 적힌 영상은 같은 분류끼리 묶여 제목줄이 하나 생긴다. 분류가 없으면 제목줄 없이
-// 맨 위에 그냥 놓인다(예전과 같은 모습). 순서는 어드민에서 정한 목록 순서를 그대로 따른다.
+// 맨 위에 그냥 놓인다. 순서는 어드민에서 정한 목록 순서를 그대로 따른다.
 function renderPicks() {
     const picks = VideoState.data.picks || [];
     const box = document.getElementById('video-pick-grid');
@@ -280,7 +280,7 @@ function renderPicks() {
     box.innerHTML = groups.map(([name, list], i) => {
         // 맨 위 묶음만 제목 없이 둘 수 있다. 분류 뒤에 오는 무분류는 앞 묶음에 딸려 보이므로 '기타'를 붙인다.
         const label = name || (i ? '기타' : '');
-        // 제목줄 위 작은 영문 라벨. 어드민에서 분류마다 적을 수 있고, 비우면 예전처럼 라벨 없이 나온다.
+        // 제목줄 위 작은 영문 라벨. 어드민에서 분류마다 적을 수 있고, 비우면 라벨 없이 나온다.
         const labelEn = String((list.find(v => String(v.groupEn || '').trim()) || {}).groupEn || '').trim();
         const enAttr = labelEn ? ` data-en="${escapeHTML(labelEn)}"` : '';
         return `

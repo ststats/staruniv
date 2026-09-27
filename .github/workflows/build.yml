@@ -18,7 +18,7 @@ on:
       - 'package.json'
 
 # 빌드 결과(docs/)를 저장소에 커밋하지 않고 GitHub Pages에 바로 배포한다
-# (저장소 설정 → Pages → Source: GitHub Actions). 예전처럼 봇 커밋이 쌓이지 않는다.
+# (저장소 설정 → Pages → Source: GitHub Actions). 봇 커밋이 쌓이지 않는다.
 permissions:
   contents: read
   pages: write

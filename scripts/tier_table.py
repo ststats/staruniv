@@ -842,7 +842,7 @@ def decide_teams(sections, by_team):
         if texts:
             out[k] = (title_guess(texts), True)
             continue
-        # 머리 글씨를 못 읽음: 예전처럼 카드 닉네임과 가장 많이 맞는 (남은) 대학
+        # 머리 글씨를 못 읽음: 카드 닉네임과 가장 많이 맞는 (남은) 대학
         def team_score(team):
             names = [r['nickname'] for r in by_team[team]]
             return sum(max((similarity(c['nickname_ocr'], n) for n in names), default=0) for c in sec['cards'])

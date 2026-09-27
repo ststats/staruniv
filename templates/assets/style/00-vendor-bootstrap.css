@@ -1,6 +1,6 @@
-/* Bootstrap 5.3.0 중 이 사이트가 쓰는 규칙만 남긴 것(예전엔 CDN에서 230KB를 통째로 받았다).
+/* Bootstrap 5.3.0 중 이 사이트가 쓰는 규칙만 남긴 것(전체는 230KB).
    손으로 고치지 말 것 - 새 Bootstrap 클래스를 쓰기 시작하면 목록을 다시 뽑는다.
-   다른 스타일보다 먼저 와야 해서 00번이다(예전 <link> 순서와 같다). */
+   다른 스타일보다 먼저 와야 해서 00번이다. */
 /*!
  * Bootstrap  v5.3.0 (https://getbootstrap.com/)
  * Copyright 2011-2023 The Bootstrap Authors

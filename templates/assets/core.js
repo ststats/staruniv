@@ -1,8 +1,7 @@
 /**
  * 스타대학 사이트 공용 코어 (모든 페이지가 가장 먼저 불러온다).
  *
- * [페이지 구조] 예전엔 index.html 하나에 모든 메뉴를 넣고 JS로 보였다 숨겼다 하는 SPA였다.
- * 이제 메뉴마다 실제 페이지(docs/records/index.html 등)가 있고, 각 페이지는
+ * [페이지 구조] 메뉴마다 실제 페이지(docs/records/index.html 등)가 있고, 각 페이지는
  *   core.js(이 파일) → [soop.js] → page-<메뉴>.js
  * 순서로 필요한 스크립트만 불러온다. 메뉴 이동은 평범한 링크라 브라우저가 처리하고,
  * 페이지 안의 하위 상태(탭, 선택한 멤버 등)만 PageState가 URL 쿼리(?view=...&member=...)와 맞춘다.
@@ -33,10 +32,9 @@ function jsStrEscape(str) {
 }
 
 // onclick="fn('${값}')"처럼 "HTML 속성 안의 JS 문자열"에 값을 꽂을 때 쓴다.
-// 예전엔 jsStrEscape만 거쳐서, 값에 큰따옴표(")가 섞이면 속성 자체가 끊기면서 그 뒤가
-// 새 속성(onmouseover=... 등)으로 해석될 수 있었다(XSS). JS 이스케이프 후 HTML 이스케이프를
+// jsStrEscape만 거치면 값에 큰따옴표(")가 섞였을 때 속성 자체가 끊기면서 그 뒤가
+// 새 속성(onmouseover=... 등)으로 해석될 수 있다(XSS). JS 이스케이프 후 HTML 이스케이프를
 // 한 번 더 하면 브라우저가 속성값을 디코딩한 결과가 정확히 JS 이스케이프된 문자열이 된다.
-// 특수문자가 없는 평범한 이름은 결과가 예전과 완전히 같다.
 function jsAttr(str) {
     return escapeHTML(jsStrEscape(str));
 }
@@ -132,7 +130,7 @@ function toggleCollapsible(areaId, chevronId) {
 }
 
 // 정적 HTML에 처음부터 있고 절대 다시 그려지지 않는 요소 목록 전용 캐시.
-// (innerHTML로 다시 그려지는 요소에는 쓰면 안 된다 - 옛 노드를 계속 붙잡게 된다)
+// (innerHTML로 다시 그려지는 요소에는 쓰면 안 된다 - 지워진 노드를 계속 붙잡게 된다)
 const _staticQueryCache = new Map();
 
 function staticAll(selector) {
@@ -178,9 +176,9 @@ function isTabActive(tabId) {
     return !!tab && tab.classList.contains('active');
 }
 
-// 모달·접기: 예전엔 부트스트랩 JS(80KB)를 받아 이 두 가지만 썼다. 같은 클래스(.modal .show
-// .modal-backdrop .collapsing)와 같은 속성(data-bs-dismiss, data-bs-toggle="collapse")을 그대로
-// 쓰므로 모양과 동작은 같다. CSS는 style/00-vendor-bootstrap.css에 있다.
+// 모달·접기: 부트스트랩 JS(80KB) 대신 이 두 가지만 직접 구현한다. 부트스트랩과 같은 클래스(.modal .show
+// .modal-backdrop .collapsing)와 같은 속성(data-bs-dismiss, data-bs-toggle="collapse")을 쓴다.
+// CSS는 style/00-vendor-bootstrap.css에 있다.
 const UI_FADE_MS = 300;
 let openModalEl = null;
 let modalBackdrop = null;
@@ -327,10 +325,9 @@ const SiteDataLoad = { status: 'idle', error: null, loaded: new Set() };
 
 const asArray = v => (Array.isArray(v) ? v : []);
 
-// [캐시] 예전엔 매번 no-store로 받아서 브라우저 캐시를 전혀 못 썼다. 빌드가 index.html에 넣어준
-// 버전(<meta name="site-data-version">)을 주소에 붙이면, 데이터가 바뀐 배포에서만 주소가 바뀌므로
-// 평소엔 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면(옛 index.html 등) 매번
-// 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
+// [캐시] 빌드가 페이지에 넣어준 버전(<meta name="site-data-version">)을 주소에 붙인다. 데이터가 바뀐
+// 배포에서만 주소가 바뀌므로 평소엔 브라우저 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면
+// 매번 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
 function siteDataRequest(part) {
     const meta = document.querySelector('meta[name="site-data-version"]');
     const version = meta && meta.content;
@@ -463,7 +460,7 @@ async function refreshSidebarLiveIndicators() {
 // 홈/소식 화면 열 때마다 멤버 30명씩 SOOP API를 다시 호출하면 사용자가 몰릴 때
 // 브라우저 쪽에서 API 호출 빈도 제한(Rate Limit)에 걸릴 수 있어, 세션 안에서는
 // 짧은 시간 내 같은 요청을 재사용하도록 sessionStorage에 캐싱해둔다.
-// [보강] ① 만료된 항목은 읽을 때 지운다(예전엔 세션 내내 쌓이기만 했다).
+// [보강] ① 만료된 항목은 읽을 때 지운다(안 지우면 세션 내내 쌓인다).
 //        ② 저장 공간이 꽉 차면 캐시 항목을 비우고 한 번 더 시도한다.
 //        ③ 같은 URL 요청이 이미 진행 중이면 새로 부르지 않고 그 결과를 같이 기다린다
 //           (페이지 로드 직후 홈 "방송 중"과 멀티뷰어 LIVE 뱃지가 멤버 전원의 방송 상태를
@@ -537,8 +534,8 @@ function resultBadgeHtml(resText) {
     if (res === '승') return '<span class="match-badge badge-win" title="승">W</span>';
     if (res === '무' || res === '무승부') return '<span class="match-badge badge-draw" title="무">D</span>';
     if (res === '패') return '<span class="match-badge badge-lose" title="패">L</span>';
-    // DB에 결과가 아직 안 적혔거나 오타인 경기. 예전에는 무조건 '패'로 나와서
-    // 집계(승패 계산에서는 빠진다)와 화면이 어긋났다.
+    // DB에 결과가 아직 안 적혔거나 오타인 경기. '패'로 보이면 집계(승패 계산에서는 빠진다)와
+    // 화면이 어긋나므로 따로 표시한다.
     return '<span class="match-badge badge-draw" title="결과 미기재">-</span>';
 }
 
@@ -587,7 +584,6 @@ function teamLogoFallback(imgEl, teamName) {
 // 서버에서 구운 페이지(전적의 상대 전적 표)의 로고는 이 스크립트보다 먼저 HTML에 있어서, 로고 파일이
 // 없을 때(404) 이 함수가 정의되기 전에 onerror가 먼저 불릴 수 있다(특히 앞에 CDN 스크립트가 있는 페이지).
 // 그 경우 onerror는 data-logo-failed 표시만 남기고, 이 파일이 로드되는 즉시 여기서 마저 처리한다.
-// (예전 SPA에서는 전적 표가 처음엔 숨겨져 있어 로고를 늦게 불러오는 바람에 우연히 안 드러났던 경쟁 상태)
 document.querySelectorAll('img[data-logo-failed]').forEach(img => teamLogoFallback(img, img.dataset.team));
 
 // 대학 로고 주소. 로고는 어드민(전적 > 팀 관리)에서 올리고 Supabase(university_logos 표 + Storage)에
@@ -736,8 +732,8 @@ function activeMembersWithSoopId() {
     return SiteData.members.filter(m => isActiveMember(m) && isValidSoopId(m['SOOP ID']));
 }
 
-// 오늘 날짜(YYYY-MM-DD, 로컬 기준). 예전엔 toISOString()(UTC 기준)이라 한국 시간 0~9시에는 어제
-// 날짜가 나와 "활동 N일째"가 하루 적게 보였다. (calendar.js를 안 쓰는 페이지에서도 쓰이므로 자체 구현)
+// 오늘 날짜(YYYY-MM-DD, 로컬 기준). toISOString()(UTC 기준)을 쓰면 한국 시간 0~9시에는 어제
+// 날짜가 나와 "활동 N일째"가 하루 적게 보인다. (calendar.js를 안 쓰는 페이지에서도 쓰이므로 자체 구현)
 function todayStr() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -941,8 +937,8 @@ function setActiveAvatarItem(listId, activeEl) {
 // 얇은 줄(서브탭 / 필터 / GNB)의 가로 스크롤 끝 흐림 - 스크롤 패턴 [C]
 // ---------------------------------------------------------------------------
 // 높이가 24~44px인 줄에는 스크롤 손잡이를 넣을 자리가 없다. 그렇다고 네이티브
-// 스크롤바를 그냥 숨겨두면(예전 상태) 좁은 화면에서 탭이 잘려 있다는 걸 알 방법이
-// 없었다. 넘치는 쪽 끝을 흐리게 해서 "저쪽에 더 있다"를 보여준다.
+// 스크롤바를 그냥 숨겨두면 좁은 화면에서 탭이 잘려 있다는 걸 알 방법이 없다.
+// 넘치는 쪽 끝을 흐리게 해서 "저쪽에 더 있다"를 보여준다.
 // 흐림 자체는 CSS(.tab-scroll.is-fade-*)가 그리고, 여기서는 지금 스크롤 위치가
 // 양 끝인지 아닌지만 판단해 클래스를 토글한다(CSS는 스크롤 위치를 모른다).
 function attachEdgeFade(el) {
@@ -1449,7 +1445,7 @@ function bootPage(init, opts) {
 let helpSeq = 0;
 
 // 설명은 { title, lead, rows: [[이름, 값], ...], note } 꼴로 적는다. 줄글 하나를
-// 통으로 넘겨도 되지만(옛 호출), 항목을 나눠 두면 상자가 표처럼 읽혀서 훨씬 빨리 훑힌다.
+// 통으로 넘겨도 되지만, 항목을 나눠 두면 상자가 표처럼 읽혀서 훨씬 빨리 훑힌다.
 // 내용은 JSON으로 data-help에 싣고 열 때 DOM으로 짠다 - 문자열을 innerHTML로 꽂지 않는다.
 function helpBadgeHtml(help) {
     const uid = `help-${++helpSeq}`;
@@ -1466,7 +1462,7 @@ function helpEl(tag, cls, text) {
     return el;
 }
 
-// 상자 내용을 다시 그린다. 옛 호출이 남아 있을 수 있어 JSON이 아니면 줄글로 본다.
+// 상자 내용을 다시 그린다. JSON이 아니면 줄글로 본다.
 function helpFill(box, raw) {
     let data;
     try { data = JSON.parse(raw); } catch (e) { data = { lead: raw || '' }; }
@@ -1569,7 +1565,7 @@ function playerRankBadgeHtml(tier, rank, tierTotal) {
     return `<span class="tag-badge rank-badge">${label} · ${body}</span>`;
 }
 
-// 승패 표기. 사이트 어디서나 '20승 19패'로 같게 적는다(예전엔 '20-19'와 섞여 있었다).
+// 승패 표기. 사이트 어디서나 '20승 19패'로 같게 적는다('20-19'와 섞지 않는다).
 // 숫자만 색을 입히고 '승/패' 글자는 본문 색으로 둬서, 좁은 칸에서도 숫자가 먼저 읽힌다.
 function winLoseText(win, lose, winClass, loseClass) {
     return `<span class="${winClass || 'h2h-win'}">${win}</span>승 `

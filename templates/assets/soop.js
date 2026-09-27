@@ -3,10 +3,9 @@
  * 방송 중 여부(bjapi), 방송국 게시판 글(api-channel), 공지 카드 마크업.
  */
 
-// 방송 중 여부. 예전엔 멤버마다 SOOP API(bjapi.afreecatv.com/.../station)를 한 번씩 불렀다(홈·도구에서 17번).
-// 지금은 ststat live-status가 2분마다 명단 전원을 훑어 둔 live_broadcasts_current를 core.js fetchLiveBroadcasts로
-// 한 번만 받아(20초 캐시) 여럿이 나눠 쓴다. 돌려주는 모양({ broad: { broad_no, broad_title, current_sum_viewer },
-// broadStart })은 예전 그대로라 호출부는 바뀌지 않는다. 시청자 수는 최대 2분 전 값이다.
+// 방송 중 여부. 멤버마다 SOOP API를 부르지 않고, ststat live-status가 2분마다 명단 전원을 훑어 둔
+// live_broadcasts_current를 core.js fetchLiveBroadcasts로 한 번만 받아(20초 캐시) 여럿이 나눠 쓴다.
+// 돌려주는 모양: { broad: { broad_no, broad_title, current_sum_viewer }, broadStart }. 시청자 수는 최대 2분 전 값이다.
 async function getLiveRealtimeStatus(soopId) {
     try {
         const row = (await fetchLiveBroadcasts())[String(soopId || '').trim().toLowerCase()];

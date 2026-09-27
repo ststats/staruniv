@@ -125,7 +125,6 @@
 
   // 방송통계 지표 탭(별풍선 · 방송시간 · 누적시청자 · 스폰판수 · 스폰승률) 표시. 다른 페이지 서브탭과 달리
   // site_config.nav.statsTabs(숨긴 지표 목록)에 저장하고, 처음 열리는 탭은 보이는 탭 중 첫 번째다.
-  // (옛 독립 어드민에 있던 기능을 새 어드민으로 옮김)
   const statsTabRows=()=>[...document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]')]
     .map(el=>({key:el.dataset.metric,label:el.textContent.trim()}));
   function markStatsTabs(cfg){
@@ -196,8 +195,8 @@
     });
   }
 
-  // 운영 현황: 파이프라인 갱신 상태 · ELO DB 범위 · 테이블 건수(ststat migration 012의 admin_dashboard_stats 한 번).
-  // 예전 독립 관리자(admin.html + page-admin.js)에만 있던 대시보드를 홈 맨 위 접기 카드로 옮겼다.
+  // 운영 현황(홈 맨 위 접기 카드): 파이프라인 갱신 상태 · ELO DB 범위 · 테이블 건수
+  // (ststat.sql의 admin_dashboard_stats 한 번).
   const OPS_TABLES=[['members','멤버'],['matches','팀 경기'],['tier_members','티어 선수'],['calendar_events','일정'],
     ['calendar_off_air','휴방'],['videos','수집 영상'],['video_picks','추천 영상'],['elo_players','ELO 선수']];
   const kst=v=>{if(!v)return '-';const d=new Date(v);return isNaN(d)?String(v):d.toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
@@ -225,7 +224,7 @@
     const f=data.freshness||{}, elo=data.elo||{}, counts=data.counts||{};
     const status=String(f.last_job_status||'unknown');
     const total=Number(counts.elo_matches||elo.total||0);
-    // 경기 수는 표 전체를 세면 시간 초과라 DB 통계 추정치(ststat migration 012).
+    // 경기 수는 표 전체를 세면 시간 초과라 DB 통계 추정치(admin_dashboard_stats).
     const totalText=(elo.total_estimated?'약 ':'')+total.toLocaleString();
     box.innerHTML=`
       <summary class="admin-rank-explain-head"><b>운영 현황</b><span>ELO ${totalText}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
@@ -248,8 +247,8 @@
       const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.dataset.icon='edit';b.onclick=openNavManager;
       menu.after(b);
     }
-    // 서브탭 편집은 페이지 관리 상자(본문 맨 위 네이비 상자)에. 예전엔 히어로의 탭 줄 끝에 붙어
-    // 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나갔다.
+    // 서브탭 편집은 페이지 관리 상자(본문 맨 위 네이비 상자)에 둔다. 히어로의 탭 줄 끝에 붙이면
+    // 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나간다.
     if(document.querySelector('.sub-tabs')&&SUBTAB_IDS[document.body.dataset.adminPage]){
       C().addPageTool({id:'adminSubtabManage',label:'서브탭 편집',icon:'edit',onClick:openSubtabManager});
     }
