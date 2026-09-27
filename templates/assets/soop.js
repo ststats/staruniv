@@ -39,16 +39,16 @@ function noticeCardFields(member, post) {
 
 // "최근 공지"/"지난 글" 카드 한 장의 마크업 - 홈 화면 목록과 멤버 공지 탭의
 // "지난 글" 리스트가 완전히 같은 모양이라 공용 함수로 뺐다. 클릭했을 때 동작만
-// 서로 달라서 링크 주소(href) 또는 onclick 속성 문자열(호출부에서 jsAttr로 이스케이프 완료)을 받는다.
+// 서로 달라서 링크 주소(href) 또는 동작 속성(act(...)의 결과)을 받는다.
 function homeNoticeCardHtml({ soopId, name, title, snippet, timeText, thumbUrl }, opts) {
-    const { href, onclickAttr, extraClass, dataAttr } = opts || {};
-    const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy" onerror="this.remove();">` : '';
+    const { href, action, extraClass, dataAttr } = opts || {};
+    const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy"${actOn('error', 'imgRemove', ACT.el)}>` : '';
     const cls = `home-notice-card${extraClass ? ' ' + extraClass : ''}`;
     // 다른 페이지로 가는 카드(홈 → 멤버 공지)는 진짜 링크(<a href>)라 새 탭 열기/Ctrl+클릭이 된다.
     // 같은 페이지 안에서 동작만 하는 카드(지난 글 → 최신 글로 올리기)는 버튼 역할로 둔다.
     const [open, close] = href
         ? [`<a class="${cls}" href="${escapeHTML(href)}"${dataAttr ? ' ' + dataAttr : ''}>`, '</a>']
-        : [`<div class="${cls}" role="button" tabindex="0" onclick="${onclickAttr}"${dataAttr ? ' ' + dataAttr : ''}>`, '</div>'];
+        : [`<div class="${cls}" role="button" tabindex="0"${action}${dataAttr ? ' ' + dataAttr : ''}>`, '</div>'];
     return `
         ${open}
             <div class="home-notice-main">

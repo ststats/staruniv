@@ -1,17 +1,4 @@
 {% extends 'base.html' %}
-{% block head_scripts %}
-    <script>
-        // 한 페이지(SPA) 시절의 공유 링크(/?/records&view=solo)로 들어오면 실제 페이지 주소
-        // (records/?view=solo)로 옮겨준다. 이런 주소는 새로 생기지 않는다.
-        (function (l) {
-            if (l.search[1] !== '/') return;
-            var decoded = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&'); }).join('?');
-            var path = decoded.slice(1), q = path.indexOf('?');
-            var page = (q === -1 ? path : path.slice(0, q)).replace(/\/+$/, '');
-            l.replace(l.pathname + (page ? page + '/' : '') + (q === -1 ? '' : path.slice(q)) + l.hash);
-        }(window.location));
-    </script>
-{% endblock %}
 {% block content %}
 {#- [리디자인] 히어로가 화면 끝까지 닿아야 해서 .container를 섹션에서 떼고 본문만 감싼다.
     .container에는 max-width(1280px)가 걸려 있어서, 안에 두면 음수 마진으로도 그 바깥까지
@@ -50,7 +37,7 @@
                 <div class="home-carousel-preview nc" data-preview="2" aria-live="polite"></div>
             </article>
         </div>
-        <div class="home-carousel-controls"><button type="button" onclick="moveHomeCarousel(-1)" aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" onclick="goHomeCarousel(0)"></button><button type="button" aria-label="2번 안내" onclick="goHomeCarousel(1)"></button><button type="button" aria-label="3번 안내" onclick="goHomeCarousel(2)"></button></div><button type="button" onclick="moveHomeCarousel(1)" aria-label="다음 안내">›</button></div>
+        <div class="home-carousel-controls"><button type="button" data-click="moveHomeCarousel" data-args='[-1]' aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" data-click="goHomeCarousel" data-args='[0]'></button><button type="button" aria-label="2번 안내" data-click="goHomeCarousel" data-args='[1]'></button><button type="button" aria-label="3번 안내" data-click="goHomeCarousel" data-args='[2]'></button></div><button type="button" data-click="moveHomeCarousel" data-args='[1]' aria-label="다음 안내">›</button></div>
     </section>
     <div class="container">
     <div class="section-title" data-en="ON AIR"><span class="section-title-label">방송 중</span></div>
@@ -74,6 +61,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset_url('actions.js') }}"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 <script src="{{ asset_url('soop.js') }}"></script>

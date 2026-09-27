@@ -123,7 +123,7 @@ function tierTeamLogoHtml(team) {
     const src = teamLogoSrc(team);
     if (!src) return '';
     return `<img class="team-logo-icon tier-card-team-logo" src="${escapeHTML(src)}" alt=""
-                 loading="lazy" onerror="this.remove();">`;
+                 loading="lazy"${actOn('error', 'imgRemove', ACT.el)}>`;
 }
 
 // 카드 위쪽 영역. 방송 중이면 16:9 썸네일, 아니면 같은 크기 박스 안에 동그란 프로필.
@@ -137,7 +137,7 @@ function tierCardMediaHtml(member, live) {
         // 시청자 수를 비교하는 곳이 아니다. 작은 카드에 얹을수록 방송 화면만 가린다.
         return `
             <img class="tier-card-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt="" loading="lazy"
-                 ${fallback ? `onerror="this.src='${jsAttr(fallback)}';"` : ''}>`;
+                 ${fallback ? actOn('error', 'imgSrc', ACT.el, fallback) : ''}>`;
     }
     return avatarHtml(soopId, 'tier-card-avatar');
 }

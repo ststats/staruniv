@@ -6,8 +6,8 @@
  * 순서로 필요한 스크립트만 불러온다. 메뉴 이동은 평범한 링크라 브라우저가 처리하고,
  * 페이지 안의 하위 상태(탭, 선택한 멤버 등)만 PageState가 URL 쿼리(?view=...&member=...)와 맞춘다.
  *
- * [전역 이름 규칙] 인라인 핸들러(onclick="...")와 calendar.js·mv-shared.js가 이름으로 부르는
- * 함수는 전역 함수로 둔다(ES 모듈로 바꾸려면 인라인 핸들러 제거가 먼저 필요하다).
+ * [전역 이름 규칙] 화면 동작(data-click="함수" 등, actions.js)과 calendar.js·mv-shared.js가 이름으로 부르는
+ * 함수는 전역 함수(function 선언)로 둔다.
  *
  * [구성] 1. 공용 유틸  2. 사이트 데이터  3. API 캐시  4. 공용 표시 헬퍼
  *        5. 방송통계 데이터(방송통계·멤버 페이지 공용)  6. 페이지 상태/시작
@@ -26,18 +26,6 @@ function escapeHTML(str) {
     }[tag]));
 }
 
-// JS 문자열 리터럴('...') 안에 값을 꽂을 때 백슬래시/따옴표를 이스케이프한다.
-function jsStrEscape(str) {
-    return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
-// onclick="fn('${값}')"처럼 "HTML 속성 안의 JS 문자열"에 값을 꽂을 때 쓴다.
-// jsStrEscape만 거치면 값에 큰따옴표(")가 섞였을 때 속성 자체가 끊기면서 그 뒤가
-// 새 속성(onmouseover=... 등)으로 해석될 수 있다(XSS). JS 이스케이프 후 HTML 이스케이프를
-// 한 번 더 하면 브라우저가 속성값을 디코딩한 결과가 정확히 JS 이스케이프된 문자열이 된다.
-function jsAttr(str) {
-    return escapeHTML(jsStrEscape(str));
-}
 
 // SOOP API의 "YYYY-MM-DD HH:MM:SS" 형식을 Date로 바꾼다. 공백을 'T'로 바꾸는 이유:
 // 공백 구분 형식은 표준이 아니라 사파리(iOS)에서 Invalid Date가 나와 정렬/상대시간이
@@ -355,21 +343,6 @@ document.addEventListener('keydown', e => {
     el.click();
 });
 
-// 노치(clip-path)로 잘린 모서리에서는 사각 포커스 테두리의 사선 구간이 비므로 02-base.css의 ::before가 사선까지 그린다.
-// 그 크기(--cut: 요소 자신 또는 모서리를 같이 쓰는 조상의 노치에서 테두리 두께를 뺀 값)를 포커스 때 넣는다.
-document.addEventListener('focusin', ({ target: el }) => {
-    if (!(el instanceof Element)) return;
-    for (let a = el, i = 0; a && i < 3; a = a.parentElement, i++) {
-        const m = /calc\(100% - ([\d.]+)px\)/.exec(getComputedStyle(a).clipPath);
-        if (!m) continue;
-        const r = el.getBoundingClientRect(), p = a.getBoundingClientRect(), s = getComputedStyle(el);
-        const cut = m[1] - (p.right - r.right) - (r.top - p.top) - parseFloat(s.borderTopWidth) - parseFloat(s.borderRightWidth);
-        if (cut > 0) el.style.setProperty('--cut', cut + 'px');
-        return;
-    }
-});
-document.addEventListener('focusout', e => e.target.style?.removeProperty('--cut'));
-
 // =====================================================================
 // 2. 페이지별 사이트 데이터
 // =====================================================================
@@ -602,13 +575,13 @@ function getProfileImgUrl(soopId) {
 function avatarHtml(soopId, cls) {
     const url = getProfileImgUrl(soopId);
     if (!url) return `<span class="${cls} d-flex align-items-center justify-content-center">👤</span>`;
-    return `<img src="${url}" class="${cls}" alt="" loading="lazy" onerror="this.outerHTML='<span class=\\'${cls} d-flex align-items-center justify-content-center\\'>👤</span>';">`;
+    return `<img src="${url}" class="${cls}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, `${cls} d-flex align-items-center justify-content-center`, '👤')}>`;
 }
 
 // 프로필 카드(개인전적 상단/멤버 프로필 모달)의 큰 원형 아바타 내용
 function profileAvatarInnerHtml(soopId) {
     const url = getProfileImgUrl(soopId);
-    return url ? `<img src="${url}" alt="" onerror="this.parentElement.innerHTML='👤';">` : '👤';
+    return url ? `<img src="${url}" alt=""${actOn('error', 'imgSwap', ACT.el, '', '👤')}>` : '👤';
 }
 
 // 상대팀 로고: teamLogoSrc(아래). '내전'(자체 스크림)은 상대가 우리 팀 자신이므로 캄몬스타즈 로고를 쓴다.
@@ -625,11 +598,6 @@ function teamLogoFallback(imgEl, teamName) {
     span.textContent = initial;
     imgEl.replaceWith(span);
 }
-
-// 서버에서 구운 페이지(전적의 상대 전적 표)의 로고는 이 스크립트보다 먼저 HTML에 있어서, 로고 파일이
-// 없을 때(404) 이 함수가 정의되기 전에 onerror가 먼저 불릴 수 있다(특히 앞에 CDN 스크립트가 있는 페이지).
-// 그 경우 onerror는 data-logo-failed 표시만 남기고, 이 파일이 로드되는 즉시 여기서 마저 처리한다.
-document.querySelectorAll('img[data-logo-failed]').forEach(img => teamLogoFallback(img, img.dataset.team));
 
 // 대학 로고 주소. 로고는 어드민(전적 > 팀 관리)에서 올리고 Supabase(university_logos 표 + Storage)에
 // 있으며 시너지와 같이 쓴다. 로고를 쓰는 페이지(bootPage의 logos: true)만 열 때 목록을 받아 둔다. 목록에 없으면 '' (배지로 대신).
@@ -683,9 +651,8 @@ function teamLogoHtml(teamName, sizePx) {
         const initial = escapeHTML(Array.from(name)[0] || '?');
         return `<span class="team-logo-fallback" style="width:${size}px;height:${size}px;font-size:${Math.max(8, Math.round(size * 0.5))}px;">${initial}</span>`;
     }
-    // 팀 이름을 onerror 안의 JS 문자열로 직접 꽂지 않고 data 속성으로 넘긴다(이스케이프 문제 원천 차단).
     // 크기는 대체 배지(teamLogoFallback)가 그대로 물려받아야 해서 인라인으로 둔다.
-    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;" data-team="${escapeHTML(name)}" onerror="teamLogoFallback(this, this.dataset.team)">`;
+    return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;"${actOn('error', 'teamLogoFallback', ACT.el, name)}>`;
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
@@ -814,7 +781,7 @@ function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member) {
     const letter = raceShortLabel(race);
     const edgeClass = ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
     const tierText = tierLabel(m['티어']).replace('티어', '');
-    return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0" onclick="${onclickFn}('${jsAttr(name)}')">
+    return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0"${act(onclickFn, name)}>
                             ${race ? raceBadgeHtml(race) : ''}
                             <span class="avatar-select-name">${escapeHTML(name)}</span>
                             <span class="avatar-select-live" data-soop-id="${escapeHTML(soopId || '')}" hidden></span>
@@ -825,8 +792,8 @@ function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member) {
 // 아바타 선택 바 맨 앞의 "전체" 항목
 // [리디자인] '전체' 줄. 시안에서는 사진 없이 "전체 · 인원수" 한 줄이고, 목록과 구분선으로만
 // 나뉜다. 로고 이미지를 쓰면 아래 멤버 줄(종족 뱃지)과 왼쪽 기준선이 어긋난다.
-function avatarSelectAllItemHtml(id, onclickJs, countText) {
-    return `<div class="avatar-select-item avatar-select-all active" id="${id}" role="button" tabindex="0" onclick="${onclickJs}">
+function avatarSelectAllItemHtml(id, action, countText) {
+    return `<div class="avatar-select-item avatar-select-all active" id="${id}" role="button" tabindex="0"${action}>
                             <span class="avatar-select-name">전체</span>
                             <span class="avatar-select-tier">${escapeHTML(countText || '')}</span>
                        </div>`;
@@ -1420,7 +1387,7 @@ function helpBadgeHtml(help) {
     const payload = typeof help === 'string' ? { lead: help } : (help || {});
     return `<span class="help-pop"><button type="button" class="help-btn" id="${uid}"
             aria-expanded="false" aria-label="설명 보기"
-            data-help="${escapeHTML(JSON.stringify(payload))}" onclick="toggleHelp(this)"><i class="i-info" aria-hidden="true"></i></button></span>`;
+            data-help="${escapeHTML(JSON.stringify(payload))}"${act('toggleHelp', ACT.el)}><i class="i-info" aria-hidden="true"></i></button></span>`;
 }
 
 function helpEl(tag, cls, text) {
@@ -1563,18 +1530,18 @@ function matchPaginationHtml(total, page, size, handler) {
     const start = Math.floor((cur - 1) / 5) * 5 + 1;
     const end = Math.min(count, start + 4);
     // 숫자 버튼과 앞뒤 이동 버튼은 모양이 달라서(활성 표시가 숫자에만 붙는다) 따로 만든다.
-    const num = n => `<button type="button" class="match-page${n === cur ? ' active' : ''}"${n === cur ? ' aria-current="page"' : ''} onclick="${handler}(${n})">${n}</button>`;
+    const num = n => `<button type="button" class="match-page${n === cur ? ' active' : ''}"${n === cur ? ' aria-current="page"' : ''}${act(handler, n)}>${n}</button>`;
     const step = (n, label, aria, disabled) =>
-        `<button type="button" class="match-page is-edge" aria-label="${aria}"${disabled ? ' disabled' : ` onclick="${handler}(${n})"`}>${label}</button>`;
+        `<button type="button" class="match-page is-edge" aria-label="${aria}"${disabled ? ' disabled' : act(handler, n)}>${label}</button>`;
     return `<nav class="match-pagination" aria-label="페이지">
         <span class="match-pagination-nav">
             ${step(1, '&laquo;', '첫 페이지', cur === 1)}
             ${step(cur - 1, '&lsaquo;', '이전 페이지', cur === 1)}
         </span>
         <span class="match-page-nums">
-            ${start > 1 ? `<button type="button" class="match-page is-gap" onclick="${handler}(${start - 1})" aria-label="이전 묶음">…</button>` : ''}
+            ${start > 1 ? `<button type="button" class="match-page is-gap"${act(handler, start - 1)} aria-label="이전 묶음">…</button>` : ''}
             ${Array.from({ length: end - start + 1 }, (_, i) => num(start + i)).join('')}
-            ${end < count ? `<button type="button" class="match-page is-gap" onclick="${handler}(${end + 1})" aria-label="다음 묶음">…</button>` : ''}
+            ${end < count ? `<button type="button" class="match-page is-gap"${act(handler, end + 1)} aria-label="다음 묶음">…</button>` : ''}
         </span>
         <span class="match-pagination-nav">
             ${step(cur + 1, '&rsaquo;', '다음 페이지', cur === count)}

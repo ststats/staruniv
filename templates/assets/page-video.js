@@ -80,9 +80,8 @@ function videoChannelAvatar(ch, cls) {
     const ok = /^https:\/\/(yt\d\.ggpht\.com|yt\d\.googleusercontent\.com|i\d?\.ytimg\.com)\//.test(t);
     const name1 = videoChannelName(ch).slice(0, 1);
     const initial = escapeHTML(name1);          // HTML 글자 자리
-    const initialJs = jsAttr(name1);            // onerror 안 JS 문자열 자리
     return ok
-        ? `<img class="${cls}" src="${escapeHTML(t)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${cls}',textContent:'${initialJs}'}))">`
+        ? `<img class="${cls}" src="${escapeHTML(t)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, cls, name1)}>`
         : `<span class="${cls}">${initial}</span>`;
 }
 
@@ -102,7 +101,7 @@ function videoCardHtml(v, opts) {
     const avatar = v.channel ? videoChannelAvatar(ch, 'video-card-avatar') : '';
     return `
         <article class="video-card${opts.top ? ' is-top' : ''}" data-video-id="${escapeHTML(v.id)}" data-video-pick="${opts.pick ? '1' : '0'}">
-            <button type="button" class="video-thumb" onclick="videoPlay('${escapeHTML(v.id)}')" aria-label="${escapeHTML(v.title)} 재생">
+            <button type="button" class="video-thumb"${act('videoPlay', v.id)} aria-label="${escapeHTML(v.title)} 재생">
                 ${videoThumbInnerHtml(v)}
                 ${rank}
                 ${v.short ? '<span class="video-badge">SHORTS</span>' : ''}
@@ -111,7 +110,7 @@ function videoCardHtml(v, opts) {
             <div class="video-card-body">
                 ${avatar}
                 <div class="video-card-text">
-                    <button type="button" class="video-card-title" onclick="videoPlay('${escapeHTML(v.id)}')">${escapeHTML(v.title)}</button>
+                    <button type="button" class="video-card-title"${act('videoPlay', v.id)}>${escapeHTML(v.title)}</button>
                     ${meta ? `<div class="video-card-meta">${meta}</div>` : ''}
                     ${opts.pick && v.note ? `<p class="video-card-note">${escapeHTML(v.note)}</p>` : ''}
                 </div>
@@ -122,7 +121,7 @@ function videoCardHtml(v, opts) {
 
 function videoShortHtml(v) {
     return `
-        <button type="button" class="video-short" onclick="videoPlay('${escapeHTML(v.id)}')" aria-label="${escapeHTML(v.title)} 재생">
+        <button type="button" class="video-short"${act('videoPlay', v.id)} aria-label="${escapeHTML(v.title)} 재생">
             <span class="video-short-thumb">${videoThumbInnerHtml(v)}</span>
             <span class="video-short-title">${escapeHTML(v.title)}</span>
             <span class="video-short-meta">${v.views ? `조회수 ${videoFormatViews(v.views)}` : escapeHTML(videoChannelName(videoChannel(v.channel)))}</span>
@@ -196,8 +195,8 @@ function renderVideoChannels() {
     const keys = VideoState.channelKeys;
     const all = VideoState.data.videos || [];
     renderAvatarBar('video-channel-row',
-        avatarSelectAllItemHtml('video-ch-all', "selectVideoChannel('')", `${all.length}`),
-        keys.map((k, i) => `<div class="avatar-select-item" id="video-ch-${i}" role="button" tabindex="0" onclick="selectVideoChannel('${jsAttr(k)}')">
+        avatarSelectAllItemHtml('video-ch-all', act('selectVideoChannel', ''), `${all.length}`),
+        keys.map((k, i) => `<div class="avatar-select-item" id="video-ch-${i}" role="button" tabindex="0"${act('selectVideoChannel', k)}>
                 ${videoChannelAvatar(videoChannel(k), 'video-bar-avatar')}
                 <span class="avatar-select-name">${escapeHTML(videoChannelName(videoChannel(k)))}</span>
                 <span class="avatar-select-tier">${all.filter(v => v.channel === k).length}</span>

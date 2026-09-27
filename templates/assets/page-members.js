@@ -39,7 +39,7 @@ function switchMemberView(viewType, skipHashUpdate) {
 
 function memberCardHtml(m) {
     return `
-        <div class="member-card${isActiveMember(m) ? '' : ' former'}${memberRaceEdgeClass(m)}" data-member="${jsAttr(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0" onclick="openMemberProfile('${jsAttr(m['이름'])}')">
+        <div class="member-card${isActiveMember(m) ? '' : ' former'}${memberRaceEdgeClass(m)}" data-member="${escapeHTML(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0"${act('openMemberProfile', m['이름'])}>
             <div class="member-card-media tier-card-media">
                 <img class="member-live-thumb" data-member-live-thumb="${escapeHTML(m['SOOP ID'] || '')}" alt="" hidden>
                 <div class="member-profile-media">${avatarHtml(m['SOOP ID'], 'member-avatar-img')}</div>
@@ -154,7 +154,7 @@ function renderMembersPage() {
             <div class="section-title" data-en="FORMER">
                 <span class="section-title-label">이전 멤버</span>
                 <button type="button" class="text-action former-members-toggle" id="former-members-toggle-btn"
-                    aria-expanded="false" aria-controls="former-members-section" onclick="toggleFormerMembersSection()">
+                    aria-expanded="false" aria-controls="former-members-section"${act('toggleFormerMembersSection')}>
                     <span id="former-members-toggle-text">보기</span>${chevronDownSvg(12, ' id="former-members-toggle-chevron" class="chevron-rotatable"')}
                 </button>
                 <span class="title-count">${sortedFormer.length}명</span>
@@ -306,7 +306,7 @@ const NewsState = {
 function renderNewsSidebar() {
     renderAvatarBar(
         'news-avatar-list',
-        avatarSelectAllItemHtml('news-side-btn-all', 'showNewsAll()',
+        avatarSelectAllItemHtml('news-side-btn-all', act('showNewsAll'),
             `${activeMembersWithSoopId().length}`),
         activeMembersWithSoopId()
             .map(mem => avatarSelectItemHtml('news-side-player-', mem['이름'], mem['SOOP ID'], 'selectNewsPlayer', mem))
@@ -577,7 +577,7 @@ function newsDesktopLayoutHtml(sorted, loadMoreHtml) {
                 </div>`;
 }
 
-const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" onclick="loadMoreNewsFeed()">더 보기 ${chevronDownSvg(9)}</button></div>`;
+const NEWS_LOAD_MORE_HTML = `<div class="news-load-more-wrap" id="news-load-more-wrap"><button class="news-load-more" data-click="loadMoreNewsFeed">더 보기 ${chevronDownSvg(9)}</button></div>`;
 
 // "전체 공지"/"멤버별 공지" 공용 렌더러.
 function renderNewsLayout(content) {
@@ -708,8 +708,9 @@ async function expandNewsPost(btn, titleNo) {
 
 // 공지 카드의 다중 사진 스와이프 - 스크롤 위치로 현재 몇 번째 사진인지 계산해서 인디케이터
 // active 표시와 좌/우 화살표(첫 장에선 이전, 마지막 장에선 다음을 숨김)를 갱신한다.
-// 스와이프 중 onscroll이 프레임당 여러 번 와도 갤러리마다 한 프레임에 한 번만 계산한다.
-const updateNewsPhotoDots = rafThrottleByKey(scroller => {
+// 스와이프 중 scroll이 프레임당 여러 번 와도 갤러리마다 한 프레임에 한 번만 계산한다.
+// (data-scroll이 이름으로 부르므로 const가 아닌 var로 전역에 둔다)
+var updateNewsPhotoDots = rafThrottleByKey(scroller => {
     const wrap = scroller.parentElement;
     if (!wrap || !wrap.classList.contains('news-post-photos-wrap')) return;
     const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
@@ -743,11 +744,11 @@ function newsPhotosHtml(photos) {
         ? `<div class="news-post-photos-dots">${photos.map((_, i) => `<span class="photo-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
         : '';
     const navHtml = multi
-        ? `<button type="button" class="news-photo-nav news-photo-nav-prev is-hidden" onclick="scrollNewsPhotos(this,-1)" aria-label="이전 사진">‹</button>
-               <button type="button" class="news-photo-nav news-photo-nav-next" onclick="scrollNewsPhotos(this,1)" aria-label="다음 사진">›</button>`
+        ? `<button type="button" class="news-photo-nav news-photo-nav-prev is-hidden"${act('scrollNewsPhotos', ACT.el, -1)} aria-label="이전 사진">‹</button>
+               <button type="button" class="news-photo-nav news-photo-nav-next"${act('scrollNewsPhotos', ACT.el, 1)} aria-label="다음 사진">›</button>`
         : '';
     return `<div class="news-post-photos-wrap">
-                    <div class="news-post-photos"${multi ? ' onscroll="updateNewsPhotoDots(this)"' : ''}>${photos.map((p, i) => `<img src="${escapeHTML(p && p.url)}" alt=""${i > 0 ? ' loading="lazy"' : ''} onerror="this.remove();">`).join('')}</div>
+                    <div class="news-post-photos"${multi ? actOn('scroll', 'updateNewsPhotoDots', ACT.el) : ''}>${photos.map((p, i) => `<img src="${escapeHTML(p && p.url)}" alt=""${i > 0 ? ' loading="lazy"' : ''}${actOn('error', 'imgRemove', ACT.el)}>`).join('')}</div>
                     ${navHtml}
                     ${dotsHtml}
                </div>`;
@@ -788,7 +789,7 @@ function renderFeaturedPostHtml(item) {
                 </div>
             </div>
             ${title ? `<div class="news-post-title">${escapeHTML(title)}</div>` : ''}
-            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn" onclick="expandNewsPost(this, '${jsAttr(post.titleNo)}')">더 보기 ${chevronDownSvg(9)}</button>` : ''}
+            ${snippet ? `<div class="news-post-body news-post-body-clamp">${formatNewsContent(snippet)}</div><button type="button" class="news-post-more-btn"${act('expandNewsPost', ACT.el, post.titleNo)}>더 보기 ${chevronDownSvg(9)}</button>` : ''}
             ${newsPhotosHtml(asArray(post.photos))}
             <div class="news-post-link-row">
                 ${newsPostStatsHtml(post)}
@@ -804,7 +805,7 @@ function renderFeaturedPostHtml(item) {
 function renderPastNoticeHtml(item) {
     const key = newsItemKey(item);
     return homeNoticeCardHtml(noticeCardFields(item.member, item.post), {
-        onclickAttr: `setNewsFeatured('${jsAttr(key)}')`,
+        action: act('setNewsFeatured', key),
         extraClass: 'news-past-item',
         dataAttr: `data-news-key="${escapeHTML(key)}"`,
     });

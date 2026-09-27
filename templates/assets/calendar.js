@@ -268,12 +268,13 @@
         calRenderSelectedDateSchedules();
     };
 
-    const changeMonth = (direction) => {
+    // 달 이동 버튼(data-click)이 이름으로 부르므로 function으로 둔다.
+    function changeMonth(direction) {
         // 날짜를 1일로 먼저 맞춰야 31일에 다음 달(30일까지) 이동 시 한 달을 건너뛰지 않는다.
         calCurrentDate.setDate(1);
         calCurrentDate.setMonth(calCurrentDate.getMonth() + direction);
         calRenderCalendar();
-    };
+    }
 
     const calSelectDate = (dateStr) => {
         calSelectedDateStr = dateStr;

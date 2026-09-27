@@ -261,7 +261,7 @@ function renderIndividualSidebar() {
         (isActiveMember(m) ? html : formerHtml).push(item);
     });
 
-    html.push(`<div class="avatar-select-item avatar-select-toggle" id="indiv-toggle-former" role="button" tabindex="0" onclick="toggleFormerMembers()">
+    html.push(`<div class="avatar-select-item avatar-select-toggle" id="indiv-toggle-former" role="button" tabindex="0" data-click="toggleFormerMembers">
                         <div class="avatar-select-fallback">
                             ${chevronDownSvg(10, ' id="indiv-toggle-chevron" class="chevron-rotatable"')}
                         </div>
@@ -270,7 +270,7 @@ function renderIndividualSidebar() {
     html.push(`<span id="indiv-former-wrap" class="d-none">${formerHtml.join('')}</span>`);
 
     renderAvatarBar('indiv-avatar-list',
-        avatarSelectAllItemHtml('side-btn-summary', 'showIndivSummary()', `${SiteData.members.filter(isActiveMember).length}`),
+        avatarSelectAllItemHtml('side-btn-summary', act('showIndivSummary'), `${SiteData.members.filter(isActiveMember).length}`),
         html.join(''));
 }
 
@@ -409,7 +409,7 @@ const SUMMARY_FORMATS = ['전체', ...FORMAT_KEYS];
 function summaryFilterHtml(current, handler) {
     return SUMMARY_FORMATS.map(f => `
         <div class="filter-item${f === current ? ' active' : ''}" role="tab" tabindex="0"
-             aria-selected="${f === current}" onclick="${handler}('${jsAttr(f)}')">${escapeHTML(f)}</div>`).join('');
+             aria-selected="${f === current}"${act(handler, f)}>${escapeHTML(f)}</div>`).join('');
 }
 
 // 고른 형식의 전적. '전체'면 네 형식을 다 더한다.
@@ -507,7 +507,7 @@ function renderIndivSummaryTable() {
             ? `${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span>`
             : '<span class="wl-empty">기록 없음</span>';
         return `
-        <button type="button" class="h2h-rival" onclick="selectPlayer('${jsAttr(name)}')">
+        <button type="button" class="h2h-rival"${act('selectPlayer', name)}>
             ${avatarHtml(m['SOOP ID'], 'h2h-rival-avatar')}
             <span class="h2h-rival-name">${escapeHTML(name)}</span>
             <span class="h2h-rival-rec">${rec}</span>

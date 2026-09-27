@@ -104,6 +104,10 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
   `api.js`가 Supabase 공개 조회(작은 읽기 클라이언트 `publicSupabaseClient`, supabase-js 없음)로 받고, 나중에 서버를 붙이면
   `api.js` 안의 조회만 `fetch('/api/v1/…')`로 바꿉니다. 화면에 새 데이터를 쓰려면 `api.js` 함수 → `api/openapi.yaml` →
   익명 권한(`supabase/staruniv.sql` 2번, `ststat.sql` 14번) 순서로 함께 고칩니다. 관리자 화면만 로그인 때문에 supabase-js를 받습니다.
+- 화면 코드에는 `onclick="…"` 같은 인라인 핸들러와 인라인 `<script>`를 쓰지 않습니다(CSP로 막을 수 있게, `npm test`가 검사).
+  버튼 동작은 `data-click="함수" data-args='[인자]'`(JS에서는 `act('함수', 인자…)`)로 적고 `templates/assets/actions.js`가
+  한 곳에서 받아 그 전역 함수(`function` 선언)를 부릅니다. 입력은 `data-input`·`data-change`·`data-enter`, 스크롤은 `data-scroll`,
+  이미지 대체는 `data-error`(`imgRemove`·`imgHide`·`imgSwap`·`imgSrc`)입니다. 스크립트는 파일로 두고 `src`로 싣습니다.
 - Bootstrap은 CDN으로 받지 않습니다. 쓰는 규칙만 뽑은 `style/00-vendor-bootstrap.css`와, 모달·접기만 따로 만든
   `core.js`의 `showModal`/`hideModal`/`toggleCollapse`를 씁니다(`data-bs-dismiss`, `data-bs-toggle="collapse"`는 그대로 동작).
   Bootstrap 클래스를 새로 쓰기 시작하면 그 규칙이 빠져 있을 수 있으니 확인합니다.

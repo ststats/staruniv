@@ -704,7 +704,7 @@ function entrySetPeriod(period) {
 function renderEntryPeriod() {
     const box = document.getElementById('entry-period');
     if (!box) return;
-    box.innerHTML = `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="맞대결 기간">${ENTRY_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${EntryState.period === key ? ' active' : ''}" aria-pressed="${EntryState.period === key}" onclick="entrySetPeriod('${key}')">${label}</button>`).join('')}</div></div>`;
+    box.innerHTML = `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="맞대결 기간">${ENTRY_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${EntryState.period === key ? ' active' : ''}" aria-pressed="${EntryState.period === key}"${act('entrySetPeriod', key)}>${label}</button>`).join('')}</div></div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -825,7 +825,7 @@ function renderEntryAutoTierPicker() {
     for (const t of [...EntryState.autoTiers]) if (!tiers.includes(t)) EntryState.autoTiers.delete(t);
     root.innerHTML = tiers.length ? tiers.map(t => {
         const on = EntryState.autoTiers.has(t);
-        return `<button type="button" class="entry-auto-tier-chip${on ? ' is-active' : ''}" aria-pressed="${on}" onclick="entryToggleAutoTier('${jsAttr(t)}')">${escapeHTML(tierLabel(t))}</button>`;
+        return `<button type="button" class="entry-auto-tier-chip${on ? ' is-active' : ''}" aria-pressed="${on}"${act('entryToggleAutoTier', t)}>${escapeHTML(tierLabel(t))}</button>`;
     }).join('') : '<span class="entry-auto-tier-empty">양쪽 소속에 공통으로 있는 티어가 없습니다</span>';
 }
 
@@ -1019,7 +1019,7 @@ function entryPlayerItemHtml(side, p, showTeam) {
     const picked = EntryState.sel[side] === p.pid;
     const team = showTeam && p.tm ? `<span class="h2h-suggest-team">${escapeHTML(p.tm)}</span>` : '';
     return `<button type="button" class="h2h-suggest-item${picked ? ' is-picked' : ''}" aria-pressed="${picked}"
-            onclick="entryTogglePlayer(${side},'${jsAttr(p.pid)}')">
+            ${act('entryTogglePlayer', side, p.pid)}>
         ${entryRaceBadgeHtml(p)}
         <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
         ${team}
@@ -1076,14 +1076,14 @@ function entryMapPickerHtml(index, current) {
     const list = showAll ? all : primary;
     const buttons = list.map(name => {
         const picked = chosen && entryNormalizeMapName(chosen) === entryNormalizeMapName(name);
-        return `<button type="button" class="entry-map-option${picked ? ' is-picked' : ''}" onclick="entryChooseMap(${index}, '${jsAttr(name)}')">${escapeHTML(name)}</button>`;
+        return `<button type="button" class="entry-map-option${picked ? ' is-picked' : ''}"${act('entryChooseMap', index, name)}>${escapeHTML(name)}</button>`;
     }).join('');
     return `<div class="entry-map-popover">
         <div class="entry-map-popover-head"><strong>${showAll ? '전체 맵' : '최근 많이 하는 맵'}</strong><span>${showAll ? all.length : Math.min(primary.length, all.length)}개</span></div>
         <div class="entry-map-options">${buttons || '<span class="entry-map-empty">맵 정보가 없습니다</span>'}</div>
         <div class="entry-map-popover-actions">
-            <button type="button" onclick="entryToggleAllMaps(${index})">${showAll ? '최근 맵만' : '전체 맵 보기'}</button>
-            <button type="button" onclick="entryChooseCustomMap(${index})">직접 입력</button>
+            <button type="button"${act('entryToggleAllMaps', index)}>${showAll ? '최근 맵만' : '전체 맵 보기'}</button>
+            <button type="button"${act('entryChooseCustomMap', index)}>직접 입력</button>
         </div>
     </div>`;
 }
@@ -1136,7 +1136,7 @@ function entryMatchRowHtml(m, i, wp) {
     return `<div class="entry-match${isOpen ? ' is-open' : ''}">
         <div class="entry-match-top">
             <span class="entry-match-no">${i + 1}경기</span>
-            <button type="button" class="entry-match-del" onclick="entryRemoveMatch(${i})" aria-label="${i + 1}경기 빼기">✕</button>
+            <button type="button" class="entry-match-del"${act('entryRemoveMatch', i)} aria-label="${i + 1}경기 빼기">✕</button>
         </div>
         <div class="entry-match-row">
             <div class="entry-match-side">
@@ -1158,12 +1158,12 @@ function entryMatchRowHtml(m, i, wp) {
         <span class="h2h-rival-bar${has ? '' : ' is-empty'}"><span style="width:${pct}%"></span></span>
         <div class="entry-match-footer">
             <div class="entry-map-control${EntryState.mapPickerOpen === i ? ' is-open' : ''}">
-                <button type="button" class="entry-map-trigger" aria-expanded="${EntryState.mapPickerOpen === i ? 'true' : 'false'}" onclick="entryToggleMapPicker(${i})">
+                <button type="button" class="entry-map-trigger" aria-expanded="${EntryState.mapPickerOpen === i ? 'true' : 'false'}"${act('entryToggleMapPicker', i)}>
                     <span>${escapeHTML(mapValue || '맵 선택')}</span>${chevronDownSvg(9, ` class="chevron-rotatable${EntryState.mapPickerOpen === i ? ' is-open' : ''}"`)}
                 </button>
             </div>
             <div class="entry-match-sim">${probText}</div>
-            <button type="button" class="entry-analysis-toggle" aria-expanded="${isOpen ? 'true' : 'false'}" onclick="entryToggleAnalysis(${i})">
+            <button type="button" class="entry-analysis-toggle" aria-expanded="${isOpen ? 'true' : 'false'}"${act('entryToggleAnalysis', i)}>
                 <span>${isOpen ? '접기' : '분석'}</span>${chevronDownSvg(9, ` class="chevron-rotatable${isOpen ? ' is-open' : ''}"`)}
             </button>
         </div>

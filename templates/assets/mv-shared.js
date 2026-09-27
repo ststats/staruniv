@@ -19,11 +19,6 @@ function mvSharedEscapeHTML(str) {
     if (str === null || str === undefined) return '';
     return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
 }
-// onclick="fn('값')"처럼 HTML 속성 안의 JS 문자열에 넣는 값: JS 이스케이프 후 HTML 이스케이프를 한 번 더 한다
-// (JS 이스케이프만 하면 값에 큰따옴표가 섞일 때 속성이 끊긴다).
-function mvSharedJsAttr(str) {
-    return mvSharedEscapeHTML(String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
-}
 
 // SOOP 프로필 사진(작은 WebP). 형식이 이상한 아이디나 사진이 없으면 사람 모양으로 대신한다.
 function mvAvatarHtml(soopId) {
@@ -31,14 +26,14 @@ function mvAvatarHtml(soopId) {
     const fallback = '<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>';
     if (!MV_SHARED_SOOP_ID_PATTERN.test(id)) return fallback;
     const url = `https://stimg.sooplive.com/LOGO/${id.substring(0, 2)}/${id}/m/${id}.webp`;
-    return `<img src="${url}" class="mv-chip-avatar" alt="" loading="lazy" onerror="this.outerHTML='${mvSharedEscapeHTML(fallback).replace(/'/g, "\\'")}'">`;
+    return `<img src="${url}" class="mv-chip-avatar" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'mv-chip-avatar d-flex align-items-center justify-content-center', '👤')}>`;
 }
 
 // 멤버 고르기 칩 하나. m은 사이트 멤버 행({ '이름', 'SOOP ID' }).
 function mvChipHtml(m, selected, isLive) {
     const soopId = m['SOOP ID'];
     return `
-        <div class="mv-chip${selected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${!!selected}" onclick="mvToggleMember('${mvSharedJsAttr(soopId)}', '${mvSharedJsAttr(m['이름'])}')">
+        <div class="mv-chip${selected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${!!selected}"${act('mvToggleMember', soopId, m['이름'])}>
             ${mvAvatarHtml(soopId)}
             <span class="mv-chip-name">${mvSharedEscapeHTML(m['이름'])}</span>
             ${isLive ? '<span class="mv-chip-live" role="img" aria-label="방송 중" title="방송 중"></span>' : ''}
@@ -70,11 +65,11 @@ function mvOrderItemHtml(entry, idx, order, focus, focusEntryId) {
     return `<div class="mv-order-detail${isFocusTarget ? ' focus-target' : ''}">
         <span class="mv-order-position">${String(idx + 1).padStart(2, '0')}</span>
         <div class="mv-order-identity"><strong>${name}</strong></div>
-        ${focus ? `<button type="button" class="mv-order-focus" aria-pressed="${isFocusTarget}" aria-label="${name} 메인 방송으로 선택" onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')">${isFocusTarget ? '메인' : '메인으로'}</button>` : ''}
+        ${focus ? `<button type="button" class="mv-order-focus" aria-pressed="${isFocusTarget}" aria-label="${name} 메인 방송으로 선택"${act('mvSetFocusTarget', entry.soopId)}>${isFocusTarget ? '메인' : '메인으로'}</button>` : ''}
         <div class="mv-order-actions">
-            <button type="button" aria-label="${name} 위로 이동" onclick="mvMove(${idx}, -1)" ${isFirst ? 'disabled' : ''}>↑</button>
-            <button type="button" aria-label="${name} 아래로 이동" onclick="mvMove(${idx}, 1)" ${isLast ? 'disabled' : ''}>↓</button>
-            <button type="button" class="mv-order-remove" aria-label="${name} 목록에서 제거" onclick="mvRemove(${idx})">×</button>
+            <button type="button" aria-label="${name} 위로 이동"${act('mvMove', idx, -1)} ${isFirst ? 'disabled' : ''}>↑</button>
+            <button type="button" aria-label="${name} 아래로 이동"${act('mvMove', idx, 1)} ${isLast ? 'disabled' : ''}>↓</button>
+            <button type="button" class="mv-order-remove" aria-label="${name} 목록에서 제거"${act('mvRemove', idx)}>×</button>
         </div>
     </div>`;
 }

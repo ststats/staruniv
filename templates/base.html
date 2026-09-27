@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-nav-pending>
 <head>
     <meta charset="UTF-8">
     {#- 하위 페이지(/records/ 등)는 모든 상대 경로(CSS/JS/이미지/data/..., JS의 fetch 포함)를
@@ -32,9 +32,6 @@
     <meta property="og:image:alt" content="{{ full_title }}">
     {%- endif %}
     <meta name="twitter:card" content="summary_large_image">
-    <script>
-        document.documentElement.dataset.navPending = '';
-    </script>
     {#- Supabase 메뉴 설정을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다(숨긴 메뉴가 잠깐 보였다가
         사라지는 깜빡임 방지). 자리(높이)는 유지하면서 보이지만 않게 한다. #}
     <style>html[data-nav-pending] #mainMenu,
@@ -79,7 +76,7 @@
             담으려면 글자를 계속 줄이거나 가로로 밀어야 했다. 버튼 하나로 여닫는다.
             (열고 닫는 건 core.js의 toggleMainMenu) #}
         <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
-                aria-expanded="false" aria-controls="mainMenu" onclick="toggleMainMenu()">
+                aria-expanded="false" aria-controls="mainMenu" data-click="toggleMainMenu">
             <span></span><span></span><span></span>
         </button>
         <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
@@ -92,8 +89,8 @@
         {#- 다크모드 전환. 고른 테마는 localStorage에 남아 다음 방문에도 유지된다
             (core.js의 applyTheme/setTheme). 첫 방문은 OS 설정을 따른다. #}
         <div class="theme-toggle" role="group" aria-label="테마 선택">
-            <button type="button" data-theme-choice="light" aria-label="라이트 모드" onclick="setTheme('light')">☀</button>
-            <button type="button" data-theme-choice="dark" aria-label="다크 모드" onclick="setTheme('dark')">◐</button>
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" data-click="setTheme" data-args='["light"]'>☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" data-click="setTheme" data-args='["dark"]'>◐</button>
         </div>
     </div>
 </header>

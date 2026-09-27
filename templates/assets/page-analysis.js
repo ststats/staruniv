@@ -134,7 +134,7 @@ function analysisSetPeriod(period) {
     renderAnalysisBody();
 }
 function analysisPeriodHtml() {
-    return `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="기간 선택">${H2H_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${AnalysisState.period === key ? ' active' : ''}" aria-pressed="${AnalysisState.period === key}" onclick="analysisSetPeriod('${key}')">${label}</button>`).join('')}</div></div>`;
+    return `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="기간 선택">${H2H_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${AnalysisState.period === key ? ' active' : ''}" aria-pressed="${AnalysisState.period === key}"${act('analysisSetPeriod', key)}>${label}</button>`).join('')}</div></div>`;
 }
 
 // 이름·티어·소속·종족은 상대전적 index(h2h)에서 가져온다.
@@ -184,9 +184,9 @@ function analysisSuggestHtml() {
     const list = analysisSuggest(AnalysisState.query);
     if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다</div></div>';
     const shown = Math.min(list.length, AnalysisState.suggestShown);
-    return `<div class="h2h-suggest" onscroll="analysisSuggestScroll(this)">
+    return `<div class="h2h-suggest"${actOn('scroll', 'analysisSuggestScroll', ACT.el)}>
         <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
-        ${playerSuggestItemsHtml(list.slice(0, shown), pid => `analysisPick('${jsAttr(pid)}')`)}
+        ${playerSuggestItemsHtml(list.slice(0, shown), pid => act('analysisPick', pid))}
     </div>`;
 }
 
@@ -198,7 +198,7 @@ function analysisSuggestScroll(el) {
     AnalysisState.suggestShown = Math.min(list.length, from + ANALYSIS_SUGGEST_STEP);
     el.insertAdjacentHTML('beforeend', playerSuggestItemsHtml(
         list.slice(from, AnalysisState.suggestShown),
-        pid => `analysisPick('${jsAttr(pid)}')`
+        pid => act('analysisPick', pid)
     ));
 }
 
@@ -227,7 +227,7 @@ document.addEventListener('click', e => {
 // ---------------------------------------------------------------------------
 function analysisHeadHtml(pid, p, e) {
     return playerSummaryHtml(p, {total: e.m, win: e.w, lose: e.l},
-        '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" onclick="analysisBack()">✕</button>',
+        '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" data-click="analysisBack">✕</button>',
         h2hRankInfo(p));
 }
 
@@ -287,8 +287,8 @@ function analysisCatHtml(e) {
         <div class="section-title has-shelf-nav" data-en="BY FORMAT">
             <span class="section-title-label">형식별 전적</span>
             <span class="shelf-nav is-always">
-                <button type="button" class="shelf-nav-btn" aria-label="이전 형식" onclick="analysisSetCatPage(${AnalysisState.catPage - 1})">&lsaquo;</button>
-                <button type="button" class="shelf-nav-btn" aria-label="다음 형식" onclick="analysisSetCatPage(${AnalysisState.catPage + 1})">&rsaquo;</button>
+                <button type="button" class="shelf-nav-btn" aria-label="이전 형식"${act('analysisSetCatPage', AnalysisState.catPage - 1)}>&lsaquo;</button>
+                <button type="button" class="shelf-nav-btn" aria-label="다음 형식"${act('analysisSetCatPage', AnalysisState.catPage + 1)}>&rsaquo;</button>
             </span>
             <span class="title-count">${AnalysisState.catPage + 1} / ${pages}</span>
         </div>
@@ -608,7 +608,7 @@ function analysisMapHtml(rows) {
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="analysisShowMoreMaps()">더 보기 ${chevronDownSvg(9)}</button>
+            <button type="button" class="news-load-more" data-click="analysisShowMoreMaps">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
@@ -632,11 +632,11 @@ function analysisRivalHtml(rows, myTier) {
             <span class="title-count">${escapeHTML(tierLabel(myTier))} · ${all.length}명</span>
         </div>
         <div class="h2h-rivals">
-            ${list.map(([pid, [w, l]]) => h2hRivalCardHtml(pid, w, l, `analysisPick('${jsAttr(pid)}')`)).join('')}
+            ${list.map(([pid, [w, l]]) => h2hRivalCardHtml(pid, w, l, act('analysisPick', pid))).join('')}
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="analysisShowMoreRivals()">더 보기 ${chevronDownSvg(9)}</button>
+            <button type="button" class="news-load-more" data-click="analysisShowMoreRivals">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 

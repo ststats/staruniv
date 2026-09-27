@@ -2,6 +2,16 @@
  * 홈 페이지: 방송 중 카드 + 최근 공지. (core.js → soop.js → 이 파일)
  */
 
+// 한 페이지(SPA) 시절의 공유 링크(/?/records&view=solo)로 들어오면 실제 페이지 주소
+// (records/?view=solo)로 옮겨준다. 이런 주소는 새로 생기지 않는다.
+(function (l) {
+    if (l.search[1] !== '/') return;
+    var decoded = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&'); }).join('?');
+    var path = decoded.slice(1), q = path.indexOf('?');
+    var page = (q === -1 ? path : path.slice(0, q)).replace(/\/+$/, '');
+    l.replace(l.pathname + (page ? page + '/' : '') + (q === -1 ? '' : path.slice(q)) + l.hash);
+}(window.location));
+
 // 홈 공지 카드/"전체 보기" → 멤버 페이지의 공지 탭(해당 멤버). 페이지 <base>가 사이트 루트라
 // 상대 경로가 GitHub Pages(/staruniv/)와 루트 배포 양쪽에서 똑같이 맞는다.
 function newsPageHref(memberName) {
@@ -191,7 +201,7 @@ function liveCardHtml({ member: m, live }) {
     return `
             <a class="live-broadcast-card${liveRaceEdgeClass(m)}" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
                 <div class="live-thumb-wrap">
-                    <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad_no)}" alt="방송 화면" onerror="this.style.display='none';">
+                    <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad_no)}" alt="방송 화면"${actOn('error', 'imgHide', ACT.el)}>
                     <div class="live-thumb-overlay">
                         <span>${escapeHTML(viewerText)}</span><span>${escapeHTML(elapsedText)}</span>
                     </div>

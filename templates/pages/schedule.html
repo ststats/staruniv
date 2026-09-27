@@ -7,8 +7,8 @@
             <p class="page-header-subtitle">캄몬스타즈의 다가올 일정과 지나간 일정입니다</p>
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
-            <div class="sub-tab active" id="tab-calendar" role="tab" tabindex="0" aria-selected="true" onclick="switchScheduleView('calendar')">일정</div>
-            <div class="sub-tab" id="tab-history" role="tab" tabindex="0" aria-selected="false" onclick="switchScheduleView('history')">연혁</div>
+            <div class="sub-tab active" id="tab-calendar" role="tab" tabindex="0" aria-selected="true" data-click="switchScheduleView" data-args='["calendar"]'>일정</div>
+            <div class="sub-tab" id="tab-history" role="tab" tabindex="0" aria-selected="false" data-click="switchScheduleView" data-args='["history"]'>연혁</div>
         </div>
     </div>
     <div class="container">
@@ -46,9 +46,9 @@
                             <div class="cal-month-name" id="monthName">&nbsp;</div>
                         </div>
                         <div class="cal-nav-group">
-                            <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <button class="cal-nav-btn" data-click="changeMonth" data-args='[-1]' aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
                             <div id="monthTitle" class="cal-nav-badge" aria-live="polite"></div>
-                            <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                            <button class="cal-nav-btn" data-click="changeMonth" data-args='[1]' aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                         </div>
                     </div>
                     <!-- 가로 스크롤 허용 캘린더 구역 -->
@@ -83,6 +83,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset_url('actions.js') }}"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 <script src="{{ asset_url('calendar.js') }}"></script>
