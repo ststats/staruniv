@@ -266,11 +266,15 @@ async function renderLiveBroadcasts() {
 
 // 멤버당 최대 3개까지만 섞는다(한 명이 몰아 쓴 글이 목록을 다 차지하지 않게)
 const HOME_NOTICES_PER_MEMBER = 3;
+const HOME_NOTICES_SHOWN = 5;
+const HOME_NOTICES_FETCH = 30;
 
 // 모아 둔 표(member_posts)에서 최신 글 몇 개만 받아 고른다 - 5개를 보여주는 데 멤버 전원의 첫 페이지를
-// 받을 필요가 없다. 활동 멤버 걸러내기·멤버당 3개 제한으로 빠질 몫까지 여유 있게 30개를 받는다.
+// 받을 필요가 없다. 최신순으로 앞에서부터 고르므로, 받은 범위 안에서 5개가 차면 전체를 받아 고른 것과 같다.
+// 활동 명단에 없는 멤버 글·멤버당 3개 제한으로 걸러져 5개가 안 찼는데 뒤에 글이 더 있을 수 있으면
+// (받은 수 = 요청 수) null을 돌려 멤버별 조회로 넘긴다 - 누락 없이 예전과 같은 결과.
 async function recentNoticesFromStore(activeMembers) {
-    const rows = await fetchRecentStoredPosts(30);
+    const rows = await fetchRecentStoredPosts(HOME_NOTICES_FETCH);
     if (!rows) return null;
     const bySoop = new Map(activeMembers.map(m => [String(m['SOOP ID']).toLowerCase(), m]));
     const perMember = new Map();
@@ -282,6 +286,7 @@ async function recentNoticesFromStore(activeMembers) {
         perMember.set(soopId, n + 1);
         picked.push({ member: m, post });
     });
+    if (picked.length < HOME_NOTICES_SHOWN && rows.length >= HOME_NOTICES_FETCH) return null;
     return picked;
 }
 
@@ -318,7 +323,7 @@ async function renderLatestNotices() {
     const latest = await recentNoticesFromStore(activeMembers) || await recentNoticesPerMember(activeMembers);
 
     container.innerHTML = latest.length
-        ? latest.slice(0, 5).map(({ member: m, post }) =>
+        ? latest.slice(0, HOME_NOTICES_SHOWN).map(({ member: m, post }) =>
             homeNoticeCardHtml(noticeCardFields(m, post), { href: newsPageHref(m['이름']) })).join('')
         : noNoticeHtml;
     container.setAttribute('aria-busy', 'false');
