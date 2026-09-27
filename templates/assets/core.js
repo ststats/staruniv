@@ -232,10 +232,15 @@ function hideModal(el, keepBackdrop) {
     const backdrop = modalBackdrop;
     modalBackdrop = null;
     backdrop.classList.remove('show');
-    afterTransition(backdrop, () => backdrop.remove());
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
+    // 스크롤바는 창이 다 사라진 뒤에 돌려놓는다 - 사라지는 도중에 돌려놓으면 화면 폭이 스크롤바만큼
+    // 줄면서 가운데 놓인 창이 왼쪽으로 살짝 밀린다. 그 사이 다른 창이 열렸으면 그대로 둔다.
+    afterTransition(backdrop, () => {
+        backdrop.remove();
+        if (openModalEl) return;
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    });
 }
 
 function toggleCollapse(target, trigger) {
