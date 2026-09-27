@@ -221,15 +221,16 @@ function openMemberProfile(name) {
     const rows = [['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
     document.getElementById('mp-info-body').innerHTML = rows.map(([label, value]) =>
         '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>').join('');
-    const station = document.getElementById('mp-station-link');
-    station.hidden = !isValidSoopId(m['SOOP ID']);
-    station.removeAttribute('href');
-    if (!station.hidden) station.href = 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim());
-    const youtube = document.getElementById('mp-youtube-link');
-    const youtubeUrl = memberYoutubeUrl(m['YouTube']);
-    youtube.hidden = !youtubeUrl;
-    youtube.removeAttribute('href');
-    if (youtubeUrl) youtube.href = youtubeUrl;
+    // 새 탭 링크: 주소가 있을 때만 href·target·rel을 단다(href 없는 a에는 target·rel을 둘 수 없다)
+    const setLink = (a, url) => {
+        a.hidden = !url;
+        ['href', 'target', 'rel'].forEach(k => a.removeAttribute(k));
+        if (url) Object.assign(a, { href: url, target: '_blank', rel: 'noopener' });
+        return a;
+    };
+    const station = setLink(document.getElementById('mp-station-link'), isValidSoopId(m['SOOP ID'])
+        ? 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim()) : '');
+    const youtube = setLink(document.getElementById('mp-youtube-link'), memberYoutubeUrl(m['YouTube']));
     document.getElementById('mp-external-links').hidden = station.hidden && youtube.hidden;
     document.getElementById('mp-records-link').href = 'records/?view=solo&member=' + encodeURIComponent(name);
     updateMemberAnalysisLink(m);
