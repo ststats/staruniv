@@ -193,8 +193,9 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         line-height: 16px;
     }
     .stat-table .match-badge { font-size: 10px; }
+    /* 로고 크기는 teamLogoHtml이 인라인으로 박으니(대체 배지가 물려받게) 여기서 줄이려면 !important가 필요하다 */
     .stat-table .team-logo-icon[class],
-    .stat-table .team-logo-fallback[class] { width: 14px; height: 14px; }
+    .stat-table .team-logo-fallback[class] { width: 14px !important; height: 14px !important; }
     .stat-table .player-avatar-sm { width: 16px; height: 16px; font-size: 8px; }
     .stat-table .set-detail-table td { padding: 5px 4px; }
 
@@ -212,7 +213,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         color: var(--color-text-muted);
     }
     .stat-table .cell-subline .team-logo-icon[class],
-    .stat-table .cell-subline .team-logo-fallback[class] { width: 11px; height: 11px; }
+    .stat-table .cell-subline .team-logo-fallback[class] { width: 11px !important; height: 11px !important; font-size: 7px !important; }
     /* 로고와 팀 이름 사이는 붙여 둔다(부트스트랩 gap-2는 8px라 한 덩어리로 안 보였다) */
     .stat-table .cell-subline > .team-cell { gap: 3px; }
 
@@ -292,7 +293,9 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     gap: 6px;
     vertical-align: middle;
 }
-.modal-title-vs .team-logo-icon { margin-right: 0; }
+/* 줄 안에서는 flex gap이 간격을 맡는다(로고의 기본 오른쪽 여백까지 더하면 이름과 떨어져 보인다) */
+.modal-title-vs .team-logo-icon,
+.team-cell .team-logo-icon { margin-right: 0; }
 .team-logo-fallback {
     display: inline-flex;
     align-items: center;

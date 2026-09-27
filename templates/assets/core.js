@@ -683,7 +683,7 @@ function teamLogoHtml(teamName, sizePx) {
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
 function teamCellInnerHtml(teamName) {
-    return `<span class="d-flex align-items-center justify-content-center gap-2">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
+    return `<span class="team-cell">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
 }
 
 // 사이트 공통 순서 - 여기 한 곳만 고친다. 티어는 높은 순, 직책은 멤버 목록 순서.
