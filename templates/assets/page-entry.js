@@ -48,10 +48,8 @@ function entryWithTimeout(promise, label) {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-async function entryPagedQuery(makeQuery, label) {
-    return fetchAllPages((from, to) => entryWithTimeout(makeQuery(from, to), label),
-        { pageSize: ENTRY_PAGE_SIZE });
-}
+// Api의 여러 쪽 조회에 넘기는 옵션: 쪽마다 시간 제한(label은 오류 문구)
+const entryPaging = label => ({ pageSize: ENTRY_PAGE_SIZE, wrap: q => entryWithTimeout(q, label) });
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
 const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
 const ENTRY_POSTER_W = 1200;      // 저장되는 포스터 가로(px)
@@ -98,19 +96,9 @@ const EntryState = {
 // 데이터
 // ---------------------------------------------------------------------------
 async function entryLoadIndexFromSupabase() {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) throw new Error('Supabase browser client is not configured');
-
     // 첫 화면에는 선수 목록만 필요하다. 랭킹 전체/메타 조회를 여기서 기다리면
     // 보조 쿼리 하나만 느려도 엔트리 탭 전체가 로딩 상태에 묶인다.
-    const playersData = await entryPagedQuery(
-        (from, to) => client
-            .from('elo_public_players')
-            .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date')
-            .order('elo_id', { ascending: true })
-            .range(from, to),
-        '선수 목록'
-    );
+    const playersData = await Api.eloPlayers(entryPaging('선수 목록'));
 
     const players = {};
     playersData.forEach(row => {
@@ -123,8 +111,6 @@ async function entryLoadIndexFromSupabase() {
             en: eloName && eloName !== nickname ? eloName : '',
             r: entryNormalizeRace(row.race),
             m: Number(row.total_games || 0),
-            w: Number(row.wins || 0),
-            d: row.last_match_date || '',
             tm: String(row.affiliation || ''),
             t: String(row.tier || ''),
             s: String(row.soop_id || ''),
@@ -146,18 +132,10 @@ async function entryLoadIndexFromSupabase() {
 }
 
 async function entryLoadRatingMetaInBackground() {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client || !EntryState.index) return;
+    if (!EntryState.index) return;
 
     try {
-        const rankingsData = await entryPagedQuery(
-            (from, to) => client
-                .from('elo_rankings')
-                .select('elo_id,raw_rating,rating,tier,tier_rank,tier_count,as_of')
-                .order('elo_id', { ascending: true })
-                .range(from, to),
-            '레이팅'
-        );
+        const rankingsData = await Api.eloRankings(entryPaging('레이팅'));
 
         rankingsData.forEach(row => {
             const player = EntryState.index?.players?.[String(row.elo_id)];
@@ -169,14 +147,7 @@ async function entryLoadRatingMetaInBackground() {
             if (!EntryState.index.syncedAt && row.as_of) EntryState.index.syncedAt = String(row.as_of);
         });
 
-        const metaRes = await entryWithTimeout(
-            client.from('elo_ranking_meta').select('as_of,tier_counts,tier_levels,race_matchup')
-                .order('as_of', { ascending: false }).limit(1),
-            '랭킹 기준선'
-        );
-        if (metaRes.error) throw metaRes.error;
-
-        const meta = Array.isArray(metaRes.data) && metaRes.data.length ? metaRes.data[0] : {};
+        const meta = await Api.eloRankingMeta({ wrap: q => entryWithTimeout(q, '랭킹 기준선') });
         EntryState.index.ranking = {
             // 반감기 기준일(비면 오늘 날짜로 계산하게 된다).
             asOf: meta.as_of ? String(meta.as_of) : '',
@@ -189,14 +160,7 @@ async function entryLoadRatingMetaInBackground() {
         // 순위 밖 선수(최근 10판 미만 · 티어 없음)까지 포함한 전 선수 레이팅. v4 이전 DB엔
         // 표가 없으니 실패하면 그냥 넘어가고, 순위 선수의 rawRating과 티어 기준선을 쓴다.
         try {
-            const ratingRows = await entryPagedQuery(
-                (from, to) => client
-                    .from('elo_player_ratings')
-                    .select('elo_id,rating,rating_se')
-                    .order('elo_id', { ascending: true })
-                    .range(from, to),
-                '전 선수 레이팅'
-            );
+            const ratingRows = await Api.eloPlayerRatings(entryPaging('전 선수 레이팅'));
             ratingRows.forEach(row => {
                 const player = EntryState.index?.players?.[String(row.elo_id)];
                 if (!player || row.rating == null) return;
@@ -524,24 +488,10 @@ function entryNeededRowsPeriod() {
 // 기본 화면(90일)에서도 예상승률 계산용 최근 1년까지만 받고,
 // 사용자가 "전체"를 눌렀을 때에만 통산을 확장 조회한다.
 async function entryLoadPlayerRows(pid, period) {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) throw new Error('Supabase browser client is not configured');
-
     const requestedPeriod = period || entryNeededRowsPeriod();
     const since = requestedPeriod === 'all' ? '' : entrySinceKey(requestedPeriod);
 
-    const rows = await entryPagedQuery(
-        (from, to) => {
-            let q = client
-                .from('elo_public_matches')
-                .select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
-                .eq('elo_id', Number(pid))
-                .order('match_date', { ascending: false });
-            if (since) q = q.gte('match_date', since);
-            return q.range(from, to);
-        },
-        '선수 전적'
-    );
+    const rows = await Api.eloPlayerMatches(pid, { since, ...entryPaging('선수 전적') });
 
     const out = [];
     const maps = (EntryState.index && EntryState.index.maps) || {};

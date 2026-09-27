@@ -113,11 +113,8 @@ function fetchStoredMemberPosts() {
     if (_storedPostsRequest && Date.now() - _storedPostsAt < STORED_POSTS_TTL_MS) return _storedPostsRequest;
     _storedPostsAt = Date.now();
     const request = (async () => {
-        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-        if (!client) return null;
-        const { data, error } = await client.from('member_posts')
-            .select('soop_id,total_pages,post').order('reg_date', { ascending: false }).limit(2000);
-        if (error || !Array.isArray(data) || !data.length) return null;
+        const data = await Api.memberPosts();
+        if (!Array.isArray(data) || !data.length) return null;
         const bySoop = new Map();
         data.forEach(r => {
             const key = String(r.soop_id || '').toLowerCase();
@@ -134,12 +131,9 @@ function fetchStoredMemberPosts() {
 // 홈 '최근 공지'용: 전체 멤버 글 중 최신 limit개만 받는다(정렬은 DB가 한다). 모음 전체(~160개, 본문 포함)를
 // 받던 것을 줄인다. 표를 못 읽거나 비어 있으면 null - 그러면 홈은 멤버별 조회(fetchMemberFeed)로 돌아간다.
 async function fetchRecentStoredPosts(limit) {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) return null;
     try {
-        const { data, error } = await client.from('member_posts')
-            .select('soop_id,post').order('reg_date', { ascending: false }).limit(limit);
-        if (error || !Array.isArray(data) || !data.length) return null;
+        const data = await Api.recentPosts(limit);
+        if (!Array.isArray(data) || !data.length) return null;
         return data.filter(r => r.post).map(r => ({ soopId: String(r.soop_id || '').toLowerCase(), post: r.post }));
     } catch (e) {
         return null;

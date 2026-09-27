@@ -1,5 +1,5 @@
 // 방송통계 달 이동: 먼저 보낸 요청이 늦게 와도 마지막으로 고른 달의 상태·화면이 유지되는지.
-// core.js·page-stats.js의 실제 함수를 떼어 VM에서 돌리고, Supabase 응답 순서만 손으로 정한다.
+// core.js·page-stats.js의 실제 함수를 떼어 VM에서 돌리고, Api(방송통계 조회) 응답 순서만 손으로 정한다.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -33,20 +33,9 @@ function setup() {
         renderSynergyMonthText() {}, renderSynergyMonthNav() {},
         renderSynergyTable() { paints.push(ctx.SynergyState.month); },
         emptyRowHtml: () => 'error',
-        publicSupabaseClient() {
-            return { from(table) {
-                const q = { table, date: '', select() { return q; }, order() { return q; }, range() { return q; },
-                    limit() { return Promise.resolve({ data: [{ stat_date: MONTH_DATES[''] }], error: null }); },
-                    eq(k, v) { if (k === 'stat_date') q.date = v; return q; }, in() { return q; } };
-                return q;
-            } };
-        },
-        fetchAllPages(makeQuery) {
-            const q = makeQuery(0, 999);
-            if (q.table === 'synergy_daily_dates') {
-                return Promise.resolve([{ stat_date: '2026-09-26' }, { stat_date: '2026-08-31' }, { stat_date: '2026-07-31' }]);
-            }
-            return new Promise((resolve, reject) => pending.set(q.date, { resolve, reject }));
+        Api: {
+            statsDates: async () => [{ stat_date: '2026-09-26' }, { stat_date: '2026-08-31' }, { stat_date: '2026-07-31' }],
+            stats: date => new Promise((resolve, reject) => pending.set(date, { resolve, reject })),
         },
     });
     vm.runInContext(CORE + PAGE, ctx);

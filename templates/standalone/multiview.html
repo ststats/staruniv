@@ -414,6 +414,7 @@ html[data-theme="dark"] .mv-settings-panel {
 <div id="mv-grid-area"></div>
 
 <script src="supabase-config.js"></script>
+<script src="api.js"></script>
 <script src="mv-shared.js?v=095cbe3ddb"></script>
 <script>
     // ===== 상태 =====
@@ -559,9 +560,7 @@ html[data-theme="dark"] .mv-settings-panel {
     // members 표는 공개 조회가 막혀 있어 직접 읽을 수 없다.
     async function mvLoadMembers() {
         try {
-            const res = await fetch('data/site_shell.json', { cache: 'no-cache' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const data = await Api.siteData('shell');
             mvMembers = (Array.isArray(data.members) ? data.members : [])
                 .filter(m => m && !m['퇴단일'] && MV_SHARED_SOOP_ID_PATTERN.test(String(m['SOOP ID'] || '').trim().toLowerCase()))
                 .map(m => ({ '이름': m['이름'] || '', 'SOOP ID': String(m['SOOP ID']).trim().toLowerCase() }));
@@ -572,15 +571,11 @@ html[data-theme="dark"] .mv-settings-panel {
     // 방송 중 여부: ststat live-status가 2분마다 채우는 live_broadcasts_current를 한 번만 읽는다
     // (멤버마다 SOOP에 묻지 않는다).
     async function mvCheckLiveMembers() {
-        const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
-        if (!mvMembers.length || !cfg.url || !cfg.key) return;
+        if (!mvMembers.length) return;
         try {
-            const res = await fetch(`${cfg.url}/rest/v1/live_broadcasts_current?select=soop_id`, {
-                headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}` },
-            });
-            if (!res.ok) return;
+            const rows = await Api.liveSoopIds();
             mvLiveMap = {};
-            (await res.json()).forEach(r => { if (r && r.soop_id) mvLiveMap[String(r.soop_id).toLowerCase()] = true; });
+            rows.forEach(r => { if (r && r.soop_id) mvLiveMap[String(r.soop_id).toLowerCase()] = true; });
             mvRenderMemberChips();
         } catch (e) { /* 방송 중 표시만 빠진다 */ }
     }

@@ -8,8 +8,8 @@ const read = rel => fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
 test('멀티뷰어 창은 공개 데이터로 멤버를 읽고, 방송 중 여부는 한 번만 조회한다', () => {
   const html = read('templates/standalone/multiview.html');
   assert.doesNotMatch(html, /supabase-js/);              // members 표는 공개 조회가 막혀 있다 - 쓰지 않는다
-  assert.match(html, /fetch\('data\/site_shell\.json'/);
-  assert.match(html, /rest\/v1\/live_broadcasts_current\?select=soop_id/);
+  assert.match(html, /await Api\.siteData\('shell'\)/);
+  assert.match(html, /await Api\.liveSoopIds\(\)/);
   assert.doesNotMatch(html, /bjapi\.afreecatv\.com/);    // 멤버마다 SOOP에 묻지 않는다
 });
 

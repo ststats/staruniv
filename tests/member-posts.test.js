@@ -13,10 +13,10 @@ function setup(tableRows, { tableError = null } = {}) {
         console, Map, Set, Promise, Number, String, Array,
         asArray: v => (Array.isArray(v) ? v : []),
         soopDateMs: v => Date.parse(String(v).replace(' ', 'T')),
-        publicSupabaseClient: () => ({ from: () => {
-            const q = { select: () => q, order: () => q, limit: () => Promise.resolve({ data: tableRows, error: tableError }) };
-            return q;
-        } }),
+        Api: {
+            memberPosts: async () => { if (tableError) throw tableError; return tableRows; },
+            recentPosts: async () => { if (tableError) throw tableError; return tableRows; },
+        },
         cachedFetchJson: async url => {
             apiCalls.push(url);
             return { contents: [{ titleNo: 9, userId: 'api', regDate: '2026-09-01 10:00:00', titleName: 'api' }], noticeData: [], meta: { totalPages: 3 } };

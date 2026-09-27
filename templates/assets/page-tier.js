@@ -65,13 +65,7 @@ function switchTierView(view) {
 // Supabase 티어 명단. 없거나 조회에 실패하면 null을 돌려준다.
 async function fetchTierMembers() {
     try {
-        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-        if (!client) throw new Error('Supabase browser client is not configured');
-        const data = await fetchAllPages((from, to) => client.from('tier_members')
-            .select('source_order,nickname,soop_id,race,tier,affiliation,modified_at')
-            .order('source_order', { ascending: true })
-            .order('soop_id', { ascending: true })
-            .range(from, to));   // 1천 명이 넘어 두 쪽을 함께 받는다
+        const data = await Api.tierMembers();
         const members = asArray(data).map(r => ({
             id: String(r.soop_id || '').trim(),
             nickname: String(r.nickname || '').trim(),

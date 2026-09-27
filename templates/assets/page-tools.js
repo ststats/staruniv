@@ -330,17 +330,11 @@ function renderExternalTools(data) {
 let toolsExternalLoaded = false;
 async function loadToolsData() {
     try {
-        const client = publicSupabaseClient();
-        if (!client) throw new Error('Supabase browser client is not configured');
-        const { data, error } = await client.from('external_tools')
-            .select('id,category,name,url,favicon,source_order,active')
-            .eq('active', true)
-            .order('source_order');
-        if (error) throw error;
+        const data = await Api.tools();
         const grouped = { extTools: { items: [] }, extSites: { items: [] } };
         asArray(data).forEach(row => {
             if (!grouped[row.category]) return;
-            grouped[row.category].items.push({ id: row.id, category: row.category, name: row.name, url: row.url, favicon: row.favicon || '', source_order: row.source_order, active: row.active });
+            grouped[row.category].items.push({ id: row.id, category: row.category, name: row.name, url: row.url, favicon: row.favicon || '' });
         });
         renderExternalTools(grouped);
     } catch (e) {
