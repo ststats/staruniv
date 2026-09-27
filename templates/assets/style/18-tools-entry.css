@@ -19,7 +19,6 @@
 .entry-auto-tier-empty { padding-bottom:12px; font-size:var(--fs-meta); color:var(--color-text-faint); }
 .entry-auto-apply { display:flex; align-items:center; justify-content:center; width:calc(100% - 24px); min-height:38px; margin:12px; border:0; background:var(--navy); background-image:var(--navy-pattern); color:var(--navy-on-text); clip-path:var(--notch-sm); font-family:inherit; font-size:var(--fs-meta); font-weight:800; cursor:pointer; }
 .entry-auto-apply:hover,.entry-auto-apply:focus-visible { color:#fff; filter:brightness(1.08); }
-.entry-auto-apply:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 .entry-label-fields { display:contents; }
 .entry-label-fields .h2h-slot-label { white-space: nowrap; }
 
