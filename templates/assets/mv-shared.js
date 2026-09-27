@@ -1,41 +1,58 @@
 /**
  * 멀티뷰어 공용 로직.
  *
- * page-tools.js(도구 탭 - 누구를 볼지 설정만 담당)와 multiview.html(실제 방송 그리드, 자체 창)이
- * 같이 쓰는 "선택 목록(mvOrder)" 로직. 두 페이지 모두 <script src="mv-shared.js">로 불러온다.
+ * page-tools.js(도구 탭 - 누구를 어떤 순서·배치로 볼지 고르고 새 창을 연다)와 multiview.html
+ * (실제 방송 그리드, 자체 창)이 같이 쓰는 부품. 두 페이지 모두 <script src="mv-shared.js">로 불러온다.
+ * 선택 목록(order: [{ soopId, name, isMember }])의 계산과 마크업만 여기에 두고, 목록이 바뀐 뒤
+ * 화면을 어떻게 다시 그리고 저장하는지는 두 페이지가 각자 한다(도구 탭은 목록만 다시 그리면 되고,
+ * 창은 재생 중인 iframe을 건드리지 않고 그리드를 맞춰야 한다).
  *
- * 그리드를 실제로 유지·조작하는 부분(포커스 대상 전환, 순서 이동, 삭제 시 DOM을 어떻게 다시
- * 그리는지)은 두 페이지의 역할이 근본적으로 달라서 각 페이지에 남겨뒀다. 이 파일에는 두 페이지가
- * 한 글자도 다르지 않게 계산해야 하는 순수 로직만 담는다.
- *
- * [전역 의존성] escapeHTML/jsStrEscape는 각 페이지(core.js, multiview.html)가 이미 전역으로
- * 갖고 있는 범용 유틸이라 여기서 다시 정의하지 않는다(정의하면 admin 등 다른 페이지의
- * const 선언과 이름이 부딪힐 수 있다). 대신 아래 mvShared* 래퍼를 거쳐서 호출하므로,
- * 혹시 로드 순서가 꼬여 전역 함수가 없더라도 예외로 멈추지 않고 같은 규칙의 내장
- * 대체 구현으로 동작한다(두 페이지의 escapeHTML/jsStrEscape와 결과가 동일).
- *
- * 행 클릭 핸들러 onclick="mvSetFocusTarget('...')"에 값을 넣을 때는 JS 이스케이프 후
- * HTML 이스케이프를 한 번 더 한다(jsStrEscape만 거치면 값에 큰따옴표가 섞일 때 속성이 끊긴다).
+ * 마크업의 onclick이 부르는 mvToggleMember · mvMove · mvRemove · mvSetFocusTarget은 두 페이지가
+ * 같은 이름으로 정의한다.
  */
 
+const MV_MIN_COLS = 1, MV_MAX_COLS = 4;   // 그리드 모드 열 개수 범위
+// 숲 아이디 형식(영문 소문자/숫자/-/_) - 직접 입력값은 소문자로 바꾼 뒤 이 형식인지 본다.
+const MV_SHARED_SOOP_ID_PATTERN = /^[a-z0-9_-]+$/;
+
 function mvSharedEscapeHTML(str) {
-    if (typeof escapeHTML === 'function') return escapeHTML(str);
     if (str === null || str === undefined) return '';
     return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
 }
-
-function mvSharedJsStrEscape(str) {
-    if (typeof jsStrEscape === 'function') return jsStrEscape(str);
-    return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
-// HTML 속성 안의 JS 문자열 리터럴용 (app.js의 jsAttr와 같은 규칙)
+// onclick="fn('값')"처럼 HTML 속성 안의 JS 문자열에 넣는 값: JS 이스케이프 후 HTML 이스케이프를 한 번 더 한다
+// (JS 이스케이프만 하면 값에 큰따옴표가 섞일 때 속성이 끊긴다).
 function mvSharedJsAttr(str) {
-    return mvSharedEscapeHTML(mvSharedJsStrEscape(str));
+    return mvSharedEscapeHTML(String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
 }
 
-// 숲 아이디 형식(영문 소문자/숫자/-/_) - 직접 입력값은 소문자로 바꾼 뒤 이 형식인지 본다.
-const MV_SHARED_SOOP_ID_PATTERN = /^[a-z0-9_-]+$/;
+// SOOP 프로필 사진(작은 WebP). 형식이 이상한 아이디나 사진이 없으면 사람 모양으로 대신한다.
+function mvAvatarHtml(soopId) {
+    const id = String(soopId || '').trim().toLowerCase();
+    const fallback = '<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>';
+    if (!MV_SHARED_SOOP_ID_PATTERN.test(id)) return fallback;
+    const url = `https://stimg.sooplive.com/LOGO/${id.substring(0, 2)}/${id}/m/${id}.webp`;
+    return `<img src="${url}" class="mv-chip-avatar" alt="" loading="lazy" onerror="this.outerHTML='${mvSharedEscapeHTML(fallback).replace(/'/g, "\\'")}'">`;
+}
+
+// 멤버 고르기 칩 하나. m은 사이트 멤버 행({ '이름', 'SOOP ID' }).
+function mvChipHtml(m, selected, isLive) {
+    const soopId = m['SOOP ID'];
+    return `
+        <div class="mv-chip${selected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${!!selected}" onclick="mvToggleMember('${mvSharedJsAttr(soopId)}', '${mvSharedJsAttr(m['이름'])}')">
+            ${mvAvatarHtml(soopId)}
+            <span class="mv-chip-name">${mvSharedEscapeHTML(m['이름'])}</span>
+            ${isLive ? '<span class="mv-chip-live" role="img" aria-label="방송 중" title="방송 중"></span>' : ''}
+            <span class="mv-chip-check">✓</span>
+        </div>`;
+}
+
+// 목록에서 idx번을 dir(-1 위 / +1 아래)만큼 옮긴다. 옮겼으면 true.
+function mvMoveEntry(order, idx, dir) {
+    const target = idx + dir;
+    if (idx < 0 || idx >= order.length || target < 0 || target >= order.length) return false;
+    [order[idx], order[target]] = [order[target], order[idx]];
+    return true;
+}
 
 // 포커스 모드에서 크게 보여줄 대상의 soopId를 정한다. 명시적으로 지정한 대상(focusId)이
 // 아직 목록에 있으면 그걸, 없으면(처음이거나 방금 지워진 경우) 목록 1번을 기본값으로 쓴다.
@@ -44,37 +61,21 @@ function mvFocusEntryId(order, focusId) {
     return order.length ? order[0].soopId : null;
 }
 
-// "선택된 목록" 한 줄(순번 + 위/아래 버튼 + 이름 + 빼기 버튼)의 마크업.
-// 포커스 모드일 때만 행 자체가 클릭 가능(selectable)해지고, 지금 포커스 대상인 행에는
-// focus-target 클래스가 붙는다. 위/아래/빼기 버튼이 부르는 mvMove(idx, dir)와 mvRemove(idx),
-// 행 클릭이 부르는 mvSetFocusTarget(soopId)는 페이지마다 구현이 다르므로(그리드 DOM을 직접
-// 조작하는지 여부) 여기서 정의하지 않고 각 페이지가 같은 이름으로 반드시 정의해야 한다.
-function mvOrderItemHtml(entry, idx, order, focus, focusEntryId, detailed = false) {
+// "선택된 목록" 한 줄(순번 + 이름 + 메인 지정 + 위/아래/빼기)의 마크업.
+// 포커스 모드일 때만 '메인으로' 버튼이 나오고, 지금 메인인 줄에는 focus-target 클래스가 붙는다.
+function mvOrderItemHtml(entry, idx, order, focus, focusEntryId) {
     const isFocusTarget = focus && focusEntryId === entry.soopId;
-    const rowClick = focus ? ` onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')"` : '';
     const isFirst = idx === 0, isLast = idx === order.length - 1;
-    // 도구 페이지에서는 순번·방송 정보·조작을 분리한 행을 쓴다.
-    // 실제 재생 창은 공간이 좁으므로 기존 간결한 목록을 유지한다.
-    if (detailed) {
-        const name = mvSharedEscapeHTML(entry.name);
-        return `<div class="mv-order-detail${isFocusTarget ? ' focus-target' : ''}">
-            <span class="mv-order-position">${String(idx + 1).padStart(2, '0')}</span>
-            <div class="mv-order-identity"><strong>${name}</strong></div>
-            ${focus ? `<button type="button" class="mv-order-focus" aria-pressed="${isFocusTarget}" aria-label="${name} 메인 방송으로 선택" onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')">${isFocusTarget ? '메인' : '메인으로'}</button>` : ''}
-            <div class="mv-order-actions">
-                <button type="button" aria-label="${name} 위로 이동" onclick="mvMove(${idx}, -1)" ${isFirst ? 'disabled' : ''}>↑</button>
-                <button type="button" aria-label="${name} 아래로 이동" onclick="mvMove(${idx}, 1)" ${isLast ? 'disabled' : ''}>↓</button>
-                <button type="button" class="mv-order-remove" aria-label="${name} 목록에서 제거" onclick="mvRemove(${idx})">×</button>
-            </div>
-        </div>`;
-    }
-    return `
-    <div class="mv-order-item${entry.isMember ? '' : ' custom'}${isFocusTarget ? ' focus-target' : ''}${focus ? ' selectable' : ''}"${rowClick}>
-        <span class="mv-order-num">${idx + 1}.</span>
-        <button type="button" title="위로" aria-label="위로" onclick="event.stopPropagation(); mvMove(${idx}, -1)" ${isFirst ? 'disabled' : ''}>▲</button>
-        <button type="button" title="아래로" aria-label="아래로" onclick="event.stopPropagation(); mvMove(${idx}, 1)" ${isLast ? 'disabled' : ''}>▼</button>
-        <span class="mv-order-name">${mvSharedEscapeHTML(entry.name)}</span>
-        <button type="button" class="mv-order-remove" title="빼기" aria-label="빼기" onclick="event.stopPropagation(); mvRemove(${idx})">✕</button>
+    const name = mvSharedEscapeHTML(entry.name);
+    return `<div class="mv-order-detail${isFocusTarget ? ' focus-target' : ''}">
+        <span class="mv-order-position">${String(idx + 1).padStart(2, '0')}</span>
+        <div class="mv-order-identity"><strong>${name}</strong></div>
+        ${focus ? `<button type="button" class="mv-order-focus" aria-pressed="${isFocusTarget}" aria-label="${name} 메인 방송으로 선택" onclick="mvSetFocusTarget('${mvSharedJsAttr(entry.soopId)}')">${isFocusTarget ? '메인' : '메인으로'}</button>` : ''}
+        <div class="mv-order-actions">
+            <button type="button" aria-label="${name} 위로 이동" onclick="mvMove(${idx}, -1)" ${isFirst ? 'disabled' : ''}>↑</button>
+            <button type="button" aria-label="${name} 아래로 이동" onclick="mvMove(${idx}, 1)" ${isLast ? 'disabled' : ''}>↓</button>
+            <button type="button" class="mv-order-remove" aria-label="${name} 목록에서 제거" onclick="mvRemove(${idx})">×</button>
+        </div>
     </div>`;
 }
 

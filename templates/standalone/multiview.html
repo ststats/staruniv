@@ -110,64 +110,6 @@ html:not([data-theme="dark"]) .mv-fab {
     flex-direction: column;
     gap: 6px;
 }
-.mv-order-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background: var(--color-bg, #fff);
-    font-size: var(--fs-body);
-}
-.mv-order-item.custom {
-    border-style: dashed;
-}
-.mv-order-num {
-    font-weight: 800;
-    color: var(--color-text-sub);
-    flex-shrink: 0;
-}
-.mv-order-name {
-    font-weight: 700;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--color-text-main);
-}
-.mv-order-item button {
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    color: var(--color-text-sub);
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: var(--fs-body);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.mv-order-item button:hover:not(:disabled) {
-    background: var(--color-row-hover);
-    color: var(--color-text-main);
-}
-.mv-order-item button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-.mv-order-item .mv-order-remove:hover:not(:disabled) {
-    color: #f03e3e;
-}
-.mv-order-item.selectable {
-    cursor: pointer;
-}
-.mv-order-item.focus-target {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-}
 #mv-grid-area {
     height: 100dvh;
     padding: 0;
@@ -471,32 +413,19 @@ html[data-theme="dark"] .mv-settings-panel {
 
 <div id="mv-grid-area"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="mv-shared.js?v=095cbe3ddb"></script>
 <script>
-    // escapeHTML/jsStrEscape는 이 페이지 전용 범용 유틸이라 여기서 정의한다.
-    // mv-shared.js(선택 목록 관련 순수 로직)가 내부적으로 이 두 함수를
-    // 그대로 호출하므로 반드시 이 파일에도 있어야 한다.
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/[&<>'"]/g, tag => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[tag]));
-    }
-    function jsStrEscape(str) { return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
-
     // ===== 상태 =====
-    // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로
-    // 선택 목록에 관한 순수 로직(mvFocusEntryId/mvOrderItemHtml/mvResolveCustomInput)은
-    // app.js(도구 탭)와 동일하게 필요해서 mv-shared.js로 공유한다.
+    // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로.
+    // 칩·목록 마크업과 목록 계산은 도구 탭(page-tools.js)과 같이 쓰는 mv-shared.js에 있다.
+    const mvEsc = mvSharedEscapeHTML;
     let mvOrder = [];
     let mvCols = 2;
     let mvFocus = true;
     let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
-    let mvMembers = [];    // 사이트 멤버 목록(활동중 + 숲 아이디 있는) - Supabase에서 로드
-    let mvLiveMap = {};    // soopId -> 방송중 여부
-    // (음소거 기능은 제거했다 - 음소거 후 해제해도 SOOP 플레이어의 소리가 돌아오지 않는 문제가 있었다.
-    //  잠깐 배포됐던 버전이 저장해둔 음소거 목록이 남아 있으면 지운다.)
-    try { localStorage.removeItem('mv-muted'); } catch (e) { /* 무시 */ }
+    let mvMembers = [];    // 사이트 멤버(활동 중 + 숲 아이디 있음) - 사이트 데이터(data/site_shell.json)에서
+    let mvLiveMap = {};    // soopId(소문자) -> 방송 중
 
     function mvSaveState() {
         try {
@@ -518,7 +447,7 @@ html[data-theme="dark"] .mv-settings-panel {
                 .filter(e => e && typeof e.id === 'string' && /^[a-z0-9_-]+$/i.test(e.id))
                 .map(e => ({ soopId: e.id.toLowerCase(), name: e.name || e.id, isMember: !!e.isMember }))
                 .filter((e, i, arr) => arr.findIndex(x => x.soopId === e.soopId) === i); // 같은 방송 중복 제거
-            mvCols = Math.min(4, Math.max(1, parseInt(params.get('cols'), 10) || 2));
+            mvCols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, parseInt(params.get('cols'), 10) || 2));
             mvFocus = params.get('focus') === '1';
             mvFocusId = params.get('focusId') || null;
             // 도구 탭에서 명시적으로 넘긴 다크모드 설정이 있으면 그걸 우선한다
@@ -532,7 +461,7 @@ html[data-theme="dark"] .mv-settings-panel {
             try {
                 mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]')
                     .filter((e, i, arr) => e && typeof e.soopId === 'string' && arr.findIndex(x => x && x.soopId === e.soopId) === i);
-                mvCols = Math.min(4, Math.max(1, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
+                mvCols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
                 mvFocus = localStorage.getItem('mv-focus') !== null ? localStorage.getItem('mv-focus') === '1' : true;
                 mvFocusId = localStorage.getItem('mv-focus-id') || null;
             } catch (e) { mvOrder = []; mvCols = 2; mvFocus = true; mvFocusId = null; }
@@ -567,7 +496,7 @@ html[data-theme="dark"] .mv-settings-panel {
 
     // ===== 열 개수 =====
     function mvChangeCols(delta) {
-        mvCols = Math.min(4, Math.max(1, mvCols + delta));
+        mvCols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, mvCols + delta));
         document.getElementById('mv-cols-value').innerText = mvCols;
         mvApplyGridColumns();
         mvSaveState();
@@ -612,70 +541,48 @@ html[data-theme="dark"] .mv-settings-panel {
         document.getElementById('mv-col-tile').classList.toggle('disabled', mvFocus);
     }
 
-    // ===== 멤버 선택 칩 (도구 탭과 동일 - Supabase에서 직접 불러온다) =====
-    function mvAvatarHtml(soopId) {
-        const id = String(soopId || '').trim().toLowerCase();
-        if (!id || !/^[a-z0-9_-]+$/.test(id)) return `<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>`;
-        const url = `https://stimg.sooplive.com/LOGO/${id.substring(0, 2)}/${id}/m/${id}.webp`;
-        return `<img src="${url}" class="mv-chip-avatar" loading="lazy" onerror="this.outerHTML='<span class=\\'mv-chip-avatar d-flex align-items-center justify-content-center\\'>👤</span>';">`;
-    }
-    function mvChipHtml(m) {
-        const soopId = m['SOOP ID'];
-        const selected = mvOrder.some(e => e.soopId === soopId);
-        const isLive = !!mvLiveMap[soopId];
-        return `
-        <div class="mv-chip${selected ? ' selected' : ''}" onclick="mvToggleMemberChip('${jsStrEscape(soopId)}', '${jsStrEscape(m['이름'])}')">
-            ${mvAvatarHtml(soopId)}
-            <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
-            ${isLive ? '<span class="mv-chip-live" role="img" aria-label="방송 중" title="방송 중"></span>' : ''}
-            <span class="mv-chip-check">✓</span>
-        </div>`;
-    }
+    // ===== 멤버 선택 칩(도구 탭과 같은 칩 - mv-shared.js mvChipHtml) =====
     function mvRenderMemberChips() {
         const container = document.getElementById('mv-chip-row');
         if (!container) return;
         container.innerHTML = mvMembers.length
-            ? mvMembers.map(mvChipHtml).join('')
+            ? mvMembers.map(m => mvChipHtml(m, mvOrder.some(e => e.soopId === m['SOOP ID']), !!mvLiveMap[m['SOOP ID']])).join('')
             : '<div class="mv-chip-empty">멤버 목록을 불러오지 못했습니다</div>';
     }
-    function mvToggleMemberChip(soopId, name) {
+    function mvToggleMember(soopId, name) {
         const idx = mvOrder.findIndex(e => e.soopId === soopId);
         if (idx !== -1) { mvRemove(idx); return; }
         mvOrder.push({ soopId, name, isMember: true });
         mvAfterOrderChange();
     }
+    // 멤버는 사이트가 빌드 때 만들어 두는 공개 데이터에서 읽는다(도구 탭과 같은 목록·순서).
+    // members 표는 공개 조회가 막혀 있어 직접 읽을 수 없다.
     async function mvLoadMembers() {
         try {
-            const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
-            if (!cfg.url || !cfg.key || !window.supabase?.createClient) throw new Error('Supabase browser client is not configured');
-            const client = window.supabase.createClient(cfg.url, cfg.key, {
-                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-            });
-            const { data, error } = await client.from('members')
-                .select('nickname,soop_id,left_date,source_order')
-                .order('source_order');
-            if (error) throw error;
-            mvMembers = (data || []).map(m => ({
-                '이름': m.nickname || '', 'SOOP ID': m.soop_id || '', '퇴단일': m.left_date || ''
-            })).filter(m => !m['퇴단일'] && /^[a-zA-Z0-9_-]+$/.test(String(m['SOOP ID']).trim()));
+            const res = await fetch('data/site_shell.json', { cache: 'no-cache' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            mvMembers = (Array.isArray(data.members) ? data.members : [])
+                .filter(m => m && !m['퇴단일'] && MV_SHARED_SOOP_ID_PATTERN.test(String(m['SOOP ID'] || '').trim().toLowerCase()))
+                .map(m => ({ '이름': m['이름'] || '', 'SOOP ID': String(m['SOOP ID']).trim().toLowerCase() }));
         } catch (e) { mvMembers = []; }
         mvRenderMemberChips();
         mvCheckLiveMembers();
     }
-    // 홈 화면 방송중 체크와 같은 방식(bjapi.afreecatv.com 직접 fetch, CORS 허용됨)으로
-    // 멤버 목록 로드 후 딱 한 번만 라이브 여부를 확인해 LIVE 뱃지를 덧입힌다.
+    // 방송 중 여부: ststat live-status가 2분마다 채우는 live_broadcasts_current를 한 번만 읽는다
+    // (멤버마다 SOOP에 묻지 않는다).
     async function mvCheckLiveMembers() {
-        if (mvMembers.length === 0) return;
-        const settled = await Promise.allSettled(mvMembers.map(m => {
-            const soopId = m['SOOP ID'];
-            return fetch(`https://bjapi.afreecatv.com/api/${soopId}/station`)
-                .then(r => r.json())
-                .then(d => ({ soopId, live: !!(d && d.broad) }))
-                .catch(() => ({ soopId, live: false }));
-        }));
-        mvLiveMap = {};
-        settled.forEach(r => { if (r.status === 'fulfilled') mvLiveMap[r.value.soopId] = r.value.live; });
-        mvRenderMemberChips();
+        const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
+        if (!mvMembers.length || !cfg.url || !cfg.key) return;
+        try {
+            const res = await fetch(`${cfg.url}/rest/v1/live_broadcasts_current?select=soop_id`, {
+                headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}` },
+            });
+            if (!res.ok) return;
+            mvLiveMap = {};
+            (await res.json()).forEach(r => { if (r && r.soop_id) mvLiveMap[String(r.soop_id).toLowerCase()] = true; });
+            mvRenderMemberChips();
+        } catch (e) { /* 방송 중 표시만 빠진다 */ }
     }
 
     // ===== 순서 목록 =====
@@ -683,7 +590,7 @@ html[data-theme="dark"] .mv-settings-panel {
         const row = document.getElementById('mv-order-row');
         const focusEntryId = mvFocusEntryId(mvOrder, mvFocusId);
         row.innerHTML = mvOrder.length
-            ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId, true)).join('')
+            ? mvOrder.map((entry, idx) => mvOrderItemHtml(entry, idx, mvOrder, mvFocus, focusEntryId)).join('')
             : '<div class="mv-order-empty"><strong>선택된 방송이 없습니다</strong></div>';
     }
 
@@ -707,9 +614,7 @@ html[data-theme="dark"] .mv-settings-panel {
     }
 
     function mvMove(idx, dir) {
-        const target = idx + dir;
-        if (target < 0 || target >= mvOrder.length) return;
-        [mvOrder[idx], mvOrder[target]] = [mvOrder[target], mvOrder[idx]];
+        if (!mvMoveEntry(mvOrder, idx, dir)) return;
         mvRenderGrid();
         mvRenderOrderRow();
         mvSaveState();
@@ -812,16 +717,16 @@ html[data-theme="dark"] .mv-settings-panel {
     const MV_LOGGED_IN_LIMIT = 4;
     function mvCellHtml(entry, isMain, anonymous = false) {
         return `
-        <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${escapeHTML(entry.soopId)}">
+        <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${mvEsc(entry.soopId)}">
             <div class="mv-cell-header">
-                <span class="mv-cell-name">${escapeHTML(entry.name)}</span>
+                <span class="mv-cell-name">${mvEsc(entry.name)}</span>
                 <div class="mv-cell-actions">
                     <button type="button" class="mv-cell-btn mv-cell-refresh" title="새로고침" aria-label="새로고침" onclick="mvRefreshCell(this)">${MV_ICON_REFRESH}</button>
                 </div>
             </div>
             <div class="mv-cell-body">
                 <div class="mv-cell-video-wrap">
-                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" scrolling="no" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"${anonymous ? ' credentialless' : ''}></iframe>
+                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${mvEsc(entry.name)} 방송" scrolling="no" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"${anonymous ? ' credentialless' : ''}></iframe>
                 </div>
             </div>
         </div>`;

@@ -134,21 +134,17 @@ function switchToolsView(viewType, skipHashUpdate) {
 }
 
 // ----- 멀티뷰어 -----
-// 우리 사이트는 "누구를 볼지 + 어떤 순서/열 개수로 볼지" 선택만 담당하고, 실제 영상 그리드/
-// 다크모드/설정 열고닫기는 자체 제작한 새 창(multiview.html)에서 처리한다. 새 창을 열 때
-// 현재 상태를 그대로 URL로 넘긴다. "선택 목록"에 관한 순수 로직(mvFocusEntryId/
-// mvOrderItemHtml/mvResolveCustomInput)은 multiview.html과 공유하는 mv-shared.js에 있다.
-// 이 페이지엔 그리드가 없어서 목록이 바뀔 때마다 통째로 다시 그리면 된다.
+// 이 탭은 "누구를 볼지 + 어떤 순서/배치로 볼지" 선택만 하고, 실제 영상 그리드는 새 창(multiview.html)이
+// 맡는다. 새 창을 열 때 지금 상태를 URL로 넘긴다. 칩·목록 마크업과 목록 계산은 창과 같이 쓰는
+// mv-shared.js에 있고, 이 탭엔 그리드가 없어서 목록이 바뀔 때마다 통째로 다시 그리면 된다.
 const MvState = {
     order: [],       // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
     cols: 2,
     dark: false,
     focus: true,
     focusId: null,   // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
-    liveMap: {},     // soopId -> live 여부. 최초 한 번만 조회해서 캐시(선택할 때마다 API를 다시 부르지 않음)
+    liveMap: {},     // soopId(소문자) -> 방송 중. 페이지를 열 때 한 번만 조회한다
 };
-
-const MV_MIN_COLS = 1, MV_MAX_COLS = 4;
 
 function mvSetFocusTarget(soopId) {
     MvState.focusId = soopId;
@@ -157,18 +153,6 @@ function mvSetFocusTarget(soopId) {
 
 function mvIndexOf(soopId) {
     return MvState.order.findIndex(e => e.soopId === soopId);
-}
-
-function mvChipHtml(m, isLive) {
-    const soopId = m['SOOP ID'];
-    const selected = mvIndexOf(soopId) !== -1;
-    return `
-        <div class="mv-chip${selected ? ' selected' : ''}" role="button" tabindex="0" aria-pressed="${selected}" onclick="mvToggleMember('${jsAttr(soopId)}', '${jsAttr(m['이름'])}')">
-            ${avatarHtml(soopId, 'mv-chip-avatar')}
-            <span class="mv-chip-name">${escapeHTML(m['이름'])}</span>
-            ${isLive ? '<span class="mv-chip-live" role="img" aria-label="방송 중" title="방송 중"></span>' : ''}
-            <span class="mv-chip-check">✓</span>
-        </div>`;
 }
 
 function mvRenderChips() {
@@ -181,22 +165,21 @@ function mvRenderChips() {
     }
     const members = activeMembersWithSoopId();
     container.innerHTML = members.length
-        ? members.map(m => mvChipHtml(m, !!MvState.liveMap[m['SOOP ID']])).join('')
+        ? members.map(m => mvChipHtml(m, mvIndexOf(m['SOOP ID']) !== -1, !!MvState.liveMap[String(m['SOOP ID']).toLowerCase()])).join('')
         : emptyStateHtml('선택 가능한 멤버가 없습니다');
     container.setAttribute('aria-busy', 'false');
 }
 
-// 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송중 여부(LIVE 뱃지)는 비동기로
-// 확인해 나중에 덧입힌다. (페이지 로드 시 한 번만 부른다 - 홈 "방송 중"과 같은 URL이라
-// cachedFetchJson이 진행 중인 요청을 공유해서 실제 네트워크 요청은 한 번만 나간다.)
+// 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송 중 여부(LIVE 뱃지)는 방송 중 표(core.js
+// fetchLiveBroadcasts, 한 번 조회)로 확인해 나중에 덧입힌다.
 async function mvCheckLiveAndRerenderChips() {
-    const members = activeMembersWithSoopId();
-    if (members.length === 0) return;
-    const settled = await Promise.allSettled(
-        members.map(m => checkIsLiveRealtime(m['SOOP ID']).then(live => ({ soopId: m['SOOP ID'], live: !!live })))
-    );
-    MvState.liveMap = {};
-    settled.forEach(r => { if (r.status === 'fulfilled') MvState.liveMap[r.value.soopId] = r.value.live; });
+    if (activeMembersWithSoopId().length === 0) return;
+    try {
+        const live = await fetchLiveBroadcasts();
+        MvState.liveMap = Object.fromEntries(Object.keys(live).map(id => [id, true]));
+    } catch (e) {
+        MvState.liveMap = {};
+    }
     mvRenderChips();
 }
 
@@ -208,7 +191,7 @@ function mvRenderOrderRow() {
     const count = document.getElementById('mv-order-count');
     if (count) count.textContent = `${order.length}명`;
     row.innerHTML = order.length
-        ? order.map((entry, idx) => mvOrderItemHtml(entry, idx, order, focus, focusEntryId, true)).join('')
+        ? order.map((entry, idx) => mvOrderItemHtml(entry, idx, order, focus, focusEntryId)).join('')
         : `<div class="mv-order-empty"><strong>선택된 방송이 없습니다</strong></div>`;
 }
 
@@ -241,11 +224,7 @@ function mvAddCustom() {
 }
 
 function mvMove(idx, dir) {
-    const order = MvState.order;
-    const target = idx + dir;
-    if (target < 0 || target >= order.length) return;
-    [order[idx], order[target]] = [order[target], order[idx]];
-    mvRenderAll();
+    if (mvMoveEntry(MvState.order, idx, dir)) mvRenderAll();
 }
 
 function mvRemove(idx) {

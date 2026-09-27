@@ -74,7 +74,6 @@ html[data-theme="dark"] .mv-order-row {
     background: var(--color-card);
 }
 .mv-chip,
-.mv-order-item,
 .mv-quickadd {
     clip-path: var(--notch-sm);
 }
@@ -352,49 +351,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     flex-wrap: wrap;
     min-height: 20px;
 }
-.mv-order-item {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    font-size: var(--fs-body);
-    border-radius: 0;
-    height: 32px;
-    padding: 0 8px 0 11px;
-    background: var(--color-bg-subtle);
-    border: 0;
-}
-.mv-order-item.custom { border-style: dashed; }
-.mv-order-num {
-    font-weight: 800;
-    color: var(--color-text-sub);
-    margin-right: 2px;
-}
-.mv-order-name {
-    font-weight: 700;
-    margin-right: 2px;
-}
-.mv-order-item button {
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    color: var(--color-text-faint);
-    cursor: pointer;
-    font-size: var(--fs-body);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.mv-order-item button:hover:not(:disabled) {
-    background: var(--color-row-hover);
-    color: var(--color-text-body);
-}
-.mv-order-item .mv-order-remove:hover:not(:disabled) { color: var(--color-lose); }
-.mv-order-item.selectable { cursor: pointer; }
-.mv-order-item.focus-target {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-}
 .mv-order-empty {
     font-size: var(--fs-body);
     color: var(--color-text-sub);
@@ -403,10 +359,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     gap: 8px;
     padding: 24px 12px;
     text-align: center;
-}
-.mv-order-item button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
 }
 .mv-order-row:has(.mv-order-detail),
 .mv-order-row:has(.mv-order-empty) {
@@ -429,7 +381,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     border-left: 3px solid transparent;
     clip-path: var(--notch-sm);
 }
-.mv-order-detail.focus-target { background: var(--color-primary-tint); }
 .mv-order-position {
     font-size: 13px;
     font-weight: 700;
@@ -497,13 +448,12 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     color: var(--color-text-main);
     font-weight: 400;
 }
-.mv-order-item.focus-target,
 .mv-order-detail.focus-target {
+    background: var(--color-primary-tint);
     box-shadow: inset 3px 0 0 var(--select-on-light);
     border-left-color: var(--select-on-light);
 }
-.mv-order-detail.focus-target .mv-order-position,
-.mv-order-item.focus-target .mv-order-position {
+.mv-order-detail.focus-target .mv-order-position {
     color: var(--select-on-light);
 }
 
