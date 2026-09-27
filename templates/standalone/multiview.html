@@ -417,6 +417,22 @@ html[data-theme="dark"] .mv-settings-panel {
 <script src="api.js"></script>
 <script src="mv-shared.js?v=095cbe3ddb"></script>
 <script>
+    // core.js와 같은 처리(이 페이지는 core.js를 싣지 않는다)
+    // 노치(clip-path)로 잘린 모서리에서는 사각 포커스 테두리의 사선 구간이 비므로 style.css(02-base)의 ::before가 사선까지 그린다.
+    // 그 크기(--cut: 요소 자신 또는 모서리를 같이 쓰는 조상의 노치에서 테두리 두께를 뺀 값)를 포커스 때 넣는다.
+    document.addEventListener('focusin', ({ target: el }) => {
+        if (!(el instanceof Element)) return;
+        for (let a = el, i = 0; a && i < 3; a = a.parentElement, i++) {
+            const m = /calc\(100% - ([\d.]+)px\)/.exec(getComputedStyle(a).clipPath);
+            if (!m) continue;
+            const r = el.getBoundingClientRect(), p = a.getBoundingClientRect(), s = getComputedStyle(el);
+            const cut = m[1] - (p.right - r.right) - (r.top - p.top) - parseFloat(s.borderTopWidth) - parseFloat(s.borderRightWidth);
+            if (cut > 0) el.style.setProperty('--cut', cut + 'px');
+            return;
+        }
+    });
+    document.addEventListener('focusout', e => e.target.style?.removeProperty('--cut'));
+
     // ===== 상태 =====
     // order: [{ soopId, name, isMember }] - 화면에 그려지는 순서 그대로.
     // 칩·목록 마크업과 목록 계산은 도구 탭(page-tools.js)과 같이 쓰는 mv-shared.js에 있다.
