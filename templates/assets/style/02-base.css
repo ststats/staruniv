@@ -63,6 +63,13 @@ a {
     color: inherit;
 }
 
+/* 키보드 포커스 테두리는 안쪽에 그린다. 탭·칩·카드의 잘린 모서리(clip-path 노치)가 바깥 테두리를 잘라 내기 때문이다.
+   글자색을 따르므로 남색 면(흰 글자)과 흰 면(진한 글자) 어디서나 보인다. 마우스 클릭에는 나오지 않는다. */
+:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+
 .modal-body,
 .scroll-area {
     -webkit-overflow-scrolling: touch;
