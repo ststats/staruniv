@@ -1537,7 +1537,7 @@ async function entrySavePoster() {
             const gap = 18;
             ctx.font = '800 58px Pretendard, sans-serif';
             ctx.textAlign = 'right';
-            ctx.fillStyle = '#1f6fff';
+            ctx.fillStyle = '#1f6dfb';
             ctx.fillText(String(hw), W / 2 - wV / 2 - gap, scoreY);
             ctx.textAlign = 'left';
             ctx.fillStyle = '#f03e3e';

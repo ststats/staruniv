@@ -32,16 +32,16 @@
     --color-text-dark: #0b1220;
     --color-text-body: #1f2937;
     --color-text-soft: #4b5565;
-    --color-text-muted: #7a8596;
-    --color-text-faint: #9aa4b3;
+    --color-text-muted: #666f7d;   /* 연회색 바탕(#eef2f8)에서도 명암 4.5:1 이상 */
+    --color-text-faint: #707782;   /* 흰 바탕에서 4.5:1 이상, muted보다 조금 옅게 */
     --color-icon-faint: #c6cedb;
 
     /* 강조 · 승패 · 종족 · 배지 */
-    --color-primary: #1f6fff;
+    --color-primary: #1f6dfb;
     --color-primary-deep: #0b55e0;
     --color-primary-tint: #eaf1ff;
     --color-primary-tint-strong: #d9e6ff;
-    --color-win: #1f6fff;
+    --color-win: #1f6dfb;
     --color-lose: #f03e3e;
     --color-draw: #868e96;
     --color-badge-format: #5a9ea6;

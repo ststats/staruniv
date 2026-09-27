@@ -143,7 +143,7 @@
     align-self: center;
     font-size: var(--fs-meta);
     font-weight: 500;
-    color: var(--color-text-faint);
+    color: var(--color-text-muted);
 }
 /* 두 선수 칸 + 가운데 VS */
 .h2h-pick {
@@ -162,7 +162,7 @@
     font-family: "Pretendard", sans-serif;
     font-size: 16px;
     font-weight: 700;
-    color: var(--color-text-faint);
+    color: var(--color-text-muted);
 }
 .h2h-slot-inner { position: relative; }
 .h2h-slot-label {
