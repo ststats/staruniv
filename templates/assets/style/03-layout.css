@@ -394,7 +394,7 @@
         padding: 0 14px;
     }
     /* 히어로 서브탭 4~5개: 한 줄에 같은 폭으로(글씨·여백을 줄여) - 줄이 늘어 히어로 높이가 바뀌지 않게.
-       core.js syncSubTabColumns가 data-tab-dense를 붙인다. 6개 이상은 그대로 옆으로 민다. */
+       core.js syncSubTabDensity가 data-tab-dense를 붙인다. 6개 이상은 그대로 옆으로 민다. */
     .page-header > .sub-tabs[data-tab-dense] {
         gap: 4px;
         overflow: visible;

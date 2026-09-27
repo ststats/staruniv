@@ -903,31 +903,6 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-nav-manage:hover { background: var(--admin-ink); box-shadow: none; color: var(--admin-on-ink); }
 
-/* 네이비 히어로 위 버튼: 공개 사이트 네이비 면 위 버튼과 같은 흰 반투명 면 + 흰 글씨. 주요 동작만 흰 바탕 */
-.page-header .admin-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    flex: none;
-    min-height: 40px;
-    padding: 0 15px;
-    border: 0;
-    background: rgba(255, 255, 255, .12);
-    background-image: none;
-    box-shadow: none;
-    color: #fff;
-    clip-path: var(--notch-md);
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color .15s, color .15s;
-}
-.page-header .admin-btn:hover { background: rgba(255, 255, 255, .22); color: #fff; }
-.page-header .admin-btn.primary,
-.page-header .admin-btn.primary:hover { background: #fff; color: var(--navy); }
-
 /* 히어로 편집(설명 · 서브탭): 줄을 따로 차지하지 않는다. PC는 서브탭과 같은 줄 오른쪽 끝(탭과 같은 높이·같은 반투명 면,
    EDIT 꼬리표로 관리 기능임을 알린다). 탭이 한 줄을 다 쓰는 좁은 화면(920px 이하)에서는 히어로 오른쪽 위,
    영문 머리글(SCHEDULE 등)과 같은 높이의 작은 버튼. */
@@ -1125,7 +1100,7 @@ body.admin-actions-on:not(.admin-edit-disabled) {
 .sub-tab.admin-config-hidden[hidden] { display: flex !important; }
 .admin-default-subtab { box-shadow: inset 0 -2px rgba(255, 255, 255, .7); }
 
-.admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
+.admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action,
     .admin-nav-manage,
     .admin-hero-tools, .admin-action-bar, .hist-admin-bar) {
     display: none !important;

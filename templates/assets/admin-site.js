@@ -27,7 +27,7 @@
     enhance();
   }
 
-  // 표시/숨김·순서는 '메뉴 편집'/'서브탭 편집' 서랍에서만 바꾼다. 화면에는 숨김 상태만 흐리게 보여 준다.
+  // 표시/숨김·순서는 '메뉴 편집'/'히어로 편집' 서랍에서만 바꾼다. 화면에는 숨김 상태만 흐리게 보여 준다.
   function subtabLabel(page,key){
     const el=[...document.querySelectorAll('.sub-tabs .sub-tab[id]')].find(x=>subKeyFromId(x.id)===key);
     return (el?.firstChild?.textContent||el?.textContent||key).trim()||key;
@@ -105,7 +105,7 @@
     list?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row)row.classList.toggle('is-off',!ev.target.checked);});
   }
 
-  // 히어로 편집: 페이지 설명(heroDescriptions[페이지])과 서브탭 표시·기본 탭을 한 서랍에서 고친다(홈은 슬라이드 편집).
+  // 히어로 편집: 페이지 설명(heroDescriptions[페이지])과 서브탭 표시·기본 탭을 한 서랍에서 고친다(홈은 장마다 openHomeSlide).
   // 설명을 비우면 기본 설명으로 돌아간다. 설명은 입력하는 대로 히어로에 미리 보인다.
   // 방송통계 지표 탭(별풍선 · 방송시간 · 누적시청자 · 스폰판수 · 스폰승률)은 다른 서브탭과 달리
   // site_config.nav.statsTabs(숨긴 지표 목록)에 저장하고, 처음 열리는 탭은 보이는 탭 중 첫 번째다.
@@ -288,7 +288,7 @@
       const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.dataset.icon='edit';b.onclick=openNavManager;
       menu.after(b);
     }
-    // 히어로 편집(설명 · 서브탭)은 각 페이지 히어로 안에 하나. 홈은 슬라이드마다 '슬라이드 편집'이 따로 있다.
+    // 히어로 편집(설명 · 서브탭)은 각 페이지 히어로 안에 하나. 홈은 캐러셀 장마다 따로 붙는다(enhanceHome).
     const page=document.body.dataset.adminPage;
     if(page&&page!=='home'&&NAV_LABELS[page]){
       C().addHeroTool({id:'adminHeroEdit',label:'히어로 편집',icon:'edit',onClick:openHeroEditor});

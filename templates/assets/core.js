@@ -977,7 +977,7 @@ function initEdgeFades(root) {
 // 히어로 서브탭이 4~5개면 좁은 화면(920px 이하)에서 한 줄에 같은 폭으로 나눠 담는다(글씨·여백을 조금 줄여서) -
 // 줄을 늘리면 페이지마다 히어로 높이가 달라지고, 옆으로 밀면 뒤 탭이 가려진다. 6개 이상이면 옆으로 민다.
 // 보이는 탭만 센다 - 메뉴 설정으로 숨기거나 다시 보이면(어드민 표시 포함) 다시 센다. 모양은 CSS(03-layout.css)가 정한다.
-function syncSubTabColumns() {
+function syncSubTabDensity() {
     document.querySelectorAll('.page-header > .sub-tabs').forEach(el => {
         const n = [...el.children].filter(c => getComputedStyle(c).display !== 'none').length;
         const dense = n >= 4 && n <= 5;
@@ -985,14 +985,14 @@ function syncSubTabColumns() {
         else if (!dense && el.dataset.tabDense !== undefined) delete el.dataset.tabDense;
     });
 }
-function watchSubTabColumns() {
-    syncSubTabColumns();
+function watchSubTabDensity() {
+    syncSubTabDensity();
     if (typeof MutationObserver === 'undefined') return;
     let queued = false;
     new MutationObserver(() => {
         if (queued) return;
         queued = true;
-        setTimeout(() => { queued = false; syncSubTabColumns(); }, 0);   // 백그라운드 탭에서도 돈다(rAF는 멈춘다)
+        setTimeout(() => { queued = false; syncSubTabDensity(); }, 0);   // 백그라운드 탭에서도 돈다(rAF는 멈춘다)
     }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
 }
 
@@ -1453,7 +1453,7 @@ function bootPage(init, opts) {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
-        watchSubTabColumns();
+        watchSubTabDensity();
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
         await Promise.all([
             applyNavVisibility(),

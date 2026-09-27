@@ -301,7 +301,7 @@
   }
 
   // 관리 버튼은 두 곳에 나눈다.
-  // - 히어로 편집(설명 · 서브탭): 그 페이지 히어로(.page-header) 맨 아래, 서브탭과 같은 줄 오른쪽(좁으면 탭 아래 한 줄).
+  // - 히어로 편집(설명 · 서브탭): 그 페이지 히어로(.page-header) 안. PC는 서브탭 줄 오른쪽 끝, 좁은 화면은 히어로 오른쪽 위.
   // - 추가 · 관리(멤버 추가 · 연혁 추가 · 새 매치 등): 히어로 바로 아래 줄. 스크롤해도 상단바 밑에 붙어 있다.
   //   scope(그 버튼이 속한 서브탭 화면)가 보일 때만 나온다 - 일정 탭에서는 '연혁 추가'가 보이지 않는다.
   // 전용 관리 화면(전적 · 티어표 · 팀)은 히어로를 직접 그리므로 pageToolsHtml을 히어로 바로 뒤에 넣는다.
@@ -426,7 +426,7 @@
     state, $, q, qa, esc, value, empty, intOrNull, field, input, textarea, select, checkbox,
     toast, markDirty, setSaveState, openDrawer, closeDrawer, errorText, requireAdmin,
     loadMembers, loadSiteConfig, saveSiteConfig, nextSourceOrder, uploadMedia, mediaUrl,
-    audit, setEditMode, addHeroTool, addPageTool, pageToolsHtml, syncActionBars
+    audit, setEditMode, addHeroTool, addPageTool, pageToolsHtml
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
