@@ -739,4 +739,4 @@ bootPage(async () => {
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         switchTierView(params.get('view'));
     }));
-}, { siteData: false });
+}, { siteData: false, logos: true });

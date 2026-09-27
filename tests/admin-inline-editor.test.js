@@ -188,3 +188,17 @@ test('휴면 선수는 공개 티어 명단 조회(anon)에서 빠진다', () =>
   assert.match(sql, /create policy public_read_tier_members on public\.tier_members for select to anon\s+using \(coalesce\(affiliation, ''\) <> '휴면'\);/);
   assert.doesNotMatch(sql, /public_read_tier_members on public\.tier_members for select to anon using \(true\)/);
 });
+
+test('대학 로고 목록은 로고를 그리는 페이지(전적·티어표)만 받는다', () => {
+  const core = read('templates/assets/core.js');
+  assert.match(core, /opts && opts\.logos \? loadTeamLogos\(\) : null/);
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const dir = path.join(__dirname, '..', 'templates', 'assets');
+  for (const file of fs.readdirSync(dir).filter(f => /^page-.*\.js$/.test(f))) {
+    const js = read(`templates/assets/${file}`);
+    const usesLogos = /teamLogoHtml|teamLogoSrc|teamCellInnerHtml/.test(js);
+    const asksLogos = /bootPage\([\s\S]*logos: true/.test(js);
+    assert.equal(asksLogos, usesLogos, `${file}: 로고를 쓰면 bootPage에 logos: true, 안 쓰면 빼기`);
+  }
+});

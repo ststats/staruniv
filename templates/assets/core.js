@@ -590,7 +590,7 @@ function teamLogoFallback(imgEl, teamName) {
 document.querySelectorAll('img[data-logo-failed]').forEach(img => teamLogoFallback(img, img.dataset.team));
 
 // 대학 로고 주소. 로고는 어드민(전적 > 팀 관리)에서 올리고 Supabase(university_logos 표 + Storage)에
-// 있으며 시너지와 같이 쓴다. 페이지를 열 때 bootPage가 목록을 받아 둔다. 목록에 없으면 '' (배지로 대신).
+// 있으며 시너지와 같이 쓴다. 로고를 쓰는 페이지(bootPage의 logos: true)만 열 때 목록을 받아 둔다. 목록에 없으면 '' (배지로 대신).
 const TeamLogos = { map: {} };
 const LOGO_CACHE_KEY = 'staruniv-logos-v1';
 function teamLogoSrc(name) {
@@ -1430,6 +1430,8 @@ function applyNavConfig(data) {
 // 티어표·영상처럼 그 데이터를 한 줄도 안 쓰는 페이지가 400KB짜리 파일을 기다렸다
 // 시작하던 걸 없애기 위한 것이다. 그 페이지에서 SiteData를 쓰기 시작하면 여기 옵션을
 // 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
+// opts.logos: true인 페이지만 대학 로고 목록(university_logos)을 받는다 - 로고를 그리는 곳은 전적·티어표뿐이다.
+// 다른 페이지에서 teamLogoHtml/teamLogoSrc를 쓰기 시작하면 그 페이지에 logos: true를 준다(안 주면 이름 첫 글자 배지).
 function bootPage(init, opts) {
     const siteDataParts = opts && opts.siteData === false
         ? [] : ((opts && Array.isArray(opts.siteData)) ? opts.siteData : ['shell']);
@@ -1440,7 +1442,7 @@ function bootPage(init, opts) {
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
         await Promise.all([
             applyNavVisibility(),
-            loadTeamLogos(),
+            opts && opts.logos ? loadTeamLogos() : null,
             siteDataParts.length ? loadSiteData(siteDataParts) : null,
         ]);
         safeInit('페이지', init);
