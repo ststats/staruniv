@@ -320,10 +320,10 @@ a.home-notice-card:hover {
     background: var(--dot-active);
     clip-path: var(--notch-xs);
 }
-.home-carousel h1 span { display: inline; }
-.home-carousel h1 { white-space: nowrap; }
-.home-carousel h1,
-.home-carousel h1 span {
+.home-carousel .page-header-title span { display: inline; }
+.home-carousel .page-header-title { white-space: nowrap; }
+.home-carousel .page-header-title,
+.home-carousel .page-header-title span {
     color: #fff;
 }
 
@@ -451,15 +451,15 @@ a.home-notice-card:hover {
     background: #fff;
     color: var(--navy);
 }
-.home-carousel h1 i {
+.home-carousel .page-header-title i {
     display: inline;
     font-style: normal;
     color: var(--navy-accent);
 }
 
 @media (max-width: 767.98px) {
-    .home-carousel h1 i,
-    .home-carousel h1 span {
+    .home-carousel .page-header-title i,
+    .home-carousel .page-header-title span {
             display: inline;
         }
     .home-carousel-slide { margin-top: 0; }

@@ -280,7 +280,9 @@ function renderSynergyTopPhoto(top) {
     const alt = (ours && ours['이름']) || '';
     const show = (src, fallback) => {
         // 영상(mp4·webm): 소리 없이 자동 반복. 끊김 없이 재생할 만큼 받은 뒤(canplaythrough) 붙인다.
+        // 데이터 절약 모드나 '동작 줄이기' 설정이면 수백 KB 영상 대신 프로필 사진을 보여준다.
         if (/\.(mp4|webm)(\?|$)/i.test(src)) {
+            if (statsPreferStill()) { if (avatar) show(avatar, true); return; }
             const video = document.createElement('video');
             Object.assign(video, { muted: true, loop: true, autoplay: true, playsInline: true, preload: 'auto' });
             video.setAttribute('muted', '');
@@ -322,6 +324,12 @@ function renderSynergyTopPhoto(top) {
     box.classList.remove('is-fallback');
     if (photo) show(photo, false);
     else if (avatar) show(avatar, true);
+}
+
+// 데이터 절약 모드(Save-Data)나 '동작 줄이기' 설정이면 움직이는 대표 영상 대신 정지 사진을 쓴다
+function statsPreferStill() {
+    if (navigator.connection && navigator.connection.saveData) return true;
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 
 function renderSynergySummary(rows) {

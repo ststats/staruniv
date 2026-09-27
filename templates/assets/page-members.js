@@ -1,7 +1,7 @@
 /**
  * 멤버 페이지: 현황(멤버 카드 + 프로필 팝업) + 공지(SOOP 게시판 피드). (core.js → soop.js → 이 파일)
  * URL: /members/ (현황), /members/?view=news[&member=이름] (공지)
- * 공지 본문 정제에 DOMPurify(purify.min.js)를 쓰므로 이 페이지만 그 파일을 먼저 불러온다.
+ * 공지 본문 정제에 DOMPurify(purify.min.js)를 쓴다 - 처음 '더 보기'를 누를 때 받는다(주소는 이 스크립트 태그의 data-purify).
  */
 
 const MEMBER_TABS = { status: ['tab-member-status', 'view-member-status'], news: ['tab-member-news', 'view-member-news'] };
@@ -678,10 +678,28 @@ function checkNewsClampButtons(container) {
 }
 
 // "더 보기" 클릭 - 이미 목록 API에서 받아 기억해둔 전체 본문(HTML)을 바로 꽂는다.
-function expandNewsPost(btn, titleNo) {
+// DOMPurify(9KB)는 본문을 펼칠 때만 쓰므로 그때 한 번 받는다. 못 받으면 순수 텍스트로 보여준다(sanitizeNewsFragment).
+const PURIFY_SRC = document.currentScript && document.currentScript.dataset.purify;
+let purifyLoading = null;
+function loadPurify() {
+    if (window.DOMPurify || !PURIFY_SRC) return Promise.resolve();
+    if (!purifyLoading) {
+        purifyLoading = new Promise(resolve => {
+            const s = document.createElement('script');
+            s.src = PURIFY_SRC;
+            s.onload = s.onerror = () => resolve();
+            document.head.appendChild(s);
+        });
+    }
+    return purifyLoading;
+}
+
+async function expandNewsPost(btn, titleNo) {
     const body = btn.previousElementSibling;
     const fullHtml = NewsState.fullContent[String(titleNo)];
-    if (!fullHtml || !body) return;
+    if (!fullHtml || !body || btn.disabled) return;
+    btn.disabled = true;
+    await loadPurify();
     body.replaceChildren(sanitizeNewsFragment(fullHtml));
     body.classList.remove('news-post-body-clamp');
     btn.remove();
