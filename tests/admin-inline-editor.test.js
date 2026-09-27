@@ -73,8 +73,31 @@ test('inline domains call their public renderers after save', () => {
 
 test('public runtime site config comes from Supabase rather than raw nav json', () => {
   const core = read('templates/assets/core.js');
-  assert.match(core, /\.from\('site_config'\)/);
+  assert.match(core, /await Api\.navConfig\(\)/);
+  assert.match(read('templates/assets/api.js'), /\.from\('site_config'\)/);
   assert.doesNotMatch(core, /fetch\('data\/nav\.json'/);
+});
+
+test('api.js의 Api 함수와 API 규격(api/openapi.yaml)이 서로 맞다', () => {
+  const api = read('templates/assets/api.js');
+  const spec = read('api/openapi.yaml');
+  const fns = [...api.slice(api.indexOf('const Api = {')).matchAll(/^    async (\w+)\(/gm)].map(m => m[1]).sort();
+  const documented = [...new Set([...spec.matchAll(/Api\.(\w+)/g)].map(m => m[1]))].sort();
+  assert.deepStrictEqual(documented, fns);
+  for (const fn of fns) assert.match(api, new RegExp(`// GET /api/v1/[^\\n]*\\n(?: *//[^\\n]*\\n)*    async ${fn}\\(`), `${fn}: 위에 대응하는 주소 주석`);
+});
+
+test('공개 페이지의 데이터 조회는 api.js 한 곳에만 있다(나중에 서버 /api/v1로 바꿀 자리)', () => {
+  const dir = path.join(ROOT, 'templates', 'assets');
+  const pages = fs.readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'api.js' && !f.startsWith('admin-') && !f.endsWith('.min.js'));
+  for (const f of pages) {
+    const js = fs.readFileSync(path.join(dir, f), 'utf8');
+    assert.doesNotMatch(js, /\.from\(['"]\w+['"]\)|publicSupabaseClient\(|\/rest\/v1\//, `${f}: 표를 직접 읽지 말고 Api 함수를 쓴다`);
+  }
+  for (const f of fs.readdirSync(path.join(ROOT, 'templates', 'pages'))) {
+    const html = fs.readFileSync(path.join(ROOT, 'templates', 'pages', f), 'utf8');
+    assert.match(html, /asset_url\('core\.js'\) \}\}"><\/script>\n<script src="\{\{ asset_url\('api\.js'\)/, `${f}: core.js 다음에 api.js`);
+  }
 });
 
 test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
@@ -202,7 +225,8 @@ test('공개 조회(anon)는 화면에 나오는 것만: 멤버·전적 표는 �
     assert.doesNotMatch(sql, new RegExp(`grant select[^;]* on public\\.${t} to anon`), `${t}는 페이지가 조회하지 않는다`);
     assert.doesNotMatch(sql, new RegExp(`create policy public_read_${t} `));
   }
-  assert.match(sql, /create policy public_read_videos on public\.videos for select to anon using \(not hidden\);/);
+  assert.match(sql, /create policy public_read_videos on public\.videos for select to anon\s+using \(not hidden and exists \(select 1 from public\.video_channels c where c\.channel_url = videos\.channel_url\)\);/);
+  assert.match(sql, /create policy university_logos_public_read on public\.university_logos for select to authenticated using \(true\);/);
   assert.match(sql, /create policy public_read_video_picks on public\.video_picks for select to anon using \(not hidden\);/);
   assert.match(sql, /create policy public_read_history_entries on public\.history_entries for select to anon using \(not hidden or entry_kind = 'override'\);/);
   const admin = read('templates/assets/admin-history.js');

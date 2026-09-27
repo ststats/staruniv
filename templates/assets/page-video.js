@@ -306,32 +306,23 @@ function switchVideoView(view) {
 }
 
 async function loadVideoDataFromSupabase() {
-    const client = publicSupabaseClient();
-    if (!client) return null;
-    const [chRes, videoRes, pickRes] = await Promise.all([
-        client.from('video_channels').select('channel_url,channel_id,title,display_name,thumb,uploads,source_order,active').eq('active', true).order('source_order'),
-        client.from('videos').select('id,channel_url,title,published,thumb,views,short,hidden').order('published', {ascending:false}).limit(3000),
-        client.from('video_picks').select('id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order').order('source_order')
-    ]);
-    const error = chRes.error || videoRes.error || pickRes.error;
-    if (error) throw error;
+    const res = await Api.videos();
     const channels = {};
-    (chRes.data || []).forEach(ch => {
+    (res.channels || []).forEach(ch => {
         channels[ch.channel_url] = {
-            id: ch.channel_id || '', title: ch.title || '', name: ch.display_name || ch.title || '',
-            thumb: ch.thumb || '', url: ch.channel_url, uploads: ch.uploads || ''
+            title: ch.title || '', name: ch.display_name || ch.title || '', thumb: ch.thumb || ''
         };
     });
     return {
         updatedAt: '',
         channels,
-        videos: (videoRes.data || []).filter(v => !!channels[v.channel_url]).map(v => ({
+        videos: (res.videos || []).filter(v => !!channels[v.channel_url]).map(v => ({
             id:v.id, channel:v.channel_url, title:v.title, published:v.published, thumb:v.thumb,
-            views:Number(v.views)||0, short:!!v.short, hidden:!!v.hidden
+            views:Number(v.views)||0, short:!!v.short
         })),
-        picks: (pickRes.data || []).map(v => ({
+        picks: (res.picks || []).map(v => ({
             id:v.id, kind:v.kind, title:v.title, note:v.note || '', group:v.group_name || '', groupEn:v.group_en || '',
-            addedAt:v.added_at || '', author:v.author || '', thumb:v.thumb || '', short:!!v.short, hidden:!!v.hidden
+            author:v.author || '', thumb:v.thumb || '', short:!!v.short
         }))
     };
 }

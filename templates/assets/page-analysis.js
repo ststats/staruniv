@@ -55,16 +55,11 @@ function analysisMonthRange(first, last) {
     return out;
 }
 
-async function analysisLoadRatingMonths(client) {
+async function analysisLoadRatingMonths() {
     if (!AnalysisState.ratingMonths) {
         AnalysisState.ratingMonths = (async () => {
-            const edge = ascending => client.from('elo_rating_history').select('month_end')
-                .order('month_end', { ascending }).limit(1);
-            const [a, b] = await Promise.all([edge(true), edge(false)]);
-            if (a.error) throw a.error;
-            if (b.error) throw b.error;
-            const month = res => String(((res.data || [])[0] || {}).month_end || '').slice(0, 7);
-            return analysisMonthRange(month(a), month(b));
+            const { first, last } = await Api.eloRatingRange();
+            return analysisMonthRange(first.slice(0, 7), last.slice(0, 7));
         })();
         AnalysisState.ratingMonths.catch(() => { AnalysisState.ratingMonths = null; });
     }
@@ -78,17 +73,10 @@ async function analysisLoadRating(pid) {
     AnalysisState.ratingLoading ||= {};
     if (!AnalysisState.ratingLoading[key]) {
         AnalysisState.ratingLoading[key] = (async () => {
-            const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-            if (!client) return;
-            const [months, res] = await Promise.all([
-                analysisLoadRatingMonths(client),
-                client.from('elo_rating_history').select('month_end,rating')
-                    .eq('elo_id', key).order('month_end', { ascending: true }).limit(1000),
-            ]);
-            if (res.error) throw res.error;
+            const [months, rows] = await Promise.all([analysisLoadRatingMonths(), Api.eloRatingHistory(key)]);
             const monthIndex = new Map(months.map((month, index) => [month, index]));
             const series = Array(months.length).fill(null);
-            (res.data || []).forEach(row => {
+            (rows || []).forEach(row => {
                 const index = monthIndex.get(String(row.month_end || '').slice(0, 7));
                 if (index !== undefined) series[index] = row.rating == null ? null : Number(row.rating);
             });

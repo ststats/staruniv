@@ -162,19 +162,13 @@
     const calLoadPublicData = async () => {
         await loadPublicHolidays();
         try {
-            const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-            if (!client) throw new Error('Supabase browser client is not configured');
-            const [eventRes, offRes] = await Promise.all([
-                client.from('calendar_events').select('id,source_order,start_date,end_date,event_time,person,description,detail,color').order('source_order'),
-                client.from('calendar_off_air').select('off_date,soop_id,source_order').order('off_date').order('source_order'),
-            ]);
-            if (eventRes.error || offRes.error) throw eventRes.error || offRes.error;
-            calEvents = (eventRes.data || []).map(r => ({
+            const { events, offAir } = await Api.schedule();
+            calEvents = (events || []).map(r => ({
                 id: r.id, startDate: r.start_date, endDate: r.end_date || r.start_date, time: r.event_time || '',
                 person: r.person || '', desc: r.description || '', detail: r.detail || '', color: r.color || ''
             }));
             calOffAir = {};
-            (offRes.data || []).forEach(r => { (calOffAir[r.off_date] ||= []).push(r.soop_id); });
+            (offAir || []).forEach(r => { (calOffAir[r.off_date] ||= []).push(r.soop_id); });
         } catch (e) {
             console.error('Supabase 일정 조회 실패:', e);
             calEvents = [];

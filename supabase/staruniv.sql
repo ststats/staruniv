@@ -568,13 +568,14 @@ create policy public_read_history_entries on public.history_entries for select t
 revoke all on public.video_channels from anon;
 revoke all on public.videos from anon;
 revoke all on public.video_picks from anon;
-grant select (channel_url,channel_id,title,display_name,thumb,uploads,source_order,active) on public.video_channels to anon;
-grant select (id,channel_url,title,published,thumb,views,short,hidden) on public.videos to anon;
-grant select (id,kind,title,note,group_name,group_en,added_at,author,thumb,short,hidden,source_order) on public.video_picks to anon;
+grant select (channel_url,title,display_name,thumb,source_order,active) on public.video_channels to anon;
+grant select (id,channel_url,title,published,thumb,views,short) on public.videos to anon;
+grant select (id,kind,title,note,group_name,group_en,author,thumb,short,source_order) on public.video_picks to anon;
 drop policy if exists public_read_video_channels on public.video_channels;
 create policy public_read_video_channels on public.video_channels for select to anon using (active=true);
 drop policy if exists public_read_videos on public.videos;
-create policy public_read_videos on public.videos for select to anon using (not hidden);
+create policy public_read_videos on public.videos for select to anon
+  using (not hidden and exists (select 1 from public.video_channels c where c.channel_url = videos.channel_url));
 drop policy if exists public_read_video_picks on public.video_picks;
 create policy public_read_video_picks on public.video_picks for select to anon using (not hidden);
 
@@ -1158,7 +1159,9 @@ create table if not exists public.university_logos (
 );
 alter table public.university_logos enable row level security;
 drop policy if exists university_logos_public_read on public.university_logos;
-create policy university_logos_public_read on public.university_logos for select to anon, authenticated using (true);
+-- 익명(anon)은 어느 화면(전적 상대팀·티어표 소속·시너지 대학)에든 나오는 대학의 로고만 본다: 정책은
+-- 그 판단에 시너지 표가 필요해서 ststat.sql 14번(university_logos_anon_read)에 있다. 어드민은 전부 본다.
+create policy university_logos_public_read on public.university_logos for select to authenticated using (true);
 drop policy if exists university_logos_admin_write on public.university_logos;
 create policy university_logos_admin_write on public.university_logos for all to authenticated
   using ((select public.is_admin())) with check ((select public.is_admin()));

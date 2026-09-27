@@ -374,16 +374,6 @@ const SiteDataLoad = { status: 'idle', error: null, loaded: new Set() };
 
 const asArray = v => (Array.isArray(v) ? v : []);
 
-// [캐시] 빌드가 페이지에 넣어준 버전(<meta name="site-data-version">)을 주소에 붙인다. 데이터가 바뀐
-// 배포에서만 주소가 바뀌므로 평소엔 브라우저 캐시를 그대로 쓰고 바뀌면 즉시 새로 받는다. 버전이 없으면
-// 매번 서버에 변경 여부만 확인(no-cache → 안 바뀌었으면 304로 본문 없이 끝남)한다.
-function siteDataRequest(part) {
-    const meta = document.querySelector('meta[name="site-data-version"]');
-    const version = meta && meta.content;
-    return version
-        ? { url: `data/site_${part}.json?v=${encodeURIComponent(version)}`, cache: 'default' }
-        : { url: `data/site_${part}.json`, cache: 'no-cache' };
-}
 
 // Supabase는 한 번에 1000줄까지만 준다. 1000줄씩 끊어 받는 조회를 한 쪽씩 기다리지 않고
 // 여러 쪽(parallel, 표 크기에 맞춰 고른다)을 동시에 요청한다 - 8천 줄이면 8번 차례로 기다리던 게 1번이 된다.
@@ -412,13 +402,7 @@ async function loadSiteData(parts) {
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        const payloads = await Promise.all(requested.map(async part => {
-            const { url, cache } = siteDataRequest(part);
-            // 사이트 데이터(정적 JSON)도 끝내 안 오면 20초에 끊고 오류 안내로 넘어간다
-            const res = await fetch(url, { cache, signal: AbortSignal.timeout(20000) });
-            if (!res.ok) throw new Error(`${part}: HTTP ${res.status}`);
-            return [part, await res.json()];
-        }));
+        const payloads = await Promise.all(requested.map(async part => [part, await Api.siteData(part)]));
         payloads.forEach(([part, data]) => {
             if (part === 'shell') {
                 SiteData.members = asArray(data && data.members);
@@ -458,13 +442,9 @@ const LIVE_BROADCASTS_TTL_MS = 20 * 1000;
 let _liveBroadcasts = { at: 0, promise: null };
 function fetchLiveBroadcasts() {
     if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS) return _liveBroadcasts.promise;
-    const client = publicSupabaseClient();
-    if (!client) return Promise.reject(new Error('Supabase 설정 없음'));
-    const promise = client.from('live_broadcasts_current')
-        .select('soop_id,broad_no,broad_title,current_sum_viewer,broad_start,category_name,broad_cate_no')
-        .limit(5000)
-        .then(({ data, error }) => {
-            if (error || !Array.isArray(data)) throw new Error(error?.message || 'Invalid live status');
+    const promise = Api.liveBroadcasts()
+        .then(data => {
+            if (!Array.isArray(data)) throw new Error('Invalid live status');
             const live = {};
             data.forEach(row => { if (row.soop_id && row.broad_no) live[String(row.soop_id).toLowerCase()] = row; });
             return live;
@@ -662,10 +642,7 @@ async function loadTeamLogos() {
     let cached = null;
     try { cached = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || 'null'); } catch (_) {}
     const fresh = (async () => {
-        const client = publicSupabaseClient();
-        if (!client) return null;
-        const { data, error } = await client.from('university_logos').select('name,path');
-        if (error) throw error;
+        const data = await Api.universityLogos();
         try { localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(data || [])); } catch (_) {}
         return data || [];
     })();
@@ -1049,94 +1026,6 @@ function watchSubTabDensity() {
 // 5. 방송통계 데이터
 // ststat -> Supabase daily_member_stats 를 직접 읽고 우리 로스터만 추린다.
 // =====================================================================
-let _publicSupabaseClient = null;
-const SUPABASE_REQUEST_TIMEOUT_MS = 8000;
-// 공개 페이지는 Supabase 표를 읽기만 한다. 그래서 supabase-js(213KB)를 받지 않고, 쓰는 조회
-// (select·eq·in·not·gte·lte·order·range·limit·maybeSingle)만 같은 주소 형식으로 직접 만든다 - 주소와
-// 헤더가 supabase-js와 한 글자까지 같아서 서버 쪽에서 보면 차이가 없다. 결과도 똑같이 {data, error}.
-// 로그인이 필요한 관리자 화면은 진짜 supabase-js를 따로 받는다(base.html).
-class SupabaseReadQuery {
-    constructor(restUrl, table, key) {
-        this.url = new URL(`${restUrl}/${table}`);
-        this.key = key;
-        this.maybeOne = false;
-    }
-    select(columns = '*') {
-        let quoted = false;
-        const cleaned = String(columns).split('')
-            .map(ch => (/\s/.test(ch) && !quoted ? '' : (ch === '"' && (quoted = !quoted), ch))).join('');
-        this.url.searchParams.set('select', cleaned);
-        return this;
-    }
-    eq(column, value) { this.url.searchParams.append(column, `eq.${value}`); return this; }
-    not(column, operator, value) { this.url.searchParams.append(column, `not.${operator}.${value}`); return this; }
-    gte(column, value) { this.url.searchParams.append(column, `gte.${value}`); return this; }
-    lte(column, value) { this.url.searchParams.append(column, `lte.${value}`); return this; }
-    in(column, values) {
-        const list = Array.from(new Set(values))
-            .map(v => (typeof v === 'string' && /[,()]/.test(v) ? `"${v}"` : `${v}`)).join(',');
-        this.url.searchParams.append(column, `in.(${list})`);
-        return this;
-    }
-    order(column, { ascending = true, nullsFirst } = {}) {
-        const prev = this.url.searchParams.get('order');
-        const nulls = nullsFirst === undefined ? '' : (nullsFirst ? '.nullsfirst' : '.nullslast');
-        this.url.searchParams.set('order', `${prev ? `${prev},` : ''}${column}.${ascending ? 'asc' : 'desc'}${nulls}`);
-        return this;
-    }
-    limit(count) { this.url.searchParams.set('limit', `${count}`); return this; }
-    range(from, to) {
-        this.url.searchParams.set('offset', `${from}`);
-        this.url.searchParams.set('limit', `${to - from + 1}`);
-        return this;
-    }
-    maybeSingle() { this.maybeOne = true; return this; }
-    // 응답이 끝내 오지 않으면(연결만 붙고 멈춤 등) 화면이 '불러오는 중'에 머문다. 요청마다 8초 제한을 두고,
-    // 네트워크 오류·시간 초과·일시 서버 오류(5xx·429)는 잠깐 쉬었다 한 번 더 시도한다(읽기라 다시 보내도 안전).
-    // 그래도 안 되면 {error}를 돌려줘 각 화면의 오류 안내로 넘어간다 - 최악 약 17초.
-    async run() {
-        const first = await this.runOnce();
-        if (first.status === 0 || first.status === 429 || first.status >= 500) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            return this.runOnce();
-        }
-        return first;
-    }
-    async runOnce() {
-        try {
-            const res = await fetch(this.url.href, {
-                headers: { apikey: this.key, Authorization: `Bearer ${this.key}` },
-                signal: AbortSignal.timeout(SUPABASE_REQUEST_TIMEOUT_MS),
-            });
-            const text = await res.text();
-            let body = null;
-            if (text) {
-                try { body = JSON.parse(text); } catch (_) { return { data: null, error: { message: text }, status: res.status }; }
-            }
-            if (!res.ok) return { data: null, error: body || { message: res.statusText }, status: res.status };
-            if (this.maybeOne && Array.isArray(body)) {
-                if (body.length > 1) {
-                    return { data: null, status: 406, error: { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' } };
-                }
-                body = body.length ? body[0] : null;
-            }
-            return { data: body, error: null, status: res.status };
-        } catch (e) {
-            return { data: null, error: { message: `${e?.name ?? 'FetchError'}: ${e?.message}` }, status: 0 };
-        }
-    }
-    then(onFulfilled, onRejected) { return this.run().then(onFulfilled, onRejected); }
-}
-
-function publicSupabaseClient() {
-    if (_publicSupabaseClient) return _publicSupabaseClient;
-    const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
-    if (!cfg.url || !cfg.key) return null;
-    const restUrl = new URL('rest/v1', cfg.url.endsWith('/') ? cfg.url : `${cfg.url}/`).href;
-    _publicSupabaseClient = { from: table => new SupabaseReadQuery(restUrl, table, cfg.key) };
-    return _publicSupabaseClient;
-}
-
 const SynergyState = {
     data: null,          // [{ ...외부 필드, ourMember, active }]
     updatedAt: '',
@@ -1188,13 +1077,7 @@ let _synergyMonthsRequest = null;
 function fetchSynergyMonths() {
     if (_synergyMonthsRequest) return _synergyMonthsRequest;
     _synergyMonthsRequest = (async () => {
-        const client = publicSupabaseClient();
-        if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다');
-        const rows = await fetchAllPages((from, to) => client
-            .from('synergy_daily_dates')
-            .select('stat_date')
-            .order('stat_date', { ascending: false })
-            .range(from, to), { parallel: 1 });
+        const rows = await Api.statsDates();
         const months = [];
         rows.forEach(r => {
             const date = String((r && r.stat_date) || '');
@@ -1233,9 +1116,6 @@ function fetchSynergyResult(month = '') {
     if (_synergyRequests.has(month)) return _synergyRequests.get(month);
 
     const request = (async () => {
-        const client = publicSupabaseClient();
-        if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다');
-
         // 날짜는 달 목록(fetchSynergyMonths, 한 번만 받는다)에서 고른다 - 최근 달은 그 첫 칸
         const months = await fetchSynergyMonths();
         const found = month ? months.find(m => m.month === month) : months[0];
@@ -1263,13 +1143,7 @@ function fetchSynergyResult(month = '') {
             .filter(Boolean);
         if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다');
 
-        const rows = await fetchAllPages((from, to) => client
-            .from('daily_member_stats')
-            .select('stat_date,soop_id,elo_id,nickname,role,affiliation,race,tier,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at,sponsor_updated_at')
-            .eq('stat_date', latestDate)
-            .in('soop_id', memberIds)
-            .order('soop_id', { ascending: true })
-            .range(from, to), { parallel: 1 });
+        const rows = await Api.stats(latestDate, memberIds);
         if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다`);
 
         const data = rows
@@ -1279,12 +1153,7 @@ function fetchSynergyResult(month = '') {
                 if (!ours) return null;
                 return {
                     id: row.soop_id,
-                    elo_id: row.elo_id,
                     nickname: row.nickname,
-                    role: row.role || '',
-                    team: row.affiliation || null,
-                    race: row.race || null,
-                    tier: row.tier || null,
                     balloons: Number(row.balloons || 0),
                     broadcast_seconds: Number(row.broadcast_seconds || 0),
                     cumulative_viewers: Number(row.cumulative_viewers || 0),
@@ -1379,12 +1248,7 @@ function runtimeDefaultSubtab(pageId, fallbackDefault) {
 // (관리자 화면은 편집 결과가 곧바로 보여야 하므로 기억해 둔 값을 쓰지 않는다.)
 const NAV_CACHE_KEY = 'staruniv-nav-config';
 async function fetchNavConfig() {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) throw new Error('Supabase browser client is not configured');
-    const { data: row, error } = await client.from('site_config')
-        .select('config_value').eq('config_key','nav').maybeSingle();
-    if (error) throw error;
-    const data = row?.config_value || {};
+    const data = await Api.navConfig();
     try { localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(data)); } catch (_) {}
     return data;
 }

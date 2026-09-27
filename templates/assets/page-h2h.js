@@ -87,14 +87,7 @@ const H2hState = {
 };
 
 async function h2hLoadIndexFromSupabase() {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) throw new Error('Supabase browser client is not configured');
-
-    const playersData = await fetchAllPages((from, to) => h2hWithTimeout(client
-        .from('elo_public_players')
-        .select('elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games,wins,last_match_date,tier_rank,tier_count,as_of')
-        .order('elo_id', { ascending: true })
-        .range(from, to), '선수 목록'));
+    const playersData = await Api.eloPlayers({ ranked: true, wrap: q => h2hWithTimeout(q, '선수 목록') });
     if (!playersData.length) throw new Error('Elo public player view is empty');
 
     const players = {};
@@ -114,8 +107,6 @@ async function h2hLoadIndexFromSupabase() {
                 en: eloName && eloName !== nickname ? eloName : '',
                 r: h2hNormalizeRace(row.race),
                 m: Number(row.total_games || 0),
-                w: Number(row.wins || 0),
-                d: row.last_match_date || '',
                 tm: String(row.affiliation || ''),
                 t: String(row.tier || ''),
                 s: String(row.soop_id || ''),
@@ -171,34 +162,12 @@ function h2hCategoryIndex(name) {
 }
 
 async function h2hLoadPlayerFromSupabase(pid) {
-    const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-    if (!client) throw new Error('Supabase browser client is not configured');
-    const rows = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-        const request = client
-            .from('elo_public_matches')
-            .select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
-            .eq('elo_id', Number(pid))
-            .order('match_date', { ascending: false })
-            .range(from, from + pageSize - 1);
-        const { data, error } = await h2hWithTimeout(request, '선수 전적');
-        if (error) throw error;
-        const batch = Array.isArray(data) ? data : [];
-        for (const r of batch) {
-            if (r.map_id != null && r.map_name) H2hState.index.maps[String(r.map_id)] = String(r.map_name);
-            const cat = h2hCategoryIndex(r.category_name);
-            rows.push([
-                String(r.match_date || ''),
-                Number(r.opponent_elo_id),
-                r.won ? 1 : 0,
-                r.map_id == null ? '' : Number(r.map_id),
-                cat,
-            ]);
-        }
-        if (batch.length < pageSize) break;
-    }
-    return rows;
+    // 쪽을 차례로 받는다(한 선수 경기는 대개 1천 줄 안이라 여러 쪽을 미리 부르지 않는다)
+    const data = await Api.eloPlayerMatches(pid, { parallel: 1, wrap: q => h2hWithTimeout(q, '선수 전적') });
+    return data.map(r => {
+        if (r.map_id != null && r.map_name) H2hState.index.maps[String(r.map_id)] = String(r.map_name);
+        return [String(r.match_date || ''), Number(r.opponent_elo_id), r.won ? 1 : 0, r.map_id == null ? '' : Number(r.map_id), h2hCategoryIndex(r.category_name)];
+    });
 }
 
 async function h2hLoadPlayer(pid) {

@@ -50,15 +50,10 @@ async function renderTodaySchedulePreview(box) {
     if (!box) return;
     box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중</div>';
     try {
-        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-        if (!client) throw new Error('Supabase browser client is not configured');
         const now = new Date();
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         // 오늘에 걸친 일정만 받는다
-        const { data, error } = await client.from('calendar_events').select('start_date,end_date,event_time,person,description')
-            .lte('start_date', today).gte('end_date', today).order('source_order');
-        if (error) throw error;
-        const events = (data || []).map(r => ({ startDate:r.start_date, endDate:r.end_date || r.start_date, time:r.event_time || '', person:r.person || '', desc:r.description || '' }));
+        const events = (await Api.scheduleOn(today) || []).map(r => ({ startDate:r.start_date, endDate:r.end_date || r.start_date, time:r.event_time || '', person:r.person || '', desc:r.description || '' }));
         const todayEvents = events.filter(ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate));
         todayEvents.sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
         box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div>' +

@@ -1,0 +1,291 @@
+openapi: 3.1.0
+info:
+  title: StarUniv public API
+  version: 1.0.0
+  description: |
+    공개 페이지가 쓰는 데이터 API 규격. 브라우저 쪽 구현은 templates/assets/api.js의 Api 객체이고,
+    함수 하나가 아래 주소 하나에 대응한다(주석의 GET /api/v1/…). 지금은 서버 없이 api.js가 Supabase
+    공개 조회(anon)로 같은 모양을 만들어 돌려준다. 서버를 붙이면 이 규격대로 구현하고 api.js 안의 조회만
+    fetch('/api/v1/…')로 바꾼다. 그 뒤에는 anon의 표 직접 조회를 모두 막는다.
+
+    원칙: 응답에는 화면이 그리는 것만 넣는다(열·행 모두). 목록은 전부 한 번에 돌려준다(쪽 나누기는 서버 안의 일).
+    오류는 HTTP 상태 코드와 { "message": "…" }.
+servers:
+  - url: /api/v1
+paths:
+  /site/{part}:
+    get:
+      summary: 멤버·전적 묶음 (Api.siteData)
+      description: 지금은 빌드가 만든 data/site_{part}.json.
+      parameters:
+        - { name: part, in: path, required: true, schema: { type: string, enum: [shell, records] } }
+      responses:
+        '200': { description: "shell은 { members, matchCount, roundCount }, records는 { matches, rounds, playersStats }", content: { application/json: { schema: { type: object } } } }
+  /site/nav:
+    get:
+      summary: 메뉴·히어로 설명·서브탭 설정 (Api.navConfig)
+      responses:
+        '200':
+          description: 설정 JSON(없으면 {})
+          content: { application/json: { schema: { $ref: '#/components/schemas/NavConfig' } } }
+  /logos:
+    get:
+      summary: 대학 로고 (Api.universityLogos)
+      description: 어느 화면(전적 상대팀·티어표 소속·시너지 대학)에든 나오는 대학만.
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Logo' } } } } }
+  /live:
+    get:
+      summary: 지금 방송 중인 선수 (Api.liveBroadcasts)
+      description: 휴면이 아닌 명단 선수만. 수집이 5분 넘게 멈추면 빈 목록.
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/LiveBroadcast' } } } } }
+  /live/ids:
+    get:
+      summary: 방송 중인 선수의 SOOP ID만 (Api.liveSoopIds, 멀티뷰어)
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { soop_id: { type: string } } } } } } }
+  /stats/dates:
+    get:
+      summary: 방송통계가 있는 날짜, 최신순 (Api.statsDates)
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { stat_date: { type: string, format: date } } } } } } }
+  /stats:
+    get:
+      summary: 그날까지의 월 누적 방송통계 (Api.stats)
+      parameters:
+        - { name: date, in: query, required: true, schema: { type: string, format: date } }
+        - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID", schema: { type: string } }
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/StatsRow' } } } } }
+  /schedule:
+    get:
+      summary: 일정·휴방 (Api.schedule, Api.scheduleOn)
+      parameters:
+        - { name: date, in: query, required: false, description: "주면 그날에 걸친 일정만(홈, 휴방 없이 events 배열)", schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: date가 없으면 { events, offAir }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events: { type: array, items: { $ref: '#/components/schemas/CalendarEvent' } }
+                  offAir: { type: array, items: { type: object, properties: { off_date: { type: string, format: date }, soop_id: { type: string } } } }
+  /history:
+    get:
+      summary: 연혁 (Api.history)
+      description: 숨긴 수동 항목은 빠진다. 자동 항목을 덮어쓰는 override 행(숨김 포함)은 들어 있다.
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/HistoryEntry' } } } } }
+  /posts:
+    get:
+      summary: 멤버 공지 모음, 최신순 (Api.memberPosts, Api.recentPosts)
+      parameters:
+        - { name: limit, in: query, required: false, description: "주면 최신 limit개만(홈, total_pages 없이)", schema: { type: integer, maximum: 2000 } }
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MemberPost' } } } } }
+  /tier/members:
+    get:
+      summary: 티어표 명단 (Api.tierMembers)
+      responses:
+        '200': { description: "휴면 제외", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/TierMember' } } } } }
+  /videos:
+    get:
+      summary: 팬 채널·최신 영상·추천 영상 (Api.videos)
+      description: 활성 채널과 그 채널의 숨기지 않은 영상만.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  channels: { type: array, items: { $ref: '#/components/schemas/VideoChannel' } }
+                  videos: { type: array, items: { $ref: '#/components/schemas/Video' } }
+                  picks: { type: array, items: { $ref: '#/components/schemas/VideoPick' } }
+  /tools:
+    get:
+      summary: 외부 도구·사이트 링크 (Api.tools)
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Tool' } } } } }
+  /elo/players:
+    get:
+      summary: EloBoard 선수 목록 (Api.eloPlayers)
+      parameters:
+        - { name: ranked, in: query, required: false, description: "1이면 티어 안 순위·기준일까지(상대전적·분석)", schema: { type: integer, enum: [0, 1] } }
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/EloPlayer' } } } } }
+  /elo/players/{id}/matches:
+    get:
+      summary: 한 선수의 경기, 최신순 (Api.eloPlayerMatches)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: since, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/EloMatch' } } } } }
+  /elo/players/{id}/ratings:
+    get:
+      summary: 한 선수의 월말 레이팅 (Api.eloRatingHistory)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { month_end: { type: string, format: date }, rating: { type: [number, 'null'] } } } } } } }
+  /elo/ratings/range:
+    get:
+      summary: 레이팅 기록이 있는 첫 달·마지막 달 (Api.eloRatingRange)
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: object, properties: { first: { type: string }, last: { type: string } } } } } }
+  /elo/rankings:
+    get:
+      summary: 티어 안 순위·레이팅 (Api.eloRankings)
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/EloRanking' } } } } }
+  /elo/rankings/meta:
+    get:
+      summary: 가장 최근 랭킹의 티어 기준선·종족 상성 (Api.eloRankingMeta)
+      responses:
+        '200': { description: "없으면 {}", content: { application/json: { schema: { $ref: '#/components/schemas/EloRankingMeta' } } } }
+  /elo/ratings:
+    get:
+      summary: 순위 밖 선수까지 전 선수 레이팅 (Api.eloPlayerRatings)
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { elo_id: { type: integer }, rating: { type: [number, 'null'] }, rating_se: { type: [number, 'null'] } } } } } } }
+components:
+  schemas:
+    NavConfig:
+      type: object
+      properties:
+        hidden: { type: array, items: { type: string }, description: "숨긴 메뉴 id" }
+        order: { type: array, items: { type: string } }
+        statsTabs: { type: object }
+        heroDescriptions: { type: object, additionalProperties: { type: string } }
+        subtabs: { type: object }
+        homeCarousel: { type: object }
+    Logo: { type: object, properties: { name: { type: string }, path: { type: string, description: "Storage staruniv-media 안 경로" } } }
+    LiveBroadcast:
+      type: object
+      properties:
+        soop_id: { type: string }
+        broad_no: { type: string }
+        broad_title: { type: string }
+        current_sum_viewer: { type: integer }
+        broad_start: { type: string }
+        category_name: { type: string }
+        broad_cate_no: { type: string }
+    StatsRow:
+      type: object
+      properties:
+        soop_id: { type: string }
+        nickname: { type: string }
+        balloons: { type: integer }
+        broadcast_seconds: { type: integer }
+        cumulative_viewers: { type: integer }
+        sponsor_wins: { type: integer }
+        sponsor_losses: { type: integer }
+        updated_at: { type: string, format: date-time }
+    CalendarEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        start_date: { type: string, format: date }
+        end_date: { type: [string, 'null'], format: date }
+        event_time: { type: [string, 'null'] }
+        person: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        detail: { type: [string, 'null'] }
+        color: { type: [string, 'null'] }
+    HistoryEntry:
+      type: object
+      properties:
+        id: { type: string }
+        entry_kind: { type: string, enum: [manual, override] }
+        event_date: { type: [string, 'null'], format: date }
+        event_type: { type: [string, 'null'] }
+        title: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        members: { type: array, items: { type: string } }
+        youtube_url: { type: [string, 'null'] }
+        image_path: { type: [string, 'null'] }
+        sort_order: { type: [integer, 'null'] }
+        hidden: { type: boolean }
+    MemberPost:
+      type: object
+      properties:
+        soop_id: { type: string }
+        total_pages: { type: integer }
+        post: { type: object, description: "titleNo, titleName, regDate, userId, userNick, content{textContent, content}, display{bbsName}, count{likeCnt, readCnt}, photos[{url}]" }
+    TierMember:
+      type: object
+      properties:
+        nickname: { type: string }
+        soop_id: { type: string }
+        race: { type: [string, 'null'] }
+        tier: { type: [string, 'null'] }
+        affiliation: { type: [string, 'null'] }
+        modified_at: { type: [string, 'null'] }
+    VideoChannel: { type: object, properties: { channel_url: { type: string }, title: { type: string }, display_name: { type: [string, 'null'] }, thumb: { type: [string, 'null'] } } }
+    Video:
+      type: object
+      properties:
+        id: { type: string }
+        channel_url: { type: string }
+        title: { type: string }
+        published: { type: string, format: date-time }
+        thumb: { type: [string, 'null'] }
+        views: { type: integer }
+        short: { type: boolean }
+    VideoPick:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        note: { type: [string, 'null'] }
+        group_name: { type: [string, 'null'] }
+        group_en: { type: [string, 'null'] }
+        author: { type: [string, 'null'] }
+        thumb: { type: [string, 'null'] }
+        short: { type: boolean }
+    Tool: { type: object, properties: { id: { type: integer }, category: { type: string, enum: [extTools, extSites] }, name: { type: string }, url: { type: string }, favicon: { type: [string, 'null'] } } }
+    EloPlayer:
+      type: object
+      properties:
+        elo_id: { type: integer }
+        elo_name: { type: string }
+        race: { type: [string, 'null'] }
+        nickname: { type: [string, 'null'], description: "명단 선수가 아니면 null(상대 이름만 elo_name으로)" }
+        soop_id: { type: [string, 'null'] }
+        tier: { type: [string, 'null'] }
+        affiliation: { type: [string, 'null'] }
+        total_games: { type: [integer, 'null'] }
+        tier_rank: { type: [integer, 'null'], description: "ranked=1일 때만" }
+        tier_count: { type: [integer, 'null'], description: "ranked=1일 때만" }
+        as_of: { type: [string, 'null'], description: "ranked=1일 때만" }
+    EloMatch:
+      type: object
+      properties:
+        match_date: { type: string, format: date }
+        opponent_elo_id: { type: integer }
+        won: { type: boolean }
+        map_id: { type: [integer, 'null'] }
+        map_name: { type: [string, 'null'] }
+        category_name: { type: [string, 'null'] }
+    EloRanking:
+      type: object
+      properties:
+        elo_id: { type: integer }
+        raw_rating: { type: [number, 'null'] }
+        rating: { type: [number, 'null'] }
+        tier: { type: [string, 'null'] }
+        tier_rank: { type: [integer, 'null'] }
+        as_of: { type: [string, 'null'] }
+    EloRankingMeta:
+      type: object
+      properties:
+        as_of: { type: string }
+        tier_counts: { type: object }
+        tier_levels: { type: object }
+        race_matchup: { type: object }

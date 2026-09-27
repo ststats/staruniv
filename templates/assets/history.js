@@ -290,20 +290,16 @@ function histOpenMedia(id) {
 }
 
 // 숨긴 항목은 공개 조회(anon)에 나오지 않는다 - 어드민은 로그인한 클라이언트를 넘겨 숨긴 항목까지 받는다.
-async function histLoadData(client = (typeof publicSupabaseClient === 'function') ? publicSupabaseClient() : null) {
+async function histLoadData(client) {
     try {
-        if (!client) throw new Error('Supabase browser client is not configured');
-        const { data, error } = await client.from('history_entries')
-                .select('id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden')
-                .order('event_date', { ascending: false, nullsFirst: false });
-            if (error) throw error;
-            const out = { items: [], overrides: {} };
-            (data || []).forEach(r => {
-                const value = { title:r.title||'', desc:r.description||'', members:Array.isArray(r.members)?r.members:[], youtube:r.youtube_url||'', image:r.image_path||'', hidden:!!r.hidden };
-                if (Number.isFinite(r.sort_order)) value.ord = r.sort_order;
-                if (r.entry_kind === 'override') out.overrides[r.id] = value;
-                else out.items.push({ id:r.id, date:String(r.event_date||''), type:r.event_type||'event', ...value });
-            });
+        const data = await Api.history(client);
+        const out = { items: [], overrides: {} };
+        (data || []).forEach(r => {
+            const value = { title:r.title||'', desc:r.description||'', members:Array.isArray(r.members)?r.members:[], youtube:r.youtube_url||'', image:r.image_path||'', hidden:!!r.hidden };
+            if (Number.isFinite(r.sort_order)) value.ord = r.sort_order;
+            if (r.entry_kind === 'override') out.overrides[r.id] = value;
+            else out.items.push({ id:r.id, date:String(r.event_date||''), type:r.event_type||'event', ...value });
+        });
         return out;
     } catch (e) {
         console.error('Supabase 연혁 조회 실패:', e);
