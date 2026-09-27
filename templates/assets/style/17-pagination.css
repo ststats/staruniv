@@ -34,7 +34,8 @@
        flex-shrink로 조금씩 줄어들게 한다(예전엔 flex:1이라 남는 폭만큼 계속 늘어났다). */
     .analysis-formline-badges .match-badge { flex:0 1 20px; width:20px; height:18px; font-size:9px; }
 
-    .h2h-map-rec,.h2h-rival-rec { white-space:nowrap; font-size:10px; }
+    .h2h-map-rec { white-space:nowrap; font-size:10px; }
+    .h2h-rival-rec { white-space:nowrap; font-size:11px; }
     .h2h-suggest-item { gap:4px; }
     .h2h-suggest-alt,.h2h-suggest-count { display:none; }
     .h2h-suggest-item .tag-badge { font-size:10px; padding:2px 4px; }

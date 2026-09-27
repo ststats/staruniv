@@ -1446,6 +1446,16 @@ function applyNavConfig(data) {
 // 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
 // opts.logos: true인 페이지만 대학 로고 목록(university_logos)을 받는다 - 로고를 그리는 곳은 전적·티어표뿐이다.
 // 다른 페이지에서 teamLogoHtml/teamLogoSrc를 쓰기 시작하면 그 페이지에 logos: true를 준다(안 주면 이름 첫 글자 배지).
+// 구역 제목(.section-title의 글자)은 div·span이라 화면 읽기 프로그램이 제목으로 모른다. 제목(2단계)으로 알려
+// 구역 사이를 건너뛸 수 있게 한다. 페이지 초기화가 그려 넣은 것까지 잡도록 초기화 뒤에 한 번 부른다.
+function markSectionHeadings(root = document) {
+    root.querySelectorAll('.section-title .section-title-label:not([role])').forEach(el => {
+        if (el.closest('h1, h2, h3, h4, h5, h6')) return;
+        el.setAttribute('role', 'heading');
+        el.setAttribute('aria-level', '2');
+    });
+}
+
 function bootPage(init, opts) {
     const siteDataParts = opts && opts.siteData === false
         ? [] : ((opts && Array.isArray(opts.siteData)) ? opts.siteData : ['shell']);
@@ -1461,6 +1471,7 @@ function bootPage(init, opts) {
             siteDataParts.length ? loadSiteData(siteDataParts) : null,
         ]);
         safeInit('페이지', init);
+        markSectionHeadings();
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
