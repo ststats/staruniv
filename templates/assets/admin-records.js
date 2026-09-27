@@ -25,22 +25,23 @@
     const names=[...new Set(S.members.map(m=>m.nickname||m.name).filter(Boolean))];
     return `<datalist id="ar_member_names">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   }
-  // 세트 순서는 표에 적힌 차례 그대로다(따로 적지 않는다)
+  // 세트 순서는 적힌 차례 그대로다(따로 적지 않는다).
+  // 편집 서랍(폭 540px)에 12칸 표를 넣으면 칸이 안 보일 만큼 좁아져서, 세트 하나를 카드 하나로 세운다.
   function roundRow(r={},idx=0){
-    return `<tr class="admin-round-row" data-round-index="${idx}">
-      <td class="admin-round-no">${idx+1}</td>
-      <td><input class="admin-input" data-k="set_name" value="${esc(r.set_name||'')}"></td>
-      <td><input class="admin-input" data-k="round_name" value="${esc(r.round_name||'')}"></td>
-      <td><input class="admin-input" data-k="our_player" list="ar_member_names" placeholder="멤버 또는 용병" value="${esc(r.our_player||'')}"></td>
-      <td><input class="admin-input" data-k="our_race" value="${esc(r.our_race||'')}"></td>
-      <td><input class="admin-input" data-k="our_tier" value="${esc(r.our_tier||'')}"></td>
-      <td><input class="admin-input" data-k="opponent_player" value="${esc(r.opponent_player||'')}"></td>
-      <td><input class="admin-input" data-k="opponent_race" value="${esc(r.opponent_race||'')}"></td>
-      <td><input class="admin-input" data-k="opponent_tier" value="${esc(r.opponent_tier||'')}"></td>
-      <td><input class="admin-input" data-k="map_name" value="${esc(r.map_name||'')}"></td>
-      <td><select class="admin-input" data-k="result"><option value=""></option><option${r.result==='승'?' selected':''}>승</option><option${r.result==='패'?' selected':''}>패</option></select></td>
-      <td><button type="button" class="admin-btn danger admin-round-delete">삭제</button></td>
-    </tr>`;
+    const f=(label,k,attrs='',cls='')=>`<label class="admin-round-field${cls}"><span>${label}</span><input class="admin-input" data-k="${k}" value="${esc(r[k]||'')}"${attrs}></label>`;
+    return `<div class="admin-round-row admin-round-card" data-round-index="${idx}">
+      <div class="admin-round-head">
+        <b><span class="admin-round-no">${idx+1}</span>세트</b>
+        <select class="admin-input admin-round-result" data-k="result" aria-label="결과"><option value="">결과</option><option${r.result==='승'?' selected':''}>승</option><option${r.result==='패'?' selected':''}>패</option></select>
+        <button type="button" class="admin-btn danger admin-round-delete">삭제</button>
+      </div>
+      <div class="admin-round-grid">
+        ${f('세트명','set_name')}${f('라운드명','round_name','',' is-wide')}
+        ${f('캄몬 선수','our_player',' list="ar_member_names" placeholder="멤버 또는 용병"')}${f('종족','our_race')}${f('티어','our_tier')}
+        ${f('상대 선수','opponent_player')}${f('종족','opponent_race')}${f('티어','opponent_tier')}
+        ${f('맵','map_name','',' is-full')}
+      </div>
+    </div>`;
   }
   // 경기번호: 새 매치(복제 포함)는 다음 번호를 미리 채운다(비우면 저장할 때 서버가 마지막 번호 + 1).
   // 결과 · 세트 스코어: 세트 결과(승/패)가 하나라도 있으면 그것으로 자동 계산한다(세트가 없는 옛 기록만 직접 적는다).
@@ -57,7 +58,7 @@
         ${C().field('세트 스코어',C().input('ar_set',match.set_result||''),'세트 결과로 자동 계산')}
       </div>
       <div class="admin-section-head"><b>세트</b><button type="button" class="admin-btn" id="ar_add_round">+ 세트 추가</button></div>
-      <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th>순서</th><th>세트명</th><th>라운드명</th><th>캄몬 선수</th><th>캄몬 종족</th><th>캄몬 티어</th><th>상대 선수</th><th>상대 종족</th><th>상대 티어</th><th>맵</th><th>결과</th><th>관리</th></tr></thead><tbody id="ar_rounds">${rounds.map(roundRow).join('')}</tbody></table></div>${memberDatalist()}`;
+      <div class="admin-round-list" id="ar_rounds">${rounds.map(roundRow).join('')}</div>${memberDatalist()}`;
   }
   function collectRounds(){
     return [...document.querySelectorAll('#ar_rounds .admin-round-row')].map((tr,i)=>{
@@ -66,7 +67,7 @@
   }
   // 세트 줄을 더하거나 지우거나 결과를 고를 때마다: 순서 번호를 다시 매기고, 결과 · 세트 스코어를 세트 결과로 채운다
   function refreshRounds(){
-    document.querySelectorAll('#ar_rounds .admin-round-no').forEach((td,i)=>{td.textContent=i+1;});
+    document.querySelectorAll('#ar_rounds .admin-round-no').forEach((el,i)=>{el.textContent=i+1;});
     const check=validateScore({},collectRounds());
     const set=document.getElementById('ar_set'), res=document.getElementById('ar_result');
     if(!set||!res)return;
@@ -107,7 +108,7 @@
       const tb=document.getElementById('ar_rounds');tb.insertAdjacentHTML('beforeend',roundRow({},tb.children.length));refreshRounds();C().markDirty(true);
     };
     const tbody=document.getElementById('ar_rounds');
-    tbody.addEventListener('click',ev=>{const b=ev.target.closest('.admin-round-delete');if(!b)return;b.closest('tr').remove();refreshRounds();C().markDirty(true);});
+    tbody.addEventListener('click',ev=>{const b=ev.target.closest('.admin-round-delete');if(!b)return;b.closest('.admin-round-row').remove();refreshRounds();C().markDirty(true);});
     tbody.addEventListener('change',ev=>{if(ev.target.matches('[data-k="result"]'))refreshRounds();});
     refreshRounds();
   }

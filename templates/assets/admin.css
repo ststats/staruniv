@@ -757,6 +757,9 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
 }
 .admin-drawer[aria-hidden="false"] .admin-drawer-sheet { transform: none; box-shadow: -12px 0 40px rgba(5, 10, 20, .18); }
 body.admin-drawer-open { overflow: hidden; }
+/* 잠근 스크롤바만큼 여백을 채워 뒤 화면·맨 위 편집 바가 옆으로 밀리지 않게(admin-core.js openDrawer가 폭을 잰다) */
+body.admin-drawer-open { padding-right: var(--drawer-lock-gap, 0px); }
+body.admin-drawer-open .admin-inline-bar { right: var(--drawer-lock-gap, 0px); }
 
 .admin-drawer-head {
     display: flex;
@@ -1029,8 +1032,22 @@ body.admin-actions-on:not(.admin-edit-disabled) {
         margin: -34px 0 0;       /* 바로가기(40px)와 가운데를 맞춘다 */
     }
 }
-/* 전적 관리 세트 표의 순서 칸(표에 적힌 차례, 자동) */
-.admin-table td.admin-round-no { width: 40px; text-align: center; color: var(--color-text-muted); font-weight: 700; }
+/* 전적 관리 세트: 편집 서랍 폭에 맞춰 세트 하나를 카드 하나로. 순서 번호는 적힌 차례(자동).
+   격자는 선수 칸을 넓게(2:1:1) - 세트명·라운드명 줄과 맵 줄도 같은 격자를 쓴다. */
+.admin-round-list { display: flex; flex-direction: column; gap: var(--space-compact-gap); }
+.admin-round-list:empty { display: none; }
+.admin-round-card { padding: 12px; border: 1px solid var(--color-border); background: var(--color-card); }
+.admin-round-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.admin-round-head > b { flex: 1; min-width: 0; color: var(--color-text-strong); font-size: 13px; font-weight: 800; }
+.admin-round-no { margin-right: 1px; }
+.admin-round-head .admin-round-result { flex: none; width: 88px; height: 36px; }
+.admin-round-head .admin-round-delete { flex: none; }
+.admin-round-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.admin-round-field { display: flex; flex-direction: column; min-width: 0; margin: 0; }
+.admin-round-field.is-wide { grid-column: span 2; }
+.admin-round-field.is-full { grid-column: 1 / -1; }
+.admin-round-field > span { margin-bottom: 4px; color: var(--color-text-sub); font-size: 11px; font-weight: 700; line-height: 14px; }
+.admin-round-field > .admin-input { height: 36px; padding: 0 10px; }
 .admin-tool-btn {
     display: inline-flex;
     align-items: center;

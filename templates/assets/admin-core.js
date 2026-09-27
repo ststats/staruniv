@@ -77,11 +77,22 @@
     const opts = state.drawer;
     drawer.setAttribute('aria-hidden','true');
     document.body.classList.remove('admin-drawer-open');
+    document.body.style.removeProperty('--drawer-lock-gap');
     state.drawer = null;
     markDirty(false);
     if (!saved && typeof opts?.onCancel === 'function') opts.onCancel();
+    const back = state.drawerReturnFocus;
+    state.drawerReturnFocus = null;
+    if (back?.isConnected) back.focus({ preventScroll: true });
     return true;
   }
+  // 서랍이 열려 있으면 Esc로 닫는다(저장 안 한 변경이 있으면 closeDrawer가 먼저 묻는다).
+  // 한글 조합 중 Esc는 조합 취소라 건드리지 않는다.
+  document.addEventListener('keydown', ev => {
+    if (ev.key !== 'Escape' || ev.isComposing || !state.drawer || state.saving) return;
+    ev.preventDefault();
+    closeDrawer();
+  });
 
   function openDrawer(opts) {
     const drawer = $('adminDrawer');
@@ -131,6 +142,13 @@
       }
     };
     form.oninput = () => markDirty(true);
+    // 스크롤을 잠그면 스크롤바가 사라지며 뒤 화면이 그만큼 옆으로 밀린다 - 공개 페이지 모달(core.js showModal)처럼 여백으로 메운다
+    if (!document.body.classList.contains('admin-drawer-open')) {
+      const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbar > 0) document.body.style.setProperty('--drawer-lock-gap', `${scrollbar}px`);
+      const active = document.activeElement;
+      state.drawerReturnFocus = active && active !== document.body && !drawer.contains(active) ? active : null;
+    }
     drawer.setAttribute('aria-hidden','false');
     document.body.classList.add('admin-drawer-open');
     markDirty(false);
