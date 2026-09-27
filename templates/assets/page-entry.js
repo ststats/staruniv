@@ -27,7 +27,6 @@
 
 // 소속이 이 값이면 지금 쉬는 사람이라 명단에 안 올린다.
 const ENTRY_DORMANT = '휴면';
-const ENTRY_PAGE_SIZE = 1000;
 const ENTRY_REQUEST_TIMEOUT_MS = 12000;
 
 function entryNormalizeRace(value) {
@@ -48,8 +47,8 @@ function entryWithTimeout(promise, label) {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-// Api의 여러 쪽 조회에 넘기는 옵션: 쪽마다 시간 제한(label은 오류 문구)
-const entryPaging = label => ({ pageSize: ENTRY_PAGE_SIZE, wrap: q => entryWithTimeout(q, label) });
+// Api 조회에 넘기는 옵션: 요청에 시간 제한(label은 오류 문구)
+const entryPaging = label => ({ wrap: q => entryWithTimeout(q, label) });
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
 const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
 const ENTRY_POSTER_W = 1200;      // 저장되는 포스터 가로(px)

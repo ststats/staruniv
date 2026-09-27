@@ -162,8 +162,7 @@ function h2hCategoryIndex(name) {
 }
 
 async function h2hLoadPlayerFromSupabase(pid) {
-    // 쪽을 차례로 받는다(한 선수 경기는 대개 1천 줄 안이라 여러 쪽을 미리 부르지 않는다)
-    const data = await Api.eloPlayerMatches(pid, { parallel: 1, wrap: q => h2hWithTimeout(q, '선수 전적') });
+    const data = await Api.eloPlayerMatches(pid, { wrap: q => h2hWithTimeout(q, '선수 전적') });
     return data.map(r => {
         if (r.map_id != null && r.map_name) H2hState.index.maps[String(r.map_id)] = String(r.map_name);
         return [String(r.match_date || ''), Number(r.opponent_elo_id), r.won ? 1 : 0, r.map_id == null ? '' : Number(r.map_id), h2hCategoryIndex(r.category_name)];
