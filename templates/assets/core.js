@@ -974,15 +974,15 @@ function initEdgeFades(root) {
     (root || document).querySelectorAll('.tab-scroll').forEach(attachEdgeFade);
 }
 
-// 히어로 서브탭이 4개 이상이면 좁은 화면(920px 이하)에서 옆으로 밀어 숨기지 않고 줄을 나눠 전부 보인다:
-// 4개는 2칸씩(2×2), 5개 이상은 3칸씩. 칸 수만 data-tab-cols로 알리고 모양은 CSS(03-layout.css)가 정한다.
-// 보이는 탭만 센다 - 메뉴 설정으로 숨기거나 다시 보이면(어드민 표시 포함) 다시 센다.
+// 히어로 서브탭이 4~5개면 좁은 화면(920px 이하)에서 한 줄에 같은 폭으로 나눠 담는다(글씨·여백을 조금 줄여서) -
+// 줄을 늘리면 페이지마다 히어로 높이가 달라지고, 옆으로 밀면 뒤 탭이 가려진다. 6개 이상이면 옆으로 민다.
+// 보이는 탭만 센다 - 메뉴 설정으로 숨기거나 다시 보이면(어드민 표시 포함) 다시 센다. 모양은 CSS(03-layout.css)가 정한다.
 function syncSubTabColumns() {
     document.querySelectorAll('.page-header > .sub-tabs').forEach(el => {
         const n = [...el.children].filter(c => getComputedStyle(c).display !== 'none').length;
-        const cols = n >= 5 ? '3' : n === 4 ? '2' : '';
-        if (cols && el.dataset.tabCols !== cols) el.dataset.tabCols = cols;
-        else if (!cols && el.dataset.tabCols) delete el.dataset.tabCols;
+        const dense = n >= 4 && n <= 5;
+        if (dense && el.dataset.tabDense === undefined) el.dataset.tabDense = '';
+        else if (!dense && el.dataset.tabDense !== undefined) delete el.dataset.tabDense;
     });
 }
 function watchSubTabColumns() {

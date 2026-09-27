@@ -292,6 +292,20 @@ html[data-theme="dark"] .admin-btn.primary { background: var(--admin-ink); color
     gap: 0 var(--space-compact-gap);
 }
 .admin-form-grid > .admin-field { min-width: 0; }
+/* 편집 서랍은 두 칸 격자: 짧은 입력(날짜·시간·숫자·선택·체크·파일)은 반 칸이라 둘씩 나란히 서고,
+   제목·설명·주소처럼 긴 입력과 목록·안내문은 한 줄 전체. 서랍 안 .admin-form-grid는 이 격자에 그대로 녹아든다. */
+#adminDrawerBody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-compact-gap);
+    align-content: start;
+}
+#adminDrawerBody > * { grid-column: 1 / -1; min-width: 0; }
+#adminDrawerBody > .admin-form-grid { display: contents; }
+#adminDrawerBody > .admin-form-grid > .admin-field,
+#adminDrawerBody > .admin-field:has(> :is(select, input[type="date"], input[type="time"], input[type="number"],
+    input[type="color"], input[type="file"], .admin-check)) { grid-column: auto; }
+#adminDrawerBody .admin-field:has(> textarea) { grid-column: 1 / -1; }
 
 .admin-field {
     display: flex;
@@ -913,9 +927,9 @@ body.admin-drawer-open { overflow: hidden; }
 .page-header .admin-btn.primary,
 .page-header .admin-btn.primary:hover { background: #fff; color: var(--navy); }
 
-/* 히어로 편집(설명 · 서브탭): 히어로 맨 아래, 서브탭과 같은 줄 오른쪽(본문에 줄을 따로 차지하지 않는다).
-   [EDIT] [히어로 편집] - 탭과 같은 높이·같은 반투명 면이라 히어로의 일부처럼 보이고, EDIT 꼬리표로 관리 기능임을 알린다.
-   1100px 이하(탭이 넓어지는 폭)에서는 탭 아래 한 줄을 쓴다. */
+/* 히어로 편집(설명 · 서브탭): 줄을 따로 차지하지 않는다. PC는 서브탭과 같은 줄 오른쪽 끝(탭과 같은 높이·같은 반투명 면,
+   EDIT 꼬리표로 관리 기능임을 알린다). 탭이 한 줄을 다 쓰는 좁은 화면(920px 이하)에서는 히어로 오른쪽 위,
+   영문 머리글(SCHEDULE 등)과 같은 높이의 작은 버튼. */
 .admin-hero-tools {
     order: 4;
     display: flex;
@@ -942,17 +956,31 @@ body.admin-drawer-open { overflow: hidden; }
     line-height: 1;
 }
 .admin-hero-tools .admin-tool-btn { min-height: 40px; }
-@media (max-width: 1100px) {
+@media (max-width: 920px) {
     .admin-hero-tools,
     .page-header:has(> .sub-tabs) > .admin-hero-tools {
-        align-self: stretch;
-        justify-content: flex-start;
+        position: absolute;
+        top: 40px;               /* 히어로 위 여백(48px)에서 머리글 줄 가운데 */
+        right: 32px;
         max-width: none;
-        margin-top: 10px;
+        margin: 0;
     }
+    .admin-hero-tools-label { display: none; }
+    .admin-hero-tools .admin-tool-btn { min-height: 28px; padding: 0 10px; font-size: 12px; }
 }
 @media (max-width: 767.98px) {
-    .admin-hero-tools .admin-tool-btn { flex: 1 1 auto; justify-content: center; min-height: 38px; }
+    .admin-hero-tools,
+    .page-header:has(> .sub-tabs) > .admin-hero-tools { top: 26px; right: 24px; }   /* 모바일 히어로 위 여백 34px */
+}
+/* 한 줄에 좁게 담은 서브탭(4~5개)에서는 '숨김' 꼬리표를 작은 점으로 줄인다(글자가 가려지지 않게) */
+.page-header > .sub-tabs[data-tab-dense] > .sub-tab.admin-config-hidden::before {
+    content: "";
+    flex: none;
+    width: 5px;
+    height: 5px;
+    margin-left: 4px;
+    padding: 0;
+    border-radius: 50%;
 }
 /* 추가 · 관리 줄(멤버 추가 · 연혁 추가 · 새 매치 등): 히어로 바로 아래. 스크롤하면 상단바 밑에 붙어 따라온다.
    상단바와 같은 반투명 흰 면 + 아래 선이라 상단바에 이어진 둘째 줄처럼 보인다. 지금 서브탭에 해당하는 버튼만 나오고
@@ -1444,7 +1472,6 @@ body.admin-actions-on:not(.admin-edit-disabled) { --sidebar-top: calc(84px + 51p
 @media (max-width: 480px) {
     .admin-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-pick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
     .admin-inline-left strong { display: none; }
 }
 

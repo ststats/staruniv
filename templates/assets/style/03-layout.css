@@ -393,18 +393,22 @@
         flex: 1 0 auto;
         padding: 0 14px;
     }
-    /* 히어로 서브탭이 4개 이상이면 옆으로 밀지 않고 줄을 나눠 전부 보인다(4개 2×2, 5개 이상 3칸씩 -
-       칸 수는 core.js syncSubTabColumns가 data-tab-cols로 알린다) */
-    .page-header > .sub-tabs[data-tab-cols] {
-        display: grid;
-        grid-template-columns: repeat(var(--tab-cols), minmax(0, 1fr));
+    /* 히어로 서브탭 4~5개: 한 줄에 같은 폭으로(글씨·여백을 줄여) - 줄이 늘어 히어로 높이가 바뀌지 않게.
+       core.js syncSubTabColumns가 data-tab-dense를 붙인다. 6개 이상은 그대로 옆으로 민다. */
+    .page-header > .sub-tabs[data-tab-dense] {
+        gap: 4px;
         overflow: visible;
         -webkit-mask-image: none;
         mask-image: none;
     }
-    .page-header > .sub-tabs[data-tab-cols="2"] { --tab-cols: 2; }
-    .page-header > .sub-tabs[data-tab-cols="3"] { --tab-cols: 3; }
-    .page-header > .sub-tabs[data-tab-cols] > .sub-tab { min-width: 0; padding: 0 8px; }
+    .page-header > .sub-tabs[data-tab-dense] > .sub-tab {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        padding: 0 4px;
+        font-size: 12px;
+        letter-spacing: -0.03em;
+    }
 }
 /* PC에서 탭이 한 줄을 넘으면 옆으로 밀지 않고 다음 줄로 넘긴다 */
 @media (min-width: 921px) {
