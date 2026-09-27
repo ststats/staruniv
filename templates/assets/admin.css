@@ -913,9 +913,9 @@ body.admin-drawer-open { overflow: hidden; }
 .page-header .admin-btn.primary,
 .page-header .admin-btn.primary:hover { background: #fff; color: var(--navy); }
 
-/* 페이지 관리 버튼: 히어로 맨 아래, 서브탭과 같은 줄 오른쪽(본문에 줄을 따로 차지하지 않는다).
-   [EDIT] [버튼] [버튼] - 탭과 같은 높이·같은 반투명 면이라 히어로의 일부처럼 보이고, EDIT 꼬리표로 관리 기능임을 알린다.
-   1100px 이하(탭이 넓어지는 폭)에서는 탭 아래 한 줄을 쓰고, 버튼이 많으면 그 줄 안에서 줄바꿈된다. */
+/* 히어로 편집(설명 · 서브탭): 히어로 맨 아래, 서브탭과 같은 줄 오른쪽(본문에 줄을 따로 차지하지 않는다).
+   [EDIT] [히어로 편집] - 탭과 같은 높이·같은 반투명 면이라 히어로의 일부처럼 보이고, EDIT 꼬리표로 관리 기능임을 알린다.
+   1100px 이하(탭이 넓어지는 폭)에서는 탭 아래 한 줄을 쓴다. */
 .admin-hero-tools {
     order: 4;
     display: flex;
@@ -953,6 +953,54 @@ body.admin-drawer-open { overflow: hidden; }
 }
 @media (max-width: 767.98px) {
     .admin-hero-tools .admin-tool-btn { flex: 1 1 auto; justify-content: center; min-height: 38px; }
+}
+/* 추가 · 관리 줄(멤버 추가 · 연혁 추가 · 새 매치 등): 히어로 바로 아래. 스크롤하면 상단바 밑에 붙어 따라온다.
+   상단바와 같은 반투명 흰 면 + 아래 선이라 상단바에 이어진 둘째 줄처럼 보인다. 지금 서브탭에 해당하는 버튼만 나오고
+   (admin-core.js syncActionBars), 하나도 없으면 줄째로 숨는다. */
+.admin-action-bar {
+    position: sticky;
+    top: calc(var(--admin-bar-h) + 68px);
+    z-index: 90;
+    margin: calc(-30px - var(--space-page-top)) 0 calc(30px + var(--space-page-top));
+    background-color: var(--nav-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-border);
+}
+.admin-action-bar[hidden] { display: none; }
+.admin-action-bar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 8px 32px;
+}
+.admin-action-bar-label {
+    flex: none;
+    margin-right: 4px;
+    padding: 4px 6px;
+    background: var(--admin-ink);
+    color: var(--admin-on-ink);
+    clip-path: var(--notch-xs);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    line-height: 1;
+}
+.admin-action-bar .admin-tool-btn { min-height: 34px; background: var(--admin-ink); color: var(--admin-on-ink); }
+.admin-action-bar .admin-tool-btn:hover { background: var(--admin-ink); color: var(--admin-on-ink); opacity: .85; }
+.admin-action-bar .admin-tool-btn[hidden] { display: none; }
+/* 관리 줄이 보이면 상단바 밑에 붙는 선택 바(멤버·전적 사이드바)를 그 높이(51px)만큼 내린다 */
+body.admin-actions-on:not(.admin-edit-disabled) { --sidebar-top: calc(84px + 51px + var(--admin-bar-h)); }
+@media (min-width: 1200px) {
+    .admin-action-bar-inner { padding: 8px 40px; }
+}
+@media (max-width: 767.98px) {
+    .admin-action-bar { top: calc(var(--admin-bar-h) + 60px); }
+    .admin-action-bar-inner { padding: 8px 18px; }
+    .admin-action-bar .admin-tool-btn { flex: 1 1 auto; justify-content: center; }
 }
 /* 홈 캐러셀 '슬라이드 편집'은 바로가기 버튼 옆(같은 높이) */
 .home-hero-links .admin-home-edit { min-height: 40px; }
@@ -1027,7 +1075,7 @@ body.admin-drawer-open { overflow: hidden; }
 
 .admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
     .admin-nav-manage,
-    .admin-hero-tools, .hist-admin-bar) {
+    .admin-hero-tools, .admin-action-bar, .hist-admin-bar) {
     display: none !important;
 }
 

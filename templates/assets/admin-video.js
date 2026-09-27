@@ -132,8 +132,8 @@
       return `<button type="button" class="admin-card-action" data-admin-video-toggle="${C().esc(v.id)}">${row?.hidden?'표시':'숨김'}</button>`;
     };
     await refresh();
-    if(document.getElementById('video-channel-row'))C().addPageTool({id:'adminVideoChannels',label:'팬튜브 채널 관리',icon:'edit',onClick:openChannelList});
-    if(document.getElementById('view-video-pick'))C().addPageTool({id:'adminVideoPickAdd',label:'보자 영상 추가',icon:'plus',onClick:()=>openPick(null)});
+    if(document.getElementById('video-channel-row'))C().addPageTool({id:'adminVideoChannels',label:'팬튜브 채널 관리',icon:'edit',scope:'#view-video-fantube',onClick:openChannelList});
+    if(document.getElementById('view-video-pick'))C().addPageTool({id:'adminVideoPickAdd',label:'보자 영상 추가',icon:'plus',scope:'#view-video-pick',onClick:()=>openPick(null)});
     document.addEventListener('click',ev=>{
       const p=ev.target.closest('[data-admin-pick]');if(p){ev.preventDefault();ev.stopPropagation();openPick(picks.find(x=>String(x.id)===p.dataset.adminPick));return;}
       const v=ev.target.closest('[data-admin-video-toggle]');if(v){ev.preventDefault();ev.stopPropagation();const r=videos.find(x=>String(x.id)===v.dataset.adminVideoToggle);toggleHidden(r.id,!r.hidden).catch(e=>C().toast(C().errorText(e),'error'));}

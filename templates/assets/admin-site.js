@@ -105,25 +105,9 @@
     list?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row)row.classList.toggle('is-off',!ev.target.checked);});
   }
 
-  async function openSubtabManager(){
-    const page=document.body.dataset.adminPage, ids=SUBTAB_IDS[page]; if(!ids)return;
-    const cfg=configDefaults(await C().loadSiteConfig()), sub=cfg.subtabs[page]||{hidden:[],default:ids[0]};
-    C().openDrawer({
-      eyebrow:'SUBTAB',title:'서브탭 편집',
-      html:`<p class="admin-help">이 페이지 서브탭의 표시 여부와, 처음 열릴 때 보여 줄 기본 탭을 정합니다. 기본 탭은 숨길 수 없습니다</p>
-        <div class="admin-order-list" id="as_subtabs">${ids.map((key,i)=>orderRow(i,subtabLabel(page,key),`data-sub="${C().esc(key)}"`,!(sub.hidden||[]).includes(key),
-          `<label class="admin-default-pick"><input type="radio" name="sub_default" value="${C().esc(key)}"${String(sub.default||ids[0])===key?' checked':''}><span>기본</span></label>`)).join('')}</div>`,
-      onSubmit:async()=>{
-        sub.hidden=ids.filter(key=>!document.querySelector(`[data-sub="${CSS.escape(key)}"] [data-visible]`)?.checked);
-        sub.default=document.querySelector('input[name="sub_default"]:checked')?.value||ids[0];
-        if(sub.hidden.includes(sub.default))throw new Error('기본 서브탭은 표시 상태여야 합니다');
-        cfg.subtabs[page]=sub;await save(cfg);
-      }
-    });
-    document.getElementById('as_subtabs')?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row&&ev.target.matches('[data-visible]'))row.classList.toggle('is-off',!ev.target.checked);});
-  }
-
-  // 방송통계 지표 탭(별풍선 · 방송시간 · 누적시청자 · 스폰판수 · 스폰승률) 표시. 다른 페이지 서브탭과 달리
+  // 히어로 편집: 페이지 설명(heroDescriptions[페이지])과 서브탭 표시·기본 탭을 한 서랍에서 고친다(홈은 슬라이드 편집).
+  // 설명을 비우면 기본 설명으로 돌아간다. 설명은 입력하는 대로 히어로에 미리 보인다.
+  // 방송통계 지표 탭(별풍선 · 방송시간 · 누적시청자 · 스폰판수 · 스폰승률)은 다른 서브탭과 달리
   // site_config.nav.statsTabs(숨긴 지표 목록)에 저장하고, 처음 열리는 탭은 보이는 탭 중 첫 번째다.
   const statsTabRows=()=>[...document.querySelectorAll('#synergy-metric-filter .sub-tab[data-metric]')]
     .map(el=>({key:el.dataset.metric,label:el.textContent.trim()}));
@@ -135,19 +119,59 @@
       el.classList.toggle('admin-config-hidden',hidden.has(el.dataset.metric));
     });
   }
-  async function openStatsTabManager(){
-    const cfg=configDefaults(await C().loadSiteConfig()), rows=statsTabRows(), hidden=new Set(cfg.statsTabs);
+  const heroSubtitle=()=>document.querySelector('.page-section.active > .page-header .page-header-subtitle');
+
+  function subtabSectionHtml(page,cfg){
+    const esc=C().esc;
+    if(page==='stats'&&document.getElementById('synergy-metric-filter')){
+      const hidden=new Set(cfg.statsTabs);
+      return `<div class="admin-field"><span>서브탭</span><p class="admin-help">숨긴 탭은 방문자에게 보이지 않고 관리자 화면에서만 흐리게 보입니다. 처음 열리는 탭은 보이는 탭 중 첫 번째입니다</p>
+        <div class="admin-order-list" id="ah_subtabs">${statsTabRows().map((r,i)=>orderRow(i,r.label,`data-stats-tab="${esc(r.key)}"`,!hidden.has(r.key))).join('')}</div></div>`;
+    }
+    const ids=SUBTAB_IDS[page];
+    if(!ids||!document.querySelector('.sub-tabs'))return '';
+    const sub=cfg.subtabs[page]||{hidden:[],default:ids[0]};
+    return `<div class="admin-field"><span>서브탭</span><p class="admin-help">표시 여부와 처음 열릴 때 보여 줄 기본 탭을 정합니다. 기본 탭은 숨길 수 없습니다</p>
+      <div class="admin-order-list" id="ah_subtabs">${ids.map((key,i)=>orderRow(i,subtabLabel(page,key),`data-sub="${esc(key)}"`,!(sub.hidden||[]).includes(key),
+        `<label class="admin-default-pick"><input type="radio" name="sub_default" value="${esc(key)}"${String(sub.default||ids[0])===key?' checked':''}><span>기본</span></label>`)).join('')}</div></div>`;
+  }
+
+  // 서랍의 서브탭 선택을 cfg에 옮긴다(잘못된 조합이면 저장하지 않고 알린다)
+  function readSubtabs(page,cfg){
+    if(!document.getElementById('ah_subtabs'))return;
+    if(page==='stats'){
+      const rows=statsTabRows();
+      const next=rows.map(r=>r.key).filter(key=>!document.querySelector(`[data-stats-tab="${CSS.escape(key)}"] [data-visible]`)?.checked);
+      if(next.length>=rows.length)throw new Error('탭을 하나 이상 보여야 합니다');
+      cfg.statsTabs=next;
+      return;
+    }
+    const ids=SUBTAB_IDS[page], sub=cfg.subtabs[page]||{hidden:[],default:ids[0]};
+    sub.hidden=ids.filter(key=>!document.querySelector(`[data-sub="${CSS.escape(key)}"] [data-visible]`)?.checked);
+    sub.default=document.querySelector('input[name="sub_default"]:checked')?.value||ids[0];
+    if(sub.hidden.includes(sub.default))throw new Error('기본 서브탭은 표시 상태여야 합니다');
+    cfg.subtabs[page]=sub;
+  }
+
+  async function openHeroEditor(){
+    const page=document.body.dataset.adminPage;
+    const cfg=configDefaults(await C().loadSiteConfig());
+    const subtitle=heroSubtitle();
+    const original=subtitle?.textContent||'';
     C().openDrawer({
-      eyebrow:'SUBTAB',title:'서브탭 편집',
-      html:`<p class="admin-help">방송통계 지표 탭의 표시 여부를 정합니다. 숨긴 탭은 방문자에게 보이지 않고 관리자 화면에서만 흐리게 보입니다. 처음 열리는 탭은 보이는 탭 중 첫 번째입니다</p>
-        <div class="admin-order-list" id="as_stats_tabs">${rows.map((r,i)=>orderRow(i,r.label,`data-stats-tab="${C().esc(r.key)}"`,!hidden.has(r.key))).join('')}</div>`,
+      eyebrow:'HERO',title:'히어로 편집',
+      html:`${C().field('설명',C().textarea('ah_desc',cfg.heroDescriptions[page]||original,'rows="3"'),'비우면 기본 설명을 씁니다')}
+        ${subtabSectionHtml(page,cfg)}`,
+      onCancel:()=>{if(subtitle)subtitle.textContent=original;},
       onSubmit:async()=>{
-        const next=rows.map(r=>r.key).filter(key=>!document.querySelector(`[data-stats-tab="${CSS.escape(key)}"] [data-visible]`)?.checked);
-        if(next.length>=rows.length)throw new Error('탭을 하나 이상 보여야 합니다');
-        cfg.statsTabs=next;await save(cfg,'방송통계 탭 표시를 저장했습니다');
+        readSubtabs(page,cfg);
+        const desc=C().value('ah_desc').trim();
+        if(desc)cfg.heroDescriptions[page]=desc;else delete cfg.heroDescriptions[page];
+        await save(cfg,'히어로를 저장했습니다');
       }
     });
-    document.getElementById('as_stats_tabs')?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row&&ev.target.matches('[data-visible]'))row.classList.toggle('is-off',!ev.target.checked);});
+    document.getElementById('ah_desc')?.addEventListener('input',()=>{if(subtitle)subtitle.textContent=C().value('ah_desc')||original;});
+    document.getElementById('ah_subtabs')?.addEventListener('change',ev=>{const row=ev.target.closest('.admin-order-row');if(row&&ev.target.matches('[data-visible]'))row.classList.toggle('is-off',!ev.target.checked);});
   }
 
   async function openHomeSlide(index){
@@ -249,13 +273,12 @@
       const b=document.createElement('button');b.id='adminNavManage';b.type='button';b.className='admin-nav-manage';b.textContent='메뉴 편집';b.dataset.icon='edit';b.onclick=openNavManager;
       menu.after(b);
     }
-    // 서브탭 편집은 페이지 관리 상자(본문 맨 위 네이비 상자)에 둔다. 히어로의 탭 줄 끝에 붙이면
-    // 좁은 화면에서 가로 스크롤에 밀려 화면 밖으로 나간다.
-    if(document.querySelector('.sub-tabs')&&SUBTAB_IDS[document.body.dataset.adminPage]){
-      C().addPageTool({id:'adminSubtabManage',label:'서브탭 편집',icon:'edit',onClick:openSubtabManager});
+    // 히어로 편집(설명 · 서브탭)은 각 페이지 히어로 안에 하나. 홈은 슬라이드마다 '슬라이드 편집'이 따로 있다.
+    const page=document.body.dataset.adminPage;
+    if(page&&page!=='home'&&NAV_LABELS[page]){
+      C().addHeroTool({id:'adminHeroEdit',label:'히어로 편집',icon:'edit',onClick:openHeroEditor});
     }
-    if(document.body.dataset.adminPage==='stats'&&document.getElementById('synergy-metric-filter')){
-      C().addPageTool({id:'adminSubtabManage',label:'서브탭 편집',icon:'edit',onClick:openStatsTabManager});
+    if(page==='stats'&&document.getElementById('synergy-metric-filter')){
       markStatsTabs(configDefaults(await C().loadSiteConfig()));
     }
   }

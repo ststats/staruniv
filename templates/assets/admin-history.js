@@ -28,8 +28,8 @@
     histRenderTypeBar(merged);
     window.histRedraw=render;
     root.innerHTML=histTimelineHtml(histFilterItems(merged),{members:SiteData.members,avatarUrl:getProfileImgUrl,admin:true});
-    // 연혁 추가는 페이지 관리 상자(서브탭 편집과 같은 상자)에 한 번만 붙인다
-    C().addPageTool({id:'adminHistoryAdd',label:'연혁 추가',icon:'plus',onClick:()=>open(null)});
+    // 연혁 추가는 히어로 아래 관리 줄에 한 번만 붙인다(연혁 탭을 볼 때만 보인다)
+    C().addPageTool({id:'adminHistoryAdd',label:'연혁 추가',icon:'plus',scope:'#view-history',onClick:()=>open(null)});
   }
 
   function participantRows(selected,locked) {

@@ -300,29 +300,75 @@
     }
   }
 
-  // 페이지 관리 버튼(서브탭 편집 · 멤버 추가 · 채널 관리 · 연혁 추가 등)은 그 페이지 히어로(.page-header) 맨 아래,
-  // 서브탭과 같은 줄 오른쪽에 모은다(좁은 화면에서는 탭 아래 한 줄). 본문에 줄을 따로 차지하지 않는다.
-  // 전용 관리 화면(전적 · 티어표 · 팀)은 히어로를 직접 그리므로 같은 마크업(pageToolsHtml)을 탭 바로 뒤에 넣는다.
-  function toolButtonHtml({id,label,icon='plus'}){
-    return `<button type="button" class="admin-tool-btn" id="${esc(id)}" data-icon="${esc(icon)}">${esc(label)}</button>`;
+  // 관리 버튼은 두 곳에 나눈다.
+  // - 히어로 편집(설명 · 서브탭): 그 페이지 히어로(.page-header) 맨 아래, 서브탭과 같은 줄 오른쪽(좁으면 탭 아래 한 줄).
+  // - 추가 · 관리(멤버 추가 · 연혁 추가 · 새 매치 등): 히어로 바로 아래 줄. 스크롤해도 상단바 밑에 붙어 있다.
+  //   scope(그 버튼이 속한 서브탭 화면)가 보일 때만 나온다 - 일정 탭에서는 '연혁 추가'가 보이지 않는다.
+  // 전용 관리 화면(전적 · 티어표 · 팀)은 히어로를 직접 그리므로 pageToolsHtml을 히어로 바로 뒤에 넣는다.
+  function toolButtonHtml({id,label,icon='plus',scope=''}){
+    return `<button type="button" class="admin-tool-btn" id="${esc(id)}" data-icon="${esc(icon)}"${scope?` data-scope="${esc(scope)}"`:''}>${esc(label)}</button>`;
   }
   function pageToolsHtml(items){
-    return `<div class="admin-hero-tools"><span class="admin-hero-tools-label">EDIT</span>${items.map(toolButtonHtml).join('')}</div>`;
+    return `<div class="admin-action-bar"><div class="admin-action-bar-inner"><span class="admin-action-bar-label">EDIT</span>${items.map(toolButtonHtml).join('')}</div></div>`;
   }
-  function addPageTool({id,label,icon='plus',onClick}){
-    const existing=document.getElementById(id);
-    if(existing)return existing;
-    let box=document.getElementById('adminPageTools');
+  const activeHeader=()=>document.querySelector('.page-section.active > .page-header')||document.querySelector('.page-section > .page-header');
+  function bindTool(id,onClick){
+    const b=document.getElementById(id);
+    if(b&&onClick)b.addEventListener('click',onClick);
+    return b;
+  }
+  function addHeroTool({id,label,icon='edit',onClick}){
+    if(document.getElementById(id))return document.getElementById(id);
+    const header=activeHeader();
+    if(!header)return null;
+    let box=document.getElementById('adminHeroTools');
     if(!box){
-      const host=document.querySelector('.page-section.active > .page-header')||document.querySelector('.page-section > .page-header');
-      if(!host)return null;
-      host.insertAdjacentHTML('beforeend',pageToolsHtml([]));
-      box=host.lastElementChild;box.id='adminPageTools';
+      header.insertAdjacentHTML('beforeend','<div class="admin-hero-tools" id="adminHeroTools"><span class="admin-hero-tools-label">EDIT</span></div>');
+      box=document.getElementById('adminHeroTools');
     }
     box.insertAdjacentHTML('beforeend',toolButtonHtml({id,label,icon}));
-    const b=document.getElementById(id);
-    if(onClick)b.addEventListener('click',onClick);
+    return bindTool(id,onClick);
+  }
+  function addPageTool({id,label,icon='plus',onClick,scope=''}){
+    if(document.getElementById(id))return document.getElementById(id);
+    let bar=document.getElementById('adminActionBar');
+    if(!bar){
+      const header=activeHeader();
+      if(!header)return null;
+      header.insertAdjacentHTML('afterend',pageToolsHtml([]));
+      bar=header.nextElementSibling;bar.id='adminActionBar';
+      watchActionScopes();
+    }
+    bar.querySelector('.admin-action-bar-inner').insertAdjacentHTML('beforeend',toolButtonHtml({id,label,icon,scope}));
+    const b=bindTool(id,onClick);
+    syncActionBars();
     return b;
+  }
+  // 버튼마다 scope 화면이 지금 보이는지 보고 보이는 것만 남긴다. 남는 버튼이 없으면 줄째로 숨긴다.
+  function syncActionBars(){
+    let on=false;
+    qa('.admin-action-bar').forEach(bar=>{
+      let any=false;
+      bar.querySelectorAll('.admin-tool-btn').forEach(b=>{
+        const scope=b.dataset.scope;
+        const show=!scope||!!document.querySelector(scope)?.getClientRects().length;
+        if(b.hidden===show)b.hidden=!show;
+        any=any||show;
+      });
+      if(bar.hidden===any)bar.hidden=!any;
+      if(any&&bar.getClientRects().length)on=true;
+    });
+    if(document.body.classList.contains('admin-actions-on')!==on)document.body.classList.toggle('admin-actions-on',on);
+  }
+  function watchActionScopes(){
+    if(state.actionWatch||typeof MutationObserver==='undefined')return;
+    let queued=false;
+    state.actionWatch=new MutationObserver(()=>{
+      if(queued)return;
+      queued=true;
+      setTimeout(()=>{queued=false;syncActionBars();},0);
+    });
+    state.actionWatch.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden']});
   }
 
   function bindCommonUi() {
@@ -380,7 +426,7 @@
     state, $, q, qa, esc, value, empty, intOrNull, field, input, textarea, select, checkbox,
     toast, markDirty, setSaveState, openDrawer, closeDrawer, errorText, requireAdmin,
     loadMembers, loadSiteConfig, saveSiteConfig, nextSourceOrder, uploadMedia, mediaUrl,
-    audit, setEditMode, addPageTool, pageToolsHtml
+    audit, setEditMode, addHeroTool, addPageTool, pageToolsHtml, syncActionBars
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
