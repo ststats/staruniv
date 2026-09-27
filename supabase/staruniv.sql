@@ -518,32 +518,29 @@ grant usage,select on sequence public.external_tools_id_seq to authenticated;
 -- ############################################################################
 
 -- 공개 방문자(anon)의 읽기 권한은 여기 한 곳에서만 관리한다(1번의 표 정의 쪽에는 두지 않는다).
--- 표마다 전부 회수한 뒤 화면에 실제로 쓰는 열만 다시 준다. 쓰기는 1번의 관리자 정책만 허용한다.
--- 운영 결정(2026-09-26):
---   · hidden은 '화면에서 빼기'다(비공개 아님). 숨긴 영상·영상 추천·연혁도 API로는 읽히고, 페이지가 거른다.
---   · 생일·성별은 공개 정보다. tier_members에서는 열을 주지 않지만 시너지 프로필이 쓰는
---     daily_member_stats(ststat.sql 5·9번)와 members에서는 공개한다.
+-- 원칙: 공개 페이지 화면에 나오는 것만 읽힌다. 표마다 전부 회수한 뒤 페이지가 실제로 조회하는 열만 다시 주고,
+-- 화면에서 빼는 행(숨김·비활성)은 정책으로 막는다. 쓰기는 1번의 관리자 정책만 허용한다.
+-- 페이지가 새 열·표를 읽게 되면 여기(ststat 쪽 표는 ststat.sql 9번)에 함께 더한다.
+--   · 멤버·팀·전적(members·teams·matches·rounds)은 빌드가 DB에서 직접 내보낸 site_shell.json·site_records.json으로
+--     화면에 나온다. 페이지가 표를 조회하지 않으므로 anon에게 주지 않는다.
+--   · 생일·성별은 공개 정보다(운영 결정 2026-09-26): 멤버 프로필(site_shell.json)과 시너지 프로필
+--     (daily_member_stats, ststat.sql 5·9번)에 나온다. tier_members에서는 열을 주지 않는다.
+--   · 숨긴 영상·영상 추천·연혁은 anon에게 읽히지 않는다(어드민은 로그인 권한으로 본다). 연혁의 자동 항목을
+--     숨기는 override 행은 페이지가 무엇을 숨길지 알아야 하므로 읽힌다.
 
 revoke all on public.members from anon;
 revoke all on public.teams from anon;
 revoke all on public.matches from anon;
 revoke all on public.rounds from anon;
 revoke all on public.tier_members from anon;
+revoke all on public.settings, public.admin_users from anon;   -- 페이지가 읽지 않는다(관리자 확인은 is_admin())
 
-grant select (source_order,nickname,soop_id,birth_date,gender,race,tier,role,joined_date,left_date,mbti,avatar_path,youtube_url) on public.members to anon;
-grant select (source_order,team_name,logo_path) on public.teams to anon;
-grant select (source_order,match_no,match_date,opponent_team,match_format,method,final_result,set_result) on public.matches to anon;
-grant select (source_order,match_no,match_date,opponent_team,match_format,set_name,round_name,our_player,our_race,result,opponent_player,opponent_race,map_name) on public.rounds to anon;
 grant select (source_order,nickname,soop_id,race,tier,affiliation,modified_at) on public.tier_members to anon;
 
 drop policy if exists public_read_teams on public.teams;
-create policy public_read_teams on public.teams for select to anon using (true);
 drop policy if exists public_read_members on public.members;
-create policy public_read_members on public.members for select to anon using (true);
 drop policy if exists public_read_matches on public.matches;
-create policy public_read_matches on public.matches for select to anon using (true);
 drop policy if exists public_read_rounds on public.rounds;
-create policy public_read_rounds on public.rounds for select to anon using (true);
 drop policy if exists public_read_tier_members on public.tier_members;
 -- 휴면 선수는 사이트(티어표 등)에 나오지 않으므로 공개 조회에서도 뺀다(운영 결정 2026-09-27: 화면에 안 나오는
 -- 사람의 SOOP ID 등은 공개하지 않는다). 상대전적·분석은 ststat.sql의 elo_public_players가 따로 담당한다.
@@ -566,7 +563,7 @@ create policy public_read_site_config on public.site_config for select to anon u
 revoke all on public.history_entries from anon;
 grant select (id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden) on public.history_entries to anon;
 drop policy if exists public_read_history_entries on public.history_entries;
-create policy public_read_history_entries on public.history_entries for select to anon using (true);
+create policy public_read_history_entries on public.history_entries for select to anon using (not hidden or entry_kind = 'override');
 
 revoke all on public.video_channels from anon;
 revoke all on public.videos from anon;
@@ -577,9 +574,9 @@ grant select (id,kind,title,note,group_name,group_en,added_at,author,thumb,short
 drop policy if exists public_read_video_channels on public.video_channels;
 create policy public_read_video_channels on public.video_channels for select to anon using (active=true);
 drop policy if exists public_read_videos on public.videos;
-create policy public_read_videos on public.videos for select to anon using (true);
+create policy public_read_videos on public.videos for select to anon using (not hidden);
 drop policy if exists public_read_video_picks on public.video_picks;
-create policy public_read_video_picks on public.video_picks for select to anon using (true);
+create policy public_read_video_picks on public.video_picks for select to anon using (not hidden);
 
 revoke all on public.external_tools from anon;
 grant select (id,category,name,url,favicon,source_order,active) on public.external_tools to anon;
@@ -1166,7 +1163,7 @@ drop policy if exists university_logos_admin_write on public.university_logos;
 create policy university_logos_admin_write on public.university_logos for all to authenticated
   using ((select public.is_admin())) with check ((select public.is_admin()));
 revoke all on public.university_logos from anon;
-grant select on public.university_logos to anon;
+grant select (name,path,color) on public.university_logos to anon;
 grant select, insert, update, delete on public.university_logos to authenticated;
 
 -- ############################################################################

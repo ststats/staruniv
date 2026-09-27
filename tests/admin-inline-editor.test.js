@@ -196,6 +196,19 @@ test('휴면 선수는 공개 티어 명단 조회(anon)에서 빠진다', () =>
   assert.doesNotMatch(sql, /public_read_tier_members on public\.tier_members for select to anon using \(true\)/);
 });
 
+test('공개 조회(anon)는 화면에 나오는 것만: 멤버·전적 표는 막고, 숨긴 영상·연혁은 빼고, 어드민 연혁은 로그인 클라이언트로 읽는다', () => {
+  const sql = read('supabase/staruniv.sql');
+  for (const t of ['members', 'teams', 'matches', 'rounds']) {
+    assert.doesNotMatch(sql, new RegExp(`grant select[^;]* on public\\.${t} to anon`), `${t}는 페이지가 조회하지 않는다`);
+    assert.doesNotMatch(sql, new RegExp(`create policy public_read_${t} `));
+  }
+  assert.match(sql, /create policy public_read_videos on public\.videos for select to anon using \(not hidden\);/);
+  assert.match(sql, /create policy public_read_video_picks on public\.video_picks for select to anon using \(not hidden\);/);
+  assert.match(sql, /create policy public_read_history_entries on public\.history_entries for select to anon using \(not hidden or entry_kind = 'override'\);/);
+  const admin = read('templates/assets/admin-history.js');
+  assert.doesNotMatch(admin, /histLoadData\(\)/, '어드민은 숨긴 연혁까지 받아야 한다');
+});
+
 test('대학 로고 목록은 로고를 그리는 페이지(전적·티어표)만 받는다', () => {
   const core = read('templates/assets/core.js');
   assert.match(core, /opts && opts\.logos \? loadTeamLogos\(\) : null/);
