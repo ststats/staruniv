@@ -22,6 +22,7 @@
 | ststat 파이프라인(`pipeline.yml`) | 매일 03:50·07:50·11:50·15:50·19:50·23:50(4시간마다) | cron-job.org가 `workflow_dispatch` 호출 |
 | 시너지 빌드(synergy `build.yml`) | 매일 00:05·12:05 | cron-job.org가 `workflow_dispatch` 호출 |
 | 방송 중 표시(`live_broadcasts`) | 2분마다 | Supabase pg_cron이 Edge Function `live-status` 호출(ststat 저장소) |
+| DB·Storage 백업(`.github/workflows/backup.yml`) | 매주 월요일 03:30 | GitHub `schedule`(아래 '백업') |
 
 cron-job.org 작업은 `POST https://api.github.com/repos/ststats/<저장소>/actions/workflows/<워크플로 파일>/dispatches`(본문 `{"ref":"main"}`)를
 GitHub 토큰으로 부릅니다(스타유니브 `build.yml`, 시너지 `build.yml`, ststat `pipeline.yml`). 실행이 안 보이면
@@ -108,6 +109,22 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
 | `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
 | `github_actions_token` | Supabase Vault | "사이트 빌드" 버튼, 티어표 갱신 |
+| `BACKUP_PASSPHRASE` | Actions secret | 주간 백업 암호(잃어버리면 백업을 못 푼다 - 따로 적어 둔다) |
+
+## 백업
+
+무료 플랜에는 자동 백업이 없어서 `backup.yml`이 매주 공유 DB(`public` 스키마 전체 구조 + 데이터)와
+Storage `staruniv-media` 파일을 받아 **암호화한 뒤** Actions 아티팩트로 90일 보관합니다. 파생 통계·방송 중·공지 모음·작업 기록은
+파이프라인이 다시 만들므로 데이터를 뺍니다. Actions 탭 → Backup → 실행 → Artifacts에서 받습니다(수동 실행: Run workflow).
+공개 저장소라 60일 동안 커밋이 없으면 GitHub가 `schedule`을 멈추니, 그때는 Actions 탭에서 다시 켭니다.
+
+복구(필요한 표만 골라 넣을 수 있음):
+
+```bash
+gpg -d supabase-backup-YYYYMMDD.tar.gz.gpg | tar -xz       # 암호 입력 → db.dump, storage/
+pg_restore --list db.dump                                    # 들어 있는 것 확인
+pg_restore --no-owner --data-only -t members -d "$SUPABASE_DB_URL" db.dump   # 예: members 표 데이터만
+```
 
 ## Supabase SQL
 

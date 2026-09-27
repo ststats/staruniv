@@ -1,0 +1,108 @@
+name: Backup
+
+# 공유 Supabase DB(스타유니브·시너지·ststat)와 Storage 파일을 주 1회 암호화해 Actions 아티팩트로 90일 보관한다.
+# 무료 플랜에는 자동 백업이 없고, 멤버·전적·연혁·일정처럼 어드민에서 직접 입력한 데이터는 DB에만 있다.
+# 저장소가 공개라 아티팩트는 GitHub에 로그인한 누구나 받을 수 있으므로 반드시 암호화한다(BACKUP_PASSPHRASE).
+# 복구 방법은 README '백업' 절.
+on:
+  schedule:
+    - cron: '30 18 * * 0'   # 매주 월요일 03:30(한국 시간)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staruniv-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check secrets
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ] || [ -z "$SUPABASE_DB_URL" ] || [ -z "$SUPABASE_URL" ]; then
+            echo "::error::BACKUP_PASSPHRASE · SUPABASE_DB_URL · SUPABASE_URL 이 필요합니다(암호 없이 올리지 않는다)."
+            exit 1
+          fi
+
+      # Supabase 서버보다 오래된 pg_dump는 거부되므로 PostgreSQL 공식 저장소의 17 클라이언트를 쓴다.
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Dump database
+        run: |
+          set -euo pipefail
+          # pg_dump는 세션 연결이 필요하다. 풀러의 트랜잭션 모드 주소(:6543)면 세션 모드(:5432)로 바꾼다.
+          url="${SUPABASE_DB_URL/:6543\//:5432/}"
+          echo "DB_URL_SESSION=$url" >> "$GITHUB_ENV"
+          mkdir -p backup
+          # 파생 통계·방송 중·공지 모음·작업 기록은 파이프라인이 다시 만들므로 구조만 남기고 데이터는 뺀다.
+          /usr/lib/postgresql/17/bin/pg_dump "$url" --format=custom --no-owner --no-privileges \
+            --schema=public \
+            --exclude-table-data=public.elo_player_stats \
+            --exclude-table-data=public.elo_h2h_stats \
+            --exclude-table-data=public.elo_race_stats \
+            --exclude-table-data=public.elo_rankings \
+            --exclude-table-data=public.elo_ranking_meta \
+            --exclude-table-data=public.elo_rating_history \
+            --exclude-table-data=public.elo_player_ratings \
+            --exclude-table-data=public.live_broadcasts \
+            --exclude-table-data=public.member_posts \
+            --exclude-table-data=public.sync_jobs \
+            --file=backup/db.dump
+          # 덤프가 제대로 읽히는지 확인(목록을 못 뽑으면 실패)
+          /usr/lib/postgresql/17/bin/pg_restore --list backup/db.dump | grep -c "TABLE DATA" | xargs echo "table data entries:"
+
+      # 로고·대표 사진·달력 사진 등(공개 버킷 staruniv-media). DB 덤프에는 파일 내용이 없다.
+      - name: Download Storage files
+        run: |
+          set -euo pipefail
+          /usr/lib/postgresql/17/bin/psql "$DB_URL_SESSION" -At \
+            -c "select name from storage.objects where bucket_id = 'staruniv-media' order by name" > names.txt
+          python3 - <<'PY'
+          import os, pathlib, urllib.parse, urllib.request
+          base = os.environ['SUPABASE_URL'].rstrip('/') + '/storage/v1/object/public/staruniv-media/'
+          names = [n for n in pathlib.Path('names.txt').read_text(encoding='utf-8').splitlines() if n and not n.endswith('/')]
+          failed = []
+          for name in names:
+              out = pathlib.Path('backup/storage') / name
+              out.parent.mkdir(parents=True, exist_ok=True)
+              try:
+                  with urllib.request.urlopen(base + urllib.parse.quote(name), timeout=60) as res:
+                      out.write_bytes(res.read())
+              except Exception as exc:
+                  failed.append(f'{name}: {exc}')
+          print(f'storage files: {len(names) - len(failed)}/{len(names)}')
+          for line in failed:
+              print('::warning::' + line)
+          PY
+          du -sh backup/*
+
+      - name: Encrypt
+        run: |
+          set -euo pipefail
+          name="supabase-backup-$(date -u +%Y%m%d).tar.gz.gpg"
+          tar -C backup -czf backup.tar.gz .
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            -o "$name" backup.tar.gz <<< "$BACKUP_PASSPHRASE"
+          rm -rf backup backup.tar.gz names.txt
+          ls -la "$name"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: supabase-backup-*.tar.gz.gpg
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
