@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 from match_link import load_linked_db
 
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "data" / "db.json"
-STATS_PATH = ROOT / "data" / "render_stats.json"
 OUT_DIR = ROOT / "docs" / "data"
 # 방송통계 TOP 대표 영상·사진: 저장소 파일 templates/static/media/members/<SOOP ID>.<확장자>(빌드 때 docs/로 복사).
 # 어드민에서 올린 대표 사진(members.photo_path)이 있으면 그쪽이 먼저다.
@@ -34,10 +34,12 @@ SITE_ROUND_FIELDS = [
     "매치 번호", "날짜", "상대팀", "형식", "세트", "라운드",
     "우리 선수", "결과", "상대 선수", "맵", "_match_key", "_mirrored",
 ]
-SITE_PLAYER_STAT_FIELDS = [
-    "이름", "대회 전적", "대학 전적", "미니 전적", "CK 전적",
-    "테란전 전적", "저그전 전적", "프로토스전 전적", "상대전적",
-]
+# 전적 페이지 개인 요약(도넛·합계)이 쓰는 선수별 통산 전적: 형식별 + 상대 종족별
+STAT_FORMATS = ["대회", "대학", "미니", "CK"]
+STAT_RACES = [("T", "테란전"), ("Z", "저그전"), ("P", "프로토스전")]
+# 복사·붙여넣기로 섞여 드는 안 보이는 문자(폭 없는 공백·BOM·줄바꿈 없는 공백 등). '승 '처럼 끝에 붙으면
+# 비교에서 조용히 빠지므로 양 끝 공백과 함께 지우고 센다.
+INVISIBLE_CHARS = re.compile(r"[​-‍⁠﻿ ᠎]")
 
 # 멤버 순서: 멤버 현황 페이지(page-members.js)와 같다 - 감독 → 코치 → 선수 → 그 밖의 직책,
 # 같은 직책 안에서는 티어 높은 순, 같은 티어면 입단순(같은 날이면 이름순). 선택 바(멤버 공지·개인 전적)가 이 순서를 그대로 쓴다.
@@ -54,6 +56,41 @@ def load_site_order() -> dict:
 SITE_ORDER = load_site_order()
 ROLE_ORDER = {role: i for i, role in enumerate(SITE_ORDER["roles"])}
 TIER_ORDER = SITE_ORDER["tiers"]   # DB에는 '3'처럼 숫자만 들어 있다
+
+
+def clean(value) -> str:
+    return "" if value is None else INVISIBLE_CHARS.sub("", str(value)).strip()
+
+
+def fmt_wl_rate(wins: int, losses: int) -> str:
+    total = wins + losses
+    return f"{wins}승 {losses}패 ({wins / total * 100:.1f}%)" if total else "-"
+
+
+def player_stats(rounds: list[dict]) -> list[dict]:
+    """선수(우리 선수)별 통산 '승 N패 (율%)' - 형식별(대회·대학·미니·CK)과 상대 종족별. 이름순."""
+    counts: Counter = Counter()
+    players = set()
+    for row in rounds:
+        name = clean(row.get("우리 선수"))
+        if not name:
+            continue
+        players.add(name)
+        result = clean(row.get("결과"))
+        counts[(name, "fmt", clean(row.get("형식")), result)] += 1
+        counts[(name, "race", clean(row.get("상대 종족")).upper(), result)] += 1
+
+    def wl(name, kind, key):
+        return fmt_wl_rate(counts[(name, kind, key, "승")], counts[(name, kind, key, "패")])
+
+    return [
+        {
+            "이름": name,
+            **{f"{fmt} 전적": wl(name, "fmt", fmt) for fmt in STAT_FORMATS},
+            **{f"{label} 전적": wl(name, "race", race) for race, label in STAT_RACES},
+        }
+        for name in sorted(players)
+    ]
 
 
 def pick(row: dict, fields: list[str]) -> dict:
@@ -96,12 +133,6 @@ def member_media_url(soop_id) -> str:
 def main() -> None:
     if not DB_PATH.exists():
         raise SystemExit(f"missing: {DB_PATH}")
-    if not STATS_PATH.exists():
-        raise SystemExit(f"missing: {STATS_PATH}")
-
-    with STATS_PATH.open("r", encoding="utf-8") as f:
-        stats_data = json.load(f)
-
     db_data, linked_matches, linked_rounds = load_linked_db(str(DB_PATH))
 
     members = sort_members(db_data.get("members", []))
@@ -118,11 +149,6 @@ def main() -> None:
         key=lambda row: str(row.get("날짜", "")),
         reverse=True,
     )
-    member_stats = (
-        stats_data.get("member_stats", {}).get("전체", [])
-        if isinstance(stats_data, dict)
-        else []
-    )
 
     shell_payload = {
         "members": [pick(row, SITE_MEMBER_FIELDS) for row in members],
@@ -133,7 +159,7 @@ def main() -> None:
     records_payload = {
         "matches": [pick(row, SITE_MATCH_FIELDS) for row in matches],
         "rounds": [pick(row, SITE_ROUND_FIELDS) for row in rounds],
-        "playersStats": [pick(row, SITE_PLAYER_STAT_FIELDS) for row in member_stats],
+        "playersStats": player_stats(linked_rounds),
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

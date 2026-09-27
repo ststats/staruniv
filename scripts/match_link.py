@@ -20,24 +20,9 @@ Supabase의 matches와 rounds 데이터를 서로 연결한다. 각 매치/라�
 
 * 내전 미러 라운드는 Supabase의 rounds_effective가 제공한다. 이 모듈은 이미 만들어진
   `_mirrored` 플래그를 보존하며 같은 행을 다시 복제하지 않는다.
-
-[리팩토링 메모]
-- 예전에는 매치 번호 컬럼이 없어서 원본 입력 순서만으로 회차를 추론했다. 이제 시트에
-  정식 번호가 생겼으므로 그 값을 1순위로 쓰고, 추론 로직은 번호가 빈 과거 줄에만 적용한다.
-- generate_stats.py와 build_html.py가 똑같은 db.json으로 link_rounds_to_matches를 각자
-  한 번씩 돌리던 중복을 없애기 위해 load_linked_db()를 둔다. db.json 원본 바이트의 해시를
-  키로 결과를 build/linked_db.json에 캐시하고, 해시가 다르면 무조건 다시 계산한다.
 """
 
-import hashlib
 import json
-import os
-
-# 파이프라인 중간 산출물 캐시 위치. 빌드 워크플로는 data/*.json과 docs/ 일부만 git add
-# 하므로 build/ 아래 파일은 커밋되지 않는다(저장소 용량이 늘지 않음).
-LINKED_CACHE_PATH = os.path.join('build', 'linked_db.json')
-# 캐시 포맷을 바꾸면 이 값을 올린다 - 버전이 다르면 옛 캐시는 무시하고 다시 계산한다.
-_LINKED_CACHE_VERSION = 3   # rounds_effective 전환
 
 
 def _extract_round_num(round_str):
@@ -281,43 +266,10 @@ def _report_linking(match_no_col, round_no_col, global_numbering, matches, round
         print(f"ℹ️ 세트 기록이 없는 매치가 {len(empty)}건 있습니다. 예시: {sample}")
 
 
-def _file_sha256(path):
-    h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(1 << 16), b''):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def load_linked_db(db_path='data/db.json', cache_path=LINKED_CACHE_PATH):
+def load_linked_db(db_path='data/db.json'):
     """db.json을 읽고 link_rounds_to_matches 결과까지 붙여 (db, matches, rounds)로 반환한다.
-
-    같은 db.json(바이트 단위로 동일)에 대해 이미 계산해 둔 결과가 캐시에 있으면
-    그걸 그대로 쓰고, 없거나 해시가 다르면 새로 계산해서 캐시에 저장한다. 캐시는
-    순수한 최적화일 뿐이라 읽기/쓰기에 실패해도 조용히 무시하고 정상 계산 결과를 돌려준다.
     FileNotFoundError(db.json 자체가 없음)는 호출부가 처리하도록 그대로 올려보낸다."""
-    db_hash = _file_sha256(db_path)
     with open(db_path, 'r', encoding='utf-8') as f:
         db = json.load(f)
-
-    try:
-        with open(cache_path, 'r', encoding='utf-8') as f:
-            cached = json.load(f)
-        if cached.get('version') == _LINKED_CACHE_VERSION and cached.get('db_sha256') == db_hash:
-            return db, cached['matches'], cached['rounds']
-    except (OSError, ValueError, KeyError, AttributeError):
-        pass  # 캐시가 없거나 깨졌으면 아래에서 새로 계산
-
     matches, rounds = link_rounds_to_matches(db.get('matches', []), db.get('rounds', []), db.get('members', []))
-
-    try:
-        os.makedirs(os.path.dirname(cache_path) or '.', exist_ok=True)
-        tmp_path = cache_path + '.tmp'
-        with open(tmp_path, 'w', encoding='utf-8') as f:
-            json.dump({'version': _LINKED_CACHE_VERSION, 'db_sha256': db_hash,
-                       'matches': matches, 'rounds': rounds}, f, ensure_ascii=False)
-        os.replace(tmp_path, cache_path)
-    except OSError as e:
-        print(f"⚠️ 매치 연결 결과 캐시를 저장하지 못했습니다(동작에는 영향 없음): {e}")
-
     return db, matches, rounds

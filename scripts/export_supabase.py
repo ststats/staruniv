@@ -1,6 +1,6 @@
 """Supabase PostgreSQL의 핵심 테이블을 기존 data/db.json 형식으로 내보낸다.
 
-기존 generate_stats.py / build_html.py가 전혀 바뀌지 않도록 한글 JSON 키를 복원한다.
+사이트 데이터(write_site_data.py)가 읽는 한글 JSON 키로 바꿔 쓴다.
 필수 환경변수: SUPABASE_DB_URL
 """
 from __future__ import annotations

@@ -136,12 +136,6 @@ def make_asset_url(versions):
     return asset_url
 
 
-def load_inputs():
-    import json
-    with open('data/render_stats.json', 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
 STATIC_OWNED_DIRS = {'images'}
 
 
@@ -182,7 +176,7 @@ def copy_static_assets():
                 shutil.copytree(source, target, dirs_exist_ok=True)
             elif os.path.isfile(source):
                 shutil.copyfile(source, target)
-        print(f"✅ 정적 폴더를 templates/static에서 docs/로 동기화했습니다.")
+        print("✅ 정적 폴더를 templates/static에서 docs/로 동기화했습니다.")
 
 
 def write_search_files():
@@ -202,18 +196,15 @@ def write_search_files():
 
 
 def main():
-    stats_data = load_inputs()
-
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     versions = static_asset_versions()
     env.globals['asset_url'] = make_asset_url(versions)
-    common = {'crew_stats': stats_data['crew_stats']}
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
     # 메뉴·방송통계 탭 숨김은 런타임에 core.js가 Supabase 설정으로 처리하므로 빌드는 모두 표시한다
     for page_id, _, title, description in PAGES:
         html_output = env.get_template(f'pages/{page_id}.html').render(
-            **common, **page_context(page_id, title, description))
+            **page_context(page_id, title, description))
         out_path = page_output_path(page_id)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         write_text_atomic(out_path, html_output)
@@ -221,7 +212,7 @@ def main():
         admin_context.update(admin_mode=True, root='', public_href=page_url_path(page_id) or './')
         for nav in admin_context['nav_items']:
             nav['href'] = f"admin-{nav['id']}.html"
-        admin_output = env.get_template(f'pages/{page_id}.html').render(**common, **admin_context)
+        admin_output = env.get_template(f'pages/{page_id}.html').render(**admin_context)
         admin_name = 'admin.html' if page_id == 'home' else f'admin-{page_id}.html'
         write_text_atomic(os.path.join(OUT_DIR, admin_name), admin_output)
     print(f"✅ 페이지 {len(PAGES)}개 생성: {', '.join(page_output_path(p[0]) for p in PAGES)}")
