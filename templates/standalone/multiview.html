@@ -355,13 +355,11 @@ html[data-theme="dark"] .mv-settings-panel {
         font-size: 11px;
     }
 }
-/* 화면에는 안 보이고 화면 읽기 프로그램만 읽는 글자(페이지 제목) */
-.mv-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
 </head>
 <body>
 <main>
-<h1 class="mv-sr-only">멀티뷰어</h1>
+<h1 class="sr-only">멀티뷰어</h1>
 
 <button type="button" class="mv-fab" id="mv-fab" data-click="mvToggleSettingsPanel" title="설정 열기/닫기" aria-label="설정 열기" aria-expanded="false" aria-controls="mv-settings-panel">
     <svg class="mv-fab-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>

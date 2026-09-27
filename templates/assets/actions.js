@@ -47,17 +47,23 @@ function imgSwap(img, cls, text) {
     img.replaceWith(cls ? Object.assign(document.createElement('span'), { className: cls, textContent: text }) : text);
 }
 
-// 노치(clip-path)로 잘린 모서리에서는 사각 포커스 테두리의 사선 구간이 비므로 style.css(02-base)의 ::before가 사선까지 그린다.
-// 그 크기(--cut: 요소 자신 또는 모서리를 같이 쓰는 조상의 노치에서 테두리 두께를 뺀 값)를 포커스 때 넣는다.
+// 노치(clip-path)로 잘린 모서리에서는 사각 포커스 테두리의 사선 구간이 비므로 style.css(02-base)가 가상 요소로 사선까지 그린다.
+// 포커스 때 그 크기(--cut: 요소 자신 또는 모서리를 같이 쓰는 조상의 노치에서 테두리 두께를 뺀 값)와, 아이콘 등에 안 쓰는
+// 가상 요소(data-ring="before"|"after")를 정한다. 둘 다 쓰고 있으면 건드리지 않는다(보통 사각 테두리가 남는다).
 document.addEventListener('focusin', ({ target: el }) => {
     if (!(el instanceof Element)) return;
-    for (let a = el, i = 0; a && i < 3; a = a.parentElement, i++) {
+    const free = ['before', 'after'].find(p => getComputedStyle(el, `::${p}`).content === 'none');
+    for (let a = el, i = 0; free && a && i < 3; a = a.parentElement, i++) {
         const m = /calc\(100% - ([\d.]+)px\)/.exec(getComputedStyle(a).clipPath);
         if (!m) continue;
         const r = el.getBoundingClientRect(), p = a.getBoundingClientRect(), s = getComputedStyle(el);
         const cut = m[1] - (p.right - r.right) - (r.top - p.top) - parseFloat(s.borderTopWidth) - parseFloat(s.borderRightWidth);
-        if (cut > 0) el.style.setProperty('--cut', cut + 'px');
+        if (cut > 0) { el.style.setProperty('--cut', cut + 'px'); el.dataset.ring = free; }
         return;
     }
 });
-document.addEventListener('focusout', e => e.target.style?.removeProperty('--cut'));
+document.addEventListener('focusout', ({ target: el }) => {
+    if (!el.dataset?.ring) return;
+    delete el.dataset.ring;
+    el.style.removeProperty('--cut');
+});

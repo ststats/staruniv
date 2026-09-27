@@ -39,5 +39,10 @@
       "src": "^/(.*)$",
       "dest": "https://ststats.github.io/staruniv/$1"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "claude/**": false
+    }
+  }
 }
