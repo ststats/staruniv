@@ -545,7 +545,10 @@ create policy public_read_matches on public.matches for select to anon using (tr
 drop policy if exists public_read_rounds on public.rounds;
 create policy public_read_rounds on public.rounds for select to anon using (true);
 drop policy if exists public_read_tier_members on public.tier_members;
-create policy public_read_tier_members on public.tier_members for select to anon using (true);
+-- 휴면 선수는 사이트(티어표 등)에 나오지 않으므로 공개 조회에서도 뺀다(운영 결정 2026-09-27: 화면에 안 나오는
+-- 사람의 SOOP ID 등은 공개하지 않는다). 상대전적·분석은 ststat.sql의 elo_public_players가 따로 담당한다.
+create policy public_read_tier_members on public.tier_members for select to anon
+  using (coalesce(affiliation, '') <> '휴면');
 
 revoke all on public.calendar_events from anon;
 revoke all on public.calendar_off_air from anon;

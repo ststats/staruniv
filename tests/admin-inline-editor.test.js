@@ -182,3 +182,9 @@ test('방송통계도 서브탭 편집(지표 탭 표시)을 페이지 관리 �
   // 페이지 관리 버튼은 모두 공통 상자(addPageTool / pageToolsHtml)로
   assert.match(read('templates/assets/admin-core.js'), /function addPageTool\(/);
 });
+
+test('휴면 선수는 공개 티어 명단 조회(anon)에서 빠진다', () => {
+  const sql = read('supabase/staruniv.sql');
+  assert.match(sql, /create policy public_read_tier_members on public\.tier_members for select to anon\s+using \(coalesce\(affiliation, ''\) <> '휴면'\);/);
+  assert.doesNotMatch(sql, /public_read_tier_members on public\.tier_members for select to anon using \(true\)/);
+});
