@@ -756,9 +756,8 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
     transition: transform .22s ease;
 }
 .admin-drawer[aria-hidden="false"] .admin-drawer-sheet { transform: none; box-shadow: -12px 0 40px rgba(5, 10, 20, .18); }
-body.admin-drawer-open { overflow: hidden; }
 /* 잠근 스크롤바만큼 여백을 채워 뒤 화면·맨 위 편집 바가 옆으로 밀리지 않게(admin-core.js openDrawer가 폭을 잰다) */
-body.admin-drawer-open { padding-right: var(--drawer-lock-gap, 0px); }
+body.admin-drawer-open { overflow: hidden; padding-right: var(--drawer-lock-gap, 0px); }
 body.admin-drawer-open .admin-inline-bar { right: var(--drawer-lock-gap, 0px); }
 
 .admin-drawer-head {
