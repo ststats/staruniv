@@ -264,8 +264,39 @@ async function renderLiveBroadcasts() {
     );
 }
 
-// SOOP 채널 게시판 API를 브라우저에서 직접 fetch한다 (방송중 체크와 같은 방식).
-// 공지만이 아니라 일반글도 같이 긁어와서(fetchMemberFeed는 공지+일반글을 합쳐 최신순 반환) 섞는다.
+// 멤버당 최대 3개까지만 섞는다(한 명이 몰아 쓴 글이 목록을 다 차지하지 않게)
+const HOME_NOTICES_PER_MEMBER = 3;
+
+// 모아 둔 표(member_posts)에서 최신 글 몇 개만 받아 고른다 - 5개를 보여주는 데 멤버 전원의 첫 페이지를
+// 받을 필요가 없다. 활동 멤버 걸러내기·멤버당 3개 제한으로 빠질 몫까지 여유 있게 30개를 받는다.
+async function recentNoticesFromStore(activeMembers) {
+    const rows = await fetchRecentStoredPosts(30);
+    if (!rows) return null;
+    const bySoop = new Map(activeMembers.map(m => [String(m['SOOP ID']).toLowerCase(), m]));
+    const perMember = new Map();
+    const picked = [];
+    sortNewsByDateDesc(rows).forEach(({ soopId, post }) => {
+        const m = bySoop.get(soopId);
+        const n = perMember.get(soopId) || 0;
+        if (!m || n >= HOME_NOTICES_PER_MEMBER) return;
+        perMember.set(soopId, n + 1);
+        picked.push({ member: m, post });
+    });
+    return picked;
+}
+
+// 표를 못 읽을 때: 멤버마다 첫 페이지를 받아 섞는다(없는 멤버는 SOOP에 직접 묻는다).
+async function recentNoticesPerMember(activeMembers) {
+    const settled = await Promise.allSettled(
+        activeMembers.map(async m => {
+            const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
+            return posts.slice(0, HOME_NOTICES_PER_MEMBER).map(post => ({ member: m, post }));
+        })
+    );
+    return sortNewsByDateDesc(settled.filter(r => r.status === 'fulfilled').flatMap(r => r.value));
+}
+
+// 공지와 일반글을 섞어 최신 5개를 보여준다. 먼저 모아 둔 표에서, 안 되면 멤버별 조회로.
 async function renderLatestNotices() {
     const container = document.getElementById('home-notice-list');
     if (!container) return;
@@ -284,13 +315,7 @@ async function renderLatestNotices() {
         return;
     }
 
-    const settled = await Promise.allSettled(
-        activeMembers.map(async m => {
-            const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
-            return posts.slice(0, 3).map(post => ({ member: m, post }));
-        })
-    );
-    const latest = sortNewsByDateDesc(settled.filter(r => r.status === 'fulfilled').flatMap(r => r.value));
+    const latest = await recentNoticesFromStore(activeMembers) || await recentNoticesPerMember(activeMembers);
 
     container.innerHTML = latest.length
         ? latest.slice(0, 5).map(({ member: m, post }) =>
