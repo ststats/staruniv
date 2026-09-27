@@ -1,5 +1,5 @@
 /**
- * 연혁: 일정 페이지 '연혁' 탭과 관리자 페이지가 같이 쓴다. (core.js 없이도 돌아가야 한다 - admin.html은 core.js를 안 싣는다. 팝업은 media-lightbox.js)
+ * 연혁: 일정 페이지 '연혁' 탭(어드민 편집은 admin-history.js가 이 위에 얹는다). 팝업은 media-lightbox.js.
  *
  * 항목은 두 종류다.
  *   - 자동 항목: 멤버 데이터의 입단일/퇴단일에서 날짜별로 묶어 만든다. Supabase 멤버 데이터를 고치면 따라온다.

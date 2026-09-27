@@ -429,8 +429,8 @@ function fetchLiveBroadcasts() {
 }
 
 // 선택 사이드바가 탭 전환 시 늦게 만들어져도 LIVE 표시를 채운다.
+// 일괄 조회(live_broadcasts)가 실패했을 때만 soop.js의 개별 조회로 대신한다(soop.js를 싣는 페이지만).
 async function refreshSidebarLiveIndicators() {
-    if (typeof checkIsLiveRealtime !== 'function') return;
     const dots = Array.from(document.querySelectorAll('.avatar-select-live[data-soop-id]'));
     if (!dots.length) return;
     const ids = [...new Set(dots.map(dot => dot.dataset.soopId).filter(Boolean))];
@@ -445,6 +445,7 @@ async function refreshSidebarLiveIndicators() {
         const live = await fetchLiveBroadcasts();
         ids.forEach(id => update(id, Boolean(live[id.toLowerCase()])));
     } catch (_) {
+        if (typeof checkIsLiveRealtime !== 'function') return;
         const pending = ids.slice();
         const workers = Array.from({ length: Math.min(6, pending.length) }, async () => {
             while (pending.length) {
@@ -1274,14 +1275,11 @@ const PageState = {
 };
 
 // ---------------------------------------------------------------------------
-// 상단 메뉴 표시/숨김 (docs/data/nav.json - 어드민 페이지에서 관리)
+// 상단 메뉴 표시/숨김 (Supabase site_config.nav - 어드민 페이지에서 관리)
 // ---------------------------------------------------------------------------
-// 메뉴는 빌드 타임에 HTML로 박히므로(build_html.py가 nav.json을 읽어 hidden을 붙인다)
-// 평소엔 이 함수가 할 일이 없다. 이 함수가 필요한 이유는 어드민에서 저장한 직후다 -
-// 다음 빌드(데이터 갱신 워크플로)까지 기다리지 않고 바로 반영되게 한다.
-// 실패하면(파일 없음/깨짐/오프라인) 아무것도 건드리지 않는다 - 메뉴가 사라지는 쪽보다
-// HTML에 이미 박혀 있는 상태를 그대로 두는 쪽이 안전한 실패다.
-// 숨긴 방송통계 지표 탭. nav.json을 읽기 전에는 비어 있다(= 아무것도 숨기지 않음).
+// 페이지를 열 때 읽어 바로 반영한다. 실패하면(조회 실패/오프라인) 아무것도 건드리지 않는다 -
+// 메뉴가 사라지는 쪽보다 HTML에 박혀 있는 기본 상태를 그대로 두는 쪽이 안전한 실패다.
+// 숨긴 방송통계 지표 탭. 설정을 읽기 전에는 비어 있다(= 아무것도 숨기지 않음).
 let HiddenStatsTabs = new Set();
 const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
 

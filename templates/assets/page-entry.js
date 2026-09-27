@@ -350,9 +350,6 @@ function entryRating(p) {
 // Elo 점수 차이 <-> 로짓. ststat가 400/ln10 배율로 내보내서 그대로 맞아떨어진다.
 const ENTRY_ELO_TO_LOGIT = Math.LN10 / 400;
 function entrySigmoid(x) { return 1 / (1 + Math.exp(-x)); }
-function entryEloProb(ra, rb) {
-    return entrySigmoid((ra - rb) * ENTRY_ELO_TO_LOGIT);
-}
 
 // 종족 상성(Elo 점수): x 종족이 y 종족을 상대로 가진 공통 우위. ststat 메타의
 // raceMatchup {TZ, ZP, PT}에서 읽고, 반대 방향은 부호만 바꾼다. 없으면 0.
@@ -374,8 +371,6 @@ function entryModelLogit(aPid, bPid) {
     if (!ra || !rb) return null;
     return (ra.value - rb.value + entryRaceEdge(a && a.r, b && b.r)) * ENTRY_ELO_TO_LOGIT;
 }
-
-function entryH2hKey(a, b) { return `${a}|${b}`; }
 
 // 예측승률 = 모델(레이팅 + 종족 상성) + 맞대결 · 종족전 · 맵 보정, 모두 로짓에서 더한다.
 //
@@ -688,18 +683,6 @@ function entryMapRecord(pid, mapName, period) {
     return { w, l, m: w + l };
 }
 
-function entryMapH2hRec(a, b, mapName, period) {
-    const key = entryNormalizeMapName(mapName);
-    if (!key) return { w: 0, l: 0, m: 0 };
-    const rows = entryRowsInPeriod(EntryState.rows[a] || [], period);
-    let w = 0; let l = 0;
-    rows.forEach(r => {
-        if (String(r[1]) !== String(b) || entryNormalizeMapName(r[3]) !== key) return;
-        if (Number(r[2]) === 1) w += 1; else l += 1;
-    });
-    return { w, l, m: w + l };
-}
-
 function entryAnalysisStat(label, adj, detail, sampleClass) {
     const cls = adj > 0.0005 ? ' is-a' : adj < -0.0005 ? ' is-b' : '';
     return `<div class="entry-analysis-stat${sampleClass ? ` ${sampleClass}` : ''}">
@@ -948,9 +931,6 @@ function entryAutoFillSelectedTiers() {
     entryRefreshProbs();
 }
 
-// 기존 외부 호출 호환: 이제 자동매칭 버튼은 티어 선택창을 먼저 연다.
-function entryAutoFill() { entryToggleAutoTierPicker(); }
-
 function entrySetTarget(n) {
     EntryState.target = Math.max(1, Math.min(31, Number(n) || ENTRY_TARGET_DEFAULT));
     const el = document.getElementById('entry-target');
@@ -1184,12 +1164,11 @@ function renderEntryRosters() {
 
 // 대진 카드 한 장. 동티어 맞대결 카드(.h2h-rival)와 같은 치수를 쓴다.
 // 가운데 주인공은 맞대결 전적이고, 막대도 그 전적의 승률이다. 예상 승률은
-// '시뮬 돌리기'를 눌렀을 때만 맨 아래 한 줄로 붙는다.
-function entryMatchRowHtml(m, i) {
+// '시뮬 돌리기'를 눌렀을 때만 맨 아래 한 줄로 붙는다. wp는 renderEntryResult가 한 번 계산해 넘긴다.
+function entryMatchRowHtml(m, i, wp) {
     const players = entryPlayers();
     const a = players[m.a]; const b = players[m.b];
     if (!a || !b) return '';
-    const wp = entryWinProb(m.a, m.b, m.map);
 
     // 화면에 보이는 일반 맞대결 전적은 기간필터를 따른다.
     // 예상승률은 wp 내부의 통산 + 반감기 계산을 그대로 사용한다.
@@ -1330,12 +1309,13 @@ function renderEntryResult() {
     const n = EntryState.matches.length;
     const count = document.getElementById('entry-count');
     if (count) count.textContent = `${n}경기`;
-    const ps = EntryState.matches.map(m => { const w = entryWinProb(m.a, m.b, m.map); return w ? w.p : 0.5; });
+    const wps = EntryState.matches.map(m => entryWinProb(m.a, m.b, m.map));
+    const ps = wps.map(w => (w ? w.p : 0.5));
     const sum = document.getElementById('entry-summary');
     if (sum) sum.innerHTML = entrySummaryHtml(ps);
     const box = document.getElementById('entry-result');
     if (box) box.innerHTML = n
-        ? `<div class="entry-matches">${EntryState.matches.map(entryMatchRowHtml).join('')}</div>`
+        ? `<div class="entry-matches">${EntryState.matches.map((m, i) => entryMatchRowHtml(m, i, wps[i])).join('')}</div>`
         : '';
 }
 

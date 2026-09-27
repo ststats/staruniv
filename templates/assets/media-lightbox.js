@@ -1,6 +1,5 @@
 /**
- * 사진 크게 보기 · 유튜브 임베디드 플레이어 팝업. 연혁(history.js)·영상 페이지·관리자 페이지가 같이 쓴다.
- * core.js 없이도 돌아가야 한다(admin.html은 core.js를 안 싣는다).
+ * 사진 크게 보기 · 유튜브 임베디드 플레이어 팝업. 연혁(history.js)·영상 페이지가 같이 쓴다.
  *
  * mediaLightboxOpen({ caption, youtubeId, soopVodNo, image, vertical })
  *   youtubeId가 있으면 유튜브를, soopVodNo가 있으면 숲(SOOP) VOD를, 둘 다 없으면 image를 띄운다.

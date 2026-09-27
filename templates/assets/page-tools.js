@@ -126,7 +126,7 @@ function switchToolsView(viewType, skipHashUpdate) {
     } else if (wasRider) {
         riderSuspend();
     }
-    // 엔트리는 index.json(135KB)을 받아야 그릴 수 있다. 이 탭을 실제로 열 때 한 번만 받는다.
+    // 엔트리 명단·레이팅(Supabase 조회)은 이 탭을 실제로 열 때 한 번만 받는다.
     if (viewType === 'entry' && typeof entryEnsureLoaded === 'function') entryEnsureLoaded();
     // 외부 도구·사이트 목록도 이 탭을 처음 열 때 받는다
     if (viewType === 'external' && !toolsExternalLoaded) { toolsExternalLoaded = true; safeInit('도구 목록', loadToolsData); }

@@ -167,7 +167,7 @@ create table if not exists public.elo_maps (
 );
 
 create table if not exists public.elo_players (
-  -- eloboard.json players의 key. 원본에서는 그냥 id처럼 보이지만 DB에서는 elo_id로 명확히 구분한다.
+  -- 이로보드(EloBoard) 선수 번호. 멤버 id·SOOP ID와 헷갈리지 않게 elo_id로 따로 둔다.
   elo_id integer primary key,
   name text not null,
   race text

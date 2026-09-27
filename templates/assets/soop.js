@@ -105,11 +105,15 @@ function mergeOwnPosts(data, soopId) {
 
 // 활동 멤버 게시판 첫 페이지 모음(member_posts). ststat live-status가 2분마다 채운다(ststat.sql 13번).
 // 홈 '최근 공지'·멤버 '전체 공지'가 멤버마다 SOOP API를 부르던 것(17번)을 이 조회 한 번으로 바꾼다.
-// 표를 못 읽거나 비어 있으면 null - 그러면 예전처럼 SOOP에 직접 묻는다.
+// 표를 못 읽거나 비어 있으면 null - 그러면 SOOP에 직접 묻는다. 결과는 1분만 재사용하고,
+// 실패(null)는 기억하지 않아 다음 호출이 다시 시도한다.
+const STORED_POSTS_TTL_MS = 60 * 1000;
 let _storedPostsRequest = null;
+let _storedPostsAt = 0;
 function fetchStoredMemberPosts() {
-    if (_storedPostsRequest) return _storedPostsRequest;
-    _storedPostsRequest = (async () => {
+    if (_storedPostsRequest && Date.now() - _storedPostsAt < STORED_POSTS_TTL_MS) return _storedPostsRequest;
+    _storedPostsAt = Date.now();
+    const request = (async () => {
         const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
         if (!client) return null;
         const { data, error } = await client.from('member_posts')
@@ -123,7 +127,9 @@ function fetchStoredMemberPosts() {
         });
         return bySoop;
     })().catch(() => null);
-    return _storedPostsRequest;
+    _storedPostsRequest = request;
+    request.then(result => { if (!result && _storedPostsRequest === request) _storedPostsRequest = null; });
+    return request;
 }
 
 async function fetchMemberFeed(soopId, page) {

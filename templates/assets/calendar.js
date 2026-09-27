@@ -1,23 +1,13 @@
     // ===== 일정(캘린더) 페이지 로직 =====
-    // 사이트 본편(index.html + app.js)과 관리자 페이지(admin.html) 양쪽이 이 파일을 그대로 쓴다.
+    // 일정 페이지(page-schedule.js)와 어드민 일정 편집(admin-schedule.js)이 같이 쓴다.
     //
-    // [공개 인터페이스 - 이름을 바꾸면 admin.html/app.js가 깨진다]
-    //   상태: calEvents, calOffAir(admin이 직접 재할당/수정), calSelectedDateStr(app.js가 대입)
+    // [공개 인터페이스 - 이름을 바꾸면 위 두 파일이 깨진다]
+    //   상태: calEvents, calOffAir, calSelectedDateStr(전역 let - 두 파일이 이름으로 직접 읽고 대입한다)
     //   함수: calEscapeHTML, calGetFormatDate, calTodayStr, loadPublicHolidays,
     //         calLoadPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
     //         calRenderTodaySchedules, calRenderSelectedDateSchedules
     //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
-    // admin.html은 이 파일의 let 변수들을 전역 이름으로 직접 대입하므로(calEvents = ...),
-    // 상태 객체로 감싸지 않고 전역 let 바인딩을 그대로 유지한다.
-    //
-    // [리팩토링 메모]
-    // - 월 이동 버그 수정: 오늘이 31일이면 setMonth(+1)이 30일까지인 달을 건너뛰었다
-    //   (예: 8/31 → "9/31" = 10/1 → 10월 표시). 이동 전에 날짜를 1일로 맞춘다.
-    // - 달력 칸을 칸마다 insertAdjacentHTML/appendChild(최대 42번 DOM 조작 + 칸마다 클로저)
-    //   하던 것을 문자열 하나로 모아 innerHTML 한 번으로 그리고, 클릭은 그리드에 이벤트 위임.
-    // - 이번 달에 걸치는 일정만 먼저 추려두고 날짜별로는 그 안에서만 찾는다(칸마다 전체 일정 스캔 제거).
-    // - 일정 색상(color)을 style 속성에 이스케이프 없이 넣던 부분을 검증 후 넣도록 수정.
-    // - "오늘 날짜 문자열" 계산이 여러 곳(캘린더/오늘의 일정/app.js/admin)에 복붙돼 있던 것을 calTodayStr로 통일.
+    // 월 이동 전에는 날짜를 1일로 맞춘다(31일에 setMonth(+1)하면 한 달을 건너뛴다).
     let calCurrentDate = new Date();
     let calSelectedDateStr = "";
     // 하루짜리 일정과 기간(장기) 일정을 완전히 통합한 단일 배열.
@@ -45,9 +35,8 @@
     const CAL_DEFAULT_EVENT_COLOR = CAL_COLOR_PALETTE.blue;
     const CAL_DEFAULT_LONGTERM_COLOR = CAL_COLOR_PALETTE.orange;
 
-    // HTML 이스케이프 (admin.html이 escapeHTML이라는 이름으로 재사용한다).
-    // app.js의 escapeHTML과 달리 falsy 값(0 포함)은 빈 문자열이 되는데, 일정 필드는 항상
-    // 문자열이라 차이가 없고 admin.html 동작을 바꾸지 않기 위해 그대로 둔다.
+    // HTML 이스케이프. core.js의 escapeHTML과 달리 falsy 값(0 포함)은 빈 문자열이 되는데,
+    // 일정 필드는 항상 문자열이라 차이가 없다.
     const calEscapeHTML = (str) => {
         if (!str) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag]));

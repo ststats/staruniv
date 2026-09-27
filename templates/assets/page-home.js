@@ -28,12 +28,6 @@ function homePreviewLinkHtml(href, label) {
     return `<a class="home-preview-link" href="${href}" aria-label="${escapeHTML(label)}"></a>`;
 }
 
-async function fetchHomePreviewData(path) {
-    const res = await fetch(path, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`미리보기 데이터를 불러오지 못했습니다: ${path}`);
-    return res.json();
-}
-
 // 캄몬스타즈 전적만 센다. SiteData는 Supabase에서 이미 받아둔 값을 재사용한다.
 function renderHomeRecordsPreview(box) {
     const rows = [

@@ -518,13 +518,6 @@ function renderIndivSummaryTable() {
     }).join('')}</div>`;
 }
 
-function openIndivMatchModal() {
-    const { player, indivFilter } = RecordsState;
-    document.getElementById('indivModalTitle').innerText = indivFilter === '전체' ? `${player} 개인 전체 전적` : `${player} 전체 전적 (${indivFilter})`;
-    renderIndivMatchesList('indiv-modal-list', indivFilter, null);
-    showModal('indivMatchesModal');
-}
-
 bootPage(() => {
     safeInit('팀 요약 통계', calculateTeamSummaries);
     safeInit('상대 전적 표', renderOpponentTable);

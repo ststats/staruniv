@@ -2861,7 +2861,6 @@ function registerDriver(raw){
  portraits[id]=portrait(id);addCard(id);chosen.add(id);
  return {id,name};
 }
-function addDriver(raw){const entry=registerDriver(raw);syncSelection();return entry.id;}
 // One field, any number of guests: the input splits on commas (and newlines, so a
 // pasted list works too) and each name is judged on its own - one bad entry skips
 // itself instead of throwing the whole batch away.

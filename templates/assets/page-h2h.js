@@ -12,8 +12,6 @@ const H2H_MAP_STEP = 8;
 const H2H_SUGGEST_STEP = 40;
 const H2H_REQUEST_TIMEOUT_MS = 12000;
 
-const H2H_RACE_LABEL = { T: '테란', P: '프로토스', Z: '저그' };
-
 function h2hNormalizeRace(value) {
     const raw = String(value ?? '').trim();
     if (!raw) return '';
@@ -25,11 +23,6 @@ function h2hNormalizeRace(value) {
     if (upper === 'Z' || upper === 'ZERG' || raw === '저그') return 'Z';
 
     return upper;
-}
-
-function h2hRaceLabel(value) {
-    const key = h2hNormalizeRace(value);
-    return H2H_RACE_LABEL[key] || String(value ?? '').trim() || '-';
 }
 
 function h2hNormalizeCategory(value) {
@@ -58,10 +51,6 @@ function h2hNormalizeCategory(value) {
     if (['리그', '프로리그'].includes(raw) || upper === 'LEAGUE') return '리그';
 
     return raw;
-}
-
-function h2hCategoryMatches(value, expected) {
-    return h2hNormalizeCategory(value) === h2hNormalizeCategory(expected);
 }
 
 const H2H_CAT_GROUPS = [
@@ -666,7 +655,7 @@ async function h2hEnter() {
         return;
     }
     if (!Object.keys(H2hState.index.players || {}).length) {
-        // 아직 아카이브를 한 번도 모으지 않은 상태(빈 index.json)
+        // 아직 아카이브를 한 번도 모으지 않은 상태(선수 목록이 비어 있음)
         document.getElementById('h2h-result').innerHTML =
             '<div class="h2h-empty">전적 아카이브를 아직 모으는 중입니다. 조금 뒤에 다시 열어주세요</div>';
         return;
