@@ -174,13 +174,20 @@ test('admin upload of feature photo/video stays: PC browser re-encodes video, no
   assert.match(sql, /'video\/mp4','video\/webm'\]/);
 });
 
-test('방송통계도 서브탭 편집(지표 탭 표시)을 페이지 관리 상자에서 할 수 있다', () => {
+test('히어로 편집(설명·서브탭, 방송통계는 지표 탭)은 히어로 안, 추가 버튼은 그 서브탭에서만', () => {
   const js = read('templates/assets/admin-site.js');
-  assert.match(js, /adminPage==='stats'&&document\.getElementById\('synergy-metric-filter'\)/);
-  assert.match(js, /async function openStatsTabManager\(\)/);
-  assert.match(js, /cfg\.statsTabs=next/);
-  // 페이지 관리 버튼은 모두 공통 상자(addPageTool / pageToolsHtml)로
-  assert.match(read('templates/assets/admin-core.js'), /function addPageTool\(/);
+  assert.match(js, /async function openHeroEditor\(\)/);
+  assert.match(js, /addHeroTool\(\{id:'adminHeroEdit'/);
+  assert.match(js, /cfg\.heroDescriptions\[page\]=desc/);
+  assert.match(js, /cfg\.statsTabs=next/);            // 방송통계 지표 탭 표시도 같은 서랍
+  const core = read('templates/assets/admin-core.js');
+  assert.match(core, /function addPageTool\(\{id,label,icon='plus',onClick,scope=''\}\)/);
+  assert.match(core, /function syncActionBars\(\)/);
+  // 추가 버튼은 자기 서브탭 화면에 묶인다(일정 탭에서 '연혁 추가'가 보이지 않게)
+  for (const [file, scope] of [['admin-history.js', '#view-history'], ['admin-members.js', '#view-member-status'],
+    ['admin-tools.js', '#view-tools-external'], ['admin-video.js', '#view-video-pick']]) {
+    assert.ok(read(`templates/assets/${file}`).includes(`scope:'${scope}'`), `${file}: ${scope}`);
+  }
 });
 
 test('휴면 선수는 공개 티어 명단 조회(anon)에서 빠진다', () => {
