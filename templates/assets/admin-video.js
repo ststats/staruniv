@@ -99,6 +99,26 @@
   const groupEnOf=name=>String((picks.find(p=>p.group_name===name&&String(p.group_en||'').trim())||{}).group_en||'').trim();
   const datalist=(id,values)=>`<datalist id="${id}">${values.map(v=>`<option value="${C().esc(v)}"></option>`).join('')}</datalist>`;
   const youtubeThumb=id=>id?`https://i.ytimg.com/vi/${id}/hqdefault.jpg`:'';
+  // 제목·채널 이름을 비워 두면 채운다. YouTube는 oEmbed(브라우저에서 바로 된다)로 받아 오고,
+  // 숲 VOD는 다른 사이트의 조회를 막아서 둘 다 '숲 VOD'로 둔다(나중에 고쳐 적으면 된다).
+  const SOOP_DEFAULT='숲 VOD';
+  const oembedCache=new Map();
+  function youtubeMeta(id){
+    if(!oembedCache.has(id)){
+      const url=`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent('https://www.youtube.com/watch?v='+id)}`;
+      oembedCache.set(id,fetch(url).then(r=>r.ok?r.json():null).then(j=>j?{title:String(j.title||'').trim(),author:String(j.author_name||'').trim()}:null).catch(()=>null));
+    }
+    return oembedCache.get(id);
+  }
+  async function fillPickMeta(){
+    const url=C().value('avp_url').trim(),y=youtubeId(url),s=!y&&soopId(url);
+    const title=document.getElementById('avp_title'),author=document.getElementById('avp_author');
+    if(!title||!author||(!y&&!s))return;
+    const meta=y?await youtubeMeta(y):{title:SOOP_DEFAULT,author:SOOP_DEFAULT};
+    if(!meta||C().value('avp_url').trim()!==url)return;   // 기다리는 사이 주소가 바뀌었으면 버린다
+    if(!title.value.trim()&&meta.title)title.value=meta.title;
+    if(!author.value.trim()&&meta.author)author.value=meta.author;
+  }
 
   function openPick(row){
     row=row||{kind:'youtube',title:'',note:'',group_name:'',group_en:'',author:'',thumb:'',added_at:new Date().toISOString().slice(0,10),source_order:'',short:false,hidden:false};
@@ -107,11 +127,11 @@
       eyebrow:'PICK',title:row.id?'보자 영상 수정':'보자 영상 추가',
       html:`
         ${C().field('YouTube 또는 SOOP URL',C().input('avp_url',row.id?pickUrl(row):'','url','required'))}
-        ${C().field('제목',C().input('avp_title',row.title||'','text','required'))}
+        ${C().field('제목',C().input('avp_title',row.title||''),'비우면 YouTube 제목, 숲 VOD는 "숲 VOD"')}
         <div class="admin-form-grid">
           ${C().field('분류',C().input('avp_group',row.group_name||'','text','list="avp_groups" autocomplete="off"'),'기존 분류에서 고르거나 새로 적기')}
           ${C().field('분류 영문',C().input('avp_group_en',groupEn,'text','placeholder="예: MONSTARZ"'),'제목 위 작은 라벨 · 분류마다 하나')}
-          ${C().field('작성자',C().input('avp_author',row.author||'','text','list="avp_authors" autocomplete="off"'),'채널 이름 (예: 김윤환TV, 숲 VOD)')}
+          ${C().field('작성자',C().input('avp_author',row.author||'','text','list="avp_authors" autocomplete="off"'),'채널 이름 · 비우면 자동으로 채움')}
           ${C().field('등록일',C().input('avp_date',row.added_at||'','date'))}
           ${C().field('표시 순서',C().input('avp_order',row.source_order??'','number','min="0"'),row.id?'':'비우면 맨 뒤')}
         </div>
@@ -125,7 +145,9 @@
         const id=y||s,kind=y?'youtube':'soop';
         const group=C().empty(C().value('avp_group').trim());
         const groupEn=C().empty(C().value('avp_group_en').trim());
-        const payload={id,kind,title:C().value('avp_title').trim(),note:C().empty(C().value('avp_note')),group_name:group,group_en:groupEn,author:C().empty(C().value('avp_author').trim()),thumb:C().empty(C().value('avp_thumb')),added_at:C().empty(C().value('avp_date')),source_order:Number(C().value('avp_order')||await C().nextSourceOrder('video_picks')),short:!!document.getElementById('avp_short')?.checked,hidden:!!document.getElementById('avp_hidden')?.checked,updated_at:new Date().toISOString()};
+        await fillPickMeta();
+        const title=C().value('avp_title').trim();if(!title)throw new Error('YouTube 제목을 가져오지 못했습니다. 제목을 적어 주세요');
+        const payload={id,kind,title,note:C().empty(C().value('avp_note')),group_name:group,group_en:groupEn,author:C().empty(C().value('avp_author').trim()),thumb:C().empty(C().value('avp_thumb')),added_at:C().empty(C().value('avp_date')),source_order:Number(C().value('avp_order')||await C().nextSourceOrder('video_picks')),short:!!document.getElementById('avp_short')?.checked,hidden:!!document.getElementById('avp_hidden')?.checked,updated_at:new Date().toISOString()};
         if(row.id&&row.id!==id){const {error:del}=await C().state.client.from('video_picks').delete().eq('id',row.id);if(del)throw del;}
         const {error}=await C().state.client.from('video_picks').upsert(payload,{onConflict:'id'});if(error)throw error;
         // 분류 영문을 바꾸면 같은 분류의 다른 영상도 같이 바꾼다(분류마다 하나)
@@ -142,6 +164,8 @@
     let enTouched=false;
     document.getElementById('avp_group_en')?.addEventListener('input',()=>{enTouched=true;});
     document.getElementById('avp_group')?.addEventListener('input',ev=>{const en=groupEnOf(ev.target.value.trim());if(!enTouched)document.getElementById('avp_group_en').value=en;});
+    let metaTimer=0;
+    document.getElementById('avp_url')?.addEventListener('input',()=>{clearTimeout(metaTimer);metaTimer=setTimeout(fillPickMeta,400);});
     preview();
   }
 
