@@ -6,10 +6,6 @@
  *   vertical이면 쇼츠처럼 세로 9:16 플레이어.
  */
 
-function mediaLightboxEscape(str) {
-    return String(str == null ? '' : str).replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
-}
-
 function mediaLightboxOpen(opts) {
     opts = opts || {};
     const yt = /^[A-Za-z0-9_-]{11}$/.test(String(opts.youtubeId || '')) ? opts.youtubeId : '';
@@ -18,7 +14,7 @@ function mediaLightboxOpen(opts) {
     const img = String(opts.image || '');
     if (!yt && !soop && !img) return;
     mediaLightboxClose();
-    const caption = mediaLightboxEscape(opts.caption || '');
+    const caption = escapeHTML(opts.caption || '');
     const layer = document.createElement('div');
     layer.className = 'media-lightbox' + (yt && opts.vertical ? ' is-vertical' : '');
     layer.id = 'media-lightbox';
@@ -32,7 +28,7 @@ function mediaLightboxOpen(opts) {
         // 숲 공식 임베드. 채팅은 끄고 자동재생만 켠다(멀티뷰의 라이브 임베드와 같은 방식).
         body = `<div class="media-lightbox-video"><iframe src="https://vod.sooplive.co.kr/player/${soop}/embed?autoPlay=true&showChat=false" title="${caption || 'SOOP VOD'}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
     } else {
-        body = `<img class="media-lightbox-img" src="${mediaLightboxEscape(img)}" alt="${caption}">`;
+        body = `<img class="media-lightbox-img" src="${escapeHTML(img)}" alt="${caption}">`;
     }
     // 임베드가 막힌 영상은 이 링크로 원래 사이트에서 볼 수 있다.
     const outLink = yt

@@ -1,6 +1,7 @@
 // CSS가 다시 '덧붙이기'로 쌓이지 않게 막는 검사.
 //  1) 같은 @media 안에서 선택자 목록이 똑같은 규칙은 한 번만 - 고칠 때는 원래 규칙을 고친다.
-//  2) HTML·JS·빌드 스크립트 어디에서도 쓰지 않는 클래스의 규칙은 남기지 않는다.
+//  2) HTML·JS·빌드 스크립트 어디에서도 쓰지 않는 클래스의 규칙은 남기지 않는다(00-vendor 포함).
+//  3) 어디서도 읽지 않는 CSS 변수(--이름)는 선언하지 않는다(00-vendor 포함).
 // 공개 CSS는 templates/assets/style/NN-*.css(빌드가 이름 순서대로 합쳐 style.css로 낸다), 어드민은 admin.css.
 const test = require('node:test');
 const assert = require('node:assert');
@@ -10,10 +11,10 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const ASSETS = path.join(ROOT, 'templates', 'assets');
 
-function cssSources() {
+function cssSources(withVendor = false) {
     const dir = path.join(ASSETS, 'style');
-    // 00-vendor-*.css는 외부 라이브러리에서 뽑아 온 것이라 검사하지 않는다
-    const parts = fs.readdirSync(dir).filter(f => f.endsWith('.css') && !f.startsWith('00-vendor')).sort()
+    // 00-vendor-*.css는 외부 라이브러리에서 뽑아 온 것이라 중복 규칙 검사에서는 뺀다
+    const parts = fs.readdirSync(dir).filter(f => f.endsWith('.css') && (withVendor || !f.startsWith('00-vendor'))).sort()
         .map(f => fs.readFileSync(path.join(dir, f), 'utf8'));
     return { 'style.css': parts.join(''), 'admin.css': fs.readFileSync(path.join(ASSETS, 'admin.css'), 'utf8') };
 }
@@ -74,9 +75,28 @@ test('쓰이지 않는 클래스의 CSS 규칙이 없다', () => {
     const tokens = new Set(corpus.match(/[A-Za-z_][\w-]*/g));
     // 코드에서 조합해 만드는 이름: prefix-${...}, prefix-{{ }}, 'prefix-' +
     const dynamic = [...corpus.matchAll(/([A-Za-z][\w-]*-)(?:\$\{|\{\{|["']\s*\+)/g)].map(m => m[1]);
-    for (const [name, css] of Object.entries(cssSources())) {
+    for (const [name, css] of Object.entries(cssSources(true))) {
         const classes = new Set([...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m => m[1]));
         const dead = [...classes].filter(c => !tokens.has(c) && !dynamic.some(p => c.startsWith(p))).sort();
         assert.deepStrictEqual(dead, [], `${name}: 어디서도 쓰지 않는 클래스 - 규칙을 지울 것`);
+    }
+});
+
+test('선언만 하고 읽지 않는 CSS 변수가 없다', () => {
+    const texts = [];
+    const walk = dir => {
+        for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+            const p = path.join(dir, f.name);
+            if (f.isDirectory()) walk(p);
+            else if (/\.(html|js|css)$/.test(f.name)) texts.push(fs.readFileSync(p, 'utf8'));
+        }
+    };
+    walk(path.join(ROOT, 'templates'));
+    const corpus = texts.join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+    // var(--x) 로 읽거나, JS가 '--x' 이름으로 직접 읽고 쓰는 것
+    const read = new Set([...corpus.matchAll(/var\(\s*(--[\w-]+)|['"`](--[\w-]+)['"`]/g)].map(m => m[1] || m[2]));
+    for (const [name, css] of Object.entries(cssSources(true))) {
+        const declared = new Set([...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(--[\w-]+)\s*:/g)].map(m => m[1]));
+        assert.deepStrictEqual([...declared].filter(v => !read.has(v)).sort(), [], `${name}: 읽지 않는 CSS 변수 - 선언을 지울 것`);
     }
 });
