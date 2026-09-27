@@ -128,6 +128,8 @@ function switchToolsView(viewType, skipHashUpdate) {
     }
     // 엔트리는 index.json(135KB)을 받아야 그릴 수 있다. 이 탭을 실제로 열 때 한 번만 받는다.
     if (viewType === 'entry' && typeof entryEnsureLoaded === 'function') entryEnsureLoaded();
+    // 외부 도구·사이트 목록도 이 탭을 처음 열 때 받는다
+    if (viewType === 'external' && !toolsExternalLoaded) { toolsExternalLoaded = true; safeInit('도구 목록', loadToolsData); }
     if (!skipHashUpdate) updateToolsHash();
 }
 
@@ -346,6 +348,7 @@ function renderExternalTools(data) {
     });
 }
 
+let toolsExternalLoaded = false;
 async function loadToolsData() {
     try {
         const client = publicSupabaseClient();
@@ -368,7 +371,6 @@ async function loadToolsData() {
 }
 
 bootPage(() => {
-    safeInit('도구 목록', loadToolsData);
     safeInit('멀티뷰어', () => { mvRenderAll(); return mvCheckLiveAndRerenderChips(); });
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         switchToolsView(toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW)), true);

@@ -199,6 +199,7 @@ function openMemberProfile(name) {
     const m = findMemberByName(name);
     if (!m) return;
     _profileMember = m;
+    loadProfileActivityData();   // 방송 활동은 창을 처음 열 때 받는다(한 번 받으면 다시 안 받음)
 
     document.getElementById('mp-name').innerText = name;
     const mpRoleBadge = document.getElementById('mp-role-badge');
@@ -812,5 +813,4 @@ bootPage(() => {
         // 특정 멤버 공지를 보다가 뒤로가기로 "전체 공지" 주소로 돌아온 경우 화면도 전체로 되돌린다
         else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
     }));
-    safeInit('방송 활동 데이터', loadProfileActivityData);
 });

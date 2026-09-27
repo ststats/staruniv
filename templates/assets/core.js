@@ -979,7 +979,7 @@ function initEdgeFades(root) {
 let _publicSupabaseClient = null;
 const SUPABASE_REQUEST_TIMEOUT_MS = 8000;
 // 공개 페이지는 Supabase 표를 읽기만 한다. 그래서 supabase-js(213KB)를 받지 않고, 쓰는 조회
-// (select·eq·in·not·order·range·limit·maybeSingle)만 같은 주소 형식으로 직접 만든다 - 주소와
+// (select·eq·in·not·gte·lte·order·range·limit·maybeSingle)만 같은 주소 형식으로 직접 만든다 - 주소와
 // 헤더가 supabase-js와 한 글자까지 같아서 서버 쪽에서 보면 차이가 없다. 결과도 똑같이 {data, error}.
 // 로그인이 필요한 관리자 화면은 진짜 supabase-js를 따로 받는다(base.html).
 class SupabaseReadQuery {
@@ -997,6 +997,8 @@ class SupabaseReadQuery {
     }
     eq(column, value) { this.url.searchParams.append(column, `eq.${value}`); return this; }
     not(column, operator, value) { this.url.searchParams.append(column, `not.${operator}.${value}`); return this; }
+    gte(column, value) { this.url.searchParams.append(column, `gte.${value}`); return this; }
+    lte(column, value) { this.url.searchParams.append(column, `lte.${value}`); return this; }
     in(column, values) {
         const list = Array.from(new Set(values))
             .map(v => (typeof v === 'string' && /[,()]/.test(v) ? `"${v}"` : `${v}`)).join(',');
@@ -1161,20 +1163,11 @@ function fetchSynergyResult(month = '') {
         const client = publicSupabaseClient();
         if (!client) throw new Error('Supabase 공개 클라이언트를 초기화하지 못했습니다');
 
-        let latest = null;
-        if (month) {
-            const found = (await fetchSynergyMonths()).find(m => m.month === month);
-            if (!found) throw new Error(`${month} 방송통계가 없습니다`);
-            latest = { stat_date: found.date };
-        } else {
-            const { data: dateRows, error: dateError } = await client
-                .from('synergy_daily_dates')
-                .select('stat_date,updated_at')
-                .order('stat_date', { ascending: false })
-                .limit(1);
-            if (dateError) throw dateError;
-            latest = Array.isArray(dateRows) ? dateRows[0] : null;
-        }
+        // 날짜는 달 목록(fetchSynergyMonths, 한 번만 받는다)에서 고른다 - 최근 달은 그 첫 칸
+        const months = await fetchSynergyMonths();
+        const found = month ? months.find(m => m.month === month) : months[0];
+        if (month && !found) throw new Error(`${month} 방송통계가 없습니다`);
+        const latest = found ? { stat_date: found.date } : null;
         const latestDate = latest && latest.stat_date ? String(latest.stat_date) : '';
         if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다');
 
