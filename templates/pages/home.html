@@ -1,4 +1,8 @@
 {% extends 'base.html' %}
+{#- 검색엔진이 읽는 사이트 정보(JSON-LD). 실행되는 스크립트가 아니라 데이터라 CSP에 걸리지 않는다. #}
+{% block head_scripts %}
+    <script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "WebSite", "name": "스타대학", "url": canonical_url, "description": description} | tojson }}</script>
+{% endblock %}
 {% block content %}
 {#- [리디자인] 히어로가 화면 끝까지 닿아야 해서 .container를 섹션에서 떼고 본문만 감싼다.
     .container에는 max-width(1280px)가 걸려 있어서, 안에 두면 음수 마진으로도 그 바깥까지
