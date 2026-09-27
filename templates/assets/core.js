@@ -354,6 +354,21 @@ document.addEventListener('keydown', e => {
     el.click();
 });
 
+// 노치(clip-path)로 잘린 모서리에서는 사각 포커스 테두리의 사선 구간이 비므로 02-base.css의 ::before가 사선까지 그린다.
+// 그 크기(--cut: 요소 자신 또는 모서리를 같이 쓰는 조상의 노치에서 테두리 두께를 뺀 값)를 포커스 때 넣는다.
+document.addEventListener('focusin', ({ target: el }) => {
+    if (!(el instanceof Element)) return;
+    for (let a = el, i = 0; a && i < 3; a = a.parentElement, i++) {
+        const m = /calc\(100% - ([\d.]+)px\)/.exec(getComputedStyle(a).clipPath);
+        if (!m) continue;
+        const r = el.getBoundingClientRect(), p = a.getBoundingClientRect(), s = getComputedStyle(el);
+        const cut = m[1] - (p.right - r.right) - (r.top - p.top) - parseFloat(s.borderTopWidth) - parseFloat(s.borderRightWidth);
+        if (cut > 0) el.style.setProperty('--cut', cut + 'px');
+        return;
+    }
+});
+document.addEventListener('focusout', e => e.target.style?.removeProperty('--cut'));
+
 // =====================================================================
 // 2. 페이지별 사이트 데이터
 // =====================================================================
