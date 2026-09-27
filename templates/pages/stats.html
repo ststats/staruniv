@@ -24,7 +24,7 @@
         <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
             {%- for key, label in stats_tabs %}
             {%- set is_first = visible_tabs and key == visible_tabs[0] %}
-            <div class="sub-tab{{ ' active' if is_first else '' }}" data-metric="{{ key }}" role="tab" tabindex="0" aria-selected="{{ 'true' if is_first else 'false' }}" onclick="setSynergyMetric('{{ key }}')"{{ ' hidden' if key in hidden_stats_tabs else '' }}>{{ label }}</div>
+            <div class="sub-tab{{ ' active' if is_first else '' }}" data-metric="{{ key }}" role="tab" tabindex="0" aria-selected="{{ 'true' if is_first else 'false' }}" data-click="setSynergyMetric" data-args='["{{ key }}"]'{{ ' hidden' if key in hidden_stats_tabs else '' }}>{{ label }}</div>
             {%- endfor %}
         </div>
     </div>
@@ -35,9 +35,9 @@
     {%- set first_label = (stats_tabs | selectattr(0, 'equalto', visible_tabs[0]) | map(attribute=1) | first) if visible_tabs else '전체' %}
     <div class="section-title" data-en="SUMMARY"><span class="section-title-label" id="synergy-summary-title" role="heading" aria-level="2">{{ first_label }} 요약</span><span id="synergy-summary-help"></span>
         <div class="cal-nav-group" id="synergy-month-nav" hidden>
-            <button type="button" class="cal-nav-btn" id="synergy-month-prev" onclick="stepSynergyMonth(-1)" aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <button type="button" class="cal-nav-btn" id="synergy-month-prev" data-click="stepSynergyMonth" data-args='[-1]' aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
             <div class="cal-nav-badge" id="synergy-month-title" aria-live="polite"></div>
-            <button type="button" class="cal-nav-btn" id="synergy-month-next" onclick="stepSynergyMonth(1)" aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+            <button type="button" class="cal-nav-btn" id="synergy-month-next" data-click="stepSynergyMonth" data-args='[1]' aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         </div>
     </div>
     {#- 맨 위 TOP 칸: 지금 고른 지표의 1위(남녀 합쳐서) 대표 사진·이름·값. 사진은 어드민 멤버 수정의
@@ -91,6 +91,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset_url('actions.js') }}"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 <script src="{{ asset_url('page-stats.js') }}"></script>

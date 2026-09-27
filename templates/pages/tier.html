@@ -10,9 +10,9 @@
                 <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표</a>, <a href="https://eloboard.com/" target="_blank" rel="noopener">EloBoard</a></p>
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
-            <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true" onclick="switchTierView('list')">티어표</div>
-            <div class="sub-tab" id="tab-tier-h2h" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('h2h')">상대전적</div>
-            <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" onclick="switchTierView('analysis')">분석</div>
+            <div class="sub-tab active" id="tab-tier-list" role="tab" tabindex="0" aria-selected="true" data-click="switchTierView" data-args='["list"]'>티어표</div>
+            <div class="sub-tab" id="tab-tier-h2h" role="tab" tabindex="0" aria-selected="false" data-click="switchTierView" data-args='["h2h"]'>상대전적</div>
+            <div class="sub-tab" id="tab-tier-analysis" role="tab" tabindex="0" aria-selected="false" data-click="switchTierView" data-args='["analysis"]'>분석</div>
         </div>
     </div>
     <div class="container">
@@ -76,7 +76,7 @@
         <div class="h2h-slot-inner" id="analysis-search">
             <label class="h2h-slot-label" for="analysis-search-input">선수 검색</label>
             <input type="search" class="h2h-input" id="analysis-search-input" autocomplete="off"
-                   placeholder="이름 또는 대학으로 검색" oninput="analysisOnQuery(this.value)">
+                   placeholder="이름 또는 대학으로 검색" data-input="analysisOnQuery" data-args='[{"$":"value"}]'>
         </div>
         <div id="analysis-body"><div class="h2h-empty">불러오는 중</div></div>
     </div>
@@ -84,6 +84,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset_url('actions.js') }}"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 <script src="{{ asset_url('page-h2h.js') }}"></script>

@@ -254,7 +254,7 @@ function h2hSuggest(query) {
 // 상대전적과 선수 분석이 같은 검색 결과 행을 쓴다. 페이지별 차이는 선택 callback뿐이다.
 function playerSuggestItemsHtml(list, pickCall) {
     return list.map(([pid, p]) => `
-        <button type="button" class="h2h-suggest-item" onclick="${pickCall(pid)}">
+        <button type="button" class="h2h-suggest-item"${pickCall(pid)}>
             ${avatarHtml(p.s || '', 'h2h-suggest-avatar')}
             <span class="h2h-suggest-name">${escapeHTML(p.n)}</span>
             ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
@@ -269,9 +269,9 @@ function h2hSuggestHtml(slot) {
     if (!H2hState.query[slot].trim()) return '';
     if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다</div></div>';
     const shown = Math.min(list.length, H2hState.suggestShown);
-    return `<div class="h2h-suggest" onscroll="h2hSuggestScroll(${slot}, this)">
+    return `<div class="h2h-suggest"${actOn('scroll', 'h2hSuggestScroll', slot, ACT.el)}>
         <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
-        ${playerSuggestItemsHtml(list.slice(0, shown), pid => `h2hPick(${slot}, '${jsAttr(pid)}')`)}
+        ${playerSuggestItemsHtml(list.slice(0, shown), pid => act('h2hPick', slot, pid))}
     </div>`;
 }
 
@@ -285,7 +285,7 @@ function h2hSuggestScroll(slot, el) {
     H2hState.suggestShown = Math.min(list.length, from + H2H_SUGGEST_STEP);
     el.insertAdjacentHTML('beforeend', playerSuggestItemsHtml(
         list.slice(from, H2hState.suggestShown),
-        pid => `h2hPick(${slot}, '${jsAttr(pid)}')`
+        pid => act('h2hPick', slot, pid)
     ));
 }
 
@@ -298,14 +298,14 @@ function h2hSlotHtml(slot) {
                 <label class="h2h-slot-label" for="h2h-input-${slot}">${label}</label>
                 <input type="search" class="h2h-input" id="h2h-input-${slot}" autocomplete="off"
                        placeholder="이름 또는 대학으로 검색" value="${escapeHTML(H2hState.query[slot])}"
-                       oninput="h2hOnQuery(${slot}, this.value)">
+                       ${actOn('input', 'h2hOnQuery', slot, ACT.value)}>
                 ${H2hState.suggestSlot === slot ? h2hSuggestHtml(slot) : ''}
             </div>`;
     }
     const p = h2hPlayer(pid) || { n: h2hName(pid) };
     const rec = h2hRecord(h2hRowsInPeriod(pid));
     return `<div class="h2h-slot-inner"><div class="h2h-slot-label">${label}</div>
-        ${playerSummaryHtml(p, rec, `<button type="button" class="h2h-card-clear" aria-label="선수 지우기" onclick="h2hClear(${slot})">✕</button>`, h2hRankInfo(p))}</div>`;
+        ${playerSummaryHtml(p, rec, `<button type="button" class="h2h-card-clear" aria-label="선수 지우기"${act('h2hClear', slot)}>✕</button>`, h2hRankInfo(p))}</div>`;
 }
 
 function h2hOnQuery(slot, value) {
@@ -403,7 +403,7 @@ function h2hFilterRowsByCategory(rows, label) {
 function matchCategoryFilterHtml(activeLabel, handler) {
     return ['전체', ...H2H_CAT_GROUPS.map(([, short]) => short)].map(label => `
         <button type="button" class="filter-item${activeLabel === label ? ' active' : ''}"
-            aria-pressed="${activeLabel === label}" onclick="${handler}('${jsAttr(label)}')">${escapeHTML(label)}</button>`).join('');
+            aria-pressed="${activeLabel === label}"${act(handler, label)}>${escapeHTML(label)}</button>`).join('');
 }
 
 function h2hSetFilter(label) {
@@ -470,7 +470,7 @@ function h2hMapTableHtml(rows) {
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="h2hShowMoreMaps()">더 보기 ${chevronDownSvg(9)}</button>
+            <button type="button" class="news-load-more" data-click="h2hShowMoreMaps">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
@@ -512,22 +512,22 @@ function h2hTopOpponentsHtml(rows, targetSlot) {
         <div class="section-title" data-en="RIVALS"><span class="section-title-label">자주 만난 상대</span>
             <span class="title-count">${all.length.toLocaleString('ko-KR')}명</span></div>
         <div class="h2h-rivals">
-            ${list.map(([pid, [win, lose]]) => h2hRivalCardHtml(pid, win, lose, `h2hPick(${targetSlot}, '${jsAttr(pid)}')`, !h2hPlayer(pid))).join('')}
+            ${list.map(([pid, [win, lose]]) => h2hRivalCardHtml(pid, win, lose, act('h2hPick', targetSlot, pid), !h2hPlayer(pid))).join('')}
         </div>
         ${all.length > list.length ? `
         <div class="news-load-more-wrap h2h-more-wrap">
-            <button type="button" class="news-load-more" onclick="h2hShowMoreRivals()">더 보기 ${chevronDownSvg(9)}</button>
+            <button type="button" class="news-load-more" data-click="h2hShowMoreRivals">더 보기 ${chevronDownSvg(9)}</button>
         </div>` : ''}`;
 }
 
 // 상대 카드 한 장: 맵별 전적(.h2h-map)과 같은 짜임 - 이름 / 승-패 · 승률 / 승률 막대.
 // 프로필 사진은 오른쪽 끝에 두 줄에 걸쳐 세운다.
-function h2hRivalCardHtml(pid, win, lose, onclick, disabled) {
+function h2hRivalCardHtml(pid, win, lose, action, disabled) {
     const known = h2hPlayer(pid);
     const total = win + lose;
     const pct = total ? (win / total) * 100 : 0;
     return `
-        <button type="button" class="h2h-rival"${disabled ? ' disabled' : ` onclick="${onclick}"`}>
+        <button type="button" class="h2h-rival"${disabled ? ' disabled' : action}>
             ${avatarHtml(known ? (known.s || '') : '', 'h2h-rival-avatar')}
             <span class="h2h-rival-name">${escapeHTML(h2hName(pid))}</span>
             <span class="h2h-rival-rec">${winLoseText(win, lose)}<span class="h2h-rate-sub"> · ${h2hRateText(win, lose)}</span></span>
@@ -580,7 +580,7 @@ function renderH2hPeriod() {
     if (!bar) return;
     bar.innerHTML = H2H_PERIODS.map(([key, label]) => `
         <button type="button" class="filter-item${H2hState.period === key ? ' active' : ''}"
-                aria-pressed="${H2hState.period === key}" onclick="h2hSetPeriod('${key}')">${label}</button>`).join('');
+                aria-pressed="${H2hState.period === key}"${act('h2hSetPeriod', key)}>${label}</button>`).join('');
 }
 
 function renderH2hSlots() {
@@ -618,7 +618,7 @@ async function h2hEnter() {
         console.error('상대전적 데이터를 불러오지 못했습니다:', e);
         if (resultBox) {
             resultBox.innerHTML =
-                `<div class="h2h-empty">전적 데이터를 불러오지 못했습니다<br><small>${escapeHTML(e.message || String(e))}</small><br><button type="button" class="news-load-more" onclick="h2hEnter()">다시 시도</button></div>`;
+                `<div class="h2h-empty">전적 데이터를 불러오지 못했습니다<br><small>${escapeHTML(e.message || String(e))}</small><br><button type="button" class="news-load-more" data-click="h2hEnter">다시 시도</button></div>`;
         }
         return;
     }

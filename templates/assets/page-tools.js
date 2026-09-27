@@ -306,7 +306,7 @@ function toolCardHtml(tool) {
     return `
         <a class="tool-card" data-tool-id="${escapeHTML(tool.id || '')}" data-tool-category="${escapeHTML(tool.category || '')}"${safeHttpUrl(url) ? ` href="${escapeHTML(safeHttpUrl(url))}"` : ''} target="_blank" rel="noopener">
             <div class="tool-card-media">
-                <div class="tool-card-icon"><img loading="lazy" src="${iconUrl}" alt="" onerror="this.style.display='none';"></div>
+                <div class="tool-card-icon"><img loading="lazy" src="${iconUrl}" alt=""${actOn('error', 'imgHide', ACT.el)}></div>
             </div>
             <div class="tool-card-body">
                 <div class="tool-card-name">${escapeHTML(tool.name)}</div>

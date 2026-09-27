@@ -8,8 +8,8 @@
             <p class="page-header-subtitle">캄몬스타즈 팬 채널의 영상과 추천 영상입니다</p>
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
-            <div class="sub-tab active" id="tab-video-fantube" role="tab" tabindex="0" aria-selected="true" onclick="switchVideoView('fantube')">팬튜브</div>
-            <div class="sub-tab" id="tab-video-pick" role="tab" tabindex="0" aria-selected="false" onclick="switchVideoView('pick')">보자</div>
+            <div class="sub-tab active" id="tab-video-fantube" role="tab" tabindex="0" aria-selected="true" data-click="switchVideoView" data-args='["fantube"]'>팬튜브</div>
+            <div class="sub-tab" id="tab-video-pick" role="tab" tabindex="0" aria-selected="false" data-click="switchVideoView" data-args='["pick"]'>보자</div>
         </div>
     </div>
     <div class="container">
@@ -33,8 +33,8 @@
                 마땅치 않아, 제목줄 오른쪽에 넘김 버튼을 둔다(좁은 화면에서는 숨긴다). #}
             <div class="section-title section-title-spaced has-shelf-nav" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span>
                 <span class="shelf-nav" id="video-shorts-nav" hidden>
-                    <button type="button" class="shelf-nav-btn" aria-label="이전 쇼츠" onclick="videoShortsScroll(-1)">‹</button>
-                    <button type="button" class="shelf-nav-btn" aria-label="다음 쇼츠" onclick="videoShortsScroll(1)">›</button>
+                    <button type="button" class="shelf-nav-btn" aria-label="이전 쇼츠" data-click="videoShortsScroll" data-args='[-1]'>‹</button>
+                    <button type="button" class="shelf-nav-btn" aria-label="다음 쇼츠" data-click="videoShortsScroll" data-args='[1]'>›</button>
                 </span>
             </div>
             <div class="video-shorts-shelf tab-scroll" id="video-shorts-shelf"></div>
@@ -43,7 +43,7 @@
         <div class="section-title section-title-spaced" data-en="LATEST"><span class="section-title-label">최신 영상</span><span class="title-count" id="video-latest-count"></span></div>
         <div class="video-grid" id="video-latest-grid" aria-live="polite" aria-busy="true"><div class="content-state video-empty">영상 목록을 불러오는 중</div></div>
         <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
-            <button type="button" class="news-load-more" onclick="videoShowMore()">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+            <button type="button" class="news-load-more" data-click="videoShowMore">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
         </div>
         </div>{#- /.selection-content #}
       </div>{#- /.selection-layout #}
@@ -59,6 +59,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset_url('actions.js') }}"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 <script src="{{ asset_url('media-lightbox.js') }}"></script>

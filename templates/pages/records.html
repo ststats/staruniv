@@ -9,8 +9,8 @@
             <p class="page-header-subtitle">캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다</p>
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
-            <div class="sub-tab active" id="tab-team" role="tab" tabindex="0" aria-selected="true" onclick="switchStatView('team')">팀</div>
-            <div class="sub-tab" id="tab-individual" role="tab" tabindex="0" aria-selected="false" onclick="switchStatView('individual')">개인</div>
+            <div class="sub-tab active" id="tab-team" role="tab" tabindex="0" aria-selected="true" data-click="switchStatView" data-args='["team"]'>팀</div>
+            <div class="sub-tab" id="tab-individual" role="tab" tabindex="0" aria-selected="false" data-click="switchStatView" data-args='["individual"]'>개인</div>
         </div>
     </div>
     <div class="container">
@@ -19,7 +19,7 @@
         <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 전적</span></div>
         <div class="row g-3 mb-block">
             {%- for fmt in ['대회', '대학', '미니', 'CK'] %}
-            <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" onclick="openTeamMatchModal('{{ fmt }}')">
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" data-click="openTeamMatchModal" data-args='["{{ fmt }}"]'>
                 <div class="label">{{ fmt }}</div>
                 <div class="donut" id="t-sum-{{ fmt }}-donut"><span class="donut-text" id="t-sum-{{ fmt }}-r">0%</span></div>
                 {#- [리디자인] 시안에는 큰 승패 숫자와 비율 바가 둘 다 있었다.
@@ -143,11 +143,11 @@
             <div class="section-title record-recent-header mt-4" data-en="RECENT">
                 <span class="record-recent-title section-title-label">최근 전적</span>
                     <div id="indiv-filters" class="filter-nav tab-scroll" role="tablist">
-                        <div class="filter-item active" role="tab" tabindex="0" onclick="setIndivFilter('전체')">전체</div>
-                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대회')">대회</div>
-                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('대학')">대학</div>
-                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('미니')">미니</div>
-                        <div class="filter-item" role="tab" tabindex="0" onclick="setIndivFilter('CK')">CK</div>
+                        <div class="filter-item active" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["전체"]'>전체</div>
+                        <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["대회"]'>대회</div>
+                        <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["대학"]'>대학</div>
+                        <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["미니"]'>미니</div>
+                        <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["CK"]'>CK</div>
                     </div>
             </div>
 
@@ -180,6 +180,7 @@
 {% include 'partials/match_modals.html' %}
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset_url('actions.js') }}"></script>
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 <script src="{{ asset_url('page-records.js') }}"></script>

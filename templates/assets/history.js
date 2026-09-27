@@ -135,11 +135,11 @@ function histMoreChipHtml(rest, members, avatarUrlFn, key) {
     const faces = rest.slice(0, HIST_STACK_FACES).map(e => {
         const url = histAvatarSrc(e, members, avatarUrlFn);
         return url
-            ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-stack-face',textContent:'👤'}))">`
+            ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-stack-face', '👤')}>`
             : `<span class="hist-stack-face">👤</span>`;
     }).join('');
     return `<button type="button" class="hist-chip hist-chip-more" data-hist-more="${key}"
-                onclick="histToggleMembers('${key}')" aria-expanded="false">
+                ${act('histToggleMembers', key)} aria-expanded="false">
                 <span class="hist-stack">${faces}</span>
                 <span class="hist-chip-name">+${rest.length}명</span>
             </button>`;
@@ -159,7 +159,7 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
     const m = (members || []).find(x => x['이름'] === name);
     const url = m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
     const ava = url
-        ? `<img class="hist-chip-ava" src="${escapeHTML(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-chip-ava',textContent:'👤'}))">`
+        ? `<img class="hist-chip-ava" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-chip-ava', '👤')}>`
         : `<span class="hist-chip-ava">👤</span>`;
     const noteHtml = note ? `<span class="hist-chip-role">${escapeHTML(note)}</span>` : '';
     return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
@@ -177,8 +177,8 @@ function histRenderTypeBar(items) {
     const types = Object.keys(HISTORY_TYPES).filter(t => items.some(x => x.type === t));
     if (!types.includes(histTypeFilter)) histTypeFilter = '';
     renderAvatarBar('history-type-list',
-        avatarSelectAllItemHtml('history-type-all', "histPickType('')", `${items.length}`),
-        types.map(t => `<div class="avatar-select-item hist-bar-item hist-type-${t}" id="history-type-${t}" role="button" tabindex="0" onclick="histPickType('${t}')">
+        avatarSelectAllItemHtml('history-type-all', act('histPickType', ''), `${items.length}`),
+        types.map(t => `<div class="avatar-select-item hist-bar-item hist-type-${t}" id="history-type-${t}" role="button" tabindex="0"${act('histPickType', t)}>
                 <span class="hist-bar-dot" aria-hidden="true"></span>
                 <span class="avatar-select-name">${HISTORY_TYPES[t]}</span>
                 <span class="avatar-select-tier">${items.filter(x => x.type === t).length}</span>
@@ -227,7 +227,7 @@ function histItemHtml(item, opts) {
     const yt = histYoutubeId(item.youtube);
     const key = escapeHTML(item.id);
     const media = thumb ? `
-            <button type="button" class="hist-media${yt && !histSafeImage(item.image) ? ' is-video' : (yt ? ' has-video' : '')}" onclick="histOpenMedia('${key}')" aria-label="${yt ? '영상 보기' : '사진 크게 보기'}">
+            <button type="button" class="hist-media${yt && !histSafeImage(item.image) ? ' is-video' : (yt ? ' has-video' : '')}"${act('histOpenMedia', key)} aria-label="${yt ? '영상 보기' : '사진 크게 보기'}">
                 <img src="${escapeHTML(thumb)}" alt="" loading="lazy">
                 ${yt ? '<span class="hist-play" aria-hidden="true"></span>' : ''}
             </button>` : '';
@@ -247,12 +247,12 @@ function histItemHtml(item, opts) {
     const adminBar = opts.admin ? `
             <div class="hist-admin-bar">
                 <span class="hist-move">
-                    <button type="button" aria-label="위로" ${opts.firstOfDay ? 'disabled' : ''} onclick="histAdminMove('${key}', -1)">▲</button>
-                    <button type="button" aria-label="아래로" ${opts.lastOfDay ? 'disabled' : ''} onclick="histAdminMove('${key}', 1)">▼</button>
+                    <button type="button" aria-label="위로" ${opts.firstOfDay ? 'disabled' : ''} ${act('histAdminMove', key, -1)}>▲</button>
+                    <button type="button" aria-label="아래로" ${opts.lastOfDay ? 'disabled' : ''} ${act('histAdminMove', key, 1)}>▼</button>
                 </span>
                 ${item.auto ? '<span class="hist-auto">자동</span>' : ''}${item.hidden ? '<span class="hist-auto is-hidden">숨김</span>' : ''}
-                <button type="button" class="edit-btn" onclick="histAdminEdit('${key}')">수정</button>
-                <button type="button" class="delete-btn" onclick="histAdminRemove('${key}')">${item.auto ? (item.hidden ? '보이기' : '숨기기') : '삭제'}</button>
+                <button type="button" class="edit-btn"${act('histAdminEdit', key)}>수정</button>
+                <button type="button" class="delete-btn"${act('histAdminRemove', key)}>${item.auto ? (item.hidden ? '보이기' : '숨기기') : '삭제'}</button>
             </div>` : '';
     return `
         <li class="hist-item hist-type-${type}${item.hidden ? ' is-hidden' : ''}" data-hist-id="${key}">
