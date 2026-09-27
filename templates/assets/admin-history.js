@@ -22,7 +22,7 @@
   async function render() {
     const root=document.getElementById('history-root');
     if(!root) return;
-    const data=await histLoadData();
+    const data=await histLoadData(C().state.client);
     const merged=histMergeItems(data, SiteData.members, true);
     histRegisterItems(merged);
     histRenderTypeBar(merged);
@@ -218,7 +218,7 @@
 
   // 화면에 보이는 그날의 항목들(자동 항목 포함), 화면과 같은 순서
   async function dayItems(date){
-    const merged=histMergeItems(await histLoadData(), SiteData.members, true);
+    const merged=histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
     return merged.filter(x=>x.date===date);
   }
   // 한 항목의 같은 날 순서/숨김을 저장한다. 자동 항목(입단·퇴단 등)은 원본이 멤버 데이터라
@@ -234,7 +234,7 @@
   // ▲▼: 화면에 보이는 순서 그대로 옆 항목과 자리를 바꾸고, 그날 항목 전체를 0,1,2...로 다시 번호 매긴다
   // (sort_order 값만 맞바꾸면 값이 모두 0일 때 아무 일도 안 일어나고, 자동 항목은 DB 행이 없어 빠진다).
   async function move(id,dir){
-    const all=histMergeItems(await histLoadData(), SiteData.members, true);
+    const all=histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
     const item=all.find(x=>String(x.id)===String(id));if(!item)return;
     const day=all.filter(x=>x.date===item.date);
     const idx=day.findIndex(x=>String(x.id)===String(id)), to=idx+dir;
@@ -246,7 +246,7 @@
     await load();
   }
   async function toggle(id){
-    const all=histMergeItems(await histLoadData(), SiteData.members, true);
+    const all=histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
     const item=all.find(x=>String(x.id)===String(id));if(!item)return;
     await saveItem(item,{hidden:!item.hidden});
     await load();
@@ -260,7 +260,7 @@
     window.histAdminEdit=async id=>{
       const manual=rows.find(x=>String(x.id)===String(id)&&x.entry_kind==='manual');
       if(manual)return open(manual);
-      const all=histMergeItems(await histLoadData(), SiteData.members, true);
+      const all=histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
       const item=all.find(x=>String(x.id)===String(id));
       if(item)open(item);
     };
