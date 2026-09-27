@@ -19,9 +19,9 @@ test('화면 코드에 인라인 이벤트 핸들러(on*="...")가 없다', () =
   }
 });
 
-test('페이지 HTML에 인라인 <script>가 없다(모두 src로 싣는다)', () => {
+test('페이지 HTML에 인라인 <script>가 없다(모두 src로 싣는다, 검색엔진용 JSON-LD 데이터만 예외)', () => {
   for (const f of files.filter(f => f.endsWith('.html'))) {
-    assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /<script(?![^>]*\bsrc=)[^>]*>/, rel(f));
+    assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /<script(?![^>]*\b(?:src=|type="application\/ld\+json"))[^>]*>/, rel(f));
   }
 });
 

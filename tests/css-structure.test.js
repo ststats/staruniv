@@ -88,11 +88,15 @@ test('선언만 하고 읽지 않는 CSS 변수가 없다', () => {
         for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
             const p = path.join(dir, f.name);
             if (f.isDirectory()) walk(p);
-            else if (/\.(html|js|css)$/.test(f.name)) texts.push(fs.readFileSync(p, 'utf8'));
+            // 주석(/* */)은 CSS·JS에서만 뺀다. HTML에서는 CSP 줄의 https://*.도메인 같은 글자가 주석 시작으로 잘못 읽힌다.
+            else if (/\.(html|js|css)$/.test(f.name)) {
+                const text = fs.readFileSync(p, 'utf8');
+                texts.push(f.name.endsWith('.html') ? text : text.replace(/\/\*[\s\S]*?\*\//g, ''));
+            }
         }
     };
     walk(path.join(ROOT, 'templates'));
-    const corpus = texts.join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+    const corpus = texts.join('\n');
     // var(--x) 로 읽거나, JS가 '--x' 이름으로 직접 읽고 쓰는 것
     const read = new Set([...corpus.matchAll(/var\(\s*(--[\w-]+)|['"`](--[\w-]+)['"`]/g)].map(m => m[1] || m[2]));
     for (const [name, css] of Object.entries(cssSources(true))) {
