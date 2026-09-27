@@ -806,7 +806,11 @@ html[data-theme="dark"] .mv-settings-panel {
     // CSS(::-webkit-scrollbar 등)로는 못 건드리지만, 이 속성은 iframe을 넣는 우리 쪽 설정이라
     // 크로스 오리진에도 그대로 먹는다. 명세상 deprecated지만 모든 브라우저가 지원하고,
     // 영상 플레이어라 안에서 스크롤할 일도 없으니 잃는 게 없다.
-    function mvCellHtml(entry, isMain) {
+    // SOOP은 로그인된 브라우저 세션 하나에 동시 재생을 4개까지만 허용한다. 5번째 칸부터는 credentialless
+    // iframe(쿠키 없이 따로 여는 익명 세션)으로 열어 그 한도에 세지 않게 한다 - 크롬·엣지(110+)만 지원하고
+    // 사파리·파이어폭스는 이 속성을 무시해 그대로 4개까지다. 익명 칸은 로그인 혜택(화질·광고 등)이 없을 수 있다.
+    const MV_LOGGED_IN_LIMIT = 4;
+    function mvCellHtml(entry, isMain, anonymous = false) {
         return `
         <div class="mv-cell${isMain ? ' mv-cell-main' : ''}" data-soop-id="${escapeHTML(entry.soopId)}">
             <div class="mv-cell-header">
@@ -817,7 +821,7 @@ html[data-theme="dark"] .mv-settings-panel {
             </div>
             <div class="mv-cell-body">
                 <div class="mv-cell-video-wrap">
-                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" scrolling="no" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"></iframe>
+                    <iframe src="${mvEmbedUrl(entry.soopId)}" title="${escapeHTML(entry.name)} 방송" scrolling="no" allowfullscreen loading="lazy" allow="${MV_IFRAME_ALLOW}"${anonymous ? ' credentialless' : ''}></iframe>
                 </div>
             </div>
         </div>`;
@@ -857,7 +861,9 @@ html[data-theme="dark"] .mv-settings-panel {
         sequence.forEach((entry, i) => {
             let cell = cellsById.get(entry.soopId);
             if (!cell) {
-                grid.insertAdjacentHTML('beforeend', mvCellHtml(entry, false));
+                // 로그인 세션으로 여는 칸이 이미 4개면 새 칸은 익명(credentialless)으로 연다
+                const loggedIn = grid.querySelectorAll('iframe:not([credentialless])').length;
+                grid.insertAdjacentHTML('beforeend', mvCellHtml(entry, false, loggedIn >= MV_LOGGED_IN_LIMIT));
                 cell = grid.lastElementChild;
             }
             if (cell.style.order !== String(i)) cell.style.order = String(i);
