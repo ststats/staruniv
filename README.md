@@ -103,7 +103,8 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
   함수 하나가 서버 API 주소 하나(`/api/v1/…`, 규격 `api/openapi.yaml`)에 대응하고 화면이 그리는 것만 돌려줍니다. 지금은 서버 없이
   `api.js`가 Supabase 공개 조회(작은 읽기 클라이언트 `publicSupabaseClient`, supabase-js 없음)로 받고, 나중에 서버를 붙이면
   `api.js` 안의 조회만 `fetch('/api/v1/…')`로 바꿉니다. 화면에 새 데이터를 쓰려면 `api.js` 함수 → `api/openapi.yaml` →
-  익명 권한(`supabase/staruniv.sql` 2번, `ststat.sql` 14번) 순서로 함께 고칩니다. 관리자 화면만 로그인 때문에 supabase-js를 받습니다.
+  익명 권한(`supabase/staruniv.sql` 2번, `ststat.sql` 14번) 순서로 함께 고칩니다. ELO 선수·순위·레이팅·선수별 경기처럼 긴 목록은
+  1000줄씩 나눠 받지 않고 `ststat.sql` 14번 끝의 DB 함수(`elo_*_list`)가 요청 한 번에 돌려줍니다. 관리자 화면만 로그인 때문에 supabase-js를 받습니다.
 - 화면 코드에는 `onclick="…"` 같은 인라인 핸들러와 인라인 `<script>`를 쓰지 않습니다(CSP로 막을 수 있게, `npm test`가 검사).
   버튼 동작은 `data-click="함수" data-args='[인자]'`(JS에서는 `act('함수', 인자…)`)로 적고 `templates/assets/actions.js`가
   한 곳에서 받아 그 전역 함수(`function` 선언)를 부릅니다. 입력은 `data-input`·`data-change`·`data-enter`, 스크롤은 `data-scroll`,

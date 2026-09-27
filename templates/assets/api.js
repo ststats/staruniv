@@ -3,8 +3,8 @@
  * 함수 하나가 서버 API 주소 하나(/api/v1/…, 규격은 저장소 api/openapi.yaml)에 대응하고, 화면이 그리는 것만 돌려준다.
  * 지금은 서버가 없어 브라우저가 Supabase 공개 조회(anon, 권한은 supabase/staruniv.sql 2번·ststat.sql 14번)로
  * 직접 받는다. 서버를 붙이면 이 파일 안의 조회만 fetch('/api/v1/…')로 바꾸고 페이지는 그대로 둔다.
- * 모든 함수는 데이터를 돌려주고, 실패하면 예외를 던진다. 여러 쪽으로 나눠 받는 조회는 wrap(쪽마다 씌울 Promise
- * 변환, 예: 페이지별 시간 제한)과 pageSize·parallel을 받는다. 관리자 화면은 로그인한 supabase-js를 따로 쓴다.
+ * 모든 함수는 데이터를 돌려주고, 실패하면 예외를 던진다. 긴 목록 조회는 wrap(요청에 씌울 Promise 변환, 예: 페이지별
+ * 시간 제한)을 받는다. 관리자 화면은 로그인한 supabase-js를 따로 쓴다.
  */
 let _publicSupabaseClient = null;
 const SUPABASE_REQUEST_TIMEOUT_MS = 8000;
@@ -48,6 +48,11 @@ class SupabaseReadQuery {
         return this;
     }
     maybeSingle() { this.maybeOne = true; return this; }
+    // DB 함수(rpc) 인자는 주소 뒤 이름=값으로 붙인다(비운 값은 빼서 함수의 기본값을 쓴다)
+    params(values) {
+        for (const [name, value] of Object.entries(values)) if (value !== '' && value != null) this.url.searchParams.set(name, `${value}`);
+        return this;
+    }
     // 응답이 끝내 오지 않으면(연결만 붙고 멈춤 등) 화면이 '불러오는 중'에 머문다. 요청마다 8초 제한을 두고,
     // 네트워크 오류·시간 초과·일시 서버 오류(5xx·429)는 잠깐 쉬었다 한 번 더 시도한다(읽기라 다시 보내도 안전).
     // 그래도 안 되면 {error}를 돌려줘 각 화면의 오류 안내로 넘어간다 - 최악 약 17초.
@@ -90,7 +95,10 @@ function publicSupabaseClient() {
     const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
     if (!cfg.url || !cfg.key) return null;
     const restUrl = new URL('rest/v1', cfg.url.endsWith('/') ? cfg.url : `${cfg.url}/`).href;
-    _publicSupabaseClient = { from: table => new SupabaseReadQuery(restUrl, table, cfg.key) };
+    _publicSupabaseClient = {
+        from: table => new SupabaseReadQuery(restUrl, table, cfg.key),
+        rpc: (fn, values = {}) => new SupabaseReadQuery(restUrl, `rpc/${fn}`, cfg.key).params(values),
+    };
     return _publicSupabaseClient;
 }
 
@@ -110,6 +118,12 @@ async function apiRows(query) {
 async function apiPaged(make, { wrap = p => p, pageSize = 1000, parallel = 2 } = {}) {
     const client = apiClient();
     return fetchAllPages((from, to) => wrap(make(client, from, to)), { pageSize, parallel });
+}
+// ELO 긴 목록은 DB 함수가 요청 한 번에 {c: 열 이름, r: [[값…]]}로 돌려준다(ststat.sql 14번 끝) - 객체 배열로 바꾼다.
+// wrap은 그 요청에 씌울 Promise 변환(예: 페이지별 시간 제한).
+async function apiList(fn, values, wrap = p => p) {
+    const { c, r } = await apiRows(wrap(apiClient().rpc(fn, values)));
+    return r.map(row => Object.fromEntries(c.map((name, i) => [name, row[i]])));
 }
 
 const Api = {
@@ -218,19 +232,13 @@ const Api = {
     },
 
     // GET /api/v1/elo/players[?ranked=1] - EloBoard 선수 목록(검색·요약 카드). ranked면 티어 안 순위·기준일까지.
-    async eloPlayers({ ranked = false, ...paging } = {}) {
-        const cols = 'elo_id,elo_name,race,nickname,soop_id,tier,affiliation,total_games' + (ranked ? ',tier_rank,tier_count,as_of' : '');
-        return apiPaged((c, from, to) => c.from('elo_public_players').select(cols).order('elo_id', { ascending: true }).range(from, to), paging);
+    async eloPlayers({ ranked = false, wrap } = {}) {
+        return apiList('elo_players_list', { p_ranked: ranked }, wrap);
     },
 
     // GET /api/v1/elo/players/{id}/matches[?since=] - 한 선수의 경기(최신순)
-    async eloPlayerMatches(eloId, { since = '', ...paging } = {}) {
-        return apiPaged((c, from, to) => {
-            let q = c.from('elo_public_matches').select('match_date,opponent_elo_id,won,map_id,map_name,category_name')
-                .eq('elo_id', Number(eloId)).order('match_date', { ascending: false });
-            if (since) q = q.gte('match_date', since);
-            return q.range(from, to);
-        }, paging);
+    async eloPlayerMatches(eloId, { since = '', wrap } = {}) {
+        return apiList('elo_player_match_list', { p_elo_id: Number(eloId), p_since: since }, wrap);
     },
 
     // GET /api/v1/elo/ratings/range - 레이팅 기록이 있는 첫 달·마지막 달 { first, last } (YYYY-MM-DD)
@@ -247,9 +255,8 @@ const Api = {
     },
 
     // GET /api/v1/elo/rankings - 티어 안 순위·레이팅
-    async eloRankings(paging) {
-        return apiPaged((c, from, to) => c.from('elo_rankings').select('elo_id,raw_rating,rating,tier,tier_rank,as_of')
-            .order('elo_id', { ascending: true }).range(from, to), paging);
+    async eloRankings({ wrap } = {}) {
+        return apiList('elo_rankings_list', {}, wrap);
     },
 
     // GET /api/v1/elo/rankings/meta - 가장 최근 랭킹의 티어 기준선·종족 상성 (없으면 {})
@@ -260,8 +267,7 @@ const Api = {
     },
 
     // GET /api/v1/elo/ratings - 순위 밖 선수까지 전 선수 레이팅
-    async eloPlayerRatings(paging) {
-        return apiPaged((c, from, to) => c.from('elo_player_ratings').select('elo_id,rating,rating_se')
-            .order('elo_id', { ascending: true }).range(from, to), paging);
+    async eloPlayerRatings({ wrap } = {}) {
+        return apiList('elo_player_ratings_list', {}, wrap);
     },
 };
