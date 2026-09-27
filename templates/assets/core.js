@@ -182,6 +182,7 @@ function isTabActive(tabId) {
 const UI_FADE_MS = 300;
 let openModalEl = null;
 let modalBackdrop = null;
+let modalReturnFocus = null;   // 창을 열기 전 포커스가 있던 요소 - 다 닫으면 그리로 돌려준다
 
 function afterTransition(el, fn) {
     let done = false;
@@ -193,6 +194,11 @@ function afterTransition(el, fn) {
 function showModal(id) {
     const el = document.getElementById(id);
     if (!el || el === openModalEl) return;
+    // 창에서 창으로 넘어갈 때는 처음 연 요소를 그대로 둔다
+    if (!openModalEl) {
+        const active = document.activeElement;
+        modalReturnFocus = active && active !== document.body ? active : null;
+    }
     if (openModalEl) hideModal(openModalEl, true);
     openModalEl = el;
     const scrollbar = window.innerWidth - document.documentElement.clientWidth;
@@ -228,7 +234,11 @@ function hideModal(el, keepBackdrop) {
         el.removeAttribute('aria-modal');
         el.removeAttribute('role');
     });
-    if (keepBackdrop || !modalBackdrop) return;
+    if (keepBackdrop) return;
+    const back = modalReturnFocus;
+    modalReturnFocus = null;
+    if (back && back.isConnected && typeof back.focus === 'function') back.focus({ preventScroll: true });
+    if (!modalBackdrop) return;
     const backdrop = modalBackdrop;
     modalBackdrop = null;
     backdrop.classList.remove('show');
@@ -284,6 +294,26 @@ document.addEventListener('click', ev => {
 });
 document.addEventListener('keydown', ev => {
     if (ev.key === 'Escape' && openModalEl) hideModal(openModalEl);
+});
+// 창이 열려 있으면 Tab/Shift+Tab이 창 안의 버튼·링크만 돌게 한다(뒤 화면으로 빠지지 않게)
+const MODAL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+document.addEventListener('keydown', ev => {
+    if (ev.key !== 'Tab' || !openModalEl) return;
+    const items = [...openModalEl.querySelectorAll(MODAL_FOCUSABLE)]
+        .filter(x => !x.hidden && x.getClientRects().length > 0);
+    if (!items.length) { ev.preventDefault(); openModalEl.focus({ preventScroll: true }); return; }
+    const first = items[0], last = items[items.length - 1];
+    const active = document.activeElement;
+    if (!openModalEl.contains(active) || active === openModalEl) {
+        ev.preventDefault();
+        (ev.shiftKey ? last : first).focus();
+    } else if (ev.shiftKey && active === first) {
+        ev.preventDefault();
+        last.focus();
+    } else if (!ev.shiftKey && active === last) {
+        ev.preventDefault();
+        first.focus();
+    }
 });
 
 // 초기화 단계 하나가 실패해도(스크립트 로드 실패, 예상 못한 데이터 형태 등) 그 아래
@@ -985,15 +1015,20 @@ function syncSubTabDensity() {
         else if (!dense && el.dataset.tabDense !== undefined) delete el.dataset.tabDense;
     });
 }
+// 탭이 숨고 보이는 건 탭 자신의 hidden·class(applyNavVisibility, 어드민 표시)로만 바뀌므로 서브탭 줄만 본다 -
+// body 전체를 보면 경기 목록·모달처럼 탭과 무관한 변화에도 매번 다시 센다.
 function watchSubTabDensity() {
     syncSubTabDensity();
     if (typeof MutationObserver === 'undefined') return;
     let queued = false;
-    new MutationObserver(() => {
+    const observer = new MutationObserver(() => {
         if (queued) return;
         queued = true;
         setTimeout(() => { queued = false; syncSubTabDensity(); }, 0);   // 백그라운드 탭에서도 돈다(rAF는 멈춘다)
-    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+    });
+    document.querySelectorAll('.page-header > .sub-tabs').forEach(el => {
+        observer.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+    });
 }
 
 // =====================================================================
