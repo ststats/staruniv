@@ -1,11 +1,17 @@
 {
   "name": "staruniv",
   "private": true,
-  "description": "테스트 실행용(node --test). 달력 캡처는 scripts/capture_calendar.py가 크롬으로 찍는다.",
+  "description": "테스트(node --test)와 배포용 JS·CSS 압축(scripts/minify_assets.mjs). 달력 캡처는 scripts/capture_calendar.py가 크롬으로 찍는다.",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "minify": "node scripts/minify_assets.mjs docs"
   },
   "engines": {
     "node": ">=24"
+  },
+  "devDependencies": {
+    "acorn": "8.15.0",
+    "esbuild": "0.25.10",
+    "terser": "5.44.0"
   }
 }

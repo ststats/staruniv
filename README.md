@@ -84,9 +84,11 @@ python scripts/generate_stats.py
 python scripts/build_html.py          # templates → docs (HTML, 자산 복사, 캐시용 ?v=해시)
 python scripts/write_site_data.py     # docs/data/site_shell.json · site_records.json
 npm test                              # node --test (의존성 없음)
+npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·HTML 주석·공백 빼기
 ```
 
 - 원본은 `templates/`입니다. `docs/`는 빌드 결과(저장소에 없음, `.gitignore`)라 직접 고치지 않습니다. `templates/static/`은 그대로 복사됩니다.
+- 배포 때 `scripts/minify_assets.mjs`가 `docs/`의 JS·CSS·HTML에서 주석과 공백을 뺍니다(변수 이름·코드는 그대로, 원본과 구문 트리가 같을 때만). 원본의 주석은 그대로 두고 필요한 설명을 적으면 됩니다.
 - 링크 미리보기 이미지는 페이지마다 `templates/static/images/share/<페이지>.png`(1200×630)입니다. 페이지 이름·설명을 바꾸면 `python scripts/make_share_images.py`로 다시 만듭니다. 카카오톡은 미리보기를 오래 기억하므로 바로 안 바뀌면 카카오 개발자 사이트의 '공유 디버거'에서 캐시를 지웁니다.
 - 빌드가 `sitemap.xml`·`robots.txt`도 만듭니다. 관리자 화면은 `noindex`라 검색에 나오지 않습니다. 구글 서치 콘솔·네이버 서치어드바이저에 `https://ststats.github.io/staruniv/sitemap.xml`을 한 번 등록하면 검색에 빨리 잡힙니다.
 - 티어 순서·직책 순서는 `templates/assets/core.js` 맨 위 `SITE_ORDER` 한 곳에서만 고칩니다(파이썬 빌드도 읽음).
