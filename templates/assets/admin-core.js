@@ -300,26 +300,26 @@
     }
   }
 
-  // 페이지 관리 상자: 페이지마다 네이비 사선 상자 하나(본문 맨 위)에 그 페이지의 관리 버튼(서브탭 편집 · 멤버 추가 ·
-  // 채널 관리 · 연혁 추가 등)을 모두 모은다. 어느 페이지에서나 같은 자리·같은 모양이다.
-  // 전용 관리 화면(전적 · 티어표 · 팀)은 화면을 통째로 다시 그리므로 같은 마크업(pageToolsHtml)을 직접 넣는다.
+  // 페이지 관리 버튼(서브탭 편집 · 멤버 추가 · 채널 관리 · 연혁 추가 등)은 그 페이지 히어로(.page-header) 맨 아래,
+  // 서브탭과 같은 줄 오른쪽에 모은다(좁은 화면에서는 탭 아래 한 줄). 본문에 줄을 따로 차지하지 않는다.
+  // 전용 관리 화면(전적 · 티어표 · 팀)은 히어로를 직접 그리므로 같은 마크업(pageToolsHtml)을 탭 바로 뒤에 넣는다.
   function toolButtonHtml({id,label,icon='plus'}){
     return `<button type="button" class="admin-tool-btn" id="${esc(id)}" data-icon="${esc(icon)}">${esc(label)}</button>`;
   }
   function pageToolsHtml(items){
-    return `<div class="admin-page-tools"><span class="admin-page-tools-label">EDIT</span><div class="admin-page-tools-actions">${items.map(toolButtonHtml).join('')}</div></div>`;
+    return `<div class="admin-hero-tools"><span class="admin-hero-tools-label">EDIT</span>${items.map(toolButtonHtml).join('')}</div>`;
   }
   function addPageTool({id,label,icon='plus',onClick}){
     const existing=document.getElementById(id);
     if(existing)return existing;
     let box=document.getElementById('adminPageTools');
     if(!box){
-      const host=document.querySelector('.page-section.active > .container')||document.querySelector('.page-section > .container');
+      const host=document.querySelector('.page-section.active > .page-header')||document.querySelector('.page-section > .page-header');
       if(!host)return null;
-      host.insertAdjacentHTML('afterbegin',pageToolsHtml([]));
-      box=host.firstElementChild;box.id='adminPageTools';
+      host.insertAdjacentHTML('beforeend',pageToolsHtml([]));
+      box=host.lastElementChild;box.id='adminPageTools';
     }
-    box.querySelector('.admin-page-tools-actions').insertAdjacentHTML('beforeend',toolButtonHtml({id,label,icon}));
+    box.insertAdjacentHTML('beforeend',toolButtonHtml({id,label,icon}));
     const b=document.getElementById(id);
     if(onClick)b.addEventListener('click',onClick);
     return b;

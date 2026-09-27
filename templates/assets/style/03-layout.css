@@ -393,6 +393,22 @@
         flex: 1 0 auto;
         padding: 0 14px;
     }
+    /* 히어로 서브탭이 4개 이상이면 옆으로 밀지 않고 줄을 나눠 전부 보인다(4개 2×2, 5개 이상 3칸씩 -
+       칸 수는 core.js syncSubTabColumns가 data-tab-cols로 알린다) */
+    .page-header > .sub-tabs[data-tab-cols] {
+        display: grid;
+        grid-template-columns: repeat(var(--tab-cols), minmax(0, 1fr));
+        overflow: visible;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+    .page-header > .sub-tabs[data-tab-cols="2"] { --tab-cols: 2; }
+    .page-header > .sub-tabs[data-tab-cols="3"] { --tab-cols: 3; }
+    .page-header > .sub-tabs[data-tab-cols] > .sub-tab { min-width: 0; padding: 0 8px; }
+}
+/* PC에서 탭이 한 줄을 넘으면 옆으로 밀지 않고 다음 줄로 넘긴다 */
+@media (min-width: 921px) {
+    .page-header > .sub-tabs { flex-wrap: wrap; }
 }
 
 @media (max-width: 767.98px) {

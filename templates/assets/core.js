@@ -974,6 +974,28 @@ function initEdgeFades(root) {
     (root || document).querySelectorAll('.tab-scroll').forEach(attachEdgeFade);
 }
 
+// 히어로 서브탭이 4개 이상이면 좁은 화면(920px 이하)에서 옆으로 밀어 숨기지 않고 줄을 나눠 전부 보인다:
+// 4개는 2칸씩(2×2), 5개 이상은 3칸씩. 칸 수만 data-tab-cols로 알리고 모양은 CSS(03-layout.css)가 정한다.
+// 보이는 탭만 센다 - 메뉴 설정으로 숨기거나 다시 보이면(어드민 표시 포함) 다시 센다.
+function syncSubTabColumns() {
+    document.querySelectorAll('.page-header > .sub-tabs').forEach(el => {
+        const n = [...el.children].filter(c => getComputedStyle(c).display !== 'none').length;
+        const cols = n >= 5 ? '3' : n === 4 ? '2' : '';
+        if (cols && el.dataset.tabCols !== cols) el.dataset.tabCols = cols;
+        else if (!cols && el.dataset.tabCols) delete el.dataset.tabCols;
+    });
+}
+function watchSubTabColumns() {
+    syncSubTabColumns();
+    if (typeof MutationObserver === 'undefined') return;
+    let queued = false;
+    new MutationObserver(() => {
+        if (queued) return;
+        queued = true;
+        setTimeout(() => { queued = false; syncSubTabColumns(); }, 0);   // 백그라운드 탭에서도 돈다(rAF는 멈춘다)
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+}
+
 // =====================================================================
 // 5. 방송통계 데이터
 // ststat -> Supabase daily_member_stats 를 직접 읽고 우리 로스터만 추린다.
@@ -1431,6 +1453,7 @@ function bootPage(init, opts) {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
+        watchSubTabColumns();
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
         await Promise.all([
             applyNavVisibility(),

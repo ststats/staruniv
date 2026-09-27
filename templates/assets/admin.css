@@ -888,10 +888,8 @@ body.admin-drawer-open { overflow: hidden; }
 }
 .admin-nav-manage:hover { background: var(--admin-ink); box-shadow: none; color: var(--admin-on-ink); }
 
-/* 네이비 히어로 위 편집 도구 (홈 캐러셀 편집) 한 모양:
-   공개 사이트 네이비 면 위 버튼과 같은 흰 반투명 면 + 흰 글씨. 주요 동작만 흰 바탕 */
-.page-header .admin-btn,
-.admin-home-edit {
+/* 네이비 히어로 위 버튼: 공개 사이트 네이비 면 위 버튼과 같은 흰 반투명 면 + 흰 글씨. 주요 동작만 흰 바탕 */
+.page-header .admin-btn {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -911,36 +909,28 @@ body.admin-drawer-open { overflow: hidden; }
     cursor: pointer;
     transition: background-color .15s, color .15s;
 }
-.page-header .admin-btn:hover,
-.admin-home-edit:hover { background: rgba(255, 255, 255, .22); color: #fff; }
+.page-header .admin-btn:hover { background: rgba(255, 255, 255, .22); color: #fff; }
 .page-header .admin-btn.primary,
 .page-header .admin-btn.primary:hover { background: #fff; color: var(--navy); }
-.admin-home-edit::before {
-    content: "";
-    width: 12px;
-    height: 12px;
-    background: currentColor;
-    -webkit-mask: var(--admin-ico-edit) center / contain no-repeat;
-    mask: var(--admin-ico-edit) center / contain no-repeat;
-}
 
-/* 페이지 관리 상자: 페이지마다 네이비 사선 상자 하나(본문 맨 위)에 그 페이지의 관리 버튼을 모두 모은다
-   (서브탭 편집 · 멤버 추가 · 채널 관리 · 보자 영상 추가 · 도구 추가 · 연혁 추가 · 새 매치 · 새 선수 · 일괄 수정 · 새 팀).
-   공개 사이트의 네이비 사선 면과 같은 면이고, 안의 버튼은 히어로 버튼처럼 흰 반투명 면 + 흰 글씨.
-   [EDIT] ........................ [버튼] [버튼] - 좁으면 버튼이 아래로 줄바꿈된다 */
-.admin-page-tools {
+/* 페이지 관리 버튼: 히어로 맨 아래, 서브탭과 같은 줄 오른쪽(본문에 줄을 따로 차지하지 않는다).
+   [EDIT] [버튼] [버튼] - 탭과 같은 높이·같은 반투명 면이라 히어로의 일부처럼 보이고, EDIT 꼬리표로 관리 기능임을 알린다.
+   1100px 이하(탭이 넓어지는 폭)에서는 탭 아래 한 줄을 쓰고, 버튼이 많으면 그 줄 안에서 줄바꿈된다. */
+.admin-hero-tools {
+    order: 4;
     display: flex;
-    align-items: center;
     flex-wrap: wrap;
-    gap: 10px 12px;
-    margin: 0 0 var(--space-content-gap);
-    padding: 10px 10px 10px 16px;
-    background-color: var(--navy);
-    background-image: var(--navy-pattern);
-    color: var(--navy-on-text);
-    clip-path: var(--notch-md);
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 22px;
 }
-.admin-page-tools-label {
+.page-header:has(> .sub-tabs) > .admin-hero-tools {
+    align-self: flex-end;
+    margin-top: -40px;           /* 탭 줄(40px)과 같은 줄에 오른쪽 정렬 */
+    max-width: 50%;
+}
+.admin-hero-tools-label {
     flex: none;
     padding: 4px 6px;
     background: rgba(255, 255, 255, .14);
@@ -951,14 +941,21 @@ body.admin-drawer-open { overflow: hidden; }
     letter-spacing: .14em;
     line-height: 1;
 }
-.admin-page-tools-actions {
-    display: flex;
-    flex: 1 1 0;               /* EDIT 옆에 남아 그 안에서 줄바꿈된다(EDIT만 한 줄을 차지하지 않게) */
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
-    min-width: 0;
+.admin-hero-tools .admin-tool-btn { min-height: 40px; }
+@media (max-width: 1100px) {
+    .admin-hero-tools,
+    .page-header:has(> .sub-tabs) > .admin-hero-tools {
+        align-self: stretch;
+        justify-content: flex-start;
+        max-width: none;
+        margin-top: 10px;
+    }
 }
+@media (max-width: 767.98px) {
+    .admin-hero-tools .admin-tool-btn { flex: 1 1 auto; justify-content: center; min-height: 38px; }
+}
+/* 홈 캐러셀 '슬라이드 편집'은 바로가기 버튼 옆(같은 높이) */
+.home-hero-links .admin-home-edit { min-height: 40px; }
 .admin-tool-btn {
     display: inline-flex;
     align-items: center;
@@ -1005,7 +1002,6 @@ body.admin-drawer-open { overflow: hidden; }
     background: #fff;
     color: var(--navy);
 }
-.admin-home-edit { position: absolute; z-index: 20; top: 18px; right: max(16px, calc((100vw - 1280px) / 2 + 32px)); min-height: 32px; }
 .video-card,
 .tool-card,
 .home-carousel-slide { position: relative; }
@@ -1031,7 +1027,7 @@ body.admin-drawer-open { overflow: hidden; }
 
 .admin-edit-disabled :is(.admin-inline-edit, .admin-inline-add, .admin-card-action, .admin-home-edit,
     .admin-nav-manage,
-    .admin-page-tools, .hist-admin-bar) {
+    .admin-hero-tools, .hist-admin-bar) {
     display: none !important;
 }
 
@@ -1056,58 +1052,79 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-filter-grid .admin-input { background: var(--admin-field); }
 .admin-filter-grid .admin-btn { min-height: 42px; padding: 0 20px; }
 
-/* 어드민 홈 '운영 현황' (admin-site.js renderOps). 접기 카드는 티어 랭킹 설명과 같은 부품 */
-.admin-ops { margin: 0 0 var(--space-block-gap); }
+/* 어드민 홈 '운영 현황' (admin-site.js renderOps). 접기 부품은 티어 랭킹 설명과 같다.
+   칸은 공개 페이지 요약 타일(.head-plate)과 같은 네이비 면 · 영문 이름표 · 굵은 숫자 */
 .admin-ops-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
     gap: 8px;
-    padding-bottom: 18px;
 }
 .admin-ops-grid > div {
     display: grid;
-    gap: 2px;
-    padding: 10px 12px;
-    background: var(--admin-soft);
-    clip-path: var(--notch-sm);
-}
-.admin-ops-grid span { color: var(--color-text-muted); font-size: 11px; font-weight: 700; }
-.admin-ops-grid b { color: var(--color-text-strong); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.admin-ops-grid small { color: var(--color-text-muted); font-size: 11px; }
-.admin-ops-grid .is-error b { color: var(--color-lose); }
-
-/* 티어 랭킹 보기 (티어표 관리 > 티어 랭킹) */
-.admin-rank-explain {
-    margin-bottom: 16px;
-    padding: 0 20px;
-    background: var(--admin-field);
+    align-content: start;
+    gap: 4px;
+    padding: 14px 16px;
+    background-color: var(--navy);
+    background-image: var(--navy-pattern);
     clip-path: var(--notch-md);
 }
+.admin-ops-grid span { color: var(--navy-accent); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+.admin-ops-grid b { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.admin-ops-grid small { color: var(--navy-on-muted); font-size: 11px; }
+.admin-ops-grid .is-error b { color: var(--color-lose); }
+@media (max-width: 767.98px) {
+    .admin-ops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    .admin-ops-grid > div { padding: 12px 13px; }
+    .admin-ops-grid b { font-size: 16px; }
+}
+
+/* 접기 구역(운영 현황 · 티어 랭킹 계산 방식): 흰 카드가 아니라 공개 페이지 구역 제목(.section-title)과 같은 모양 -
+   영문 머리글 · 제목 · 아래 선(제목 밑 네이비 강조) · 오른쪽 네이비 꼬리표(펼치기). 한 줄 요약은 제목 아래 흐린 글씨 */
+.admin-rank-explain { margin: 0 0 var(--space-block-gap); }
 .admin-rank-explain-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: 4px 12px;
-    padding: 15px 0;
+    margin-bottom: 0;
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--color-border);
+    background: linear-gradient(var(--navy-deco), var(--navy-deco)) no-repeat left bottom / 56px 2px;
     list-style: none;
     cursor: pointer;
     user-select: none;
 }
+.admin-rank-explain[open] > .admin-rank-explain-head { margin-bottom: var(--space-title-gap); }
 .admin-rank-explain-head::-webkit-details-marker { display: none; }
-/* 오른쪽 끝 펼침 표시(▾ / ▴) */
+.admin-rank-explain-head[data-en]::before {
+    content: attr(data-en);
+    grid-column: 1 / -1;
+    grid-row: 1;
+    color: var(--title-eyebrow);
+    font-size: var(--fs-eyebrow);
+    font-weight: 600;
+    letter-spacing: .16em;
+}
+.admin-rank-explain-head b { grid-column: 1; grid-row: 2; color: var(--color-text-strong); font-size: 18px; font-weight: 700; letter-spacing: -.025em; }
+/* 오른쪽 펼침 꼬리표: 구역 제목의 인원수 꼬리표(.title-count)와 같은 네이비 면 */
 .admin-rank-explain-head::after {
     content: "펼치기 ▾";
-    margin-left: auto;
-    color: var(--color-text-muted);
-    font-size: 12px;
+    grid-column: 2;
+    grid-row: 2;
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 9px;
+    background: var(--navy-deco-fill);
+    color: #fff;
+    clip-path: var(--notch-xs);
+    font-size: 11px;
     font-weight: 700;
 }
 .admin-rank-explain[open] > .admin-rank-explain-head::after { content: "접기 ▴"; }
-.admin-rank-explain[open] > .admin-rank-explain-head { margin-bottom: 12px; border-bottom: 1px solid var(--admin-line); }
-.admin-rank-explain-head:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.admin-rank-explain-head span { grid-column: 1 / -1; grid-row: 3; color: var(--color-text-muted); font-size: 12px; line-height: 1.5; }
+.admin-rank-explain-head:hover b { color: var(--color-primary); }
 .admin-rank-explain > ol { padding-bottom: 8px !important; }
-.admin-rank-explain-head b { color: var(--color-text-strong); font-size: 15px; font-weight: 800; }
-.admin-rank-explain-head span { color: var(--color-text-muted); font-size: 12px; }
 .admin-rank-explain ol {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1373,7 +1390,6 @@ body.admin-drawer-open { overflow: hidden; }
     .admin-table { font-size: 12px; }
     .admin-table th,
     .admin-table td { padding: 8px; }
-    .admin-home-edit { right: 16px; }
     .admin-nav-manage { display: none; }
 }
 

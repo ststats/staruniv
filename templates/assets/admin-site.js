@@ -188,9 +188,11 @@
 
   async function enhanceHome(){
     if(document.body.dataset.adminPage!=='home')return;
+    // 슬라이드 편집은 바로가기 버튼 옆에 둔다(오른쪽 위에 띄우면 미리보기 칸과 겹친다)
     document.querySelectorAll('.home-carousel-slide').forEach((slide,i)=>{
-      if(!slide.querySelector('.admin-home-edit')){
-        slide.insertAdjacentHTML('beforeend',`<button type="button" class="admin-home-edit" data-admin-home-slide="${i}">편집</button>`);
+      const links=slide.querySelector('.home-hero-links');
+      if(links&&!slide.querySelector('.admin-home-edit')){
+        links.insertAdjacentHTML('beforeend',`<button type="button" class="admin-tool-btn admin-home-edit" data-icon="edit" data-admin-home-slide="${i}">슬라이드 편집</button>`);
       }
     });
   }
@@ -215,10 +217,10 @@
       host.prepend(box);
     }
     const esc=C().esc;
-    box.innerHTML='<summary class="admin-rank-explain-head"><b>운영 현황</b><span>불러오는 중</span></summary>';
+    box.innerHTML='<summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>불러오는 중</span></summary>';
     const {data,error}=await C().state.client.rpc('admin_dashboard_stats');
     if(error||!data){
-      box.innerHTML=`<summary class="admin-rank-explain-head"><b>운영 현황</b><span>조회 실패 · ${esc(C().errorText?C().errorText(error):'')}</span></summary>`;
+      box.innerHTML=`<summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>조회 실패 · ${esc(C().errorText?C().errorText(error):'')}</span></summary>`;
       return;
     }
     const f=data.freshness||{}, elo=data.elo||{}, counts=data.counts||{};
@@ -227,7 +229,7 @@
     // 경기 수는 표 전체를 세면 시간 초과라 DB 통계 추정치(admin_dashboard_stats).
     const totalText=(elo.total_estimated?'약 ':'')+total.toLocaleString();
     box.innerHTML=`
-      <summary class="admin-rank-explain-head"><b>운영 현황</b><span>ELO ${totalText}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
+      <summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>ELO ${totalText}경기 · 최근 파이프라인 ${esc(f.last_job_name||'-')} ${esc(status)} (${esc(kst(f.last_job_finished_at))})</span></summary>
       <div class="admin-ops-grid">
         <div${status==='failed'?' class="is-error"':''}><span>최근 파이프라인</span><b>${esc(f.last_job_name||'-')} · ${esc(status)}</b><small>${esc(kst(f.last_job_finished_at))}</small></div>
         <div><span>ELO 기준일</span><b>${esc(f.elo_as_of||'-')}</b><small>${esc(kst(f.elo_activated_at))}</small></div>
