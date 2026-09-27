@@ -103,7 +103,36 @@ function mergeOwnPosts(data, soopId) {
     return unique.sort((a, b) => soopDateMs(b.regDate) - soopDateMs(a.regDate));
 }
 
+// 활동 멤버 게시판 첫 페이지 모음(member_posts). ststat live-status가 2분마다 채운다(ststat.sql 13번).
+// 홈 '최근 공지'·멤버 '전체 공지'가 멤버마다 SOOP API를 부르던 것(17번)을 이 조회 한 번으로 바꾼다.
+// 표를 못 읽거나 비어 있으면 null - 그러면 예전처럼 SOOP에 직접 묻는다.
+let _storedPostsRequest = null;
+function fetchStoredMemberPosts() {
+    if (_storedPostsRequest) return _storedPostsRequest;
+    _storedPostsRequest = (async () => {
+        const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
+        if (!client) return null;
+        const { data, error } = await client.from('member_posts')
+            .select('soop_id,total_pages,post').order('reg_date', { ascending: false }).limit(2000);
+        if (error || !Array.isArray(data) || !data.length) return null;
+        const bySoop = new Map();
+        data.forEach(r => {
+            const key = String(r.soop_id || '').toLowerCase();
+            if (!bySoop.has(key)) bySoop.set(key, { posts: [], totalPages: Number(r.total_pages) || 1 });
+            if (r.post) bySoop.get(key).posts.push(r.post);
+        });
+        return bySoop;
+    })().catch(() => null);
+    return _storedPostsRequest;
+}
+
 async function fetchMemberFeed(soopId, page) {
+    // 첫 페이지는 모아 둔 표에서(없는 멤버 - 글이 없거나 새로 들어온 멤버 - 는 아래처럼 SOOP에 직접)
+    if (Number(page) === 1) {
+        const stored = await fetchStoredMemberPosts();
+        const hit = stored && stored.get(String(soopId || '').toLowerCase());
+        if (hit) return { posts: hit.posts.slice().sort((a, b) => soopDateMs(b.regDate) - soopDateMs(a.regDate)), totalPages: hit.totalPages };
+    }
     try {
         const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board?perPage=${NEWS_PAGE_SIZE}&page=${page}`;
         const data = await cachedFetchJson(url, 120000); // 2분
