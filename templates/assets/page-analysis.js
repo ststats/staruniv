@@ -23,8 +23,9 @@ const AnalysisState = {
     catPage: 0,             // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
     mapShown: ANALYSIS_MAP_STEP,
     rivalShown: ANALYSIS_RIVAL_STEP,
-    rating: null,           // 레이팅 변화 데이터(한 번만 받는다)
-    ratingLoading: null,
+    rating: null,           // 레이팅 변화 데이터 { months, players } - 고른 선수만 채운다
+    ratingLoading: null,    // 선수별 받는 중인 요청
+    ratingMonths: null,     // 월 축(모든 선수 공통, 한 번만)
 };
 
 // 선수를 바꾸거나 기간을 바꾸면 '더 보기'로 펼쳐둔 것들과 페이지를 처음으로 되돌린다.
@@ -39,35 +40,68 @@ function analysisResetLists() {
 // ---------------------------------------------------------------------------
 async function analysisLoadData() { return h2hLoadIndex(); }
 
-async function analysisLoadRating() {
-    if (AnalysisState.rating) return AnalysisState.rating;
-    if (!AnalysisState.ratingLoading) {
-        AnalysisState.ratingLoading = (async () => {
+// 레이팅 변화: 고른 선수의 이력만 받는다(예전엔 전 선수 × 달 약 8천 줄을 통째로 받고 한 명만 썼다).
+// 월 축은 모든 선수 공통(첫 달 ~ 마지막 달, 달마다 빠짐없이 계산된다)이라 첫 달·마지막 달만 받아 만들고,
+// 그 사이 선수 기록이 없는 달은 null로 둬서 그래프 선이 예전처럼 끊긴다.
+// AnalysisState.rating = { months, players: { elo_id: [달마다 점수 또는 null] } } 모양은 그대로다.
+function analysisMonthRange(first, last) {
+    const out = [];
+    if (!first || !last) return out;
+    let [y, m] = first.split('-').map(Number);
+    while (`${y}-${String(m).padStart(2, '0')}` <= last && out.length < 600) {
+        out.push(`${y}-${String(m).padStart(2, '0')}`);
+        if (m === 12) { y += 1; m = 1; } else m += 1;
+    }
+    return out;
+}
+
+async function analysisLoadRatingMonths(client) {
+    if (!AnalysisState.ratingMonths) {
+        AnalysisState.ratingMonths = (async () => {
+            const edge = ascending => client.from('elo_rating_history').select('month_end')
+                .order('month_end', { ascending }).limit(1);
+            const [a, b] = await Promise.all([edge(true), edge(false)]);
+            if (a.error) throw a.error;
+            if (b.error) throw b.error;
+            const month = res => String(((res.data || [])[0] || {}).month_end || '').slice(0, 7);
+            return analysisMonthRange(month(a), month(b));
+        })();
+        AnalysisState.ratingMonths.catch(() => { AnalysisState.ratingMonths = null; });
+    }
+    return AnalysisState.ratingMonths;
+}
+
+async function analysisLoadRating(pid) {
+    const key = String(pid || '');
+    if (!AnalysisState.rating) AnalysisState.rating = { months: [], players: {} };
+    if (!key || AnalysisState.rating.players[key]) return AnalysisState.rating;
+    AnalysisState.ratingLoading ||= {};
+    if (!AnalysisState.ratingLoading[key]) {
+        AnalysisState.ratingLoading[key] = (async () => {
             const client = typeof publicSupabaseClient === 'function' ? publicSupabaseClient() : null;
-            if (!client) return { months: [], players: {} };
-            const rows = await fetchAllPages((from, to) => client.from('elo_rating_history')
-                .select('elo_id,month_end,rating')
-                .order('month_end', { ascending: true })
-                .order('elo_id', { ascending: true })
-                .range(from, to), { parallel: 8 });   // 약 8천 줄(선수 × 달)
-            const months = [...new Set(rows.map(r => String(r.month_end || '').slice(0, 7)).filter(Boolean))].sort();
+            if (!client) return;
+            const [months, res] = await Promise.all([
+                analysisLoadRatingMonths(client),
+                client.from('elo_rating_history').select('month_end,rating')
+                    .eq('elo_id', key).order('month_end', { ascending: true }).limit(1000),
+            ]);
+            if (res.error) throw res.error;
             const monthIndex = new Map(months.map((month, index) => [month, index]));
-            const players = {};
-            rows.forEach(row => {
-                const pid = String(row.elo_id);
-                if (!players[pid]) players[pid] = Array(months.length).fill(null);
+            const series = Array(months.length).fill(null);
+            (res.data || []).forEach(row => {
                 const index = monthIndex.get(String(row.month_end || '').slice(0, 7));
-                if (index !== undefined) players[pid][index] = row.rating == null ? null : Number(row.rating);
+                if (index !== undefined) series[index] = row.rating == null ? null : Number(row.rating);
             });
-            return { months, players };
+            AnalysisState.rating.months = months;
+            AnalysisState.rating.players[key] = series;
         })()
             .catch(err => {
                 console.error('[분석] 레이팅 기록 조회 실패:', err);
-                return { months: [], players: {} };
-            })
-            .then(data => { AnalysisState.rating = data; return data; });
+                delete AnalysisState.ratingLoading[key];   // 다음에 다시 받는다
+            });
     }
-    return AnalysisState.ratingLoading;
+    await AnalysisState.ratingLoading[key];
+    return AnalysisState.rating;
 }
 
 // 경기 로그는 상대전적 탭의 샤드를 그대로 쓴다.
@@ -721,7 +755,7 @@ async function analysisPick(pid) {
     document.getElementById('analysis-body').innerHTML = '<div class="h2h-empty">불러오는 중</div>';
     try {
         // 레이팅 변화는 없어도 나머지가 나와야 하므로, 실패해도 멈추지 않는다(위에서 잡는다).
-        await Promise.all([analysisLoadPlayer(pid), analysisLoadRating()]);
+        await Promise.all([analysisLoadPlayer(pid), analysisLoadRating(pid)]);
     } catch (err) {
         console.error(err);
         document.getElementById('analysis-body').innerHTML =

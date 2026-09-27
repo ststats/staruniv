@@ -33,6 +33,8 @@ const TierState = {
     jump: null,        // 바로가기로 이동한 직후 { id, y } - 사용자가 스크롤하기 전까지 그 티어를 강조한다
     visibleThumbs: new Set(),
     thumbObserver: null,
+    view: '',          // 지금 보고 있는 탭(list · h2h · analysis) - 방송 상태는 list일 때만 갱신
+    listInit: null,    // 티어 목록 초기화(처음 열 때 한 번)
 };
 
 // ---------------------------------------------------------------------------
@@ -52,6 +54,8 @@ function switchTierView(view) {
     // 선수가 하나도 안 불러와지는 버그가 있었다. 사용자가 탭을 직접 클릭했을 때만(=복원 중이
     // 아닐 때만) 이전 뷰의 파라미터를 정리한다.
     if (!PageState.restoring) PageState.update(key === 'list' ? {} : { view: key });
+    TierState.view = key;
+    if (key === 'list') safeInit('티어표', enterTierList);   // 처음 열 때만 명단을 받는다(아래 initTierList)
     if (key === 'h2h') safeInit('상대전적', h2hEnter);   // page-h2h.js (처음 열 때만 데이터를 읽는다)
     if (key === 'analysis') safeInit('분석', analysisEnter);   // page-analysis.js (처음 열 때만 데이터를 읽는다)
 }
@@ -558,7 +562,7 @@ function isStarcraftCategory(name, no) {
 // 방송 상태
 // ---------------------------------------------------------------------------
 async function refreshTierLive() {
-    if (TierState.members.length === 0) return;
+    if (TierState.members.length === 0 || TierState.view !== 'list') return;
 
     let merged;
     try {
@@ -636,31 +640,26 @@ function applyLiveToCards(setChanged) {
     if (needsObserve || setChanged) observeTierThumbs();
 }
 
-// ---------------------------------------------------------------------------
-// 시작
-// ---------------------------------------------------------------------------
-// 티어표는 우리 팀 멤버·경기 기록을 쓰지 않으므로 해당 Supabase 요청을 생략한다.
-bootPage(async () => {
-    const root = document.getElementById('tier-root');
-    // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
-    // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
-    ensureTierPick();
+// 티어 목록 탭: 명단 받기 · 그리기 · 방송 상태 갱신. 이 탭을 처음 열 때 한 번만 한다 - 상대전적·분석 주소로
+// 바로 들어오면 보이지 않는 티어 목록 명단을 받지 않는다(두 탭은 이 명단을 쓰지 않는다).
+function enterTierList() {
+    if (TierState.listInit) {
+        refreshTierLive();   // 다른 탭에 있던 사이 바뀌었을 수 있다(방송 상태는 목록을 볼 때만 갱신한다)
+        return TierState.listInit;
+    }
+    TierState.listInit = initTierList();
+    return TierState.listInit;
+}
 
-    // 상대전적·분석 탭 주소로 바로 들어오면 그 탭이 쓰는 선수 목록도 명단과 함께 받기 시작한다
-    // (명단을 다 받은 뒤 탭을 열면서 시작하면 요청 한 번을 더 기다린다). 실패하면 탭이 다시 받는다.
-    const startParams = new URLSearchParams(location.search);
-    const startView = startParams.get('view');
-    if (startView === 'h2h' || startView === 'analysis') h2hLoadIndex().catch(() => {});
-    // 분석 탭에 선수까지 담긴 주소(공유 링크)면 레이팅 기록(약 8천 줄)도 미리 받는다
-    if (startView === 'analysis' && startParams.get('p')) analysisLoadRating();
-
+async function initTierList() {
     let payload;
     try {
         payload = await fetchTierMembers();
         if (!payload) throw new Error('Supabase tier_members is empty');
     } catch (e) {
         console.error('티어 명단을 불러오지 못했습니다:', e);
-        root.innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요</div>';
+        document.getElementById('tier-root').innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요</div>';
+        TierState.listInit = null;   // 다시 탭을 열면 새로 받는다
         return;
     }
 
@@ -715,6 +714,25 @@ bootPage(async () => {
 
     refreshTierLive();
     if (!document.hidden) startTierLive();
+
+}
+
+// ---------------------------------------------------------------------------
+// 시작
+// ---------------------------------------------------------------------------
+// 티어표는 우리 팀 멤버·경기 기록을 쓰지 않으므로 해당 Supabase 요청을 생략한다.
+bootPage(async () => {
+    // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
+    // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
+    ensureTierPick();
+
+    // 상대전적·분석 탭 주소로 바로 들어오면 그 탭이 쓰는 선수 목록을 바로 받기 시작한다(탭 초기화를 기다리지
+    // 않게). 티어 목록 명단은 티어 목록 탭을 열 때 받는다(enterTierList). 실패하면 탭이 다시 받는다.
+    const startParams = new URLSearchParams(location.search);
+    const startView = startParams.get('view');
+    if (startView === 'h2h' || startView === 'analysis') h2hLoadIndex().catch(() => {});
+    // 분석 탭에 선수까지 담긴 주소(공유 링크)면 그 선수의 레이팅 기록도 미리 받는다
+    if (startView === 'analysis' && startParams.get('p')) analysisLoadRating(startParams.get('p'));
 
     // 주소로 들어온 탭(?view=h2h&p1=..&p2=..)을 되살린다. 상대전적은 자기 몫의 주소를
     // page-h2h.js가 직접 챙긴다(선수 두 명까지 주소에 담아야 링크 공유가 된다).
