@@ -106,7 +106,7 @@
         ${C().field('설립자',C().input('tm_founders',r.founders||''))}
         ${C().field('창단일',C().input('tm_founded',r.founded_date||'','date'))}
         ${C().field('해체일',C().input('tm_disbanded',r.disbanded_date||'','date'))}
-        ${C().field('우승',C().input('tm_championship',r.championship||''))}
+        ${C().field('우승',C().textarea('tm_championship',r.championship||'','rows="3" placeholder="우승한 대회 이름(여러 개면 줄을 나눠서)"'))}
       </div>
       ${C().field('비고',C().textarea('tm_note',r.note||'','rows="3"'))}
       <div class="admin-section-head"><b>로고</b><small>올리면 긴 변 ${SIZE}px로 줄여 저장합니다 · 시너지와 같이 씁니다</small></div>
@@ -161,7 +161,7 @@
     el.innerHTML=`
       ${T.logoError?`<div class="admin-tl-import"><span>대학 로고 표가 아직 없습니다. supabase/staruniv.sql을 실행해 주세요</span></div>`:''}
       <div class="admin-table-wrap"><table class="admin-table admin-tm-table"><thead><tr><th>로고</th><th>팀</th><th>설립자</th><th>창단일</th><th>해체일</th><th>우승</th><th>비고</th><th>티어표 인원</th><th>관리</th></tr></thead><tbody>
-      ${T.teams.map(t=>`<tr><td>${logoBox(t.team_name,'admin-tl-logo is-sm')}</td><td><b>${esc(t.team_name)}</b></td><td>${esc(t.founders)}</td><td>${esc(t.founded_date)}</td><td>${esc(t.disbanded_date)}</td><td>${esc(t.championship)}</td><td class="admin-tm-note">${esc(t.note)}</td><td>${T.count[t.team_name]||''}</td><td><button class="admin-btn" data-tm-edit="${t.id}">수정</button></td></tr>`).join('')||'<tr><td colspan="9">팀이 없습니다</td></tr>'}
+      ${T.teams.map(t=>`<tr><td>${logoBox(t.team_name,'admin-tl-logo is-sm')}</td><td><b>${esc(t.team_name)}</b></td><td>${esc(t.founders)}</td><td>${esc(t.founded_date)}</td><td>${esc(t.disbanded_date)}</td><td class="admin-tm-note">${esc(t.championship)}</td><td class="admin-tm-note">${esc(t.note)}</td><td>${T.count[t.team_name]||''}</td><td><button class="admin-btn" data-tm-edit="${t.id}">수정</button></td></tr>`).join('')||'<tr><td colspan="9">팀이 없습니다</td></tr>'}
       </tbody></table></div>
       ${extra.length?`<div class="admin-section-head"><b>팀 목록에 없는 대학 ${extra.length}</b><small>티어표에 선수가 있거나 로고만 있는 이름입니다. 누르면 팀으로 추가합니다</small></div>
       <div class="admin-tm-extra">${extra.map(n=>`<button type="button" class="admin-tm-chip" data-tm-add="${esc(n)}">${logoBox(n,'admin-tl-logo is-xs')}<span>${esc(n)}</span><small>${T.count[n]?`${T.count[n]}명`:'로고만'}</small></button>`).join('')}</div>`:''}`;

@@ -131,6 +131,7 @@
     --scroll-thumb-hover: var(--color-primary);
     --navbar-h: 64px;
     --sidebar-top: 68px;   /* 선택 바가 붙는 위치: 상단바(68px) 바로 아래 */
+    --strip-top: 68px;     /* 좁은 화면(920px 이하)의 가로 선택 줄이 붙는 위치: 상단바 바로 아래(모바일 60px) */
     --bar-scope-h: 34px;
     --bar-scope-btn-h: 28px;
     --bar-chip-h: 30px;
@@ -232,6 +233,7 @@ html[data-theme="dark"] {
 @media (max-width: 767.98px) {
     :root {
         /* 크기: 상단바 · 선택 바 · 스크롤바 · 목록 높이 */
+        --strip-top: 60px;   /* 가로 선택 줄이 붙는 위치: 모바일 상단바(60px) 바로 아래 */
         --bar-scope-h: 32px;
         --bar-scope-btn-h: 26px;
         --bar-chip-h: 28px;
@@ -240,4 +242,3 @@ html[data-theme="dark"] {
         --bar-gap: 8px;
     }
 }
-

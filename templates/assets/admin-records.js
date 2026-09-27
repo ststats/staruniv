@@ -25,9 +25,10 @@
     const names=[...new Set(S.members.map(m=>m.nickname||m.name).filter(Boolean))];
     return `<datalist id="ar_member_names">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   }
+  // 세트 순서는 표에 적힌 차례 그대로다(따로 적지 않는다)
   function roundRow(r={},idx=0){
     return `<tr class="admin-round-row" data-round-index="${idx}">
-      <td><input class="admin-input" data-k="source_order" type="number" value="${esc(r.source_order??idx+1)}"></td>
+      <td class="admin-round-no">${idx+1}</td>
       <td><input class="admin-input" data-k="set_name" value="${esc(r.set_name||'')}"></td>
       <td><input class="admin-input" data-k="round_name" value="${esc(r.round_name||'')}"></td>
       <td><input class="admin-input" data-k="our_player" list="ar_member_names" placeholder="멤버 또는 용병" value="${esc(r.our_player||'')}"></td>
@@ -41,25 +42,41 @@
       <td><button type="button" class="admin-btn danger admin-round-delete">삭제</button></td>
     </tr>`;
   }
-  function editorHtml(match={},rounds=[]){
+  // 경기번호: 새 매치(복제 포함)는 다음 번호를 미리 채운다(비우면 저장할 때 서버가 마지막 번호 + 1).
+  // 결과 · 세트 스코어: 세트 결과(승/패)가 하나라도 있으면 그것으로 자동 계산한다(세트가 없는 옛 기록만 직접 적는다).
+  function editorHtml(match={},rounds=[],nextNo=null){
+    const isNew=match.match_no==null;
     return `
       <div class="admin-form-grid">
-        ${C().field('경기번호',C().input('ar_no',match.match_no??'','number','min="1"'))}
+        ${C().field('경기번호',C().input('ar_no',match.match_no??nextNo??'','number','min="1"'),isNew?'다음 번호로 자동':'')}
         ${C().field('날짜',C().input('ar_date',match.match_date||'','date','required'))}
         ${C().field('상대 대학',C().input('ar_opp',match.opponent_team||'','text','required'))}
         ${C().field('형식',C().input('ar_format',match.match_format||''))}
         ${C().field('진행 방식',C().input('ar_method',match.method||''))}
         ${C().field('결과',C().input('ar_result',match.final_result||''))}
-        ${C().field('세트 스코어',C().input('ar_set',match.set_result||''))}
-        ${C().field('세트 수',C().input('ar_sets',rounds.length,'number','readonly'))}
+        ${C().field('세트 스코어',C().input('ar_set',match.set_result||''),'세트 결과로 자동 계산')}
       </div>
       <div class="admin-section-head"><b>세트</b><button type="button" class="admin-btn" id="ar_add_round">+ 세트 추가</button></div>
       <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th>순서</th><th>세트명</th><th>라운드명</th><th>캄몬 선수</th><th>캄몬 종족</th><th>캄몬 티어</th><th>상대 선수</th><th>상대 종족</th><th>상대 티어</th><th>맵</th><th>결과</th><th>관리</th></tr></thead><tbody id="ar_rounds">${rounds.map(roundRow).join('')}</tbody></table></div>${memberDatalist()}`;
   }
   function collectRounds(){
     return [...document.querySelectorAll('#ar_rounds .admin-round-row')].map((tr,i)=>{
-      const r={};tr.querySelectorAll('[data-k]').forEach(el=>r[el.dataset.k]=C().empty(el.value));r.source_order=Number(r.source_order||i+1);return r;
+      const r={};tr.querySelectorAll('[data-k]').forEach(el=>r[el.dataset.k]=C().empty(el.value));r.source_order=i+1;return r;
     });
+  }
+  // 세트 줄을 더하거나 지우거나 결과를 고를 때마다: 순서 번호를 다시 매기고, 결과 · 세트 스코어를 세트 결과로 채운다
+  function refreshRounds(){
+    document.querySelectorAll('#ar_rounds .admin-round-no').forEach((td,i)=>{td.textContent=i+1;});
+    const check=validateScore({},collectRounds());
+    const set=document.getElementById('ar_set'), res=document.getElementById('ar_result');
+    if(!set||!res)return;
+    if(check){set.value=check.score;res.value=check.final;}
+    set.readOnly=res.readOnly=!!check;
+  }
+  async function nextMatchNo(){
+    const {data,error}=await C().state.client.from('matches').select('match_no').order('match_no',{ascending:false}).limit(1);
+    if(error)return null;
+    return Number(data?.[0]?.match_no||0)+1;
   }
   async function getRounds(matchNo){
     const {data,error}=await C().state.client.from('rounds').select('*').eq('match_no',matchNo).order('source_order');if(error)throw error;return data||[];
@@ -67,9 +84,10 @@
   async function openEditor(match,clone=false){
     match=match||{};const sourceNo=match.match_no;const rounds=sourceNo?await getRounds(sourceNo):[];
     const editing=clone?{...match,match_no:null,source_order:null}:match;
+    const nextNo=editing.match_no==null?await nextMatchNo():null;
     C().openDrawer({
       eyebrow:'RECORD',title:clone?'매치 복제':sourceNo?'매치 수정':'새 매치',
-      html:editorHtml(editing,rounds),
+      html:editorHtml(editing,rounds,nextNo),
       onSubmit:async()=>{
         const p_match={
           match_no:C().intOrNull(C().value('ar_no')),source_order:editing.source_order||null,match_date:C().value('ar_date'),
@@ -86,9 +104,12 @@
       onDelete:sourceNo&&!clone?async()=>{const {error}=await C().state.client.from('matches').delete().eq('match_no',sourceNo);if(error)throw error;await C().audit('delete','matches',sourceNo,{opponent_team:match.opponent_team});await load(S.page);}:null
     });
     document.getElementById('ar_add_round').onclick=()=>{
-      const tb=document.getElementById('ar_rounds');tb.insertAdjacentHTML('beforeend',roundRow({},tb.children.length));C().markDirty(true);
+      const tb=document.getElementById('ar_rounds');tb.insertAdjacentHTML('beforeend',roundRow({},tb.children.length));refreshRounds();C().markDirty(true);
     };
-    document.getElementById('ar_rounds').addEventListener('click',ev=>{const b=ev.target.closest('.admin-round-delete');if(!b)return;b.closest('tr').remove();C().markDirty(true);});
+    const tbody=document.getElementById('ar_rounds');
+    tbody.addEventListener('click',ev=>{const b=ev.target.closest('.admin-round-delete');if(!b)return;b.closest('tr').remove();refreshRounds();C().markDirty(true);});
+    tbody.addEventListener('change',ev=>{if(ev.target.matches('[data-k="result"]'))refreshRounds();});
+    refreshRounds();
   }
   async function load(page=0){
     S.page=Math.max(0,page);let allowed=null;
@@ -157,7 +178,7 @@
         <input class="admin-input" id="recordsPlayer" placeholder="선수 검색" value="${esc(C().value('recordsPlayer'))}">
         <button class="admin-btn primary" id="recordsSearch">조회</button>
       </div>
-      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>세트 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${wl(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다</td></tr>'}</tbody></table></div>
+      <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>경기번호</th><th>날짜</th><th>상대 대학</th><th>형식</th><th>진행 방식</th><th>결과</th><th>세트 스코어</th><th>라운드 수</th><th>관리</th></tr></thead><tbody>${S.rows.map(r=>`<tr data-match="${r.match_no}"><td>${r.match_no}</td><td>${esc(r.match_date)}</td><td><b>${esc(r.opponent_team)}</b></td><td>${esc(r.match_format)}</td><td>${esc(r.method)}</td><td>${wl(r.final_result)}</td><td>${esc(r.set_result)}</td><td>${S.roundCounts[String(r.match_no)]||0}</td><td><button class="admin-btn" data-edit="${r.match_no}">수정</button><button class="admin-btn" data-clone="${r.match_no}">복제</button></td></tr>`).join('')||'<tr><td colspan="9">검색 결과가 없습니다</td></tr>'}</tbody></table></div>
       <div class="admin-pager"><button class="admin-btn" id="recordsPrev"${S.page<=0?' disabled':''}>이전</button><span>${S.page+1} / ${pages} · ${S.count}경기</span><button class="admin-btn" id="recordsNext"${S.page>=pages-1?' disabled':''}>다음</button></div></div>`;
     bindViewTabs(root);
     root.querySelector('#recordsAdd').onclick=()=>openEditor(null);

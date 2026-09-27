@@ -18,6 +18,7 @@
 body.admin-mode {
     --admin-bar-h: 40px;
     --sidebar-top: calc(84px + var(--admin-bar-h));
+    --strip-top: calc(68px + var(--admin-bar-h));   /* 좁은 화면 가로 선택 줄: 상단바 + 어드민 줄 밑 */
     /* 관리자 색: 공개 사이트처럼 남색 + 무채색만 쓴다. 파랑 · 하늘색 바탕은 쓰지 않는다.
        흰 면 위 주요 버튼 · 선택 = 남색(다크 모드는 흰색), 입력칸 · 목록 = 흰 바탕 + 회색 테두리 */
     --admin-ink: var(--navy);
@@ -1020,8 +1021,14 @@ body.admin-drawer-open { overflow: hidden; }
 .admin-action-bar .admin-tool-btn { min-height: 34px; background: var(--admin-ink); color: var(--admin-on-ink); }
 .admin-action-bar .admin-tool-btn:hover { background: var(--admin-ink); color: var(--admin-on-ink); opacity: .85; }
 .admin-action-bar .admin-tool-btn[hidden] { display: none; }
-/* 관리 줄이 보이면 상단바 밑에 붙는 선택 바(멤버·전적 사이드바)를 그 높이(51px)만큼 내린다 */
-body.admin-actions-on:not(.admin-edit-disabled) { --sidebar-top: calc(84px + 51px + var(--admin-bar-h)); }
+/* 상단에 붙는 선택 바(PC 사이드바 · 좁은 화면의 가로 선택 줄)는 어드민 상단바 밑, 관리 줄이 보이면 그 높이(51px)만큼 더 밑에 붙는다 */
+body.admin-actions-on:not(.admin-edit-disabled) {
+    --sidebar-top: calc(84px + 51px + var(--admin-bar-h));
+    --strip-top: calc(68px + 51px + var(--admin-bar-h));
+}
+@media (max-width: 767.98px) {
+    body.admin-actions-on:not(.admin-edit-disabled) { --strip-top: calc(60px + 51px + var(--admin-bar-h)); }
+}
 @media (min-width: 1200px) {
     .admin-action-bar-inner { padding: 8px 40px; }
 }
@@ -1030,8 +1037,25 @@ body.admin-actions-on:not(.admin-edit-disabled) { --sidebar-top: calc(84px + 51p
     .admin-action-bar-inner { padding: 8px 18px; }
     .admin-action-bar .admin-tool-btn { flex: 1 1 auto; justify-content: center; }
 }
-/* 홈 캐러셀 '슬라이드 편집'은 바로가기 버튼 옆(같은 높이) */
-.home-hero-links .admin-home-edit { min-height: 40px; }
+/* 홈 히어로 편집: PC는 바로가기 버튼 바로 뒤(오른쪽은 미리보기 칸 - 폭은 admin-site.js가 --cta-w로 알린다),
+   좁은 화면은 다른 페이지처럼 오른쪽 위 */
+.home-carousel-slide > .admin-hero-tools {
+    align-self: flex-start;
+    margin-top: -40px;
+    margin-left: calc(var(--cta-w, 100px) + 8px);
+}
+/* 좁은 화면: 미리보기 칸이 숨으니 바로가기 줄 오른쪽 끝(홈 머리글은 길어서 오른쪽 위에 두면 겹친다) */
+@media (max-width: 920px) {
+    .home-carousel-slide > .admin-hero-tools {
+        position: relative;
+        top: auto;
+        right: auto;
+        align-self: flex-end;
+        margin: -34px 0 0;       /* 바로가기(40px)와 가운데를 맞춘다 */
+    }
+}
+/* 전적 관리 세트 표의 순서 칸(표에 적힌 차례, 자동) */
+.admin-table td.admin-round-no { width: 40px; text-align: center; color: var(--color-text-muted); font-weight: 700; }
 .admin-tool-btn {
     display: inline-flex;
     align-items: center;
@@ -1449,7 +1473,7 @@ body.admin-actions-on:not(.admin-edit-disabled) { --sidebar-top: calc(84px + 51p
 @media (max-width: 767.98px) {
     .admin-rank-explain ol { grid-template-columns: minmax(0, 1fr); }
     .admin-rank-tools { grid-template-columns: minmax(0, 1fr); }
-    body.admin-mode { --admin-bar-h: 44px; }
+    body.admin-mode { --admin-bar-h: 44px; --strip-top: calc(60px + var(--admin-bar-h)); }
     .admin-inline-bar { padding: 0 12px; gap: 8px; }
     .admin-save-state { display: none; }
     .admin-inline-actions .admin-btn-ghost { display: none; }

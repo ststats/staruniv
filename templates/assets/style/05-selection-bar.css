@@ -389,7 +389,7 @@
     }
     .selection-layout > .avatar-bar {
         position: sticky;
-        top: 60px;
+        top: var(--strip-top);
         z-index: 90;
         align-items: stretch;
         overflow: hidden;
@@ -445,7 +445,7 @@
         gap: var(--bar-gap);
         padding: 0;
         position: sticky;
-        top: 60px;
+        top: var(--strip-top);
         z-index: 90;
     }
     .selection-layout > .tier-bar .tier-bar-tools {

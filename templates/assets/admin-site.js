@@ -187,7 +187,7 @@
     const titleEl=slide?.querySelector('.page-header-title'), descEl=slide?.querySelector('.page-header-subtitle'), linkEl=slide?.querySelector('.home-hero-links a');
     const original={title:titleEl?.textContent||'',description:descEl?.textContent||'',href:linkEl?.getAttribute('href')||''};
     C().openDrawer({
-      eyebrow:'HOME',title:'홈 캐러셀 편집',
+      eyebrow:'HOME',title:'히어로 편집',
       html:`${C().field('제목',C().input('ahs_title',row.title,'text','required'))}
         ${C().field('설명',C().textarea('ahs_desc',row.description,'rows="3"'))}
         ${C().field('바로가기',C().input('ahs_href',row.href,'text','required'))}`,
@@ -212,13 +212,21 @@
 
   async function enhanceHome(){
     if(document.body.dataset.adminPage!=='home')return;
-    // 슬라이드 편집은 바로가기 버튼 옆에 둔다(오른쪽 위에 띄우면 미리보기 칸과 겹친다)
-    document.querySelectorAll('.home-carousel-slide').forEach((slide,i)=>{
-      const links=slide.querySelector('.home-hero-links');
-      if(links&&!slide.querySelector('.admin-home-edit')){
-        links.insertAdjacentHTML('beforeend',`<button type="button" class="admin-tool-btn admin-home-edit" data-icon="edit" data-admin-home-slide="${i}">슬라이드 편집</button>`);
-      }
+    // 홈 히어로(캐러셀 장마다)도 다른 페이지와 같은 [EDIT 히어로 편집]. PC는 오른쪽에 미리보기 칸이 있어
+    // 바로가기 버튼 바로 뒤, 좁은 화면(920px 이하)에서는 다른 페이지처럼 히어로 오른쪽 위.
+    // 도구는 장(히어로)의 직계로 둔다(다른 페이지와 같은 자리 계산). PC에서 바로가기 뒤에 붙도록 그 폭을 --cta-w로 알린다.
+    const slides=[...document.querySelectorAll('.home-carousel-slide')];
+    slides.forEach((slide,i)=>{
+      if(slide.querySelector('.admin-home-edit'))return;
+      slide.insertAdjacentHTML('beforeend',`<div class="admin-hero-tools"><span class="admin-hero-tools-label">EDIT</span><button type="button" class="admin-tool-btn admin-home-edit" data-icon="edit" data-admin-home-slide="${i}">히어로 편집</button></div>`);
     });
+    const fitCta=()=>slides.forEach(slide=>{
+      const links=slide.querySelector('.home-hero-links'), tools=slide.querySelector('.admin-hero-tools');
+      if(links&&tools&&links.offsetWidth)tools.style.setProperty('--cta-w',`${links.offsetWidth}px`);
+    });
+    fitCta();
+    document.fonts?.ready?.then(fitCta);
+    if(!enhanceHome.bound){enhanceHome.bound=true;window.addEventListener('resize',fitCta);}
   }
 
   // 운영 현황(홈 맨 위 접기 카드): 파이프라인 갱신 상태 · ELO DB 범위 · 테이블 건수
