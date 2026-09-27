@@ -107,6 +107,7 @@ function applyTheme(theme) {
     const dark = theme === 'dark';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.documentElement.dataset.bsTheme = dark ? 'dark' : 'light';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#07090d' : '#ffffff');
     document.querySelectorAll('[data-theme-choice]').forEach(button => {
         const selected = button.dataset.themeChoice === (dark ? 'dark' : 'light');
         button.classList.toggle('active', selected);

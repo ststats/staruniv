@@ -90,12 +90,13 @@ function goHomeCarousel(index) {
 
 // 자동 넘김. 마우스를 올리거나 키보드 초점이 들어오면 멈춘다(읽는 중에 넘어가면 성가시다).
 // 사용자가 직접 넘기면 타이머를 처음부터 다시 센다 - 누른 직후 곧바로 넘어가지 않게.
+// '동작 줄이기' 설정이면 자동으로 넘기지 않는다(직접 넘기기는 그대로).
 let homeCarouselTimer = null;
 const HOME_CAROUSEL_MS = 6000;
 function startHomeCarouselAuto() {
     stopHomeCarouselAuto();
     const dots = document.querySelectorAll('#home-carousel-dots button');
-    if (dots.length < 2) return;
+    if (dots.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     homeCarouselTimer = setInterval(() => goHomeCarousel(homeCarouselIndex + 1), HOME_CAROUSEL_MS);
 }
 function stopHomeCarouselAuto() {

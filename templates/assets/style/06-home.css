@@ -246,6 +246,7 @@ a.home-notice-card:hover {
     display: flex;
     transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
 }
+@media (prefers-reduced-motion: reduce) { .home-carousel-track { transition: none; } }
 .home-carousel-slide {
     flex: 0 0 100%;
     min-width: 0;
