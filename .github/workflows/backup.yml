@@ -1,6 +1,7 @@
 name: Backup
 
-# 공유 Supabase DB(스타유니브·시너지·ststat)와 Storage 파일을 월 1회 암호화해 Actions 아티팩트로 90일 보관한다(최근 3개).
+# 공유 Supabase DB(스타유니브·시너지·ststat)와 Storage 파일을 월 1회 암호화해 Actions 아티팩트로 둔다.
+# 새 백업이 올라가면 이전 백업은 지워 가장 최근 하나만 남긴다(실패한 달에는 이전 것이 그대로 남는다).
 # 무료 플랜에는 자동 백업이 없고, 멤버·전적·연혁·일정처럼 어드민에서 직접 입력한 데이터는 DB에만 있다.
 # 저장소가 공개라 아티팩트는 GitHub에 로그인한 누구나 받을 수 있으므로 반드시 암호화한다(BACKUP_PASSPHRASE).
 # 복구 방법은 README '백업' 절.
@@ -11,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: write   # 이전 백업 아티팩트 지우기
 
 concurrency:
   group: staruniv-backup
@@ -103,6 +105,28 @@ jobs:
         with:
           name: supabase-backup-${{ github.run_id }}
           path: supabase-backup-*.tar.gz.gpg
-          retention-days: 90
+          retention-days: 90   # 다음 달 백업이 계속 실패해도 90일까지는 남는다
           compression-level: 0
           if-no-files-found: error
+
+      # 새 백업이 올라간 뒤에만 이전 백업들을 지운다(이번 실행의 것만 남긴다).
+      - name: Delete older backups
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          KEEP: supabase-backup-${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          api = f"https://api.github.com/repos/{os.environ['REPO']}/actions/artifacts"
+          headers = {'Authorization': f"Bearer {os.environ['GH_TOKEN']}", 'Accept': 'application/vnd.github+json'}
+          def call(url, method='GET'):
+              with urllib.request.urlopen(urllib.request.Request(url, headers=headers, method=method), timeout=30) as res:
+                  return json.loads(res.read() or b'{}')
+          arts = call(api + '?per_page=100').get('artifacts', [])
+          old = [a for a in arts if a['name'].startswith('supabase-backup-') and a['name'] != os.environ['KEEP']]
+          for a in old:
+              call(f"{api}/{a['id']}", method='DELETE')
+              print('deleted', a['name'], a['created_at'])
+          print(f'kept {os.environ["KEEP"]}, deleted {len(old)}')
+          PY
