@@ -1,12 +1,12 @@
 name: Backup
 
-# 공유 Supabase DB(스타유니브·시너지·ststat)와 Storage 파일을 주 1회 암호화해 Actions 아티팩트로 90일 보관한다.
+# 공유 Supabase DB(스타유니브·시너지·ststat)와 Storage 파일을 월 1회 암호화해 Actions 아티팩트로 90일 보관한다(최근 3개).
 # 무료 플랜에는 자동 백업이 없고, 멤버·전적·연혁·일정처럼 어드민에서 직접 입력한 데이터는 DB에만 있다.
 # 저장소가 공개라 아티팩트는 GitHub에 로그인한 누구나 받을 수 있으므로 반드시 암호화한다(BACKUP_PASSPHRASE).
 # 복구 방법은 README '백업' 절.
 on:
   schedule:
-    - cron: '30 18 * * 0'   # 매주 월요일 03:30(한국 시간)
+    - cron: '30 18 1 * *'   # 매월 2일 03:30(한국 시간)
   workflow_dispatch:
 
 permissions:
