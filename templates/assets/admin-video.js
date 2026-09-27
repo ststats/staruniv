@@ -93,34 +93,56 @@
     C().toast(hidden?'영상을 숨겼습니다':'영상을 표시했습니다');await refresh();
   }
 
+  // 기존 보자 영상이 쓰는 값(분류 · 분류 영문 · 작성자)을 골라 쓰게 한다 - 오타로 분류가 새로 갈라지지 않게.
+  // 분류 영문은 분류마다 하나다(공개 페이지는 분류 안에서 처음 보이는 값을 제목 위 라벨로 쓴다).
+  const uniq=list=>[...new Set(list.map(x=>String(x||'').trim()).filter(Boolean))];
+  const groupEnOf=name=>String((picks.find(p=>p.group_name===name&&String(p.group_en||'').trim())||{}).group_en||'').trim();
+  const datalist=(id,values)=>`<datalist id="${id}">${values.map(v=>`<option value="${C().esc(v)}"></option>`).join('')}</datalist>`;
+  const youtubeThumb=id=>id?`https://i.ytimg.com/vi/${id}/hqdefault.jpg`:'';
+
   function openPick(row){
-    row=row||{kind:'youtube',title:'',note:'',group_name:'',author:'',thumb:'',added_at:new Date().toISOString().slice(0,10),source_order:'',short:false,hidden:false};
+    row=row||{kind:'youtube',title:'',note:'',group_name:'',group_en:'',author:'',thumb:'',added_at:new Date().toISOString().slice(0,10),source_order:'',short:false,hidden:false};
+    const groupEn=String(row.group_en||'').trim()||groupEnOf(row.group_name);
     C().openDrawer({
       eyebrow:'PICK',title:row.id?'보자 영상 수정':'보자 영상 추가',
       html:`
         ${C().field('YouTube 또는 SOOP URL',C().input('avp_url',row.id?pickUrl(row):'','url','required'))}
         ${C().field('제목',C().input('avp_title',row.title||'','text','required'))}
-        ${C().field('설명',C().textarea('avp_note',row.note||'','rows="3"'))}
         <div class="admin-form-grid">
-          ${C().field('분류',C().input('avp_group',row.group_name||''))}
-          ${C().field('작성자',C().input('avp_author',row.author||''))}
+          ${C().field('분류',C().input('avp_group',row.group_name||'','text','list="avp_groups" autocomplete="off"'),'기존 분류에서 고르거나 새로 적기')}
+          ${C().field('분류 영문',C().input('avp_group_en',groupEn,'text','placeholder="예: MONSTARZ"'),'제목 위 작은 라벨 · 분류마다 하나')}
+          ${C().field('작성자',C().input('avp_author',row.author||'','text','list="avp_authors" autocomplete="off"'),'채널 이름 (예: 김윤환TV, 숲 VOD)')}
           ${C().field('등록일',C().input('avp_date',row.added_at||'','date'))}
-          ${C().field('표시 순서',C().input('avp_order',row.source_order??'','number','min="0"'))}
+          ${C().field('표시 순서',C().input('avp_order',row.source_order??'','number','min="0"'),row.id?'':'비우면 맨 뒤')}
         </div>
-        ${C().field('썸네일',C().input('avp_thumb',row.thumb||'','url'))}
+        ${C().field('썸네일',C().input('avp_thumb',row.thumb||'','url'),'YouTube는 비우면 기본 썸네일 · 숲 VOD는 비우면 글자 썸네일')}
+        <div class="admin-media-preview" id="avp_preview"></div>
+        ${C().field('설명',C().textarea('avp_note',row.note||'','rows="2"'),'선택 · 카드 제목 아래에 나옴')}
         <div class="admin-form-grid">${C().field('쇼츠',C().checkbox('avp_short',!!row.short,'쇼츠'))}${C().field('숨김',C().checkbox('avp_hidden',!!row.hidden,'숨김'))}</div>
-        <div class="admin-media-preview" id="avp_preview">${row.thumb?`<img src="${C().esc(row.thumb)}" alt="">`:''}</div>`,
+        ${datalist('avp_groups',uniq(picks.map(p=>p.group_name)))}${datalist('avp_authors',uniq(picks.map(p=>p.author)))}`,
       onSubmit:async()=>{
         const url=C().value('avp_url').trim();const y=youtubeId(url),s=soopId(url);if(!y&&!s)throw new Error('지원하는 YouTube 또는 SOOP URL이 아닙니다');
         const id=y||s,kind=y?'youtube':'soop';
-        const payload={id,kind,title:C().value('avp_title').trim(),note:C().empty(C().value('avp_note')),group_name:C().empty(C().value('avp_group')),group_en:null,author:C().empty(C().value('avp_author')),thumb:C().empty(C().value('avp_thumb')),added_at:C().empty(C().value('avp_date')),source_order:Number(C().value('avp_order')||await C().nextSourceOrder('video_picks')),short:!!document.getElementById('avp_short')?.checked,hidden:!!document.getElementById('avp_hidden')?.checked,updated_at:new Date().toISOString()};
+        const group=C().empty(C().value('avp_group').trim());
+        const groupEn=C().empty(C().value('avp_group_en').trim());
+        const payload={id,kind,title:C().value('avp_title').trim(),note:C().empty(C().value('avp_note')),group_name:group,group_en:groupEn,author:C().empty(C().value('avp_author').trim()),thumb:C().empty(C().value('avp_thumb')),added_at:C().empty(C().value('avp_date')),source_order:Number(C().value('avp_order')||await C().nextSourceOrder('video_picks')),short:!!document.getElementById('avp_short')?.checked,hidden:!!document.getElementById('avp_hidden')?.checked,updated_at:new Date().toISOString()};
         if(row.id&&row.id!==id){const {error:del}=await C().state.client.from('video_picks').delete().eq('id',row.id);if(del)throw del;}
         const {error}=await C().state.client.from('video_picks').upsert(payload,{onConflict:'id'});if(error)throw error;
+        // 분류 영문을 바꾸면 같은 분류의 다른 영상도 같이 바꾼다(분류마다 하나)
+        if(group&&groupEn&&groupEn!==groupEnOf(group)){const {error:en}=await C().state.client.from('video_picks').update({group_en:groupEn}).eq('group_name',group);if(en)throw en;}
         C().toast('보자 영상을 저장했습니다');await refresh();
       },
       onDelete:row.id?async()=>{const {error}=await C().state.client.from('video_picks').delete().eq('id',row.id);if(error)throw error;await C().audit('delete','video_picks',row.id,{title:row.title});await refresh();}:null
     });
-    document.getElementById('avp_thumb')?.addEventListener('input',ev=>{document.getElementById('avp_preview').innerHTML=ev.target.value?`<img src="${C().esc(ev.target.value)}" alt="">`:'';});
+    // 미리보기: 적은 썸네일, 없으면 YouTube 기본 썸네일
+    const preview=()=>{const t=C().value('avp_thumb').trim()||youtubeThumb(youtubeId(C().value('avp_url')));document.getElementById('avp_preview').innerHTML=t?`<img src="${C().esc(t)}" alt="">`:'';};
+    document.getElementById('avp_thumb')?.addEventListener('input',preview);
+    document.getElementById('avp_url')?.addEventListener('input',preview);
+    // 기존 분류를 고르면 그 분류의 영문을 채운다(직접 적은 값은 덮지 않는다)
+    let enTouched=false;
+    document.getElementById('avp_group_en')?.addEventListener('input',()=>{enTouched=true;});
+    document.getElementById('avp_group')?.addEventListener('input',ev=>{const en=groupEnOf(ev.target.value.trim());if(!enTouched)document.getElementById('avp_group_en').value=en;});
+    preview();
   }
 
   async function init(){
