@@ -1,4 +1,4 @@
-<div class="admin-inline-bar" id="adminInlineBar" aria-label="관리자 편집 도구">
+<div class="admin-inline-bar" id="adminInlineBar" role="group" aria-label="관리자 편집 도구">
   <div class="admin-inline-left">
     <span class="admin-edit-badge">EDIT</span>
     <strong id="adminPageLabel">{{ page_id }}</strong>
@@ -14,7 +14,7 @@
 
 <div class="admin-toast" id="adminToast" role="status" aria-live="polite" hidden></div>
 
-<aside class="admin-drawer" id="adminDrawer" aria-hidden="true" aria-label="편집">
+<aside class="admin-drawer" id="adminDrawer" aria-hidden="true" aria-label="편집" inert>
   <div class="admin-drawer-backdrop" data-admin-close></div>
   <section class="admin-drawer-sheet" role="dialog" aria-modal="true" aria-labelledby="adminDrawerTitle">
     <header class="admin-drawer-head">

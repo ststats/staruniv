@@ -76,6 +76,7 @@
     if (!drawer) return true;
     const opts = state.drawer;
     drawer.setAttribute('aria-hidden','true');
+    drawer.inert = true;
     document.body.classList.remove('admin-drawer-open');
     document.body.style.removeProperty('--drawer-lock-gap');
     state.drawer = null;
@@ -150,6 +151,7 @@
       state.drawerReturnFocus = active && active !== document.body && !drawer.contains(active) ? active : null;
     }
     drawer.setAttribute('aria-hidden','false');
+    drawer.inert = false;
     document.body.classList.add('admin-drawer-open');
     markDirty(false);
     requestAnimationFrame(() => q('input,select,textarea', $('adminDrawerBody'))?.focus());

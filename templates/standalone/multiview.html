@@ -378,7 +378,7 @@ html[data-theme="dark"] .mv-settings-panel {
                 <div class="mv-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
                     <div class="mv-tile-label">그리드</div>
-                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" onclick="mvToggleFocusMode()"></button>
+                    <button type="button" class="mv-toggle-switch" id="mv-mode-toggle" aria-label="그리드 모드" aria-pressed="false" onclick="mvToggleFocusMode()"></button>
                 </div>
                 <div class="mv-tile disabled" id="mv-col-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>
@@ -392,7 +392,7 @@ html[data-theme="dark"] .mv-settings-panel {
                 <div class="mv-tile">
                     <svg class="mv-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
                     <div class="mv-tile-label">다크 모드</div>
-                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" onclick="mvToggleTheme()"></button>
+                    <button type="button" class="mv-toggle-switch" id="mv-theme-toggle" aria-label="다크 모드" aria-pressed="false" onclick="mvToggleTheme()"></button>
                 </div>
             </div>
         </div>
@@ -473,7 +473,7 @@ html[data-theme="dark"] .mv-settings-panel {
     function mvApplyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         const btn = document.getElementById('mv-theme-toggle');
-        if (btn) btn.classList.toggle('on', theme === 'dark');
+        if (btn) btn.setAttribute('aria-pressed', btn.classList.toggle('on', theme === 'dark'));
         localStorage.setItem('mv-theme', theme);
     }
     function mvToggleTheme() {
@@ -518,7 +518,7 @@ html[data-theme="dark"] .mv-settings-panel {
 
     function mvApplyModeButtons() {
         const toggle = document.getElementById('mv-mode-toggle');
-        if (toggle) toggle.classList.toggle('on', !mvFocus);
+        if (toggle) toggle.setAttribute('aria-pressed', toggle.classList.toggle('on', !mvFocus));
     }
     function mvSetFocusMode(isFocus) {
         if (isFocus === mvFocus) return;

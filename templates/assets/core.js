@@ -213,7 +213,6 @@ function showModal(id) {
         modalBackdrop.classList.add('show');
     }
     el.style.display = 'block';
-    el.removeAttribute('aria-hidden');
     el.setAttribute('aria-modal', 'true');
     el.setAttribute('role', 'dialog');
     void el.offsetWidth;
@@ -223,14 +222,13 @@ function showModal(id) {
 
 function hideModal(el, keepBackdrop) {
     if (!el || !el.classList.contains('show')) return;
-    // 모달 안에 포커스가 남은 채로 aria-hidden을 씌우면 크롬 접근성 경고가 뜬다 - 먼저 뺀다
+    // 모달 안에 포커스가 남은 채로 숨기면 포커스가 보이지 않는 곳에 남는다 - 먼저 뺀다
     if (el.contains(document.activeElement)) document.activeElement.blur();
     el.classList.remove('show');
     if (openModalEl === el) openModalEl = null;
     afterTransition(el, () => {
         if (el.classList.contains('show')) return;
         el.style.display = 'none';
-        el.setAttribute('aria-hidden', 'true');
         el.removeAttribute('aria-modal');
         el.removeAttribute('role');
     });
@@ -330,11 +328,27 @@ function safeInit(label, fn) {
 }
 
 // role="button"/"tab"을 단 div/tr 등(네이티브 버튼이 아닌 클릭 요소)도 키보드
-// Enter/Space로 누를 수 있게 한다. 마우스 클릭 동작에는 영향이 없다.
+// Enter/Space로 누를 수 있게 한다. 탭 목록에서는 ←/→/Home/End로 옆 탭을 골라 연다(WAI-ARIA 탭 패턴).
+// 마우스 클릭 동작에는 영향이 없다.
+const TAB_KEYS = { ArrowLeft: -1, ArrowRight: 1, Home: 'first', End: 'last' };
 document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
     const el = e.target;
-    if (!el || !el.matches || !el.matches('[role="button"], [role="tab"]')) return;
+    if (!el || !el.matches) return;
+    if (e.key in TAB_KEYS && el.matches('[role="tablist"] > [role="tab"]') && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        const list = el.parentElement;
+        const visibleTabs = () => [...list.children].filter(t => t.matches('[role="tab"]') && t.getClientRects().length);
+        const tabs = visibleTabs();
+        const step = TAB_KEYS[e.key];
+        const i = step === 'first' ? 0 : step === 'last' ? tabs.length - 1 : (tabs.indexOf(el) + step + tabs.length) % tabs.length;
+        e.preventDefault();
+        if (tabs[i] === el) return;
+        tabs[i].click();
+        // 필터처럼 누를 때 탭 목록을 새로 그리는 곳은 같은 자리의 새 탭으로 포커스를 옮긴다
+        (tabs[i].isConnected ? tabs[i] : visibleTabs()[i])?.focus();
+        return;
+    }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (!el.matches('[role="button"], [role="tab"]')) return;
     if (/^(BUTTON|INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
     e.preventDefault();
     el.click();
