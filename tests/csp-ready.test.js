@@ -41,3 +41,11 @@ test('data-click 등이 이름으로 부르는 함수는 모두 전역 function�
   for (const fn of used) assert.ok(declared.has(fn), `전역 function ${fn} 없음`);
 });
 
+test('공개 페이지와 멀티뷰어는 같은 CSP를 싣고, 인라인 스크립트는 허용하지 않는다', () => {
+  const csp = f => (fs.readFileSync(path.join(root, f), 'utf8').match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1];
+  const base = csp('base.html');
+  assert.ok(base, 'base.html에 CSP가 없다');
+  assert.equal(csp('standalone/multiview.html'), base);
+  const scriptSrc = base.match(/script-src ([^;]+)/)[1];
+  assert.doesNotMatch(scriptSrc, /unsafe-inline|unsafe-eval/);
+});
