@@ -21,11 +21,6 @@ const HISTORY_TYPES = {
     other: '기타',
 };
 
-function histEscape(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
-}
-
 // 유튜브 주소(watch · youtu.be · shorts · embed)에서 영상 id를 뽑는다. 아니면 ''.
 function histYoutubeId(url) {
     const s = String(url || '').trim();
@@ -140,7 +135,7 @@ function histMoreChipHtml(rest, members, avatarUrlFn, key) {
     const faces = rest.slice(0, HIST_STACK_FACES).map(e => {
         const url = histAvatarSrc(e, members, avatarUrlFn);
         return url
-            ? `<img class="hist-stack-face" src="${histEscape(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-stack-face',textContent:'👤'}))">`
+            ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-stack-face',textContent:'👤'}))">`
             : `<span class="hist-stack-face">👤</span>`;
     }).join('');
     return `<button type="button" class="hist-chip hist-chip-more" data-hist-more="${key}"
@@ -164,10 +159,10 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
     const m = (members || []).find(x => x['이름'] === name);
     const url = m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
     const ava = url
-        ? `<img class="hist-chip-ava" src="${histEscape(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-chip-ava',textContent:'👤'}))">`
+        ? `<img class="hist-chip-ava" src="${escapeHTML(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hist-chip-ava',textContent:'👤'}))">`
         : `<span class="hist-chip-ava">👤</span>`;
-    const noteHtml = note ? `<span class="hist-chip-role">${histEscape(note)}</span>` : '';
-    return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${histEscape(name)}</span>${noteHtml}</span>`;
+    const noteHtml = note ? `<span class="hist-chip-role">${escapeHTML(note)}</span>` : '';
+    return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
 }
 
 // 형식 필터. 선택 바(멤버 공지와 같은 .avatar-bar)는 연혁에 실제로 있는 형식만 보여준다.
@@ -209,7 +204,7 @@ function histTimelineHtml(items, opts) {
     });
     let html = '';
     byYear.forEach((list, year) => {
-        html += `<div class="section-title hist-year" data-en="HISTORY"><span class="section-title-label">${histEscape(year)}</span><span class="title-count">${list.length}건</span></div>`;
+        html += `<div class="section-title hist-year" data-en="HISTORY"><span class="section-title-label">${escapeHTML(year)}</span><span class="title-count">${list.length}건</span></div>`;
         html += '<ol class="hist-list">';
         list.forEach((item, i) => {
             html += histItemHtml(item, {
@@ -230,10 +225,10 @@ function histItemHtml(item, opts) {
     const weekday = isNaN(d) ? '' : HIST_WEEKDAYS[d.getDay()];
     const thumb = histThumbUrl(item);
     const yt = histYoutubeId(item.youtube);
-    const key = histEscape(item.id);
+    const key = escapeHTML(item.id);
     const media = thumb ? `
             <button type="button" class="hist-media${yt && !histSafeImage(item.image) ? ' is-video' : (yt ? ' has-video' : '')}" onclick="histOpenMedia('${key}')" aria-label="${yt ? '영상 보기' : '사진 크게 보기'}">
-                <img src="${histEscape(thumb)}" alt="" loading="lazy">
+                <img src="${escapeHTML(thumb)}" alt="" loading="lazy">
                 ${yt ? '<span class="hist-play" aria-hidden="true"></span>' : ''}
             </button>` : '';
     const members = (item.members || []).filter(Boolean);
@@ -264,11 +259,11 @@ function histItemHtml(item, opts) {
           <div class="hist-card">
             <div class="hist-main">
                 <div class="hist-meta">
-                    <time class="hist-date" datetime="${histEscape(item.date)}">${dateText}<small>${weekday}</small></time>
+                    <time class="hist-date" datetime="${escapeHTML(item.date)}">${dateText}<small>${weekday}</small></time>
                     <span class="hist-type">${HISTORY_TYPES[type]}</span>
                 </div>
-                <div class="hist-title">${histEscape(item.title || HISTORY_TYPES[type])}</div>
-                ${item.desc ? `<div class="hist-desc">${histEscape(item.desc)}</div>` : ''}
+                <div class="hist-title">${escapeHTML(item.title || HISTORY_TYPES[type])}</div>
+                ${item.desc ? `<div class="hist-desc">${escapeHTML(item.desc)}</div>` : ''}
                 ${chips}
                 ${adminBar}
                 ${typeof window.histCardExtra === 'function' ? window.histCardExtra(item, opts) : ''}

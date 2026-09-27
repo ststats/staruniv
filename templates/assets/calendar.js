@@ -3,7 +3,7 @@
     //
     // [공개 인터페이스 - 이름을 바꾸면 위 두 파일이 깨진다]
     //   상태: calEvents, calOffAir, calSelectedDateStr(전역 let - 두 파일이 이름으로 직접 읽고 대입한다)
-    //   함수: calEscapeHTML, calGetFormatDate, calTodayStr, loadPublicHolidays,
+    //   함수: calGetFormatDate, calTodayStr, loadPublicHolidays,
     //         calLoadPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
     //         calRenderTodaySchedules, calRenderSelectedDateSchedules
     //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
@@ -34,13 +34,6 @@
     };
     const CAL_DEFAULT_EVENT_COLOR = CAL_COLOR_PALETTE.blue;
     const CAL_DEFAULT_LONGTERM_COLOR = CAL_COLOR_PALETTE.orange;
-
-    // HTML 이스케이프. core.js의 escapeHTML과 달리 falsy 값(0 포함)은 빈 문자열이 되는데,
-    // 일정 필드는 항상 문자열이라 차이가 없다.
-    const calEscapeHTML = (str) => {
-        if (!str) return '';
-        return String(str).replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag]));
-    };
 
     const calGetFormatDate = (year, month, day) => {
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -118,14 +111,14 @@
     // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
     // 일정 색은 CSS 변수로 전달한다(calEventColorVars).
     const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
-        const timeHtml = timeText ? `<span class="cal-event-time">${calEscapeHTML(timeText)}</span>` : '';
-        const personHtml = personText ? `<span class="cal-event-person">${calEscapeHTML(personText)}</span>` : '';
-        const descHtml = descText ? `<div class="cal-event-desc">${calEscapeHTML(descText)}</div>` : '';
+        const timeHtml = timeText ? `<span class="cal-event-time">${escapeHTML(timeText)}</span>` : '';
+        const personHtml = personText ? `<span class="cal-event-person">${escapeHTML(personText)}</span>` : '';
+        const descHtml = descText ? `<div class="cal-event-desc">${escapeHTML(descText)}</div>` : '';
         const barStyle = bar
             ? `--bar-bleed-left:${bar.bleedLeft}; --bar-bleed-right:${bar.bleedRight}; --bar-pad-left:${bar.padLeft}; --bar-pad-right:${bar.padRight}; --bar-radius:${bar.radius}; `
             : '';
         return `
-            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}--ev-color: ${color};${calEventColorVars(color)}">
+            <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}${calEventColorVars(color)}">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>
@@ -303,11 +296,11 @@
     const calEventCardHtml = (item, dateStr, type) => {
         const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
         return `
-            <div class="${cardClass}" data-event-id="${calEscapeHTML(item.id)}">
+            <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
-                    ${item.time ? `<span class="cal-card-time">${calEscapeHTML(item.time)}</span>` : ''}
-                    ${item.person ? `<span class="cal-card-person">${calEscapeHTML(item.person)}</span>` : ''}
-                    <span class="cal-card-desc">${calEscapeHTML(item.desc)}${item.detail ? ` <span class="cal-card-detail">${calEscapeHTML(item.detail)}</span>` : ''}</span>
+                    ${item.time ? `<span class="cal-card-time">${escapeHTML(item.time)}</span>` : ''}
+                    ${item.person ? `<span class="cal-card-person">${escapeHTML(item.person)}</span>` : ''}
+                    <span class="cal-card-desc">${escapeHTML(item.desc)}${item.detail ? ` <span class="cal-card-detail">${escapeHTML(item.detail)}</span>` : ''}</span>
                     ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, dateStr, type) : ''}
                 </div>
             </div>

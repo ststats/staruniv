@@ -434,55 +434,54 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
         # 글씨 칸 폭: 같은 줄 다음 카드 사진 앞까지(최대 125px). 칸 간격이 좁은 배치에서 옆 사진이 섞이지 않게
         nxt = min((p[2] for p in spots if p[0] == row and p[2] > x), default=x + 1000)
         tw = max(40, min(125, nxt - (x + side + 5) - 4))
-        if True:
-            # 찾은 네모는 4px 단위라 원래 사진(80px)의 가장자리가 조금 어긋날 수 있다. 크기가 80px에서
-            # 크게 벗어나지 않으면 80px로 보고, 글씨 위치는 사진 크기에 비례해 잡는다.
-            if abs(side - PHOTO) <= 8:
-                side = PHOTO
-            photo = im.crop((x, y, x + side, y + side))
-            if side != PHOTO:
-                photo = photo.resize((PHOTO, PHOTO), Image.LANCZOS)
-            tx = x + side + 5
-            tier_img = im.crop((tx, y + 2, tx + tw, y + 2 + TIER_BOX[1]))
-            name_img = im.crop((tx, y + 26, tx + tw, y + 50))
-            name_f = glyph_feat(name_img, bg, NAME_BOX[0])
-            race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
-            tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
-            card = {'row': row, 'col': col, 'x': x, 'y': y, 'side': side, 'bg': '%02x%02x%02x' % bg,
-                    'tier_feat': pack_feat(tier_f), 'race_feat': pack_feat(race_f), 'name_feat': pack_feat(name_f),
-                    'photo': photo_hash(photo),
-                    'photo_shifts': [photo_hash(im.crop((x + dx, y + dy, x + side + dx, y + side + dy)).resize((PHOTO, PHOTO)))
-                                     for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2) if dx or dy]}
-            mem = memory or {}
-            known = recall_photo(card, mem)
-            # 기억한 글씨(아는 선수면 그 선수의 지난번 글씨 포함) 중 가장 가까운 값. 기억이 없으면 OCR
-            tier = classify_tier(tier_f, mem, known)
-            race = classify_race(race_f, mem, known)
-            tier_raw = ocr(text_mask(tier_img, bg), 'eng+kor') if not tier else ''
-            race_raw = ocr(text_mask(race_img, bg), 'eng') if not race else ''
-            # 닉네임 글씨는 사진으로 아는 선수도 늘 읽는다 - 사진만 보고 넘어가면 닉네임 변경(박쭈이 → 쭈이)을
-            # 놓친다. 같은 카드 그림은 매번 같게 읽히므로, 지난번에 이 선수 카드를 읽은 글씨(name_read)와 같으면
-            # 글자 인식이 조금 틀렸더라도 바뀐 게 아니다(기억한 닉네임을 쓴다). 다르면 읽은 글씨를 그대로 넘겨
-            # 비교 단계에서 '닉네임 변경' 후보가 된다.
-            # 아는 선수이고 닉네임 칸 그림이 지난번과 같으면 이름도 같다 - 글씨를 읽지 않는다.
-            # 그림이 다르면(또는 기억한 그림이 없으면) 읽어서, 지난번에 읽은 글씨와 비교한다.
-            if known and known.get('name_feat') and name_distance(
-                    name_f, unpack_feat(known['name_feat'], (NAME_BOX[1], NAME_BOX[0]))) <= NAME_SAME:
-                role, nick, name_raw = '', known['nickname'], ''
-                card['name_read'] = known.get('name_read') or ''
+        # 찾은 네모는 4px 단위라 원래 사진(80px)의 가장자리가 조금 어긋날 수 있다. 크기가 80px에서
+        # 크게 벗어나지 않으면 80px로 보고, 글씨 위치는 사진 크기에 비례해 잡는다.
+        if abs(side - PHOTO) <= 8:
+            side = PHOTO
+        photo = im.crop((x, y, x + side, y + side))
+        if side != PHOTO:
+            photo = photo.resize((PHOTO, PHOTO), Image.LANCZOS)
+        tx = x + side + 5
+        tier_img = im.crop((tx, y + 2, tx + tw, y + 2 + TIER_BOX[1]))
+        name_img = im.crop((tx, y + 26, tx + tw, y + 50))
+        name_f = glyph_feat(name_img, bg, NAME_BOX[0])
+        race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
+        tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
+        card = {'row': row, 'col': col, 'x': x, 'y': y, 'side': side, 'bg': '%02x%02x%02x' % bg,
+                'tier_feat': pack_feat(tier_f), 'race_feat': pack_feat(race_f), 'name_feat': pack_feat(name_f),
+                'photo': photo_hash(photo),
+                'photo_shifts': [photo_hash(im.crop((x + dx, y + dy, x + side + dx, y + side + dy)).resize((PHOTO, PHOTO)))
+                                 for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2) if dx or dy]}
+        mem = memory or {}
+        known = recall_photo(card, mem)
+        # 기억한 글씨(아는 선수면 그 선수의 지난번 글씨 포함) 중 가장 가까운 값. 기억이 없으면 OCR
+        tier = classify_tier(tier_f, mem, known)
+        race = classify_race(race_f, mem, known)
+        tier_raw = ocr(text_mask(tier_img, bg), 'eng+kor') if not tier else ''
+        race_raw = ocr(text_mask(race_img, bg), 'eng') if not race else ''
+        # 닉네임 글씨는 사진으로 아는 선수도 늘 읽는다 - 사진만 보고 넘어가면 닉네임 변경(박쭈이 → 쭈이)을
+        # 놓친다. 같은 카드 그림은 매번 같게 읽히므로, 지난번에 이 선수 카드를 읽은 글씨(name_read)와 같으면
+        # 글자 인식이 조금 틀렸더라도 바뀐 게 아니다(기억한 닉네임을 쓴다). 다르면 읽은 글씨를 그대로 넘겨
+        # 비교 단계에서 '닉네임 변경' 후보가 된다.
+        # 아는 선수이고 닉네임 칸 그림이 지난번과 같으면 이름도 같다 - 글씨를 읽지 않는다.
+        # 그림이 다르면(또는 기억한 그림이 없으면) 읽어서, 지난번에 읽은 글씨와 비교한다.
+        if known and known.get('name_feat') and name_distance(
+                name_f, unpack_feat(known['name_feat'], (NAME_BOX[1], NAME_BOX[0]))) <= NAME_SAME:
+            role, nick, name_raw = '', known['nickname'], ''
+            card['name_read'] = known.get('name_read') or ''
+            card['name_unchanged'] = True
+        else:
+            role, nick, name_raw = read_name(name_img, bg)
+            card['name_read'] = nick
+            if known and nick and known.get('name_read') == nick:
+                nick = known['nickname']
                 card['name_unchanged'] = True
-            else:
-                role, nick, name_raw = read_name(name_img, bg)
-                card['name_read'] = nick
-                if known and nick and known.get('name_read') == nick:
-                    nick = known['nickname']
-                    card['name_unchanged'] = True
-            card.update({'tier': tier or read_tier(tier_raw), 'race': race or read_race(race_raw),
-                         'role': role, 'nickname_ocr': nick or (known['nickname'] if known else ''),
-                         'raw': {'tier': tier_raw, 'name': name_raw, 'race': race_raw}})
-            if known:
-                card['known'] = {'soop_id': known.get('soop_id'), 'nickname': known['nickname']}
-            cards.append(card)
+        card.update({'tier': tier or read_tier(tier_raw), 'race': race or read_race(race_raw),
+                     'role': role, 'nickname_ocr': nick or (known['nickname'] if known else ''),
+                     'raw': {'tier': tier_raw, 'name': name_raw, 'race': race_raw}})
+        if known:
+            card['known'] = {'soop_id': known.get('soop_id'), 'nickname': known['nickname']}
+        cards.append(card)
     return cards
 
 
