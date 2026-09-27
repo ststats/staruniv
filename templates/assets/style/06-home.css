@@ -293,9 +293,13 @@ a.home-notice-card:hover {
     width: 7px;
     height: 7px;
     padding: 0;
-    border: 0;
+    /* 누르는 영역만 25px로(투명 테두리 9px, 같은 만큼 여백을 빼 점 간격은 그대로). 보이는 점은 7px */
+    border: 9px solid transparent;
+    margin: -9px;
+    box-sizing: content-box;
     transition: width 0.2s, background 0.2s;
     background: rgba(255, 255, 255, 0.3);
+    background-clip: padding-box;
 }
 .home-carousel-slide > .home-carousel-preview {
     /* 최대 네 일정을 한 줄씩 표시해 히어로 높이와 카드 크기를 유지한다. */
@@ -318,7 +322,8 @@ a.home-notice-card:hover {
 .home-carousel-dots button.active {
     width: 22px;
     background: var(--dot-active);
-    clip-path: var(--notch-xs);
+    background-clip: padding-box;   /* background 줄임말이 되돌린 칠 범위를 다시 점 안쪽으로 */
+    clip-path: var(--notch-xs) padding-box;
 }
 .home-carousel .page-header-title span { display: inline; }
 .home-carousel .page-header-title { white-space: nowrap; }

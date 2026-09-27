@@ -189,10 +189,10 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table .tag-badge {
         height: 16px;
         padding: 0 5px;
-        font-size: 9px;
+        font-size: 10px;
         line-height: 16px;
     }
-    .stat-table .match-badge { font-size: 9px; }
+    .stat-table .match-badge { font-size: 10px; }
     .stat-table .team-logo-icon[class],
     .stat-table .team-logo-fallback[class] { width: 14px; height: 14px; }
     .stat-table .player-avatar-sm { width: 16px; height: 16px; font-size: 8px; }
@@ -207,7 +207,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
         justify-content: center;
         gap: 4px;
         margin-top: 1px;
-        font-size: 9px;
+        font-size: 10px;
         font-weight: 500;
         color: var(--color-text-muted);
     }
@@ -237,7 +237,7 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     .stat-table tbody td { padding: 5px 3px; }
     .stat-table .cell-clip,
     .stat-table .ellipsis-text { max-width: 58px; }
-    .stat-table .tag-badge { padding: 0 4px; font-size: 9px; }
+    .stat-table .tag-badge { padding: 0 4px; font-size: 10px; }
     .stat-table .col-arrow { display: none; }
     .stat-table .set-detail-table td { padding: 4px 3px; }
 }

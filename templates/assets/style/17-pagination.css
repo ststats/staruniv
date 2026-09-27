@@ -4,7 +4,7 @@
 .match-page { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 5px; border:0; background:transparent; clip-path:var(--notch-xs); font-family:"Pretendard",sans-serif; font-size:12px; font-weight:600; line-height:1; color:var(--color-text-sub); }
 .match-page:hover:not(:disabled):not(.active) { background:var(--color-row-hover); color:var(--color-primary); }
 .match-page.active { background:var(--select-on-light); color:#fff; font-weight:700; }
-.match-page.is-edge { min-width:22px; padding:0 4px; font-size:13px; }
+.match-page.is-edge { min-width:24px; padding:0 4px; font-size:13px; }
 .match-page.is-gap { min-width:18px; padding:0; }
 .match-page:disabled { opacity:.3; }
 .match-pagination-info { position:absolute; right:14px; font-family:"Pretendard",sans-serif; font-size:11px; color:var(--color-text-muted); }
