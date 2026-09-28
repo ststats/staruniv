@@ -12,6 +12,8 @@
    - 기억에 없으면 Tesseract OCR(무료)로 읽고, 닉네임은 같은 대학 DB 명단에서 비슷한 이름과 맞춘다.
 4. FA 명단 글은 '티어｜ T 이름 … Z 이름 … P 이름 …' 형식을 그대로 읽는다.
 5. 결과: 소속·티어·종족 변동(changes), 사람이 확인할 것(review: 처음 보는 카드·표에서 빠짐 등).
+   티어·종족 글씨를 못 읽었거나 비슷한 글씨와 헷갈리면(UNSURE_MARGIN) 안 바뀐 것으로 읽혔어도 '확인 필요'
+   변동으로 올린다. 관리자가 값을 고쳐 반영하면 그 카드 글씨를 고친 값으로 기억한다(다음부터 바로 읽음).
    --learn: 이번 결과의 확실한 짝을 기억에 더한다(관리자 화면에서는 반영할 때 자동으로).
 
 DB는 공개 읽기(Supabase REST, publishable key)로 tier_members의 공개 칸만 읽는다.
@@ -171,12 +173,8 @@ def unpack_feat(s: str, shape) -> np.ndarray:
     return np.frombuffer(zlib.decompress(base64.b64decode(s)), dtype=np.uint8).reshape(shape).astype(np.float32) / 255
 
 
-def nearest(feat: np.ndarray, cands, width=None):
-    """cands: [(특징 배열, 값)]. ±1px 어긋남을 허용한 평균 차이가 가장 작은 값.
-    한 값이 넘는 기준(문턱) 대신 '어느 기억 글씨와 가장 가까운가'로 정한다 - 압축 잡음은 모든 후보와의
-    차이에 똑같이 끼어서, 문턱은 흔들려도 가장 가까운 후보는 그대로다(다시 압축해도 219/219)."""
-    if not cands:
-        return None, 1.0
+def _distances(feat: np.ndarray, cands, width=None) -> np.ndarray:
+    """후보마다 ±1px 어긋남을 허용한 평균 차이."""
     w = width or feat.shape[1]
     stack = np.stack([c[0][:, :w] for c in cands])
     best = None
@@ -185,8 +183,27 @@ def nearest(feat: np.ndarray, cands, width=None):
             sh = np.roll(np.roll(feat[:, :w], dy, 0), dx, 1)
             d = np.abs(stack - sh)[:, 2:-2, 2:-2].mean(axis=(1, 2))
             best = d if best is None else np.minimum(best, d)
+    return best
+
+
+def nearest(feat: np.ndarray, cands, width=None):
+    """cands: [(특징 배열, 값)]. ±1px 어긋남을 허용한 평균 차이가 가장 작은 값.
+    한 값이 넘는 기준(문턱) 대신 '어느 기억 글씨와 가장 가까운가'로 정한다 - 압축 잡음은 모든 후보와의
+    차이에 똑같이 끼어서, 문턱은 흔들려도 가장 가까운 후보는 그대로다(다시 압축해도 219/219)."""
+    if not cands:
+        return None, 1.0
+    best = _distances(feat, cands, width)
     i = int(best.argmin())
     return cands[i][1], float(best[i])
+
+
+def runner_up(feat: np.ndarray, cands, value, width=None):
+    """value 다음으로 가까운 다른 값과, 두 값의 차이(여유). 다른 값 후보가 없으면 (None, 1.0)."""
+    others = [c for c in cands if c[1] != value]
+    if not others:
+        return None, 1.0
+    alt, alt_d = nearest(feat, others, width)
+    return alt, alt_d - nearest(feat, [c for c in cands if c[1] == value], width)[1]
 
 
 PHOTO_SIDE = 32
@@ -455,8 +472,8 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
         mem = memory or {}
         known = recall_photo(card, mem)
         # 기억한 글씨(아는 선수면 그 선수의 지난번 글씨 포함) 중 가장 가까운 값. 기억이 없으면 OCR
-        tier = classify_tier(tier_f, mem, known)
-        race = classify_race(race_f, mem, known)
+        tier, tier_margin, tier_alt = classify_tier(tier_f, mem, known, detail=True)
+        race, race_margin, race_alt = classify_race(race_f, mem, known, detail=True)
         tier_raw = ocr(text_mask(tier_img, bg), 'eng+kor') if not tier else ''
         race_raw = ocr(text_mask(race_img, bg), 'eng') if not race else ''
         # 닉네임 글씨는 사진으로 아는 선수도 늘 읽는다 - 사진만 보고 넘어가면 닉네임 변경(박쭈이 → 쭈이)을
@@ -476,6 +493,9 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             if known and nick and known.get('name_read') == nick:
                 nick = known['nickname']
                 card['name_unchanged'] = True
+        # 기억 글씨로 읽었으면 두 번째 후보와의 여유(작으면 비교 단계에서 '확인 필요'), OCR로 읽었으면 표시만
+        card['tier_read'] = {'margin': round(tier_margin, 4), 'alt': tier_alt} if tier else {'ocr': True}
+        card['race_read'] = {'margin': round(race_margin, 4), 'alt': race_alt} if race else {'ocr': True}
         card.update({'tier': tier or read_tier(tier_raw), 'race': race or read_race(race_raw),
                      'role': role, 'nickname_ocr': nick or (known['nickname'] if known else ''),
                      'raw': {'tier': tier_raw, 'name': name_raw, 'race': race_raw}})
@@ -548,20 +568,33 @@ def _cands(memory, kind, known):
     return out
 
 
-def classify_tier(feat, memory, known=None):
-    """티어 칸 전체로 가장 가까운 값을 고르고, 숫자 티어면 숫자 부분만 숫자 후보끼리 다시 비교한다."""
+def classify_tier(feat, memory, known=None, detail=False):
+    """티어 칸 전체로 가장 가까운 값을 고르고, 숫자 티어면 숫자 부분만 숫자 후보끼리 다시 비교한다.
+    detail=True면 (값, 여유, 두 번째 후보). 여유 = 두 번째로 가까운 다른 값과의 차이(작을수록 헷갈림)."""
     cands = _cands(memory, 'tier', known)
     value, dist = nearest(feat, cands)
     if value is None or dist > 0.25:
-        return None
+        return (None, None, None) if detail else None
+    width = None
     if value.isdigit():
-        value = nearest(feat, [c for c in cands if c[1].isdigit()], DIGIT_W)[0]
-    return value
+        cands, width = [c for c in cands if c[1].isdigit()], DIGIT_W
+        value = nearest(feat, cands, width)[0]
+    if not detail:
+        return value
+    alt, margin = runner_up(feat, cands, value, width)
+    return value, margin, alt
 
 
-def classify_race(feat, memory, known=None):
-    value, dist = nearest(feat, _cands(memory, 'race', known))
-    return value if value and dist <= 0.25 else None
+def classify_race(feat, memory, known=None, detail=False):
+    cands = _cands(memory, 'race', known)
+    value, dist = nearest(feat, cands)
+    value = value if value and dist <= 0.25 else None
+    if not detail:
+        return value
+    if value is None:
+        return None, None, None
+    alt, margin = runner_up(feat, cands, value)
+    return value, margin, alt
 
 
 _PHOTO_MATRIX = {}
@@ -889,6 +922,12 @@ def match_sections(sections, db):
     return results
 
 
+# 두 번째 후보와의 여유가 이보다 작으면 '확인 필요'. 기억 글씨 201개로 티어가 바뀐 경우 2,894가지를
+# 만들어 잰 값(2026-09-28): 틀리게 읽힌 105건은 모두 0.027 이하, 안 바뀐 카드 219장은 모두 0.076 이상이라
+# 0.03이면 틀린 것은 다 잡고 안 바뀐 카드는 하나도 걸리지 않는다(맞게 읽힌 변동의 약 7%는 확인으로 올라간다).
+UNSURE_MARGIN = 0.03
+
+
 def compare(sections, fa, db, candidates=None):
     """카드·FA 명단을 DB와 비교한다.
     changes: 반영할 변동(관리자 화면에서 기본 체크). uncertain이면 기본 체크 해제.
@@ -924,13 +963,27 @@ def compare(sections, fa, db, candidates=None):
             diff = {}
             if r['affiliation'] != team:
                 diff['affiliation'] = [r['affiliation'], team]
-            if card['tier'] and str(r['tier']) != card['tier']:
-                diff['tier'] = [r['tier'], card['tier']]
-            if card['race'] and r['race'] != card['race']:
-                diff['race'] = [r['race'], card['race']]
+            notes = []
+            for kind, label, db_value in (('tier', '티어', str(r['tier'])), ('race', '종족', r['race'])):
+                value, read = card[kind], card.get(kind + '_read') or {}
+                if value and db_value != value:
+                    diff[kind] = [r[kind], value]
+                if not value:
+                    # 못 읽은 카드를 조용히 넘기면 그 선수의 변동을 놓친다: 관리자가 카드를 보고 고르게 올린다
+                    diff[kind] = [r[kind], None]
+                    notes.append(f'{label} 글씨를 읽지 못했습니다. 카드를 보고 고르세요')
+                elif read.get('margin') is not None and read['margin'] < UNSURE_MARGIN:
+                    # 비슷한 글씨(5·6·8 등)와 거의 같은 거리: 안 바뀐 것으로 읽혔어도 확인하게 올린다
+                    diff.setdefault(kind, [r[kind], value])
+                    notes.append(f"{label} 글씨가 {value}·{read.get('alt')} 중 어느 쪽인지 헷갈립니다")
+                elif read.get('ocr') and kind in diff:
+                    notes.append(f'처음 보는 {label} 글씨라 글자 인식으로 읽었습니다')
             if diff:
-                changes.append({'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team,
-                                'diff': diff, 'ocr': card['nickname_ocr'], 'ref': [si, i]})
+                change = {'id': r.get('id'), 'nickname': r['nickname'], 'soop_id': r['soop_id'], 'team': team,
+                          'diff': diff, 'ocr': card['nickname_ocr'], 'ref': [si, i]}
+                if notes:
+                    change['uncertain'] = ' / '.join(notes)
+                changes.append(change)
             # 닉네임 변경(예: 박쭈이 → 쭈이). 카드는 사진·비슷한 이름·티어로 같은 사람으로 맞췄지만 글씨가 다르다.
             # 글씨 인식이 틀렸을 수도 있어 따로 한 줄로 두고 기본은 체크 해제 - 카드 사진을 보고 고르게 한다.
             ocr_nick = (card.get('nickname_ocr') or '').strip()
