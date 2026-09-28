@@ -168,6 +168,13 @@ const Api = {
             .order('stat_date', { ascending: false }).range(from, to), { parallel: 1 });
     },
 
+    // GET /api/v1/stats/latest?ids= - 가장 최근 날짜의 월 누적(멤버별, 날짜 stat_date 포함). 날짜를 먼저 받지 않아도 된다.
+    async statsLatest(soopIds) {
+        return apiPaged((c, from, to) => c.from('daily_member_stats_latest')
+            .select('stat_date,soop_id,nickname,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at')
+            .in('soop_id', soopIds).order('soop_id', { ascending: true }).range(from, to), { parallel: 1 });
+    },
+
     // GET /api/v1/stats?date=&ids= - 그날까지의 월 누적(멤버별)
     async stats(date, soopIds) {
         return apiPaged((c, from, to) => c.from('daily_member_stats')

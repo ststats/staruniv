@@ -1099,14 +1099,6 @@ function fetchSynergyResult(month = '') {
     if (_synergyRequests.has(month)) return _synergyRequests.get(month);
 
     const request = (async () => {
-        // 날짜는 달 목록(fetchSynergyMonths, 한 번만 받는다)에서 고른다 - 최근 달은 그 첫 칸
-        const months = await fetchSynergyMonths();
-        const found = month ? months.find(m => m.month === month) : months[0];
-        if (month && !found) throw new Error(`${month} 방송통계가 없습니다`);
-        const latest = found ? { stat_date: found.date } : null;
-        const latestDate = latest && latest.stat_date ? String(latest.stat_date) : '';
-        if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다');
-
         // 같은 SOOP ID로 입단 기록이 여러 개(재입단)일 수 있다. 이번 달은 늘 그랬듯 마지막 기록을,
         // 지난 달은 그 달과 겹치는 기록을 쓴다(없으면 그 달엔 우리 멤버가 아니었다).
         const idToMember = new Map();
@@ -1126,7 +1118,25 @@ function fetchSynergyResult(month = '') {
             .filter(Boolean);
         if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다');
 
-        const rows = await Api.stats(latestDate, memberIds);
+        // 최근 달은 최신 날짜 뷰(daily_member_stats_latest)로 날짜 목록을 기다리지 않고 한 번에 받는다.
+        // 뷰가 아직 없거나(ststat.sql 적용 전) 실패하면, 지난 달처럼 달 목록(fetchSynergyMonths)에서 날짜를 골라 받는다.
+        let latestDate = '';
+        let rows = null;
+        if (!month) {
+            try {
+                rows = await Api.statsLatest(memberIds);
+                latestDate = rows.length ? String(rows[0].stat_date || '') : '';
+            } catch (_) { /* 아래 달 목록 경로로 받는다 */ }
+            if (!latestDate) rows = null;
+        }
+        if (!rows) {
+            const months = await fetchSynergyMonths();
+            const found = month ? months.find(m => m.month === month) : months[0];
+            if (month && !found) throw new Error(`${month} 방송통계가 없습니다`);
+            latestDate = found && found.date ? String(found.date) : '';
+            if (!latestDate) throw new Error('사용 가능한 방송통계 날짜가 없습니다');
+            rows = await Api.stats(latestDate, memberIds);
+        }
         if (!rows.length) throw new Error(`${latestDate} 방송통계 데이터가 없습니다`);
 
         const data = rows
@@ -1152,7 +1162,7 @@ function fetchSynergyResult(month = '') {
             const value = String(row.updated_at || '');
             return value > acc ? value : acc;
         }, '');
-        return { data, statDate: latestDate, updatedAt: latestUpdated || String(latest.updated_at || latestDate) };
+        return { data, statDate: latestDate, updatedAt: latestUpdated || latestDate };
     })();
 
     _synergyRequests.set(month, request);
