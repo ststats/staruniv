@@ -12,6 +12,9 @@
     {%- endif %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    {%- if supabase_origin %}
+    <link rel="preconnect" href="{{ supabase_origin }}" crossorigin>
+    {%- endif %}
     <title>{{ full_title }}</title>
     <meta name="description" content="{{ description }}">
     {%- if admin_mode %}
