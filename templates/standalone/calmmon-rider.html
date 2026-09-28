@@ -2810,11 +2810,13 @@ const ITEM_POOLS={
  // 바리케이드와 우주선은 선두를 노리는 아이템이라 후미 전용이다.
  front:['shield','shield','banana','banana','wisp','water','magnet'],
  rear:['rocket','rocket','ufo','barricade','magnet','water','missile'],
- middle:['missile','shield','rocket','magnet','water','banana','wisp','ufo']
+ middle:['missile','shield','rocket','magnet','water','banana','wisp','ufo'],
+ // 1등은 앞에 노릴 사람이 없다. 원작처럼 지키고 까는 아이템만 준다(자석·물파리·물폭탄은 앞차가 있어야 쓸모가 있다).
+ leader:['shield','shield','banana','banana']
 };
-function giveItem(r,list){const q=list.indexOf(r)/Math.max(1,list.length-1),pool=q<.25?ITEM_POOLS.front:q>.58?ITEM_POOLS.rear:ITEM_POOLS.middle;r.item=list.some(o=>o.finish===null&&o!==r&&o.progress>r.progress)&&Math.random()<.03?'lightning':pool[Math.floor(Math.random()*pool.length)];r.useIn=.45+Math.random()*.9;r.itemTimer=1.2;}
+function giveItem(r,list){const q=list.indexOf(r)/Math.max(1,list.length-1),hasAhead=list.some(o=>o.finish===null&&o!==r&&o.progress>r.progress),pool=!hasAhead?ITEM_POOLS.leader:q<.25?ITEM_POOLS.front:q>.58?ITEM_POOLS.rear:ITEM_POOLS.middle;r.item=hasAhead&&Math.random()<.03?'lightning':pool[Math.floor(Math.random()*pool.length)];r.useIn=.45+Math.random()*.9;r.itemTimer=1.2;}
 const attackTargets=[],barricadeAhead=[];
-function useItem(r,list){const kind=r.item;if(!kind)return;itemStats.used++;if(['rocket','magnet','shield'].includes(kind))raceAudio.effect(kind);r.item=null;r.lastItem=kind;r.lastItemUntil=elapsed+1.7;const ahead=attackTargets;ahead.length=0;if(kind==='ufo'||kind==='missile'||kind==='lightning'||kind==='wisp')for(const o of list)if(o.finish===null&&o!==r&&o.progress>r.progress)ahead.push(o);if(kind==='banana'){traps.push({owner:r.id,kind:'banana',span:20,hits:1,progress:r.progress-.008,lane:r.lane,ttl:12});if(elapsed-eventAt>1.8)itemEvent(r.name+' 바나나 설치! 뒤따르는 선수 주의!',r.id);}else if(kind==='ufo'){const target=ahead[0];if(target){strike(target,'ufo',r.name);if(target.ufo>0)effects.push({type:'ufo',id:target.id,ttl:3});itemEvent(r.name+' 우주선! '+target.name+' 추격 저지!',target.id);}else r.shield=2;}else if(kind==='water'){const origin=point(r.progress,r.lane),landing=point(r.progress+.065,r.lane);effects.push({type:'water',from:r.id,origin,landing,ttl:.75,total:.75,owner:r.name});if(elapsed-eventAt>1.5)itemEvent(r.name+' 물폭탄 투척!',r.id);}else if(kind==='shield'){r.shield=4.5;}else if(kind==='rocket'){r.boost=2.7;r.immunity=Math.max(r.immunity,1);if(elapsed-eventAt>1.8)itemEvent(r.name+' 부스터! 단숨에 거리를 좁힙니다',r.id);}else if(kind==='magnet'){r.magnet=3.2;if(elapsed-eventAt>2)itemEvent(r.name+' 자석으로 앞차를 추격합니다!',r.id);}else if(kind==='missile'){const target=ahead[ahead.length-1];if(target){effects.push({type:'missile',from:r.id,id:target.id,ttl:.65,total:.65,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 미사일 발사!',target.id);}else r.shield=2.2;}else if(kind==='wisp'){
+function useItem(r,list){const kind=r.item;if(!kind)return;itemStats.used++;if(['rocket','magnet','shield'].includes(kind))raceAudio.effect(kind);r.item=null;r.lastItem=kind;r.lastItemUntil=elapsed+1.7;const ahead=attackTargets;ahead.length=0;if(kind==='ufo'||kind==='missile'||kind==='lightning'||kind==='wisp')for(const o of list)if(o.finish===null&&o!==r&&o.progress>r.progress)ahead.push(o);if(kind==='banana'){traps.push({owner:r.id,kind:'banana',span:20,hits:1,progress:r.progress-.008,lane:r.lane,ttl:12});if(elapsed-eventAt>1.8)itemEvent(r.name+' 바나나 설치! 뒤따르는 선수 주의!',r.id);}else if(kind==='ufo'){const target=ahead[0];if(target){strike(target,'ufo',r.name);if(target.ufo>0)effects.push({type:'ufo',id:target.id,ttl:3});itemEvent(r.name+' 우주선! '+target.name+' 추격 저지!',target.id);}else r.shield=2;}else if(kind==='water'){const origin=point(r.progress,r.lane),landing=point(r.progress+.065,r.lane);effects.push({type:'water',from:r.id,origin,landing,ttl:.75,total:.75,owner:r.name});if(elapsed-eventAt>1.5)itemEvent(r.name+' 물폭탄 투척!',r.id);}else if(kind==='shield'){r.shield=4.5;}else if(kind==='rocket'){r.boost=2.7;r.immunity=Math.max(r.immunity,1);if(elapsed-eventAt>1.8)itemEvent(r.name+' 부스터! 단숨에 거리를 좁힙니다',r.id);}else if(kind==='magnet'){if(list.some(o=>o.finish===null&&o!==r&&o.progress>r.progress)){r.magnet=3.2;if(elapsed-eventAt>2)itemEvent(r.name+' 자석으로 앞차를 추격합니다!',r.id);}else r.shield=2;}else if(kind==='missile'){const target=ahead[ahead.length-1];if(target){effects.push({type:'missile',from:r.id,id:target.id,ttl:.65,total:.65,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 미사일 발사!',target.id);}else r.shield=2.2;}else if(kind==='wisp'){
   // 물파리는 물폭탄의 축소판 - 바로 앞 한 명만 물방울에 가둔다.
   const target=ahead[ahead.length-1];
   if(target){effects.push({type:'wisp',from:r.id,id:target.id,ttl:.6,total:.6,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 물파리!',target.id);}
@@ -2950,7 +2952,7 @@ if(state!=='racing')return;elapsed+=dt;const standings=order();
 const active=activeRacers;active.length=0;for(const r of standings)if(r.finish===null){r.ai=active.length;active.push(r);}
 const frontProgress=active[0]?.progress||0;
 for(const t of traps)t.ttl-=dt;compact(traps,t=>t.ttl>0);for(const e of effects){e.ttl-=dt;if(e.ttl<=0&&e.type==='water'&&!e.done){e.done=true;for(const r of racers){if(r.id===e.from||r.finish!==null)continue;const p=point(r.progress,r.lane),dx=p.x-e.landing.x,dy=p.y-e.landing.y;if(dx*dx+dy*dy<=55*55)strike(r,'water',e.owner);}effects.push({type:'water_splash',landing:e.landing,ttl:.6,total:.6});}if(e.ttl<=0&&(e.type==='missile'||e.type==='wisp')&&!e.done){e.done=true;const target=getRacer(e.id);if(target)strike(target,e.type==='wisp'?'wisp':'missile',e.owner);}}compact(effects,e=>e.ttl>0);
-for(const r of racers){if(r.finish!==null)continue;r.decision-=dt;r.boost=Math.max(0,r.boost-dt);r.stun=Math.max(0,r.stun-dt);r.ufo=Math.max(0,r.ufo-dt);r.shield=Math.max(0,r.shield-dt);r.immunity=Math.max(0,r.immunity-dt);r.magnet=Math.max(0,r.magnet-dt);r.itemTimer-=dt;
+for(const r of racers){if(r.finish!==null)continue;r.decision-=dt;r.boost=Math.max(0,r.boost-dt);r.stun=Math.max(0,r.stun-dt);r.ufo=Math.max(0,r.ufo-dt);r.shield=Math.max(0,r.shield-dt);r.immunity=Math.max(0,r.immunity-dt);r.magnet=Math.max(0,r.magnet-dt);if(r.magnet>0&&r.progress>=frontProgress)r.magnet=0;r.itemTimer-=dt;
 if(r.item){r.useIn-=dt;if(r.useIn<=0)useItem(r,standings);}
 if(r.decision<=0){r.formTarget=(Math.random()-.5)*.18;r.laneTarget=(Math.random()-.5)*38;r.decision=1.5+Math.random()*2.8;}r.form+=(r.formTarget-r.form)*dt*.8;
 const a=(r.progress%1)*Math.PI*2,catchup=Math.min(.17,Math.max(0,frontProgress-r.progress)*.32);let target=.043*(1+r.form+catchup+.035*Math.sin(a*2+r.phase))*(r.boost>0?1.68:r.magnet>0?1.38:1)*(r.stun>0?.27:r.ufo>0?.52:1);
@@ -3209,18 +3211,21 @@ else if(e.type==='hit_barricade'){g.strokeStyle='#f0913f';g.lineWidth=3;for(let 
 // Under a rotated transform every fill drops off the axis-aligned fast path, so the
 // wide shot (where a kart is ~30 px and the whole field is on screen) draws a
 // silhouette only. Detail returns as soon as the director zooms in.
-const KART_DETAIL_Z=1.45;
-function drawKart(r,preview=false,p=point(r.progress,r.lane)){const isFocused=focused===r.id;const detail=preview||camera.z>=KART_DETAIL_Z||isFocused;g.save();g.translate(p.x,p.y);g.rotate(p.angle+Math.PI/2+(r.stun>0?(r.hitKind==='banana'?(elapsed-r.hitAt)*11:r.hitKind==='lightning'?Math.sin(elapsed*55)*.13:r.hitKind==='missile'?Math.sin(elapsed*28)*.3:0):0));if(r.boost>0&&!preview&&r.finish===null){g.fillStyle='#d5fd75cc';g.beginPath();g.moveTo(-7,10);g.lineTo(0,35+Math.sin(elapsed*28+r.id)*8);g.lineTo(7,10);g.fill()}
- if(detail){g.fillStyle='#18292335';g.beginPath();g.ellipse(3,6,15,18,0,0,7);g.fill();g.fillStyle='#243033';for(let side of [-1,1]){g.fillRect(side*10-3,-10,6,10);g.fillRect(side*10-3,6,6,10)}}
+// 카트 세부(그림자·바퀴·헤드라이트·든 아이템)는 확대했을 때만 그린다. 한 배율에서 켜고 끄면 전체↔배틀 전환 중
+// 그 배율을 지나는 순간 모든 카트의 세부가 한꺼번에 튀어 나왔다 - 이 구간에서 서서히 나타나게 한다.
+const KART_DETAIL_Z=1.45,KART_DETAIL_FADE=.15;
+const kartDetailAlpha=()=>Math.min(1,Math.max(0,(camera.z-(KART_DETAIL_Z-KART_DETAIL_FADE))/(2*KART_DETAIL_FADE)));
+function drawKart(r,preview=false,p=point(r.progress,r.lane)){const isFocused=focused===r.id;const detailAlpha=preview||isFocused?1:kartDetailAlpha(),detail=detailAlpha>0,baseAlpha=g.globalAlpha;g.save();g.translate(p.x,p.y);g.rotate(p.angle+Math.PI/2+(r.stun>0?(r.hitKind==='banana'?(elapsed-r.hitAt)*11:r.hitKind==='lightning'?Math.sin(elapsed*55)*.13:r.hitKind==='missile'?Math.sin(elapsed*28)*.3:0):0));if(r.boost>0&&!preview&&r.finish===null){g.fillStyle='#d5fd75cc';g.beginPath();g.moveTo(-7,10);g.lineTo(0,35+Math.sin(elapsed*28+r.id)*8);g.lineTo(7,10);g.fill()}
+ if(detail){g.globalAlpha=baseAlpha*detailAlpha;g.fillStyle='#18292335';g.beginPath();g.ellipse(3,6,15,18,0,0,7);g.fill();g.fillStyle='#243033';for(let side of [-1,1]){g.fillRect(side*10-3,-10,6,10);g.fillRect(side*10-3,6,6,10)}g.globalAlpha=baseAlpha;}
  g.fillStyle=colors[r.id];g.beginPath();g.roundRect(-9,-16,18,33,5);g.fill();
- if(detail){g.fillStyle='#f4f4d7';g.fillRect(-5,-14,10,3);}
+ if(detail){g.globalAlpha=baseAlpha*detailAlpha;g.fillStyle='#f4f4d7';g.fillRect(-5,-14,10,3);g.globalAlpha=baseAlpha;}
  g.fillStyle='#253039';g.fillRect(-14,10,28,4);g.restore();
  drawKartFace(r.id,p.x-10.5,p.y-14.5,21);if(r.shield>0){g.strokeStyle='#62dbff';g.fillStyle='#6feaff22';g.lineWidth=2;g.beginPath();g.arc(p.x,p.y,21,0,7);g.fill();g.stroke();}if(r.stun>0)drawHitStatus(r,p);
  // At 14 px the item glyph is unreadable in the wide shot and the standings list
  // already spells the same item out, so it is only drawn when the kart is legible.
- if(detail&&(r.item||r.lastItemUntil>elapsed)){const held=r.item||r.lastItem;
+ if(detail&&(r.item||r.lastItemUntil>elapsed)){const held=r.item||r.lastItem,itemAlpha=g.globalAlpha;g.globalAlpha=itemAlpha*detailAlpha;
   if(held==='wisp')drawWaterFly(p.x+19,p.y+1,8.5);
-  else{g.font='14px Pretendard,sans-serif';g.textAlign='center';g.fillText(itemNames[held].split(' ')[0],p.x+19,p.y+7);}}if(isFocused){g.strokeStyle='#eaff8d';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,22,0,7);g.stroke()}}
+  else{g.font='14px Pretendard,sans-serif';g.textAlign='center';g.fillText(itemNames[held].split(' ')[0],p.x+19,p.y+7);}g.globalAlpha=itemAlpha;}if(isFocused){g.strokeStyle='#eaff8d';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,22,0,7);g.stroke()}}
 // ------------------------------------------------------------------ 카메라 디렉터
 //
 // 규칙은 여기 일곱 줄이 전부다.
@@ -3242,10 +3247,16 @@ const SHOT_MIN=2,        // 샷 최소 유지 시간(초)
       BATTLE_RUN=14,     // 선두 추격을 보여주는 시간
       WIDE_RUN=7,        // 그 뒤 전체 서킷을 보여주는 시간
       RIVAL_GAP=.10,     // 이 안에 있으면 같은 화면에 담을 라이벌로 본다
-      CUT_RATE=7,        // 컷 직후 카메라가 목표로 붙는 속도
-      FOLLOW_RATE=3,     // 샷이 자리잡은 뒤 따라가는 속도
-      CUT_EASE=.35;      // 빠르게 붙는 구간의 길이(초)
+      CUT_TIME=.17,      // 컷 직후 카메라가 목표로 붙는 시간(스프링 시간 상수, 90% 도달 약 0.33초)
+      FOLLOW_TIME=.33,   // 샷이 자리잡은 뒤 따라가는 시간(움직이는 선수와의 간격 = 속도 × 이 값)
+      CUT_EASE=.35;      // 빠르게 붙는 구간에서 따라가기로 넘어가는 시간(초)
 let shot=null,shotAge=0;
+// 카메라는 임계 감쇠 스프링으로 움직인다(Unity SmoothDamp와 같은 식). 예전 지수 따라가기는 컷 첫 프레임에
+// 최고 속도로 튀어 나가고, 0.35초에 빠르기가 7→3으로 바뀌는 순간 반 이하로 급감속해서 전체↔배틀 전환이
+// 덜컥거려 보였다. 스프링은 속도가 0에서 출발해 끊김 없이 이어지고, 시간 상수도 서서히 바꾼다.
+// 반환은 새 위치, 새 속도는 camDampVel에 둔다(프레임마다 배열을 만들지 않게).
+let camDampVel=0;
+function camDamp(cur,target,vel,time,dt){const w=2/time,x=w*dt,e=1/(1+x+.48*x*x+.235*x*x*x),c=cur-target,t=(vel+w*c)*dt;camDampVel=(vel-w*t)*e;return target+(c+t)*e;}
 // 근접 샷(리더/드라이버/배틀/액션) 배율. 기본 2배, '화면 확대' 버튼을 누르면 4배.
 let camBoost=2;
 
@@ -3344,8 +3355,11 @@ function cameraStep(dt,list=order()){
  }
 
  if(state!=='setup'&&state!=='countdown'&&(cameraMode==='leader'||cameraMode==='driver'||(cameraMode==='auto'&&(shot?.kind==='battle'||shot?.kind==='action'))))z=camBoost;
- const blend=1-Math.exp(-dt*(shot?.kind==='finish'?5:shotAge<CUT_EASE?CUT_RATE:FOLLOW_RATE));
- camera.x+=(tx-camera.x)*blend;camera.y+=(ty-camera.y)*blend;camera.z+=(z-camera.z)*blend;camera.angle=0;
+ // 확대는 로그로 움직여 줌인·줌아웃의 체감 속도를 같게 한다.
+ const time=shot?.kind==='finish'?.2:FOLLOW_TIME-(FOLLOW_TIME-CUT_TIME)*Math.exp(-shotAge/CUT_EASE);
+ camera.x=camDamp(camera.x,tx,camera.vx||0,time,dt);camera.vx=camDampVel;
+ camera.y=camDamp(camera.y,ty,camera.vy||0,time,dt);camera.vy=camDampVel;
+ camera.z=Math.exp(camDamp(Math.log(camera.z),Math.log(z),camera.vz||0,time,dt));camera.vz=camDampVel;camera.angle=0;
  setText($('cameraLabel'),label);
  setText($('focusLabel'),slowMotion?'PHOTO FINISH · SLOW MOTION':cameraMode==='auto'?'AUTO DIRECTOR':cameraMode==='wide'?'FULL CIRCUIT VIEW':'FOLLOW CAMERA');
 }
@@ -3477,11 +3491,19 @@ const SIM_HZ=60,SIM_STEP=1/SIM_HZ,MAX_SUBSTEPS=8;
 // 따라가거나 전환할 때 끊겨 보였다. 단계마다 직전 위치를 기억해 두고, 그릴 때만 남은 시간(accumulator)
 // 비율만큼 직전과 지금 사이에 놓았다가 곧바로 되돌린다. 판정·순위·아이템 같은 진행은 그대로다.
 function keepRacerSteps(){for(const r of racers){r.prevProgress=r.progress;r.prevLane=r.lane;}}
+// 날아가는 아이템(미사일·물폭탄·물파리)과 애니메이션도 남은 시간(ttl)·경과 시간이 단계마다 줄어드니 같은 비율로 되돌려 그린다.
 function renderSmooth(dt){
  const a=state==='racing'||state==='paused'?Math.min(1,Math.max(0,accumulator/SIM_STEP)):1;
  if(a>=1){render(dt);return;}
+ const back=SIM_STEP*(1-a),simElapsed=elapsed;
  for(const r of racers){if(r.prevProgress===undefined)continue;r.simProgress=r.progress;r.simLane=r.lane;r.progress=r.prevProgress+(r.progress-r.prevProgress)*a;r.lane=r.prevLane+(r.lane-r.prevLane)*a;}
- try{render(dt);}finally{for(const r of racers){if(r.simProgress===undefined)continue;r.progress=r.simProgress;r.lane=r.simLane;r.simProgress=undefined;}}
+ for(const e of effects){if(e.total===undefined)continue;e.simTtl=e.ttl;e.ttl=Math.min(e.total,e.ttl+back);}
+ if(state==='racing')elapsed=Math.max(0,elapsed-back);
+ try{render(dt);}finally{
+  elapsed=simElapsed;
+  for(const r of racers){if(r.simProgress===undefined)continue;r.progress=r.simProgress;r.lane=r.simLane;r.simProgress=undefined;}
+  for(const e of effects){if(e.simTtl===undefined)continue;e.ttl=e.simTtl;e.simTtl=undefined;}
+ }
 }
 function frame(now){
  frameHandle=null;const frameStart=performance.now();
