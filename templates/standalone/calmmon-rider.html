@@ -2917,6 +2917,9 @@ function reset(){closeCeremony();$('ceremonyOpen').hidden=true;stopLoop();state=
 faceSlots.clear();faceAtlas=null;faceAtlasCtx=null;nameWidths.clear();prefixWidths.clear();leaderRows.clear();$('leaderList').replaceChildren();
 document.body.classList.remove('watching');state='setup';names.splice(BASE_DRIVERS);colors.splice(BASE_DRIVERS);portraits.splice(BASE_DRIVERS);chosen=new Set([...chosen].filter(id=>id<BASE_DRIVERS));if(chosen.size<2)chosen=new Set([0,1,2,4,7,8,9,14]);$('roster').replaceChildren();CARD_ORDER.forEach(id=>addCard(id));$('driverMessage').textContent='';toggleSettings(true);$('rankTitle').textContent='출전 선수';$('start').innerHTML='경기 시작 <span aria-hidden="true">▶</span>';racers=[];focused=null;elapsed=0;$('selection').hidden=false;$('standings').hidden=false;$('start').hidden=false;$('pause').hidden=true;$('reset').hidden=true;$('laps').disabled=false;$('centerOverlay').hidden=false;$('countdown').textContent='';$('trackState').textContent='READY TO RACE';$('sessionStatus').textContent='ENTRY OPEN';$('timer').textContent='00:00.00';$('lapLabel').textContent=$('laps').value+' LAPS';$('focusLabel').textContent='FULL CIRCUIT VIEW';document.body.classList.remove('racing');syncSelection()}
 let resumeState='racing';function pause(){if(state==='countdown'||state==='racing'){resumeState=state;state='paused';stopLoop();$('pause').textContent='계속 관전 ▶';$('trackState').textContent='PAUSED';$('countdown').textContent='Ⅱ';document.body.classList.remove('racing')}else if(state==='paused'){state=resumeState;wakeLoop();$('pause').textContent='일시 정지 Ⅱ';$('countdown').textContent='';$('trackState').textContent=state==='countdown'?'STARTING GRID':'LIVE RACE';document.body.classList.add('racing')}else if(state==='finished')showResults()}
+// 오디오 장치(AudioContext)는 만드는 데 수십 ms가 걸려서 경기 시작 클릭 안에서 만들면 첫 프레임이 멈춘다.
+// 페이지에서 처음 누르는 순간(시작 버튼을 누르기 시작할 때 포함) 미리 만든다. 누르는 것은 사용자 동작이라 소리 정책에도 걸리지 않는다.
+for(const type of ['pointerdown','keydown','touchend'])document.addEventListener(type,()=>raceAudio.init(),{capture:true,once:true,passive:true});
 $('start').onclick=start;$('pause').onclick=pause;$('reset').onclick=reset;let visibilityPaused=false;
 function handleVisibilityChange(){
  if(document.hidden){visibilityPaused=state==='racing'||state==='countdown';if(visibilityPaused)pause();else stopLoop();}
@@ -3469,6 +3472,17 @@ globalThis.raceFreezes=function(){
 };
 // Fixed-step simulation. SIM_HZ is the single knob; item probabilities are unchanged.
 const SIM_HZ=60,SIM_STEP=1/SIM_HZ,MAX_SUBSTEPS=8;
+// 보간. 시뮬레이션은 1/60초 단위로만 움직이는데 화면 갱신 간격은 조금씩 흔들리고(120·144Hz 화면이면 더),
+// 보간 없이 그리면 카트가 어떤 프레임엔 멈추고 어떤 프레임엔 두 칸 간다 - 카메라는 매끄럽게 움직이니
+// 따라가거나 전환할 때 끊겨 보였다. 단계마다 직전 위치를 기억해 두고, 그릴 때만 남은 시간(accumulator)
+// 비율만큼 직전과 지금 사이에 놓았다가 곧바로 되돌린다. 판정·순위·아이템 같은 진행은 그대로다.
+function keepRacerSteps(){for(const r of racers){r.prevProgress=r.progress;r.prevLane=r.lane;}}
+function renderSmooth(dt){
+ const a=state==='racing'||state==='paused'?Math.min(1,Math.max(0,accumulator/SIM_STEP)):1;
+ if(a>=1){render(dt);return;}
+ for(const r of racers){if(r.prevProgress===undefined)continue;r.simProgress=r.progress;r.simLane=r.lane;r.progress=r.prevProgress+(r.progress-r.prevProgress)*a;r.lane=r.prevLane+(r.lane-r.prevLane)*a;}
+ try{render(dt);}finally{for(const r of racers){if(r.simProgress===undefined)continue;r.progress=r.simProgress;r.lane=r.simLane;r.simProgress=undefined;}}
+}
 function frame(now){
  frameHandle=null;const frameStart=performance.now();
  const rawDt=last===0?0:(now-last)/1000;const dt=Math.min(.10,rawDt);last=now;
@@ -3478,12 +3492,12 @@ function frame(now){
   // 사진 판정 슬로모션은 시뮬레이션 속도를 바꾸는 값이라, 렌더를 건너뛴 프레임에서도
   // 최신이어야 한다. 그래서 카메라 안이 아니라 여기서 매 프레임 정한다.
   accumulator+=dt*updateFinishDirection(dt);
-  let steps=0;while(accumulator>=SIM_STEP&&state==='racing'&&steps<MAX_SUBSTEPS){tick(SIM_STEP);accumulator-=SIM_STEP;steps++;}
+  let steps=0;while(accumulator>=SIM_STEP&&state==='racing'&&steps<MAX_SUBSTEPS){keepRacerSteps();tick(SIM_STEP);accumulator-=SIM_STEP;steps++;}
   // Drop the backlog rather than carry it: a slow frame must not make the next one slower.
   if(accumulator>SIM_STEP*MAX_SUBSTEPS)accumulator=SIM_STEP*MAX_SUBSTEPS;}
  const animated=state==='countdown'||state==='racing';
  if(animated){uiClock+=dt;if(uiClock>.16){updateUI();uiClock=0;}}
- drawElapsed+=dt;renderClock+=dt;if((animated||renderDirty||settleFrames>0)&&(renderDirty||renderClock+0.0001>=renderInterval)){const drawDt=drawElapsed;drawElapsed=0;renderClock=Math.max(0,renderClock-renderInterval);if(renderClock>=renderInterval)renderClock%=renderInterval;render(drawDt);renderDirty=false;if(settleFrames>0)settleFrames--;}
+ drawElapsed+=dt;renderClock+=dt;if((animated||renderDirty||settleFrames>0)&&(renderDirty||renderClock+0.0001>=renderInterval)){const drawDt=drawElapsed;drawElapsed=0;renderClock=Math.max(0,renderClock-renderInterval);if(renderClock>=renderInterval)renderClock%=renderInterval;renderSmooth(drawDt);renderDirty=false;if(settleFrames>0)settleFrames--;}
  if(animated&&rawDt>.1){
   const stall={at:+elapsed.toFixed(2),stallMs:Math.round(rawDt*1000),js:+(performance.now()-frameStart).toFixed(1),
    camZ:+camera.z.toFixed(2),cam:cameraMode,drivers:racers.length};
