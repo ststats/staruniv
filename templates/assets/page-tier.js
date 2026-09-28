@@ -62,10 +62,21 @@ function switchTierView(view) {
 // ---------------------------------------------------------------------------
 // 데이터
 // ---------------------------------------------------------------------------
+// Supabase 티어 명단 요청. 페이지를 열자마자 시작해 두고(bootPage prefetch) 목록을 그릴 때 그 결과를 쓴다.
+// 실패하면 비워서 다음에 새로 받는다.
+let _tierMembersRequest = null;
+function requestTierMembers() {
+    if (!_tierMembersRequest) {
+        _tierMembersRequest = Api.tierMembers();
+        _tierMembersRequest.catch(() => { _tierMembersRequest = null; });
+    }
+    return _tierMembersRequest;
+}
+
 // Supabase 티어 명단. 없거나 조회에 실패하면 null을 돌려준다.
 async function fetchTierMembers() {
     try {
-        const data = await Api.tierMembers();
+        const data = await requestTierMembers();
         const members = asArray(data).map(r => ({
             id: String(r.soop_id || '').trim(),
             nickname: String(r.nickname || '').trim(),
@@ -719,17 +730,26 @@ bootPage(async () => {
     // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
     ensureTierPick();
 
-    // 상대전적·분석 탭 주소로 바로 들어오면 그 탭이 쓰는 선수 목록을 바로 받기 시작한다(탭 초기화를 기다리지
-    // 않게). 티어 목록 명단은 티어 목록 탭을 열 때 받는다(enterTierList). 실패하면 탭이 다시 받는다.
-    const startParams = new URLSearchParams(location.search);
-    const startView = startParams.get('view');
-    if (startView === 'h2h' || startView === 'analysis') h2hLoadIndex().catch(() => {});
-    // 분석 탭에 선수까지 담긴 주소(공유 링크)면 그 선수의 레이팅 기록도 미리 받는다
-    if (startView === 'analysis' && startParams.get('p')) analysisLoadRating(startParams.get('p'));
-
     // 주소로 들어온 탭(?view=h2h&p1=..&p2=..)을 되살린다. 상대전적은 자기 몫의 주소를
     // page-h2h.js가 직접 챙긴다(선수 두 명까지 주소에 담아야 링크 공유가 된다).
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         switchTierView(params.get('view'));
     }));
-}, { siteData: false, logos: true });
+}, {
+    siteData: false,
+    logos: true,
+    view: params => activateTabView(TIER_TABS, TIER_TABS[params.get('view')] ? params.get('view') : 'list'),
+    // 들어온 탭이 쓰는 데이터를 로고·설정을 기다리지 않고 바로 받기 시작한다. 실패하면 탭이 다시 받는다.
+    prefetch: () => {
+        const params = new URLSearchParams(location.search);
+        const view = params.get('view');
+        if (view === 'h2h' || view === 'analysis') h2hLoadIndex().catch(() => {});
+        // 분석 탭에 선수까지 담긴 주소(공유 링크)면 그 선수의 레이팅 기록도 미리 받는다
+        if (view === 'analysis' && params.get('p')) analysisLoadRating(params.get('p'));
+        // 티어 목록(기본 탭): 명단과 방송 상태(20초 캐시)를 함께 받는다
+        if (!view || view === 'list') {
+            requestTierMembers().catch(() => {});
+            fetchLiveBroadcasts().catch(() => {});
+        }
+    },
+});

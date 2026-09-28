@@ -4,7 +4,7 @@
     // [공개 인터페이스 - 이름을 바꾸면 위 두 파일이 깨진다]
     //   상태: calEvents, calOffAir, calSelectedDateStr(전역 let - 두 파일이 이름으로 직접 읽고 대입한다)
     //   함수: calGetFormatDate, calTodayStr, loadPublicHolidays,
-    //         calLoadPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
+    //         calLoadPublicData, calPrefetchPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
     //         calRenderTodaySchedules, calRenderSelectedDateSchedules
     //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
     // 월 이동 전에는 날짜를 1일로 맞춘다(31일에 setMonth(+1)하면 한 달을 건너뛴다).
@@ -159,10 +159,20 @@
     const calEventsForDate = (dateStr, source) =>
         calSortByTime((source || calEvents).filter(ev => ev && calEventCoversDate(ev, dateStr)));
 
+    // 공휴일 파일과 일정 조회는 서로 무관하니 함께 받는다. calPrefetchPublicData()로 먼저 시작해 두었으면
+    // 그 결과를 한 번만 쓴다(어드민이 편집한 뒤 다시 부를 때는 새로 받는다).
+    let calPublicPrefetch = null;
+    const calPrefetchPublicData = () => {
+        if (calPublicPrefetch) return;
+        calPublicPrefetch = [loadPublicHolidays(), Api.schedule()];
+        calPublicPrefetch[1].catch(() => {});   // 실패는 calLoadPublicData가 받아서 처리한다
+    };
     const calLoadPublicData = async () => {
-        await loadPublicHolidays();
+        const [holidays, schedule] = calPublicPrefetch || [loadPublicHolidays(), Api.schedule()];
+        calPublicPrefetch = null;
+        await holidays;
         try {
-            const { events, offAir } = await Api.schedule();
+            const { events, offAir } = await schedule;
             calEvents = (events || []).map(r => ({
                 id: r.id, startDate: r.start_date, endDate: r.end_date || r.start_date, time: r.event_time || '',
                 person: r.person || '', desc: r.description || '', detail: r.detail || '', color: r.color || ''

@@ -7,6 +7,7 @@
  *    인자의 ACT.el은 그 요소, ACT.value는 그 요소의 값으로 바뀐다. JS에서는 act('함수', 인자...)로 속성을 만든다.
  *    클릭 · 입력은 인라인 핸들러처럼 바깥 요소로 올라가며 부르고, 함수가 stopPropagation()을 부르면 거기서 멈춘다.
  * 2) 노치 모서리 포커스 테두리(아래).
+ * 3) 서브탭 깜빡임 방지(맨 아래). 이 파일은 <head>에서 실린다(base.html).
  */
 const ACT = { el: { $: 'el' }, value: { $: 'value' } };
 
@@ -67,3 +68,21 @@ document.addEventListener('focusout', ({ target: el }) => {
     delete el.dataset.ring;
     el.style.removeProperty('--cut');
 });
+
+// 서브탭 깜빡임 방지: HTML은 기본 탭이 켜진 채로 오고, 주소(?view=)나 저장된 기본 탭 설정대로 바꾸는 건 본문 끝의
+// 페이지 스크립트(bootPage의 view)다. 그 사이 첫 화면에 기본 탭이 보이지 않도록, 바뀔 것 같으면 표시를 걸어 둔다
+// (base.html의 CSS가 탭 영역을 잠깐 가리고, bootPage가 탭을 맞춘 뒤 푼다). 기본 탭 설정은 core.js가 저장해 둔 값
+// (staruniv-nav-config)을 본다. 아래 기본값은 각 페이지 HTML에서 켜져 있는 탭이다.
+(() => {
+    const htmlDefault = { members: 'status', schedule: 'calendar', tools: 'multiviewer', video: 'fantube' };
+    let pending = new URLSearchParams(location.search).has('view');
+    if (!pending) {
+        try {
+            const page = location.pathname.split('/').filter(Boolean).pop() || '';
+            const nav = JSON.parse(localStorage.getItem('staruniv-nav-config') || 'null');
+            const def = nav && nav.subtabs && nav.subtabs[page] && nav.subtabs[page].default;
+            pending = Boolean(def && htmlDefault[page] && def !== htmlDefault[page]);
+        } catch (_) {}
+    }
+    if (pending) document.documentElement.dataset.viewPending = '';
+})();

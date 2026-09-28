@@ -399,4 +399,15 @@ bootPage(() => {
     }));
     safeInit('방송통계(시너지)', () => { if (!SynergyState.data) loadSynergyData(); });
     safeInit('방송통계 달 목록', loadSynergyMonths);
+}, {
+    prefetch: () => fetchSynergyMonths().catch(() => {}),
+    view: params => {
+        const metric = synergyMetricFromUrl(params.get('view'));
+        staticAll('#synergy-metric-filter .sub-tab').forEach(el => {
+            el.classList.toggle('active', el.dataset.metric === metric);
+            el.setAttribute('aria-selected', el.dataset.metric === metric ? 'true' : 'false');
+        });
+        const config = synergyMetricConfig(metric);
+        if (config) staticAll('.synergy-metric-label').forEach(el => { el.innerText = config.label; });
+    },
 });

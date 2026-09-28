@@ -361,4 +361,8 @@ bootPage(async () => {
         renderVideoChannels();
         renderFantube();
     }));
-}, { siteData: false });
+}, {
+    siteData: false,
+    view: params => activateTabView(VIDEO_TABS,
+        (params.get('view') || runtimeDefaultSubtab('video', 'fantube')) === 'pick' ? 'pick' : 'fantube'),
+});

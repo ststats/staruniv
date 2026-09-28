@@ -1236,6 +1236,16 @@ async function fetchNavConfig() {
     return data;
 }
 
+// 기본 탭(runtimeDefaultSubtab)을 설정 응답 전에 읽을 수 있게 마지막으로 받아 둔 설정을 먼저 넣어 둔다.
+// applyNavVisibility가 곧 같은 값을 적용하고, 새 값이 오면 덮어쓴다. 관리자 화면은 기억해 둔 값을 쓰지 않는다.
+function seedRuntimeConfigFromCache() {
+    if (document.body.classList.contains('admin-mode') || Object.keys(SiteRuntimeConfig).length) return;
+    try {
+        const cached = JSON.parse(localStorage.getItem(NAV_CACHE_KEY) || 'null');
+        if (cached && typeof cached === 'object') SiteRuntimeConfig = cached;
+    } catch (_) {}
+}
+
 async function applyNavVisibility() {
     let cached = null;
     if (!document.body.classList.contains('admin-mode')) {
@@ -1353,6 +1363,19 @@ function markSectionHeadings(root = document) {
 }
 
 function bootPage(init, opts) {
+    // opts.prefetch: 설정·사이트 데이터 파일을 기다리지 않고 지금 바로 시작할 요청. 결과는 각 조회 함수의
+    // 캐시가 들고 있다가 init이 쓴다(한 번 더 기다리는 왕복을 없앤다). 실패는 init 쪽 조회가 다시 다룬다.
+    if (opts && typeof opts.prefetch === 'function') {
+        try { opts.prefetch(); } catch (e) { console.warn('미리 받기 실패', e); }
+    }
+    // opts.view(params): 주소(?view=)나 저장해 둔 기본 탭 설정대로 탭 모양만 지금 맞춘다. HTML은 기본 탭이
+    // 켜진 채로 오므로, 데이터를 기다린 뒤에야 바꾸면 새로고침 때 기본 탭이 잠깐 보였다가 바뀐다.
+    // 탭을 열 때 하는 일(데이터 받기·그리기)은 init의 URL 복원이 그대로 한다.
+    if (opts && typeof opts.view === 'function') {
+        seedRuntimeConfigFromCache();
+        try { opts.view(new URLSearchParams(location.search)); } catch (e) { console.warn('탭 먼저 맞추기 실패', e); }
+    }
+    delete document.documentElement.dataset.viewPending;   // actions.js가 걸어 둔 탭 가림을 푼다
     const siteDataParts = opts && opts.siteData === false
         ? [] : ((opts && Array.isArray(opts.siteData)) ? opts.siteData : ['shell']);
     const start = async () => {
