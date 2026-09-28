@@ -2725,10 +2725,24 @@ const visibleKarts=[],kartDrawEntries=new Map(),cameraAlive=[];
 // RESIZE_STEP of mismatch, the canvas is sampled very slightly off 1:1 instead, which
 // at this scale is under 2.5% and invisible.
 const RESIZE_STEP=24;
+// 고해상도로 그리는데 기기가 못 따라가면(경기 중 2초 동안 늦은 프레임이 5%를 넘으면) 예전 해상도로 내리고 되돌리지 않는다.
+// 그리기 명령은 해상도와 상관없이 가볍고 픽셀을 칠하는 비용은 나중에 드러나므로, 실제 프레임 간격으로 판단한다.
+// 프레임 수가 아니라 시간으로 모은다 - 느린 기기일수록 프레임이 적게 나와 판단이 늦어지면 안 된다.
+let hiResOk=true,hiResLate=0,hiResSeen=0,hiResTime=0;
+function watchHiRes(rawDt){
+ if(!hiResOk||cv.width<=1200||rawDt<=0||elapsed<1)return;
+ hiResSeen++;hiResTime+=rawDt;if(rawDt>.025)hiResLate++;
+ if(hiResTime<2)return;
+ if(hiResLate/hiResSeen>.05){hiResOk=false;console.info('[캄몬라이더] 화면이 밀려 해상도를 낮춥니다 ('+hiResLate+'/'+hiResSeen+' 프레임 지연)');fitRaceCanvas();}
+ hiResLate=0;hiResSeen=0;hiResTime=0;
+}
 function fitRaceCanvas(){
  const width=cv.clientWidth;if(!width)return;
  const mobile=width<=750;
- const wanted=Math.min(1200,Math.max(600,Math.round(width*Math.min(globalThis.devicePixelRatio||1,1.5))));
+ // PC(가로 750px 초과)는 고해상도 화면에서 픽셀 밀도 2배·가로 1600px까지 그려 선명하게 한다(픽셀 약 1.8배).
+ // 모바일은 발열·배터리 때문에 1.5배·1200px 그대로다. PC라도 프레임이 밀리면 watchHiRes가 1200px로 내린다.
+ const hi=!mobile&&hiResOk;
+ const wanted=Math.min(hi?1600:1200,Math.max(600,Math.round(width*Math.min(globalThis.devicePixelRatio||1,hi?2:1.5))));
  if(!cv.width||Math.abs(wanted-cv.width)>=RESIZE_STEP){
   const height=Math.round(wanted*H/W);
   cv.width=wanted;cv.height=height;canvasScale=wanted/W;renderDirty=true;
@@ -2744,7 +2758,9 @@ if(typeof ResizeObserver!=='undefined')new ResizeObserver(fitRaceCanvas).observe
 // 물려야 한다는 뜻이다. 텍스처가 많으면 브라우저가 캔버스를 GPU 에 두지 못하고
 // 소프트웨어로 강등하거나 다시 승격하는 일이 생기고, 그 전환은 한 번에 수백 ms 다.
 // 이제 프레임마다 쓰이는 텍스처는 트랙 래스터와 이 아틀라스 둘뿐이다.
-const FACE_PX=42,FACE_COLS=8;
+// 아틀라스 한 칸은 84px - 확대 샷(최대 4.8배)에서 21px 얼굴이 크게 그려지므로, 42px로 두면 늘어나 흐려졌다.
+// 원본(96px) 안에서 두 배로 키운다. 아틀라스 전체도 672x504라 텍스처 부담은 그대로다.
+const FACE_PX=84,FACE_COLS=8;
 let faceAtlas=null,faceAtlasCtx=null;
 const faceSlots=new Map();
 function kartFaceSlot(id){
@@ -3518,7 +3534,7 @@ function renderSmooth(dt){
 }
 function frame(now){
  frameHandle=null;const frameStart=performance.now();
- const rawDt=last===0?0:(now-last)/1000;const dt=Math.min(.10,rawDt);last=now;
+ const rawDt=last===0?0:(now-last)/1000;const dt=Math.min(.10,rawDt);last=now;if(state==='racing')watchHiRes(rawDt);
  if(document.hidden||state==='setup'){last=0;return;}
  if(state==='countdown')tick(dt);
  else if(state==='racing'){
