@@ -2,9 +2,8 @@
 <html lang="ko" data-nav-pending>
 <head>
     <meta charset="UTF-8">
-    {#- 스크립트는 이 사이트 파일(와 관리자용 supabase-js CDN)만 실행한다: 인라인 코드·외부 스크립트가 끼어들어도 막힌다(XSS 방지).
-        바꾸면 standalone/multiview.html의 같은 줄도 같이 바꾼다(npm test가 비교). #}
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' data: https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-channel.sooplive.com https://www.youtube.com; frame-src 'self' https://www.youtube-nocookie.com https://*.sooplive.co.kr https://*.sooplive.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    {#- 콘텐츠 보안 정책(CSP)은 여기 <meta>가 아니라 Vercel 응답 헤더로 보낸다(docs/vercel.json).
+        <meta>로 두면 Chrome이 미리 읽기(preload scanner)를 꺼서 CSS·스크립트를 하나씩 차례로 받는다. #}
     {#- 하위 페이지(/records/ 등)는 모든 상대 경로(CSS/JS/이미지/data/..., JS의 fetch 포함)를
         사이트 루트 기준으로 해석하게 한다. 절대 경로 대신 이렇게 해야 GitHub Pages 프로젝트 페이지
         (/staruniv/)와 루트 배포(Vercel) 양쪽에서 같은 결과물이 그대로 동작한다. #}

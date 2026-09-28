@@ -41,11 +41,27 @@ test('data-click 등이 이름으로 부르는 함수는 모두 전역 function�
   for (const fn of used) assert.ok(declared.has(fn), `전역 function ${fn} 없음`);
 });
 
-test('공개 페이지와 멀티뷰어는 같은 CSP를 싣고, 인라인 스크립트는 허용하지 않는다', () => {
-  const csp = f => (fs.readFileSync(path.join(root, f), 'utf8').match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1];
-  const base = csp('base.html');
-  assert.ok(base, 'base.html에 CSP가 없다');
-  assert.equal(csp('standalone/multiview.html'), base);
-  const scriptSrc = base.match(/script-src ([^;]+)/)[1];
-  assert.doesNotMatch(scriptSrc, /unsafe-inline|unsafe-eval/);
+// CSP는 Vercel 응답 헤더로 보낸다. <meta http-equiv>로 두면 Chrome이 미리 읽기(preload scanner)를 꺼서
+// CSS·스크립트를 하나씩 차례로 받아 첫 화면이 늦어진다(실측: 멤버 페이지 DOMContentLoaded 약 2배).
+test('템플릿에 CSP <meta>가 없다(미리 읽기가 꺼진다)', () => {
+  for (const f of files.filter(f => f.endsWith('.html'))) {
+    assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /http-equiv=["']Content-Security-Policy/i, rel(f));
+  }
+});
+
+test('모든 페이지 주소가 CSP 헤더를 받고, 인라인 스크립트는 허용하지 않는다', () => {
+  const vercel = JSON.parse(fs.readFileSync(path.join(root, '..', 'docs', 'vercel.json'), 'utf8'));
+  const routes = vercel.routes.filter(r => r.headers && /script-src/.test(r.headers['Content-Security-Policy'] || ''));
+  assert.equal(routes.length, 1, 'CSP 헤더 규칙은 하나여야 한다');
+  const [route] = routes;
+  const policy = route.headers['Content-Security-Policy'];
+  assert.doesNotMatch(policy.match(/script-src ([^;]+)/)[1], /unsafe-inline|unsafe-eval/);
+  assert.match(policy, /frame-ancestors 'self'/);
+  const src = new RegExp(route.src);
+  const pages = fs.readdirSync(path.join(root, 'pages')).map(f => f.replace(/\.html$/, ''));
+  const urls = ['/', '/index.html', '/multiview.html', '/admin.html'];
+  for (const p of pages.filter(p => p !== 'home')) urls.push(`/${p}/`, `/${p}/index.html`, `/admin-${p}.html`);
+  for (const u of urls) assert.match(u, src, `${u}에 CSP 헤더가 안 붙는다`);
+  // 인라인 코드가 있는 단독 페이지와 없는 주소(GitHub Pages 404 안내)는 빼야 한다
+  for (const u of ['/calmmon-rider.html', '/404.html', '/nope/', '/style.css', '/core.js']) assert.doesNotMatch(u, src, u);
 });
