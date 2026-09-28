@@ -137,6 +137,27 @@ def make_asset_url(versions):
     return asset_url
 
 
+def standalone_html(versions):
+    """templates/standalone(없으면 기존 docs 파일)의 독립 페이지에 자산 버전을 붙인 내용."""
+    pages = {}
+    standalone_src_dir = os.path.join(TEMPLATE_DIR, 'standalone')
+    for filename in ('multiview.html', 'calmmon-rider.html'):
+        source = os.path.join(standalone_src_dir, filename)
+        if not os.path.isfile(source):
+            source = os.path.join(OUT_DIR, filename)
+            if not os.path.isfile(source):
+                continue
+        # 손으로 관리하는 파일이라 원래 줄바꿈 형식(CRLF)을 지킨다. 기본 모드로 읽고 쓰면
+        # CRLF가 LF로 바뀌어, 캐시 해시 한 줄만 바뀌어도 파일 전체가 바뀐 것으로 커밋된다.
+        with open(source, encoding='utf-8', newline='') as f:
+            html = f.read()
+        for asset, version in versions.items():
+            html = re.sub(r'((?:src|href)=")' + re.escape(asset) + r'(?:\?v=[a-f0-9]+)?"',
+                          lambda match: f'{match.group(1)}{asset}?v={version}"', html)
+        pages[filename] = html
+    return pages
+
+
 STATIC_OWNED_DIRS = {'images'}
 
 
@@ -200,6 +221,12 @@ def main():
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     versions = static_asset_versions()
     env.globals['asset_url'] = make_asset_url(versions)
+    standalone_pages = standalone_html(versions)
+    # 캄몬라이더(약 1MB)도 주소에 내용 해시를 붙여 iframe에 넣는다. 게임이 바뀌지 않았으면
+    # 재방문 때 서버에 다시 묻지 않고 브라우저 캐시에서 바로 연다(vercel.json이 1년 캐시를 준다).
+    rider_html = standalone_pages.get('calmmon-rider.html')
+    env.globals['rider_url'] = ('calmmon-rider.html?v=' + content_version(rider_html.encode('utf-8'))
+                                if rider_html is not None else 'calmmon-rider.html')
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
     # 메뉴·방송통계 탭 숨김은 런타임에 core.js가 Supabase 설정으로 처리하므로 빌드는 모두 표시한다
@@ -222,22 +249,8 @@ def main():
     copy_static_assets()
     # 독립 관리자/멀티뷰어/캄몬라이더도 docs를 직접 원본으로 두지 않는다.
     # templates/standalone을 소스로 관리하고 빌드 때 docs로 복사한 뒤 자산 버전을 붙인다.
-    standalone_src_dir = os.path.join(TEMPLATE_DIR, 'standalone')
-    for filename in ('multiview.html', 'calmmon-rider.html'):
-        source = os.path.join(standalone_src_dir, filename)
-        standalone = os.path.join(OUT_DIR, filename)
-        if os.path.isfile(source):
-            shutil.copyfile(source, standalone)
-        elif not os.path.isfile(standalone):
-            continue
-        # 손으로 관리하는 파일이라 원래 줄바꿈 형식(CRLF)을 지킨다. 기본 모드로 읽고 쓰면
-        # CRLF가 LF로 바뀌어, 캐시 해시 한 줄만 바뀌어도 파일 전체가 바뀐 것으로 커밋된다.
-        with open(standalone, encoding='utf-8', newline='') as f:
-            html = f.read()
-        for asset, version in versions.items():
-            html = re.sub(r'((?:src|href)=")' + re.escape(asset) + r'(?:\?v=[a-f0-9]+)?"',
-                          lambda match: f'{match.group(1)}{asset}?v={version}"', html)
-        write_text_atomic(standalone, html, newline='')
+    for filename, html in standalone_pages.items():
+        write_text_atomic(os.path.join(OUT_DIR, filename), html, newline='')
     print("✅ 성공적으로 화이트&블루 통합 웹페이지가 구워졌습니다!")
 
 
