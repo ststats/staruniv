@@ -50,6 +50,13 @@ paths:
       summary: 방송통계가 있는 날짜, 최신순 (Api.statsDates)
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { stat_date: { type: string, format: date } } } } } } }
+  /stats/latest:
+    get:
+      summary: 가장 최근 날짜의 월 누적 방송통계, 날짜(stat_date) 포함 (Api.statsLatest)
+      parameters:
+        - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID", schema: { type: string } }
+      responses:
+        '200': { description: "ok", content: { application/json: { schema: { type: array, items: { allOf: [ { $ref: '#/components/schemas/StatsRow' }, { type: object, properties: { stat_date: { type: string, format: date } } } ] } } } } }
   /stats:
     get:
       summary: 그날까지의 월 누적 방송통계 (Api.stats)
