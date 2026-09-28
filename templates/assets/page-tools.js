@@ -32,14 +32,19 @@ function updateToolsHash() {
 }
 
 // ----- 캄몬라이더 (자체 제작 레이싱 게임을 iframe으로 임베드) -----
-// 게임 파일 하나가 4MB에 가까워서(스프라이트가 파일 안에 들어있다) 페이지를 열자마자 불러오면
+// 게임 파일 하나가 1MB 가까이 돼서(글꼴·스프라이트가 파일 안에 들어있다) 페이지를 열자마자 불러오면
 // 이 탭을 보지도 않는 사람까지 그 용량을 받게 된다. 그래서 이 탭을 처음 열 때 한 번만 src를 채운다.
 // (두 번째부터는 이미 들어있는 iframe을 그대로 둬서 진행 중이던 게임이 초기화되지 않는다.)
-const RIDER_PAGE_URL = 'calmmon-rider.html';
+// 빌드가 iframe의 data-src에 내용 해시가 붙은 주소(calmmon-rider.html?v=...)를 넣어 준다.
+// 게임이 그대로면 재방문 때 1MB 가까운 파일을 서버에 다시 묻지 않고 브라우저 캐시에서 연다.
+function riderPageUrl() {
+    const frame = document.getElementById('rider-frame');
+    return (frame && frame.dataset.src) || 'calmmon-rider.html';
+}
 
 function riderEnsureLoaded() {
     const frame = document.getElementById('rider-frame');
-    if (frame && !frame.getAttribute('src')) frame.src = RIDER_PAGE_URL;
+    if (frame && !frame.getAttribute('src')) frame.src = riderPageUrl();
 }
 
 // ----- 다른 탭으로 갔을 때 게임 멈추기 -----
@@ -114,7 +119,7 @@ function riderFullscreen() {
 }
 
 function riderOpenWindow() {
-    window.open(RIDER_PAGE_URL, '_blank', 'noopener');
+    window.open(riderPageUrl(), '_blank', 'noopener');
 }
 
 function switchToolsView(viewType, skipHashUpdate) {
