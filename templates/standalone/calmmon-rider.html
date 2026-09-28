@@ -2816,7 +2816,10 @@ const ITEM_POOLS={
 };
 function giveItem(r,list){const q=list.indexOf(r)/Math.max(1,list.length-1),hasAhead=list.some(o=>o.finish===null&&o!==r&&o.progress>r.progress),pool=!hasAhead?ITEM_POOLS.leader:q<.25?ITEM_POOLS.front:q>.58?ITEM_POOLS.rear:ITEM_POOLS.middle;r.item=hasAhead&&Math.random()<.03?'lightning':pool[Math.floor(Math.random()*pool.length)];r.useIn=.45+Math.random()*.9;r.itemTimer=1.2;}
 const attackTargets=[],barricadeAhead=[];
-function useItem(r,list){const kind=r.item;if(!kind)return;itemStats.used++;if(['rocket','magnet','shield'].includes(kind))raceAudio.effect(kind);r.item=null;r.lastItem=kind;r.lastItemUntil=elapsed+1.7;const ahead=attackTargets;ahead.length=0;if(kind==='ufo'||kind==='missile'||kind==='lightning'||kind==='wisp')for(const o of list)if(o.finish===null&&o!==r&&o.progress>r.progress)ahead.push(o);if(kind==='banana'){traps.push({owner:r.id,kind:'banana',span:20,hits:1,progress:r.progress-.008,lane:r.lane,ttl:12});if(elapsed-eventAt>1.8)itemEvent(r.name+' 바나나 설치! 뒤따르는 선수 주의!',r.id);}else if(kind==='ufo'){const target=ahead[0];if(target){strike(target,'ufo',r.name);if(target.ufo>0)effects.push({type:'ufo',id:target.id,ttl:3});itemEvent(r.name+' 우주선! '+target.name+' 추격 저지!',target.id);}else r.shield=2;}else if(kind==='water'){const origin=point(r.progress,r.lane),landing=point(r.progress+.065,r.lane);effects.push({type:'water',from:r.id,origin,landing,ttl:.75,total:.75,owner:r.name});if(elapsed-eventAt>1.5)itemEvent(r.name+' 물폭탄 투척!',r.id);}else if(kind==='shield'){r.shield=4.5;}else if(kind==='rocket'){r.boost=2.7;r.immunity=Math.max(r.immunity,1);if(elapsed-eventAt>1.8)itemEvent(r.name+' 부스터! 단숨에 거리를 좁힙니다',r.id);}else if(kind==='magnet'){if(list.some(o=>o.finish===null&&o!==r&&o.progress>r.progress)){r.magnet=3.2;if(elapsed-eventAt>2)itemEvent(r.name+' 자석으로 앞차를 추격합니다!',r.id);}else r.shield=2;}else if(kind==='missile'){const target=ahead[ahead.length-1];if(target){effects.push({type:'missile',from:r.id,id:target.id,ttl:.65,total:.65,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 미사일 발사!',target.id);}else r.shield=2.2;}else if(kind==='wisp'){
+function useItem(r,list){const kind=r.item;if(!kind)return;itemStats.used++;if(['rocket','magnet','shield'].includes(kind))raceAudio.effect(kind);r.item=null;r.lastItem=kind;r.lastItemUntil=elapsed+1.7;const ahead=attackTargets;ahead.length=0;if(kind==='ufo'||kind==='missile'||kind==='lightning'||kind==='wisp')for(const o of list)if(o.finish===null&&o!==r&&o.progress>r.progress)ahead.push(o);if(kind==='banana'){traps.push({owner:r.id,kind:'banana',span:20,hits:1,progress:r.progress-.008,lane:r.lane,ttl:12});if(elapsed-eventAt>1.8)itemEvent(r.name+' 바나나 설치! 뒤따르는 선수 주의!',r.id);}else if(kind==='ufo'){const target=ahead[0];if(target){strike(target,'ufo',r.name);if(target.ufo>0)effects.push({type:'ufo',id:target.id,ttl:3});itemEvent(r.name+' 우주선! '+target.name+' 추격 저지!',target.id);}else r.shield=2;}else if(kind==='water'){const origin=point(r.progress,r.lane),landing=point(r.progress+.065,r.lane);effects.push({type:'water',from:r.id,origin,landing,ttl:.75,total:.75,owner:r.name});if(elapsed-eventAt>1.5)itemEvent(r.name+' 물폭탄 투척!',r.id);}else if(kind==='shield'){r.shield=4.5;}else if(kind==='rocket'){r.boost=2.7;r.immunity=Math.max(r.immunity,1);if(elapsed-eventAt>1.8)itemEvent(r.name+' 부스터! 단숨에 거리를 좁힙니다',r.id);}else if(kind==='magnet'){
+  // 자석은 바로 앞차 한 명에게 붙는다(순위표에서 나보다 앞선 사람 중 마지막).
+  let target=null;for(const o of list){if(o===r)break;if(o.finish===null&&o.progress>r.progress)target=o;}
+  if(target){r.magnet=3.2;r.magnetTarget=target.id;r.magnetGap=target.progress-r.progress;if(elapsed-eventAt>2)itemEvent(r.name+' 자석! '+target.name+'에게 끌려갑니다',target.id);}else r.shield=2;}else if(kind==='missile'){const target=ahead[ahead.length-1];if(target){effects.push({type:'missile',from:r.id,id:target.id,ttl:.65,total:.65,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 미사일 발사!',target.id);}else r.shield=2.2;}else if(kind==='wisp'){
   // 물파리는 물폭탄의 축소판 - 바로 앞 한 명만 물방울에 가둔다.
   const target=ahead[ahead.length-1];
   if(target){effects.push({type:'wisp',from:r.id,id:target.id,ttl:.6,total:.6,owner:r.name});if(elapsed-eventAt>1.8)itemEvent(r.name+' → '+target.name+' 물파리!',target.id);}
@@ -2951,11 +2954,15 @@ if(state!=='racing')return;elapsed+=dt;const standings=order();
 // backward scan instead of a full search per racer (that search was O(n^2) per tick).
 const active=activeRacers;active.length=0;for(const r of standings)if(r.finish===null){r.ai=active.length;active.push(r);}
 const frontProgress=active[0]?.progress||0;
+// 자석: 뒷차는 앞차와의 간격이 멀수록 세게 끌려가고(가까우면 +20%대, 멀면 최대 +60%), 끌려가는 앞차는 느려진다
+// (한 명에게 -12%, 여럿이 붙어도 -20%까지). 따라잡거나 대상이 완주하면 끝난다. 뒷차는 앞차 차선으로 붙어 간다.
+for(const r of racers)r.magnetDrag=1;
+for(const r of racers){if(!(r.magnet>0)||r.finish!==null)continue;const t=getRacer(r.magnetTarget);if(!t||t.finish!==null||t.progress<=r.progress){r.magnet=0;continue;}t.magnetDrag=Math.max(.8,t.magnetDrag*.88);r.magnetGap=t.progress-r.progress;r.laneTarget=t.lane;}
 for(const t of traps)t.ttl-=dt;compact(traps,t=>t.ttl>0);for(const e of effects){e.ttl-=dt;if(e.ttl<=0&&e.type==='water'&&!e.done){e.done=true;for(const r of racers){if(r.id===e.from||r.finish!==null)continue;const p=point(r.progress,r.lane),dx=p.x-e.landing.x,dy=p.y-e.landing.y;if(dx*dx+dy*dy<=55*55)strike(r,'water',e.owner);}effects.push({type:'water_splash',landing:e.landing,ttl:.6,total:.6});}if(e.ttl<=0&&(e.type==='missile'||e.type==='wisp')&&!e.done){e.done=true;const target=getRacer(e.id);if(target)strike(target,e.type==='wisp'?'wisp':'missile',e.owner);}}compact(effects,e=>e.ttl>0);
-for(const r of racers){if(r.finish!==null)continue;r.decision-=dt;r.boost=Math.max(0,r.boost-dt);r.stun=Math.max(0,r.stun-dt);r.ufo=Math.max(0,r.ufo-dt);r.shield=Math.max(0,r.shield-dt);r.immunity=Math.max(0,r.immunity-dt);r.magnet=Math.max(0,r.magnet-dt);if(r.magnet>0&&r.progress>=frontProgress)r.magnet=0;r.itemTimer-=dt;
+for(const r of racers){if(r.finish!==null)continue;r.decision-=dt;r.boost=Math.max(0,r.boost-dt);r.stun=Math.max(0,r.stun-dt);r.ufo=Math.max(0,r.ufo-dt);r.shield=Math.max(0,r.shield-dt);r.immunity=Math.max(0,r.immunity-dt);r.magnet=Math.max(0,r.magnet-dt);r.itemTimer-=dt;
 if(r.item){r.useIn-=dt;if(r.useIn<=0)useItem(r,standings);}
 if(r.decision<=0){r.formTarget=(Math.random()-.5)*.18;r.laneTarget=(Math.random()-.5)*38;r.decision=1.5+Math.random()*2.8;}r.form+=(r.formTarget-r.form)*dt*.8;
-const a=(r.progress%1)*Math.PI*2,catchup=Math.min(.17,Math.max(0,frontProgress-r.progress)*.32);let target=.043*(1+r.form+catchup+.035*Math.sin(a*2+r.phase))*(r.boost>0?1.68:r.magnet>0?1.38:1)*(r.stun>0?.27:r.ufo>0?.52:1);
+const a=(r.progress%1)*Math.PI*2,catchup=Math.min(.17,Math.max(0,frontProgress-r.progress)*.32);let target=.043*(1+r.form+catchup+.035*Math.sin(a*2+r.phase))*(r.boost>0?1.68:r.magnet>0?1.15+Math.min(.45,(r.magnetGap||0)*9):1)*(r.stun>0?.27:r.ufo>0?.52:1)*(r.magnetDrag||1);
 let front=null;for(let j=r.ai-1;j>=0;j--){const other=active[j],d=other.progress-r.progress;if(d>=.011)break;if(d>0&&Math.abs(other.lane-r.lane)<12)front=other;}if(front){target*=.92;r.laneTarget=r.lane>=0?-18:18;}
 // 바리케이드는 눈에 보이는 장애물이라 선수가 피하려 든다. 조각을 하나씩 보고 반사적으로
 // 꺾으면 다른 조각으로 뛰어드니, 앞쪽 조각을 한꺼번에 보고 전부 비껄 수 있는 가장 가까운
@@ -3007,7 +3014,7 @@ function createLeaderRow(r){
 function racerStatus(r){
  if(state==='setup')return '출전 대기';if(r.finish!==null)return 'FINISHED';
  if(r.stun>0)return ({missile:'💥 폭발 충격',banana:'🍌 미끄러짐',water:'💧 물폭탄 감금',wisp:'💧 물파리 감금',barricade:'🚧 바리케이드 충돌',lightning:'ϟ 감전'})[r.hitKind]||'피격';
- if(r.ufo>0)return '🛸 붙잡힘';if(r.shield>0)return '🛡 방어 중';if(r.boost>0)return '🔥 가속 중';if(r.magnet>0)return '🧲 추격 중';
+ if(r.ufo>0)return '🛸 붙잡힘';if(r.shield>0)return '🛡 방어 중';if(r.boost>0)return '🔥 가속 중';if(r.magnet>0)return '🧲 추격 중';if(r.magnetDrag<1)return '🧲 끌려오는 중';
  return r.item?itemNames[r.item]:Math.floor(Math.max(0,r.progress)/laps*100)+'%';
 }
 function updateUI(){
@@ -3364,6 +3371,8 @@ function cameraStep(dt,list=order()){
  setText($('focusLabel'),slowMotion?'PHOTO FINISH · SLOW MOTION':cameraMode==='auto'?'AUTO DIRECTOR':cameraMode==='wide'?'FULL CIRCUIT VIEW':'FOLLOW CAMERA');
 }
 function drawEffects(){
+// 자석으로 붙은 두 카트를 점선으로 잇는다
+g.save();g.setLineDash(PROJECTILE_DASH);g.strokeStyle='#ff6b6bb0';g.lineWidth=2;for(const r of racers){if(!(r.magnet>0)||r.finish!==null)continue;const t=getRacer(r.magnetTarget);if(!t||t.finish!==null)continue;const a=racerPoint(r),ax=a.x,ay=a.y,b=racerPoint(t);g.beginPath();g.moveTo(ax,ay);g.lineTo(b.x,b.y);g.stroke();}g.restore();
 const left=camera.x-W/(2*camera.z),right=camera.x+W/(2*camera.z),top=camera.y-H/(2*camera.z),bottom=camera.y+H/(2*camera.z);
 const visible=(x,y,pad)=>x+pad>=left&&x-pad<=right&&y+pad>=top&&y-pad<=bottom;
 if(traps.length){g.font='22px Pretendard,sans-serif';g.textAlign='center';for(const t of traps){const p=t.drawPoint||(t.drawPoint=point(t.progress,t.lane));if(!visible(p.x,p.y,38))continue;g.fillText(t.kind==='barricade'?'🚧':'🍌',p.x,p.y+7);}}for(const e of effects){
