@@ -54,6 +54,8 @@ jobs:
         run: python scripts/export_supabase.py
 
       - name: Build internal StarUniv stats and pages
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
         run: |
           python scripts/build_html.py
           python scripts/write_site_data.py

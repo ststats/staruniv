@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 from datetime import datetime, timedelta, timezone
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -18,6 +18,10 @@ TEMPLATE_DIR = 'templates'
 STATIC_SRC = os.path.join(TEMPLATE_DIR, 'assets')
 STATIC_TREE_SRC = os.path.join(TEMPLATE_DIR, 'static')
 OUT_DIR = 'docs'
+# 브라우저가 데이터를 받는 Supabase 주소. 있으면 페이지 머리에 preconnect를 넣어, 스크립트가 도는 동안
+# 연결(DNS·TLS)을 미리 맺어 둔다. 빌드 환경에 SUPABASE_URL이 없으면(로컬 빌드) 태그를 넣지 않는다.
+_supabase = urlsplit((os.environ.get('SUPABASE_URL') or '').strip())
+SUPABASE_ORIGIN = f'https://{_supabase.netloc}' if _supabase.scheme == 'https' and _supabase.netloc else ''
 # 메뉴/방송통계 표시 설정은 Supabase site_config에서 브라우저가 직접 읽는다(빌드는 모두 표시).
 
 # ----- 페이지 구성 -----
@@ -60,6 +64,7 @@ def page_context(page_id, title, description, hidden_nav_ids=frozenset(), hidden
     """페이지별로 달라지는 템플릿 값(제목/설명/대표 주소/<base>/메뉴 링크)."""
     return {
         'page_id': page_id,
+        'supabase_origin': SUPABASE_ORIGIN,
         # 하위 폴더 페이지는 <base href="../">로 모든 상대 경로를 사이트 루트 기준으로 맞춘다
         'root': '' if page_id == 'home' else '../',
         'full_title': f'{title} | {SITE_NAME}' if title else SITE_NAME,
