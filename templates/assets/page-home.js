@@ -339,4 +339,4 @@ bootPage(() => {
     safeInit('홈 캐러셀', initHomeCarousel);
     safeInit('방송중 카드', renderLiveBroadcasts);
     safeInit('최근 공지', renderLatestNotices);
-});
+}, { prefetch: () => fetchLiveBroadcasts().catch(() => {}) });   // 방송중 카드(멤버 명단을 기다리지 않고 받아 둔다)

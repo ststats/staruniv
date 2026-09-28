@@ -1353,6 +1353,11 @@ function markSectionHeadings(root = document) {
 }
 
 function bootPage(init, opts) {
+    // opts.prefetch: 설정·사이트 데이터 파일을 기다리지 않고 지금 바로 시작할 요청. 결과는 각 조회 함수의
+    // 캐시가 들고 있다가 init이 쓴다(한 번 더 기다리는 왕복을 없앤다). 실패는 init 쪽 조회가 다시 다룬다.
+    if (opts && typeof opts.prefetch === 'function') {
+        try { opts.prefetch(); } catch (e) { console.warn('미리 받기 실패', e); }
+    }
     const siteDataParts = opts && opts.siteData === false
         ? [] : ((opts && Array.isArray(opts.siteData)) ? opts.siteData : ['shell']);
     const start = async () => {

@@ -77,4 +77,4 @@ bootPage(() => {
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         switchScheduleView(params.get('view') || runtimeDefaultSubtab('schedule','calendar'));
     }));
-});
+}, { prefetch: calPrefetchPublicData });

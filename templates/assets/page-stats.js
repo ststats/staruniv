@@ -399,4 +399,4 @@ bootPage(() => {
     }));
     safeInit('방송통계(시너지)', () => { if (!SynergyState.data) loadSynergyData(); });
     safeInit('방송통계 달 목록', loadSynergyMonths);
-});
+}, { prefetch: () => fetchSynergyMonths().catch(() => {}) });

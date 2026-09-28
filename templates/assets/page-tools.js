@@ -348,4 +348,4 @@ bootPage(() => {
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         switchToolsView(toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW)), true);
     }));
-});
+}, { prefetch: () => fetchLiveBroadcasts().catch(() => {}) });   // 멀티뷰어 방송 중 표시
