@@ -62,8 +62,13 @@
   // ---------------------------------------------------------------------------
   function initDecisions(){
     const r=U.job.result||{};
-    const d={changes:{},nick:{},teams:{},cards:{},missing:{},faOnly:{}};
-    (r.changes||[]).forEach((c,i)=>{d.changes[i]=!c.uncertain;if(c.diff?.nickname)d.nick[i]=c.diff.nickname[1];});
+    const d={changes:{},nick:{},tier:{},race:{},teams:{},cards:{},missing:{},faOnly:{}};
+    (r.changes||[]).forEach((c,i)=>{
+      d.changes[i]=!c.uncertain;if(c.diff?.nickname)d.nick[i]=c.diff.nickname[1];
+      // 티어·종족은 고를 수 있다(못 읽었으면 지금 값에서 시작). 고친 값으로 반영하면 그 카드 글씨를 그 값으로 기억한다
+      if(c.diff?.tier)d.tier[i]=String(c.diff.tier[1]??c.diff.tier[0]??'');
+      if(c.diff?.race)d.race[i]=String(c.diff.race[1]??c.diff.race[0]??'');
+    });
     (r.review||[]).forEach((x,i)=>{
       if(x.type==='새 대학')d.teams[i]={name:x.team};
       else if(x.type==='신규 또는 인식 실패')d.cards[i]={mode:'skip',pick:'',nick:x.card?.nickname_ocr||'',rename:'',tier:x.card?.tier||'',race:x.card?.race||'',cand:'',elo:'',soop:''};
@@ -94,8 +99,8 @@
       if(c.id==null)return;
       const f={};
       if(c.diff.affiliation)f.affiliation=teamName(c.diff.affiliation[1]);
-      if(c.diff.tier)f.tier=String(c.diff.tier[1]);
-      if(c.diff.race)f.race=c.diff.race[1];
+      if(c.diff.tier)f.tier=U.decide.tier[i]??c.diff.tier[1];
+      if(c.diff.race)f.race=U.decide.race[i]??c.diff.race[1];
       if(c.diff.nickname){const v=String(U.decide.nick[i]||'').trim();if(v)f.nickname=v;}
       put(c.id,f);
     });
@@ -211,13 +216,17 @@
     if(c.diff.nickname)parts.push(`닉네임 ${esc(c.diff.nickname[0]||'-')} → ${i==null?`<b>${esc(c.diff.nickname[1])}</b>`
       :`<input class="admin-input admin-tu-nick" data-tu-nick="${i}" value="${esc(U.decide.nick[i]??c.diff.nickname[1])}">`}`);
     if(c.diff.affiliation)parts.push(`소속 ${esc(c.diff.affiliation[0]||'-')} → <b>${esc(teamName(c.diff.affiliation[1]))}</b>`);
-    if(c.diff.tier)parts.push(`티어 ${esc(tierText(c.diff.tier[0])||"-")} → <b>${esc(tierText(c.diff.tier[1]))}</b>`);
-    if(c.diff.race)parts.push(`종족 ${esc(c.diff.race[0]||'-')} → <b>${esc(c.diff.race[1])}</b>`);
+    if(c.diff.tier)parts.push(`티어 ${esc(tierText(c.diff.tier[0])||"-")} → ${i==null?`<b>${esc(tierText(c.diff.tier[1]))}</b>`
+      :`<select class="admin-input" data-tu-tier="${i}">${optionList(withValue(SITE_ORDER.tiers,U.decide.tier[i]),U.decide.tier[i])}</select>`}`);
+    if(c.diff.race)parts.push(`종족 ${esc(c.diff.race[0]||'-')} → ${i==null?`<b>${esc(c.diff.race[1])}</b>`
+      :`<select class="admin-input" data-tu-race="${i}">${optionList(withValue(RACES,U.decide.race[i]),U.decide.race[i])}</select>`}`);
     return parts.join('<br>');
   }
   function pickInput(id,value){
     return `<input class="admin-input" list="tuPeople" data-tu-pick="${id}" value="${esc(value)}" placeholder="닉네임으로 찾기">`;
   }
+  // 목록에 없는 지금 값(빈 값 포함)도 그대로 보이게 한다 - 없으면 첫 항목이 선택된 것처럼 보인다
+  function withValue(list,cur){return list.some(v=>String(v)===String(cur??''))?list:[cur??'',...list];}
   function optionList(list,cur){
     return list.map(v=>`<option value="${esc(v)}"${String(v)===String(cur)?' selected':''}>${esc(v?tierText(v):'-')}</option>`).join('');
   }
@@ -401,6 +410,8 @@
       render();
     });
     on('[data-tu-nick]','oninput',n=>{U.decide.nick[n.dataset.tuNick]=n.value;});
+    on('[data-tu-tier]','onchange',n=>{U.decide.tier[n.dataset.tuTier]=n.value;});
+    on('[data-tu-race]','onchange',n=>{U.decide.race[n.dataset.tuRace]=n.value;});
     on('[data-tu-card-tier]','onchange',n=>{U.decide.cards[n.dataset.tuCardTier].tier=n.value;});
     on('[data-tu-card-race]','onchange',n=>{U.decide.cards[n.dataset.tuCardRace].race=n.value;});
     on('[data-tu-missing]','onchange',n=>{U.decide.missing[n.dataset.tuMissing]=n.value;});
