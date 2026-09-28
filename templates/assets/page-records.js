@@ -525,4 +525,8 @@ bootPage(() => {
         const member = params.get('member');
         if (view === 'individual' && member) selectPlayer(member);
     }));
-}, { siteData: ['shell', 'records'], logos: true });
+}, {
+    siteData: ['shell', 'records'],
+    logos: true,
+    view: params => activateTabView(RECORD_TABS, params.get('view') === 'solo' ? 'individual' : 'team'),
+});

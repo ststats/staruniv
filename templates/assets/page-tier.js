@@ -738,6 +738,7 @@ bootPage(async () => {
 }, {
     siteData: false,
     logos: true,
+    view: params => activateTabView(TIER_TABS, TIER_TABS[params.get('view')] ? params.get('view') : 'list'),
     // 들어온 탭이 쓰는 데이터를 로고·설정을 기다리지 않고 바로 받기 시작한다. 실패하면 탭이 다시 받는다.
     prefetch: () => {
         const params = new URLSearchParams(location.search);

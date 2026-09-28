@@ -40,7 +40,13 @@
     {#- Supabase 메뉴 설정을 읽기 전에는 메뉴와 방송통계 지표 탭을 감춘다(숨긴 메뉴가 잠깐 보였다가
         사라지는 깜빡임 방지). 자리(높이)는 유지하면서 보이지만 않게 한다. #}
     <style>html[data-nav-pending] #mainMenu,
-           html[data-nav-pending] #synergy-metric-filter { visibility: hidden; }</style>
+           html[data-nav-pending] #synergy-metric-filter { visibility: hidden; }
+    {#- 주소(?view=)나 저장된 기본 탭 설정이 HTML의 기본 탭과 다를 때(actions.js가 판단), 페이지 스크립트가
+        맞는 탭을 켤 때까지 탭 줄과 탭 내용을 잠깐 가린다(기본 탭이 보였다가 바뀌는 깜빡임 방지).
+        스크립트가 안 돌아도 2초 뒤에는 보인다. #}
+           html[data-view-pending] .sub-tabs,
+           html[data-view-pending] [id^="view-"] { visibility: hidden; animation: view-pending-reveal 0s 2s forwards; }
+           @keyframes view-pending-reveal { to { visibility: visible; } }</style>
     {#- 공개 사이트 운영 데이터는 Supabase에서 직접 읽는다. publishable key는 브라우저 공개용이고,
         실제 공개 범위는 RLS + 컬럼 권한으로 제한한다. #}
     {#- 공개 페이지는 core.js의 작은 읽기 클라이언트를 쓴다. 로그인이 필요한 관리자 화면만 supabase-js를 받는다.
@@ -62,6 +68,8 @@
     {#- 글꼴은 Pretendard 하나로 통일한다(숫자·라틴용 글꼴을 따로 쓰면 한글과 섞이는 자리에서 자간이
         어긋나 보인다). 표 자리수는 font-variant-numeric으로 맞춘다. #}
     <link rel="stylesheet" href="{{ asset_url('style.css') }}">
+    {#- 문서 전체 동작 연결(data-click 등)과 첫 화면 전 탭 판단. 첫 화면 전에 돌아야 해서 <head>에 둔다(2KB, 캐시). #}
+    <script src="{{ asset_url('actions.js') }}"></script>
 {% if admin_mode %}<link rel="stylesheet" href="{{ asset_url('admin.css') }}">{% endif %}
 </head>
 <body{% if admin_mode %} class="admin-mode" data-admin-page="{{ page_id }}"{% endif %}>

@@ -832,4 +832,8 @@ bootPage(() => {
         // 특정 멤버 공지를 보다가 뒤로가기로 "전체 공지" 주소로 돌아온 경우 화면도 전체로 되돌린다
         else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
     }));
-}, { prefetch: () => fetchLiveBroadcasts().catch(() => {}) });   // 현황 카드의 방송 중 표시
+}, {
+    prefetch: () => fetchLiveBroadcasts().catch(() => {}),   // 현황 카드의 방송 중 표시
+    view: params => activateTabView(MEMBER_TABS,
+        (params.get('view') || runtimeDefaultSubtab('members', 'status')) === 'news' ? 'news' : 'status'),
+});
