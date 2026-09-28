@@ -255,8 +255,9 @@ function renderMemberActivitySummary(m) {
     const valueEls = ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-sponsor-record'].map(id => document.getElementById(id));
     const setValues = values => valueEls.forEach((el, i) => { el.innerText = values[i]; });
 
+    // 받는 중에는 안내 줄을 띄우지 않는다(네 칸은 '-'). 줄이 떴다가 사라지면 처음 열 때 창 높이가 줄어들며 튄다.
     if (!SynergyState.data) {
-        statusEl.innerText = SynergyState.failed ? '불러오지 못했습니다' : '데이터 불러오는 중';
+        statusEl.innerText = SynergyState.failed ? '불러오지 못했습니다' : '';
         setValues(['-', '-', '-', '-']);
         return;
     }
