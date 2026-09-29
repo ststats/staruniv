@@ -3,7 +3,7 @@
  *
  * 1) 동작 연결: HTML에 onclick="..." 같은 코드를 직접 쓰지 않고 data-click="함수이름" data-args='[인자...]'로
  *    적으면 여기서 그 전역 함수를 부른다. 인라인 코드가 없어야 CSP로 인라인 스크립트를 막을 수 있다.
- *    이벤트: data-click · data-input · data-change · data-enter(Enter 키) · data-scroll · data-error(이미지를 못 불러옴)
+ *    이벤트: data-click · data-input · data-change · data-enter(Enter 키) · data-scroll · data-error(이미지를 못 불러옴) · data-load(이미지를 불러옴)
  *    인자의 ACT.el은 그 요소, ACT.value는 그 요소의 값으로 바뀐다. JS에서는 act('함수', 인자...)로 속성을 만든다.
  *    클릭 · 입력은 인라인 핸들러처럼 바깥 요소로 올라가며 부르고, 함수가 stopPropagation()을 부르면 거기서 멈춘다.
  * 2) 노치 모서리 포커스 테두리(아래).
@@ -44,8 +44,8 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     el.click();
 });
-// scroll · error는 버블링되지 않아 캡처 단계에서 받는다
-['scroll', 'error'].forEach(type => document.addEventListener(type, e => actRun(e, type, false), true));
+// scroll · error · load는 버블링되지 않아 캡처 단계에서 받는다
+['scroll', 'error', 'load'].forEach(type => document.addEventListener(type, e => actRun(e, type, false), true));
 
 // 이미지를 못 불러왔을 때(data-error): 지우기 · 숨기기 · 다른 주소로 바꾸기 · 글자(cls가 있으면 그 클래스의 <span>)로 바꾸기
 function imgRemove(img) { img.remove(); }
