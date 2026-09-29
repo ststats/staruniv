@@ -467,7 +467,11 @@ html[data-theme="dark"] .cal-longterm-bar {
     color: var(--color-primary);
     font-weight: 700;
 }
-#page-schedule .cal-card-person { font-weight: 700; }
+#page-schedule .cal-card-person {
+    flex: none;            /* 시간 없는 일정에서 설명이 길면 이름이 한 글자씩 줄바꿈되던 것 방지 */
+    white-space: nowrap;
+    font-weight: 700;
+}
 #page-schedule .cal-card-desc { font-weight: 500; }
 #page-schedule .cal-today-card + .cal-today-card,
 #page-schedule .cal-selected-card + .cal-selected-card {
