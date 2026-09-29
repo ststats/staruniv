@@ -177,12 +177,13 @@ function tierCardHtml(member, live) {
 // ---------------------------------------------------------------------------
 // 방송 미리보기 (마우스를 올린 방송 중 카드)
 // ---------------------------------------------------------------------------
-// 카드 속 썸네일은 작아서, 마우스를 올리면 큰 방송 화면·제목·시청자·방송 시간을 옆에 띄운다.
+// 카드 속 썸네일은 작아서, 마우스를 올리면 큰 방송 화면·제목·시청자·방송 시간을 마우스 옆에 띄우고 따라다닌다.
 // 마우스가 있는 화면에서만 쓴다(터치는 누르면 바로 방송으로 가므로 미리보기를 띄울 틈이 없다).
 // 스치듯 지나갈 때마다 뜨지 않게 잠깐 머물러야 뜬다.
 const TIER_PEEK_DELAY_MS = 250;
 const tierPeekHover = window.matchMedia('(hover: hover) and (pointer: fine)');
-const TierPeek = { el: null, card: null, timer: 0 };
+const TierPeek = { el: null, card: null, timer: 0, x: 0, y: 0, frame: 0 };
+const TIER_PEEK_OFFSET = 16;   // 커서와 미리보기 사이(커서가 미리보기를 가리지 않게)
 
 function tierPeekEl() {
     if (!TierPeek.el) {
@@ -212,15 +213,16 @@ function tierPeekHtml(member, live) {
         </div>`;
 }
 
-// 카드 오른쪽에(자리가 없으면 왼쪽에) 붙이고, 화면 밖으로 나가지 않게 위아래를 맞춘다
-function tierPeekPlace(card) {
+// 커서 오른쪽 아래에 띄운다. 화면 오른쪽·아래 끝에 닿으면 커서의 왼쪽·위로 넘긴다.
+function tierPeekPlace() {
+    TierPeek.frame = 0;
     const el = TierPeek.el;
-    const r = card.getBoundingClientRect();
-    const w = el.offsetWidth, h = el.offsetHeight, gap = 10, pad = 8;
-    const left = r.right + gap + w <= window.innerWidth - pad ? r.right + gap : Math.max(pad, r.left - gap - w);
-    const top = Math.min(Math.max(pad, r.top), window.innerHeight - h - pad);
-    el.style.left = `${Math.round(left)}px`;
-    el.style.top = `${Math.round(top)}px`;
+    if (!el || !el.classList.contains('is-open')) return;
+    const w = el.offsetWidth, h = el.offsetHeight, off = TIER_PEEK_OFFSET, pad = 8;
+    let left = TierPeek.x + off, top = TierPeek.y + off;
+    if (left + w > window.innerWidth - pad) left = TierPeek.x - off - w;
+    if (top + h > window.innerHeight - pad) top = TierPeek.y - off - h;
+    el.style.transform = `translate(${Math.round(Math.max(pad, left))}px, ${Math.round(Math.max(pad, top))}px)`;
 }
 
 function tierPeekShow(card) {
@@ -233,7 +235,7 @@ function tierPeekShow(card) {
     el.className = `tier-peek live-broadcast-card${['T', 'Z', 'P'].includes(race) ? ` edge-${race}` : ''}${live.isStar ? '' : ' is-offcate'}`;
     el.innerHTML = tierPeekHtml(member, live);
     el.classList.add('is-open');
-    tierPeekPlace(card);
+    tierPeekPlace();
 }
 
 function tierPeekHide() {
@@ -246,6 +248,8 @@ function initTierPeek() {
     const root = document.getElementById('tier-root');
     if (!root || !tierPeekHover.matches) return;
     root.addEventListener('mouseover', e => {
+        TierPeek.x = e.clientX;
+        TierPeek.y = e.clientY;
         const card = e.target.closest('.tier-card.is-live');
         if (card === TierPeek.card) return;
         tierPeekHide();
@@ -253,6 +257,14 @@ function initTierPeek() {
         TierPeek.card = card;
         TierPeek.timer = setTimeout(() => { if (TierPeek.card === card) tierPeekShow(card); }, TIER_PEEK_DELAY_MS);
     });
+    // 마우스를 움직이면 따라간다(화면을 그릴 때마다 한 번만 자리를 옮긴다)
+    root.addEventListener('mousemove', e => {
+        TierPeek.x = e.clientX;
+        TierPeek.y = e.clientY;
+        if (TierPeek.el && TierPeek.el.classList.contains('is-open') && !TierPeek.frame) {
+            TierPeek.frame = requestAnimationFrame(tierPeekPlace);
+        }
+    }, { passive: true });
     root.addEventListener('mouseleave', tierPeekHide);
     // 스크롤하면 카드가 움직이므로 닫는다(다시 올리면 새 자리에 뜬다)
     window.addEventListener('scroll', tierPeekHide, { passive: true });
