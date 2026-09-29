@@ -183,7 +183,7 @@ function tierCardHtml(member, live) {
 const TIER_PEEK_DELAY_MS = 250;
 const tierPeekHover = window.matchMedia('(hover: hover) and (pointer: fine)');
 const TierPeek = { el: null, card: null, timer: 0, x: 0, y: 0, frame: 0 };
-const TIER_PEEK_OFFSET = 16;   // 커서와 미리보기 사이(커서가 미리보기를 가리지 않게)
+const TIER_PEEK_OFFSET = 16;   // 커서와 미리보기 사이 가로 간격(커서가 미리보기를 가리지 않게)
 
 function tierPeekEl() {
     if (!TierPeek.el) {
@@ -213,16 +213,17 @@ function tierPeekHtml(member, live) {
         </div>`;
 }
 
-// 커서 오른쪽 아래에 띄운다. 화면 오른쪽·아래 끝에 닿으면 커서의 왼쪽·위로 넘긴다.
+// 커서 오른쪽에 띄우고 세로는 커서가 미리보기 가운데쯤 오게 맞춘다(위아래로 뒤집히지 않게).
+// 화면 오른쪽 끝에 닿으면 커서의 왼쪽으로 넘기고, 위아래는 화면 안으로 밀어 넣는다.
 function tierPeekPlace() {
     TierPeek.frame = 0;
     const el = TierPeek.el;
     if (!el || !el.classList.contains('is-open')) return;
     const w = el.offsetWidth, h = el.offsetHeight, off = TIER_PEEK_OFFSET, pad = 8;
-    let left = TierPeek.x + off, top = TierPeek.y + off;
+    let left = TierPeek.x + off;
     if (left + w > window.innerWidth - pad) left = TierPeek.x - off - w;
-    if (top + h > window.innerHeight - pad) top = TierPeek.y - off - h;
-    el.style.transform = `translate(${Math.round(Math.max(pad, left))}px, ${Math.round(Math.max(pad, top))}px)`;
+    const top = Math.min(Math.max(pad, TierPeek.y - h / 2), window.innerHeight - h - pad);
+    el.style.transform = `translate(${Math.round(Math.max(pad, left))}px, ${Math.round(top)}px)`;
 }
 
 function tierPeekShow(card) {
