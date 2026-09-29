@@ -97,7 +97,7 @@ def pick(row: dict, fields: list[str]) -> dict:
 
 
 def tier_index(value) -> int:
-    text = str(value or "").strip().removesuffix("티어")
+    text = str("" if value is None else value).strip().removesuffix("티어")   # 숫자 0티어(0)도 살린다
     try:
         return TIER_ORDER.index(text)
     except ValueError:
