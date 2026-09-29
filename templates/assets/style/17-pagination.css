@@ -41,7 +41,5 @@
     .h2h-suggest-item .tag-badge { font-size:10px; padding:2px 4px; }
 
     .match-pagination { gap:4px; padding:8px; min-height:44px; }
-    /* 손가락으로 누르기엔 24px이 작았다. 폭은 360px 화면에 열 칸이 들어가게만 늘린다 */
-    .match-page { min-width:28px; height:32px; padding:0 4px; font-size:12px; }
 }
 
