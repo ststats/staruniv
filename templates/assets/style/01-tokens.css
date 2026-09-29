@@ -43,6 +43,7 @@
     --color-primary-tint-strong: #d9e6ff;
     --color-win: #1f6dfb;
     --color-lose: #f03e3e;
+    --color-holiday: #e03131;       /* 달력 일요일·휴일 숫자 - --color-lose보다 한 단계 진하게(흰 바탕 4.5:1) */
     --color-draw: #868e96;
     --color-badge-format: #487f85;   /* 흰 글씨 대비 4.5:1 */
     --color-badge-role-text: #fff;
@@ -180,7 +181,8 @@ html[data-theme="dark"] {
     --color-primary-tint: #0f1d36;
     --color-primary-tint-strong: #16294d;
     --color-win: #3b82ff;
-    --select-on-light: #3b82ff;
+    --select-on-light: #1f6dfb;     /* 흰 글씨 대비 4.5:1 */
+    --color-holiday: #f03e3e;
     --color-tier-badge: #2a2d35;
 
     /* 면(패널) 토큰: 네이비 면 안에서는 흰 계열로 바뀐다 */
