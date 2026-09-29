@@ -39,17 +39,6 @@
     height: 24px;
     background: var(--color-bg-subtle);
 }
-.mv-chip-check {
-    display: none;
-    font-size: 10px;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 12px;
-    height: 12px;
-    color: #fff;
-}
-.mv-chip.selected .mv-chip-check { display: flex; }
 .mv-chip-live {
     align-items: center;
     color: #fff;
@@ -76,10 +65,6 @@ html[data-theme="dark"] .mv-order-row {
 .mv-chip,
 .mv-quickadd {
     clip-path: var(--notch-sm);
-}
-.mv-chip-check,
-.mv-quickadd-btn {
-    clip-path: var(--notch-xs);
 }
 .mv-chip.selected .mv-chip-avatar { background: rgba(255, 255, 255, 0.25); }
 .mv-chip-name {
@@ -332,6 +317,7 @@ html:not([data-theme="dark"]) .mv-run-btn:not(:disabled) {
 }
 .mv-quickadd input::placeholder { color: var(--color-text-faint); }
 .mv-quickadd-btn {
+    clip-path: var(--notch-xs);
     width: 28px;
     height: 28px;
     padding: 0;

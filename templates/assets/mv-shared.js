@@ -37,7 +37,6 @@ function mvChipHtml(m, selected, isLive) {
             ${mvAvatarHtml(soopId)}
             <span class="mv-chip-name">${mvSharedEscapeHTML(m['이름'])}</span>
             ${isLive ? '<span class="mv-chip-live" role="img" aria-label="방송 중" title="방송 중"></span>' : ''}
-            <span class="mv-chip-check">✓</span>
         </div>`;
 }
 
