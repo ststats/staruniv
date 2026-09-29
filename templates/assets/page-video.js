@@ -122,7 +122,7 @@ function videoCardHtml(v, opts) {
 function videoShortHtml(v) {
     return `
         <button type="button" class="video-short"${act('videoPlay', v.id)} aria-label="${escapeHTML(v.title)} 재생">
-            <span class="video-short-thumb">${videoThumbInnerHtml(v)}</span>
+            <span class="video-short-thumb">${videoShortThumbInnerHtml(v)}</span>
             <span class="video-short-title">${escapeHTML(v.title)}</span>
             <span class="video-short-meta">${v.views ? `조회수 ${videoFormatViews(v.views)}` : escapeHTML(videoChannelName(videoChannel(v.channel)))}</span>
         </button>`;
@@ -134,6 +134,19 @@ function videoThumbInnerHtml(v) {
     return t
         ? `<img src="${escapeHTML(t)}" alt="" loading="lazy">`
         : '<span class="video-thumb-blank">SOOP</span>';
+}
+
+// 유튜브 쇼츠: 기본 썸네일(hqdefault)은 480×360 가로 그림 가운데에 세로 화면이 들어 있어서, 세로 칸에
+// 맞춰 자르면 가운데 200px 남짓을 늘려 쓰게 된다(흐릿함). 원래 비율 썸네일(oardefault, 세로)을 쓰고,
+// 없으면 유튜브가 보내는 작은 회색 대체 그림(120px 이하)이나 오류 → 기본 썸네일로 바꾼다.
+function videoShortThumbInnerHtml(v) {
+    if (videoIsSoop(v) || !/^[\w-]{6,}$/.test(String(v.id || ''))) return videoThumbInnerHtml(v);
+    const fallback = videoThumb(v);
+    return `<img src="https://i.ytimg.com/vi/${v.id}/oardefault.jpg" alt="" loading="lazy"`
+        + `${actOn('error', 'imgSrc', ACT.el, fallback)} data-load="videoShortThumbCheck">`;
+}
+function videoShortThumbCheck(img, fallback) {
+    if (img.naturalWidth && img.naturalWidth <= 120 && img.src !== fallback) img.src = fallback;
 }
 
 // ----- 쇼츠 선반 넘김(마우스용) -----
