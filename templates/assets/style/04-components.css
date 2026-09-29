@@ -466,6 +466,26 @@ html[data-theme="dark"] .stat-table tbody tr:hover > td {
     font-variant-numeric: tabular-nums;
 }
 .head-stat-live { color: var(--color-lose); }
+
+/* 방송 중 점(멀티뷰어 멤버 칩 · 선수 선택 사이드바). 시너지와 같은 모양: 4px 빨간 점이 1.4초마다 퍼지며 깜빡인다 */
+.mv-chip-live,
+.avatar-select-live {
+    flex: none;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #e53935;
+    animation: live-dot-pulse 1.4s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .mv-chip-live,
+    .avatar-select-live { animation: none; }
+}
+@keyframes live-dot-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.55); }
+    70% { box-shadow: 0 0 0 3px rgba(229, 57, 53, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+}
 .head-stat-time { font-weight: 600; }
 
 .g2 {

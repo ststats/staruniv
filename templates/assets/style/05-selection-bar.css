@@ -190,13 +190,6 @@
     font-weight: 800;
     font-size: var(--fs-body);
 }
-.avatar-select-live {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--color-lose);
-    flex: none;
-}
 .avatar-select-tier {
     font-size: 10px;
     font-weight: 700;
