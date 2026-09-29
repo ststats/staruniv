@@ -45,14 +45,17 @@
     justify-content: center;
     font-size: 22px;
 }
-.tier-card.is-offcate {
-    filter: grayscale(1);
+/* 스타 카테고리가 아닌 방송: 흑백 + 사진·로고만 흐리게. 글자는 투명도 대신 흐린 글자색이라
+   명암 대비 4.5:1은 지킨다. */
+.tier-card.is-offcate { filter: grayscale(1); }
+.tier-card.is-offcate :is(.tier-card-media, .tier-card-team-logo) {
     opacity: 0.6;
+    transition: opacity 0.15s;
 }
-.tier-card.is-offcate:hover {
-    filter: none;
-    opacity: 1;
-}
+.tier-card.is-offcate .tier-card-name { color: var(--color-text-muted); }
+.tier-card.is-offcate:hover { filter: none; }
+.tier-card.is-offcate:hover :is(.tier-card-media, .tier-card-team-logo) { opacity: 1; }
+.tier-card.is-offcate:hover .tier-card-name { color: var(--color-primary); }
 /* 방송 미리보기: 마우스를 올린 방송 중 카드 옆에 뜬다(page-tier.js tierPeekShow).
    안의 모양은 홈 '방송 중' 카드(.live-broadcast-card, 06-home.css)를 그대로 쓰고 여기서는 띄우는 것만 정한다. */
 .tier-peek {
