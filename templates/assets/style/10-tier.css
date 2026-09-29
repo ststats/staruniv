@@ -57,19 +57,20 @@
    안의 모양은 홈 '방송 중' 카드(.live-broadcast-card, 06-home.css)를 그대로 쓰고 여기서는 띄우는 것만 정한다. */
 .tier-peek {
     position: fixed;
+    top: 0;
+    left: 0;
     z-index: 1050;
     width: 260px;
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(4px);
-    transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0.14s;
+    transition: opacity 0.12s ease, visibility 0s linear 0.12s;   /* 자리(transform)는 마우스를 바로 따라간다 */
+    will-change: transform;
 }
 .tier-peek.is-open {
     opacity: 1;
     visibility: visible;
-    transform: none;
-    transition: opacity 0.14s ease, transform 0.14s ease;
+    transition: opacity 0.12s ease;
 }
 .tier-peek.is-offcate .live-thumb { filter: grayscale(1); }
 .tier-card-body {
