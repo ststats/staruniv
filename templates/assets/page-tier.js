@@ -194,25 +194,21 @@ function tierPeekEl() {
     return TierPeek.el;
 }
 
+// 홈 '방송 중' 카드(page-home.js liveCardHtml)와 같은 모양 · 같은 클래스로 그린다
 function tierPeekHtml(member, live) {
     const soopId = String(member.id).trim();
-    const team = String(member.team || '').trim();
-    const elapsed = formatLiveElapsed(live.start);
+    const elapsed = formatLiveElapsed(live.start) || '-';
     return `
-        <div class="tier-peek-media">
-            <img class="tier-peek-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt=""${actOn('error', 'imgHide', ACT.el)}>
-            <div class="tier-peek-stats">
-                <span>${escapeHTML(live.viewers.toLocaleString('ko-KR'))}명</span>
-                ${elapsed ? `<span>${escapeHTML(elapsed)}</span>` : ''}
+        <div class="live-thumb-wrap">
+            <img class="live-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt=""${actOn('error', 'imgHide', ACT.el)}>
+            <div class="live-thumb-overlay">
+                <span>${escapeHTML(live.viewers.toLocaleString('ko-KR'))}명</span><span>${escapeHTML(elapsed)}</span>
             </div>
         </div>
-        <div class="tier-peek-body">
-            <div class="tier-peek-title">${escapeHTML(live.title || '제목 없음')}</div>
-            <div class="tier-peek-who">
-                <span class="tier-peek-name">${escapeHTML(member.nickname || soopId)}</span>
-                ${member.race ? raceBadgeHtml(member.race) : ''}
-                ${team ? `<span class="tier-peek-team">${tierTeamLogoHtml(team)}${escapeHTML(team)}</span>` : ''}
-            </div>
+        <div class="live-card-body">
+            <span class="live-card-avatar-ring">${avatarHtml(soopId, 'live-card-avatar')}</span>
+            <span class="live-card-name">${escapeHTML(member.nickname || soopId)}</span>
+            <div class="live-card-title">${escapeHTML(live.title || '')}</div>
         </div>`;
 }
 
@@ -233,7 +229,8 @@ function tierPeekShow(card) {
     const member = TierState.byId[key];
     if (!live || !member) return;
     const el = tierPeekEl();
-    el.classList.toggle('is-offcate', !live.isStar);
+    const race = raceShortLabel(member.race || '');
+    el.className = `tier-peek live-broadcast-card${['T', 'Z', 'P'].includes(race) ? ` edge-${race}` : ''}${live.isStar ? '' : ' is-offcate'}`;
     el.innerHTML = tierPeekHtml(member, live);
     el.classList.add('is-open');
     tierPeekPlace(card);
