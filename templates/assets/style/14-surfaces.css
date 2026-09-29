@@ -35,7 +35,7 @@
 /* 인원 수는 켜져 있든 아니든 제 색을 지킨다 - 방송중은 빨강, 전체는 파랑이라 한눈에
    구분된다. 위 '선택된 버튼은 남색' 규칙보다 뒤에 와야 이긴다.
    켜진 쪽은 바탕이 흰색이라 네이비 면용 --panel-accent 대신 --color-primary를 쓴다. */
-.selection-layout > .tier-bar .tier-scope-btn.tier-scope-live .tier-scope-num { color: var(--color-lose); }
+.selection-layout > .tier-bar .tier-scope-btn.tier-scope-live .tier-scope-num { color: #e03131; }   /* --color-lose보다 한 단계 진하게 - 흰 버튼 위 대비 4.5:1 */
 .selection-layout > .tier-bar .tier-scope-btn.tier-scope-all.on .tier-scope-num { color: var(--color-primary); }
 
 .page-header,
