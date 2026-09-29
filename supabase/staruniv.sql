@@ -17,6 +17,7 @@
 --
 -- 구성(순서대로): 1 기본 스키마·관리자 권한·영상·도구 → 2 공개 읽기 권한 → 3 어드민 편집 보조
 --                 → 4 어드민 ELO 통계 → 5 사이트 빌드 버튼 → 6 티어표 갱신 → 7 대학 로고
+--                 → 8 다른 ELO 계정 → 9 멤버 ↔ 티어표 연동 → 10 성별 표기 통일
 
 
 -- ############################################################################
@@ -1363,3 +1364,53 @@ create trigger tier_members_sync_members after update of soop_id, birth_date, ge
 -- 처음 한 번 전체 맞추기(연결된 줄만)
 update public.members set tier_member_id = tier_member_id where tier_member_id is not null;
 
+
+-- ############################################################################
+-- 10. 성별 표기 통일('남자' / '여자')
+-- ############################################################################
+-- 공개 화면·방송통계(시너지)는 성별을 '남자'/'여자'로 비교한다. 어드민에서 '남'·'여성'·'F' 같은 다른 표기로
+-- 넣어도 저장할 때 이 둘로 맞춘다. 모르는 값은 지우지 않고 그대로 둔다(아래 확인 쿼리로 찾아 고친다).
+create or replace function public.normalize_gender(p text)
+returns text
+language sql
+immutable
+as $$
+  select case
+    when p is null or btrim(p) = '' then null
+    when btrim(p) in ('남', '남성', '남자') or upper(btrim(p)) in ('M', 'MALE') then '남자'
+    when btrim(p) in ('여', '여성', '여자') or upper(btrim(p)) in ('F', 'FEMALE') then '여자'
+    else btrim(p)
+  end
+$$;
+
+create or replace function public.normalize_gender_column()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.gender := public.normalize_gender(new.gender);
+  return new;
+end;
+$$;
+
+-- 이름 순서로 도는 before 트리거라 members는 members_fill_from_tier(티어표 값 채우기) 다음에 맞춘다
+drop trigger if exists tier_members_normalize_gender on public.tier_members;
+create trigger tier_members_normalize_gender before insert or update of gender on public.tier_members
+  for each row execute function public.normalize_gender_column();
+drop trigger if exists members_normalize_gender on public.members;
+create trigger members_normalize_gender before insert or update on public.members
+  for each row execute function public.normalize_gender_column();
+
+-- 처음 한 번 기존 값 맞추기
+update public.tier_members set gender = public.normalize_gender(gender)
+ where gender is distinct from public.normalize_gender(gender);
+update public.members set gender = public.normalize_gender(gender)
+ where gender is distinct from public.normalize_gender(gender);
+
+-- 확인: '남자'/'여자'/비어 있음 말고 남은 값(있으면 어드민에서 고친다)
+-- select 'tier_members' as tbl, gender, count(*) from public.tier_members
+--  where gender is not null and gender not in ('남자', '여자') group by gender
+-- union all
+-- select 'members', gender, count(*) from public.members
+--  where gender is not null and gender not in ('남자', '여자') group by gender;

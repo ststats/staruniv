@@ -20,6 +20,12 @@
   // 방송통계에 소급 반영하고, 반영이 끝나면 자기가 읽은 값과 같을 때만 지운다. 저장할 때마다 시각이
   // 새로 붙으므로, 반영 도중 다시 고쳐도 값이 달라 표시가 남아 다음 실행에서 새 내용으로 다시 반영된다.
   // (UTC 시각으로 적으면 한국 시간 새벽에 고친 것이 전날부터 소급된다.)
+  // 성별은 '남자'/'여자'만 고른다. 예전에 다른 표기로 들어간 값은 목록 끝에 그대로 보여 줘서 모르고 지우지 않게 한다.
+  function genderSelect(value){
+    const g=C().normalizeGender(value), list=['','남자','여자'];
+    if(g&&!list.includes(g))list.push(g);
+    return `<select class="admin-input" id="ati_gender">${list.map(v=>`<option value="${C().esc(v)}"${g===v?' selected':''}>${C().esc(v||'-')}</option>`).join('')}</select>`;
+  }
   function modifiedStamp(day){
     const kst=new Date(Date.now()+9*3600e3).toISOString();
     const d=/^\d{4}-\d{2}-\d{2}$/.test(String(day||''))?day:kst.slice(0,10);
@@ -67,7 +73,7 @@
       ${C().field('닉네임',C().input('ati_nick',r.nickname||'','text','required'))}
       ${C().field('SOOP ID',C().input('ati_soop',r.soop_id||''))}
       ${C().field('ELO ID(메인 종족 계정)',C().input('ati_elo',r.elo_id??'','number','min="1"'))}
-      ${C().field('성별',C().input('ati_gender',r.gender||''))}
+      ${C().field('성별',genderSelect(r.gender))}
       ${C().field('종족',C().input('ati_race',r.race||''))}
       ${C().field('생년월일',C().input('ati_birth',r.birth_date||'','date'))}
       ${C().field('티어',C().input('ati_tier',r.tier||''))}
