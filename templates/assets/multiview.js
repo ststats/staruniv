@@ -88,15 +88,31 @@ function mvApplyGridColumns() {
     mvRelayoutGridDims();
 }
 
-// 포커스 모드: 메인이 2×2칸을 차지하는 균일 그리드. 컨테이너의 가로세로
-// 비율에 맞춰 칸이 너무 눌리거나 늘어나지 않게 열/행 개수를 정하고,
-// 실제 배치(빈 칸 채우기)는 CSS Grid 자동배치에 맡긴다.
+// 포커스 모드: 메인이 span×span칸을 차지하는 균일 그리드. 방송 화면은 16:9라 칸이 정사각형에
+// 가까우면 위아래가 검은 띠로 버려진다. 그래서 열·행 수와 메인 크기(2~4칸)를 모두 따져, 칸 안에
+// 실제로 보이는 16:9 화면 넓이의 합이 가장 큰 배치를 고른다. 빈 칸은 나머지 방송 수의 절반(최소 1)까지만
+// 허용한다(빈 검은 칸이 많으면 화면이 휑해진다).
+// 실제 배치(빈 칸 채우기)는 CSS Grid 자동배치에 맡긴다 - 메인이 왼쪽 위, 나머지가 오른쪽 · 아래를 채운다.
+const MV_VIDEO_AR = 16 / 9;
 function mvComputeFocusGridDims(totalW, totalH, restCount) {
-    const units = 4 + restCount; // 메인이 4칸(2x2) + 나머지는 한 칸씩
-    const aspect = totalW / (totalH || 1);
-    const cols = Math.max(2, Math.round(Math.sqrt(units * aspect)));
-    const rows = Math.max(2, Math.ceil(units / cols));
-    return { cols, rows };
+    const W = totalW || 1, H = totalH || 1;
+    const shown = (w, h) => { const vw = Math.min(w, h * MV_VIDEO_AR); return vw * vw / MV_VIDEO_AR; };
+    let best = null;
+    for (let span = 2; span <= 4; span++) {
+        for (let cols = span; cols <= 8; cols++) {
+            for (let rows = span; rows <= 8; rows++) {
+                const empty = cols * rows - (span * span + restCount);
+                if (empty < 0 || empty > Math.max(1, Math.floor(restCount / 2))) continue;
+                const cw = W / cols, ch = H / rows;
+                const area = Math.round((shown(span * cw, span * ch) + restCount * shown(cw, ch)) / (W * H) * 1000);
+                // 비교 순서: 보이는 넓이 ↑ → 빈 칸 ↓ → 전체 칸 ↓ → 칸 비율이 16:9에 가까운 쪽 → 화면 방향으로 긴 쪽
+                const key = [area, -empty, -cols * rows, -Math.round(Math.abs(Math.log(cw / ch / MV_VIDEO_AR)) * 100), W >= H ? cols : rows];
+                const diff = best ? key.findIndex((v, i) => v !== best.key[i]) : 0;
+                if (!best || (diff !== -1 && key[diff] > best.key[diff])) best = { key, cols, rows, span };
+            }
+        }
+    }
+    return best || { cols: 2, rows: 2 + Math.ceil(restCount / 2), span: 2 };
 }
 
 function mvApplyModeButtons() {
@@ -212,10 +228,10 @@ function mvRelayoutGridDims() {
     if (!grid) return;
     const count = grid.children.length;
     if (count === 0) return;
-    let cols, rows;
+    let cols, rows, span = 2;
     if (mvFocus && count > 1) {
         const area = document.getElementById('mv-grid-area');
-        ({ cols, rows } = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, count - 1));
+        ({ cols, rows, span } = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, count - 1));
     } else {
         // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에 휑하게 남지 않게 하고,
         // 행 개수를 못박아 세로도 뷰포트 안에 딱 맞게 나눈다. (포커스 모드에 혼자면 1×1 = 화면 전체)
@@ -225,6 +241,7 @@ function mvRelayoutGridDims() {
     const colsValue = `repeat(${cols}, 1fr)`, rowsValue = `repeat(${rows}, 1fr)`;
     if (grid.style.gridTemplateColumns !== colsValue) grid.style.gridTemplateColumns = colsValue;
     if (grid.style.gridTemplateRows !== rowsValue) grid.style.gridTemplateRows = rowsValue;
+    if (grid.style.getPropertyValue('--mv-main-span') !== String(span)) grid.style.setProperty('--mv-main-span', String(span));
 }
 
 function mvAddCustom() {
