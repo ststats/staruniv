@@ -178,7 +178,8 @@ html[data-theme="dark"] .mv-order-row {
     color: var(--panel-muted);
 }
 .mv-stepper-value {
-    width: 22px;
+    min-width: 22px;
+    padding: 0 4px;
     text-align: center;
     font-weight: 800;
     font-size: var(--fs-body);

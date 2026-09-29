@@ -12,6 +12,40 @@
  */
 
 const MV_MIN_COLS = 1, MV_MAX_COLS = 4;   // 그리드 모드 열 개수 범위
+const MV_AUTO_COLS = 0;                    // 열 개수 '자동'(기본) - 화면·인원 수에 맞춰 창이 고른다
+const MV_VIDEO_AR = 16 / 9;                // 방송 화면 비율
+
+function mvParseCols(value) {
+    const n = parseInt(value, 10);
+    return n >= MV_MIN_COLS && n <= MV_MAX_COLS ? n : MV_AUTO_COLS;
+}
+function mvColsLabel(cols) {
+    return cols ? String(cols) : '자동';
+}
+// 스테퍼 한 칸 이동. 자동이면 지금 자동으로 잡힌 열 수(base)에서 출발하고, 1에서 더 줄이면 자동으로 돌아간다.
+function mvStepCols(cols, delta, base) {
+    if (!cols) return Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, base + delta));
+    const next = cols + delta;
+    return next < MV_MIN_COLS ? MV_AUTO_COLS : Math.min(MV_MAX_COLS, next);
+}
+
+// w×h 칸에 16:9 화면을 꽉 맞췄을 때 실제로 보이는 넓이(남는 곳은 검은 띠).
+function mvShownArea(w, h) {
+    const vw = Math.min(w, h * MV_VIDEO_AR);
+    return vw * vw / MV_VIDEO_AR;
+}
+// 그리드 모드 자동 열 수: 보이는 화면 넓이 합이 가장 큰 열 수. 마지막 줄이 덜 차면 그 줄 칸들이
+// 가로로 늘어나 빈 칸 없이 채우므로(multiview.js mvRelayoutGridDims) 그것까지 넣어 계산한다.
+function mvAutoGridCols(count, width, height) {
+    let best = null;
+    for (let cols = 1; cols <= Math.min(MV_MAX_COLS, count); cols++) {
+        const rows = Math.ceil(count / cols), last = count - (rows - 1) * cols, ch = height / rows;
+        const area = (count - last) * mvShownArea(width / cols, ch) + last * mvShownArea(width / last, ch);
+        // 넓이가 같으면 가로 화면에선 열이 많은 쪽(나란히), 세로 화면에선 적은 쪽(위아래)
+        if (!best || area > best.area * 1.001 || (area > best.area * 0.999 && width >= height)) best = { cols, area };
+    }
+    return best ? best.cols : 1;
+}
 // 숲 아이디 형식(영문 소문자/숫자/-/_) - 직접 입력값은 소문자로 바꾼 뒤 이 형식인지 본다.
 const MV_SHARED_SOOP_ID_PATTERN = /^[a-z0-9_-]+$/;
 
