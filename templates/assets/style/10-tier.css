@@ -467,6 +467,8 @@
 /* 분석 탭 - 전적 페이지의 개인 프로필과 같은 틀을 쓰고, 분석 전용 부품만 여기서 더한다 */
 
 /* 최근 폼: W/L 배지 한 줄 (사이트 공용 .match-badge를 그대로 쓴다) */
+/* 선수 분석에서 따로 다시 그리는 구역(맵·라이벌·최근 전적)을 묶기만 한다 - 배치에는 영향이 없다 */
+.analysis-sec { display: contents; }
 .analysis-formline {
     display: flex;
     align-items: center;

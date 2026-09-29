@@ -79,10 +79,11 @@ const EntryState = {
     period: '90',            // 맞대결 기간(ENTRY_PERIODS). 기본은 최근 90일 - 옛날 천적
                              // 관계보다 지금 폼이 엔트리를 짜는 데 쓸모 있다.
     rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
-    rowCoverage: {},         // 선수id -> '30'/'90'/'365'/'all' 중 현재 캐시 범위
+    rowsLoaded: {},          // 선수id -> true: 통산 전적을 받아 둠(예측은 늘 통산을 쓴다)
     rowLoads: {},            // 선수id -> 진행 중 요청(같은 선수를 연속 클릭해도 중복 조회 금지)
     refreshToken: 0,
     h2hCache: {},            // "기간|a|b" -> {w, l}
+    probCache: new Map(),    // "a|b|맵" -> 예상승률 결과. 입력(선수 전적·레이팅·명단)이 바뀌면 비운다
     shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
     target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
     autoTiers: new Set(),       // 자동매칭에 포함할 티어
@@ -134,7 +135,17 @@ async function entryLoadRatingMetaInBackground() {
     if (!EntryState.index) return;
 
     try {
-        const rankingsData = await Api.eloRankings(entryPaging('레이팅'));
+        // 세 요청은 서로의 응답이 필요 없어 한꺼번에 보낸다(적용 순서는 그대로).
+        // 순위 밖 선수(최근 10판 미만 · 티어 없음)까지 포함한 전 선수 레이팅은 v4 이전 DB엔 표가 없으니
+        // 실패하면 그냥 넘어가고, 순위 선수의 rawRating과 티어 기준선을 쓴다.
+        const ratingsRequest = Api.eloPlayerRatings(entryPaging('전 선수 레이팅')).catch(e => {
+            console.info('전 선수 레이팅이 아직 없어 순위 선수 레이팅만 씁니다:', e.message || e);
+            return null;
+        });
+        const [rankingsData, meta] = await Promise.all([
+            Api.eloRankings(entryPaging('레이팅')),
+            Api.eloRankingMeta({ wrap: q => entryWithTimeout(q, '랭킹 기준선') }),
+        ]);
 
         rankingsData.forEach(row => {
             const player = EntryState.index?.players?.[String(row.elo_id)];
@@ -146,7 +157,6 @@ async function entryLoadRatingMetaInBackground() {
             if (!EntryState.index.syncedAt && row.as_of) EntryState.index.syncedAt = String(row.as_of);
         });
 
-        const meta = await Api.eloRankingMeta({ wrap: q => entryWithTimeout(q, '랭킹 기준선') });
         EntryState.index.ranking = {
             // 반감기 기준일(비면 오늘 날짜로 계산하게 된다).
             asOf: meta.as_of ? String(meta.as_of) : '',
@@ -156,20 +166,15 @@ async function entryLoadRatingMetaInBackground() {
         };
         if (!EntryState.index.syncedAt && meta.as_of) EntryState.index.syncedAt = String(meta.as_of);
 
-        // 순위 밖 선수(최근 10판 미만 · 티어 없음)까지 포함한 전 선수 레이팅. v4 이전 DB엔
-        // 표가 없으니 실패하면 그냥 넘어가고, 순위 선수의 rawRating과 티어 기준선을 쓴다.
-        try {
-            const ratingRows = await Api.eloPlayerRatings(entryPaging('전 선수 레이팅'));
-            ratingRows.forEach(row => {
-                const player = EntryState.index?.players?.[String(row.elo_id)];
-                if (!player || row.rating == null) return;
-                player.theta = Number(row.rating);
-                player.thetaSE = row.rating_se == null ? null : Number(row.rating_se);
-            });
-        } catch (e) {
-            console.info('전 선수 레이팅이 아직 없어 순위 선수 레이팅만 씁니다:', e.message || e);
-        }
+        const ratingRows = await ratingsRequest;
+        (ratingRows || []).forEach(row => {
+            const player = EntryState.index?.players?.[String(row.elo_id)];
+            if (!player || row.rating == null) return;
+            player.theta = Number(row.rating);
+            player.thetaSE = row.rating_se == null ? null : Number(row.rating_se);
+        });
 
+        entryProbsChanged();
         renderEntry();
     } catch (e) {
         // 보조 데이터 실패는 엔트리 탭 전체 실패로 취급하지 않는다.
@@ -188,10 +193,12 @@ async function entryEnsureLoaded() {
         EntryState.loading = entryLoadIndexFromSupabase()
             .then(data => {
                 EntryState.index = data;
+                entryProbsChanged();
                 return data;
             })
             .catch(e => {
                 EntryState.index = null;
+                entryProbsChanged();
                 throw e;
             })
             .finally(() => { EntryState.loading = null; });
@@ -412,7 +419,20 @@ function entryRaceLabel(code) {
     return ({ T:'테란', Z:'저그', P:'프로토스' })[key] || key || '미상';
 }
 
+// 예상승률은 선수마다 경기 기록을 여러 번 훑어서 비싸다. 설명 펼치기·맵 선택창 열기처럼 입력이
+// 그대로인 다시 그리기는 저장해 둔 결과를 쓴다. 입력(선수 전적·레이팅·명단)이 바뀌는 곳에서
+// entryProbsChanged()로 비운다.
+function entryProbsChanged() {
+    EntryState.probCache.clear();
+}
+
 function entryWinProb(aPid, bPid, mapName) {
+    const key = `${aPid}|${bPid}|${String(mapName || '')}`;
+    if (!EntryState.probCache.has(key)) EntryState.probCache.set(key, entryComputeWinProb(aPid, bPid, mapName));
+    return EntryState.probCache.get(key);
+}
+
+function entryComputeWinProb(aPid, bPid, mapName) {
     const players = entryPlayers();
     const a = players[aPid], b = players[bPid];
     const ra = entryRating(a);
@@ -463,34 +483,11 @@ function entryWinProb(aPid, bPid, mapName) {
     };
 }
 
-// 선수 경기 기록은 Supabase public view에서 직접 읽는다.
-// rows 형식은 기존 엔트리 로직을 그대로 쓰도록 [날짜, 상대id, 이김, 맵, 형식]을 유지한다.
-function entryCoverageDays(period) {
-    if (period === 'all') return Infinity;
-    return Math.max(0, Number(period) || 0);
-}
-
-function entryCoverageEnough(current, needed) {
-    if (!current) return false;
-    if (current === 'all') return true;
-    if (needed === 'all') return false;
-    return entryCoverageDays(current) >= entryCoverageDays(needed);
-}
-
-function entryNeededRowsPeriod() {
-    // 예상승률은 UI 기간필터와 독립이다. 통산 데이터에 반감기 가중을 적용하므로
-    // 예측용 캐시는 항상 전체 범위를 확보한다.
-    return ENTRY_PREDICTION_PERIOD;
-}
-
-// 선수 경기 기록은 필요한 기간만 Supabase에서 직접 읽는다.
-// 기본 화면(90일)에서도 예상승률 계산용 최근 1년까지만 받고,
-// 사용자가 "전체"를 눌렀을 때에만 통산을 확장 조회한다.
-async function entryLoadPlayerRows(pid, period) {
-    const requestedPeriod = period || entryNeededRowsPeriod();
-    const since = requestedPeriod === 'all' ? '' : entrySinceKey(requestedPeriod);
-
-    const rows = await Api.eloPlayerMatches(pid, { since, ...entryPaging('선수 전적') });
+// 선수 경기 기록(통산)을 Supabase에서 읽는다. 예상승률은 기간 탭과 무관하게 통산에 반감기를
+// 적용하고, 기간 탭은 받아 둔 통산 행을 화면에서 걸러 쓰므로 선수마다 한 번만 받으면 된다.
+// rows 형식은 [날짜, 상대id, 이김, 맵, 형식].
+async function entryLoadPlayerRows(pid) {
+    const rows = await Api.eloPlayerMatches(pid, { since: '', ...entryPaging('선수 전적') });
 
     const out = [];
     const maps = (EntryState.index && EntryState.index.maps) || {};
@@ -518,40 +515,46 @@ async function entryLoadPlayerRows(pid, period) {
         ].filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 30);
     }
 
-    return { rows: out, coverage: requestedPeriod };
+    return out;
 }
 
 // 고른 선수들의 경기 행을 받아 둔다. 맞대결은 기간이 바뀔 때마다 여기서 다시 센다.
-async function entryLoadH2h(pids, period) {
-    const needed = period || entryNeededRowsPeriod();
+// 고른 선수들의 통산 전적을 받아 둔다(이미 받았거나 받는 중이면 다시 요청하지 않는다).
+// 실패한 선수는 다음 호출에서 다시 시도한다.
+// 반환: 이번에 새로 받은(또는 받기를 기다린) 선수가 있었는지 - 없으면 다시 그릴 것이 없다.
+async function entryLoadH2h(pids) {
     const unique = [...new Set(pids)].filter(Boolean);
+    let changed = false;
 
     await Promise.all(unique.map(async pid => {
-        if (entryCoverageEnough(EntryState.rowCoverage[pid], needed)) return;
+        if (EntryState.rowsLoaded[pid]) return;
+        changed = true;
 
         const loading = EntryState.rowLoads[pid];
-        if (loading && entryCoverageEnough(loading.period, needed)) {
-            await loading.promise;
+        if (loading) {
+            await loading;
             return;
         }
 
-        const promise = entryLoadPlayerRows(pid, needed)
-            .then(result => {
-                EntryState.rows[pid] = result.rows;
-                EntryState.rowCoverage[pid] = result.coverage;
+        const promise = entryLoadPlayerRows(pid)
+            .then(rows => {
+                EntryState.rows[pid] = rows;
+                EntryState.rowsLoaded[pid] = true;
+                entryProbsChanged();
                 renderEntryMapDatalist();
             })
             .catch(e => {
                 console.warn(`엔트리 선수 ${pid} 전적 조회 실패:`, e);
-                if (!EntryState.rows[pid]) EntryState.rows[pid] = [];
+                if (!EntryState.rows[pid]) { EntryState.rows[pid] = []; entryProbsChanged(); }
             })
             .finally(() => {
-                if (EntryState.rowLoads[pid]?.promise === promise) delete EntryState.rowLoads[pid];
+                if (EntryState.rowLoads[pid] === promise) delete EntryState.rowLoads[pid];
             });
 
-        EntryState.rowLoads[pid] = { period: needed, promise };
+        EntryState.rowLoads[pid] = promise;
         await promise;
     }));
+    return changed;
 }
 
 // '최근 90일 전적'처럼 전적 위에 작게 적을 이름
@@ -595,9 +598,11 @@ function entryPeriodCutoff(period) {
     return entrySinceKey(per);
 }
 
+// 부르는 곳은 읽기만 한다: 통산이면 복사하지 않고 그대로 돌려준다
 function entryRowsInPeriod(rows, period) {
     const since = entryPeriodCutoff(period);
-    return (rows || []).filter(r => !since || String(r[0]) >= since);
+    if (!since) return rows || [];
+    return (rows || []).filter(r => String(r[0]) >= since);
 }
 
 function entryRecordText(w, l) {
@@ -890,10 +895,10 @@ async function entryRefreshProbs() {
     if (!pids.length) return;
 
     const token = ++EntryState.refreshToken;
-    const needed = entryNeededRowsPeriod();
-    await entryLoadH2h(pids, needed);
+    // 부르는 곳이 모두 먼저 그린 뒤 부른다: 새로 받은 전적이 없으면 같은 화면을 다시 그리지 않는다
+    const changed = await entryLoadH2h(pids);
 
-    if (token !== EntryState.refreshToken) return;
+    if (!changed || token !== EntryState.refreshToken) return;
     renderEntryResult();
 }
 
@@ -1401,7 +1406,7 @@ async function entrySavePoster() {
     const rows = entryPosterRows();
     if (!rows.length) { alert('대진을 먼저 만들어 주세요'); return; }
     // 맞대결을 아직 안 받았으면 먼저 받는다(포스터의 가운데 칸이 그 값이다)
-    await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]), 'all');
+    await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
 
     const W = ENTRY_POSTER_W;
     // 공유해서 보는 그림이라 휴대폰에서 줄어들어도 읽혀야 한다 - 글자를 넉넉히 키운다
