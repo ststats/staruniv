@@ -44,7 +44,7 @@
     --color-win: #1f6dfb;
     --color-lose: #f03e3e;
     --color-draw: #868e96;
-    --color-badge-format: #5a9ea6;
+    --color-badge-format: #487f85;   /* 흰 글씨 대비 4.5:1 */
     --color-badge-role-text: #fff;
     --color-race-t: #1976d2;
     --color-race-z: #7b1fa2;
