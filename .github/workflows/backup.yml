@@ -143,5 +143,5 @@ jobs:
           for a in old[1:]:
               call(f"{api}/{a['id']}", method='DELETE')
               print('deleted', a['name'], a['created_at'])
-          print(f'kept {os.environ["KEEP"]}, deleted {len(old)}')
+          print(f'kept {os.environ["KEEP"]}' + (f' and {old[0]["name"]}' if old else '') + f', deleted {len(old[1:])}')
           PY
