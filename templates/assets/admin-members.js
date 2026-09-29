@@ -20,7 +20,7 @@
   function toPublic(r){
     return {
       '이름':r.nickname||r.name||'','닉네임':r.nickname||r.name||'','SOOP ID':r.soop_id||'','ELO ID':r.elo_id??'',
-      '직책':r.role||'','티어':r.tier||'','입단 티어':r.join_tier||'','종족':r.race||'','성별':normalizeGender(r.gender),
+      '직책':r.role||'','티어':r.tier||'','입단 티어':r.join_tier||'','종족':r.race||'','성별':C().normalizeGender(r.gender),
       '생년월일':r.birth_date||'','MBTI':r.mbti||'','YouTube':r.youtube_url||'','입단일':r.joined_date||'','퇴단일':r.left_date||'','프로필 사진':r.avatar_path||'','대표 사진':r.photo_path||''
     };
   }
@@ -50,13 +50,6 @@
     return url.href;
   }
 
-  function normalizeGender(value){
-    const raw=String(value||'').trim();
-    const upper=raw.toUpperCase();
-    if(['남','남성','남자'].includes(raw)||['M','MALE'].includes(upper))return '남자';
-    if(['여','여성','여자'].includes(raw)||['F','FEMALE'].includes(upper))return '여자';
-    return raw;
-  }
 
   // 대표 영상 자동 편집: 올린 영상을 브라우저에서 1280×720(16:9, 가운데 기준으로 잘라 맞춤) · 30fps ·
   // 소리 없음 · 최대 6초 MP4(H.264)로 다시 만든다. 저장소의 다른 대표 영상들과 같은 크기이고, 6초 400~500KB 안팎이라
@@ -140,7 +133,7 @@
           ${C().field('티어(지금)',C().input('am_tier',row.tier||''))}
           ${C().field('입단 티어',C().input('am_join_tier',row.join_tier||''))}
           ${C().field('종족',`<select class="admin-input" id="am_race">${opts(['','테란','저그','프로토스'],row.race)}</select>`)}
-          ${C().field('성별',`<select class="admin-input" id="am_gender">${opts(['','남자','여자'],normalizeGender(row.gender))}</select>`)}
+          ${C().field('성별',`<select class="admin-input" id="am_gender">${opts(['','남자','여자'],C().normalizeGender(row.gender))}</select>`)}
           ${C().field('생년월일',C().input('am_birth',row.birth_date||'','date'))}
           ${C().field('MBTI',C().input('am_mbti',row.mbti||'','text','maxlength="8"'))}
           ${C().field('입단일',C().input('am_joined',row.joined_date||'','date'))}

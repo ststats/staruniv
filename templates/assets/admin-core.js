@@ -21,6 +21,13 @@
   const value = id => $(id)?.value ?? '';
   const empty = v => String(v ?? '').trim() || null;
   const intOrNull = v => String(v ?? '').trim() === '' ? null : Number(v);
+  // 성별 표기는 '남자'/'여자'로 통일한다(DB도 저장할 때 같은 규칙으로 맞춘다 - staruniv.sql 10번)
+  function normalizeGender(v) {
+    const raw = String(v ?? '').trim(), upper = raw.toUpperCase();
+    if (['남', '남성', '남자'].includes(raw) || ['M', 'MALE'].includes(upper)) return '남자';
+    if (['여', '여성', '여자'].includes(raw) || ['F', 'FEMALE'].includes(upper)) return '여자';
+    return raw;
+  }
 
   function setVisible(id, visible) {
     const el = $(id);
@@ -443,7 +450,7 @@
   }
 
   window.AdminCore = {
-    state, $, q, qa, esc, value, empty, intOrNull, field, input, textarea, select, checkbox,
+    state, $, q, qa, esc, value, empty, intOrNull, normalizeGender, field, input, textarea, select, checkbox,
     toast, markDirty, setSaveState, openDrawer, closeDrawer, errorText, requireAdmin,
     loadMembers, loadSiteConfig, saveSiteConfig, nextSourceOrder, uploadMedia, mediaUrl,
     audit, setEditMode, addHeroTool, addPageTool, pageToolsHtml
