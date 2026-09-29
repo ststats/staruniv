@@ -270,7 +270,7 @@ function analysisCatPages() {
 function analysisSetCatPage(page) {
     const pages = analysisCatPages();
     AnalysisState.catPage = ((page % pages) + pages) % pages;   // 끝에서 누르면 처음으로 돈다
-    renderAnalysisBody();
+    renderAnalysisSection('cat');
 }
 
 // 분석 형식은 개인 · 대회 · 대학 · 미니 · 리그·CK · 스폰의 6개 묶음이다.
@@ -573,12 +573,12 @@ function analysisRatingHtml(pid) {
 // ---------------------------------------------------------------------------
 function analysisShowMoreMaps() {
     AnalysisState.mapShown += ANALYSIS_MAP_STEP;
-    renderAnalysisBody();
+    renderAnalysisSection('map');
 }
 
 function analysisShowMoreRivals() {
     AnalysisState.rivalShown += ANALYSIS_RIVAL_STEP;
-    renderAnalysisBody();
+    renderAnalysisSection('rival');
 }
 
 function analysisMapHtml(rows) {
@@ -650,12 +650,12 @@ function analysisFilterRows(rows) {
 function analysisSetFilter(label) {
     AnalysisState.matchFilter = label;
     AnalysisState.matchPage = 1;
-    renderAnalysisBody();
+    renderAnalysisSection('matches');
 }
 
 function analysisSetPage(page) {
     AnalysisState.matchPage = page;
-    renderAnalysisBody();
+    renderAnalysisSection('matches');
 }
 
 function analysisMatchesHtml(rows) {
@@ -698,16 +698,29 @@ function analysisProfileHtml(pid) {
         ${analysisHeadHtml(pid, p, e)}
         ${analysisFormHtml(rows)}
         <div class="row g-3 mb-block">
-            <div class="col-lg-6">${analysisCatHtml(e)}</div>
+            <div class="col-lg-6" id="analysis-sec-cat">${analysisCatHtml(e)}</div>
             <div class="col-lg-6">${analysisRaceHtml(e)}</div>
         </div>
         <div class="row g-3">
             <div class="col-lg-6">${analysisMonthlyHtml(AnalysisState.rows[pid] || [])}</div>
             <div class="col-lg-6">${analysisRatingHtml(pid)}</div>
         </div>
-        ${analysisMapHtml(rows)}
-        ${analysisRivalHtml(rows, p.t)}
-        ${analysisMatchesHtml(rows)}`;
+        <div id="analysis-sec-map" class="analysis-sec">${analysisMapHtml(rows)}</div>
+        <div id="analysis-sec-rival" class="analysis-sec">${analysisRivalHtml(rows, p.t)}</div>
+        <div id="analysis-sec-matches" class="analysis-sec">${analysisMatchesHtml(rows)}</div>`;
+}
+
+// 전적 페이지 넘기기 · 형식 고르기 · 더 보기 · 형식 카드 넘기기는 그 구역만 바뀐다: 그래프·요약까지
+// 전부 다시 만들지 않고 해당 구역만 새로 그린다(구역이 없으면 전체를 그린다).
+function renderAnalysisSection(name) {
+    const pid = AnalysisState.picked;
+    const el = pid && document.getElementById(`analysis-sec-${name}`);
+    if (!el) { renderAnalysisBody(); return; }
+    const rows = analysisRows(pid);
+    if (name === 'cat') el.innerHTML = analysisCatHtml(analysisSummary(rows));
+    else if (name === 'map') el.innerHTML = analysisMapHtml(rows);
+    else if (name === 'rival') el.innerHTML = analysisRivalHtml(rows, analysisInfo(pid)?.t);
+    else if (name === 'matches') el.innerHTML = analysisMatchesHtml(rows);
 }
 
 function analysisEmptyHtml() {

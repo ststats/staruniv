@@ -142,3 +142,27 @@ test('correlated set form makes series odds less extreme than independent sets',
   const even = run(context, `entrySeriesSim([0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5], 9)`);
   assert.ok(Math.abs(even.pA - 0.5) < 1e-9);
 });
+
+test('win probability is reused until its inputs change', () => {
+  const context = entryContext();
+  const out = run(context, `
+    let edges = 0;
+    const realEdge = entryResidualEdge;
+    entryResidualEdge = (...args) => { edges += 1; return realEdge(...args); };
+    const first = entryWinProb('1', '2', '투혼');
+    const afterFirst = edges;
+    const again = entryWinProb('1', '2', '투혼');
+    const reused = again === first && edges === afterFirst;
+    // 새 전적이 들어오면 다시 계산하고, 값은 캐시 없이 계산한 것과 같다
+    EntryState.rows['1'].push(['2026-09-25', 2, 1, '투혼', '대학대전']);
+    entryProbsChanged();
+    const updated = entryWinProb('1', '2', '투혼');
+    ({ reused, afterFirst, recomputed: edges > afterFirst,
+       changed: updated.p !== first.p, same: updated.p === entryComputeWinProb('1', '2', '투혼').p });
+  `);
+  assert.equal(out.reused, true);
+  assert.equal(out.afterFirst, 5);   // 맞대결 1 · 종족 2 · 맵 2
+  assert.equal(out.recomputed, true);
+  assert.equal(out.changed, true);
+  assert.equal(out.same, true);
+});
