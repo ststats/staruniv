@@ -34,6 +34,17 @@ function parseSoopDate(value) {
     return new Date(String(value || '').replace(' ', 'T'));
 }
 
+// 방송 시작 시각부터 지금까지("2시간 5분", "12분"). 홈 방송 카드와 티어표 미리보기가 같이 쓴다.
+function formatLiveElapsed(broadStart) {
+    if (!broadStart) return '';
+    const startDate = parseSoopDate(broadStart);
+    if (isNaN(startDate.getTime())) return '';
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 1000));
+    const eh = Math.floor(elapsedSec / 3600);
+    const em = Math.floor((elapsedSec % 3600) / 60);
+    return eh > 0 ? `${eh}시간 ${em}분` : `${em}분`;
+}
+
 function soopDateMs(value) {
     return parseSoopDate(value).getTime();
 }

@@ -20,16 +20,6 @@ function newsPageHref(memberName) {
     return `members/?${qs.toString()}`;
 }
 
-function formatLiveElapsed(broadStart) {
-    if (!broadStart) return '';
-    const startDate = parseSoopDate(broadStart);
-    if (isNaN(startDate.getTime())) return '';
-    const elapsedSec = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 1000));
-    const eh = Math.floor(elapsedSec / 3600);
-    const em = Math.floor((elapsedSec % 3600) / 60);
-    return eh > 0 ? `${eh}시간 ${em}분` : `${em}분`;
-}
-
 let homeCarouselIndex = 0;
 
 // 미리보기 칸을 통째로 누르면 그 페이지로 간다. 안의 줄들은 읽기 전용이라

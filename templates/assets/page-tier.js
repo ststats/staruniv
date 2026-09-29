@@ -153,12 +153,6 @@ function tierCardMediaHtml(member, live) {
     return avatarHtml(soopId, 'tier-card-avatar');
 }
 
-// 스타크래프트가 아닌 방송은 카드를 살짝 회색으로 눌러둔다(명단에서 빼지는 않는다 -
-// 방송을 켠 건 맞으니까).
-function tierCardTitle(member, live) {
-    return live ? live.title : (member.nickname || String(member.id).trim());
-}
-
 function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
@@ -166,8 +160,7 @@ function tierCardHtml(member, live) {
     const raceEdge = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
     return `
     <a class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
-       href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"
-       title="${escapeHTML(tierCardTitle(member, live))}">
+       href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
         <div class="tier-card-body">
             <div class="tier-card-nameline">
@@ -179,6 +172,93 @@ function tierCardHtml(member, live) {
             </div>
         </div>
     </a>`;
+}
+
+// ---------------------------------------------------------------------------
+// 방송 미리보기 (마우스를 올린 방송 중 카드)
+// ---------------------------------------------------------------------------
+// 카드 속 썸네일은 작아서, 마우스를 올리면 큰 방송 화면·제목·시청자·방송 시간을 옆에 띄운다.
+// 마우스가 있는 화면에서만 쓴다(터치는 누르면 바로 방송으로 가므로 미리보기를 띄울 틈이 없다).
+// 스치듯 지나갈 때마다 뜨지 않게 잠깐 머물러야 뜬다.
+const TIER_PEEK_DELAY_MS = 250;
+const tierPeekHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+const TierPeek = { el: null, card: null, timer: 0 };
+
+function tierPeekEl() {
+    if (!TierPeek.el) {
+        TierPeek.el = document.createElement('div');
+        TierPeek.el.className = 'tier-peek';
+        TierPeek.el.setAttribute('aria-hidden', 'true');   // 카드 링크와 같은 내용을 크게 보여 줄 뿐이다
+        document.body.appendChild(TierPeek.el);
+    }
+    return TierPeek.el;
+}
+
+function tierPeekHtml(member, live) {
+    const soopId = String(member.id).trim();
+    const team = String(member.team || '').trim();
+    const elapsed = formatLiveElapsed(live.start);
+    return `
+        <div class="tier-peek-media">
+            <img class="tier-peek-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt=""${actOn('error', 'imgHide', ACT.el)}>
+            <div class="tier-peek-stats">
+                <span>${escapeHTML(live.viewers.toLocaleString('ko-KR'))}명</span>
+                ${elapsed ? `<span>${escapeHTML(elapsed)}</span>` : ''}
+            </div>
+        </div>
+        <div class="tier-peek-body">
+            <div class="tier-peek-title">${escapeHTML(live.title || '제목 없음')}</div>
+            <div class="tier-peek-who">
+                <span class="tier-peek-name">${escapeHTML(member.nickname || soopId)}</span>
+                ${member.race ? raceBadgeHtml(member.race) : ''}
+                ${team ? `<span class="tier-peek-team">${tierTeamLogoHtml(team)}${escapeHTML(team)}</span>` : ''}
+            </div>
+        </div>`;
+}
+
+// 카드 오른쪽에(자리가 없으면 왼쪽에) 붙이고, 화면 밖으로 나가지 않게 위아래를 맞춘다
+function tierPeekPlace(card) {
+    const el = TierPeek.el;
+    const r = card.getBoundingClientRect();
+    const w = el.offsetWidth, h = el.offsetHeight, gap = 10, pad = 8;
+    const left = r.right + gap + w <= window.innerWidth - pad ? r.right + gap : Math.max(pad, r.left - gap - w);
+    const top = Math.min(Math.max(pad, r.top), window.innerHeight - h - pad);
+    el.style.left = `${Math.round(left)}px`;
+    el.style.top = `${Math.round(top)}px`;
+}
+
+function tierPeekShow(card) {
+    const key = card.dataset.tierId;
+    const live = TierState.live[key];
+    const member = TierState.byId[key];
+    if (!live || !member) return;
+    const el = tierPeekEl();
+    el.classList.toggle('is-offcate', !live.isStar);
+    el.innerHTML = tierPeekHtml(member, live);
+    el.classList.add('is-open');
+    tierPeekPlace(card);
+}
+
+function tierPeekHide() {
+    clearTimeout(TierPeek.timer);
+    TierPeek.card = null;
+    if (TierPeek.el) TierPeek.el.classList.remove('is-open');
+}
+
+function initTierPeek() {
+    const root = document.getElementById('tier-root');
+    if (!root || !tierPeekHover.matches) return;
+    root.addEventListener('mouseover', e => {
+        const card = e.target.closest('.tier-card.is-live');
+        if (card === TierPeek.card) return;
+        tierPeekHide();
+        if (!card) return;
+        TierPeek.card = card;
+        TierPeek.timer = setTimeout(() => { if (TierPeek.card === card) tierPeekShow(card); }, TIER_PEEK_DELAY_MS);
+    });
+    root.addEventListener('mouseleave', tierPeekHide);
+    // 스크롤하면 카드가 움직이므로 닫는다(다시 올리면 새 자리에 뜬다)
+    window.addEventListener('scroll', tierPeekHide, { passive: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -242,6 +322,7 @@ function renderTierGroups() {
         count: groups.get(tier).length,
     }));
 
+    tierPeekHide();   // 카드를 새로 그리면 보고 있던 미리보기의 카드가 없어진다
     document.getElementById('tier-root').innerHTML = TierState.sections.length
         ? TierState.sections.map(sec => `
             <div class="tier-row" id="${sec.id}">
@@ -589,6 +670,7 @@ async function refreshTierLive() {
             broadNo: info.broad_no,
             title: info.broad_title || '',
             viewers: Number(info.current_sum_viewer) || 0,
+            start: info.broad_start || '',
             isStar: isStarcraftCategory(categoryName, categoryNo),
         };
     });
@@ -628,12 +710,10 @@ function applyLiveToCards(setChanged) {
             media.innerHTML = tierCardMediaHtml(member, live);
             card.classList.toggle('is-live', !!live);
             card.classList.toggle('is-offcate', !!live && !live.isStar);
-            card.title = tierCardTitle(member, live);
             needsObserve = true;
         } else if (live) {
             // 방송 중에 카테고리를 바꾸는 일은 흔하다(스타 하다가 저챗 등) - 회색 여부도 따라간다.
             card.classList.toggle('is-offcate', !live.isStar);
-            card.title = tierCardTitle(TierState.byId[key] || live.member, live);
             // 계속 방송 중이면 썸네일만, 그것도 화면에 보이는 것만 새로 받는다.
             const img = media.querySelector('.tier-card-thumb');
             if (img && TierState.visibleThumbs.has(img)) img.src = tierThumbUrl(live.broadNo);
@@ -682,6 +762,7 @@ async function initTierList() {
 
     document.getElementById('tier-scope').addEventListener('click', onTierScopeClick);
     document.getElementById('tier-bar').addEventListener('click', onTierBarClick);
+    initTierPeek();
 
     // 스크롤 이벤트는 초당 수십 번 온다. 프레임당 한 번만 계산한다.
     let highlightScheduled = false;
