@@ -34,15 +34,15 @@ function mvShownArea(w, h) {
     const vw = Math.min(w, h * MV_VIDEO_AR);
     return vw * vw / MV_VIDEO_AR;
 }
-// 그리드 모드 자동 열 수: 보이는 화면 넓이 합이 가장 큰 열 수. 마지막 줄이 덜 차면 그 줄 칸들이
-// 가로로 늘어나 빈 칸 없이 채우므로(multiview.js mvRelayoutGridDims) 그것까지 넣어 계산한다.
+// 그리드 모드 자동 열 수: 보이는 화면 넓이 합이 가장 큰 열 수. 같으면 빈 칸이 적은 쪽,
+// 그다음 가로 화면에선 열이 많은 쪽(나란히), 세로 화면에선 적은 쪽(위아래).
 function mvAutoGridCols(count, width, height) {
     let best = null;
     for (let cols = 1; cols <= Math.min(MV_MAX_COLS, count); cols++) {
-        const rows = Math.ceil(count / cols), last = count - (rows - 1) * cols, ch = height / rows;
-        const area = (count - last) * mvShownArea(width / cols, ch) + last * mvShownArea(width / last, ch);
-        // 넓이가 같으면 가로 화면에선 열이 많은 쪽(나란히), 세로 화면에선 적은 쪽(위아래)
-        if (!best || area > best.area * 1.001 || (area > best.area * 0.999 && width >= height)) best = { cols, area };
+        const rows = Math.ceil(count / cols);
+        const key = [Math.round(count * mvShownArea(width / cols, height / rows) / 100), -(cols * rows - count), width >= height ? cols : -cols];
+        const diff = best ? key.findIndex((v, i) => v !== best.key[i]) : 0;
+        if (!best || (diff !== -1 && key[diff] > best.key[diff])) best = { key, cols };
     }
     return best ? best.cols : 1;
 }
