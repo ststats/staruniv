@@ -433,8 +433,8 @@ window.addEventListener('resize', () => {
     });
 });
 
-// 화면 우상단(설정 버튼 자리)에 오는 칸을 찾아 표시한다. 칸 배치는 CSS Grid 자동배치라
-// 코드상 순서로는 알 수 없어서, 실제 렌더링된 위치(가장 위 줄에서 가장 오른쪽)로 판단한다.
+// 화면 우상단(설정 버튼 자리)에 오는 칸을 찾아 표시한다. 칸 배치는 모드·인원 수·화면 크기에 따라
+// 바뀌어서(그리드 모드는 CSS Grid 자동배치) 실제 렌더링된 위치(가장 위 줄에서 가장 오른쪽)로 판단한다.
 function mvMarkCornerCell() {
     const cells = Array.from(document.querySelectorAll('#mv-grid-area .mv-cell'));
     let corner = null, best = null;
