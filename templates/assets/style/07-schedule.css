@@ -152,6 +152,8 @@ body.calendar-capture .cal-calendar-inner {
     --ev-accent: var(--ev-accent-l);
     --ev-bg: var(--ev-bg-l);
     --ev-hover: var(--ev-hover-l);
+    --ev-text: var(--ev-text-l);
+    --ev-sub: var(--ev-sub-l);
     background: var(--ev-bg);
     border-left: 3px solid var(--ev-accent);
     padding: 4px 6px 4px 6px;
@@ -173,6 +175,8 @@ html[data-theme="dark"] .cal-longterm-bar {
     --ev-accent: var(--ev-accent-d);
     --ev-bg: var(--ev-bg-d);
     --ev-hover: var(--ev-hover-d);
+    --ev-text: var(--ev-text-d);
+    --ev-sub: var(--ev-sub-d);
 }
 
 /* 칸이 좁아지는 구간(태블릿·노트북 2단 배치)에서는 일정 칩 글자를 한 단계 줄인다. */
@@ -192,6 +196,8 @@ html[data-theme="dark"] .cal-longterm-bar {
     --ev-accent: var(--ev-accent-l);
     --ev-bg: var(--ev-bg-l);
     --ev-hover: var(--ev-hover-l);
+    --ev-text: var(--ev-text-l);
+    --ev-sub: var(--ev-sub-l);
     position: relative;
     z-index: 1;
     margin-left: var(--bar-bleed-left, 0);
@@ -220,7 +226,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     font-family: "Pretendard", sans-serif;
     font-size: 10px;
     font-weight: 700;
-    color: var(--ev-accent);
+    color: var(--ev-text, var(--ev-accent));   /* 일정 색을 바탕 대비 4.5:1까지 진하게(calendar.js calEventColorVars) */
 }
 .cal-event-person {
     min-width: 0;
@@ -228,7 +234,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     text-overflow: ellipsis;
     font-size: 10px;
     font-weight: 600;
-    color: var(--color-text-sub);
+    color: var(--ev-sub, var(--color-text-sub));
 }
 
 .cal-no-schedule {
@@ -333,9 +339,9 @@ html[data-theme="dark"] .cal-longterm-bar {
     margin-bottom: 2px;
     font-size: 13px;
 }
-.cal-day-cell:nth-child(7n + 1) .cal-day-number { color: var(--color-lose); }
+.cal-day-cell:nth-child(7n + 1) .cal-day-number { color: var(--color-holiday); }
 .cal-day-cell:nth-child(7n) .cal-day-number { color: var(--color-primary); }
-.cal-day-cell.holiday .cal-day-number { color: var(--color-lose); }
+.cal-day-cell.holiday .cal-day-number { color: var(--color-holiday); }
 .cal-day-cell.other-month .cal-day-number {
     font-weight: 500;
     color: var(--calendar-outside-text);
@@ -709,7 +715,7 @@ html[data-theme="dark"] .cal-longterm-bar {
     margin-left: 4px;
     font-size: 11px;
     font-weight: 600;
-    color: var(--color-text-sub);
+    color: var(--ev-sub, var(--color-text-sub));
 }
 .hist-type {
     display: inline-flex;

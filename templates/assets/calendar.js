@@ -72,8 +72,8 @@
     // "unsupported color function" 오류로 저장이 막히므로, 섞은 결과를 #rrggbb로 넘긴다.
     // 섞는 기준색은 style.css 토큰과 같다: 라이트 글자 #0b1220 / 카드 #ffffff, 다크 글자 #eef2f8 / 카드 #10131a.
     const CAL_EV_THEME = {
-        l: { text: [11, 18, 32], card: [255, 255, 255], bg: 0.14, hover: 0.24 },
-        d: { text: [238, 242, 248], card: [16, 19, 26], bg: 0.22, hover: 0.32 },
+        l: { text: [11, 18, 32], card: [255, 255, 255], sub: [93, 104, 122], bg: 0.14, hover: 0.24 },
+        d: { text: [238, 242, 248], card: [16, 19, 26], sub: [143, 152, 166], bg: 0.22, hover: 0.32 },
     };
     const calColorCache = new Map();
     const calToRgb = (color) => {
@@ -99,12 +99,29 @@
         return rgb;
     };
     const calMix = (a, b, t) => '#' + a.map((v, i) => Math.round(v * t + b[i] * (1 - t)).toString(16).padStart(2, '0')).join('');
+    // 명암 대비(WCAG). 일정 색은 관리자가 아무 색이나 고를 수 있어서, 칩 글자(시간·이름)는
+    // 바탕(평소·호버 둘 다)과 4.5:1이 될 때까지 글자색(라이트는 검정, 다크는 흰색) 쪽으로 더 섞는다.
+    const calLum = (rgb) => {
+        const c = rgb.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const calContrast = (a, b) => { const x = calLum(a), y = calLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const calReadable = (rgb, towards, bgs) => {
+        for (let t = 1; t > 0; t -= 0.05) {
+            const hex = calMix(rgb, towards, t);
+            if (bgs.every(bg => calContrast(calToRgb(hex), bg) >= 4.5)) return hex;
+        }
+        return calMix(towards, towards, 1);
+    };
     const calEventColorVars = (color) => {
         const base = calToRgb(color);
         return Object.entries(CAL_EV_THEME).map(([k, th]) => {
             const accentHex = calMix(base, th.text, 0.78);
             const accent = calToRgb(accentHex);
-            return `--ev-accent-${k}:${accentHex};--ev-bg-${k}:${calMix(accent, th.card, th.bg)};--ev-hover-${k}:${calMix(accent, th.card, th.hover)};`;
+            const bgHex = calMix(accent, th.card, th.bg), hoverHex = calMix(accent, th.card, th.hover);
+            const bgs = [calToRgb(bgHex), calToRgb(hoverHex)];
+            return `--ev-accent-${k}:${accentHex};--ev-bg-${k}:${bgHex};--ev-hover-${k}:${hoverHex};`
+                + `--ev-text-${k}:${calReadable(accent, th.text, bgs)};--ev-sub-${k}:${calReadable(th.sub, th.text, bgs)};`;
         }).join('');
     };
 
