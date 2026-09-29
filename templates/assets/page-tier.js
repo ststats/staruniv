@@ -154,10 +154,9 @@ function tierCardMediaHtml(member, live) {
 }
 
 // 스타크래프트가 아닌 방송은 카드를 살짝 회색으로 눌러둔다(명단에서 빼지는 않는다 -
-// 방송을 켠 건 맞으니까). 제목 옆에 카테고리도 같이 달아 왜 회색인지 알 수 있게 한다.
+// 방송을 켠 건 맞으니까).
 function tierCardTitle(member, live) {
-    const base = live ? live.title : (member.nickname || String(member.id).trim());
-    return (live && live.category && !live.isStar) ? `[${live.category}] ${base}` : base;
+    return live ? live.title : (member.nickname || String(member.id).trim());
 }
 
 function tierCardHtml(member, live) {
@@ -590,7 +589,6 @@ async function refreshTierLive() {
             broadNo: info.broad_no,
             title: info.broad_title || '',
             viewers: Number(info.current_sum_viewer) || 0,
-            category: categoryName,
             isStar: isStarcraftCategory(categoryName, categoryNo),
         };
     });
