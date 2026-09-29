@@ -97,6 +97,7 @@ function mvApplyGridColumns() {
 // 위아래·좌우가 검은 띠로 버려지므로, 칸 안에 실제로 보이는 작은 화면이 가장 커지는 열·행 수를 고른다
 // (메인은 작은 화면의 정확히 2배). 방송이 늘면 들어갈 수 있는 배치가 줄어들 뿐이라 메인·작은 화면이
 // 커지는 일은 없다. 같은 크기면 빈 칸이 적은 쪽 → 칸 비율이 16:9에 가까운 쪽 → 화면 방향으로 긴 쪽.
+// 배치는 CSS Grid 자동배치 - 메인이 왼쪽 위, 나머지는 목록 순서대로 오른쪽 → 아래를 채우고 남는 칸은 빈 칸.
 function mvComputeFocusGridDims(totalW, totalH, restCount) {
     const W = totalW || 1, H = totalH || 1;
     let best = null;
@@ -112,36 +113,6 @@ function mvComputeFocusGridDims(totalW, totalH, restCount) {
         }
     }
     return best || { cols: 2, rows: 2 + Math.ceil(restCount / 2) };
-}
-
-// 포커스 배치를 칸별 좌표로 푼다: 메인은 왼쪽 위 2×2, 나머지는 오른쪽 → 아래 순서로 채운다.
-// 마지막 줄(메인 옆에만 있으면 마지막 세로줄)이 덜 차면 그 줄 칸들을 늘려 빈 칸을 없앤다 - 그리드를
-// 최소공배수로 잘게 나눠서(예: 아랫줄 3칸에 2개 → 열을 2배로, 2개가 3칸씩) 모든 칸에 span을 준다.
-// 반환: { cols, rows, cells: [[열, 열span, 행, 행span], ...] } (1부터, cells[0]이 메인)
-function mvFocusPlacement(cols, rows, restCount) {
-    const gcd = (a, b) => (b ? gcd(b, a % b) : a);
-    const slots = [];
-    if (rows === 2) {
-        // 나머지가 모두 메인 옆: 세로줄 단위로 채우고, 마지막 세로줄에 하나만 남으면 세로로 늘린다.
-        for (let k = 0; k < restCount; k++) {
-            const col = 3 + Math.floor(k / 2);
-            slots.push(k === restCount - 1 && k % 2 === 0 ? [col, 1, 1, 2] : [col, 1, 1 + (k % 2), 1]);
-        }
-        return { cols, rows, cells: [[1, 2, 1, 2], ...slots] };
-    }
-    const rowWidth = r => (r < 2 ? cols - 2 : cols);
-    const pos = [];
-    for (let r = 0; pos.length < restCount; r++) for (let c = cols - rowWidth(r); c < cols && pos.length < restCount; c++) pos.push([c, r]);
-    const lastRow = pos[pos.length - 1][1], lastW = rowWidth(lastRow);
-    const inLast = pos.filter(p => p[1] === lastRow).length;
-    const cm = inLast / gcd(lastW, inLast);
-    let li = 0;
-    pos.forEach(([c, r]) => {
-        if (r !== lastRow || inLast === lastW) { slots.push([c * cm, cm, r, 1]); return; }
-        const w = lastW * cm / inLast;
-        slots.push([(cols - lastW) * cm + li++ * w, w, r, 1]);
-    });
-    return { cols: cols * cm, rows: Math.max(2, lastRow + 1), cells: [[0, 2 * cm, 0, 2], ...slots].map(([c, cs, r, rs]) => [c + 1, cs, r + 1, rs]) };
 }
 
 function mvApplyModeButtons() {
@@ -258,32 +229,16 @@ function mvRelayoutGridDims() {
     const count = grid.children.length;
     if (count === 0) return;
     const area = document.getElementById('mv-grid-area');
-    const cells = Array.from(grid.children).sort((x, y) => Number(x.style.order) - Number(y.style.order));
-    let cols, rows, place;
+    let cols, rows;
     if (mvFocus && count > 1) {
-        const dims = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, count - 1);
-        ({ cols, rows, cells: place } = mvFocusPlacement(dims.cols, dims.rows, count - 1));
+        ({ cols, rows } = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, count - 1));
     } else {
+        // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에 휑하게 남지 않게 하고,
         // 행 개수를 못박아 세로도 뷰포트 안에 딱 맞게 나눈다. (포커스 모드에 혼자면 1×1 = 화면 전체)
-        // 마지막 줄이 덜 차면 그 줄 칸들을 가로로 늘려 빈 칸이 남지 않게 한다 - 열을 두 칸 수의
-        // 최소공배수로 잘게 나누고 칸마다 span을 준다(예: 5개·3열 → 6열, 윗줄 2칸씩·아랫줄 3칸씩).
         const want = mvFocus ? 1 : (mvCols || mvAutoGridCols(count, area.clientWidth, area.clientHeight));
-        const base = Math.max(1, Math.min(want, count));
-        rows = Math.ceil(count / base);
-        const last = count - (rows - 1) * base;
-        const gcd = (a, b) => (b ? gcd(b, a % b) : a);
-        cols = base * last / gcd(base, last);
-        const lastRowStart = (rows - 1) * base;
-        place = cells.map((_, i) => [0, i >= lastRowStart ? cols / last : cols / base, 0, 1]);
+        cols = Math.max(1, Math.min(want, count));
+        rows = Math.ceil(count / cols);
     }
-    // 칸 순서는 DOM 순서가 아니라 style.order라서 그 순서대로 자리를 준다(열/행 0이면 자동 배치).
-    cells.forEach((cell, i) => {
-        const [c, cs, r, rs] = place[i];
-        const colValue = c ? `${c} / span ${cs}` : (cs > 1 ? `span ${cs}` : '');
-        const rowValue = r ? `${r} / span ${rs}` : '';
-        if (cell.style.gridColumn !== colValue) cell.style.gridColumn = colValue;
-        if (cell.style.gridRow !== rowValue) cell.style.gridRow = rowValue;
-    });
     const colsValue = `repeat(${cols}, 1fr)`, rowsValue = `repeat(${rows}, 1fr)`;
     if (grid.style.gridTemplateColumns !== colsValue) grid.style.gridTemplateColumns = colsValue;
     if (grid.style.gridTemplateRows !== rowsValue) grid.style.gridTemplateRows = rowsValue;
@@ -433,8 +388,8 @@ window.addEventListener('resize', () => {
     });
 });
 
-// 화면 우상단(설정 버튼 자리)에 오는 칸을 찾아 표시한다. 칸 배치는 모드·인원 수·화면 크기에 따라
-// 바뀌어서(그리드 모드는 CSS Grid 자동배치) 실제 렌더링된 위치(가장 위 줄에서 가장 오른쪽)로 판단한다.
+// 화면 우상단(설정 버튼 자리)에 오는 칸을 찾아 표시한다. 칸 배치는 CSS Grid 자동배치라
+// 코드상 순서로는 알 수 없어서, 실제 렌더링된 위치(가장 위 줄에서 가장 오른쪽)로 판단한다.
 function mvMarkCornerCell() {
     const cells = Array.from(document.querySelectorAll('#mv-grid-area .mv-cell'));
     let corner = null, best = null;
