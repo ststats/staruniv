@@ -378,7 +378,7 @@
 .profile-modal-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-modal-link:hover { color: var(--color-primary); background: var(--color-row-hover); }
 /* 방송국·유튜브는 사이트 밖으로 나가는 링크라 안쪽 바로가기와 줄을 나눈다(있는 것만 보이고 폭을 나눠 가짐) */
-.profile-modal-station { background: var(--navy); color: var(--navy-on-text); }
+.profile-modal-station { background: var(--navy); background-image: var(--navy-pattern); color: var(--navy-on-text); }
 .profile-modal-station:hover { background: var(--color-primary); color: #fff; }
 .profile-modal-youtube { background: #ff0033; color: #fff; }
 .profile-modal-youtube:hover { background: #d9002b; color: #fff; }
