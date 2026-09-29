@@ -372,19 +372,12 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     clip-path: var(--notch-sm);
 }
 .mv-order-position {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 26px;
-    height: 20px;
-    padding: 0 5px;
-    background: var(--navy-deco-fill);
-    color: #fff;
-    clip-path: var(--notch-xs);
+    min-width: 18px;
+    color: var(--color-text-faint);
     font-family: "Pretendard", sans-serif;
     font-variant-numeric: tabular-nums;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 700;
 }
 .mv-order-identity {
     display: flex;
@@ -400,8 +393,8 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 }
 .mv-order-focus {
     grid-column: 4;
-    padding: 0 9px;
-    min-height: 28px;
+    padding: 0 7px;
+    min-height: 24px;
     border: 0;
     background: var(--color-card);
     color: var(--color-text-sub);
@@ -419,8 +412,8 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
 .mv-order-actions button {
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: 0;
     background: var(--color-card);
@@ -451,12 +444,10 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
     font-weight: 400;
 }
 .mv-order-detail.focus-target {
-    background: var(--color-primary-tint);
-    box-shadow: inset 3px 0 0 var(--select-on-light);
     border-left-color: var(--select-on-light);
 }
 .mv-order-detail.focus-target .mv-order-position {
-    background: var(--select-on-light);
+    color: var(--select-on-light);
 }
 
 /* 게임 화면은 그 자체로 한 덩어리라 노치나 테두리를 두르지 않는다 -
@@ -541,20 +532,6 @@ html:not([data-theme="dark"]) .mv-quickadd-btn { background: var(--navy); }
         padding: 8px 7px;
     }
     .mv-order-detail .mv-chip-avatar { width: 22px; height: 22px; }
-    .mv-order-focus {
-        min-height: 32px;
-        padding: 0 7px;
-        font-size: 11px;
-    }
-    .mv-order-actions {
-        grid-column: 5;
-        gap: 2px;
-    }
-    .mv-order-actions button {
-        width: 28px;
-        height: 32px;
-        font-size: 15px;
-    }
 }
 
 @media (max-width: 767.98px) {
