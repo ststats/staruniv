@@ -695,7 +695,6 @@ function analysisProfileHtml(pid) {
     const e = analysisSummary(rows);
     if (!p || !e) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다</div>';
     return `
-        ${analysisHeadHtml(pid, p, e)}
         ${analysisFormHtml(rows)}
         <div class="row g-3 mb-block">
             <div class="col-lg-6" id="analysis-sec-cat">${analysisCatHtml(e)}</div>
@@ -731,11 +730,33 @@ function analysisEmptyHtml() {
         </div>`;
 }
 
+// 검색칸: 선수를 고르면 상대전적 칸처럼 그 자리가 선수 카드로 바뀌고(✕로 지우면 다시 검색칸), 기간을
+// 바꾸면 카드의 전적도 따라 바뀐다. 검색칸은 이미 있으면 그대로 둔다(적던 글자·포커스 유지).
+function renderAnalysisSearch() {
+    const box = document.getElementById('analysis-search');
+    if (!box) return;
+    const pid = AnalysisState.picked;
+    const p = pid && analysisInfo(pid);
+    const e = p && analysisSummary(analysisRows(pid));
+    if (p && e) {
+        box.classList.remove('is-empty');
+        box.innerHTML = `<div class="h2h-slot-label">PLAYER</div>${analysisHeadHtml(pid, p, e)}`;
+        return;
+    }
+    box.classList.add('is-empty');
+    if (box.querySelector('#analysis-search-input')) return;
+    box.innerHTML = `
+        <label class="h2h-slot-label" for="analysis-search-input">선수 검색</label>
+        <input type="search" class="h2h-input" id="analysis-search-input" autocomplete="off"
+               placeholder="이름 또는 대학으로 검색"${actOn('input', 'analysisOnQuery', ACT.value)}>`;
+}
+
 function renderAnalysisBody() {
     const box = document.getElementById('analysis-body');
     if (!box) return;
     const period = document.getElementById('analysis-period');
     if (period) period.innerHTML = analysisPeriodHtml();
+    renderAnalysisSearch();
     box.innerHTML = AnalysisState.picked ? analysisProfileHtml(AnalysisState.picked) : analysisEmptyHtml();
 }
 
