@@ -1103,8 +1103,12 @@ function fetchSynergyResult(month = '') {
     if (_synergyRequests.has(month)) return _synergyRequests.get(month);
 
     const request = (async () => {
-        // 같은 SOOP ID로 입단 기록이 여러 개(재입단)일 수 있다. 이번 달은 늘 그랬듯 마지막 기록을,
-        // 지난 달은 그 달과 겹치는 기록을 쓴다(없으면 그 달엔 우리 멤버가 아니었다).
+        // 같은 SOOP ID로 입단 기록이 여러 개(재입단)일 수 있다. 목록은 직책·티어 순이라 순서로 고르면
+        // 지난 퇴단 기록이 뽑힐 수 있으므로 기준을 정한다: 이번 달은 활동 중인 기록 → 입단일이 늦은 기록,
+        // 지난 달은 그 달과 겹치는 기록 중 입단일이 늦은 기록(겹치는 게 없으면 그 달엔 우리 멤버가 아니었다).
+        const joinedAt = m => String(m['입단일'] || '').trim();
+        const better = (a, b) => (!month && isActiveMember(a) !== isActiveMember(b))
+            ? isActiveMember(a) : joinedAt(a) > joinedAt(b);
         const idToMember = new Map();
         SiteData.members.forEach(m => {
             const originalId = String(m['SOOP ID'] || '').trim();
@@ -1114,7 +1118,8 @@ function fetchSynergyResult(month = '') {
                 if (!idToMember.has(soopId)) idToMember.set(soopId, null);
                 return;
             }
-            idToMember.set(soopId, m);
+            const prev = idToMember.get(soopId);
+            if (!prev || better(m, prev)) idToMember.set(soopId, m);
         });
         const memberIds = [...idToMember.values()]
             .filter(Boolean)
