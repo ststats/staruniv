@@ -182,7 +182,7 @@ function tierCardHtml(member, live) {
 // 스치듯 지나갈 때마다 뜨지 않게 잠깐 머물러야 뜬다.
 const TIER_PEEK_DELAY_MS = 250;
 const tierPeekHover = window.matchMedia('(hover: hover) and (pointer: fine)');
-const TierPeek = { el: null, card: null, timer: 0, x: 0, y: 0, frame: 0 };
+const TierPeek = { el: null, card: null, timer: 0, x: 0, y: 0, frame: 0, inside: false, scrollTimer: 0 };
 const TIER_PEEK_OFFSET = 16;   // 커서와 미리보기 사이 가로 간격(커서가 미리보기를 가리지 않게)
 
 function tierPeekEl() {
@@ -245,30 +245,43 @@ function tierPeekHide() {
     if (TierPeek.el) TierPeek.el.classList.remove('is-open');
 }
 
+// 마우스 아래의 방송 중 카드가 바뀌면 미리보기를 닫고, 새 카드에 잠깐 머물면 연다
+function tierPeekTrack(card) {
+    if (card === TierPeek.card) return;
+    tierPeekHide();
+    if (!card) return;
+    TierPeek.card = card;
+    TierPeek.timer = setTimeout(() => { if (TierPeek.card === card) tierPeekShow(card); }, TIER_PEEK_DELAY_MS);
+}
+
 function initTierPeek() {
     const root = document.getElementById('tier-root');
     if (!root || !tierPeekHover.matches) return;
-    root.addEventListener('mouseover', e => {
+    // mouseover만 보면 카드 안에서 움직일 때는 신호가 없어, 스크롤이나 방송 갱신으로 닫힌 뒤 같은 카드
+    // 위에 있으면 다시 뜨지 않는다. 움직일 때마다 마우스 아래 카드를 확인한다.
+    const onPointer = e => {
         TierPeek.x = e.clientX;
         TierPeek.y = e.clientY;
-        const card = e.target.closest('.tier-card.is-live');
-        if (card === TierPeek.card) return;
-        tierPeekHide();
-        if (!card) return;
-        TierPeek.card = card;
-        TierPeek.timer = setTimeout(() => { if (TierPeek.card === card) tierPeekShow(card); }, TIER_PEEK_DELAY_MS);
-    });
-    // 마우스를 움직이면 따라간다(화면을 그릴 때마다 한 번만 자리를 옮긴다)
-    root.addEventListener('mousemove', e => {
-        TierPeek.x = e.clientX;
-        TierPeek.y = e.clientY;
+        tierPeekTrack(e.target.closest('.tier-card.is-live'));
+        // 열려 있으면 따라간다(화면을 그릴 때마다 한 번만 자리를 옮긴다)
         if (TierPeek.el && TierPeek.el.classList.contains('is-open') && !TierPeek.frame) {
             TierPeek.frame = requestAnimationFrame(tierPeekPlace);
         }
+    };
+    root.addEventListener('mouseover', onPointer);
+    root.addEventListener('mousemove', onPointer, { passive: true });
+    root.addEventListener('mouseenter', () => { TierPeek.inside = true; });
+    root.addEventListener('mouseleave', () => { TierPeek.inside = false; tierPeekHide(); });
+    // 스크롤하면 카드가 움직이므로 닫고, 스크롤이 멈추면 그 자리에서 마우스 아래 카드를 다시 찾는다
+    window.addEventListener('scroll', () => {
+        tierPeekHide();
+        clearTimeout(TierPeek.scrollTimer);
+        TierPeek.scrollTimer = setTimeout(() => {
+            if (!TierPeek.inside) return;
+            const under = document.elementFromPoint(TierPeek.x, TierPeek.y);
+            tierPeekTrack(under && under.closest('#tier-root .tier-card.is-live'));
+        }, 150);
     }, { passive: true });
-    root.addEventListener('mouseleave', tierPeekHide);
-    // 스크롤하면 카드가 움직이므로 닫는다(다시 올리면 새 자리에 뜬다)
-    window.addEventListener('scroll', tierPeekHide, { passive: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -730,6 +743,8 @@ function applyLiveToCards(setChanged) {
         }
     });
     if (needsObserve || setChanged) observeTierThumbs();
+    // 보고 있던 카드의 방송이 끝났으면 미리보기를 닫는다(아직 방송 중이면 다음 움직임에 새 정보로 다시 열린다)
+    if (TierPeek.card && !TierPeek.card.classList.contains('is-live')) tierPeekHide();
 }
 
 // 티어 목록 탭: 명단 받기 · 그리기 · 방송 상태 갱신. 이 탭을 처음 열 때 한 번만 한다 - 상대전적·분석 주소로
