@@ -96,7 +96,7 @@ test('공개 페이지의 데이터 조회는 api.js 한 곳에만 있다(나중
   }
   for (const f of fs.readdirSync(path.join(ROOT, 'templates', 'pages'))) {
     const html = fs.readFileSync(path.join(ROOT, 'templates', 'pages', f), 'utf8');
-    assert.match(html, /asset_url\('core\.js'\) \}\}"><\/script>\n<script src="\{\{ asset_url\('api\.js'\)/, `${f}: core.js 다음에 api.js`);
+    assert.match(html, /asset_url\('core\.js'\) \}\}"><\/script>\r?\n<script src="\{\{ asset_url\('api\.js'\)/, `${f}: core.js 다음에 api.js`);
   }
 });
 

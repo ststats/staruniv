@@ -127,8 +127,9 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
 ## 백업
 
 무료 플랜에는 자동 백업이 없어서 `backup.yml`이 매달 공유 DB(`public` 스키마 전체 구조 + 데이터)와
-Storage `staruniv-media` 파일을 받아 **암호화한 뒤** Actions 아티팩트로 둡니다. 새 백업이 올라가면 이전 것은 지워 가장 최근 하나만 남습니다(실패한 달에는 이전 것이 남음). 파생 통계·방송 중·공지 모음·작업 기록은
-파이프라인이 다시 만들므로 데이터를 뺍니다. Actions 탭 → Backup → 실행 → Artifacts에서 받습니다(수동 실행: Run workflow).
+Storage `staruniv-media` 파일을 받아 **암호화한 뒤** Actions 아티팩트로 둡니다. Storage 파일이 하나라도 받아지지 않으면 그 달 백업은 실패로 끝나고
+이전 백업은 그대로 남습니다. 새 백업이 올라가면 가장 최근 것과 직전 것 두 개만 남기고 지웁니다. 파생 통계(스냅샷 목록 포함)·방송 중·공지 모음·작업 기록은
+파이프라인이 다시 만들므로 데이터를 뺍니다. 전체를 복구한 뒤에는 ststat의 ELO 통계 계산 작업을 한 번 돌리면 통계가 다시 채워집니다. Actions 탭 → Backup → 실행 → Artifacts에서 받습니다(수동 실행: Run workflow).
 공개 저장소라 60일 동안 커밋이 없으면 GitHub가 `schedule`을 멈추니, 그때는 Actions 탭에서 다시 켭니다.
 
 복구(필요한 표만 골라 넣을 수 있음):

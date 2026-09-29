@@ -13,7 +13,10 @@ function mediaLightboxOpen(opts) {
     const soop = !yt && /^\d{1,20}$/.test(String(opts.soopVodNo || '')) ? String(opts.soopVodNo) : '';
     const img = String(opts.image || '');
     if (!yt && !soop && !img) return;
+    // 닫으면 연 버튼으로 포커스를 돌려준다(이미 열린 창에서 다른 걸 연 경우엔 처음 연 버튼)
+    const opener = mediaLightboxOpener || document.activeElement;
     mediaLightboxClose();
+    mediaLightboxOpener = opener;
     const caption = escapeHTML(opts.caption || '');
     const layer = document.createElement('div');
     layer.className = 'media-lightbox' + (yt && opts.vertical ? ' is-vertical' : '');
@@ -51,13 +54,28 @@ function mediaLightboxOpen(opts) {
     layer.querySelector('.media-lightbox-close').focus();
 }
 
+let mediaLightboxOpener = null;
+
 function mediaLightboxClose() {
     const layer = document.getElementById('media-lightbox');
     if (layer) layer.remove();   // iframe을 지워야 영상 소리도 멈춘다
     document.body.classList.remove('media-lightbox-open');
     document.removeEventListener('keydown', mediaLightboxKey);
+    const opener = mediaLightboxOpener;
+    mediaLightboxOpener = null;
+    if (layer && opener && opener.isConnected && opener.focus) opener.focus();
 }
 
 function mediaLightboxKey(e) {
-    if (e.key === 'Escape') mediaLightboxClose();
+    if (e.key === 'Escape') { mediaLightboxClose(); return; }
+    // Tab은 창 안에서만 돈다(닫기 · 원래 사이트 링크 · 플레이어)
+    if (e.key !== 'Tab') return;
+    const layer = document.getElementById('media-lightbox');
+    if (!layer) return;
+    const items = [...layer.querySelectorAll('a[href], button:not([disabled]), iframe')];
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    const inside = layer.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === first || !inside)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
 }
