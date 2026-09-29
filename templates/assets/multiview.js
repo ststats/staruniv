@@ -4,7 +4,7 @@
 // 칩·목록 마크업과 목록 계산은 도구 탭(page-tools.js)과 같이 쓰는 mv-shared.js에 있다.
 const mvEsc = mvSharedEscapeHTML;
 let mvOrder = [];
-let mvCols = 2;
+let mvCols = MV_AUTO_COLS;
 let mvFocus = true;
 let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
 let mvMembers = [];    // 사이트 멤버(활동 중 + 숲 아이디 있음) - 사이트 데이터(data/site_shell.json)에서
@@ -13,7 +13,7 @@ let mvLiveMap = {};    // soopId(소문자) -> 방송 중
 function mvSaveState() {
     try {
         localStorage.setItem('mv-order', JSON.stringify(mvOrder));
-        localStorage.setItem('mv-cols', String(mvCols));
+        localStorage.setItem('mv-grid-cols', String(mvCols));
         localStorage.setItem('mv-focus', mvFocus ? '1' : '0');
         localStorage.setItem('mv-focus-id', mvFocusId || '');
     } catch (e) { /* localStorage 접근 불가한 환경이면 그냥 무시 */ }
@@ -30,7 +30,7 @@ function mvInit() {
             .filter(e => e && typeof e.id === 'string' && /^[a-z0-9_-]+$/i.test(e.id))
             .map(e => ({ soopId: e.id.toLowerCase(), name: e.name || e.id, isMember: !!e.isMember }))
             .filter((e, i, arr) => arr.findIndex(x => x.soopId === e.soopId) === i); // 같은 방송 중복 제거
-        mvCols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, parseInt(params.get('cols'), 10) || 2));
+        mvCols = mvParseCols(params.get('cols'));
         mvFocus = params.get('focus') === '1';
         mvFocusId = params.get('focusId') || null;
         // 도구 탭에서 명시적으로 넘긴 다크모드 설정이 있으면 그걸 우선한다
@@ -44,10 +44,11 @@ function mvInit() {
         try {
             mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]')
                 .filter((e, i, arr) => e && typeof e.soopId === 'string' && arr.findIndex(x => x && x.soopId === e.soopId) === i);
-            mvCols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, parseInt(localStorage.getItem('mv-cols'), 10) || 2));
+            // 예전 'mv-cols'(기본 2가 늘 저장됨)는 무시하고, 자동이 기본인 새 키만 읽는다.
+            mvCols = mvParseCols(localStorage.getItem('mv-grid-cols'));
             mvFocus = localStorage.getItem('mv-focus') !== null ? localStorage.getItem('mv-focus') === '1' : true;
             mvFocusId = localStorage.getItem('mv-focus-id') || null;
-        } catch (e) { mvOrder = []; mvCols = 2; mvFocus = true; mvFocusId = null; }
+        } catch (e) { mvOrder = []; mvCols = MV_AUTO_COLS; mvFocus = true; mvFocusId = null; }
     }
     mvApplyModeButtons();
 }
@@ -78,9 +79,13 @@ function mvToggleSettingsPanel() {
 }
 
 // ===== 열 개수 =====
+function mvCurrentAutoCols() {
+    const area = document.getElementById('mv-grid-area');
+    return mvAutoGridCols(Math.max(1, mvOrder.length), area.clientWidth, area.clientHeight);
+}
 function mvChangeCols(delta) {
-    mvCols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, mvCols + delta));
-    document.getElementById('mv-cols-value').innerText = mvCols;
+    mvCols = mvStepCols(mvCols, delta, mvCurrentAutoCols());
+    document.getElementById('mv-cols-value').innerText = mvColsLabel(mvCols);
     mvApplyGridColumns();
     mvSaveState();
 }
@@ -93,10 +98,9 @@ function mvApplyGridColumns() {
 // 실제로 보이는 16:9 화면 넓이의 합이 가장 큰 배치를 고른다. 빈 칸은 나머지 방송 수의 절반(최소 1)까지만
 // 허용한다(빈 검은 칸이 많으면 화면이 휑해진다).
 // 실제 배치(빈 칸 채우기)는 CSS Grid 자동배치에 맡긴다 - 메인이 왼쪽 위, 나머지가 오른쪽 · 아래를 채운다.
-const MV_VIDEO_AR = 16 / 9;
 function mvComputeFocusGridDims(totalW, totalH, restCount) {
     const W = totalW || 1, H = totalH || 1;
-    const shown = (w, h) => { const vw = Math.min(w, h * MV_VIDEO_AR); return vw * vw / MV_VIDEO_AR; };
+    const shown = mvShownArea;
     let best = null;
     for (let span = 2; span <= 4; span++) {
         for (let cols = span; cols <= 8; cols++) {
@@ -228,16 +232,28 @@ function mvRelayoutGridDims() {
     if (!grid) return;
     const count = grid.children.length;
     if (count === 0) return;
-    let cols, rows, span = 2;
+    const area = document.getElementById('mv-grid-area');
+    let cols, rows, span = 2, lastRowStart = count, cellSpan = 1, lastSpan = 1;
     if (mvFocus && count > 1) {
-        const area = document.getElementById('mv-grid-area');
         ({ cols, rows, span } = mvComputeFocusGridDims(area.clientWidth, area.clientHeight, count - 1));
     } else {
-        // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에 휑하게 남지 않게 하고,
         // 행 개수를 못박아 세로도 뷰포트 안에 딱 맞게 나눈다. (포커스 모드에 혼자면 1×1 = 화면 전체)
-        cols = mvFocus ? 1 : Math.max(1, Math.min(mvCols, count));
-        rows = Math.max(1, Math.ceil(count / cols));
+        // 마지막 줄이 덜 차면 그 줄 칸들을 가로로 늘려 빈 칸이 남지 않게 한다 - 열을 두 칸 수의
+        // 최소공배수로 잘게 나누고 칸마다 span을 준다(예: 5개·3열 → 6열, 윗줄 2칸씩·아랫줄 3칸씩).
+        const want = mvFocus ? 1 : (mvCols || mvAutoGridCols(count, area.clientWidth, area.clientHeight));
+        const base = Math.max(1, Math.min(want, count));
+        rows = Math.ceil(count / base);
+        const last = count - (rows - 1) * base;
+        const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+        cols = base * last / gcd(base, last);
+        lastRowStart = (rows - 1) * base; cellSpan = cols / base; lastSpan = cols / last;
     }
+    // 칸 순서는 DOM 순서가 아니라 style.order라서 그 값으로 마지막 줄을 가린다. 포커스 모드는 span을 지운다.
+    Array.from(grid.children).forEach(cell => {
+        const n = mvFocus && count > 1 ? 0 : (Number(cell.style.order) >= lastRowStart ? lastSpan : cellSpan);
+        const value = n > 1 ? `span ${n}` : '';
+        if (cell.style.gridColumn !== value) cell.style.gridColumn = value;
+    });
     const colsValue = `repeat(${cols}, 1fr)`, rowsValue = `repeat(${rows}, 1fr)`;
     if (grid.style.gridTemplateColumns !== colsValue) grid.style.gridTemplateColumns = colsValue;
     if (grid.style.gridTemplateRows !== rowsValue) grid.style.gridTemplateRows = rowsValue;
@@ -417,7 +433,7 @@ new MutationObserver(() => {
 // ===== 초기화 =====
 mvApplyTheme(localStorage.getItem('mv-theme') || 'light');
 mvInit();
-document.getElementById('mv-cols-value').innerText = mvCols;
+document.getElementById('mv-cols-value').innerText = mvColsLabel(mvCols);
 mvApplyColsGroupVisibility();
 mvRenderOrderRow();
 mvRenderGrid();

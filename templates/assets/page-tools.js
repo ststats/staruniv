@@ -144,7 +144,7 @@ function switchToolsView(viewType, skipHashUpdate) {
 // mv-shared.js에 있고, 이 탭엔 그리드가 없어서 목록이 바뀔 때마다 통째로 다시 그리면 된다.
 const MvState = {
     order: [],       // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
-    cols: 2,
+    cols: MV_AUTO_COLS, // 자동 - 새 창이 화면·인원 수에 맞춰 고른다
     dark: false,
     focus: true,
     focusId: null,   // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
@@ -238,8 +238,10 @@ function mvRemove(idx) {
 }
 
 function mvChangeCols(delta) {
-    MvState.cols = Math.min(MV_MAX_COLS, Math.max(MV_MIN_COLS, MvState.cols + delta));
-    document.getElementById('mv-cols-value').innerText = MvState.cols;
+    // 자동에서 움직이면 이 모니터에 창을 꽉 채웠을 때의 자동 열 수에서 출발한다.
+    const base = mvAutoGridCols(Math.max(1, MvState.order.length), screen.availWidth, screen.availHeight);
+    MvState.cols = mvStepCols(MvState.cols, delta, base);
+    document.getElementById('mv-cols-value').innerText = mvColsLabel(MvState.cols);
 }
 
 function mvToggleDarkSetting() {
