@@ -34,6 +34,16 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     actRun(e, 'enter', false);
 });
+// role="button"/"tab"을 단 div/tr 등(네이티브 버튼이 아닌 클릭 요소)도 키보드 Enter/Space로 누를 수 있게 한다.
+// 모든 페이지(멀티뷰어 포함)가 이 파일을 읽으므로 여기서 한 번만 처리한다.
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target;
+    if (!(el instanceof Element) || !el.matches('[role="button"], [role="tab"]')) return;
+    if (/^(BUTTON|INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    e.preventDefault();
+    el.click();
+});
 // scroll · error는 버블링되지 않아 캡처 단계에서 받는다
 ['scroll', 'error'].forEach(type => document.addEventListener(type, e => actRun(e, type, false), true));
 

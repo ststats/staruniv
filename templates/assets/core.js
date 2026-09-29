@@ -316,9 +316,8 @@ function safeInit(label, fn) {
     }
 }
 
-// role="button"/"tab"을 단 div/tr 등(네이티브 버튼이 아닌 클릭 요소)도 키보드
-// Enter/Space로 누를 수 있게 한다. 탭 목록에서는 ←/→/Home/End로 옆 탭을 골라 연다(WAI-ARIA 탭 패턴).
-// 마우스 클릭 동작에는 영향이 없다.
+// 탭 목록에서는 ←/→/Home/End로 옆 탭을 골라 연다(WAI-ARIA 탭 패턴). 마우스 클릭 동작에는 영향이 없다.
+// role="button"/"tab" 요소의 Enter/Space는 actions.js가 처리한다(core.js를 안 쓰는 멀티뷰어에서도 되게).
 const TAB_KEYS = { ArrowLeft: -1, ArrowRight: 1, Home: 'first', End: 'last' };
 document.addEventListener('keydown', e => {
     const el = e.target;
@@ -334,13 +333,7 @@ document.addEventListener('keydown', e => {
         tabs[i].click();
         // 필터처럼 누를 때 탭 목록을 새로 그리는 곳은 같은 자리의 새 탭으로 포커스를 옮긴다
         (tabs[i].isConnected ? tabs[i] : visibleTabs()[i])?.focus();
-        return;
     }
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (!el.matches('[role="button"], [role="tab"]')) return;
-    if (/^(BUTTON|INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-    e.preventDefault();
-    el.click();
 });
 
 // =====================================================================

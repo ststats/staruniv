@@ -53,6 +53,18 @@
 
   async function refresh(){await fetchAll();syncRenderer();}
 
+  // 주소(키)가 바뀐 저장: 지우고 다시 넣으면 두 번째 요청이 실패할 때 원래 항목까지 사라진다.
+  // 키 열을 바꾸는 UPDATE 한 번으로 처리해 실패하면(새 주소가 이미 있는 등) 원래 항목이 그대로 남는다.
+  // 원래 항목이 그사이 지워졌으면 새로 넣는다.
+  async function saveRenamed(table,key,oldKey,payload){
+    const db=C().state.client.from(table);
+    if(oldKey!=null&&oldKey!==payload[key]){
+      const {data,error}=await db.update(payload).eq(key,oldKey).select(key);if(error)throw error;
+      if(data&&data.length)return;
+    }
+    const {error}=await C().state.client.from(table).upsert(payload,{onConflict:key});if(error)throw error;
+  }
+
   function openChannel(row){
     row=row||{};
     C().openDrawer({
@@ -67,10 +79,7 @@
       onSubmit:async()=>{
         const url=C().value('avc_url').trim();if(!/^https?:\/\//i.test(url))throw new Error('올바른 채널 URL을 입력하세요');
         const payload={channel_url:url,display_name:C().value('avc_name').trim(),source_order:Number(C().value('avc_order')||await C().nextSourceOrder('video_channels')),active:!!document.getElementById('avc_active')?.checked,updated_at:new Date().toISOString()};
-        if(row.channel_url&&row.channel_url!==url){
-          const {error:del}=await C().state.client.from('video_channels').delete().eq('channel_url',row.channel_url);if(del)throw del;
-        }
-        const {error}=await C().state.client.from('video_channels').upsert({...row,...payload},{onConflict:'channel_url'});if(error)throw error;
+        await saveRenamed('video_channels','channel_url',row.channel_url,{...row,...payload});
         C().toast('채널을 저장했습니다');await refresh();
       }
     });
@@ -148,8 +157,7 @@
         await fillPickMeta();
         const title=C().value('avp_title').trim();if(!title)throw new Error('YouTube 제목을 가져오지 못했습니다. 제목을 적어 주세요');
         const payload={id,kind,title,note:C().empty(C().value('avp_note')),group_name:group,group_en:groupEn,author:C().empty(C().value('avp_author').trim()),thumb:C().empty(C().value('avp_thumb')),added_at:C().empty(C().value('avp_date')),source_order:Number(C().value('avp_order')||await C().nextSourceOrder('video_picks')),short:!!document.getElementById('avp_short')?.checked,hidden:!!document.getElementById('avp_hidden')?.checked,updated_at:new Date().toISOString()};
-        if(row.id&&row.id!==id){const {error:del}=await C().state.client.from('video_picks').delete().eq('id',row.id);if(del)throw del;}
-        const {error}=await C().state.client.from('video_picks').upsert(payload,{onConflict:'id'});if(error)throw error;
+        await saveRenamed('video_picks','id',row.id,payload);
         // 분류 영문을 바꾸면 같은 분류의 다른 영상도 같이 바꾼다(분류마다 하나)
         if(group&&groupEn&&groupEn!==groupEnOf(group)){const {error:en}=await C().state.client.from('video_picks').update({group_en:groupEn}).eq('group_name',group);if(en)throw en;}
         C().toast('보자 영상을 저장했습니다');await refresh();
