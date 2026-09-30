@@ -264,8 +264,9 @@ function renderMemberActivitySummary(m) {
 
     const soopId = String(m['SOOP ID'] || '').trim().toLowerCase();
     const entry = SynergyState.data.find(s => String(s.id || '').trim().toLowerCase() === soopId);
+    // 이번 달 기록이 없으면 네 칸이 '-'인 것으로 충분하다(안내 줄을 띄우면 창 높이만 늘어난다)
     if (!entry) {
-        statusEl.innerText = '데이터 없음';
+        statusEl.innerText = '';
         setValues(['-', '-', '-', '-']);
         return;
     }
