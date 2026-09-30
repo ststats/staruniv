@@ -56,3 +56,18 @@ test('표를 못 읽거나 비어 있으면 예전처럼 SOOP에 직접 묻는�
         assert.equal(r.totalPages, 3);
     }
 });
+
+test('홈 카드용 최근 글은 카드 칸만 받아 카드 모양(post)으로 되돌린다', async () => {
+    const { ctx } = setup([
+        { soop_id: 'AAA', titleName: '제목', regDate: '2026-09-25 10:00:00', text: '본문', thumb: 'https://x/1.jpg' },
+        { soop_id: 'bbb', titleName: '사진 없음', regDate: '2026-09-24 10:00:00', text: null, thumb: null },
+    ]);
+    const rows = await vm.runInContext('fetchRecentStoredPosts(30)', ctx);
+    assert.equal(rows[0].soopId, 'aaa');
+    assert.equal(rows[0].post.photos[0].url, 'https://x/1.jpg');
+    assert.equal(rows[0].post.content.textContent, '본문');
+    assert.equal(rows[1].post.photos.length, 0);
+    assert.equal(rows[1].post.content.textContent, '');
+    const api = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', 'api.js'), 'utf8');
+    assert.match(api, /select\('soop_id,titleName:post->>titleName,regDate:post->>regDate,text:post->content->>textContent,thumb:post->photos->0->>url'\)/);
+});

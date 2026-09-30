@@ -359,6 +359,7 @@ const SiteData = {
     playersStats: [],
     matchCount: 0,
     roundCount: 0,
+    profiles: null,
 };
 
 // 페이지 초기화는 데이터 요청 실패 뒤에도 계속되어야 한다. 화면이 빈 데이터와 요청 실패를
@@ -401,6 +402,8 @@ async function loadSiteData(parts) {
                 SiteData.members = asArray(data && data.members);
                 SiteData.matchCount = Number(data && data.matchCount) || 0;
                 SiteData.roundCount = Number(data && data.roundCount) || 0;
+            } else if (part === 'profiles') {
+                SiteData.profiles = (data && data.profiles) || {};
             } else if (part === 'records') {
                 SiteData.matches = asArray(data && data.matches);
                 SiteData.rounds = asArray(data && data.rounds);
@@ -408,6 +411,13 @@ async function loadSiteData(parts) {
             }
             SiteDataLoad.loaded.add(part);
         });
+        // 프로필 창에서만 보이는 칸(생년월일·MBTI 등, 멤버 페이지만 받는다)을 멤버 목록에 이름으로 붙인다.
+        // 같은 이름(재입단)은 목록 순서대로 하나씩 붙인다.
+        if (SiteData.profiles && SiteDataLoad.loaded.has('shell')) {
+            const queues = Object.fromEntries(Object.entries(SiteData.profiles).map(([k, v]) => [k, asArray(v).slice()]));
+            SiteData.members.forEach(m => Object.assign(m, (queues[m['이름']] || []).shift() || {}));
+            SiteData.profiles = null;
+        }
         SiteDataLoad.status = 'loaded';
     } catch (e) {
         SiteDataLoad.status = 'error';
@@ -447,6 +457,24 @@ function fetchLiveBroadcasts() {
     return promise;
 }
 
+// 방송 중인 멤버 ID만 { soop_id(소문자): true } - LIVE 점만 찍는 화면(사이드바·멀티뷰어 칩)은 방송 제목·시청자 수를
+// 받지 않는다. 같은 페이지가 방송 정보 전체를 이미 받았거나 받는 중이면 그걸 쓴다. 20초 동안은 같은 결과를 쓴다.
+let _liveIds = { at: 0, promise: null };
+function fetchLiveIds() {
+    if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS) return _liveBroadcasts.promise;
+    if (_liveIds.promise && Date.now() - _liveIds.at < LIVE_BROADCASTS_TTL_MS) return _liveIds.promise;
+    const promise = Api.liveSoopIds()
+        .then(data => {
+            if (!Array.isArray(data)) throw new Error('Invalid live status');
+            const live = {};
+            data.forEach(row => { if (row.soop_id) live[String(row.soop_id).toLowerCase()] = true; });
+            return live;
+        });
+    _liveIds = { at: Date.now(), promise };
+    promise.catch(() => { if (_liveIds.promise === promise) _liveIds = { at: 0, promise: null }; });
+    return promise;
+}
+
 // 선택 사이드바가 탭 전환 시 늦게 만들어져도 LIVE 표시를 채운다.
 // 일괄 조회(live_broadcasts)가 실패했을 때만 soop.js의 개별 조회로 대신한다(soop.js를 싣는 페이지만).
 async function refreshSidebarLiveIndicators() {
@@ -461,7 +489,7 @@ async function refreshSidebarLiveIndicators() {
     // 티어표와 같은 일괄 조회를 사용한다. 개별 SOOP 요청 하나가 지연되어도
     // 전체 사이드바가 Promise.all 종료를 기다리며 빈 상태로 남지 않는다.
     try {
-        const live = await fetchLiveBroadcasts();
+        const live = await fetchLiveIds();
         ids.forEach(id => update(id, Boolean(live[id.toLowerCase()])));
     } catch (_) {
         if (typeof checkIsLiveRealtime !== 'function') return;
@@ -1011,7 +1039,7 @@ function watchSubTabDensity() {
 
 // =====================================================================
 // 5. 방송통계 데이터
-// ststat -> Supabase daily_member_stats 를 직접 읽고 우리 로스터만 추린다.
+// ststat -> Supabase player_stats 함수(daily_member_stats)로 우리 로스터 ID만 받는다(휴면 선수 포함).
 // =====================================================================
 const SynergyState = {
     data: null,          // [{ ...외부 필드, ourMember, active }]
@@ -1127,8 +1155,8 @@ function fetchSynergyResult(month = '') {
             .filter(Boolean);
         if (!memberIds.length) throw new Error('조회할 StarUniv 선수 ID가 없습니다');
 
-        // 최근 달은 최신 날짜 뷰(daily_member_stats_latest)로 날짜 목록을 기다리지 않고 한 번에 받는다.
-        // 뷰가 아직 없거나(ststat.sql 적용 전) 실패하면, 지난 달처럼 달 목록(fetchSynergyMonths)에서 날짜를 골라 받는다.
+        // 최근 달은 최신 날짜(player_stats에 날짜 없이)로 날짜 목록을 기다리지 않고 한 번에 받는다.
+        // 함수가 아직 없거나(ststat.sql 적용 전) 실패하면, 지난 달처럼 달 목록(fetchSynergyMonths)에서 날짜를 골라 받는다.
         let latestDate = '';
         let rows = null;
         if (!month) {

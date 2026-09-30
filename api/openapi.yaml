@@ -18,9 +18,9 @@ paths:
       summary: 멤버·전적 묶음 (Api.siteData)
       description: 지금은 빌드가 만든 data/site_{part}.json.
       parameters:
-        - { name: part, in: path, required: true, schema: { type: string, enum: [shell, records] } }
+        - { name: part, in: path, required: true, schema: { type: string, enum: [shell, records, profiles] } }
       responses:
-        '200': { description: "shell은 { members, matchCount, roundCount }, records는 { matches, rounds, playersStats }", content: { application/json: { schema: { type: object } } } }
+        '200': { description: "shell은 { members, matchCount, roundCount }(목록에 보이는 칸만), records는 { matches, rounds, playersStats }, profiles는 { profiles: { 이름: [ { 생년월일, MBTI, YouTube, ELO ID, 입단 티어 } ] } }(멤버 페이지 프로필 창 전용)", content: { application/json: { schema: { type: object } } } }
   /site/nav:
     get:
       summary: 메뉴·히어로 설명·서브탭 설정 (Api.navConfig)
@@ -42,7 +42,7 @@ paths:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/LiveBroadcast' } } } } }
   /live/ids:
     get:
-      summary: 방송 중인 선수의 SOOP ID만 (Api.liveSoopIds, 멀티뷰어)
+      summary: 방송 중인 선수의 SOOP ID만 (Api.liveSoopIds - LIVE 점만 찍는 화면: 사이드바·멀티뷰어)
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { soop_id: { type: string } } } } } } }
   /stats/dates:
@@ -54,7 +54,7 @@ paths:
     get:
       summary: 가장 최근 날짜의 월 누적 방송통계, 날짜(stat_date) 포함 (Api.statsLatest)
       parameters:
-        - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID", schema: { type: string } }
+        - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID(한 번에 300개까지). 휴면 선수도 준다(그 선수 칸에 보이므로)", schema: { type: string } }
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { allOf: [ { $ref: '#/components/schemas/StatsRow' }, { type: object, properties: { stat_date: { type: string, format: date } } } ] } } } } }
   /stats:
@@ -62,7 +62,7 @@ paths:
       summary: 그날까지의 월 누적 방송통계 (Api.stats)
       parameters:
         - { name: date, in: query, required: true, schema: { type: string, format: date } }
-        - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID", schema: { type: string } }
+        - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID(한 번에 300개까지). 휴면 선수도 준다", schema: { type: string } }
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/StatsRow' } } } } }
   /schedule:
@@ -90,7 +90,7 @@ paths:
     get:
       summary: 멤버 공지 모음, 최신순 (Api.memberPosts, Api.recentPosts)
       parameters:
-        - { name: limit, in: query, required: false, description: "주면 최신 limit개만(홈, total_pages 없이)", schema: { type: integer, maximum: 2000 } }
+        - { name: limit, in: query, required: false, description: "주면 최신 limit개만(홈 카드). 이때 글 전체 대신 카드 칸만 { soop_id, titleName, regDate, text, thumb }", schema: { type: integer, maximum: 2000 } }
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MemberPost' } } } } }
   /tier/members:

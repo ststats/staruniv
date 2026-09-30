@@ -833,6 +833,7 @@ bootPage(() => {
         else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
     }));
 }, {
+    siteData: ['shell', 'profiles'],   // profiles: 프로필 창에서만 보이는 칸(생년월일·MBTI·YouTube·ELO ID·입단 티어)
     prefetch: () => fetchLiveBroadcasts().catch(() => {}),   // 현황 카드의 방송 중 표시
     view: params => activateTabView(MEMBER_TABS,
         (params.get('view') || runtimeDefaultSubtab('members', 'status')) === 'news' ? 'news' : 'status'),

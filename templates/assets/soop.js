@@ -134,7 +134,11 @@ async function fetchRecentStoredPosts(limit) {
     try {
         const data = await Api.recentPosts(limit);
         if (!Array.isArray(data) || !data.length) return null;
-        return data.filter(r => r.post).map(r => ({ soopId: String(r.soop_id || '').toLowerCase(), post: r.post }));
+        // 카드가 쓰는 모양(noticeCardFields)으로 되돌린다
+        return data.filter(r => r.regDate).map(r => ({
+            soopId: String(r.soop_id || '').toLowerCase(),
+            post: { titleName: r.titleName, regDate: r.regDate, content: { textContent: r.text || '' }, photos: r.thumb ? [{ url: r.thumb }] : [] },
+        }));
     } catch (e) {
         return null;
     }
