@@ -116,7 +116,7 @@
           if(!dc.nick.trim())throw new Error('새 선수 닉네임을 적어 주세요');
           confirmed.push({ref:x.ref,insert:inserts.length});
           inserts.push({nickname:dc.nick.trim(),tier:dc.tier,race:dc.race,affiliation:team,
-            elo_id:String(dc.elo||'').trim()||null,soop_id:String(dc.soop||'').trim()||null});
+            elo_id:String(dc.elo||'').trim()||null,soop_id:String(dc.soop||'').trim()||null,gender:dc.gender||null});
         }
       }else if(x.type==='표에서 빠짐'){
         const v=U.decide.missing[i];
@@ -403,11 +403,11 @@
     on('[data-tu-card-rename]','oninput',n=>{U.decide.cards[n.dataset.tuCardRename].rename=n.value;});
     on('[data-tu-card-elo]','oninput',n=>{U.decide.cards[n.dataset.tuCardElo].elo=n.value;});
     on('[data-tu-card-soop]','oninput',n=>{U.decide.cards[n.dataset.tuCardSoop].soop=n.value;});
-    // ELO 대기 명단에서 고르면 ELO ID·SOOP ID와 함께 이름·티어·종족도 그 값으로 채운다(카드 글씨보다 정확)
+    // ELO 대기 명단에서 고르면 ELO ID·SOOP ID·성별과 함께 이름·티어·종족도 그 값으로 채운다(카드 글씨보다 정확)
     on('[data-tu-card-cand]','onchange',n=>{
       const i=n.dataset.tuCardCand,dc=U.decide.cards[i],c=(U.job.result.review[i].suggest||[])[n.value];
       dc.cand=n.value;
-      if(c){dc.elo=String(c.elo_id);dc.soop=c.soop_id||'';dc.nick=c.nickname||dc.nick;if(c.tier)dc.tier=c.tier;if(c.race)dc.race=c.race;}
+      if(c){dc.elo=String(c.elo_id);dc.soop=c.soop_id||'';dc.gender=c.gender||'';dc.nick=c.nickname||dc.nick;if(c.tier)dc.tier=c.tier;if(c.race)dc.race=c.race;}
       render();
     });
     on('[data-tu-nick]','oninput',n=>{U.decide.nick[n.dataset.tuNick]=n.value;});
