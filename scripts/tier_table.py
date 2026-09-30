@@ -665,6 +665,15 @@ def load_db_sql(conn):
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def load_off_board_sql(conn) -> set:
+    """현황판에 아직 없는 대학(teams.off_board). 칸이 아직 없으면(SQL 적용 전) 빈 집합."""
+    has = conn.execute("select 1 from information_schema.columns where table_schema = 'public' "
+                       "and table_name = 'teams' and column_name = 'off_board'").fetchone()
+    if not has:
+        return set()
+    return {row[0] for row in conn.execute('select team_name from public.teams where off_board').fetchall()}
+
+
 def load_candidates_sql(conn):
     """ststat이 모아 둔 ELO 대기 명단(EloBoard에는 있고 우리 명단엔 없는 선수). 표가 없으면 빈 목록."""
     try:
@@ -784,7 +793,7 @@ def run_job(job_id: int):
         sections = read_image(im, memory)
         fa = read_fa_text(fa_text or '')
         db = load_db_sql(conn)
-        result = compare(sections, fa, db, load_candidates_sql(conn))
+        result = compare(sections, fa, db, load_candidates_sql(conn), load_off_board_sql(conn))
         # 반영 때 기억할 사진·글씨 특징만 남긴다(±2px 지문 24개는 읽을 때만 쓰므로 뺀다)
         result['sections'] = [{'y': s['y'], 'cards': [{k: v for k, v in c.items() if k not in ('photo_shifts', 'raw')}
                                                        for c in s['cards']]} for s in sections]
@@ -928,8 +937,9 @@ def match_sections(sections, db):
 UNSURE_MARGIN = 0.03
 
 
-def compare(sections, fa, db, candidates=None):
-    """카드·FA 명단을 DB와 비교한다.
+def compare(sections, fa, db, candidates=None, off_board=()):
+    """카드·FA 명단을 DB와 비교한다. off_board: 현황판에 아직 없는 대학(teams.off_board) - 표에 안 나와도
+    그 선수들을 FA·휴면으로 바꾸지 않는다(표에 그 대학이 나오면 평소대로 비교).
     changes: 반영할 변동(관리자 화면에서 기본 체크). uncertain이면 기본 체크 해제.
     review: 사람이 골라야 하는 것(새 얼굴·새 대학 등)."""
     changes, review, missing, matches = [], [], [], []
@@ -995,7 +1005,8 @@ def compare(sections, fa, db, candidates=None):
 
     # 표에서 없어진 대학. 새 대학 선수 대부분이 그 대학 출신이면 이름이 바뀐 것일 수 있다고 알려 준다
     shown = {sec['team'] for sec in secs}
-    gone_teams = sorted({r['affiliation'] for r in db if r['affiliation'] not in NO_TEAM} - shown)
+    kept_teams = set(off_board) - shown
+    gone_teams = sorted({r['affiliation'] for r in db if r['affiliation'] not in NO_TEAM} - shown - kept_teams)
     for item in review:
         if item['type'] == '새 대학' and item['prev_affiliation']:
             top, n = item['prev_affiliation'][0]
@@ -1019,7 +1030,11 @@ def compare(sections, fa, db, candidates=None):
             review.append({'type': '표와 FA 명단에 둘 다 있음', 'id': r.get('id'), 'nickname': r['nickname']})
             continue
         diff = {}
-        if r['affiliation'] != 'FA':
+        if r['affiliation'] in kept_teams:
+            # 현황판에 아직 없는 대학 선수는 FA 명단에 남아 있어도 소속을 지킨다(티어·종족만 본다)
+            review.append({'type': '현황판에 없는 대학 소속(소속 유지)', 'id': r.get('id'), 'nickname': r['nickname'],
+                           'team': r['affiliation']})
+        elif r['affiliation'] != 'FA':
             diff['affiliation'] = [r['affiliation'], 'FA']
         if str(r['tier']) != f['tier']:
             diff['tier'] = [r['tier'], f['tier']]

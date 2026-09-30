@@ -440,6 +440,9 @@ grant execute on function public.admin_save_match(jsonb, jsonb) to authenticated
 
 alter table public.members add column if not exists avatar_path text;
 alter table public.teams add column if not exists logo_path text;
+-- 현황판(펨코 티어표)에 아직 없는 대학. 티어표 갱신(scripts/tier_table.py)이 이 대학 선수를 표에 없다고
+-- FA·휴면으로 바꾸지 않는다(티어·종족 변동은 그대로 올린다). 표에 대학이 나오면 저절로 평소대로 비교한다.
+alter table public.teams add column if not exists off_board boolean not null default false;
 
 
 -- 공개 Storage 버킷. URL은 공개지만 쓰기/삭제는 관리자만 가능하다.

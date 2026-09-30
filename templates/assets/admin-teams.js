@@ -99,6 +99,8 @@
   function openTeam(team){
     const r=team||{};
     const logo=r.team_name?T.logos[r.team_name]:null;
+    // off_board 칸은 staruniv.sql 적용 후에 생긴다 - 없으면 체크박스를 보이지 않고 저장에도 넣지 않는다
+    const hasOffBoard=T.teams.some(t=>'off_board' in t);
     C().openDrawer({
       eyebrow:'TEAM',title:r.id?`${r.team_name} 수정`:'새 팀',
       html:`<div class="admin-form-grid">
@@ -106,6 +108,7 @@
         ${C().field('설립자',C().input('tm_founders',r.founders||''))}
         ${C().field('창단일',C().input('tm_founded',r.founded_date||'','date'))}
         ${C().field('해체일',C().input('tm_disbanded',r.disbanded_date||'','date'))}
+        ${hasOffBoard?C().field('현황판',C().checkbox('tm_off_board',!!r.off_board,'현황판에 아직 없음'),'켜 두면 티어표 갱신이 이 대학 선수를 FA·휴면으로 바꾸지 않습니다(현황판에 나오면 저절로 평소대로)'):''}
         ${C().field('우승',C().textarea('tm_championship',r.championship||'','rows="3" placeholder="우승한 대회 이름(여러 개면 줄을 나눠서)"'))}
       </div>
       ${C().field('비고',C().textarea('tm_note',r.note||'','rows="3"'))}
@@ -122,6 +125,7 @@
         const row={team_name:name,founders:C().empty(C().value('tm_founders')),founded_date:C().empty(C().value('tm_founded')),
           disbanded_date:C().empty(C().value('tm_disbanded')),championship:C().empty(C().value('tm_championship')),note:C().empty(C().value('tm_note'))};
         if(r.id&&r.team_name!==name&&!confirm(`팀 이름을 ${r.team_name} → ${name}으로 바꿉니다\n전적의 상대 대학 이름과 티어표 소속은 자동으로 바뀌지 않습니다. 계속할까요`))throw new Error('저장을 취소했습니다');
+        if(hasOffBoard)row.off_board=!!document.getElementById('tm_off_board')?.checked;
         let error;
         if(r.id)({error}=await sb().from('teams').update(row).eq('id',r.id));
         else{row.source_order=await C().nextSourceOrder('teams');({error}=await sb().from('teams').insert(row));}
@@ -161,7 +165,7 @@
     el.innerHTML=`
       ${T.logoError?`<div class="admin-tl-import"><span>대학 로고 표가 아직 없습니다. supabase/staruniv.sql을 실행해 주세요</span></div>`:''}
       <div class="admin-table-wrap"><table class="admin-table admin-tm-table"><thead><tr><th>로고</th><th>팀</th><th>설립자</th><th>창단일</th><th>해체일</th><th>우승</th><th>비고</th><th>티어표 인원</th><th>관리</th></tr></thead><tbody>
-      ${T.teams.map(t=>`<tr><td>${logoBox(t.team_name,'admin-tl-logo is-sm')}</td><td><b>${esc(t.team_name)}</b></td><td>${esc(t.founders)}</td><td>${esc(t.founded_date)}</td><td>${esc(t.disbanded_date)}</td><td class="admin-tm-note">${esc(t.championship)}</td><td class="admin-tm-note">${esc(t.note)}</td><td>${T.count[t.team_name]||''}</td><td><button class="admin-btn" data-tm-edit="${t.id}">수정</button></td></tr>`).join('')||'<tr><td colspan="9">팀이 없습니다</td></tr>'}
+      ${T.teams.map(t=>`<tr><td>${logoBox(t.team_name,'admin-tl-logo is-sm')}</td><td><b>${esc(t.team_name)}</b>${t.off_board?' <br><small class="admin-tm-note">현황판 없음</small>':''}</td><td>${esc(t.founders)}</td><td>${esc(t.founded_date)}</td><td>${esc(t.disbanded_date)}</td><td class="admin-tm-note">${esc(t.championship)}</td><td class="admin-tm-note">${esc(t.note)}</td><td>${T.count[t.team_name]||''}</td><td><button class="admin-btn" data-tm-edit="${t.id}">수정</button></td></tr>`).join('')||'<tr><td colspan="9">팀이 없습니다</td></tr>'}
       </tbody></table></div>
       ${extra.length?`<div class="admin-section-head"><b>팀 목록에 없는 대학 ${extra.length}</b><small>티어표에 선수가 있거나 로고만 있는 이름입니다. 누르면 팀으로 추가합니다</small></div>
       <div class="admin-tm-extra">${extra.map(n=>`<button type="button" class="admin-tm-chip" data-tm-add="${esc(n)}">${logoBox(n,'admin-tl-logo is-xs')}<span>${esc(n)}</span><small>${T.count[n]?`${T.count[n]}명`:'로고만'}</small></button>`).join('')}</div>`:''}`;
