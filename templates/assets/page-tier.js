@@ -132,9 +132,16 @@ function tierThumbUrl(broadNo) {
 function tierTeamLogoHtml(team) {
     if (!team) return '';
     const src = teamLogoSrc(team);
-    if (!src) return '';
+    // 로고 목록이 아직 안 왔으면 자리만 표시해 두고, 오면 swapTierTeamLogos가 채운다(없는 대학은 그대로 비어 있다)
+    if (!src) return `<span class="tier-logo-pending" data-tier-logo="${escapeHTML(team)}" hidden></span>`;
     return `<img class="team-logo-icon tier-card-team-logo" src="${escapeHTML(src)}" alt=""
                  loading="lazy"${actOn('error', 'imgRemove', ACT.el)}>`;
+}
+
+function swapTierTeamLogos() {
+    document.querySelectorAll('.tier-logo-pending[data-tier-logo]').forEach(el => {
+        if (teamLogoSrc(el.dataset.tierLogo)) el.outerHTML = tierTeamLogoHtml(el.dataset.tierLogo);
+    });
 }
 
 // 카드 위쪽 영역. 방송 중이면 16:9 썸네일, 아니면 같은 크기 박스 안에 동그란 프로필.
@@ -771,7 +778,8 @@ async function initTierList() {
     }
 
     // 명단에 나오는 대학 로고만 받는다(처음 보는 대학이 있으면 받을 때까지 기다린다)
-    await loadTeamLogos(payload.members.map(m => m.team));
+    // 로고는 목록을 기다리게 하지 않는다: 받아 둔 로고는 바로 쓰고, 처음 보는 대학은 도착하면 그 자리만 채운다
+    loadTeamLogos(payload.members.map(m => m.team)).then(swapTierTeamLogos);
     TierState.members = payload.members;
     TierState.byId = {};
     TierState.members.forEach(m => { TierState.byId[tierIdKey(m)] = m; });
