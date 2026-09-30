@@ -1103,7 +1103,7 @@ function renderEntryColBody(side) {
     const searching = !!String(q || '').trim();
     const list = searching ? entrySearch(q) : entryRoster(team);
     const label = searching ? '검색 결과' : (team || '전체');
-    body.innerHTML = `<div class="h2h-suggest-head">${escapeHTML(label)} ${list.length.toLocaleString('ko-KR')}명</div>`
+    body.innerHTML = `<div class="h2h-suggest-head">${escapeHTML(label)} ${formatNum(list.length)}명</div>`
         + (list.length
             ? list.map(p => entryPlayerItemHtml(side, p, searching || !team)).join('')
             : `<div class="h2h-suggest-empty">${searching ? '찾는 선수가 없습니다' : '명단이 비어 있습니다'}</div>`);

@@ -152,7 +152,7 @@ function analysisRateColor(rate) {
 }
 
 function analysisWlText(w, l) {
-    return (w + l) ? `${w.toLocaleString('ko-KR')}승 ${l.toLocaleString('ko-KR')}패` : '-';
+    return (w + l) ? `${formatNum(w)}승 ${formatNum(l)}패` : '-';
 }
 
 // 전적 페이지와 같은 도넛(conic-gradient). page-records.js의 donutBackground와 같은 규칙이다.
@@ -185,7 +185,7 @@ function analysisSuggestHtml() {
     if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다</div></div>';
     const shown = Math.min(list.length, AnalysisState.suggestShown);
     return `<div class="h2h-suggest"${actOn('scroll', 'analysisSuggestScroll', ACT.el)}>
-        <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
+        <div class="h2h-suggest-head">검색 결과 ${formatNum(list.length)}명</div>
         ${playerSuggestItemsHtml(list.slice(0, shown), pid => act('analysisPick', pid))}
     </div>`;
 }

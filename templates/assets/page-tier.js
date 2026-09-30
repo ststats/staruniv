@@ -203,7 +203,7 @@ function tierPeekHtml(member, live) {
         <div class="live-thumb-wrap">
             <img class="live-thumb" src="${escapeHTML(tierThumbUrl(live.broadNo))}" alt=""${actOn('error', 'imgHide', ACT.el)}>
             <div class="live-thumb-overlay">
-                <span>${escapeHTML(live.viewers.toLocaleString('ko-KR'))}명</span><span>${escapeHTML(elapsed)}</span>
+                <span>${escapeHTML(formatNum(live.viewers))}명</span><span>${escapeHTML(elapsed)}</span>
             </div>
         </div>
         <div class="live-card-body">
@@ -586,11 +586,11 @@ function renderTierScope() {
     scope.innerHTML = `
         <button type="button" class="tier-scope-btn tier-scope-all${TierState.liveOnly ? '' : ' on'}"
                 data-live-only="0" aria-pressed="${!TierState.liveOnly}">
-            전체<span class="tier-scope-num">${total.toLocaleString('ko-KR')}</span>
+            전체<span class="tier-scope-num">${formatNum(total)}</span>
         </button>
         <button type="button" class="tier-scope-btn tier-scope-live${TierState.liveOnly ? ' on' : ''}"
                 data-live-only="1" aria-pressed="${TierState.liveOnly}">
-            방송중<span class="tier-scope-num">${liveCount.toLocaleString('ko-KR')}</span>
+            방송중<span class="tier-scope-num">${formatNum(liveCount)}</span>
         </button>`;
 }
 
