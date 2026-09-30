@@ -233,16 +233,17 @@ test('공개 조회(anon)는 화면에 나오는 것만: 멤버·전적 표는 �
   assert.doesNotMatch(admin, /histLoadData\(\)/, '어드민은 숨긴 연혁까지 받아야 한다');
 });
 
-test('대학 로고 목록은 로고를 그리는 페이지(전적·티어표)만 받는다', () => {
+test('대학 로고는 로고를 그리는 페이지(전적·티어표)가 화면에 나오는 대학 것만 받는다', () => {
   const core = read('templates/assets/core.js');
-  assert.match(core, /opts && opts\.logos \? loadTeamLogos\(\) : null/);
+  assert.match(core, /typeof opts\.logos === 'function' \? loadTeamLogos\(opts\.logos\(\)\)/);
+  assert.match(read('templates/assets/api.js'), /from\('university_logos'\)\.select\('name,path'\)\.in\('name', names\)/);
   const fs = require('node:fs');
   const path = require('node:path');
   const dir = path.join(__dirname, '..', 'templates', 'assets');
   for (const file of fs.readdirSync(dir).filter(f => /^page-.*\.js$/.test(f))) {
     const js = read(`templates/assets/${file}`);
     const usesLogos = /teamLogoHtml|teamLogoSrc|teamCellInnerHtml/.test(js);
-    const asksLogos = /bootPage\([\s\S]*logos: true/.test(js);
-    assert.equal(asksLogos, usesLogos, `${file}: 로고를 쓰면 bootPage에 logos: true, 안 쓰면 빼기`);
+    const asksLogos = /loadTeamLogos\(|bootPage\([\s\S]*logos: \(\) =>/.test(js);
+    assert.equal(asksLogos, usesLogos, `${file}: 로고를 쓰면 그 화면의 대학으로 로고를 받고, 안 쓰면 받지 않는다`);
   }
 });

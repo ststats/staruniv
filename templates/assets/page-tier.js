@@ -770,6 +770,8 @@ async function initTierList() {
         return;
     }
 
+    // 명단에 나오는 대학 로고만 받는다(처음 보는 대학이 있으면 받을 때까지 기다린다)
+    await loadTeamLogos(payload.members.map(m => m.team));
     TierState.members = payload.members;
     TierState.byId = {};
     TierState.members.forEach(m => { TierState.byId[tierIdKey(m)] = m; });
@@ -841,7 +843,6 @@ bootPage(async () => {
     }));
 }, {
     siteData: false,
-    logos: true,
     view: params => activateTabView(TIER_TABS, TIER_TABS[params.get('view')] ? params.get('view') : 'list'),
     // 들어온 탭이 쓰는 데이터를 로고·설정을 기다리지 않고 바로 받기 시작한다. 실패하면 탭이 다시 받는다.
     prefetch: () => {
@@ -852,7 +853,7 @@ bootPage(async () => {
         if (view === 'analysis' && params.get('p')) analysisLoadRating(params.get('p'));
         // 티어 목록(기본 탭): 명단과 방송 상태(20초 캐시)를 함께 받는다
         if (!view || view === 'list') {
-            requestTierMembers().catch(() => {});
+            requestTierMembers().then(rows => loadTeamLogos(asArray(rows).map(r => r.affiliation))).catch(() => {});
             fetchLiveBroadcasts().catch(() => {});
         }
     },
