@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -217,6 +218,32 @@ def write_search_files():
                       f'Sitemap: {SITE_URL}/sitemap.xml\n')
 
 
+def nav_config_default():
+    """export_supabase.py가 받아 둔 메뉴·서브탭 설정(JSON 문자열). 없으면 빈 문자열(그때는 브라우저가 받을 때까지 기다린다)."""
+    path = os.path.join('data', 'nav_config.json')
+    if not os.path.exists(path):
+        return ''
+    try:
+        with open(path, encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return ''
+    return json.dumps(data, ensure_ascii=False, separators=(',', ':')) if isinstance(data, dict) else ''
+
+
+def site_data_version():
+    """사이트 데이터 파일(write_site_data.py가 먼저 만든다)마다 내용 해시 - 'shell:ab12…,records:…,profiles:…'.
+    api.js가 파일 주소에 붙여, 바뀐 파일만 새로 받고 나머지는 브라우저 캐시를 그대로 쓴다(vercel.json이 ?v= 주소에 1년 캐시).
+    파일이 없으면(로컬 빌드 등) 빈 문자열 - 그러면 페이지는 매번 변경 여부만 확인한다."""
+    parts = []
+    for part in ('shell', 'records', 'profiles'):
+        path = os.path.join(OUT_DIR, 'data', f'site_{part}.json')
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                parts.append(f'{part}:{content_version(f.read())}')
+    return ','.join(parts)
+
+
 def main():
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     versions = static_asset_versions()
@@ -229,6 +256,8 @@ def main():
                                 if rider_html is not None else 'calmmon-rider.html')
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
+    env.globals['site_data_version'] = site_data_version()
+    env.globals['nav_config_default'] = nav_config_default()
     # 메뉴·방송통계 탭 숨김은 런타임에 core.js가 Supabase 설정으로 처리하므로 빌드는 모두 표시한다
     for page_id, _, title, description in PAGES:
         html_output = env.get_template(f'pages/{page_id}.html').render(

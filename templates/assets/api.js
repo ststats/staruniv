@@ -137,11 +137,13 @@ async function playerStats(soopIds, date) {
 }
 
 const Api = {
-    // GET /api/v1/site/{shell|records} - 멤버·전적 묶음(지금은 빌드가 만든 data/site_*.json)
-    // [캐시] 빌드가 페이지에 넣어준 버전(<meta name="site-data-version">)을 주소에 붙인다. 데이터가 바뀐 배포에서만
-    // 주소가 바뀌므로 평소엔 브라우저 캐시를 쓰고, 버전이 없으면 매번 변경 여부만 확인한다(no-cache → 304).
+    // GET /api/v1/site/{shell|records|profiles} - 멤버·전적 묶음(지금은 빌드가 만든 data/site_*.json)
+    // [캐시] 빌드가 페이지에 넣어준 파일별 내용 해시(<meta name="site-data-version" content="shell:…,records:…">)를
+    // 주소에 붙인다. 그 파일이 바뀐 배포에서만 주소가 바뀌므로 평소엔 브라우저 캐시를 그대로 쓰고(vercel.json 1년 캐시),
+    // 해시가 없으면 매번 변경 여부만 확인한다(no-cache → 304).
     async siteData(part) {
-        const version = document.querySelector('meta[name="site-data-version"]')?.content;
+        const meta = document.querySelector('meta[name="site-data-version"]')?.content || '';
+        const version = meta.split(',').map(x => x.split(':')).find(([k]) => k === part)?.[1];
         const url = `data/site_${part}.json${version ? `?v=${encodeURIComponent(version)}` : ''}`;
         // 끝내 안 오면 20초에 끊고 오류 안내로 넘어간다
         const res = await fetch(url, { cache: version ? 'default' : 'no-cache', signal: AbortSignal.timeout(20000) });

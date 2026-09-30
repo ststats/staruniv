@@ -169,12 +169,19 @@ async function h2hLoadPlayerFromSupabase(pid) {
     });
 }
 
+// 같은 선수를 받는 중에 또 부르면(두 칸에 같은 선수, 탭 전환 등) 새로 요청하지 않고 떠 있는 요청을 같이 기다린다.
+// 실패하면 비워서 다음에 다시 받는다.
+const h2hPlayerPending = {};
 async function h2hLoadPlayer(pid) {
     if (!pid) return [];
     if (H2hState.rows[pid]) return H2hState.rows[pid];
+    if (!h2hPlayerPending[pid]) {
+        h2hPlayerPending[pid] = h2hLoadPlayerFromSupabase(pid)
+            .then(rows => { H2hState.rows[pid] = rows; return rows; })
+            .finally(() => { delete h2hPlayerPending[pid]; });
+    }
     try {
-        H2hState.rows[pid] = await h2hLoadPlayerFromSupabase(pid);
-        return H2hState.rows[pid];
+        return await h2hPlayerPending[pid];
     } catch (e) {
         throw new Error(`선수 전적을 불러오지 못했습니다 (${e.message})`);
     }
