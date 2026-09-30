@@ -126,6 +126,16 @@ async function apiList(fn, values, wrap = p => p) {
     return r.map(row => Object.fromEntries(c.map((name, i) => [name, row[i]])));
 }
 
+// player_stats(ststat.sql)는 한 번에 ID 300개까지 받는다 - 넘으면 나눠 부른다
+async function playerStats(soopIds, date) {
+    const ids = [...new Set((soopIds || []).map(id => String(id || '').trim()).filter(Boolean))];
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += 300) chunks.push(ids.slice(i, i + 300));
+    const parts = await Promise.all(chunks.map(chunk => apiRows(apiClient().rpc('player_stats',
+        date ? { p_ids: chunk.join(','), p_date: date } : { p_ids: chunk.join(',') }))));
+    return parts.flat();
+}
+
 const Api = {
     // GET /api/v1/site/{shell|records} - 멤버·전적 묶음(지금은 빌드가 만든 data/site_*.json)
     // [캐시] 빌드가 페이지에 넣어준 버전(<meta name="site-data-version">)을 주소에 붙인다. 데이터가 바뀐 배포에서만
@@ -169,17 +179,14 @@ const Api = {
     },
 
     // GET /api/v1/stats/latest?ids= - 가장 최근 날짜의 월 누적(멤버별, 날짜 stat_date 포함). 날짜를 먼저 받지 않아도 된다.
+    // 휴면 선수도 그 선수 칸(프로필·방송통계)에는 나와야 하므로 표를 직접 읽지 않고 ID를 받는 함수(player_stats)로 읽는다.
     async statsLatest(soopIds) {
-        return apiPaged((c, from, to) => c.from('daily_member_stats_latest')
-            .select('stat_date,soop_id,nickname,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at')
-            .in('soop_id', soopIds).order('soop_id', { ascending: true }).range(from, to), { parallel: 1 });
+        return playerStats(soopIds, null);
     },
 
     // GET /api/v1/stats?date=&ids= - 그날까지의 월 누적(멤버별)
     async stats(date, soopIds) {
-        return apiPaged((c, from, to) => c.from('daily_member_stats')
-            .select('soop_id,nickname,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at')
-            .eq('stat_date', date).in('soop_id', soopIds).order('soop_id', { ascending: true }).range(from, to), { parallel: 1 });
+        return playerStats(soopIds, date);
     },
 
     // GET /api/v1/schedule - 일정 전체와 휴방 { events, offAir }
@@ -210,9 +217,12 @@ const Api = {
         return apiRows(apiClient().from('member_posts').select('soop_id,total_pages,post').order('reg_date', { ascending: false }).limit(2000));
     },
 
-    // GET /api/v1/posts?limit= - 전체 멤버 공지 중 최신 limit개(홈) [{soop_id, post}]
+    // GET /api/v1/posts?limit= - 전체 멤버 공지 중 최신 limit개(홈 카드) [{soop_id, titleName, regDate, text, thumb}]
+    // 홈 카드는 제목·본문 글자·시각·첫 사진만 그리므로 글 전체(JSON) 대신 그 칸만 받는다.
     async recentPosts(limit) {
-        return apiRows(apiClient().from('member_posts').select('soop_id,post').order('reg_date', { ascending: false }).limit(limit));
+        return apiRows(apiClient().from('member_posts')
+            .select('soop_id,titleName:post->>titleName,regDate:post->>regDate,text:post->content->>textContent,thumb:post->photos->0->>url')
+            .order('reg_date', { ascending: false }).limit(limit));
     },
 
     // GET /api/v1/tier/members - 티어표 명단

@@ -175,12 +175,12 @@ function mvRenderChips() {
     container.setAttribute('aria-busy', 'false');
 }
 
-// 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송 중 여부(LIVE 뱃지)는 방송 중 표(core.js
-// fetchLiveBroadcasts, 한 번 조회)로 확인해 나중에 덧입힌다.
+// 멤버 목록은 즉시 그려서 바로 선택할 수 있게 하고, 방송 중 여부(LIVE 뱃지)는 방송 중인 ID 목록(core.js
+// fetchLiveIds, 한 번 조회)으로 확인해 나중에 덧입힌다.
 async function mvCheckLiveAndRerenderChips() {
     if (activeMembersWithSoopId().length === 0) return;
     try {
-        const live = await fetchLiveBroadcasts();
+        const live = await fetchLiveIds();
         MvState.liveMap = Object.fromEntries(Object.keys(live).map(id => [id, true]));
     } catch (e) {
         MvState.liveMap = {};
@@ -356,6 +356,6 @@ bootPage(() => {
         switchToolsView(toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW)), true);
     }));
 }, {
-    prefetch: () => fetchLiveBroadcasts().catch(() => {}),   // 멀티뷰어 방송 중 표시
+    prefetch: () => fetchLiveIds().catch(() => {}),   // 멀티뷰어 방송 중 표시
     view: params => activateTabView(TOOLS_TABS, toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW))),
 });

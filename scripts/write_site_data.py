@@ -18,14 +18,17 @@ MEMBER_MEDIA_EXTS = (".mp4", ".webm", ".webp", ".gif", ".jpg", ".jpeg", ".png")
 OUT_PATHS = {
     "shell": OUT_DIR / "site_shell.json",
     "records": OUT_DIR / "site_records.json",
+    "profiles": OUT_DIR / "site_profiles.json",
 }
 
-# '입단 티어'는 프로필 활동기간 줄, 'ELO ID'는 프로필 전적 분석 버튼, '대표 사진'은 방송통계 TOP 칸이 쓴다
-# (여기 없으면 사이트에 안 넘어가서 안 보인다)
+# 거의 모든 페이지가 받는 멤버 목록(site_shell.json): 목록·카드·선택 바가 쓰는 칸만. '대표 사진'은 방송통계 TOP 칸이 쓴다.
 SITE_MEMBER_FIELDS = [
-    "이름", "SOOP ID", "ELO ID", "생년월일", "성별", "종족", "티어", "입단 티어",
-    "직책", "입단일", "퇴단일", "MBTI", "YouTube", "대표 사진",
+    "이름", "SOOP ID", "성별", "종족", "티어",
+    "직책", "입단일", "퇴단일", "대표 사진",
 ]
+# 멤버 페이지 프로필 창에서만 보이는 칸(site_profiles.json, 멤버 페이지만 받는다). 이름으로 멤버 목록에 붙인다.
+# '입단 티어'는 활동기간 줄, 'ELO ID'는 전적 분석 버튼, 'YouTube'는 외부 링크가 쓴다(여기 없으면 사이트에 안 보인다).
+SITE_PROFILE_FIELDS = ["생년월일", "MBTI", "YouTube", "ELO ID", "입단 티어"]
 SITE_MATCH_FIELDS = [
     "매치 번호", "날짜", "상대팀", "형식", "방식",
     "최종 결과", "세트 결과", "_match_key",
@@ -155,6 +158,11 @@ def main() -> None:
         # 내전은 양쪽 선수 기록을 위해 세트를 뒤집은 복제본(_mirrored)이 한 벌 더 있다 - 세트 수에서는 뺀다
         "roundCount": sum(1 for row in rounds if not row.get("_mirrored")),
     }
+    # 이름이 같은 줄(재입단)이 여럿이면 목록 순서와 같게 차례로 붙이도록 이름별 배열로 둔다
+    profiles: dict[str, list[dict]] = {}
+    for row in members:
+        profiles.setdefault(str(row.get("이름") or ""), []).append(pick(row, SITE_PROFILE_FIELDS))
+    profiles_payload = {"profiles": profiles}
     records_payload = {
         "matches": [pick(row, SITE_MATCH_FIELDS) for row in matches],
         "rounds": [pick(row, SITE_ROUND_FIELDS) for row in rounds],
@@ -162,7 +170,7 @@ def main() -> None:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for name, payload in (("shell", shell_payload), ("records", records_payload)):
+    for name, payload in (("shell", shell_payload), ("records", records_payload), ("profiles", profiles_payload)):
         path = OUT_PATHS[name]
         temp = path.with_suffix(".json.tmp")
         temp.write_text(
