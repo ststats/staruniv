@@ -38,7 +38,7 @@ function renderHomeRecordsPreview(box) {
     ];
     box.innerHTML = '<div class="home-preview-label">RECORDS</div>'
         + rows.map(([label, count, unit]) =>
-            `<div class="home-preview-row"><span>${label}</span><b>${count.toLocaleString('ko-KR')}${unit}</b></div>`).join('')
+            `<div class="home-preview-row"><span>${label}</span><b>${formatNum(count)}${unit}</b></div>`).join('')
         + homePreviewLinkHtml('records/', '전적 보기');
 }
 
@@ -183,7 +183,7 @@ function liveRaceEdgeClass(m) {
 function liveCardHtml({ member: m, live }) {
     const { broad, broadStart } = live;
     const soopId = m['SOOP ID'];
-    const viewerText = broad.current_sum_viewer != null ? broad.current_sum_viewer.toLocaleString('ko-KR') + '명' : '-';
+    const viewerText = broad.current_sum_viewer != null ? formatNum(broad.current_sum_viewer) + '명' : '-';
     const elapsedText = formatLiveElapsed(broadStart) || '-';
     // 아바타 링 색: 여자는 기존 그대로(빨강 계열 그라디언트), 남자만 파란 원테두리로.
     const avatarRingClass = m['성별'] === '남자' ? 'live-card-avatar-ring live-card-avatar-ring--male' : 'live-card-avatar-ring';

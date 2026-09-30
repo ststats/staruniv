@@ -214,7 +214,7 @@ function openMemberProfile(name) {
         ? m['입단일'] + ' ~ ' + (active ? '현재' : (m['퇴단일'] || '-')) : '-';
     const daysEl = document.getElementById('mp-days');
     daysEl.hidden = days === null || !Number.isFinite(days);
-    daysEl.textContent = daysEl.hidden ? '' : days.toLocaleString('ko-KR') + (active ? '일째' : '일 활동');
+    daysEl.textContent = daysEl.hidden ? '' : formatNum(days) + (active ? '일째' : '일 활동');
     // 위 티어 뱃지는 지금 티어(티어표), 입단 티어는 이 입단 때 티어(프로필 활동기간 줄에서만 보인다)
     const joinTier = String(m['입단 티어'] ?? '').trim();
     document.getElementById('mp-join-tier').textContent = joinTier ? tierLabel(joinTier) : '-';
@@ -761,7 +761,7 @@ function newsPostStatsHtml(post) {
     const likeCnt = post.count && post.count.likeCnt;
     const readCnt = post.count && post.count.readCnt;
     if (!likeCnt && !readCnt) return '<div class="news-post-stats"></div>';
-    const stat = (icon, n) => `<span class="news-post-stat">${icon}${escapeHTML(Number(n).toLocaleString('ko-KR'))}</span>`;
+    const stat = (icon, n) => `<span class="news-post-stat">${icon}${escapeHTML(formatNum(Number(n)))}</span>`;
     return `<div class="news-post-stats">
                     ${likeCnt ? stat(HEART_ICON, likeCnt) : ''}
                     ${readCnt ? stat(EYE_ICON, readCnt) : ''}
@@ -822,8 +822,21 @@ function loadProfileActivityData() {
     return fetchSynergyData().then(refresh, err => { console.error(err); refresh(); });
 }
 
+// 프로필 창은 처음 열 때만 레이아웃 계산이 무거워(창 안 요소 전체를 처음 배치) 살짝 멈춘다.
+// 페이지가 한가할 때 보이지 않게 한 번 배치해 두면 처음 열 때도 두 번째처럼 바로 열린다.
+function prewarmProfileModal() {
+    const el = document.getElementById('memberProfileModal');
+    if (!el || el.classList.contains('show')) return;
+    el.style.visibility = 'hidden';
+    el.style.display = 'block';
+    void el.offsetWidth;
+    el.style.display = '';
+    el.style.visibility = '';
+}
+
 bootPage(() => {
     safeInit('멤버 페이지', renderMembersPage);
+    (window.requestIdleCallback || (fn => setTimeout(fn, 500)))(() => prewarmProfileModal(), { timeout: 3000 });
     safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
         const rawView = params.get('view') || runtimeDefaultSubtab('members','status');
         const view = rawView === 'news' ? 'news' : 'status';

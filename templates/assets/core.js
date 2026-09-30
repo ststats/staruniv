@@ -204,7 +204,12 @@ function showModal(id) {
     const scrollbar = window.innerWidth - document.documentElement.clientWidth;
     document.body.classList.add('modal-open');
     document.body.style.overflow = 'hidden';
-    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
+    // 스크롤바가 사라진 만큼 폭이 넓어지면 페이지 전체(멤버 카드 목록 등)를 다시 배치하느라 창이 열리는 순간 멈춘다.
+    // 스크롤바 자리를 비워 두면(scrollbar-gutter) 폭이 그대로라 다시 배치할 게 없다. 못 쓰는 브라우저는 예전처럼 여백으로 메운다.
+    if (scrollbar > 0) {
+        if (CSS.supports && CSS.supports('scrollbar-gutter', 'stable')) document.documentElement.style.scrollbarGutter = 'stable';
+        else document.body.style.paddingRight = `${scrollbar}px`;
+    }
     if (!modalBackdrop) {
         modalBackdrop = document.createElement('div');
         modalBackdrop.className = 'modal-backdrop fade';
@@ -248,6 +253,7 @@ function hideModal(el, keepBackdrop) {
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
+        document.documentElement.style.scrollbarGutter = '';
     });
 }
 
@@ -809,7 +815,7 @@ function memberPeriodBadgeHtml(m) {
     const end = active ? '현재' : (m['퇴단일'] || '-');
     const range = `${String(join).replace(/-/g, '.')} ~ ${String(end).replace(/-/g, '.')}`;
     const days = daysBetween(join, active ? todayStr() : (m['퇴단일'] || null));
-    const text = days === null ? range : `${days.toLocaleString('ko-KR')}일${active ? '째' : ''}`;
+    const text = days === null ? range : `${formatNum(days)}일${active ? '째' : ''}`;
     return `<span class="rank-badge-text" title="활동기간 ${escapeHTML(range)}">${escapeHTML(text)}</span>`;
 }
 
@@ -1065,11 +1071,19 @@ function formatSecondsToHM(sec) {
     sec = sec || 0;
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
-    return `${h.toLocaleString('ko-KR')}시간 ${m}분`;   // 합계는 1만 시간을 넘는다(18,112시간)
+    return `${formatNum(h)}시간 ${m}분`;   // 합계는 1만 시간을 넘는다(18,112시간)
+}
+
+// 천 단위 쉼표(12,345). toLocaleString('ko-KR')은 처음 부를 때 한국어 숫자 형식 자료를 읽느라 수십 ms 멈춘다
+// (멤버 프로필 창을 처음 열 때 버벅임) - 정수는 직접 쉼표를 넣고, 소수만 toLocaleString에 맡긴다.
+function formatNum(value) {
+    const n = Number(value) || 0;
+    if (!Number.isSafeInteger(n)) return n.toLocaleString('ko-KR');
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 function formatCount(value, unit) {
-    return (value || 0).toLocaleString('ko-KR') + unit;
+    return formatNum(value || 0) + unit;
 }
 
 function formatSponsorRecord(wins, losses) {
@@ -1576,7 +1590,7 @@ const RANK_HELP = {
 function playerRankBadgeHtml(tier, rank, tierTotal) {
     const label = escapeHTML(tierLabel(tier));
     const body = (rank && tierTotal)
-        ? `${rank}위/${Number(tierTotal).toLocaleString('ko-KR')}명`
+        ? `${rank}위/${formatNum(Number(tierTotal))}명`
         : '기록 없음';
     return `<span class="tag-badge rank-badge">${label} · ${body}</span>`;
 }
@@ -1600,7 +1614,7 @@ function playerSummaryHtml(p, rec, close = '', opts = {}) {
             <div class="player-summary-position">${playerRankBadgeHtml(p.t, opts.rank, opts.tierTotal)}${helpBadgeHtml(RANK_HELP)}</div>
         </div>
         <div class="player-summary-stats">
-            <div class="player-summary-total">총 전적 ${rec.total.toLocaleString('ko-KR')}전</div>
+            <div class="player-summary-total">총 전적 ${formatNum(rec.total)}전</div>
             <div class="player-summary-wl">${rec.win}승 ${rec.lose}패</div>
             <div class="player-summary-rate">${rec.total ? `${Math.round(rec.win / rec.total * 1000) / 10}%` : '-'}</div>
         </div>${close}</div>`;
@@ -1628,6 +1642,6 @@ function matchPaginationHtml(total, page, size, handler) {
             ${step(cur + 1, '&rsaquo;', '다음 페이지', cur === count)}
             ${step(count, '&raquo;', '마지막 페이지', cur === count)}
         </span>
-        <span class="match-pagination-info">${cur} / ${count} 페이지 · ${total.toLocaleString('ko-KR')}경기</span>
+        <span class="match-pagination-info">${cur} / ${count} 페이지 · ${formatNum(total)}경기</span>
     </nav>`;
 }

@@ -337,7 +337,7 @@ function renderSynergySummary(rows) {
     const config = synergyMetricConfig(SynergyState.metric) || SYNERGY_METRICS.sponsor;
     renderSynergyTileLabels();
     const readValue = config.sortValue ? config.sortValue : (row => row[SynergyState.metric] || 0);
-    const fmt = v => (config.formatValue ? config.formatValue(v) : Number(v).toLocaleString('ko-KR'));
+    const fmt = v => (config.formatValue ? config.formatValue(v) : formatNum(Number(v)));
 
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
     setText('synergy-top-metric', config.label || '');

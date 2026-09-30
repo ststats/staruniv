@@ -259,7 +259,7 @@ function playerSuggestItemsHtml(list, pickCall) {
             ${p.en ? `<span class="h2h-suggest-alt">${escapeHTML(p.en)}</span>` : ''}
             ${p.r ? raceBadgeHtml(p.r) : ''}
             ${playerBadgesHtml({...p, r: ""})}
-            <span class="h2h-suggest-count">${(p.m || 0).toLocaleString('ko-KR')}판</span>
+            <span class="h2h-suggest-count">${formatNum(p.m || 0)}판</span>
         </button>`).join('');
 }
 
@@ -269,7 +269,7 @@ function h2hSuggestHtml(slot) {
     if (!list.length) return '<div class="h2h-suggest"><div class="h2h-suggest-empty">찾는 선수가 없습니다</div></div>';
     const shown = Math.min(list.length, H2hState.suggestShown);
     return `<div class="h2h-suggest"${actOn('scroll', 'h2hSuggestScroll', slot, ACT.el)}>
-        <div class="h2h-suggest-head">검색 결과 ${list.length.toLocaleString('ko-KR')}명</div>
+        <div class="h2h-suggest-head">검색 결과 ${formatNum(list.length)}명</div>
         ${playerSuggestItemsHtml(list.slice(0, shown), pid => act('h2hPick', slot, pid))}
     </div>`;
 }
@@ -485,7 +485,7 @@ function h2hScoreHtml(a, b, winA, winB) {
             <div class="h2h-score-mid">
                 <div class="h2h-score-rate">${h2hRateText(winA, winB)}</div>
                 <div class="h2h-score-bar"><span style="width:${pct}%"></span></div>
-                <div class="h2h-score-total">${total.toLocaleString('ko-KR')}전</div>
+                <div class="h2h-score-total">${formatNum(total)}전</div>
             </div>
             <div class="h2h-score-side">
                 <div class="h2h-score-name">${escapeHTML(b)}</div>
@@ -509,7 +509,7 @@ function h2hTopOpponentsHtml(rows, targetSlot) {
     const list = all.slice(0, H2hState.rivalShown);
     return `
         <div class="section-title" data-en="RIVALS"><span class="section-title-label">자주 만난 상대</span>
-            <span class="title-count">${all.length.toLocaleString('ko-KR')}명</span></div>
+            <span class="title-count">${formatNum(all.length)}명</span></div>
         <div class="h2h-rivals">
             ${list.map(([pid, [win, lose]]) => h2hRivalCardHtml(pid, win, lose, act('h2hPick', targetSlot, pid), !h2hPlayer(pid))).join('')}
         </div>
