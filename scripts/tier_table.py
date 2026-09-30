@@ -704,12 +704,24 @@ def suggest_candidates(card, team, candidates, n=3):
              'score': round(sim, 2)} for sim, c in scored[:n]]
 
 
+PHOTO_COLS = ('soop_id', 'nickname', 'hash', 'tier', 'race', 'tier_feat', 'race_feat')
+PHOTO_NAME_COLS = ('name_read', 'name_feat')
+
+
+def photo_cols(conn):
+    """사진 기억 칸. 닉네임 칸 그림·읽은 글씨(name_feat·name_read)는 SQL 적용 뒤에만 있다 - 없으면 빼고 쓴다.
+    예전엔 이 둘을 저장하지 않아 매번 기억이 비어, 늘 틀리게 읽히는 닉네임이 매번 '닉네임 변경'으로 떴다."""
+    have = {r[0] for r in conn.execute("select column_name from information_schema.columns where table_schema = 'public' "
+                                        "and table_name = 'tier_memory_photos'").fetchall()}
+    return PHOTO_COLS + tuple(k for k in PHOTO_NAME_COLS if k in have)
+
+
 def load_memory_sql(conn):
     """DB의 기억을 읽는다. 처음(비어 있음)이면 저장소의 기억 파일로 채워 넣는다."""
     memory = {'tier': [], 'race': [], 'photos': []}
     for kind, value, feat, bg in conn.execute('select kind, value, feat, bg from public.tier_memory_glyphs order by id'):
         memory[kind].append({'value': value, 'feat': feat, 'bg': bg})
-    cur = conn.execute('select soop_id, nickname, hash, tier, race, tier_feat, race_feat from public.tier_memory_photos order by id')
+    cur = conn.execute(f'select {", ".join(photo_cols(conn))} from public.tier_memory_photos order by id')
     cols = [c.name for c in cur.description]
     memory['photos'] = [dict(zip(cols, row)) for row in cur.fetchall()]
     if not memory['photos'] and not memory['tier'] and MEMORY_PATH.exists():
@@ -733,10 +745,10 @@ def save_memory_sql(conn, memory):
         c.execute('delete from public.tier_memory_photos')
         c.executemany('insert into public.tier_memory_glyphs (kind, value, feat, bg) values (%s, %s, %s, %s)',
                       [(k, t['value'], t['feat'], t.get('bg')) for k in ('tier', 'race') for t in memory[k]])
-        c.executemany('insert into public.tier_memory_photos (soop_id, nickname, hash, tier, race, tier_feat, race_feat) '
-                      'values (%s, %s, %s, %s, %s, %s, %s)',
-                      [(p.get('soop_id'), p['nickname'], p['hash'], p.get('tier'), p.get('race'),
-                        p.get('tier_feat'), p.get('race_feat')) for p in memory['photos']])
+        cols = photo_cols(conn)
+        c.executemany(f'insert into public.tier_memory_photos ({", ".join(cols)}) '
+                      f'values ({", ".join(["%s"] * len(cols))})',
+                      [tuple(p.get(k) for k in cols) for p in memory['photos']])
 
 
 def learn_applied(conn, memory):
