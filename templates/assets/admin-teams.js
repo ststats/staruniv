@@ -11,7 +11,7 @@
   const T={teams:[],logos:{},count:{}};
 
   const root=()=>document.getElementById('tmRoot');
-  const clearLogoCache=()=>{try{localStorage.removeItem('staruniv-logos-v1');}catch(e){}};
+  const clearLogoCache=()=>{try{localStorage.removeItem(typeof LOGO_CACHE_KEY==='string'?LOGO_CACHE_KEY:'staruniv-logos-v2');}catch(e){}};
 
   async function load(){
     const [teams,logos,people]=await Promise.all([
