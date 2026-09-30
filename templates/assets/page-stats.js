@@ -104,9 +104,8 @@ async function loadSynergyData(month = SynergyState.month) {
         if (seq !== _synergyLoadSeq) return;
         SynergyState.failed = true;
         console.error(e);
-        const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다');
-        document.getElementById('synergy-tbody-male').innerHTML = errRow;
-        document.getElementById('synergy-tbody-female').innerHTML = errRow;
+        document.getElementById('synergy-updated').innerText = '-';
+        renderSynergyTable();
     }
 }
 
@@ -181,7 +180,7 @@ function renderSynergyTileLabels() {
 
 function setSynergyMonth(month) {
     const key = synergyMonthKey(month);
-    if (key === SynergyState.month && SynergyState.data) return;
+    if (key === SynergyState.month && SynergyState.data && !SynergyState.failed) return;   // 실패한 달은 다시 누르면 다시 받는다
     SynergyState.month = key;
     renderSynergyMonthNav();
     syncSynergyUrl();
@@ -374,6 +373,14 @@ function renderSynergySummary(rows) {
 }
 
 function renderSynergyTable() {
+    // 고른 달을 받지 못했으면(실패) 이전 달 데이터가 남아 있어도 그리지 않는다 - 지표를 바꿔도 새 달 수치처럼 보이지 않게
+    if (SynergyState.failed) {
+        renderSynergySummary([]);
+        const errRow = emptyRowHtml(3, '데이터를 불러오지 못했습니다');
+        document.getElementById('synergy-tbody-male').innerHTML = errRow;
+        document.getElementById('synergy-tbody-female').innerHTML = errRow;
+        return;
+    }
     if (!SynergyState.data) return;
     const active = SynergyState.data.filter(m => m.active);
     // 요약 타일은 남녀를 합친 전체 순위를 기준으로 한다.
