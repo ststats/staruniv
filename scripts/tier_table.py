@@ -677,7 +677,7 @@ def load_off_board_sql(conn) -> set:
 def load_candidates_sql(conn):
     """ststat이 모아 둔 ELO 대기 명단(EloBoard에는 있고 우리 명단엔 없는 선수). 표가 없으면 빈 목록."""
     try:
-        cur = conn.execute("select elo_id, nickname, soop_id, race, tier, affiliation from public.tier_member_candidates "
+        cur = conn.execute("select elo_id, nickname, soop_id, race, tier, affiliation, gender from public.tier_member_candidates "
                            "where status = 'pending' and elo_id is not null")
     except Exception:
         conn.rollback()
@@ -701,7 +701,7 @@ def suggest_candidates(card, team, candidates, n=3):
     scored.sort(key=lambda x: -x[0])
     return [{'elo_id': c['elo_id'], 'nickname': c.get('nickname') or '', 'soop_id': c.get('soop_id') or '',
              'tier': c.get('tier') or '', 'race': c.get('race') or '', 'affiliation': c.get('affiliation') or '',
-             'score': round(sim, 2)} for sim, c in scored[:n]]
+             'gender': c.get('gender') or '', 'score': round(sim, 2)} for sim, c in scored[:n]]
 
 
 PHOTO_COLS = ('soop_id', 'nickname', 'hash', 'tier', 'race', 'tier_feat', 'race_feat')

@@ -1112,13 +1112,13 @@ begin
     next_order := next_order + 1;
     -- ELO 대기 명단에서 고른 새 선수는 ELO ID(·SOOP ID)까지 넣어 전적·방송통계와 바로 이어진다
     insert into public.tier_members (source_order, nickname, soop_id, elo_id, tier, race, affiliation, history,
-                                     modified_at, tier_table_registered)
+                                     modified_at, tier_table_registered, gender)
     values (next_order, btrim(u->>'nickname'), nullif(btrim(u->>'soop_id'), ''),
             case when coalesce(u->>'elo_id', '') ~ '^[0-9]+$' then (u->>'elo_id')::int end,
             nullif(u->>'tier', ''),
             nullif(u->>'race', ''), nullif(u->>'affiliation', ''),
             case when u->>'affiliation' in ('FA', '휴면') then null else nullif(u->>'affiliation', '') end,
-            stamp, d)
+            stamp, d, case when u->>'gender' in ('남자', '여자') then u->>'gender' end)
     returning id into new_id;
     ins_ids := ins_ids || new_id;
     log := log || jsonb_build_object('id', new_id, 'nickname', btrim(u->>'nickname'), 'new', true,
