@@ -363,6 +363,7 @@
         <div class="admin-tu-choice"><select class="admin-input" data-tu-fa-mode="${i}">${[['skip','보류'],['pick','기존 선수(닉네임 변경)'],['new','새 선수 추가']].map(([k,l])=>`<option value="${k}"${dc.mode===k?' selected':''}>${l}</option>`).join('')}</select>
         ${dc.mode==='pick'?pickInput(`fa-${i}`,dc.pick):''}</div></div>`;
     }
+    if(x.type==='현황판에 없는 대학 소속(소속 유지)')return `<div class="admin-tu-review"><div><b>현황판에 없는 대학 소속</b> · ${esc(x.nickname)} (${esc(x.team)})<br><small>FA 명단에 있지만 팀 관리에서 '현황판에 아직 없음'인 대학이라 소속을 그대로 둡니다</small></div></div>`;
     if(x.type==='표에서 없어진 대학')return `<div class="admin-tu-review"><div><b>표에서 없어진 대학</b> · ${esc(x.team)} (${x.members}명)<br><small>선수들은 FA 명단에 있으면 FA, 없으면 휴면 변동으로 올라가 있습니다</small></div></div>`;
     return `<div class="admin-tu-review"><div><b>${esc(x.type)}</b> · ${esc(x.nickname||x.team||'')}</div></div>`;
   }
