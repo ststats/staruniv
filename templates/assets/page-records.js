@@ -527,6 +527,6 @@ bootPage(() => {
     }));
 }, {
     siteData: ['shell', 'records'],
-    logos: true,
+    logos: () => [...SiteData.matches.map(m => m['상대팀']), '캄몬스타즈'],   // 상대팀('내전'은 캄몬스타즈 로고)
     view: params => activateTabView(RECORD_TABS, params.get('view') === 'solo' ? 'individual' : 'team'),
 });

@@ -31,7 +31,9 @@ paths:
   /logos:
     get:
       summary: 대학 로고 (Api.universityLogos)
-      description: 어느 화면(전적 상대팀·티어표 소속·시너지 대학)에든 나오는 대학만.
+      description: 그 화면에 나오는 대학만(전적은 상대팀, 티어표는 명단 소속, 시너지는 카드가 그려지는 대학).
+      parameters:
+        - { name: names, in: query, required: true, description: "쉼표로 구분한 대학 이름", schema: { type: string } }
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Logo' } } } } }
   /live:

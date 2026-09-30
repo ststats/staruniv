@@ -632,9 +632,10 @@ function teamLogoFallback(imgEl, teamName) {
 }
 
 // 대학 로고 주소. 로고는 어드민(전적 > 팀 관리)에서 올리고 Supabase(university_logos 표 + Storage)에
-// 있으며 시너지와 같이 쓴다. 로고를 쓰는 페이지(bootPage의 logos: true)만 열 때 목록을 받아 둔다. 목록에 없으면 '' (배지로 대신).
-const TeamLogos = { map: {} };
-const LOGO_CACHE_KEY = 'staruniv-logos-v1';
+// 있으며 시너지와 같이 쓴다. 로고를 그리는 화면이 그 화면에 나오는 대학 이름으로 loadTeamLogos를 부른다
+// (전적: bootPage의 logos, 티어표: 명단을 받은 뒤). 목록에 없으면 '' (배지로 대신).
+const TeamLogos = { map: {}, pending: {} };
+const LOGO_CACHE_KEY = 'staruniv-logos-v2';   // { 대학 이름: Storage 경로('' = 로고 없음) }
 function teamLogoSrc(name) {
     return TeamLogos.map[name] || '';
 }
@@ -645,31 +646,41 @@ function storageMediaUrl(path) {
     if (!p || !base || /^[a-z]+:/i.test(p) || p.includes('..')) return '';
     return `${base}/storage/v1/object/public/staruniv-media/${p.split('/').map(encodeURIComponent).join('/')}`;
 }
-function setTeamLogos(rows) {
+// { 이름: 경로 } 를 로고 주소로 바꿔 TeamLogos.map에 더한다(경로가 비면 로고 없음)
+function setTeamLogos(paths) {
     const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
     const base = String(cfg.url || '').replace(/\/$/, '');
-    const map = {};
-    (Array.isArray(rows) ? rows : []).forEach(r => {
-        if (r && r.name && r.path) map[r.name] = `${base}/storage/v1/object/public/staruniv-media/${r.path}`;
+    Object.entries(paths).forEach(([name, path]) => {
+        if (path) TeamLogos.map[name] = `${base}/storage/v1/object/public/staruniv-media/${path}`;
+        else delete TeamLogos.map[name];
     });
-    TeamLogos.map = map;
 }
-async function loadTeamLogos() {
-    let cached = null;
-    try { cached = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || 'null'); } catch (_) {}
-    const fresh = (async () => {
-        const data = await Api.universityLogos();
-        try { localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(data || [])); } catch (_) {}
-        return data || [];
-    })();
-    // 전에 받아 둔 목록이 있으면 바로 쓰고 새 목록은 뒤에서 받는다(다음 화면부터 반영)
-    if (Array.isArray(cached)) {
-        setTeamLogos(cached);
-        fresh.catch(e => console.warn('대학 로고 목록을 새로 받지 못했습니다.', e));
-        return;
+// 화면에 나오는 대학(names)의 로고만 받는다. 전에 받아 둔 대학(브라우저 저장)은 바로 쓰고 뒤에서 새로 받고
+// (다음 화면부터 반영), 처음 보는 대학이 있으면 받을 때까지 기다린다. 같은 대학을 두 번 동시에 묻지 않는다.
+async function loadTeamLogos(names) {
+    const wanted = [...new Set(asArray(names).map(n => String(n || '').trim()).filter(Boolean))];
+    if (!wanted.length) return;
+    let cached = {};
+    try { cached = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; } catch (_) {}
+    const known = wanted.filter(n => Object.prototype.hasOwnProperty.call(cached, n));
+    setTeamLogos(Object.fromEntries(known.map(n => [n, cached[n]])));
+    const ask = wanted.filter(n => !TeamLogos.pending[n]);
+    if (ask.length) {
+        const request = Api.universityLogos(ask).then(rows => {
+            const paths = Object.fromEntries(ask.map(n => [n, '']));
+            asArray(rows).forEach(r => { if (r && r.name && ask.includes(r.name)) paths[r.name] = r.path || ''; });
+            setTeamLogos(paths);
+            try {
+                const all = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {};
+                localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(Object.assign(all, paths)));
+            } catch (_) {}
+        });
+        ask.forEach(n => { TeamLogos.pending[n] = request; });
+        request.catch(() => ask.forEach(n => { if (TeamLogos.pending[n] === request) delete TeamLogos.pending[n]; }));
     }
-    try { setTeamLogos(await fresh); }
-    catch (e) { console.warn('대학 로고 목록을 불러오지 못했습니다. 이름 첫 글자 배지로 대신합니다.', e); }
+    const waits = [...new Set(wanted.filter(n => !known.includes(n)).map(n => TeamLogos.pending[n]))];
+    try { await Promise.all(waits); }
+    catch (e) { console.warn('대학 로고를 불러오지 못했습니다. 이름 첫 글자 배지로 대신합니다.', e); }
 }
 
 function teamLogoHtml(teamName, sizePx) {
@@ -1397,8 +1408,8 @@ function applyNavConfig(data) {
 // 티어표·영상처럼 그 데이터를 한 줄도 안 쓰는 페이지가 400KB짜리 파일을 기다렸다
 // 시작하던 걸 없애기 위한 것이다. 그 페이지에서 SiteData를 쓰기 시작하면 여기 옵션을
 // 지워야 한다(안 지우면 목록이 빈 채로 그려진다).
-// opts.logos: true인 페이지만 대학 로고 목록(university_logos)을 받는다 - 로고를 그리는 곳은 전적·티어표뿐이다.
-// 다른 페이지에서 teamLogoHtml/teamLogoSrc를 쓰기 시작하면 그 페이지에 logos: true를 준다(안 주면 이름 첫 글자 배지).
+// opts.logos: 사이트 데이터를 받은 뒤 부르는 함수로, 그 페이지에 로고가 나오는 대학 이름 목록을 돌려준다(그 대학 로고만 받는다).
+// 다른 페이지에서 teamLogoHtml/teamLogoSrc를 쓰기 시작하면 그 페이지에 logos를 준다(안 주면 이름 첫 글자 배지).
 // 구역 제목(.section-title의 글자)은 div·span이라 화면 읽기 프로그램이 제목으로 모른다. 제목(2단계)으로 알려
 // 구역 사이를 건너뛸 수 있게 한다. 페이지 초기화가 그려 넣은 것까지 잡도록 초기화 뒤에 한 번 부른다.
 function markSectionHeadings(root = document) {
@@ -1433,8 +1444,8 @@ function bootPage(init, opts) {
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
         await Promise.all([
             applyNavVisibility(),
-            opts && opts.logos ? loadTeamLogos() : null,
-            siteDataParts.length ? loadSiteData(siteDataParts) : null,
+            (siteDataParts.length ? loadSiteData(siteDataParts) : Promise.resolve())
+                .then(() => (opts && typeof opts.logos === 'function' ? loadTeamLogos(opts.logos()) : null)),
         ]);
         safeInit('페이지', init);
         markSectionHeadings();

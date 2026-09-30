@@ -155,9 +155,9 @@ const Api = {
         return row?.config_value || {};
     },
 
-    // GET /api/v1/logos - 대학 로고 [{name, path}]
-    async universityLogos() {
-        return apiRows(apiClient().from('university_logos').select('name,path'));
+    // GET /api/v1/logos?names= - 화면에 나오는 대학의 로고만 [{name, path}]
+    async universityLogos(names) {
+        return apiRows(apiClient().from('university_logos').select('name,path').in('name', names));
     },
 
     // GET /api/v1/live - 지금 방송 중인 선수 [{soop_id, broad_no, broad_title, current_sum_viewer, broad_start, category_name, broad_cate_no}]
