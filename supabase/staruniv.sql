@@ -938,6 +938,9 @@ create table if not exists public.tier_memory_photos (
   updated_at timestamptz not null default now()
 );
 create index if not exists tier_memory_photos_soop_idx on public.tier_memory_photos (soop_id);
+-- 닉네임 칸 그림(name_feat)과 그때 읽은 글씨(name_read): 같은 카드면 늘 틀리게 읽히는 닉네임도 '변경'으로 띄우지 않는다
+alter table public.tier_memory_photos add column if not exists name_read text;
+alter table public.tier_memory_photos add column if not exists name_feat text;
 alter table public.tier_memory_glyphs enable row level security;
 alter table public.tier_memory_photos enable row level security;
 revoke all on public.tier_memory_glyphs, public.tier_memory_photos from anon, authenticated;
