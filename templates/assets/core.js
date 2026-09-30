@@ -696,12 +696,22 @@ function teamLogoHtml(teamName, sizePx) {
     const size = sizePx || 16;
     const src = teamLogoSrc(fileName);
     // 로고가 없는 팀은 이미지를 요청하지 않고 바로 배지(teamLogoFallback과 같은 모양)
+    // data-logo-team: 로고 목록이 나중에 오면 swapTeamLogoFallbacks가 이 배지를 로고로 바꾼다
     if (!src) {
         const initial = escapeHTML(Array.from(name)[0] || '?');
-        return `<span class="team-logo-fallback" style="width:${size}px;height:${size}px;font-size:${Math.max(8, Math.round(size * 0.5))}px;">${initial}</span>`;
+        return `<span class="team-logo-fallback" data-logo-team="${escapeHTML(name)}" data-logo-size="${size}" style="width:${size}px;height:${size}px;font-size:${Math.max(8, Math.round(size * 0.5))}px;">${initial}</span>`;
     }
     // 크기는 대체 배지(teamLogoFallback)가 그대로 물려받아야 해서 인라인으로 둔다.
     return `<img src="${escapeHTML(src)}" alt="" class="team-logo-icon" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;"${actOn('error', 'teamLogoFallback', ACT.el, name)}>`;
+}
+
+// 로고가 늦게 도착했을 때: 먼저 그려 둔 첫 글자 배지 중 이제 로고가 있는 것만 로고로 바꾼다(화면 전체를 다시 그리지 않는다)
+function swapTeamLogoFallbacks(root = document) {
+    root.querySelectorAll('.team-logo-fallback[data-logo-team]').forEach(el => {
+        const name = el.dataset.logoTeam;
+        if (!teamLogoSrc(name === '내전' ? '캄몬스타즈' : name)) return;
+        el.outerHTML = teamLogoHtml(name, Number(el.dataset.logoSize) || 16);
+    });
 }
 
 // 로고 + 팀 이름(말줄임) 묶음 - 팀/개인 전적 표 공용
@@ -1312,19 +1322,26 @@ async function fetchNavConfig() {
 // applyNavVisibility가 곧 같은 값을 적용하고, 새 값이 오면 덮어쓴다. 관리자 화면은 기억해 둔 값을 쓰지 않는다.
 function seedRuntimeConfigFromCache() {
     if (document.body.classList.contains('admin-mode') || Object.keys(SiteRuntimeConfig).length) return;
-    try {
-        const cached = JSON.parse(localStorage.getItem(NAV_CACHE_KEY) || 'null');
-        if (cached && typeof cached === 'object') SiteRuntimeConfig = cached;
-    } catch (_) {}
+    const cached = cachedNavConfig();
+    if (cached) SiteRuntimeConfig = cached;
+}
+// 기억해 둔 설정(이 브라우저가 마지막으로 받은 것), 없으면 빌드가 페이지에 넣어 둔 설정(<meta name="nav-config">).
+// 관리자 화면은 쓰지 않는다(항상 최신을 받아 편집한다).
+function cachedNavConfig() {
+    if (document.body.classList.contains('admin-mode')) return null;
+    for (const read of [() => localStorage.getItem(NAV_CACHE_KEY), () => document.querySelector('meta[name="nav-config"]')?.content]) {
+        try {
+            const value = JSON.parse(read() || 'null');
+            if (value && typeof value === 'object') return value;
+        } catch (_) {}
+    }
+    return null;
 }
 
 async function applyNavVisibility() {
-    let cached = null;
-    if (!document.body.classList.contains('admin-mode')) {
-        try { cached = JSON.parse(localStorage.getItem(NAV_CACHE_KEY) || 'null'); } catch (_) {}
-    }
+    const cached = cachedNavConfig();
     const fresh = fetchNavConfig();
-    if (cached && typeof cached === 'object') {
+    if (cached) {
         applyNavConfig(cached);
         fresh.then(data => { if (JSON.stringify(data) !== JSON.stringify(cached)) applyNavConfig(data); })
             .catch(e => console.warn('사이트 표시 설정을 새로 받지 못했습니다.', e));
@@ -1458,10 +1475,13 @@ function bootPage(init, opts) {
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
         await Promise.all([
             applyNavVisibility(),
-            (siteDataParts.length ? loadSiteData(siteDataParts) : Promise.resolve())
-                .then(() => (opts && typeof opts.logos === 'function' ? loadTeamLogos(opts.logos()) : null)),
+            siteDataParts.length ? loadSiteData(siteDataParts) : null,
         ]);
+        // 로고는 본문을 막지 않는다: 이 브라우저가 받아 둔 로고는 바로 쓰고(loadTeamLogos가 먼저 채운다),
+        // 처음 보는 대학은 첫 글자 배지로 그린 뒤 도착하면 그 자리만 로고로 바꾼다.
+        const logosReady = opts && typeof opts.logos === 'function' ? loadTeamLogos(opts.logos()) : null;
         safeInit('페이지', init);
+        if (logosReady) logosReady.then(() => swapTeamLogoFallbacks());
         markSectionHeadings();
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

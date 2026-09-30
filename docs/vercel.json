@@ -46,6 +46,19 @@
       }
     },
     {
+      "src": "^/data/site_[a-z]+\\.json$",
+      "has": [
+        {
+          "type": "query",
+          "key": "v"
+        }
+      ],
+      "continue": true,
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "^/calendar\\.png$",
       "dest": "https://czqxedrayvgxirvlveon.supabase.co/storage/v1/object/public/staruniv-media/calendar.png",
       "headers": {

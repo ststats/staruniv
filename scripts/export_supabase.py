@@ -13,6 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = ROOT / "data" / "db.json"
+# 메뉴·서브탭 표시 설정(site_config nav). 빌드가 페이지에 기본값으로 넣어, 처음 방문한 사람도 설정 응답을
+# 기다리지 않고 바로 그린다(브라우저는 뒤에서 최신 설정을 받아 바뀐 게 있으면 다시 맞춘다).
+NAV_PATH = ROOT / "data" / "nav_config.json"
 
 
 def empty(value):
@@ -185,6 +188,7 @@ def main():
         matches = fetch(conn, "select * from public.matches order by source_order")
         rounds = fetch(conn, "select * from public.rounds_effective order by source_order, is_mirrored")
         tier_members = fetch(conn, "select * from public.tier_members order by source_order")
+        nav_rows = fetch(conn, "select config_value from public.site_config where config_key = 'nav'")
 
     required = {
         "settings": settings,
@@ -205,6 +209,9 @@ def main():
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(db, f, ensure_ascii=False, indent=2)
     os.replace(tmp, OUTPUT_PATH)
+
+    nav = nav_rows[0]["config_value"] if nav_rows else {}
+    NAV_PATH.write_text(json.dumps(nav if isinstance(nav, dict) else {}, ensure_ascii=False), encoding="utf-8")
 
     print("✅ Supabase -> data/db.json 내보내기 완료")
     for key, rows in db.items():

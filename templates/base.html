@@ -11,6 +11,12 @@
     <base href="{{ root }}">
     {%- endif %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {%- if nav_config_default and not admin_mode %}
+    <meta name="nav-config" content="{{ nav_config_default|e }}">
+    {%- endif %}
+    {%- if site_data_version %}
+    <meta name="site-data-version" content="{{ site_data_version }}">
+    {%- endif %}
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     {%- if supabase_origin %}
     <link rel="preconnect" href="{{ supabase_origin }}" crossorigin>
