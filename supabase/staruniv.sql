@@ -1305,16 +1305,8 @@ from (select distinct on (lower(btrim(soop_id))) id, lower(btrim(soop_id)) as k
       from public.tier_members where coalesce(btrim(soop_id), '') <> '' order by lower(btrim(soop_id)), id) t
 where m.tier_member_id is null and coalesce(btrim(m.soop_id), '') <> '' and lower(btrim(m.soop_id)) = t.k;
 
--- 티어표에 비어 있고 멤버 표에만 있던 생년월일·성별은 티어표로 옮겨 둔다(원본을 한 곳으로)
-update public.tier_members t
-set birth_date = coalesce(t.birth_date, m.birth_date),
-    gender = coalesce(nullif(btrim(t.gender), ''), m.gender)
-from (select distinct on (tier_member_id) tier_member_id, birth_date, nullif(btrim(gender), '') as gender
-      from public.members where tier_member_id is not null
-      order by tier_member_id, (birth_date is null), source_order) m
-where t.id = m.tier_member_id
-  and ((t.birth_date is null and m.birth_date is not null)
-       or (coalesce(btrim(t.gender), '') = '' and m.gender is not null));
+-- (예전에 여기서 멤버 표에만 있던 생년월일·성별을 티어표로 한 번 옮겼다. 이미 옮겼고, 다시 돌리면 티어표에서 지운
+--  값을 멤버 표에서 되살리므로 뺐다. 이제는 아래 members_push_to_tier 트리거가 멤버 쪽 입력을 티어표로 올린다.)
 
 -- 연동 기준은 SOOP ID: 멤버 줄에 SOOP ID를 적으면 SOOP ID가 같은 티어표 선수에 자동으로 이어진다
 -- (새로 넣을 때, 아직 안 이어진 줄, SOOP ID를 다른 값으로 고칠 때). 이어진 뒤에는 사람 정보를 티어표 값으로 채운다.
@@ -1323,7 +1315,9 @@ returns trigger
 language plpgsql
 set search_path = public
 as $$
-declare t public.tier_members%rowtype;
+declare
+  t public.tier_members%rowtype;
+  linking boolean;
 begin
   if coalesce(btrim(new.soop_id), '') <> ''
      and (new.tier_member_id is null
@@ -1334,16 +1328,49 @@ begin
   if new.tier_member_id is null then return new; end if;
   select * into t from public.tier_members where id = new.tier_member_id;
   if not found then return new; end if;
+  linking := tg_op = 'INSERT' or old.tier_member_id is distinct from new.tier_member_id;
   new.soop_id := coalesce(nullif(btrim(t.soop_id), ''), new.soop_id);
-  new.birth_date := coalesce(t.birth_date, new.birth_date);
-  new.gender := coalesce(nullif(btrim(t.gender), ''), new.gender);
   new.tier := coalesce(nullif(btrim(t.tier), ''), new.tier);
+  -- 생년월일·성별은 티어표가 원본: 이어진 뒤에는 티어표 값을 그대로 따른다(티어표에서 지우면 여기서도 지워진다).
+  -- 방금 이어졌거나 멤버 쪽에서 새로 적은 값은, 티어표가 비어 있을 때만 남기고 아래 트리거가 티어표로 올린다.
+  if linking or (tg_op = 'UPDATE' and new.birth_date is distinct from old.birth_date) then
+    new.birth_date := coalesce(t.birth_date, new.birth_date);
+  else
+    new.birth_date := t.birth_date;
+  end if;
+  if linking or (tg_op = 'UPDATE' and new.gender is distinct from old.gender) then
+    new.gender := coalesce(nullif(btrim(t.gender), ''), new.gender);
+  else
+    new.gender := nullif(btrim(t.gender), '');
+  end if;
   return new;
 end;
 $$;
 drop trigger if exists members_fill_from_tier on public.members;
 create trigger members_fill_from_tier before insert or update on public.members
   for each row execute function public.members_fill_from_tier();
+
+-- 멤버 쪽에서 적은 생년월일·성별이 (티어표가 비어 있어) 남았으면 티어표로 올린다 - 원본을 한 곳으로.
+-- 티어표가 바뀌면 아래 트리거가 다시 멤버 줄을 맞추고, 그때는 값이 같아 여기서 할 일이 없다.
+create or replace function public.members_push_to_tier()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.tier_member_id is null then return null; end if;
+  update public.tier_members
+     set birth_date = coalesce(birth_date, new.birth_date),
+         gender = coalesce(nullif(btrim(gender), ''), nullif(btrim(new.gender), ''))
+   where id = new.tier_member_id
+     and ((birth_date is null and new.birth_date is not null)
+          or (coalesce(btrim(gender), '') = '' and coalesce(btrim(new.gender), '') <> ''));
+  return null;
+end;
+$$;
+drop trigger if exists members_push_to_tier on public.members;
+create trigger members_push_to_tier after insert or update of birth_date, gender, tier_member_id on public.members
+  for each row execute function public.members_push_to_tier();
 
 -- 티어표에서 사람 정보가 바뀌면(티어표 갱신·선수 수정) 연결된 멤버 줄에도 바로 반영한다
 create or replace function public.tier_members_sync_members()

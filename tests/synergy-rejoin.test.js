@@ -6,7 +6,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const read = rel => fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
+// Windows(core.autocrlf)에서 CRLF로 받아도 같은 구간을 찾게 줄바꿈을 LF로 맞춘다
+const read = rel => fs.readFileSync(path.join(__dirname, '..', rel), 'utf8').replace(/\r\n/g, '\n');
 const slice = (src, from, to) => {
     const a = src.indexOf(from);
     const b = src.indexOf(to, a);
