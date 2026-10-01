@@ -583,6 +583,15 @@ async function refreshSidebarLiveIndicators() {
 //           동시에 조회해서 요청이 두 배로 나가던 문제).
 const API_CACHE_PREFIX = 'apicache:';
 
+// 응답이 ms 안에 오지 않으면 '<label> 응답 시간이 초과되었습니다'로 실패시킨다(Api 조회의 wrap 옵션에 쓴다).
+function withTimeout(promise, label, ms = 12000) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다`)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 const _inflightRequests = new Map();
 
 function readApiCache(url, ttlMs) {
@@ -834,6 +843,19 @@ function raceShortLabel(race) {
     return race;
 }
 
+// 종족 값(T·Terran·테란 등)을 T/P/Z 한 글자로. 모르는 값은 대문자 그대로, 비었으면 ''.
+// 상대전적·분석·엔트리가 EloBoard 값과 티어표 값을 같은 기준으로 비교할 때 쓴다.
+function raceCode(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    const upper = raw.toUpperCase();
+    if (upper === 'T' || upper === 'TERRAN' || raw === '테란') return 'T';
+    if (upper === 'P' || upper === 'PROTOSS' || raw === '프로토스') return 'P';
+    if (upper === 'Z' || upper === 'ZERG' || raw === '저그') return 'Z';
+    return upper;
+}
+const RACE_NAMES = { T: '테란', Z: '저그', P: '프로토스' };
+
 // 종족 뱃지 클래스(T/Z/P별 색상)
 function raceBadgeClass(race) {
     const letter = raceShortLabel(race);
@@ -1047,6 +1069,25 @@ function centerBarItem(item) {
     list.scrollTo({ left, behavior: 'smooth' });
 }
 
+// 모바일에서 바를 접고 펴는 '현재 선택' 줄 버튼(아바타 바·티어 바가 같이 쓴다). 바는 접힌 채로 시작한다.
+// 라벨 칸은 '<className>-label'이라 고른 이름을 나중에 그 칸에 적는다.
+function createBarPick(bar, className, label) {
+    const pick = document.createElement('button');
+    pick.type = 'button';
+    pick.className = className;
+    pick.setAttribute('aria-expanded', 'false');
+    pick.innerHTML =
+        `<span class="${className}-label">${escapeHTML(label)}</span>` +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+        'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    pick.addEventListener('click', () => {
+        const closed = bar.classList.toggle('is-closed');
+        pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
+    });
+    bar.classList.add('is-closed');
+    return pick;
+}
+
 // 바 구조를 한 번만 만들고, 그 다음부터는 만들어 둔 '전체' 칸을 그대로 돌려준다.
 function avatarBarTools(list) {
     const scroll = list.parentElement;
@@ -1066,20 +1107,7 @@ function avatarBarTools(list) {
     // [리디자인] 모바일(<=920px)에서만 보이는 '현재 선택' 줄. 누르면 같은 목록이 아래로
     // 펼쳐진다. 좁은 화면에서 40명을 가로로 밀게 하는 대신, 한 줄만 두고 필요할 때만
     // 목록을 꺼내는 쪽이 본문을 덜 가린다. 데스크톱에서는 CSS가 숨긴다.
-    const pick = document.createElement('button');
-    pick.type = 'button';
-    pick.className = 'avatar-bar-pick';
-    pick.setAttribute('aria-expanded', 'false');
-    pick.innerHTML =
-        '<span class="avatar-bar-pick-label">전체</span>' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
-        'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-    pick.addEventListener('click', () => {
-        const closed = bar.classList.toggle('is-closed');
-        pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
-    });
-    bar.classList.add('is-closed');
-    bar.appendChild(pick);
+    bar.appendChild(createBarPick(bar, 'avatar-bar-pick', '전체'));
     scroll.replaceWith(bar); // 껍데기가 있던 자리에 바를 놓고
     bar.appendChild(tools); // 그 안에 '전체' 칸과
     bar.appendChild(scroll); // 원래 껍데기를 차례로 넣는다

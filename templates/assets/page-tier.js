@@ -448,21 +448,8 @@ function tierBarCoversContent() {
 function ensureTierPick() {
     const bar = document.getElementById('tier-bar');
     if (!bar || bar.querySelector('.tier-bar-pick')) return;
-    const pick = document.createElement('button');
-    pick.type = 'button';
-    pick.className = 'tier-bar-pick';
-    pick.setAttribute('aria-expanded', 'false');
-    pick.innerHTML =
-        '<span class="tier-bar-pick-label">티어 바로가기</span>' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
-        'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-    pick.addEventListener('click', () => {
-        const closed = bar.classList.toggle('is-closed');
-        pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
-    });
-    bar.classList.add('is-closed');
     const heading = bar.querySelector('.tier-bar-heading');
-    heading.insertBefore(pick, heading.firstChild);
+    heading.insertBefore(createBarPick(bar, 'tier-bar-pick', '티어 바로가기'), heading.firstChild);
 }
 
 // 눌린 티어 칩의 이름을 모바일 선택 줄에 반영하고 목록을 접는다.

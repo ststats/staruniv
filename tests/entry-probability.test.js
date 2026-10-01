@@ -12,6 +12,11 @@ function entryContext(setup) {
   const context = vm.createContext({
     console, Date, Math, Promise, URLSearchParams, setTimeout, clearTimeout,
   });
+  // page-entry.js가 쓰는 공통 도우미(core.js의 raceCode·RACE_NAMES·withTimeout)만 먼저 넣는다
+  const core = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', 'core.js'), 'utf8');
+  for (const re of [/^function raceCode\([\s\S]*?^\}$/m, /^const RACE_NAMES = .*;$/m, /^function withTimeout\([\s\S]*?^\}$/m]) {
+    vm.runInContext(core.match(re)[0], context);
+  }
   vm.runInContext(source, context);
   vm.runInContext(setup || `
     EntryState.index = { players: {

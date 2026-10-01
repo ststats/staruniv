@@ -120,7 +120,7 @@ function analysisSummary(rows) {
         e[r[2] ? 'w' : 'l']++;
         (e.cat[r[4]] ||= [0, 0])[i]++;
         const rawRace = (h2hPlayer(String(r[1])) || {}).r || (H2hState.index.otherRaces || {})[r[1]];
-        const race = h2hNormalizeRace(rawRace);
+        const race = raceCode(rawRace);
         if (race === 'T' || race === 'P' || race === 'Z') {
             (e.race[race] ||= [0, 0])[i]++;
         }
