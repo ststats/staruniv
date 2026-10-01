@@ -1,6 +1,11 @@
 (function () {
     'use strict';
     const C = () => window.AdminCore;
+    // 머리의 보기 전환 탭
+    const VIEW_TABS = [
+        ['matches', '매치 관리'],
+        ['teams', '팀 관리'],
+    ];
     const S = {
         page: 0,
         size: 25,
@@ -267,20 +272,10 @@
     }
     // 서브탭: 매치 관리 / 팀 관리(admin-teams.js). 공개 페이지 서브탭과 같은 모양
     function viewTabs() {
-        return `<div class="sub-tabs tab-scroll" role="tablist">${[
-            ['matches', '매치 관리'],
-            ['teams', '팀 관리'],
-        ]
-            .map(
-                ([k, l]) =>
-                    `<div class="sub-tab${S.view === k ? ' active' : ''}" role="tab" tabindex="0" aria-selected="${S.view === k}" data-records-view="${k}">${l}</div>`
-            )
-            .join('')}</div>`;
+        return C().viewTabsHtml(VIEW_TABS, S.view);
     }
     function bindViewTabs(root) {
-        root.querySelectorAll('[data-records-view]').forEach(
-            el => (el.onclick = () => setView(el.dataset.recordsView))
-        );
+        C().bindViewTabs(root, setView);
     }
     function setView(view) {
         if (S.view === view) return;

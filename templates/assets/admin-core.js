@@ -86,6 +86,18 @@
             .join('');
         return `<select class="admin-input" id="${id}" ${attrs}>${html}</select>`;
     }
+    // 관리 화면 머리의 보기 전환 탭(공개 페이지 서브탭과 같은 모양). views: [[값, 이름], ...]
+    function viewTabsHtml(views, current) {
+        return `<div class="sub-tabs tab-scroll" role="tablist">${views
+            .map(
+                ([k, l]) =>
+                    `<div class="sub-tab${current === k ? ' active' : ''}" role="tab" tabindex="0" aria-selected="${current === k}" data-admin-view="${esc(k)}">${esc(l)}</div>`
+            )
+            .join('')}</div>`;
+    }
+    function bindViewTabs(root, onPick) {
+        root.querySelectorAll('[data-admin-view]').forEach(el => (el.onclick = () => onPick(el.dataset.adminView)));
+    }
     function checkbox(id, checked, label) {
         return `<label class="admin-check"><input id="${id}" type="checkbox"${checked ? ' checked' : ''}><span>${esc(label)}</span></label>`;
     }
@@ -529,6 +541,8 @@
         textarea,
         select,
         checkbox,
+        viewTabsHtml,
+        bindViewTabs,
         toast,
         markDirty,
         setSaveState,

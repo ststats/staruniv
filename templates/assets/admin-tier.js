@@ -1,8 +1,14 @@
 (function () {
     'use strict';
     const C = () => window.AdminCore;
-    // 보기: 선수 관리 / 신규 인원 / 티어 랭킹 / 티어표 갱신(북마클릿은 #tier-update로 연다)
-    const VIEWS = ['members', 'candidates', 'ranking', 'update'];
+    // 보기(머리의 보기 전환 탭): 선수 관리 / 신규 인원 / 티어 랭킹 / 티어표 갱신(북마클릿은 #tier-update로 연다)
+    const VIEW_TABS = [
+        ['members', '선수 관리'],
+        ['candidates', '신규 인원'],
+        ['ranking', '티어 랭킹'],
+        ['update', '티어표 갱신'],
+    ];
+    const VIEWS = VIEW_TABS.map(([k]) => k);
     const startView = location.hash.startsWith('#tier-update')
         ? 'update'
         : new URLSearchParams(location.search).get('view');
@@ -21,7 +27,9 @@
     const PROMO = [8, 7, 6, 5, 4, 3, 2, 1, 0];
     // 티어 사다리: core.js의 공통 순서(SITE_ORDER.tiers). ststat의 티어 순서와도 같아야 한다.
     const LADDER = SITE_ORDER.tiers;
-    const tierLabel = t => (/^\d$/.test(String(t)) ? `${t}티어` : String(t) === '체크' ? '미분류' : `${t}`);
+    // 관리 화면의 티어 이름: 숫자만 'N티어'(갓·킹 등은 그대로), 체크는 '미분류'.
+    // 공개 화면(core.js tierLabel)은 카드 티어에도 '티어'를 붙여서 이름이 겹치지 않게 따로 둔다.
+    const adminTierLabel = t => (/^\d$/.test(String(t)) ? `${t}티어` : String(t) === '체크' ? '미분류' : `${t}`);
     // 사다리에 없는 값(체크 = 아직 티어를 안 매긴 사람 등)은 맨 끝으로 보낸다
     const tierRank = t => {
         const i = LADDER.indexOf(String(t));
@@ -216,7 +224,7 @@
         // 연결 계정마다 이름(EloBoard 이름 등 구분용)·종족을 고칠 수 있다. 전적·랭킹에는 쓰지 않는 메모 성격의 값이다.
         const RACES = ['테란', '저그', '프로토스'];
         const raceOf = v =>
-            ({ T: '테란', Z: '저그', P: '프로토스' })[
+            RACE_NAMES[
                 String(v || '')
                     .trim()
                     .toUpperCase()
@@ -371,20 +379,10 @@
     }
     // 히어로의 보기 전환 탭(공개 페이지 서브탭과 같은 모양)
     function viewTabs() {
-        return `<div class="sub-tabs tab-scroll" role="tablist">${[
-            ['members', '선수 관리'],
-            ['candidates', '신규 인원'],
-            ['ranking', '티어 랭킹'],
-            ['update', '티어표 갱신'],
-        ]
-            .map(
-                ([k, l]) =>
-                    `<div class="sub-tab${S.view === k ? ' active' : ''}" role="tab" tabindex="0" aria-selected="${S.view === k}" data-tier-view="${k}">${l}</div>`
-            )
-            .join('')}</div>`;
+        return C().viewTabsHtml(VIEW_TABS, S.view);
     }
     function bindViewTabs(root) {
-        root.querySelectorAll('[data-tier-view]').forEach(el => (el.onclick = () => setView(el.dataset.tierView)));
+        C().bindViewTabs(root, setView);
     }
     function setView(view) {
         if (S.view === view) return;
@@ -423,7 +421,7 @@
             ]
         )}<div class="admin-dedicated-shell">
       <div class="admin-filter-grid"><input class="admin-input" id="tierQ" placeholder="이름 · 닉네임 · SOOP ID · ELO ID" value="${esc(S.filters.q)}">
-      <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x => `<option value="${esc(x)}"${selected(x, S.filters.tier)}>${esc(tierLabel(x))}</option>`).join('')}</select>
+      <select class="admin-input" id="tierFilter"><option value="">전체 티어</option>${tiers.map(x => `<option value="${esc(x)}"${selected(x, S.filters.tier)}>${esc(adminTierLabel(x))}</option>`).join('')}</select>
       <select class="admin-input" id="tierAff"><option value="">전체 소속</option>${affs.map(x => `<option value="${esc(x)}"${selected(x, S.filters.aff)}>${esc(x)}</option>`).join('')}</select>
       <select class="admin-input" id="tierRace"><option value="">전체 종족</option>${races.map(x => `<option value="${esc(x)}"${selected(x, S.filters.race)}>${esc(x)}</option>`).join('')}</select><button class="admin-btn primary" id="tierSearch">조회</button></div>
       <div class="admin-table-wrap"><table class="admin-table admin-table-wide"><thead><tr><th></th>${[
@@ -565,7 +563,7 @@
         const gap = Number(r.tier_gap) || 0;
         if (!gap) return '<span class="admin-rank-none">일치</span>';
         // tier_gap > 0: 데이터상 더 높은 티어(승급 후보), < 0: 더 낮은 티어
-        return `<span class="admin-wl ${gap > 0 ? 'wl-w' : 'wl-l'}">${esc(tierLabel(r.data_tier))} ${gap > 0 ? '↑' : '↓'}${Math.abs(gap)}</span>`;
+        return `<span class="admin-wl ${gap > 0 ? 'wl-w' : 'wl-l'}">${esc(adminTierLabel(r.data_tier))} ${gap > 0 ? '↑' : '↓'}${Math.abs(gap)}</span>`;
     }
     // 티어 랭킹 계산식 설명. "이 순위 어떻게 나온 거야?"에 그대로 답할 수 있게 쓴다.
     function rankingExplain() {
@@ -637,7 +635,7 @@
         );
         const chips = [
             ['', '전체', R.rows.length],
-            ...LADDER.filter(t => counts[t]).map(t => [t, tierLabel(t), counts[t]]),
+            ...LADDER.filter(t => counts[t]).map(t => [t, adminTierLabel(t), counts[t]]),
         ]
             .map(
                 ([k, l, n]) =>
@@ -649,11 +647,11 @@
             .map(r => {
                 const head =
                     !R.tier && r.tier !== lastTier
-                        ? `<tr class="admin-rank-group"><td colspan="11">${esc(tierLabel(r.tier))} · ${counts[r.tier] || 0}명</td></tr>`
+                        ? `<tr class="admin-rank-group"><td colspan="11">${esc(adminTierLabel(r.tier))} · ${counts[r.tier] || 0}명</td></tr>`
                         : '';
                 lastTier = r.tier;
                 return `${head}<tr${Number(r.tier_gap) ? ' class="has-gap"' : ''}>
-        <td>${esc(tierLabel(r.tier))}</td>
+        <td>${esc(adminTierLabel(r.tier))}</td>
         <td><b>${r.tier_rank}</b><span class="admin-rank-none"> / ${r.tier_count || counts[r.tier] || ''}</span></td>
         <td><b>${esc(r.nickname || r.elo_name || r.elo_id)}</b>${r.nickname && r.elo_name && r.nickname !== r.elo_name ? `<span class="admin-rank-none"> ${esc(r.elo_name)}</span>` : ''}</td>
         <td>${esc(r.race || '')}</td>

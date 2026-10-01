@@ -27,28 +27,9 @@
 
 // 소속이 이 값이면 지금 쉬는 사람이라 명단에 안 올린다.
 const ENTRY_DORMANT = '휴면';
-const ENTRY_REQUEST_TIMEOUT_MS = 12000;
-
-function entryNormalizeRace(value) {
-    const raw = String(value ?? '').trim();
-    if (!raw) return '';
-    const upper = raw.toUpperCase();
-    if (upper === 'T' || upper === 'TERRAN' || raw === '테란') return 'T';
-    if (upper === 'P' || upper === 'PROTOSS' || raw === '프로토스') return 'P';
-    if (upper === 'Z' || upper === 'ZERG' || raw === '저그') return 'Z';
-    return upper;
-}
-
-function entryWithTimeout(promise, label) {
-    let timer;
-    const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다`)), ENTRY_REQUEST_TIMEOUT_MS);
-    });
-    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
 
 // Api 조회에 넘기는 옵션: 요청에 시간 제한(label은 오류 문구)
-const entryPaging = label => ({ wrap: q => entryWithTimeout(q, label) });
+const entryPaging = label => ({ wrap: q => withTimeout(q, label) });
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
 const ENTRY_PERIODS = [
     ['all', '전체'],
@@ -68,6 +49,15 @@ const ENTRY_TIER_SEQ = ['1', '2', '3', '4', '5', '6', '7', '8', '갓', '킹', '�
 function entrySeqIndex(tier) {
     const i = ENTRY_TIER_SEQ.indexOf(String(tier));
     return i < 0 ? ENTRY_TIER_SEQ.length : i;
+}
+
+// 후보 목록 차례: 경기 올리는 티어 순 → 티어 안 순위 → 이름
+function entryCompare(a, b) {
+    return (
+        entrySeqIndex(a.t) - entrySeqIndex(b.t) ||
+        (a.k || 99) - (b.k || 99) ||
+        String(a.n).localeCompare(String(b.n), 'ko')
+    );
 }
 
 const EntryState = {
@@ -113,7 +103,7 @@ async function entryLoadIndexFromSupabase() {
         players[pid] = {
             n: nickname,
             en: eloName && eloName !== nickname ? eloName : '',
-            r: entryNormalizeRace(row.race),
+            r: raceCode(row.race),
             m: Number(row.total_games || 0),
             tm: String(row.affiliation || ''),
             t: String(row.tier || ''),
@@ -148,7 +138,7 @@ async function entryLoadRatingMetaInBackground() {
         });
         const [rankingsData, meta] = await Promise.all([
             Api.eloRankings(entryPaging('레이팅')),
-            Api.eloRankingMeta({ wrap: q => entryWithTimeout(q, '랭킹 기준선') }),
+            Api.eloRankingMeta({ wrap: q => withTimeout(q, '랭킹 기준선') }),
         ]);
 
         rankingsData.forEach(row => {
@@ -259,12 +249,7 @@ function entryRoster(team) {
             return team ? t === team : true;
         })
         .map(([pid, p]) => ({ pid, ...p }))
-        .sort(
-            (a, b) =>
-                entrySeqIndex(a.t) - entrySeqIndex(b.t) ||
-                (a.k || 99) - (b.k || 99) ||
-                String(a.n).localeCompare(String(b.n), 'ko')
-        );
+        .sort(entryCompare);
 }
 
 // ---------------------------------------------------------------------------
@@ -342,8 +327,8 @@ function entrySigmoid(x) {
 // raceMatchup {TZ, ZP, PT}에서 읽고, 반대 방향은 부호만 바꾼다. 없으면 0.
 function entryRaceEdge(xRace, yRace) {
     const table = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.raceMatchup) || {};
-    const x = entryNormalizeRace(xRace),
-        y = entryNormalizeRace(yRace);
+    const x = raceCode(xRace),
+        y = raceCode(yRace);
     if (!x || !y || x === y) return 0;
     const direct = Number(table[x + y]);
     if (Number.isFinite(direct)) return direct;
@@ -444,8 +429,8 @@ function entrySampleLabel(n) {
 }
 
 function entryRaceLabel(code) {
-    const key = entryNormalizeRace(code);
-    return { T: '테란', Z: '저그', P: '프로토스' }[key] || key || '미상';
+    const key = raceCode(code);
+    return RACE_NAMES[key] || key || '미상';
 }
 
 // 예상승률은 선수마다 경기 기록을 여러 번 훑어서 비싸다. 설명 펼치기·맵 선택창 열기처럼 입력이
@@ -487,7 +472,7 @@ function entryComputeWinProb(aPid, bPid, mapName) {
             aPid,
             row => {
                 const opp = players[row[1]];
-                return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(b.r);
+                return opp && raceCode(opp.r) === raceCode(b.r);
             },
             ENTRY_RACE_TAU
         );
@@ -495,7 +480,7 @@ function entryComputeWinProb(aPid, bPid, mapName) {
             bPid,
             row => {
                 const opp = players[row[1]];
-                return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(a.r);
+                return opp && raceCode(opp.r) === raceCode(a.r);
             },
             ENTRY_RACE_TAU
         );
@@ -674,13 +659,13 @@ function entryRecordText(w, l) {
 }
 
 function entryRaceRecord(pid, oppRace, period) {
-    const targetRace = entryNormalizeRace(oppRace);
+    const targetRace = raceCode(oppRace);
     const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
     let w = 0;
     let l = 0;
     rows.forEach(r => {
         const opp = entryPlayers()[String(r[1])];
-        if (!opp || entryNormalizeRace(opp.r) !== targetRace) return;
+        if (!opp || raceCode(opp.r) !== targetRace) return;
         if (Number(r[2]) === 1) w += 1;
         else l += 1;
     });
@@ -1097,12 +1082,7 @@ function entrySearch(q) {
             return [p.n, p.en, p.tm].filter(Boolean).some(v => String(v).toLowerCase().includes(key));
         })
         .map(([pid, p]) => ({ pid, ...p }))
-        .sort(
-            (a, b) =>
-                entrySeqIndex(a.t) - entrySeqIndex(b.t) ||
-                (a.k || 99) - (b.k || 99) ||
-                String(a.n).localeCompare(String(b.n), 'ko')
-        )
+        .sort(entryCompare)
         .slice(0, ENTRY_SEARCH_MAX);
 }
 

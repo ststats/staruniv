@@ -15,20 +15,6 @@ const H2H_LIST_STEP = 10;
 const H2H_RIVAL_STEP = 8;
 const H2H_MAP_STEP = 8;
 const H2H_SUGGEST_STEP = 40;
-const H2H_REQUEST_TIMEOUT_MS = 12000;
-
-function h2hNormalizeRace(value) {
-    const raw = String(value ?? '').trim();
-    if (!raw) return '';
-
-    const upper = raw.toUpperCase();
-
-    if (upper === 'T' || upper === 'TERRAN' || raw === '테란') return 'T';
-    if (upper === 'P' || upper === 'PROTOSS' || raw === '프로토스') return 'P';
-    if (upper === 'Z' || upper === 'ZERG' || raw === '저그') return 'Z';
-
-    return upper;
-}
 
 function h2hNormalizeCategory(value) {
     const raw = String(value ?? '').trim();
@@ -68,14 +54,6 @@ const H2H_CAT_GROUPS = [
     ['스폰', '스폰', ['스폰', '스폰빵', 'sponsored']],
 ];
 
-function h2hWithTimeout(promise, label) {
-    let timer;
-    const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} 응답 시간이 초과되었습니다`)), H2H_REQUEST_TIMEOUT_MS);
-    });
-    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-
 const H2hState = {
     index: null,
     loading: null,
@@ -92,7 +70,7 @@ const H2hState = {
 };
 
 async function h2hLoadIndexFromSupabase() {
-    const playersData = await Api.eloPlayers({ ranked: true, wrap: q => h2hWithTimeout(q, '선수 목록') });
+    const playersData = await Api.eloPlayers({ ranked: true, wrap: q => withTimeout(q, '선수 목록') });
     if (!playersData.length) throw new Error('Elo public player view is empty');
 
     const players = {};
@@ -110,7 +88,7 @@ async function h2hLoadIndexFromSupabase() {
             players[pid] = {
                 n: nickname,
                 en: eloName && eloName !== nickname ? eloName : '',
-                r: h2hNormalizeRace(row.race),
+                r: raceCode(row.race),
                 m: Number(row.total_games || 0),
                 tm: String(row.affiliation || ''),
                 t: String(row.tier || ''),
@@ -120,7 +98,7 @@ async function h2hLoadIndexFromSupabase() {
             if (row.tier && row.tier_count != null) tierCounts[String(row.tier)] = Number(row.tier_count);
         } else {
             others[pid] = eloName || '알 수 없음';
-            if (row.race) otherRaces[pid] = h2hNormalizeRace(row.race);
+            if (row.race) otherRaces[pid] = raceCode(row.race);
         }
     }
 
@@ -171,7 +149,7 @@ function h2hCategoryIndex(name) {
 }
 
 async function h2hLoadPlayerFromSupabase(pid) {
-    const data = await Api.eloPlayerMatches(pid, { wrap: q => h2hWithTimeout(q, '선수 전적') });
+    const data = await Api.eloPlayerMatches(pid, { wrap: q => withTimeout(q, '선수 전적') });
     return data.map(r => {
         if (r.map_id != null && r.map_name) H2hState.index.maps[String(r.map_id)] = String(r.map_name);
         return [
