@@ -145,7 +145,7 @@
     let p;
     try{p=buildPayload();}catch(e){C().toast(e.message,'error');return;}
     if(!p.updates.length&&!p.inserts.length&&!confirm('바꿀 선수가 없습니다. 확인만 한 것으로 표시할까요'))return;
-    if((p.updates.length||p.inserts.length)&&!confirm(`선수 ${p.updates.length}명 수정, 새 선수 ${p.inserts.length}명 추가\n승급일은 ${U.date}로 적습니다. 반영할까요`))return;
+    if((p.updates.length||p.inserts.length)&&!confirm(`선수 ${p.updates.length}명 수정, 새 선수 ${p.inserts.length}명 추가\n승급일·수정일은 ${U.date}로 적습니다(방송통계 기록도 이날부터 새 값). 반영할까요`))return;
     U.busy=true;render();
     try{
       const {data,error}=await sb().rpc('admin_apply_tier_update',{p_job_id:U.jobId,p_updates:p.updates,p_inserts:p.inserts,p_confirmed:p.confirmed,p_date:U.date||null});
