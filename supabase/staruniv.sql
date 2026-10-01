@@ -1031,8 +1031,10 @@ set search_path = public
 as $$
 declare
   ladder constant text[] := array['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'];
-  stamp text := to_char(timezone('Asia/Seoul', now()), 'YYYY-MM-DD HH24:MI:SS');
   d text := to_char(coalesce(p_date, timezone('Asia/Seoul', now())::date), 'YYYY-MM-DD');
+  -- 수정일 = 승급일(d). ststat이 수정일 날짜부터 방송통계 일별 기록의 티어·소속을 새 값으로 고친다
+  -- (반영한 날로 적으면 승급일~반영일 사이 기록은 예전 값으로 남는다). 시각은 반영한 때.
+  stamp text := d || ' ' || to_char(timezone('Asia/Seoul', now()), 'HH24:MI:SS');
   job_status text;
   u jsonb;
   r public.tier_members;
