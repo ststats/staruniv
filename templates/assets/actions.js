@@ -23,7 +23,7 @@ function actRun(e, type, bubbles) {
     for (let el = e.target; el instanceof Element; el = bubbles ? el.parentElement : null) {
         const fn = el.dataset[type];
         if (!fn) continue;
-        const args = JSON.parse(el.dataset.args || '[]').map(a => a && a.$ ? (a.$ === 'el' ? el : el.value) : a);
+        const args = JSON.parse(el.dataset.args || '[]').map(a => (a && a.$ ? (a.$ === 'el' ? el : el.value) : a));
         window[fn](...args);
         if (e.cancelBubble) return;
     }
@@ -48,8 +48,12 @@ document.addEventListener('keydown', e => {
 ['scroll', 'error', 'load'].forEach(type => document.addEventListener(type, e => actRun(e, type, false), true));
 
 // 이미지를 못 불러왔을 때(data-error): 지우기 · 숨기기 · 다른 주소로 바꾸기 · 글자(cls가 있으면 그 클래스의 <span>)로 바꾸기
-function imgRemove(img) { img.remove(); }
-function imgHide(img) { img.style.display = 'none'; }
+function imgRemove(img) {
+    img.remove();
+}
+function imgHide(img) {
+    img.style.display = 'none';
+}
 // 대신할 주소도 안 되면 자리와 바탕색은 두고 투명한 1px 그림으로 비운다(깨진 그림 표시 없이, 다시 시도를 반복하지 않게)
 function imgSrc(img, src) {
     img.src = img.src === src ? 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' : src;

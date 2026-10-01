@@ -6,11 +6,18 @@
 // (records/?view=solo)로 옮겨준다. 이런 주소는 새로 생기지 않는다.
 (function (l) {
     if (l.search[1] !== '/') return;
-    var decoded = l.search.slice(1).split('&').map(function (s) { return s.replace(/~and~/g, '&'); }).join('?');
-    var path = decoded.slice(1), q = path.indexOf('?');
+    var decoded = l.search
+        .slice(1)
+        .split('&')
+        .map(function (s) {
+            return s.replace(/~and~/g, '&');
+        })
+        .join('?');
+    var path = decoded.slice(1),
+        q = path.indexOf('?');
     var page = (q === -1 ? path : path.slice(0, q)).replace(/\/+$/, '');
     l.replace(l.pathname + (page ? page + '/' : '') + (q === -1 ? '' : path.slice(q)) + l.hash);
-}(window.location));
+})(window.location);
 
 // 홈 공지 카드/"전체 보기" → 멤버 페이지의 공지 탭(해당 멤버). 페이지 <base>가 사이트 루트라
 // 상대 경로가 GitHub Pages(/staruniv/)와 루트 배포 양쪽에서 똑같이 맞는다.
@@ -36,36 +43,58 @@ function renderHomeRecordsPreview(box) {
         ['누적 매치', Number(SiteData.matchCount || 0), '경기'],
         ['누적 세트', Number(SiteData.roundCount || 0), '세트'],
     ];
-    box.innerHTML = '<div class="home-preview-label">RECORDS</div>'
-        + rows.map(([label, count, unit]) =>
-            `<div class="home-preview-row"><span>${label}</span><b>${formatNum(count)}${unit}</b></div>`).join('')
-        + homePreviewLinkHtml('records/', '전적 보기');
+    box.innerHTML =
+        '<div class="home-preview-label">RECORDS</div>' +
+        rows
+            .map(
+                ([label, count, unit]) =>
+                    `<div class="home-preview-row"><span>${label}</span><b>${formatNum(count)}${unit}</b></div>`
+            )
+            .join('') +
+        homePreviewLinkHtml('records/', '전적 보기');
 }
 
 function renderHomeVideoPreview(box) {
-    box.innerHTML = '<a class="home-video-preview" href="video/" aria-label="캄몬플레이 영상 보기"><span class="home-video-play" aria-hidden="true"></span></a>';
+    box.innerHTML =
+        '<a class="home-video-preview" href="video/" aria-label="캄몬플레이 영상 보기"><span class="home-video-play" aria-hidden="true"></span></a>';
 }
 
 async function renderTodaySchedulePreview(box) {
     if (!box) return;
-    box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중</div>';
+    box.innerHTML =
+        '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중</div>';
     try {
         const now = new Date();
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         // 오늘에 걸친 일정만 받는다
-        const events = (await Api.scheduleOn(today) || []).map(r => ({ startDate:r.start_date, endDate:r.end_date || r.start_date, time:r.event_time || '', person:r.person || '', desc:r.description || '' }));
-        const todayEvents = events.filter(ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate));
+        const events = ((await Api.scheduleOn(today)) || []).map(r => ({
+            startDate: r.start_date,
+            endDate: r.end_date || r.start_date,
+            time: r.event_time || '',
+            person: r.person || '',
+            desc: r.description || '',
+        }));
+        const todayEvents = events.filter(
+            ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate)
+        );
         todayEvents.sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
-        box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div>' +
+        box.innerHTML =
+            '<div class="home-preview-label">TODAY SCHEDULE</div>' +
             (todayEvents.length
-                ? todayEvents.slice(0, 4).map(ev => `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><span class="home-preview-description">${escapeHTML(ev.desc || '')}</span></div>`).join('')
-                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다</div>')
-            + homePreviewLinkHtml('schedule/', '일정 보기');
+                ? todayEvents
+                      .slice(0, 4)
+                      .map(
+                          ev =>
+                              `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><span class="home-preview-description">${escapeHTML(ev.desc || '')}</span></div>`
+                      )
+                      .join('')
+                : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다</div>') +
+            homePreviewLinkHtml('schedule/', '일정 보기');
     } catch (e) {
-        box.innerHTML = '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다</div>';
+        box.innerHTML =
+            '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오지 못했습니다</div>';
     }
 }
-
 
 // 미리보기 칸은 장 안에 하나씩 들어 있다(data-preview="0|1|2"). 그래서 트랙이 밀릴 때
 // 글과 같이 따라 움직인다(캐러셀 기준 절대배치면 칸만 제자리에 남는다).
@@ -73,7 +102,10 @@ async function renderTodaySchedulePreview(box) {
 function renderHomePreviewPanes() {
     document.querySelectorAll('.home-carousel-preview[data-preview]').forEach(box => {
         const index = Number(box.dataset.preview);
-        if (index === 0) { renderTodaySchedulePreview(box); return; }
+        if (index === 0) {
+            renderTodaySchedulePreview(box);
+            return;
+        }
         if (index === 1) renderHomeRecordsPreview(box);
         if (index === 2) renderHomeVideoPreview(box);
     });
@@ -100,58 +132,87 @@ function startHomeCarouselAuto() {
     homeCarouselTimer = setInterval(() => goHomeCarousel(homeCarouselIndex + 1), HOME_CAROUSEL_MS);
 }
 function stopHomeCarouselAuto() {
-    if (homeCarouselTimer) { clearInterval(homeCarouselTimer); homeCarouselTimer = null; }
+    if (homeCarouselTimer) {
+        clearInterval(homeCarouselTimer);
+        homeCarouselTimer = null;
+    }
 }
 
 function initHomeCarouselSwipe(car) {
     let gesture = null;
     let suppressClickUntil = 0;
-    car.addEventListener('touchstart', event => {
-        if (!window.matchMedia('(max-width: 767.98px)').matches) return;
-        stopHomeCarouselAuto();
-        suppressClickUntil = 0;
-        if (event.touches.length !== 1) { gesture = null; return; }
-        const touch = event.touches[0];
-        gesture = { id: touch.identifier, x: touch.clientX, y: touch.clientY, axis: null };
-    }, { passive: true });
-    car.addEventListener('touchmove', event => {
-        if (!gesture) return;
-        if (event.touches.length !== 1) { gesture = null; return; }
-        const touch = event.touches[0];
-        const dx = Math.abs(touch.clientX - gesture.x);
-        const dy = Math.abs(touch.clientY - gesture.y);
-        if (!gesture.axis && Math.max(dx, dy) >= 12) {
-            gesture.axis = dx > dy ? 'horizontal' : 'vertical';
-        }
-        // 가로 제스처만 처리한다. 세로 스크롤과 확대 동작은 브라우저에 맡긴다.
-        if (gesture.axis === 'horizontal' && event.cancelable) event.preventDefault();
-    }, { passive: false });
-    car.addEventListener('touchend', event => {
-        if (gesture) {
-            const touch = Array.from(event.changedTouches).find(t => t.identifier === gesture.id);
-            if (touch) {
-                const dx = touch.clientX - gesture.x;
-                const dy = touch.clientY - gesture.y;
-                if (gesture.axis !== 'vertical' && Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
-                    // 이동 거리에 관계없이 손을 뗄 때 딱 한 장만 넘긴다.
-                    moveHomeCarousel(dx < 0 ? 1 : -1);
-                    suppressClickUntil = Date.now() + 500;
+    car.addEventListener(
+        'touchstart',
+        event => {
+            if (!window.matchMedia('(max-width: 767.98px)').matches) return;
+            stopHomeCarouselAuto();
+            suppressClickUntil = 0;
+            if (event.touches.length !== 1) {
+                gesture = null;
+                return;
+            }
+            const touch = event.touches[0];
+            gesture = { id: touch.identifier, x: touch.clientX, y: touch.clientY, axis: null };
+        },
+        { passive: true }
+    );
+    car.addEventListener(
+        'touchmove',
+        event => {
+            if (!gesture) return;
+            if (event.touches.length !== 1) {
+                gesture = null;
+                return;
+            }
+            const touch = event.touches[0];
+            const dx = Math.abs(touch.clientX - gesture.x);
+            const dy = Math.abs(touch.clientY - gesture.y);
+            if (!gesture.axis && Math.max(dx, dy) >= 12) {
+                gesture.axis = dx > dy ? 'horizontal' : 'vertical';
+            }
+            // 가로 제스처만 처리한다. 세로 스크롤과 확대 동작은 브라우저에 맡긴다.
+            if (gesture.axis === 'horizontal' && event.cancelable) event.preventDefault();
+        },
+        { passive: false }
+    );
+    car.addEventListener(
+        'touchend',
+        event => {
+            if (gesture) {
+                const touch = Array.from(event.changedTouches).find(t => t.identifier === gesture.id);
+                if (touch) {
+                    const dx = touch.clientX - gesture.x;
+                    const dy = touch.clientY - gesture.y;
+                    if (gesture.axis !== 'vertical' && Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
+                        // 이동 거리에 관계없이 손을 뗄 때 딱 한 장만 넘긴다.
+                        moveHomeCarousel(dx < 0 ? 1 : -1);
+                        suppressClickUntil = Date.now() + 500;
+                    }
                 }
             }
-        }
-        gesture = null;
-        if (!event.touches.length && !document.hidden) startHomeCarouselAuto();
-    }, { passive: true });
-    car.addEventListener('touchcancel', () => {
-        gesture = null;
-        if (!document.hidden) startHomeCarouselAuto();
-    }, { passive: true });
-    car.addEventListener('click', event => {
-        if (Date.now() < suppressClickUntil) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-        }
-    }, true);
+            gesture = null;
+            if (!event.touches.length && !document.hidden) startHomeCarouselAuto();
+        },
+        { passive: true }
+    );
+    car.addEventListener(
+        'touchcancel',
+        () => {
+            gesture = null;
+            if (!document.hidden) startHomeCarouselAuto();
+        },
+        { passive: true }
+    );
+    car.addEventListener(
+        'click',
+        event => {
+            if (Date.now() < suppressClickUntil) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        },
+        true
+    );
 }
 
 function initHomeCarousel() {
@@ -165,13 +226,14 @@ function initHomeCarousel() {
     car.addEventListener('focusout', startHomeCarouselAuto);
     // 다른 탭을 보고 있을 때는 돌리지 않는다.
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) stopHomeCarouselAuto(); else startHomeCarouselAuto();
+        if (document.hidden) stopHomeCarouselAuto();
+        else startHomeCarouselAuto();
     });
     startHomeCarouselAuto();
 }
 function moveHomeCarousel(direction) {
     goHomeCarousel(homeCarouselIndex + direction);
-    if (homeCarouselTimer) startHomeCarouselAuto();   // 누른 직후 바로 또 넘어가지 않게 다시 센다
+    if (homeCarouselTimer) startHomeCarouselAuto(); // 누른 직후 바로 또 넘어가지 않게 다시 센다
 }
 
 // [리디자인] 방송중 카드도 멤버 카드와 같은 규칙 - 왼쪽 3px 엣지에 종족 색.
@@ -186,7 +248,8 @@ function liveCardHtml({ member: m, live }) {
     const viewerText = broad.current_sum_viewer != null ? formatNum(broad.current_sum_viewer) + '명' : '-';
     const elapsedText = formatLiveElapsed(broadStart) || '-';
     // 아바타 링 색: 여자는 기존 그대로(빨강 계열 그라디언트), 남자만 파란 원테두리로.
-    const avatarRingClass = m['성별'] === '남자' ? 'live-card-avatar-ring live-card-avatar-ring--male' : 'live-card-avatar-ring';
+    const avatarRingClass =
+        m['성별'] === '남자' ? 'live-card-avatar-ring live-card-avatar-ring--male' : 'live-card-avatar-ring';
 
     return `
             <a class="live-broadcast-card${liveRaceEdgeClass(m)}" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
@@ -316,17 +379,24 @@ async function renderLatestNotices() {
         return;
     }
 
-    const latest = await recentNoticesFromStore(activeMembers) || await recentNoticesPerMember(activeMembers);
+    const latest = (await recentNoticesFromStore(activeMembers)) || (await recentNoticesPerMember(activeMembers));
 
     container.innerHTML = latest.length
-        ? latest.slice(0, HOME_NOTICES_SHOWN).map(({ member: m, post }) =>
-            homeNoticeCardHtml(noticeCardFields(m, post), { href: newsPageHref(m['이름']) })).join('')
+        ? latest
+              .slice(0, HOME_NOTICES_SHOWN)
+              .map(({ member: m, post }) =>
+                  homeNoticeCardHtml(noticeCardFields(m, post), { href: newsPageHref(m['이름']) })
+              )
+              .join('')
         : noNoticeHtml;
     container.setAttribute('aria-busy', 'false');
 }
 
-bootPage(() => {
-    safeInit('홈 캐러셀', initHomeCarousel);
-    safeInit('방송중 카드', renderLiveBroadcasts);
-    safeInit('최근 공지', renderLatestNotices);
-}, { prefetch: () => fetchLiveBroadcasts().catch(() => {}) });   // 방송중 카드(멤버 명단을 기다리지 않고 받아 둔다)
+bootPage(
+    () => {
+        safeInit('홈 캐러셀', initHomeCarousel);
+        safeInit('방송중 카드', renderLiveBroadcasts);
+        safeInit('최근 공지', renderLatestNotices);
+    },
+    { prefetch: () => fetchLiveBroadcasts().catch(() => {}) }
+); // 방송중 카드(멤버 명단을 기다리지 않고 받아 둔다)

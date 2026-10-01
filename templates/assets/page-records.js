@@ -17,7 +17,8 @@ const _keyPart = v => (v === undefined ? 'u' : 'v' + JSON.stringify(v));
 const dateTeamKey = (date, team) => _keyPart(date) + '|' + _keyPart(team);
 
 function buildRoundIndex() {
-    const byMatchKey = new Map(), byDateTeam = new Map();
+    const byMatchKey = new Map(),
+        byDateTeam = new Map();
     SiteData.rounds.forEach(r => {
         if (r['_mirrored']) return;
         const push = (map, key) => {
@@ -43,7 +44,7 @@ function roundsForMatch(m) {
 }
 
 const RecordsState = {
-    player: '',          // 개인 전적에서 선택된 멤버 이름('' = 전체 요약)
+    player: '', // 개인 전적에서 선택된 멤버 이름('' = 전체 요약)
     teamFilter: '전체', // 팀 최근 전적 형식 필터
     indivFilter: '전체', // 개인 최근 전적 형식 필터
 };
@@ -72,16 +73,19 @@ function switchStatView(viewType) {
 }
 
 function parseStat(statStr) {
-    if (!statStr || statStr === "-") return { wins: 0, losses: 0, rate: 0, text: "-" };
+    if (!statStr || statStr === '-') return { wins: 0, losses: 0, rate: 0, text: '-' };
     const match = String(statStr).match(/(\d+)승 (\d+)패/);
     if (match) {
-        const w = parseInt(match[1], 10), l = parseInt(match[2], 10);
-        return { wins: w, losses: l, rate: (w+l) > 0 ? (w/(w+l)*100) : 0, text: `${w}승 ${l}패` };
+        const w = parseInt(match[1], 10),
+            l = parseInt(match[2], 10);
+        return { wins: w, losses: l, rate: w + l > 0 ? (w / (w + l)) * 100 : 0, text: `${w}승 ${l}패` };
     }
-    return { wins: 0, losses: 0, rate: 0, text: "-" };
+    return { wins: 0, losses: 0, rate: 0, text: '-' };
 }
 
-function getRateText(w, l) { return (w+l) > 0 ? (w/(w+l)*100).toFixed(1) + "%" : "-"; }
+function getRateText(w, l) {
+    return w + l > 0 ? ((w / (w + l)) * 100).toFixed(1) + '%' : '-';
+}
 
 // 50% 기준으로 승(파랑)/패(빨강) 색을 정한다.
 const rateColor = rate => (rate >= 50 ? 'var(--color-win)' : 'var(--color-lose)');
@@ -90,7 +94,7 @@ const donutBackground = (color, rate) => `conic-gradient(${color} ${rate}%, var(
 
 function updateDonut(elId, txtId, subId, stat, color) {
     const txtEl = document.getElementById(txtId);
-    txtEl.innerText = stat.text === "-" ? "-" : stat.rate.toFixed(1) + "%";
+    txtEl.innerText = stat.text === '-' ? '-' : stat.rate.toFixed(1) + '%';
     document.getElementById(subId).innerText = stat.text;
     // color === 'byRate'면 50% 기준으로 승(파랑)/패(빨강) 색을 자동으로 정한다.
     const ringColor = color === 'byRate' ? rateColor(stat.rate) : color;
@@ -100,7 +104,9 @@ function updateDonut(elId, txtId, subId, stat, color) {
 
 function calculateTeamSummaries() {
     const tStats = {};
-    FORMAT_KEYS.forEach(fmt => { tStats[fmt] = { w: 0, l: 0 }; });
+    FORMAT_KEYS.forEach(fmt => {
+        tStats[fmt] = { w: 0, l: 0 };
+    });
     SiteData.matches.forEach(m => {
         const bucket = tStats[m['형식']];
         if (!bucket || !m['최종 결과']) return;
@@ -109,7 +115,7 @@ function calculateTeamSummaries() {
     });
     FORMAT_KEYS.forEach(fmt => {
         const { w, l } = tStats[fmt];
-        const rate = (w + l) > 0 ? (w / (w + l) * 100) : 0;
+        const rate = w + l > 0 ? (w / (w + l)) * 100 : 0;
         const ringColor = rateColor(rate);
         // [리디자인] 승패를 비율 바로 보여준다. 폭을 실제 비율로 주고 숫자를 바 안에 넣는다
         // ('승'/'패' 글자를 바 밖에 두면 바 배경이 없어 흰 글자가 보이지 않는다).
@@ -119,16 +125,16 @@ function calculateTeamSummaries() {
         const wlText = document.getElementById(`t-sum-${fmt}-t`);
         if (wlText) {
             // 시안에서 승 수만 흰색이고 패 수는 회색이었다 - 이겼다는 쪽에 무게를 준다.
-            wlText.innerHTML = wlTotal === 0
-                ? '<small>기록 없음</small>'
-                : `${w}<small>승</small> <i>${l}<small>패</small></i>`;
+            wlText.innerHTML =
+                wlTotal === 0 ? '<small>기록 없음</small>' : `${w}<small>승</small> <i>${l}<small>패</small></i>`;
         }
         wlBox.setAttribute('title', `${w}승 ${l}패`);
         wlBox.setAttribute('aria-label', `${w}승 ${l}패`);
-        wlBox.innerHTML = wlTotal === 0
-            ? '<span class="wl-none">기록 없음</span>'
-            : (w ? `<span class="wl-win" style="width:${(w / wlTotal * 100).toFixed(1)}%">${w}</span>` : '')
-            + (l ? `<span class="wl-lose" style="width:${(l / wlTotal * 100).toFixed(1)}%">${l}</span>` : '');
+        wlBox.innerHTML =
+            wlTotal === 0
+                ? '<span class="wl-none">기록 없음</span>'
+                : (w ? `<span class="wl-win" style="width:${((w / wlTotal) * 100).toFixed(1)}%">${w}</span>` : '') +
+                  (l ? `<span class="wl-lose" style="width:${((l / wlTotal) * 100).toFixed(1)}%">${l}</span>` : '');
         const rateEl = document.getElementById(`t-sum-${fmt}-r`);
         rateEl.innerText = getRateText(w, l);
         rateEl.style.color = ringColor;
@@ -143,24 +149,27 @@ function teamSetDetailsHtml(m) {
     if (teamRounds.length === 0) {
         return emptyRowHtml(6, '상세 세트 기록이 없습니다', 'py-2 fs-body');
     }
-    return teamRounds.map(r => {
-        const isWin = r['결과'] === '승';
-        const isDraw = r['결과'] === '무' || r['결과'] === '무승부';
-        let resBadge = '<span class="text-danger fw-bold">패</span>';
-        if (isWin) resBadge = '<span class="text-primary fw-bold">승</span>';
-        if (isDraw) resBadge = '<span class="text-secondary fw-bold">무</span>';
-        const winnerCls = 'fw-bold text-primary', otherCls = 'text-body';
+    return teamRounds
+        .map(r => {
+            const isWin = r['결과'] === '승';
+            const isDraw = r['결과'] === '무' || r['결과'] === '무승부';
+            let resBadge = '<span class="text-danger fw-bold">패</span>';
+            if (isWin) resBadge = '<span class="text-primary fw-bold">승</span>';
+            if (isDraw) resBadge = '<span class="text-secondary fw-bold">무</span>';
+            const winnerCls = 'fw-bold text-primary',
+                otherCls = 'text-body';
 
-        return `
+            return `
                     <tr class="stat-row">
                         <td class="colw-18-8 set-detail-label">${escapeHTML(r['세트']) || ''} ${escapeHTML(r['라운드']) || ''}</td>
-                        <td class="colw-18-8 ${isWin ? winnerCls : otherCls}">${escapeHTML(r['우리 선수'])||'-'}</td>
+                        <td class="colw-18-8 ${isWin ? winnerCls : otherCls}">${escapeHTML(r['우리 선수']) || '-'}</td>
                         <td class="colw-18-8">${resBadge}</td>
-                        <td class="colw-18-8 ${(!isWin && !isDraw) ? winnerCls : otherCls}">${escapeHTML(r['상대 선수'])||'-'}</td>
+                        <td class="colw-18-8 ${!isWin && !isDraw ? winnerCls : otherCls}">${escapeHTML(r['상대 선수']) || '-'}</td>
                         <td class="colw-18-8 set-detail-map">${escapeHTML(r['맵']) || '-'}</td>
                         <td class="colw-6 col-arrow"></td>
                     </tr>`;
-    }).join('');
+        })
+        .join('');
 }
 
 function teamMatchRowHtml(m, collapseId) {
@@ -200,21 +209,27 @@ function renderTeamMatchesList(containerId, filters, limit, paginationId) {
     let filtered = format === '전체' ? SiteData.matches : SiteData.matches.filter(m => m['형식'] === format);
     if (opponent) filtered = filtered.filter(m => m['상대팀'] === opponent);
 
-    const page = paginationId ? (RecordsState.teamPage || 1) : 1;
+    const page = paginationId ? RecordsState.teamPage || 1 : 1;
     const sliced = limit ? filtered.slice((page - 1) * limit, page * limit) : filtered;
 
     document.getElementById(containerId).innerHTML = sliced.length
         ? sliced.map((m, idx) => teamMatchRowHtml(m, `collapse-${containerId}-${idx}`)).join('')
         : EMPTY_MATCH_ROW_HTML;
     if (paginationId) {
-        document.getElementById(paginationId).innerHTML =
-            matchPaginationHtml(filtered.length, page, limit, 'setTeamPage');
+        document.getElementById(paginationId).innerHTML = matchPaginationHtml(
+            filtered.length,
+            page,
+            limit,
+            'setTeamPage'
+        );
     }
 }
 
 function renderTeamRecentMatches() {
-    document.getElementById('team-recent-filters').innerHTML =
-        summaryFilterHtml(RecordsState.teamFilter, 'setTeamFilter');
+    document.getElementById('team-recent-filters').innerHTML = summaryFilterHtml(
+        RecordsState.teamFilter,
+        'setTeamFilter'
+    );
     renderTeamMatchesList('team-recent-list', { format: RecordsState.teamFilter }, 10, 'team-recent-pagination');
 }
 
@@ -231,7 +246,7 @@ function setTeamPage(page) {
 
 function openTeamMatchModal(format) {
     document.getElementById('teamModalTitle').innerText = format === '전체' ? '팀 전체 전적' : `팀 ${format} 전적`;
-    renderTeamMatchesList('team-modal-list', {format}, null);
+    renderTeamMatchesList('team-modal-list', { format }, null);
     showModal('teamMatchesModal');
 }
 
@@ -241,13 +256,13 @@ function openTeamOpponentModal(opponent, format) {
     const fmt = format || '전체';
     document.getElementById('teamModalTitle').innerHTML =
         `<span class="modal-title-vs">vs${teamLogoHtml(opponent, 20)}${escapeHTML(opponent)} ${fmt === '전체' ? '전체 전적' : `${escapeHTML(fmt)} 전적`}</span>`;
-    renderTeamMatchesList('team-modal-list', {format: fmt, opponent}, null);
+    renderTeamMatchesList('team-modal-list', { format: fmt, opponent }, null);
     showModal('teamMatchesModal');
 }
 
 // 상대 전적 카드는 하나하나 onclick을 달지 않고 한 곳에서 위임 처리한다
 // (서버가 구운 표가 그대로 남았을 때도 같은 핸들러가 받는다).
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const row = e.target.closest('.team-row-clickable');
     if (row) openTeamOpponentModal(row.dataset.team, RecordsState.oppFormat);
 });
@@ -269,11 +284,16 @@ function renderIndividualSidebar() {
                    </div>`);
     html.push(`<span id="indiv-former-wrap" class="d-none">${formerHtml.join('')}</span>`);
 
-    renderAvatarBar('indiv-avatar-list',
-        avatarSelectAllItemHtml('side-btn-summary', act('showIndivSummary'), `${SiteData.members.filter(isActiveMember).length}`),
-        html.join(''));
+    renderAvatarBar(
+        'indiv-avatar-list',
+        avatarSelectAllItemHtml(
+            'side-btn-summary',
+            act('showIndivSummary'),
+            `${SiteData.members.filter(isActiveMember).length}`
+        ),
+        html.join('')
+    );
 }
-
 
 function toggleFormerMembers() {
     toggleCollapsible('indiv-former-wrap', 'indiv-toggle-chevron');
@@ -327,7 +347,11 @@ function selectPlayer(name) {
     const periodEl = document.getElementById('p-period');
     periodEl.className = 'tag-badge rank-badge';
     periodEl.innerHTML = memberPeriodBadgeHtml(pDb);
-    applyBadge(document.getElementById('p-race'), raceShortLabel(pDb['종족']), 'tag-badge' + raceBadgeClass(pDb['종족']));
+    applyBadge(
+        document.getElementById('p-race'),
+        raceShortLabel(pDb['종족']),
+        'tag-badge' + raceBadgeClass(pDb['종족'])
+    );
     document.getElementById('p-avatar').innerHTML = profileAvatarInnerHtml(pDb['SOOP ID']);
 
     INDIV_DONUTS.forEach(([suffix, key, color]) => {
@@ -337,18 +361,21 @@ function selectPlayer(name) {
     // [리디자인] 머리 카드 오른쪽의 합계 - 대회 + 대학만 센다.
     // 미니·CK까지 한 숫자로 묶으면 "이 선수가 대회에서 얼마나 하는지"가 미니 경기 수에
     // 묻혀버린다(미니가 경기 수가 훨씬 많다).
-    const official = ['대회 전적', '대학 전적'].reduce((acc, key) => {
-        const st = parseStat(pStat[key]);
-        return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
-    }, { wins: 0, losses: 0 });
+    const official = ['대회 전적', '대학 전적'].reduce(
+        (acc, key) => {
+            const st = parseStat(pStat[key]);
+            return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
+        },
+        { wins: 0, losses: 0 }
+    );
     const officialTotal = official.wins + official.losses;
-    document.getElementById('p-total-label').innerText =
-        `대학 · 대회 총 전적 ${formatNum(officialTotal)}전`;
+    document.getElementById('p-total-label').innerText = `대학 · 대회 총 전적 ${formatNum(officialTotal)}전`;
     document.getElementById('p-total-wl').innerHTML = officialTotal
         ? `${official.wins}<small>승</small> ${official.losses}<small>패</small>`
         : '<small>기록 없음</small>';
-    document.getElementById('p-total-rate').innerText =
-        officialTotal ? (official.wins / officialTotal * 100).toFixed(1) + '%' : '-';
+    document.getElementById('p-total-rate').innerText = officialTotal
+        ? ((official.wins / officialTotal) * 100).toFixed(1) + '%'
+        : '-';
 
     renderIndivMatchesList('indiv-recent-list', RecordsState.indivFilter, 10);
     updateStatsHash();
@@ -379,9 +406,18 @@ function renderIndivMatchesList(containerId, format, limit) {
     if (format !== '전체') filtered = filtered.filter(m => m['형식'] === format);
     const page = RecordsState.indivPage || 1;
     const sliced = limit ? filtered.slice((page - 1) * limit, page * limit) : filtered;
-    if (containerId === 'indiv-recent-list') document.getElementById('indiv-pagination').innerHTML = matchPaginationHtml(filtered.length, page, limit || 10, 'setIndivPage');
+    if (containerId === 'indiv-recent-list')
+        document.getElementById('indiv-pagination').innerHTML = matchPaginationHtml(
+            filtered.length,
+            page,
+            limit || 10,
+            'setIndivPage'
+        );
 
-    document.getElementById(containerId).innerHTML = sliced.length ? sliced.map(m => `
+    document.getElementById(containerId).innerHTML = sliced.length
+        ? sliced
+              .map(
+                  m => `
             <tr class="stat-row">
                 <td class="stat-table-sticky-col">
                     <span class="cell-clip">${escapeHTML(m['상대 선수']) || '-'}</span>
@@ -395,9 +431,11 @@ function renderIndivMatchesList(containerId, format, limit) {
                 <td class="badge-cell">${resultBadgeHtml(m['결과'] || '')}</td>
                 <td>${escapeHTML(shortMatchDate(m['날짜']))}</td>
             </tr>
-            `).join('') : EMPTY_MATCH_ROW_HTML;
+            `
+              )
+              .join('')
+        : EMPTY_MATCH_ROW_HTML;
 }
-
 
 // "3승 1패 (75.0%)" 한 칸. 넓은 화면은 지금까지와 똑같이 그 문장 그대로,
 // 상대 전적 · 개인 전체 전적 표는 둘 다 "상대(멤버) x 형식 4개"라 칸의 절반이 비어 있었다
@@ -407,18 +445,23 @@ const SUMMARY_FORMATS = ['전체', ...FORMAT_KEYS];
 
 // 형식 칩 한 줄. 지금 고른 것만 active.
 function summaryFilterHtml(current, handler) {
-    return SUMMARY_FORMATS.map(f => `
+    return SUMMARY_FORMATS.map(
+        f => `
         <div class="filter-item${f === current ? ' active' : ''}" role="tab" tabindex="0"
-             aria-selected="${f === current}"${act(handler, f)}>${escapeHTML(f)}</div>`).join('');
+             aria-selected="${f === current}"${act(handler, f)}>${escapeHTML(f)}</div>`
+    ).join('');
 }
 
 // 고른 형식의 전적. '전체'면 네 형식을 다 더한다.
 function statFor(getText, format) {
     if (format !== '전체') return parseStat(getText(format));
-    return FORMAT_KEYS.reduce((acc, f) => {
-        const st = parseStat(getText(f));
-        return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
-    }, { wins: 0, losses: 0 });
+    return FORMAT_KEYS.reduce(
+        (acc, f) => {
+            const st = parseStat(getText(f));
+            return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
+        },
+        { wins: 0, losses: 0 }
+    );
 }
 
 // ----- 팀: 상대 전적 -----
@@ -440,10 +483,12 @@ function readOpponentRows() {
     });
     return [...byTeam.entries()].map(([team, counts]) => ({
         team,
-        stats: Object.fromEntries(FORMAT_KEYS.map(f => {
-            const r = counts[f];
-            return [f, (r.w + r.l) ? `${r.w}승 ${r.l}패 (${(r.w / (r.w + r.l) * 100).toFixed(1)}%)` : '-'];
-        }))
+        stats: Object.fromEntries(
+            FORMAT_KEYS.map(f => {
+                const r = counts[f];
+                return [f, r.w + r.l ? `${r.w}승 ${r.l}패 (${((r.w / (r.w + r.l)) * 100).toFixed(1)}%)` : '-'];
+            })
+        ),
     }));
 }
 function setTeamOppFormat(format) {
@@ -457,29 +502,30 @@ function renderOpponentTable() {
     const rows = readOpponentRows();
     const format = RecordsState.oppFormat || '전체';
 
-    document.getElementById('team-opp-filters').innerHTML =
-        summaryFilterHtml(format, 'setTeamOppFormat');
+    document.getElementById('team-opp-filters').innerHTML = summaryFilterHtml(format, 'setTeamOppFormat');
 
     // 고른 형식에 기록이 있는 상대만, 많이 붙은 순으로('—'만 찍힌 줄을 만들지 않는다).
     const cards = rows
         .map(r => ({ team: r.team, stat: statFor(f => r.stats[f], format) }))
         .filter(x => x.stat.wins + x.stat.losses > 0)
-        .sort((a, b) => (b.stat.wins + b.stat.losses) - (a.stat.wins + a.stat.losses));
+        .sort((a, b) => b.stat.wins + b.stat.losses - (a.stat.wins + a.stat.losses));
 
     if (!cards.length) {
         wrap.innerHTML = '<div class="h2h-empty">이 형식의 전적이 없습니다</div>';
         return;
     }
-    wrap.innerHTML = `<div class="h2h-rivals">${cards.map(({ team, stat }) => {
-        const total = stat.wins + stat.losses;
-        return `
+    wrap.innerHTML = `<div class="h2h-rivals">${cards
+        .map(({ team, stat }) => {
+            const total = stat.wins + stat.losses;
+            return `
         <button type="button" class="h2h-rival team-row-clickable" data-team="${escapeHTML(team)}">
             <span class="h2h-rival-avatar is-logo">${teamLogoHtml(team, 26)}</span>
             <span class="h2h-rival-name">${escapeHTML(team)}</span>
             <span class="h2h-rival-rec">${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span></span>
-            <span class="h2h-rival-bar"><span style="width:${(stat.wins / total * 100).toFixed(1)}%"></span></span>
+            <span class="h2h-rival-bar"><span style="width:${((stat.wins / total) * 100).toFixed(1)}%"></span></span>
         </button>`;
-    }).join('')}</div>`;
+        })
+        .join('')}</div>`;
 }
 
 // ----- 개인: 전체 전적 -----
@@ -495,38 +541,45 @@ function renderIndivSummaryTable() {
     const grid = document.getElementById('indiv-summary-grid');
     if (!grid) return;
     const format = RecordsState.summaryFormat || '전체';
-    document.getElementById('indiv-summary-filters').innerHTML =
-        summaryFilterHtml(format, 'setIndivSummaryFormat');
+    document.getElementById('indiv-summary-filters').innerHTML = summaryFilterHtml(format, 'setIndivSummaryFormat');
 
-    grid.innerHTML = `<div class="h2h-rivals">${SiteData.members.filter(isActiveMember).map(m => {
-        const pStat = findPlayerStats(m['이름']);
-        const name = m['이름'];
-        const stat = statFor(f => pStat[`${f} 전적`], format);
-        const total = stat.wins + stat.losses;
-        const rec = total
-            ? `${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span>`
-            : '<span class="wl-empty">기록 없음</span>';
-        return `
+    grid.innerHTML = `<div class="h2h-rivals">${SiteData.members
+        .filter(isActiveMember)
+        .map(m => {
+            const pStat = findPlayerStats(m['이름']);
+            const name = m['이름'];
+            const stat = statFor(f => pStat[`${f} 전적`], format);
+            const total = stat.wins + stat.losses;
+            const rec = total
+                ? `${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span>`
+                : '<span class="wl-empty">기록 없음</span>';
+            return `
         <button type="button" class="h2h-rival"${act('selectPlayer', name)}>
             ${avatarHtml(m['SOOP ID'], 'h2h-rival-avatar')}
             <span class="h2h-rival-name">${escapeHTML(name)}</span>
             <span class="h2h-rival-rec">${rec}</span>
-            ${total ? `<span class="h2h-rival-bar"><span style="width:${(stat.wins / total * 100).toFixed(1)}%"></span></span>` : '<span class="h2h-rival-bar is-empty"></span>'}
+            ${total ? `<span class="h2h-rival-bar"><span style="width:${((stat.wins / total) * 100).toFixed(1)}%"></span></span>` : '<span class="h2h-rival-bar is-empty"></span>'}
         </button>`;
-    }).join('')}</div>`;
+        })
+        .join('')}</div>`;
 }
 
-bootPage(() => {
-    safeInit('팀 요약 통계', calculateTeamSummaries);
-    safeInit('상대 전적 표', renderOpponentTable);
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        const view = params.get('view') === 'solo' ? 'individual' : 'team';
-        switchStatView(view);
-        const member = params.get('member');
-        if (view === 'individual' && member) selectPlayer(member);
-    }));
-}, {
-    siteData: ['shell', 'records'],
-    logos: () => [...SiteData.matches.map(m => m['상대팀']), '캄몬스타즈'],   // 상대팀('내전'은 캄몬스타즈 로고)
-    view: params => activateTabView(RECORD_TABS, params.get('view') === 'solo' ? 'individual' : 'team'),
-});
+bootPage(
+    () => {
+        safeInit('팀 요약 통계', calculateTeamSummaries);
+        safeInit('상대 전적 표', renderOpponentTable);
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                const view = params.get('view') === 'solo' ? 'individual' : 'team';
+                switchStatView(view);
+                const member = params.get('member');
+                if (view === 'individual' && member) selectPlayer(member);
+            })
+        );
+    },
+    {
+        siteData: ['shell', 'records'],
+        logos: () => [...SiteData.matches.map(m => m['상대팀']), '캄몬스타즈'], // 상대팀('내전'은 캄몬스타즈 로고)
+        view: params => activateTabView(RECORD_TABS, params.get('view') === 'solo' ? 'individual' : 'team'),
+    }
+);

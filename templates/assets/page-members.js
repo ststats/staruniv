@@ -4,9 +4,12 @@
  * 공지 본문 정제에 DOMPurify(purify.min.js)를 쓴다 - 처음 '더 보기'를 누를 때 받는다(주소는 이 스크립트 태그의 data-purify).
  */
 
-const MEMBER_TABS = { status: ['tab-member-status', 'view-member-status'], news: ['tab-member-news', 'view-member-news'] };
+const MEMBER_TABS = {
+    status: ['tab-member-status', 'view-member-status'],
+    news: ['tab-member-news', 'view-member-news'],
+};
 
-const ROLE_ORDER_BASE = SITE_ORDER.roles;   // core.js 공통 순서
+const ROLE_ORDER_BASE = SITE_ORDER.roles; // core.js 공통 순서
 // 현황 탭에서 먼저 완료된 방송 상태 조회 결과를 공지 탭 사이드바가
 // 나중에 렌더링될 때도 재사용한다.
 let MEMBER_LIVE_IDS = [];
@@ -67,10 +70,12 @@ const ROLE_EN = { '감독': 'HEAD COACH', '코치': 'COACH', '선수': 'PLAYER',
 
 function renderMemberGroup(title, members) {
     if (members.length === 0) return '';
-    const sorted = [...members].sort((a, b) =>
-        tierIndex(a['티어']) - tierIndex(b['티어'])
-        || String(a['입단일'] || '9999').localeCompare(String(b['입단일'] || '9999'))
-        || String(a['이름']).localeCompare(String(b['이름']), 'ko'));
+    const sorted = [...members].sort(
+        (a, b) =>
+            tierIndex(a['티어']) - tierIndex(b['티어']) ||
+            String(a['입단일'] || '9999').localeCompare(String(b['입단일'] || '9999')) ||
+            String(a['이름']).localeCompare(String(b['이름']), 'ko')
+    );
 
     return `
         <div class="section-title" data-en="${ROLE_EN[title] || 'ROSTER'}"><span class="section-title-label">${escapeHTML(title)}</span><span class="title-count">${sorted.length}명</span></div>
@@ -88,7 +93,10 @@ function renderMemberHeadCounts(activeMembers) {
     const liveEl = document.getElementById('member-count-live');
     if (!liveEl || typeof checkIsLiveRealtime !== 'function') return;
     const targets = activeMembersWithSoopId();
-    if (!targets.length) { liveEl.innerText = '0'; return; }
+    if (!targets.length) {
+        liveEl.innerText = '0';
+        return;
+    }
     Promise.allSettled(targets.map(m => checkIsLiveRealtime(m['SOOP ID'])))
         .then(results => {
             const liveIds = targets
@@ -98,12 +106,15 @@ function renderMemberHeadCounts(activeMembers) {
             MEMBER_LIVE_DATA.clear();
             targets.forEach((m, i) => {
                 const result = results[i];
-                if (result.status === 'fulfilled' && result.value && result.value.broad) MEMBER_LIVE_DATA.set(String(m['SOOP ID']), result.value);
+                if (result.status === 'fulfilled' && result.value && result.value.broad)
+                    MEMBER_LIVE_DATA.set(String(m['SOOP ID']), result.value);
             });
             liveEl.innerText = liveIds.length;
             markLiveMembers(liveIds);
         })
-        .catch(() => { /* 실패하면 '-' 유지 */ });
+        .catch(() => {
+            /* 실패하면 '-' 유지 */
+        });
 }
 
 // 방송 중인 멤버의 카드와 사이드바 줄에 표시를 켠다.
@@ -117,7 +128,8 @@ function markLiveMembers(liveIds) {
         const broad = MEMBER_LIVE_DATA.get(String(card.dataset.soopId));
         if (thumb) {
             thumb.hidden = !on;
-            if (on && broad && broad.broad && broad.broad.broad_no) thumb.src = `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad.broad_no)}`;
+            if (on && broad && broad.broad && broad.broad.broad_no)
+                thumb.src = `https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad.broad_no)}`;
         }
         const profile = card.querySelector('.member-profile-media');
         if (profile) profile.hidden = on;
@@ -141,7 +153,14 @@ function renderMembersPage() {
 
     renderMemberHeadCounts(activeMembers);
 
-    let html = roleOrder.map(role => renderMemberGroup(role, activeMembers.filter(m => (m['직책'] || '기타') === role))).join('');
+    let html = roleOrder
+        .map(role =>
+            renderMemberGroup(
+                role,
+                activeMembers.filter(m => (m['직책'] || '기타') === role)
+            )
+        )
+        .join('');
 
     // 이전 멤버는 다른 직책 그룹과 같은 제목(인원 배지 포함)을 먼저 보여주고, 카드 목록만 접어 둔다.
     if (formerMembers.length > 0) {
@@ -198,29 +217,41 @@ function openMemberProfile(name) {
     const m = findMemberByName(name);
     if (!m) return;
     _profileMember = m;
-    loadProfileActivityData();   // 방송 활동은 창을 처음 열 때 받는다(한 번 받으면 다시 안 받음)
+    loadProfileActivityData(); // 방송 활동은 창을 처음 열 때 받는다(한 번 받으면 다시 안 받음)
 
     document.getElementById('mp-name').innerText = name;
     const mpRoleBadge = document.getElementById('mp-role-badge');
     applyBadge(mpRoleBadge, m['직책'] || '미정', 'tag-badge role-badge');
     mpRoleBadge.style.background = roleColor(m['직책']); // 직책마다 달라지는 동적 색이라 인라인 유지
-    applyBadge(document.getElementById('mp-race-badge'), raceShortLabel(m['종족']), 'tag-badge' + raceBadgeClass(m['종족']));
+    applyBadge(
+        document.getElementById('mp-race-badge'),
+        raceShortLabel(m['종족']),
+        'tag-badge' + raceBadgeClass(m['종족'])
+    );
     applyBadge(document.getElementById('mp-tier-badge'), tierLabel(m['티어']), 'tag-badge tier-badge');
     document.getElementById('mp-avatar').innerHTML = profileAvatarInnerHtml(m['SOOP ID']);
 
     const active = isActiveMember(m);
-    const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : (m['퇴단일'] || null)) : null;
+    const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : m['퇴단일'] || null) : null;
     document.getElementById('mp-period').textContent = m['입단일']
-        ? m['입단일'] + ' ~ ' + (active ? '현재' : (m['퇴단일'] || '-')) : '-';
+        ? m['입단일'] + ' ~ ' + (active ? '현재' : m['퇴단일'] || '-')
+        : '-';
     const daysEl = document.getElementById('mp-days');
     daysEl.hidden = days === null || !Number.isFinite(days);
     daysEl.textContent = daysEl.hidden ? '' : formatNum(days) + (active ? '일째' : '일 활동');
     // 위 티어 뱃지는 지금 티어(티어표), 입단 티어는 이 입단 때 티어(프로필 활동기간 줄에서만 보인다)
     const joinTier = String(m['입단 티어'] ?? '').trim();
     document.getElementById('mp-join-tier').textContent = joinTier ? tierLabel(joinTier) : '-';
-    const rows = [['성별', m['성별']], ['생년월일', m['생년월일']], ['MBTI', m['MBTI']]];
-    document.getElementById('mp-info-body').innerHTML = rows.map(([label, value]) =>
-        '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>').join('');
+    const rows = [
+        ['성별', m['성별']],
+        ['생년월일', m['생년월일']],
+        ['MBTI', m['MBTI']],
+    ];
+    document.getElementById('mp-info-body').innerHTML = rows
+        .map(
+            ([label, value]) => '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>'
+        )
+        .join('');
     // 새 탭 링크: 주소가 있을 때만 href·target·rel을 단다(href 없는 a에는 target·rel을 둘 수 없다)
     const setLink = (a, url) => {
         a.hidden = !url;
@@ -228,8 +259,12 @@ function openMemberProfile(name) {
         if (url) Object.assign(a, { href: url, target: '_blank', rel: 'noopener' });
         return a;
     };
-    const station = setLink(document.getElementById('mp-station-link'), isValidSoopId(m['SOOP ID'])
-        ? 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim()) : '');
+    const station = setLink(
+        document.getElementById('mp-station-link'),
+        isValidSoopId(m['SOOP ID'])
+            ? 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim())
+            : ''
+    );
     const youtube = setLink(document.getElementById('mp-youtube-link'), memberYoutubeUrl(m['YouTube']));
     document.getElementById('mp-external-links').hidden = station.hidden && youtube.hidden;
     document.getElementById('mp-records-link').href = 'records/?view=solo&member=' + encodeURIComponent(name);
@@ -252,8 +287,13 @@ function updateMemberAnalysisLink(member) {
 // 프로필 팝업의 "이번 달 방송 활동"을 시너지표(ststats)에서 가져온 데이터로 채운다.
 function renderMemberActivitySummary(m) {
     const statusEl = document.getElementById('mp-activity-status');
-    const valueEls = ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-sponsor-record'].map(id => document.getElementById(id));
-    const setValues = values => valueEls.forEach((el, i) => { el.innerText = values[i]; });
+    const valueEls = ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-sponsor-record'].map(id =>
+        document.getElementById(id)
+    );
+    const setValues = values =>
+        valueEls.forEach((el, i) => {
+            el.innerText = values[i];
+        });
 
     // 받는 중에는 안내 줄을 띄우지 않는다(네 칸은 '-'). 줄이 떴다가 사라지면 처음 열 때 창 높이가 줄어들며 튄다.
     if (!SynergyState.data) {
@@ -262,8 +302,15 @@ function renderMemberActivitySummary(m) {
         return;
     }
 
-    const soopId = String(m['SOOP ID'] || '').trim().toLowerCase();
-    const entry = SynergyState.data.find(s => String(s.id || '').trim().toLowerCase() === soopId);
+    const soopId = String(m['SOOP ID'] || '')
+        .trim()
+        .toLowerCase();
+    const entry = SynergyState.data.find(
+        s =>
+            String(s.id || '')
+                .trim()
+                .toLowerCase() === soopId
+    );
     // 이번 달 기록이 없으면 네 칸이 '-'인 것으로 충분하다(안내 줄을 띄우면 창 높이만 늘어난다)
     if (!entry) {
         statusEl.innerText = '';
@@ -283,15 +330,15 @@ function renderMemberActivitySummary(m) {
 // "전체 공지"/"멤버별 공지" 두 화면 다 이 하나의 상태로 통일해서 그린다.
 const NewsState = {
     sidebarRendered: false,
-    player: null,          // 선택된 멤버 객체 (null = 전체 공지)
-    mode: 'all',           // 'all'(전체 공지) | 'member'(특정 멤버) - 더보기 때 어느 쪽 API를 더 부를지 결정
-    items: [],             // 지금 화면에 로드되어 있는 { member, post } 목록
-    featuredKey: null,     // 왼쪽 "최신 글" 자리에 올려둔 글의 식별자 - 리스트 클릭 시 이 값만 바뀐다
+    player: null, // 선택된 멤버 객체 (null = 전체 공지)
+    mode: 'all', // 'all'(전체 공지) | 'member'(특정 멤버) - 더보기 때 어느 쪽 API를 더 부를지 결정
+    items: [], // 지금 화면에 로드되어 있는 { member, post } 목록
+    featuredKey: null, // 왼쪽 "최신 글" 자리에 올려둔 글의 식별자 - 리스트 클릭 시 이 값만 바뀐다
     hasMore: false,
-    loading: false,        // "더 보기" 중복 클릭 방지
-    memberPage: 1,         // 멤버 모드: 마지막으로 받은 페이지
+    loading: false, // "더 보기" 중복 클릭 방지
+    memberPage: 1, // 멤버 모드: 마지막으로 받은 페이지
     memberTotalPages: 1,
-    allPool: [],           // 전체 모드: 멤버별로 모아 날짜순 정렬해둔 후보 풀
+    allPool: [], // 전체 모드: 멤버별로 모아 날짜순 정렬해둔 후보 풀
     allShownCount: 0,
     // 전체 모드에서 멤버별로 다음에 가져올 페이지 번호와 총 페이지 수.
     // Map<soopId, { nextPage, totalPages }> - 풀에 남은 게 부족하면 아직 페이지가 남은 멤버의 다음 페이지를 가져온다.
@@ -308,8 +355,7 @@ const NewsState = {
 function renderNewsSidebar() {
     renderAvatarBar(
         'news-avatar-list',
-        avatarSelectAllItemHtml('news-side-btn-all', act('showNewsAll'),
-            `${activeMembersWithSoopId().length}`),
+        avatarSelectAllItemHtml('news-side-btn-all', act('showNewsAll'), `${activeMembersWithSoopId().length}`),
         activeMembersWithSoopId()
             .map(mem => avatarSelectItemHtml('news-side-player-', mem['이름'], mem['SOOP ID'], 'selectNewsPlayer', mem))
             .join('')
@@ -450,7 +496,9 @@ async function loadMoreAllNews(token) {
         if (token !== S.requestSeq) return false;
         // 공지가 페이지마다 같이 딸려올 수 있어, 이미 풀에 있는 글은 다시 추가하지 않는다.
         const existingKeys = new Set(S.allPool.map(newsItemKey));
-        const fetched = settled.filter(r => r.status === 'fulfilled').flatMap(r => r.value)
+        const fetched = settled
+            .filter(r => r.status === 'fulfilled')
+            .flatMap(r => r.value)
             .filter(item => !existingKeys.has(newsItemKey(item)));
         S.allPool = sortNewsByDateDesc(S.allPool.concat(fetched));
     }
@@ -471,7 +519,9 @@ async function loadMoreMemberNews(token) {
     // 공지(noticeData)는 페이지가 넘어가도 고정으로 같이 딸려오는 경우가 있어, 이미 있는 글은
     // 다시 추가하지 않는다 (안 그러면 "더보기"를 누를 때마다 같은 공지가 중복으로 쌓임).
     const existingKeys = new Set(S.items.map(newsItemKey));
-    S.items = S.items.concat(posts.map(post => ({ member, post })).filter(item => !existingKeys.has(newsItemKey(item))));
+    S.items = S.items.concat(
+        posts.map(post => ({ member, post })).filter(item => !existingKeys.has(newsItemKey(item)))
+    );
     S.hasMore = S.memberPage < S.memberTotalPages;
     return true;
 }
@@ -514,15 +564,22 @@ function setNewsFeatured(key) {
     NewsState.featuredKey = key;
     renderNewsLayout(document.getElementById('news-feed-content'));
     restoreScroll();
-    if (mobile) requestAnimationFrame(() => {
-        const card = document.querySelector('#news-feed-content .featured-post');
-        if (!card) return;
-        const nav = document.querySelector('.top-navbar');
-        const bar = document.querySelector('#view-member-news .avatar-bar');
-        const barHeight = bar && getComputedStyle(bar).position === 'sticky' ? bar.getBoundingClientRect().height : 0;
-        const top = window.scrollY + card.getBoundingClientRect().top - (nav?.getBoundingClientRect().height || 0) - barHeight - 12;
-        window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
-    });
+    if (mobile)
+        requestAnimationFrame(() => {
+            const card = document.querySelector('#news-feed-content .featured-post');
+            if (!card) return;
+            const nav = document.querySelector('.top-navbar');
+            const bar = document.querySelector('#view-member-news .avatar-bar');
+            const barHeight =
+                bar && getComputedStyle(bar).position === 'sticky' ? bar.getBoundingClientRect().height : 0;
+            const top =
+                window.scrollY +
+                card.getBoundingClientRect().top -
+                (nav?.getBoundingClientRect().height || 0) -
+                barHeight -
+                12;
+            window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+        });
 }
 
 // 고정 픽셀 기준 대신, CSS에서 두 컬럼에 준 min-width(.featured-post 300px + .past-posts
@@ -559,9 +616,13 @@ function featuredPostWrapHtml(item) {
 // 모바일: 날짜순 단일 리스트에서 선택된 글만 그 자리에서 큰 카드로 확대한다
 // (큰 글을 맨 위에 고정하면 리스트에서 누를 때마다 위로 스크롤해야 보이기 때문).
 function newsMobileLayoutHtml(sorted, loadMoreHtml) {
-    return sorted.map(item => (newsItemKey(item) === NewsState.featuredKey
-        ? featuredPostWrapHtml(item)
-        : renderPastNoticeHtml(item))).join('') + loadMoreHtml;
+    return (
+        sorted
+            .map(item =>
+                newsItemKey(item) === NewsState.featuredKey ? featuredPostWrapHtml(item) : renderPastNoticeHtml(item)
+            )
+            .join('') + loadMoreHtml
+    );
 }
 
 // PC: 왼쪽 큰 카드(선택된 글) + 오른쪽 날짜순 "지난 글" 리스트
@@ -598,7 +659,9 @@ function renderNewsLayout(content) {
 
     const mobile = isNewsMobileLayout();
     content.classList.toggle('news-feed-mobile', mobile);
-    content.innerHTML = mobile ? newsMobileLayoutHtml(sorted, loadMoreHtml) : newsDesktopLayoutHtml(sorted, loadMoreHtml);
+    content.innerHTML = mobile
+        ? newsMobileLayoutHtml(sorted, loadMoreHtml)
+        : newsDesktopLayoutHtml(sorted, loadMoreHtml);
     checkNewsClampButtons(content);
 }
 
@@ -613,19 +676,87 @@ function renderNewsLayout(content) {
 //     거치며 의미가 바뀌는 mutation XSS의 여지를 없앰).
 //   - DOMPurify가 없으면(로드 실패 등) HTML을 쓰지 않고 순수 텍스트로만 보여준다(안전한 쪽으로 실패).
 const NEWS_ALLOWED_TAGS = [
-    'p', 'br', 'div', 'span', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'ins', 'sub', 'sup',
-    'small', 'mark', 'font', 'a', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr',
-    'pre', 'code', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
-    'figure', 'figcaption', // 아래에서 통째로 지우기 위해 허용(허용 안 하면 안의 캡션 글자만 남는다)
+    'p',
+    'br',
+    'div',
+    'span',
+    'strong',
+    'b',
+    'em',
+    'i',
+    'u',
+    's',
+    'strike',
+    'del',
+    'ins',
+    'sub',
+    'sup',
+    'small',
+    'mark',
+    'font',
+    'a',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'hr',
+    'pre',
+    'code',
+    'table',
+    'thead',
+    'tbody',
+    'tfoot',
+    'tr',
+    'th',
+    'td',
+    'caption',
+    'colgroup',
+    'col',
+    'figure',
+    'figcaption', // 아래에서 통째로 지우기 위해 허용(허용 안 하면 안의 캡션 글자만 남는다)
 ];
 
-const NEWS_ALLOWED_ATTR = ['href', 'target', 'title', 'style', 'align', 'color', 'size', 'face', 'colspan', 'rowspan', 'dir', 'lang'];
+const NEWS_ALLOWED_ATTR = [
+    'href',
+    'target',
+    'title',
+    'style',
+    'align',
+    'color',
+    'size',
+    'face',
+    'colspan',
+    'rowspan',
+    'dir',
+    'lang',
+];
 
-const NEWS_STRIPPED_STYLE_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'inset', 'z-index', 'transform', 'color', 'background', 'background-color', '-webkit-text-fill-color'];
+const NEWS_STRIPPED_STYLE_PROPS = [
+    'position',
+    'top',
+    'right',
+    'bottom',
+    'left',
+    'inset',
+    'z-index',
+    'transform',
+    'color',
+    'background',
+    'background-color',
+    '-webkit-text-fill-color',
+];
 
 // DOMPurify를 쓸 수 없을 때: 문단/줄바꿈만 살린 순수 텍스트(.news-post-body가 pre-wrap이라 줄바꿈이 보인다)
 function newsPlainTextFragment(html) {
-    const withBreaks = String(html).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n');
+    const withBreaks = String(html)
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n');
     const doc = new DOMParser().parseFromString(withBreaks, 'text/html'); // 스크립트가 실행되지 않는 문서
     doc.querySelectorAll('figure, script, style, noscript, template').forEach(el => el.remove()); // 사진 캡션·코드 글자 제외
     const text = doc.body.textContent || '';
@@ -637,7 +768,8 @@ function newsPlainTextFragment(html) {
 function sanitizeNewsFragment(html) {
     if (!html) return document.createDocumentFragment();
     const purifier = window.DOMPurify;
-    if (!purifier || !purifier.isSupported || typeof purifier.sanitize !== 'function') return newsPlainTextFragment(html);
+    if (!purifier || !purifier.isSupported || typeof purifier.sanitize !== 'function')
+        return newsPlainTextFragment(html);
 
     const frag = purifier.sanitize(String(html), {
         ALLOWED_TAGS: NEWS_ALLOWED_TAGS,
@@ -718,7 +850,9 @@ var updateNewsPhotoDots = rafThrottleByKey(scroller => {
     const idx = Math.round(scroller.scrollLeft / scroller.clientWidth);
     const total = scroller.children.length;
 
-    wrap.querySelectorAll('.news-post-photos-dots .photo-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+    wrap.querySelectorAll('.news-post-photos-dots .photo-dot').forEach((d, i) =>
+        d.classList.toggle('active', i === idx)
+    );
     const prevBtn = wrap.querySelector('.news-photo-nav-prev');
     const nextBtn = wrap.querySelector('.news-photo-nav-next');
     if (prevBtn) prevBtn.classList.toggle('is-hidden', idx <= 0);
@@ -732,9 +866,11 @@ function scrollNewsPhotos(btn, dir) {
     if (scroller) scroller.scrollBy({ left: dir * scroller.clientWidth, behavior: 'smooth' });
 }
 
-const HEART_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10.2 1.4 6.9 4 5.3c2.2-1.3 4.7-.6 6 1.2l2 2.7 2-2.7c1.3-1.8 3.8-2.5 6-1.2 2.6 1.6 3 4.9 1.3 7.6C18.7 16.65 12 21 12 21z"/></svg>';
+const HEART_ICON =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10.2 1.4 6.9 4 5.3c2.2-1.3 4.7-.6 6 1.2l2 2.7 2-2.7c1.3-1.8 3.8-2.5 6-1.2 2.6 1.6 3 4.9 1.3 7.6C18.7 16.65 12 21 12 21z"/></svg>';
 
-const EYE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_ICON =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 // 사진이 2장 이상이면 인스타처럼 가로 스와이프(스크롤 스냅) + 하단 인디케이터. PC는 호버 시
 // 좌우 화살표, 모바일은 스와이프만(화살표는 CSS @media (hover:none)에서 숨김). 첫 사진은
@@ -778,7 +914,7 @@ function renderFeaturedPostHtml(item) {
     const category = (post.display && post.display.bbsName) || '';
     const timeText = formatRelativeTime(post.regDate);
     const soopId = member ? member['SOOP ID'] : post.userId;
-    const name = member ? member['이름'] : (post.userNick || '');
+    const name = member ? member['이름'] : post.userNick || '';
     const postUrl = `https://www.sooplive.co.kr/station/${encodeURIComponent(soopId)}/post/${encodeURIComponent(post.titleNo)}`;
 
     return `
@@ -819,7 +955,10 @@ function loadProfileActivityData() {
         const modal = document.getElementById('memberProfileModal');
         if (_profileMember && modal && modal.classList.contains('show')) renderMemberActivitySummary(_profileMember);
     };
-    return fetchSynergyData().then(refresh, err => { console.error(err); refresh(); });
+    return fetchSynergyData().then(refresh, err => {
+        console.error(err);
+        refresh();
+    });
 }
 
 // 프로필 창은 처음 열 때만 레이아웃 계산이 무거워(창 안 요소 전체를 처음 배치) 살짝 멈춘다.
@@ -834,21 +973,29 @@ function prewarmProfileModal() {
     el.style.visibility = '';
 }
 
-bootPage(() => {
-    safeInit('멤버 페이지', renderMembersPage);
-    (window.requestIdleCallback || (fn => setTimeout(fn, 500)))(() => prewarmProfileModal(), { timeout: 3000 });
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        const rawView = params.get('view') || runtimeDefaultSubtab('members','status');
-        const view = rawView === 'news' ? 'news' : 'status';
-        switchMemberView(view);
-        const member = params.get('member');
-        if (view === 'news' && member) selectNewsPlayer(member);
-        // 특정 멤버 공지를 보다가 뒤로가기로 "전체 공지" 주소로 돌아온 경우 화면도 전체로 되돌린다
-        else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
-    }));
-}, {
-    siteData: ['shell', 'profiles'],   // profiles: 프로필 창에서만 보이는 칸(생년월일·MBTI·YouTube·ELO ID·입단 티어)
-    prefetch: () => fetchLiveBroadcasts().catch(() => {}),   // 현황 카드의 방송 중 표시
-    view: params => activateTabView(MEMBER_TABS,
-        (params.get('view') || runtimeDefaultSubtab('members', 'status')) === 'news' ? 'news' : 'status'),
-});
+bootPage(
+    () => {
+        safeInit('멤버 페이지', renderMembersPage);
+        (window.requestIdleCallback || (fn => setTimeout(fn, 500)))(() => prewarmProfileModal(), { timeout: 3000 });
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                const rawView = params.get('view') || runtimeDefaultSubtab('members', 'status');
+                const view = rawView === 'news' ? 'news' : 'status';
+                switchMemberView(view);
+                const member = params.get('member');
+                if (view === 'news' && member) selectNewsPlayer(member);
+                // 특정 멤버 공지를 보다가 뒤로가기로 "전체 공지" 주소로 돌아온 경우 화면도 전체로 되돌린다
+                else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
+            })
+        );
+    },
+    {
+        siteData: ['shell', 'profiles'], // profiles: 프로필 창에서만 보이는 칸(생년월일·MBTI·YouTube·ELO ID·입단 티어)
+        prefetch: () => fetchLiveBroadcasts().catch(() => {}), // 현황 카드의 방송 중 표시
+        view: params =>
+            activateTabView(
+                MEMBER_TABS,
+                (params.get('view') || runtimeDefaultSubtab('members', 'status')) === 'news' ? 'news' : 'status'
+            ),
+    }
+);

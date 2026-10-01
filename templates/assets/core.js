@@ -21,11 +21,18 @@
 // (mv-shared.js가 이 이름을 그대로 호출하므로 이름/동작을 바꾸면 안 된다)
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
-    return String(str).replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-    }[tag]));
+    return String(str).replace(
+        /[&<>'"]/g,
+        tag =>
+            ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;',
+            })[tag]
+    );
 }
-
 
 // SOOP API의 "YYYY-MM-DD HH:MM:SS" 형식을 Date로 바꾼다. 공백을 'T'로 바꾸는 이유:
 // 공백 구분 형식은 표준이 아니라 사파리(iOS)에서 Invalid Date가 나와 정렬/상대시간이
@@ -93,13 +100,15 @@ function toggleMainMenu(force) {
         btn.setAttribute('aria-label', open ? '메뉴 닫기' : '메뉴 열기');
     }
 }
-document.addEventListener('click', (e) => {
+document.addEventListener('click', e => {
     const bar = document.querySelector('.top-navbar');
     if (!bar || !bar.classList.contains('menu-open')) return;
     // 메뉴 항목을 눌렀거나 상단바 밖을 눌렀으면 닫는다
     if (e.target.closest('.nav-menu .nav-item') || !e.target.closest('.top-navbar')) toggleMainMenu(false);
 });
-window.addEventListener('resize', () => { if (window.innerWidth > 767.98) toggleMainMenu(false); });
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 767.98) toggleMainMenu(false);
+});
 
 // 사용자가 고른 테마는 다음 방문에도 유지한다. 시스템 설정은 첫 방문의 기본값으로만 쓴다.
 function applyTheme(theme) {
@@ -113,11 +122,18 @@ function applyTheme(theme) {
         button.setAttribute('aria-pressed', selected ? 'true' : 'false');
     });
 }
-function setTheme(theme) { localStorage.setItem('staruniv-theme', theme); applyTheme(theme); }
+function setTheme(theme) {
+    localStorage.setItem('staruniv-theme', theme);
+    applyTheme(theme);
+}
 try {
-    applyTheme(localStorage.getItem('staruniv-theme') ||
-        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-} catch (_) { applyTheme('light'); }
+    applyTheme(
+        localStorage.getItem('staruniv-theme') ||
+            (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    );
+} catch (_) {
+    applyTheme('light');
+}
 // (전적 페이지의 아바타 바, 멤버 페이지의 이전 멤버 목록 양쪽에서 쓴다)
 // "이전 멤버" 접기/펼치기 공용: 대상 영역 표시 + 쉐브론 회전
 function toggleCollapsible(areaId, chevronId) {
@@ -134,7 +150,8 @@ function toggleCollapsible(areaId, chevronId) {
 const _staticQueryCache = new Map();
 
 function staticAll(selector) {
-    if (!_staticQueryCache.has(selector)) _staticQueryCache.set(selector, Array.from(document.querySelectorAll(selector)));
+    if (!_staticQueryCache.has(selector))
+        _staticQueryCache.set(selector, Array.from(document.querySelectorAll(selector)));
     return _staticQueryCache.get(selector);
 }
 
@@ -144,7 +161,10 @@ function rafThrottle(fn) {
     return (...args) => {
         if (scheduled) return;
         scheduled = true;
-        requestAnimationFrame(() => { scheduled = false; fn(...args); });
+        requestAnimationFrame(() => {
+            scheduled = false;
+            fn(...args);
+        });
     };
 }
 
@@ -154,7 +174,10 @@ function rafThrottleByKey(fn) {
     return (key, ...args) => {
         if (scheduled.has(key)) return;
         scheduled.add(key);
-        requestAnimationFrame(() => { scheduled.delete(key); fn(key, ...args); });
+        requestAnimationFrame(() => {
+            scheduled.delete(key);
+            fn(key, ...args);
+        });
     };
 }
 
@@ -182,13 +205,18 @@ function isTabActive(tabId) {
 const UI_FADE_MS = 300;
 let openModalEl = null;
 let modalBackdrop = null;
-let modalReturnFocus = null;   // 창을 열기 전 포커스가 있던 요소 - 다 닫으면 그리로 돌려준다
+let modalReturnFocus = null; // 창을 열기 전 포커스가 있던 요소 - 다 닫으면 그리로 돌려준다
 
 function afterTransition(el, fn) {
     let done = false;
-    const finish = () => { if (done) return; done = true; el.removeEventListener('transitionend', finish); fn(); };
+    const finish = () => {
+        if (done) return;
+        done = true;
+        el.removeEventListener('transitionend', finish);
+        fn();
+    };
     el.addEventListener('transitionend', finish);
-    setTimeout(finish, UI_FADE_MS + 50);   // 애니메이션을 끈 환경에서는 transitionend가 안 온다
+    setTimeout(finish, UI_FADE_MS + 50); // 애니메이션을 끈 환경에서는 transitionend가 안 온다
 }
 
 function showModal(id) {
@@ -207,7 +235,8 @@ function showModal(id) {
     // 스크롤바가 사라진 만큼 폭이 넓어지면 페이지 전체(멤버 카드 목록 등)를 다시 배치하느라 창이 열리는 순간 멈춘다.
     // 스크롤바 자리를 비워 두면(scrollbar-gutter) 폭이 그대로라 다시 배치할 게 없다. 못 쓰는 브라우저는 예전처럼 여백으로 메운다.
     if (scrollbar > 0) {
-        if (CSS.supports && CSS.supports('scrollbar-gutter', 'stable')) document.documentElement.style.scrollbarGutter = 'stable';
+        if (CSS.supports && CSS.supports('scrollbar-gutter', 'stable'))
+            document.documentElement.style.scrollbarGutter = 'stable';
         else document.body.style.paddingRight = `${scrollbar}px`;
     }
     if (!modalBackdrop) {
@@ -222,7 +251,9 @@ function showModal(id) {
     el.setAttribute('role', 'dialog');
     void el.offsetWidth;
     el.classList.add('show');
-    afterTransition(el, () => { if (openModalEl === el) el.focus({ preventScroll: true }); });
+    afterTransition(el, () => {
+        if (openModalEl === el) el.focus({ preventScroll: true });
+    });
 }
 
 function hideModal(el, keepBackdrop) {
@@ -287,9 +318,15 @@ function toggleCollapse(target, trigger) {
 
 document.addEventListener('click', ev => {
     const dismiss = ev.target.closest('[data-bs-dismiss="modal"]');
-    if (dismiss) { hideModal(dismiss.closest('.modal')); return; }
+    if (dismiss) {
+        hideModal(dismiss.closest('.modal'));
+        return;
+    }
     // 대화상자 바깥(어두운 바탕)을 누르면 닫는다
-    if (openModalEl && ev.target === openModalEl) { hideModal(openModalEl); return; }
+    if (openModalEl && ev.target === openModalEl) {
+        hideModal(openModalEl);
+        return;
+    }
     const toggle = ev.target.closest('[data-bs-toggle="collapse"]');
     if (toggle) {
         ev.preventDefault();
@@ -300,13 +337,20 @@ document.addEventListener('keydown', ev => {
     if (ev.key === 'Escape' && openModalEl) hideModal(openModalEl);
 });
 // 창이 열려 있으면 Tab/Shift+Tab이 창 안의 버튼·링크만 돌게 한다(뒤 화면으로 빠지지 않게)
-const MODAL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const MODAL_FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 document.addEventListener('keydown', ev => {
     if (ev.key !== 'Tab' || !openModalEl) return;
-    const items = [...openModalEl.querySelectorAll(MODAL_FOCUSABLE)]
-        .filter(x => !x.hidden && x.getClientRects().length > 0);
-    if (!items.length) { ev.preventDefault(); openModalEl.focus({ preventScroll: true }); return; }
-    const first = items[0], last = items[items.length - 1];
+    const items = [...openModalEl.querySelectorAll(MODAL_FOCUSABLE)].filter(
+        x => !x.hidden && x.getClientRects().length > 0
+    );
+    if (!items.length) {
+        ev.preventDefault();
+        openModalEl.focus({ preventScroll: true });
+        return;
+    }
+    const first = items[0],
+        last = items[items.length - 1];
     const active = document.activeElement;
     if (!openModalEl.contains(active) || active === openModalEl) {
         ev.preventDefault();
@@ -341,10 +385,16 @@ document.addEventListener('keydown', e => {
     if (!el || !el.matches) return;
     if (e.key in TAB_KEYS && el.matches('[role="tablist"] > [role="tab"]') && !e.altKey && !e.ctrlKey && !e.metaKey) {
         const list = el.parentElement;
-        const visibleTabs = () => [...list.children].filter(t => t.matches('[role="tab"]') && t.getClientRects().length);
+        const visibleTabs = () =>
+            [...list.children].filter(t => t.matches('[role="tab"]') && t.getClientRects().length);
         const tabs = visibleTabs();
         const step = TAB_KEYS[e.key];
-        const i = step === 'first' ? 0 : step === 'last' ? tabs.length - 1 : (tabs.indexOf(el) + step + tabs.length) % tabs.length;
+        const i =
+            step === 'first'
+                ? 0
+                : step === 'last'
+                  ? tabs.length - 1
+                  : (tabs.indexOf(el) + step + tabs.length) % tabs.length;
         e.preventDefault();
         if (tabs[i] === el) return;
         tabs[i].click();
@@ -374,7 +424,6 @@ const SiteDataLoad = { status: 'idle', error: null, loaded: new Set() };
 
 const asArray = v => (Array.isArray(v) ? v : []);
 
-
 // Supabase는 한 번에 1000줄까지만 준다. 1000줄씩 끊어 받는 조회를 한 쪽씩 기다리지 않고
 // 여러 쪽(parallel, 표 크기에 맞춰 고른다)을 동시에 요청한다 - 8천 줄이면 8번 차례로 기다리던 게 1번이 된다.
 // 끝을 넘은 쪽은 빈 목록으로 오므로 그대로 멈추면 된다.
@@ -382,10 +431,12 @@ const asArray = v => (Array.isArray(v) ? v : []);
 async function fetchAllPages(makeQuery, { pageSize = 1000, parallel = 2 } = {}) {
     const rows = [];
     for (let from = 0; ; from += pageSize * parallel) {
-        const results = await Promise.all(Array.from({ length: parallel }, (_, i) => {
-            const start = from + i * pageSize;
-            return makeQuery(start, start + pageSize - 1);
-        }));
+        const results = await Promise.all(
+            Array.from({ length: parallel }, (_, i) => {
+                const start = from + i * pageSize;
+                return makeQuery(start, start + pageSize - 1);
+            })
+        );
         for (const { data, error } of results) {
             if (error) throw error;
             const batch = Array.isArray(data) ? data : [];
@@ -396,8 +447,7 @@ async function fetchAllPages(makeQuery, { pageSize = 1000, parallel = 2 } = {}) 
 }
 
 async function loadSiteData(parts) {
-    const requested = (Array.isArray(parts) ? parts : ['shell'])
-        .filter(part => !SiteDataLoad.loaded.has(part));
+    const requested = (Array.isArray(parts) ? parts : ['shell']).filter(part => !SiteDataLoad.loaded.has(part));
     if (!requested.length) return;
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
@@ -420,7 +470,9 @@ async function loadSiteData(parts) {
         // 프로필 창에서만 보이는 칸(생년월일·MBTI 등, 멤버 페이지만 받는다)을 멤버 목록에 이름으로 붙인다.
         // 같은 이름(재입단)은 목록 순서대로 하나씩 붙인다.
         if (SiteData.profiles && SiteDataLoad.loaded.has('shell')) {
-            const queues = Object.fromEntries(Object.entries(SiteData.profiles).map(([k, v]) => [k, asArray(v).slice()]));
+            const queues = Object.fromEntries(
+                Object.entries(SiteData.profiles).map(([k, v]) => [k, asArray(v).slice()])
+            );
             SiteData.members.forEach(m => Object.assign(m, (queues[m['이름']] || []).shift() || {}));
             SiteData.profiles = null;
         }
@@ -450,16 +502,20 @@ function findPlayerStats(name) {
 const LIVE_BROADCASTS_TTL_MS = 20 * 1000;
 let _liveBroadcasts = { at: 0, promise: null };
 function fetchLiveBroadcasts() {
-    if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS) return _liveBroadcasts.promise;
-    const promise = Api.liveBroadcasts()
-        .then(data => {
-            if (!Array.isArray(data)) throw new Error('Invalid live status');
-            const live = {};
-            data.forEach(row => { if (row.soop_id && row.broad_no) live[String(row.soop_id).toLowerCase()] = row; });
-            return live;
+    if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS)
+        return _liveBroadcasts.promise;
+    const promise = Api.liveBroadcasts().then(data => {
+        if (!Array.isArray(data)) throw new Error('Invalid live status');
+        const live = {};
+        data.forEach(row => {
+            if (row.soop_id && row.broad_no) live[String(row.soop_id).toLowerCase()] = row;
         });
+        return live;
+    });
     _liveBroadcasts = { at: Date.now(), promise };
-    promise.catch(() => { if (_liveBroadcasts.promise === promise) _liveBroadcasts = { at: 0, promise: null }; });
+    promise.catch(() => {
+        if (_liveBroadcasts.promise === promise) _liveBroadcasts = { at: 0, promise: null };
+    });
     return promise;
 }
 
@@ -467,17 +523,21 @@ function fetchLiveBroadcasts() {
 // 받지 않는다. 같은 페이지가 방송 정보 전체를 이미 받았거나 받는 중이면 그걸 쓴다. 20초 동안은 같은 결과를 쓴다.
 let _liveIds = { at: 0, promise: null };
 function fetchLiveIds() {
-    if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS) return _liveBroadcasts.promise;
+    if (_liveBroadcasts.promise && Date.now() - _liveBroadcasts.at < LIVE_BROADCASTS_TTL_MS)
+        return _liveBroadcasts.promise;
     if (_liveIds.promise && Date.now() - _liveIds.at < LIVE_BROADCASTS_TTL_MS) return _liveIds.promise;
-    const promise = Api.liveSoopIds()
-        .then(data => {
-            if (!Array.isArray(data)) throw new Error('Invalid live status');
-            const live = {};
-            data.forEach(row => { if (row.soop_id) live[String(row.soop_id).toLowerCase()] = true; });
-            return live;
+    const promise = Api.liveSoopIds().then(data => {
+        if (!Array.isArray(data)) throw new Error('Invalid live status');
+        const live = {};
+        data.forEach(row => {
+            if (row.soop_id) live[String(row.soop_id).toLowerCase()] = true;
         });
+        return live;
+    });
     _liveIds = { at: Date.now(), promise };
-    promise.catch(() => { if (_liveIds.promise === promise) _liveIds = { at: 0, promise: null }; });
+    promise.catch(() => {
+        if (_liveIds.promise === promise) _liveIds = { at: 0, promise: null };
+    });
     return promise;
 }
 
@@ -533,7 +593,9 @@ function readApiCache(url, ttlMs) {
         const entry = JSON.parse(raw);
         if (entry && typeof entry.ts === 'number' && Date.now() - entry.ts < ttlMs) return entry.data;
         sessionStorage.removeItem(cacheKey);
-    } catch (e) { /* 캐시 읽기 실패는 무시하고 그냥 새로 받아온다 */ }
+    } catch (e) {
+        /* 캐시 읽기 실패는 무시하고 그냥 새로 받아온다 */
+    }
     return undefined;
 }
 
@@ -543,7 +605,9 @@ function purgeApiCache() {
             const key = sessionStorage.key(i);
             if (key && key.startsWith(API_CACHE_PREFIX)) sessionStorage.removeItem(key);
         }
-    } catch (e) { /* 무시 */ }
+    } catch (e) {
+        /* 무시 */
+    }
 }
 
 function writeApiCache(url, data) {
@@ -553,7 +617,11 @@ function writeApiCache(url, data) {
     } catch (e) {
         // 저장 공간이 꽉 찼으면 오래된 캐시를 비우고 한 번만 재시도. 캐싱은 선택사항이라 실패해도 무시.
         purgeApiCache();
-        try { sessionStorage.setItem(API_CACHE_PREFIX + url, payload); } catch (e2) { /* 무시 */ }
+        try {
+            sessionStorage.setItem(API_CACHE_PREFIX + url, payload);
+        } catch (e2) {
+            /* 무시 */
+        }
     }
 }
 
@@ -625,10 +693,14 @@ function profileAvatarInnerHtml(soopId) {
 // 상대팀 로고: teamLogoSrc(아래). '내전'(자체 스크림)은 상대가 우리 팀 자신이므로 캄몬스타즈 로고를 쓴다.
 // 로고가 없는 팀은 원형 배지에 팀 이름 첫 글자를 넣어 대신 보여준다.
 function teamLogoFallback(imgEl, teamName) {
-    const initial = String(teamName || '').trim().charAt(0) || '?';
+    const initial =
+        String(teamName || '')
+            .trim()
+            .charAt(0) || '?';
     const span = document.createElement('span');
     span.className = 'team-logo-fallback';
-    const w = imgEl.style.width, h = imgEl.style.height;
+    const w = imgEl.style.width,
+        h = imgEl.style.height;
     if (w) span.style.width = w;
     if (h) span.style.height = h;
     const sizeNum = parseInt(w, 10);
@@ -641,7 +713,7 @@ function teamLogoFallback(imgEl, teamName) {
 // 있으며 시너지와 같이 쓴다. 로고를 그리는 화면이 그 화면에 나오는 대학 이름으로 loadTeamLogos를 부른다
 // (전적: bootPage의 logos, 티어표: 명단을 받은 뒤). 목록에 없으면 '' (배지로 대신).
 const TeamLogos = { map: {}, pending: {} };
-const LOGO_CACHE_KEY = 'staruniv-logos-v2';   // { 대학 이름: Storage 경로('' = 로고 없음) }
+const LOGO_CACHE_KEY = 'staruniv-logos-v2'; // { 대학 이름: Storage 경로('' = 로고 없음) }
 function teamLogoSrc(name) {
     return TeamLogos.map[name] || '';
 }
@@ -664,35 +736,54 @@ function setTeamLogos(paths) {
 // 화면에 나오는 대학(names)의 로고만 받는다. 전에 받아 둔 대학(브라우저 저장)은 바로 쓰고 뒤에서 새로 받고
 // (다음 화면부터 반영), 처음 보는 대학이 있으면 받을 때까지 기다린다. 같은 대학을 두 번 동시에 묻지 않는다.
 async function loadTeamLogos(names) {
-    const wanted = [...new Set(asArray(names).map(n => String(n || '').trim()).filter(Boolean))];
+    const wanted = [
+        ...new Set(
+            asArray(names)
+                .map(n => String(n || '').trim())
+                .filter(Boolean)
+        ),
+    ];
     if (!wanted.length) return;
     let cached = {};
-    try { cached = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; } catch (_) {}
+    try {
+        cached = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {};
+    } catch (_) {}
     const known = wanted.filter(n => Object.prototype.hasOwnProperty.call(cached, n));
     setTeamLogos(Object.fromEntries(known.map(n => [n, cached[n]])));
     const ask = wanted.filter(n => !TeamLogos.pending[n]);
     if (ask.length) {
         const request = Api.universityLogos(ask).then(rows => {
             const paths = Object.fromEntries(ask.map(n => [n, '']));
-            asArray(rows).forEach(r => { if (r && r.name && ask.includes(r.name)) paths[r.name] = r.path || ''; });
+            asArray(rows).forEach(r => {
+                if (r && r.name && ask.includes(r.name)) paths[r.name] = r.path || '';
+            });
             setTeamLogos(paths);
             try {
                 const all = JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {};
                 localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(Object.assign(all, paths)));
             } catch (_) {}
         });
-        ask.forEach(n => { TeamLogos.pending[n] = request; });
-        request.catch(() => ask.forEach(n => { if (TeamLogos.pending[n] === request) delete TeamLogos.pending[n]; }));
+        ask.forEach(n => {
+            TeamLogos.pending[n] = request;
+        });
+        request.catch(() =>
+            ask.forEach(n => {
+                if (TeamLogos.pending[n] === request) delete TeamLogos.pending[n];
+            })
+        );
     }
     const waits = [...new Set(wanted.filter(n => !known.includes(n)).map(n => TeamLogos.pending[n]))];
-    try { await Promise.all(waits); }
-    catch (e) { console.warn('대학 로고를 불러오지 못했습니다. 이름 첫 글자 배지로 대신합니다.', e); }
+    try {
+        await Promise.all(waits);
+    } catch (e) {
+        console.warn('대학 로고를 불러오지 못했습니다. 이름 첫 글자 배지로 대신합니다.', e);
+    }
 }
 
 function teamLogoHtml(teamName, sizePx) {
     const name = String(teamName || '').trim();
     if (!name) return '';
-    const fileName = (name === '내전') ? '캄몬스타즈' : name;
+    const fileName = name === '내전' ? '캄몬스타즈' : name;
     const size = sizePx || 16;
     const src = teamLogoSrc(fileName);
     // 로고가 없는 팀은 이미지를 요청하지 않고 바로 배지(teamLogoFallback과 같은 모양)
@@ -721,6 +812,7 @@ function teamCellInnerHtml(teamName) {
 
 // 사이트 공통 순서 - 여기 한 곳만 고친다. 티어는 높은 순, 직책은 멤버 목록 순서.
 // scripts/write_site_data.py도 이 블록을 JSON으로 읽어 같은 순서를 쓴다(큰따옴표 JSON 형식 유지).
+// prettier-ignore
 const SITE_ORDER = {
     "tiers": ["갓", "킹", "잭", "조커", "스페이드", "0", "1", "2", "3", "4", "5", "6", "7", "8", "베이비"],
     "roles": ["감독", "코치", "선수"]
@@ -758,7 +850,7 @@ const TIER_NO_SUFFIX = new Set(['스페이드']);
 
 // 티어 표기(예: "3티어")를 멤버 카드/모달/개인전적 프로필에서 동일하게 사용
 function tierLabel(tier) {
-    const raw = (tier === undefined || tier === null) ? '' : String(tier).trim();
+    const raw = tier === undefined || tier === null ? '' : String(tier).trim();
     // 비어 있거나 '체크'면 아직 티어를 안 매긴 사람이다 - 둘 다 '미분류'로 적는다.
     if (!raw || TIER_UNRANKED.has(raw)) return '미분류';
     return TIER_NO_SUFFIX.has(raw) ? raw : `${raw}티어`;
@@ -822,9 +914,9 @@ function memberPeriodBadgeHtml(m) {
     const join = m && m['입단일'];
     if (!join) return '<span class="rank-badge-text">활동기간 -</span>';
     const active = isActiveMember(m);
-    const end = active ? '현재' : (m['퇴단일'] || '-');
+    const end = active ? '현재' : m['퇴단일'] || '-';
     const range = `${String(join).replace(/-/g, '.')} ~ ${String(end).replace(/-/g, '.')}`;
-    const days = daysBetween(join, active ? todayStr() : (m['퇴단일'] || null));
+    const days = daysBetween(join, active ? todayStr() : m['퇴단일'] || null);
     const text = days === null ? range : `${formatNum(days)}일${active ? '째' : ''}`;
     return `<span class="rank-badge-text" title="활동기간 ${escapeHTML(range)}">${escapeHTML(text)}</span>`;
 }
@@ -888,16 +980,26 @@ function attachBarScroll(el) {
     else window.addEventListener('resize', update);
     new MutationObserver(update).observe(el, { childList: true, subtree: true });
 
-    let startX = 0, startLeft = 0, moved = false, id = null;
+    let startX = 0,
+        startLeft = 0,
+        moved = false,
+        id = null;
     el.addEventListener('pointerdown', e => {
         if (e.pointerType !== 'mouse' || e.button !== 0 || !bar.classList.contains('is-scrollable')) return;
-        id = e.pointerId; startX = e.clientX; startLeft = el.scrollLeft; moved = false;
+        id = e.pointerId;
+        startX = e.clientX;
+        startLeft = el.scrollLeft;
+        moved = false;
     });
     el.addEventListener('pointermove', e => {
         if (e.pointerId !== id) return;
         const dx = e.clientX - startX;
         if (!moved && Math.abs(dx) < 5) return;
-        if (!moved) { moved = true; el.setPointerCapture(id); bar.classList.add('is-dragging'); }
+        if (!moved) {
+            moved = true;
+            el.setPointerCapture(id);
+            bar.classList.add('is-dragging');
+        }
         el.scrollLeft = startLeft - dx;
     });
     const end = e => {
@@ -908,12 +1010,16 @@ function attachBarScroll(el) {
     };
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
-    el.addEventListener('click', e => {
-        if (!el._dragged) return;
-        el._dragged = false;
-        e.preventDefault();
-        e.stopPropagation();
-    }, true);
+    el.addEventListener(
+        'click',
+        e => {
+            if (!el._dragged) return;
+            el._dragged = false;
+            e.preventDefault();
+            e.stopPropagation();
+        },
+        true
+    );
     el.addEventListener('dragstart', e => e.preventDefault());
     update();
 }
@@ -925,8 +1031,9 @@ function attachBarScroll(el) {
 function centerBarItem(item) {
     if (!item) return;
     const bar = item.closest('.avatar-bar, .tier-bar');
-    const list = item.closest('.avatar-selector-scroll, .tier-bar-list')
-        || (bar && bar.querySelector('.avatar-selector-scroll, .tier-bar-list'));
+    const list =
+        item.closest('.avatar-selector-scroll, .tier-bar-list') ||
+        (bar && bar.querySelector('.avatar-selector-scroll, .tier-bar-list'));
     if (!list || list.scrollWidth <= list.clientWidth) return;
     let left = 0;
     if (list.contains(item)) {
@@ -963,18 +1070,19 @@ function avatarBarTools(list) {
     pick.type = 'button';
     pick.className = 'avatar-bar-pick';
     pick.setAttribute('aria-expanded', 'false');
-    pick.innerHTML = '<span class="avatar-bar-pick-label">전체</span>'
-        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" '
-        + 'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    pick.innerHTML =
+        '<span class="avatar-bar-pick-label">전체</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+        'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
     pick.addEventListener('click', () => {
         const closed = bar.classList.toggle('is-closed');
         pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
     });
     bar.classList.add('is-closed');
     bar.appendChild(pick);
-    scroll.replaceWith(bar);   // 껍데기가 있던 자리에 바를 놓고
-    bar.appendChild(tools);    // 그 안에 '전체' 칸과
-    bar.appendChild(scroll);   // 원래 껍데기를 차례로 넣는다
+    scroll.replaceWith(bar); // 껍데기가 있던 자리에 바를 놓고
+    bar.appendChild(tools); // 그 안에 '전체' 칸과
+    bar.appendChild(scroll); // 원래 껍데기를 차례로 넣는다
     return tools;
 }
 
@@ -999,7 +1107,6 @@ function setActiveAvatarItem(listId, activeEl) {
     bar.classList.add('is-closed');
     pick.setAttribute('aria-expanded', 'false');
 }
-
 
 // ---------------------------------------------------------------------------
 // 얇은 줄(서브탭 / 필터 / GNB)의 가로 스크롤 끝 흐림 - 스크롤 패턴 [C]
@@ -1057,10 +1164,18 @@ function watchSubTabDensity() {
     const observer = new MutationObserver(() => {
         if (queued) return;
         queued = true;
-        setTimeout(() => { queued = false; syncSubTabDensity(); }, 0);   // 백그라운드 탭에서도 돈다(rAF는 멈춘다)
+        setTimeout(() => {
+            queued = false;
+            syncSubTabDensity();
+        }, 0); // 백그라운드 탭에서도 돈다(rAF는 멈춘다)
     });
     document.querySelectorAll('.page-header > .sub-tabs').forEach(el => {
-        observer.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+        observer.observe(el, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: ['hidden', 'class'],
+        });
     });
 }
 
@@ -1069,10 +1184,10 @@ function watchSubTabDensity() {
 // ststat -> Supabase player_stats 함수(daily_member_stats)로 우리 로스터 ID만 받는다(휴면 선수 포함).
 // =====================================================================
 const SynergyState = {
-    data: null,          // [{ ...외부 필드, ourMember, active }]
+    data: null, // [{ ...외부 필드, ourMember, active }]
     updatedAt: '',
-    month: '',           // 보고 있는 달(YYYY-MM). ''이면 가장 최근 달
-    statDate: '',        // 그 데이터의 날짜(그달 1일부터 이날까지의 누적)
+    month: '', // 보고 있는 달(YYYY-MM). ''이면 가장 최근 달
+    statDate: '', // 그 데이터의 날짜(그달 1일부터 이날까지의 누적)
     failed: false,
     metric: 'balloons',
 };
@@ -1081,7 +1196,7 @@ function formatSecondsToHM(sec) {
     sec = sec || 0;
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
-    return `${formatNum(h)}시간 ${m}분`;   // 합계는 1만 시간을 넘는다(18,112시간)
+    return `${formatNum(h)}시간 ${m}분`; // 합계는 1만 시간을 넘는다(18,112시간)
 }
 
 // 천 단위 쉼표(12,345). toLocaleString('ko-KR')은 처음 부를 때 한국어 숫자 형식 자료를 읽느라 수십 ms 멈춘다
@@ -1100,7 +1215,7 @@ function formatSponsorRecord(wins, losses) {
     wins = wins || 0;
     losses = losses || 0;
     const total = wins + losses;
-    const rate = total > 0 ? (wins / total * 100).toFixed(1) : '0.0';
+    const rate = total > 0 ? ((wins / total) * 100).toFixed(1) : '0.0';
     return `${wins}승 ${losses}패 (${rate}%)`;
 }
 
@@ -1109,12 +1224,17 @@ function formatKstDateTime(value, includeTime) {
     const parsed = new Date(value);
     if (!Number.isFinite(parsed.getTime())) return String(value).slice(0, includeTime ? 19 : 10);
     const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-        ...(includeTime ? { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' } : {})
-    }).formatToParts(parsed).reduce((out, part) => {
-        if (part.type !== 'literal') out[part.type] = part.value;
-        return out;
-    }, {});
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        ...(includeTime ? { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' } : {}),
+    })
+        .formatToParts(parsed)
+        .reduce((out, part) => {
+            if (part.type !== 'literal') out[part.type] = part.value;
+            return out;
+        }, {});
     const date = `${parts.year}-${parts.month}-${parts.day}`;
     return includeTime ? `${date} ${parts.hour}:${parts.minute}:${parts.second} KST` : date;
 }
@@ -1137,7 +1257,9 @@ function fetchSynergyMonths() {
         });
         return months;
     })();
-    _synergyMonthsRequest.catch(() => { _synergyMonthsRequest = null; });
+    _synergyMonthsRequest.catch(() => {
+        _synergyMonthsRequest = null;
+    });
     return _synergyMonthsRequest;
 }
 
@@ -1159,7 +1281,11 @@ const _synergyRequests = new Map();
 function fetchSynergyData(month = '') {
     return fetchSynergyResult(month).then(
         result => applySynergyResult(month, result),
-        err => { SynergyState.failed = true; throw err; });
+        err => {
+            SynergyState.failed = true;
+            throw err;
+        }
+    );
 }
 
 function fetchSynergyResult(month = '') {
@@ -1170,8 +1296,8 @@ function fetchSynergyResult(month = '') {
         // 지난 퇴단 기록이 뽑힐 수 있으므로 기준을 정한다: 이번 달은 활동 중인 기록 → 입단일이 늦은 기록,
         // 지난 달은 그 달과 겹치는 기록 중 입단일이 늦은 기록(겹치는 게 없으면 그 달엔 우리 멤버가 아니었다).
         const joinedAt = m => String(m['입단일'] || '').trim();
-        const better = (a, b) => (!month && isActiveMember(a) !== isActiveMember(b))
-            ? isActiveMember(a) : joinedAt(a) > joinedAt(b);
+        const better = (a, b) =>
+            !month && isActiveMember(a) !== isActiveMember(b) ? isActiveMember(a) : joinedAt(a) > joinedAt(b);
         const idToMember = new Map();
         SiteData.members.forEach(m => {
             const originalId = String(m['SOOP ID'] || '').trim();
@@ -1198,7 +1324,9 @@ function fetchSynergyResult(month = '') {
             try {
                 rows = await Api.statsLatest(memberIds);
                 latestDate = rows.length ? String(rows[0].stat_date || '') : '';
-            } catch (_) { /* 아래 달 목록 경로로 받는다 */ }
+            } catch (_) {
+                /* 아래 달 목록 경로로 받는다 */
+            }
             if (!latestDate) rows = null;
         }
         if (!rows) {
@@ -1213,7 +1341,9 @@ function fetchSynergyResult(month = '') {
 
         const data = rows
             .map(row => {
-                const soopId = String((row && row.soop_id) || '').trim().toLowerCase();
+                const soopId = String((row && row.soop_id) || '')
+                    .trim()
+                    .toLowerCase();
                 const ours = idToMember.get(soopId);
                 if (!ours) return null;
                 return {
@@ -1238,7 +1368,9 @@ function fetchSynergyResult(month = '') {
     })();
 
     _synergyRequests.set(month, request);
-    request.catch(() => { _synergyRequests.delete(month); });   // 실패한 달은 다음에 다시 받는다
+    request.catch(() => {
+        _synergyRequests.delete(month);
+    }); // 실패한 달은 다음에 다시 받는다
     return request;
 }
 
@@ -1262,7 +1394,9 @@ const PageState = {
     restoring: false,
     update(params) {
         const qs = new URLSearchParams();
-        Object.entries(params || {}).forEach(([k, v]) => { if (v) qs.set(k, v); });
+        Object.entries(params || {}).forEach(([k, v]) => {
+            if (v) qs.set(k, v);
+        });
         const qsStr = qs.toString();
         const url = location.pathname + (qsStr ? '?' + qsStr : '');
         if (url === location.pathname + location.search) return;
@@ -1273,7 +1407,11 @@ const PageState = {
     bindRestore(restore) {
         const run = () => {
             this.restoring = true;
-            try { restore(new URLSearchParams(location.search)); } finally { this.restoring = false; }
+            try {
+                restore(new URLSearchParams(location.search));
+            } finally {
+                this.restoring = false;
+            }
         };
         window.addEventListener('popstate', run);
         run();
@@ -1291,10 +1429,12 @@ const isStatsTabHidden = key => HiddenStatsTabs.has(String(key));
 
 let SiteRuntimeConfig = {};
 function runtimePageId() {
-    return document.body.dataset.adminPage
-        || document.querySelector('.page-section.active')?.id?.replace(/^page-/,'')
-        || location.pathname.split('/').filter(Boolean).pop()
-        || 'home';
+    return (
+        document.body.dataset.adminPage ||
+        document.querySelector('.page-section.active')?.id?.replace(/^page-/, '') ||
+        location.pathname.split('/').filter(Boolean).pop() ||
+        'home'
+    );
 }
 function runtimeSubtabConfig(pageId, fallbackDefault) {
     const raw = SiteRuntimeConfig?.subtabs?.[pageId] || {};
@@ -1314,7 +1454,9 @@ function runtimeDefaultSubtab(pageId, fallbackDefault) {
 const NAV_CACHE_KEY = 'staruniv-nav-config';
 async function fetchNavConfig() {
     const data = await Api.navConfig();
-    try { localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(data)); } catch (_) {}
+    try {
+        localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(data));
+    } catch (_) {}
     return data;
 }
 
@@ -1329,7 +1471,10 @@ function seedRuntimeConfigFromCache() {
 // 관리자 화면은 쓰지 않는다(항상 최신을 받아 편집한다).
 function cachedNavConfig() {
     if (document.body.classList.contains('admin-mode')) return null;
-    for (const read of [() => localStorage.getItem(NAV_CACHE_KEY), () => document.querySelector('meta[name="nav-config"]')?.content]) {
+    for (const read of [
+        () => localStorage.getItem(NAV_CACHE_KEY),
+        () => document.querySelector('meta[name="nav-config"]')?.content,
+    ]) {
         try {
             const value = JSON.parse(read() || 'null');
             if (value && typeof value === 'object') return value;
@@ -1343,20 +1488,29 @@ async function applyNavVisibility() {
     const fresh = fetchNavConfig();
     if (cached) {
         applyNavConfig(cached);
-        fresh.then(data => { if (JSON.stringify(data) !== JSON.stringify(cached)) applyNavConfig(data); })
+        fresh
+            .then(data => {
+                if (JSON.stringify(data) !== JSON.stringify(cached)) applyNavConfig(data);
+            })
             .catch(e => console.warn('사이트 표시 설정을 새로 받지 못했습니다.', e));
         return;
     }
     let data = null;
-    try { data = await fresh; }
-    catch (e) { console.warn('사이트 표시 설정을 불러오지 못했습니다.', e); }
+    try {
+        data = await fresh;
+    } catch (e) {
+        console.warn('사이트 표시 설정을 불러오지 못했습니다.', e);
+    }
     if (data) applyNavConfig(data);
     delete document.documentElement.dataset.navPending;
 }
 
 // 사이트 문구는 끝에 마침표·말줄임표를 붙이지 않는다. 관리자가 입력한 문구도 표시할 때 맞춘다.
 function trimEndPunct(text) {
-    return String(text || '').trim().replace(/(?:\.|…)+$/, '').trim();
+    return String(text || '')
+        .trim()
+        .replace(/(?:\.|…)+$/, '')
+        .trim();
 }
 
 function applyNavConfig(data) {
@@ -1383,29 +1537,33 @@ function applyNavConfig(data) {
         const pageId = runtimePageId();
         const sub = runtimeSubtabConfig(pageId, '');
         document.querySelectorAll('.sub-tabs .sub-tab[id]').forEach(el => {
-            const key = el.id.replace(/^tab-(?:member-|tools-|video-)?/,'').replace(/^tab-/,'');
+            const key = el.id.replace(/^tab-(?:member-|tools-|video-)?/, '').replace(/^tab-/, '');
             const hiddenSub = sub.hidden.includes(key);
             el.hidden = hiddenSub && !isAdmin;
             el.classList.toggle('admin-config-hidden', hiddenSub && isAdmin);
         });
 
-        const heroDescriptions = (data.heroDescriptions && typeof data.heroDescriptions === 'object') ? data.heroDescriptions : {};
+        const heroDescriptions =
+            data.heroDescriptions && typeof data.heroDescriptions === 'object' ? data.heroDescriptions : {};
         document.querySelectorAll('[data-hero-description]').forEach(subtitle => {
             const heroText = trimEndPunct(heroDescriptions[subtitle.dataset.heroDescription]);
             if (heroText) subtitle.textContent = heroText;
         });
         const heroText = trimEndPunct(heroDescriptions[pageId]);
         if (heroText) {
-            const subtitle = document.querySelector('.page-section.active .page-header-subtitle:not([data-hero-description])');
+            const subtitle = document.querySelector(
+                '.page-section.active .page-header-subtitle:not([data-hero-description])'
+            );
             if (subtitle) {
-                if (subtitle.id === 'tier-subtitle' && subtitle.firstChild) subtitle.firstChild.nodeValue = heroText + '. 출처 : ';
+                if (subtitle.id === 'tier-subtitle' && subtitle.firstChild)
+                    subtitle.firstChild.nodeValue = heroText + '. 출처 : ';
                 else subtitle.textContent = heroText;
             }
         }
 
         const carousel = data.homeCarousel && typeof data.homeCarousel === 'object' ? data.homeCarousel : {};
         document.querySelectorAll('.home-carousel-slide').forEach((slide, idx) => {
-            const key = ['schedule','records','video'][idx];
+            const key = ['schedule', 'records', 'video'][idx];
             const cfg = carousel[key];
             if (!cfg) return;
             const title = slide.querySelector('.page-header-title');
@@ -1424,7 +1582,7 @@ function applyNavConfig(data) {
         });
         if (typeof syncStatsMetricVisibility === 'function') syncStatsMetricVisibility();
         if (menu && menu._edgeFadeUpdate) menu._edgeFadeUpdate();
-        document.dispatchEvent(new CustomEvent('site:config', {detail:data}));
+        document.dispatchEvent(new CustomEvent('site:config', { detail: data }));
     } catch (e) {
         console.warn('사이트 표시 설정을 적용하지 못했습니다.', e);
     } finally {
@@ -1455,28 +1613,33 @@ function bootPage(init, opts) {
     // opts.prefetch: 설정·사이트 데이터 파일을 기다리지 않고 지금 바로 시작할 요청. 결과는 각 조회 함수의
     // 캐시가 들고 있다가 init이 쓴다(한 번 더 기다리는 왕복을 없앤다). 실패는 init 쪽 조회가 다시 다룬다.
     if (opts && typeof opts.prefetch === 'function') {
-        try { opts.prefetch(); } catch (e) { console.warn('미리 받기 실패', e); }
+        try {
+            opts.prefetch();
+        } catch (e) {
+            console.warn('미리 받기 실패', e);
+        }
     }
     // opts.view(params): 주소(?view=)나 저장해 둔 기본 탭 설정대로 탭 모양만 지금 맞춘다. HTML은 기본 탭이
     // 켜진 채로 오므로, 데이터를 기다린 뒤에야 바꾸면 새로고침 때 기본 탭이 잠깐 보였다가 바뀐다.
     // 탭을 열 때 하는 일(데이터 받기·그리기)은 init의 URL 복원이 그대로 한다.
     if (opts && typeof opts.view === 'function') {
         seedRuntimeConfigFromCache();
-        try { opts.view(new URLSearchParams(location.search)); } catch (e) { console.warn('탭 먼저 맞추기 실패', e); }
+        try {
+            opts.view(new URLSearchParams(location.search));
+        } catch (e) {
+            console.warn('탭 먼저 맞추기 실패', e);
+        }
     }
-    delete document.documentElement.dataset.viewPending;   // actions.js가 걸어 둔 탭 가림을 푼다
-    const siteDataParts = opts && opts.siteData === false
-        ? [] : ((opts && Array.isArray(opts.siteData)) ? opts.siteData : ['shell']);
+    delete document.documentElement.dataset.viewPending; // actions.js가 걸어 둔 탭 가림을 푼다
+    const siteDataParts =
+        opts && opts.siteData === false ? [] : opts && Array.isArray(opts.siteData) ? opts.siteData : ['shell'];
     const start = async () => {
         // 상단 메뉴/서브탭은 데이터와 무관하게 이미 그려져 있으니, 데이터를 기다리지 않고
         // 먼저 붙인다(ResizeObserver가 이후 변화를 알아서 따라간다).
         initEdgeFades();
         watchSubTabDensity();
         // 메뉴/서브탭 기본값을 페이지 초기화 전에 확정한다. 사이트 데이터 파일과는 서로 무관하니 함께 받는다.
-        await Promise.all([
-            applyNavVisibility(),
-            siteDataParts.length ? loadSiteData(siteDataParts) : null,
-        ]);
+        await Promise.all([applyNavVisibility(), siteDataParts.length ? loadSiteData(siteDataParts) : null]);
         // 로고는 본문을 막지 않는다: 이 브라우저가 받아 둔 로고는 바로 쓰고(loadTeamLogos가 먼저 채운다),
         // 처음 보는 대학은 첫 글자 배지로 그린 뒤 도착하면 그 자리만 로고로 바꾼다.
         const logosReady = opts && typeof opts.logos === 'function' ? loadTeamLogos(opts.logos()) : null;
@@ -1499,7 +1662,7 @@ let helpSeq = 0;
 // 내용은 JSON으로 data-help에 싣고 열 때 DOM으로 짠다 - 문자열을 innerHTML로 꽂지 않는다.
 function helpBadgeHtml(help) {
     const uid = `help-${++helpSeq}`;
-    const payload = typeof help === 'string' ? { lead: help } : (help || {});
+    const payload = typeof help === 'string' ? { lead: help } : help || {};
     return `<span class="help-pop"><button type="button" class="help-btn" id="${uid}"
             aria-expanded="false" aria-label="설명 보기"
             data-help="${escapeHTML(JSON.stringify(payload))}"${act('toggleHelp', ACT.el)}><i class="i-info" aria-hidden="true"></i></button></span>`;
@@ -1515,7 +1678,11 @@ function helpEl(tag, cls, text) {
 // 상자 내용을 다시 그린다. JSON이 아니면 줄글로 본다.
 function helpFill(box, raw) {
     let data;
-    try { data = JSON.parse(raw); } catch (e) { data = { lead: raw || '' }; }
+    try {
+        data = JSON.parse(raw);
+    } catch (e) {
+        data = { lead: raw || '' };
+    }
     if (!data || typeof data !== 'object') data = { lead: String(raw || '') };
     box.textContent = '';
     if (data.title) box.appendChild(helpEl('div', 'help-head', data.title));
@@ -1547,8 +1714,12 @@ function helpBox() {
 
 function closeAllHelp() {
     const box = document.getElementById('help-floating');
-    if (box) { box.hidden = true; box.removeAttribute('data-owner'); }
-    document.querySelectorAll('.help-btn[aria-expanded="true"]')
+    if (box) {
+        box.hidden = true;
+        box.removeAttribute('data-owner');
+    }
+    document
+        .querySelectorAll('.help-btn[aria-expanded="true"]')
         .forEach(el => el.setAttribute('aria-expanded', 'false'));
 }
 
@@ -1556,7 +1727,7 @@ function toggleHelp(btn) {
     const box = helpBox();
     const wasOpen = !box.hidden && box.dataset.owner === btn.id;
     closeAllHelp();
-    if (wasOpen) return;                       // 같은 단추를 다시 누르면 닫기만 한다
+    if (wasOpen) return; // 같은 단추를 다시 누르면 닫기만 한다
 
     helpFill(box, btn.dataset.help || '');
     box.dataset.owner = btn.id;
@@ -1609,17 +1780,17 @@ const RANK_HELP = {
 // 잘리므로 머리 카드의 셋째 줄을 따로 내준다(.player-summary-position).
 function playerRankBadgeHtml(tier, rank, tierTotal) {
     const label = escapeHTML(tierLabel(tier));
-    const body = (rank && tierTotal)
-        ? `${rank}위/${formatNum(Number(tierTotal))}명`
-        : '기록 없음';
+    const body = rank && tierTotal ? `${rank}위/${formatNum(Number(tierTotal))}명` : '기록 없음';
     return `<span class="tag-badge rank-badge">${label} · ${body}</span>`;
 }
 
 // 승패 표기. 사이트 어디서나 '20승 19패'로 같게 적는다('20-19'와 섞지 않는다).
 // 숫자만 색을 입히고 '승/패' 글자는 본문 색으로 둬서, 좁은 칸에서도 숫자가 먼저 읽힌다.
 function winLoseText(win, lose, winClass, loseClass) {
-    return `<span class="${winClass || 'h2h-win'}">${win}</span>승 `
-        + `<span class="${loseClass || 'h2h-lose'}">${lose}</span>패`;
+    return (
+        `<span class="${winClass || 'h2h-win'}">${win}</span>승 ` +
+        `<span class="${loseClass || 'h2h-lose'}">${lose}</span>패`
+    );
 }
 
 function playerBadgesHtml(p) {
@@ -1636,7 +1807,7 @@ function playerSummaryHtml(p, rec, close = '', opts = {}) {
         <div class="player-summary-stats">
             <div class="player-summary-total">총 전적 ${formatNum(rec.total)}전</div>
             <div class="player-summary-wl">${rec.win}승 ${rec.lose}패</div>
-            <div class="player-summary-rate">${rec.total ? `${Math.round(rec.win / rec.total * 1000) / 10}%` : '-'}</div>
+            <div class="player-summary-rate">${rec.total ? `${Math.round((rec.win / rec.total) * 1000) / 10}%` : '-'}</div>
         </div>${close}</div>`;
 }
 function matchPaginationHtml(total, page, size, handler) {
@@ -1645,7 +1816,8 @@ function matchPaginationHtml(total, page, size, handler) {
     const start = Math.floor((cur - 1) / 5) * 5 + 1;
     const end = Math.min(count, start + 4);
     // 숫자 버튼과 앞뒤 이동 버튼은 모양이 달라서(활성 표시가 숫자에만 붙는다) 따로 만든다.
-    const num = n => `<button type="button" class="match-page${n === cur ? ' active' : ''}"${n === cur ? ' aria-current="page"' : ''}${act(handler, n)}>${n}</button>`;
+    const num = n =>
+        `<button type="button" class="match-page${n === cur ? ' active' : ''}"${n === cur ? ' aria-current="page"' : ''}${act(handler, n)}>${n}</button>`;
     const step = (n, label, aria, disabled) =>
         `<button type="button" class="match-page is-edge" aria-label="${aria}"${disabled ? ' disabled' : act(handler, n)}>${label}</button>`;
     return `<nav class="match-pagination" aria-label="페이지">

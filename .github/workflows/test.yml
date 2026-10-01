@@ -16,4 +16,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          cache: npm
       - run: npm test
+      # 코드 모양(.prettierrc.json)은 PR에서만 본다 - 모양 때문에 정기 배포가 막히지 않게. 고칠 땐 npm run format
+      - if: github.event_name == 'pull_request'
+        run: npm ci && npm run format:check

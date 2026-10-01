@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { code } = require('./code-pattern');
 
 const ROOT = path.resolve(__dirname, '..');
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -45,7 +46,7 @@ test('schedule uses stable fixed palette and public renderer accepts keys', () =
 test('records use atomic match RPC and validate set results before save', () => {
   const admin = read('templates/assets/admin-records.js');
   assert.match(admin, /rpc\('admin_save_match'/);
-  assert.match(admin, /validateScore\(p_match,p_rounds\)/);
+  assert.match(admin, code("validateScore(p_match,p_rounds)"));
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_save_match/);
   assert.match(sql, /delete from public\.rounds where match_no = v_match_no/);
@@ -54,7 +55,7 @@ test('records use atomic match RPC and validate set results before save', () => 
 test('tier editor checks duplicate ELO IDs and bulk update is admin-only RPC', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, /function duplicateElo/);
-  assert.match(tier, /\.eq\('elo_id',elo\)/);
+  assert.match(tier, code(".eq('elo_id',elo)"));
   assert.match(tier, /admin_bulk_update_tier_members/);
   const migration = read('supabase/staruniv.sql');
   assert.match(migration, /if not public\.is_admin\(\) then raise exception 'admin only'/);
@@ -102,15 +103,15 @@ test('공개 페이지의 데이터 조회는 api.js 한 곳에만 있다(나중
 
 test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
   const tier = read('templates/assets/admin-tier.js');
-  assert.match(tier, /\['candidates','신규 인원'\]/);
+  assert.match(tier, code("['candidates','신규 인원']"));
   assert.match(tier, /from\('tier_member_candidates'\)/);
-  assert.match(tier, /setCandidateStatus\(find\(b\.dataset\.candIgnore\),'ignored'\)/);
-  assert.match(tier, /from\('tier_member_candidates'\)\.delete\(\)\.eq\('id',c\.id\)/);
+  assert.match(tier, code("setCandidateStatus(find(b.dataset.candIgnore),'ignored')"));
+  assert.match(tier, code("from('tier_member_candidates').delete().eq('id',c.id)"));
 });
 
 test('other-race ELO accounts are linked, and duplicate SOOP IDs are blocked in the DB', () => {
   const tier = read('templates/assets/admin-tier.js');
-  assert.match(tier, /from\('tier_member_elo_links'\)\.insert/);
+  assert.match(tier, code("from('tier_member_elo_links').insert"));
   assert.match(tier, /data-cand-link/);
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create table if not exists public\.tier_member_elo_links/);
@@ -120,7 +121,7 @@ test('other-race ELO accounts are linked, and duplicate SOOP IDs are blocked in 
 test('main ELO account can be switched, and dotted EloBoard names match existing players', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, /rpc\('admin_set_main_elo'/);
-  assert.match(tier, /replace\(\/\[\.\\s\]\+\/g,''\)/);
+  assert.match(tier, code("replace(/[.\\s]+/g,'')"));
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_set_main_elo\(p_member_id bigint, p_elo_id integer\)/);
 });
@@ -138,23 +139,23 @@ test('member rows link to tier players; person fields come from the tier table',
   assert.match(sql, /create trigger members_fill_from_tier before insert or update on public\.members/);
   assert.match(sql, /create trigger tier_members_sync_members after update of soop_id, birth_date, gender, tier on public\.tier_members/);
   const admin = read('templates/assets/admin-members.js');
-  assert.match(admin, /function linkStatus\(list,soop\)/);
+  assert.match(admin, code("function linkStatus(list,soop)"));
   assert.match(sql, /where lower\(btrim\(soop_id\)\) = lower\(btrim\(new\.soop_id\)\) order by id limit 1/);
-  assert.match(admin, /rows\.find\(r=>r\.nickname===name\)\|\|rows\.find\(r=>r\.name===name\)/);
+  assert.match(admin, code("rows.find(r=>r.nickname===name)||rows.find(r=>r.name===name)"));
   const page = read('templates/assets/page-members.js');
   assert.match(page, /getElementById\('mp-join-tier'\)\.textContent = joinTier \? tierLabel\(joinTier\) : '-'/);
 });
 
 test('linked ELO accounts: name and race are editable in the player drawer', () => {
   const tier = read('templates/assets/admin-tier.js');
-  assert.match(tier, /from\('tier_member_elo_links'\)\.update\(payload\)\.eq\('elo_id'/);
+  assert.match(tier, code("from('tier_member_elo_links').update(payload).eq('elo_id'"));
   assert.match(tier, /data-link-race/);
 });
 
 test('admin shows members by nickname (same as the public site), not by the base name', () => {
-  assert.match(read('templates/assets/admin-members.js'), /'이름':r\.nickname\|\|r\.name\|\|''/);
-  assert.match(read('templates/assets/admin-history.js'), /m\.nickname\|\|m\.name/);
-  assert.match(read('templates/assets/admin-records.js'), /m=>m\.nickname\|\|m\.name/);
+  assert.match(read('templates/assets/admin-members.js'), code("'이름':r.nickname||r.name||''"));
+  assert.match(read('templates/assets/admin-history.js'), code("m.nickname||m.name"));
+  assert.match(read('templates/assets/admin-records.js'), code("m=>m.nickname||m.name"));
 });
 
 test('site member data keeps join tier and ELO ID for the profile', () => {
@@ -186,10 +187,10 @@ test('stats TOP card uses repo media files (media/members/<SOOP ID>), no DB uplo
 
 test('admin upload of feature photo/video stays: PC browser re-encodes video, no server encoding', () => {
   const js = read('templates/assets/admin-members.js');
-  assert.match(js, /const CLIP=\{w:1280,h:720,fps:30,maxSec:6/);
+  assert.match(js, code("const CLIP={w:1280,h:720,fps:30,maxSec:6"));
   // 소프트웨어 H.264(Baseline)를 먼저, 안 되면 하드웨어 Main으로
-  assert.match(js, /encoder:'avc1\.42001f',muxer:'avc',extra:\{avc:\{format:'avc'\},hardwareAcceleration:'prefer-software'\}/);
-  assert.match(js, /encoder:'avc1\.4d401f',muxer:'avc'/);
+  assert.match(js, code("encoder:'avc1.42001f',muxer:'avc',extra:{avc:{format:'avc'},hardwareAcceleration:'prefer-software'}"));
+  assert.match(js, code("encoder:'avc1.4d401f',muxer:'avc'"));
   assert.doesNotMatch(js, /admin_request_member_video|members-photo-raw/);
   assert.match(read('templates/base.html'), /asset_url\('mp4-muxer\.js'\)/);
   const sql = read('supabase/staruniv.sql');
@@ -200,16 +201,16 @@ test('admin upload of feature photo/video stays: PC browser re-encodes video, no
 test('히어로 편집(설명·서브탭, 방송통계는 지표 탭)은 히어로 안, 추가 버튼은 그 서브탭에서만', () => {
   const js = read('templates/assets/admin-site.js');
   assert.match(js, /async function openHeroEditor\(\)/);
-  assert.match(js, /addHeroTool\(\{id:'adminHeroEdit'/);
-  assert.match(js, /cfg\.heroDescriptions\[page\]=desc/);
-  assert.match(js, /cfg\.statsTabs=next/);            // 방송통계 지표 탭 표시도 같은 서랍
+  assert.match(js, code("addHeroTool({id:'adminHeroEdit'"));
+  assert.match(js, code("cfg.heroDescriptions[page]=desc"));
+  assert.match(js, code("cfg.statsTabs=next"));            // 방송통계 지표 탭 표시도 같은 서랍
   const core = read('templates/assets/admin-core.js');
-  assert.match(core, /function addPageTool\(\{id,label,icon='plus',onClick,scope=''\}\)/);
+  assert.match(core, code("function addPageTool({id,label,icon='plus',onClick,scope=''})"));
   assert.match(core, /function syncActionBars\(\)/);
   // 추가 버튼은 자기 서브탭 화면에 묶인다(일정 탭에서 '연혁 추가'가 보이지 않게)
   for (const [file, scope] of [['admin-history.js', '#view-history'], ['admin-members.js', '#view-member-status'],
     ['admin-tools.js', '#view-tools-external'], ['admin-video.js', '#view-video-pick']]) {
-    assert.ok(read(`templates/assets/${file}`).includes(`scope:'${scope}'`), `${file}: ${scope}`);
+    assert.match(read(`templates/assets/${file}`), code(`scope:'${scope}'`), `${file}: ${scope}`);
   }
 });
 
@@ -256,6 +257,6 @@ test('현황판에 아직 없는 대학(teams.off_board)은 티어표 갱신이 
   assert.match(read('supabase/staruniv.sql'), /alter table public\.teams add column if not exists off_board boolean not null default false;/);
   const teams = read('templates/assets/admin-teams.js');
   assert.match(teams, /checkbox\('tm_off_board'/);
-  assert.match(teams, /if\(hasOffBoard\)row\.off_board=/);
+  assert.match(teams, code("if(hasOffBoard)row.off_board="));
   assert.match(read('templates/assets/admin-tier-update.js'), /현황판에 없는 대학 소속\(소속 유지\)/);
 });

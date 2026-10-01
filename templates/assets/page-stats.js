@@ -10,22 +10,26 @@
 const SPONSOR_RATE_MIN = 10;
 const SYNERGY_METRICS = {
     balloons: {
-        label: '별풍선', url: 'balloons',
+        label: '별풍선',
+        url: 'balloons',
         format: m => formatCount(m.balloons, '개'),
         formatValue: v => formatCount(v, '개'),
     },
     broadcast_seconds: {
-        label: '방송시간', url: 'hours',
+        label: '방송시간',
+        url: 'hours',
         format: m => formatSecondsToHM(m.broadcast_seconds),
         formatValue: v => formatSecondsToHM(v),
     },
     cumulative_viewers: {
-        label: '누적시청자', url: 'viewers',
+        label: '누적시청자',
+        url: 'viewers',
         format: m => formatCount(m.cumulative_viewers, '명'),
         formatValue: v => formatCount(v, '명'),
     },
     sponsor: {
-        label: '스폰판수', url: 'sponsor',
+        label: '스폰판수',
+        url: 'sponsor',
         format: m => formatCount(sponsorGames(m), '판'),
         sortValue: sponsorGames,
         formatValue: v => formatCount(v, '판'),
@@ -33,7 +37,8 @@ const SYNERGY_METRICS = {
     // 승패·승률. 판수가 적으면 승률이 튀므로(1전 1승 = 100%) SPONSOR_RATE_MIN판 이상인 멤버를 승률순으로
     // 먼저 세우고, 그보다 적은 멤버는 그 뒤에 판수순으로 둔다. 합계·평균 칸은 전체 승률·평균 승률이다.
     sponsor_rate: {
-        label: '스폰승률', url: 'winrate',
+        label: '스폰승률',
+        url: 'winrate',
         format: m => (sponsorGames(m) ? formatSponsorRecord(m.sponsor_wins, m.sponsor_losses) : '-'),
         sortValue: m => {
             const games = sponsorGames(m);
@@ -59,7 +64,7 @@ const SYNERGY_METRICS = {
             const rated = rows.filter(m => sponsorGames(m) >= SPONSOR_RATE_MIN);
             const avg = rated.reduce((n, m) => n + (m.sponsor_wins || 0) / sponsorGames(m), 0) / (rated.length || 1);
             return {
-                total: games ? `${(wins / games * 100).toFixed(1)}%` : '-',
+                total: games ? `${((wins / games) * 100).toFixed(1)}%` : '-',
                 avg: rated.length ? `${(avg * 100).toFixed(1)}%` : '-',
             };
         },
@@ -110,15 +115,18 @@ async function loadSynergyData(month = SynergyState.month) {
 }
 
 function loadSynergyMonths() {
-    return fetchSynergyMonths().then(months => {
-        SynergyMonths = months;
-        renderSynergyMonthNav();
-    }, err => console.error(err));
+    return fetchSynergyMonths().then(
+        months => {
+            SynergyMonths = months;
+            renderSynergyMonthNav();
+        },
+        err => console.error(err)
+    );
 }
 
 // 최근 달은 month 값을 비운다(주소에 안 남고, 새 달이 되면 자연히 그 달을 보게).
 function synergyMonthKey(month) {
-    return SynergyMonths.length && month === SynergyMonths[0].month ? '' : (month || '');
+    return SynergyMonths.length && month === SynergyMonths[0].month ? '' : month || '';
 }
 
 function synergyMonthLabel(month) {
@@ -180,7 +188,7 @@ function renderSynergyTileLabels() {
 
 function setSynergyMonth(month) {
     const key = synergyMonthKey(month);
-    if (key === SynergyState.month && SynergyState.data && !SynergyState.failed) return;   // 실패한 달은 다시 누르면 다시 받는다
+    if (key === SynergyState.month && SynergyState.data && !SynergyState.failed) return; // 실패한 달은 다시 누르면 다시 받는다
     SynergyState.month = key;
     renderSynergyMonthNav();
     syncSynergyUrl();
@@ -257,7 +265,7 @@ function synergyRowHtml(m, idx) {
 function sortSynergyRows(rows) {
     const metric = SynergyState.metric;
     const config = synergyMetricConfig(metric);
-    const value = config && config.sortValue ? config.sortValue : (m => m[metric] || 0);
+    const value = config && config.sortValue ? config.sortValue : m => m[metric] || 0;
     return rows.slice().sort((a, b) => value(b) - value(a));
 }
 
@@ -273,7 +281,7 @@ function renderSynergyTopPhoto(top) {
     const photo = /^media\/members\/[a-z0-9_-]+\.[a-z0-9]+(\?v=[0-9a-f]+)?$/.test(raw) ? raw : storageMediaUrl(raw);
     const avatar = (ours && getProfileImgUrl(ours['SOOP ID'])) || '';
     const key = photo || avatar || 'none';
-    if (box.dataset.src === key) return;          // 같은 사진이면 다시 그리지 않는다(움짤이 처음부터 다시 돌지 않게)
+    if (box.dataset.src === key) return; // 같은 사진이면 다시 그리지 않는다(움짤이 처음부터 다시 돌지 않게)
     box.dataset.src = key;
     box.innerHTML = '';
     const alt = (ours && ours['이름']) || '';
@@ -281,7 +289,10 @@ function renderSynergyTopPhoto(top) {
         // 영상(mp4·webm): 소리 없이 자동 반복. 끊김 없이 재생할 만큼 받은 뒤(canplaythrough) 붙인다.
         // 데이터 절약 모드나 '동작 줄이기' 설정이면 수백 KB 영상 대신 프로필 사진을 보여준다.
         if (/\.(mp4|webm)(\?|$)/i.test(src)) {
-            if (statsPreferStill()) { if (avatar) show(avatar, true); return; }
+            if (statsPreferStill()) {
+                if (avatar) show(avatar, true);
+                return;
+            }
             const video = document.createElement('video');
             Object.assign(video, { muted: true, loop: true, autoplay: true, playsInline: true, preload: 'auto' });
             video.setAttribute('muted', '');
@@ -293,14 +304,18 @@ function renderSynergyTopPhoto(top) {
                 done = true;
                 box.classList.remove('is-fallback');
                 box.replaceChildren(video);
-                video.play().catch(() => {});     // 저전력 모드 등 자동 재생이 막히면 첫 장면이 멈춘 채로 보인다
+                video.play().catch(() => {}); // 저전력 모드 등 자동 재생이 막히면 첫 장면이 멈춘 채로 보인다
                 requestAnimationFrame(() => video.classList.add('is-in'));
             };
             video.addEventListener('canplaythrough', ready, { once: true });
-            video.addEventListener('loadeddata', () => setTimeout(ready, 1500), { once: true });  // canplaythrough가 안 오는 브라우저 대비
-            video.addEventListener('error', () => {
-                if (box.dataset.src === key && avatar) show(avatar, true);
-            }, { once: true });
+            video.addEventListener('loadeddata', () => setTimeout(ready, 1500), { once: true }); // canplaythrough가 안 오는 브라우저 대비
+            video.addEventListener(
+                'error',
+                () => {
+                    if (box.dataset.src === key && avatar) show(avatar, true);
+                },
+                { once: true }
+            );
             video.src = src;
             video.load();
             return;
@@ -310,15 +325,22 @@ function renderSynergyTopPhoto(top) {
         img.alt = alt;
         img.decoding = 'async';
         img.src = src;
-        const ready = img.decode ? img.decode() : new Promise((ok, no) => { img.onload = ok; img.onerror = no; });
-        ready.then(() => {
-            if (box.dataset.src !== key) return;       // 그사이 다른 지표·1위로 바뀌었으면 버린다
-            box.classList.toggle('is-fallback', fallback);
-            box.replaceChildren(img);
-            requestAnimationFrame(() => img.classList.add('is-in'));
-        }).catch(() => {
-            if (box.dataset.src === key && !fallback && avatar) show(avatar, true);   // 대표 사진이 깨지면 SOOP 사진
-        });
+        const ready = img.decode
+            ? img.decode()
+            : new Promise((ok, no) => {
+                  img.onload = ok;
+                  img.onerror = no;
+              });
+        ready
+            .then(() => {
+                if (box.dataset.src !== key) return; // 그사이 다른 지표·1위로 바뀌었으면 버린다
+                box.classList.toggle('is-fallback', fallback);
+                box.replaceChildren(img);
+                requestAnimationFrame(() => img.classList.add('is-in'));
+            })
+            .catch(() => {
+                if (box.dataset.src === key && !fallback && avatar) show(avatar, true); // 대표 사진이 깨지면 SOOP 사진
+            });
     };
     box.classList.remove('is-fallback');
     if (photo) show(photo, false);
@@ -336,10 +358,13 @@ function renderSynergySummary(rows) {
     if (!box) return;
     const config = synergyMetricConfig(SynergyState.metric) || SYNERGY_METRICS.sponsor;
     renderSynergyTileLabels();
-    const readValue = config.sortValue ? config.sortValue : (row => row[SynergyState.metric] || 0);
+    const readValue = config.sortValue ? config.sortValue : row => row[SynergyState.metric] || 0;
     const fmt = v => (config.formatValue ? config.formatValue(v) : formatNum(Number(v)));
 
-    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+    const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    };
     setText('synergy-top-metric', config.label || '');
     setText('synergy-summary-title', `${config.label || '전체'} 요약`);
     // 도움말이 있는 지표만 배지를 단다. 지표가 바뀔 때만 다시 그린다(열어 둔 설명이 데이터 갱신에 닫히지 않게)
@@ -351,7 +376,9 @@ function renderSynergySummary(rows) {
     setText('synergy-sum-count', rows.length ? `${rows.length}명` : '-');
 
     if (!rows.length) {
-        ['synergy-sum-total', 'synergy-sum-avg', 'synergy-sum-top', 'synergy-sum-top-value'].forEach(id => setText(id, '-'));
+        ['synergy-sum-total', 'synergy-sum-avg', 'synergy-sum-top', 'synergy-sum-top-value'].forEach(id =>
+            setText(id, '-')
+        );
         renderSynergyTopPhoto(null);
         return;
     }
@@ -386,7 +413,10 @@ function renderSynergyTable() {
     // 요약 타일은 남녀를 합친 전체 순위를 기준으로 한다.
     renderSynergySummary(sortSynergyRows(active));
     const noData = emptyRowHtml(3, '표시할 멤버가 없습니다');
-    [['synergy-tbody-male', '남자'], ['synergy-tbody-female', '여자']].forEach(([tbodyId, gender]) => {
+    [
+        ['synergy-tbody-male', '남자'],
+        ['synergy-tbody-female', '여자'],
+    ].forEach(([tbodyId, gender]) => {
         const rows = sortSynergyRows(active.filter(m => m.ourMember['성별'] === gender));
         document.getElementById(tbodyId).innerHTML = rows.length
             ? rows.map((m, i) => synergyRowHtml(m, i)).join('')
@@ -394,27 +424,40 @@ function renderSynergyTable() {
     });
 }
 
-bootPage(() => {
-    // 주소의 달을 먼저 읽고 그 달을 받는다(뒤로·앞으로 갈 때도 같은 순서)
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        const month = /^\d{4}-\d{2}$/.test(params.get('month') || '') ? params.get('month') : '';
-        const changed = month !== SynergyState.month;
-        SynergyState.month = month;
-        synergyUrlRestored = true;
-        setSynergyMetric(synergyMetricFromUrl(params.get('view')));
-        if (changed) { renderSynergyMonthNav(); loadSynergyData(month); }
-    }));
-    safeInit('방송통계(시너지)', () => { if (!SynergyState.data) loadSynergyData(); });
-    safeInit('방송통계 달 목록', loadSynergyMonths);
-}, {
-    prefetch: () => fetchSynergyMonths().catch(() => {}),
-    view: params => {
-        const metric = synergyMetricFromUrl(params.get('view'));
-        staticAll('#synergy-metric-filter .sub-tab').forEach(el => {
-            el.classList.toggle('active', el.dataset.metric === metric);
-            el.setAttribute('aria-selected', el.dataset.metric === metric ? 'true' : 'false');
+bootPage(
+    () => {
+        // 주소의 달을 먼저 읽고 그 달을 받는다(뒤로·앞으로 갈 때도 같은 순서)
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                const month = /^\d{4}-\d{2}$/.test(params.get('month') || '') ? params.get('month') : '';
+                const changed = month !== SynergyState.month;
+                SynergyState.month = month;
+                synergyUrlRestored = true;
+                setSynergyMetric(synergyMetricFromUrl(params.get('view')));
+                if (changed) {
+                    renderSynergyMonthNav();
+                    loadSynergyData(month);
+                }
+            })
+        );
+        safeInit('방송통계(시너지)', () => {
+            if (!SynergyState.data) loadSynergyData();
         });
-        const config = synergyMetricConfig(metric);
-        if (config) staticAll('.synergy-metric-label').forEach(el => { el.innerText = config.label; });
+        safeInit('방송통계 달 목록', loadSynergyMonths);
     },
-});
+    {
+        prefetch: () => fetchSynergyMonths().catch(() => {}),
+        view: params => {
+            const metric = synergyMetricFromUrl(params.get('view'));
+            staticAll('#synergy-metric-filter .sub-tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.metric === metric);
+                el.setAttribute('aria-selected', el.dataset.metric === metric ? 'true' : 'false');
+            });
+            const config = synergyMetricConfig(metric);
+            if (config)
+                staticAll('.synergy-metric-label').forEach(el => {
+                    el.innerText = config.label;
+                });
+        },
+    }
+);

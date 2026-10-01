@@ -11,9 +11,10 @@
  * 같은 이름으로 정의한다.
  */
 
-const MV_MIN_COLS = 1, MV_MAX_COLS = 4;   // 그리드 모드 열 개수 범위
-const MV_AUTO_COLS = 0;                    // 열 개수 '자동'(기본) - 화면·인원 수에 맞춰 창이 고른다
-const MV_VIDEO_AR = 16 / 9;                // 방송 화면 비율
+const MV_MIN_COLS = 1,
+    MV_MAX_COLS = 4; // 그리드 모드 열 개수 범위
+const MV_AUTO_COLS = 0; // 열 개수 '자동'(기본) - 화면·인원 수에 맞춰 창이 고른다
+const MV_VIDEO_AR = 16 / 9; // 방송 화면 비율
 
 function mvParseCols(value) {
     const n = parseInt(value, 10);
@@ -32,7 +33,7 @@ function mvStepCols(cols, delta, base) {
 // w×h 칸에 16:9 화면을 꽉 맞췄을 때 실제로 보이는 넓이(남는 곳은 검은 띠).
 function mvShownArea(w, h) {
     const vw = Math.min(w, h * MV_VIDEO_AR);
-    return vw * vw / MV_VIDEO_AR;
+    return (vw * vw) / MV_VIDEO_AR;
 }
 // 그리드 모드 자동 열 수: 보이는 화면 넓이 합이 가장 큰 열 수. 같으면 빈 칸이 적은 쪽,
 // 그다음 가로 화면에선 열이 많은 쪽(나란히), 세로 화면에선 적은 쪽(위아래).
@@ -40,7 +41,11 @@ function mvAutoGridCols(count, width, height) {
     let best = null;
     for (let cols = 1; cols <= Math.min(MV_MAX_COLS, count); cols++) {
         const rows = Math.ceil(count / cols);
-        const key = [Math.round(count * mvShownArea(width / cols, height / rows) / 100), -(cols * rows - count), width >= height ? cols : -cols];
+        const key = [
+            Math.round((count * mvShownArea(width / cols, height / rows)) / 100),
+            -(cols * rows - count),
+            width >= height ? cols : -cols,
+        ];
         const diff = best ? key.findIndex((v, i) => v !== best.key[i]) : 0;
         if (!best || (diff !== -1 && key[diff] > best.key[diff])) best = { key, cols };
     }
@@ -51,12 +56,17 @@ const MV_SHARED_SOOP_ID_PATTERN = /^[a-z0-9_-]+$/;
 
 function mvSharedEscapeHTML(str) {
     if (str === null || str === undefined) return '';
-    return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+    return String(str).replace(
+        /[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[tag]
+    );
 }
 
 // SOOP 프로필 사진(작은 WebP). 형식이 이상한 아이디나 사진이 없으면 사람 모양으로 대신한다.
 function mvAvatarHtml(soopId) {
-    const id = String(soopId || '').trim().toLowerCase();
+    const id = String(soopId || '')
+        .trim()
+        .toLowerCase();
     const fallback = '<span class="mv-chip-avatar d-flex align-items-center justify-content-center">👤</span>';
     if (!MV_SHARED_SOOP_ID_PATTERN.test(id)) return fallback;
     const url = `https://stimg.sooplive.com/LOGO/${id.substring(0, 2)}/${id}/m/${id}.webp`;
@@ -93,7 +103,8 @@ function mvFocusEntryId(order, focusId) {
 // 포커스 모드일 때만 '메인으로' 버튼이 나오고, 지금 메인인 줄에는 focus-target 클래스가 붙는다.
 function mvOrderItemHtml(entry, idx, order, focus, focusEntryId) {
     const isFocusTarget = focus && focusEntryId === entry.soopId;
-    const isFirst = idx === 0, isLast = idx === order.length - 1;
+    const isFirst = idx === 0,
+        isLast = idx === order.length - 1;
     const name = mvSharedEscapeHTML(entry.name);
     return `<div class="mv-order-detail${isFocusTarget ? ' focus-target' : ''}">
         <span class="mv-order-position">${String(idx + 1).padStart(2, '0')}</span>
@@ -128,10 +139,13 @@ function mvResolveCustomInput(raw, order, memberList) {
     }
 
     const id = lowered;
-    if (!MV_SHARED_SOOP_ID_PATTERN.test(id)) return { error: '멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다' };
+    if (!MV_SHARED_SOOP_ID_PATTERN.test(id))
+        return { error: '멤버 이름이 아니면 숲 아이디 형식(영문/숫자/-/_)이어야 합니다' };
     if (isInOrder(id)) return { error: '이미 추가된 아이디입니다' };
     const knownMember = members.find(m => m && m['SOOP ID'] === id);
-    return { entry: knownMember
-        ? { soopId: id, name: knownMember['이름'], isMember: true }
-        : { soopId: id, name: id, isMember: false } };
+    return {
+        entry: knownMember
+            ? { soopId: id, name: knownMember['이름'], isMember: true }
+            : { soopId: id, name: id, isMember: false },
+    };
 }
