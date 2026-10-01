@@ -1,31 +1,30 @@
-const ANALYSIS_PAGE_SIZE = 10;         // 최근 전적 한 페이지에 보여줄 경기 수
+const ANALYSIS_PAGE_SIZE = 10; // 최근 전적 한 페이지에 보여줄 경기 수
 const ANALYSIS_SUGGEST_STEP = 40;
-const ANALYSIS_FORM_COUNT = 10;        // '최근 10경기'
+const ANALYSIS_FORM_COUNT = 10; // '최근 10경기'
 // 월별 전적에 보여줄 달 수(이번 달 포함). 기간 칩은 날짜로 자르지만(최근 365일 등) 월별 막대는 달 단위라,
 // 날짜로 자른 경기를 그대로 묶으면 첫 달이 며칠치만 든 채 한 칸 더 생겼다(1년 → 13개월). 그래서 이 그래프는
 // 칩에 맞는 '최근 N개월 전체'를 보여 준다.
 const ANALYSIS_MONTH_WINDOW = { all: 18, 365: 12, 90: 3, 30: 1 };
-const ANALYSIS_RATE_MIN = 5;           // 월별 승률 선을 그릴 최소 표본(이 미만인 달은 선을 끊는다)
-const ANALYSIS_MAP_STEP = 8;           // '맵별 전적' 한 번에 보여줄 개수(4열 x 2줄)
-const ANALYSIS_RIVAL_STEP = 8;         // '동티어 맞대결' 한 번에 보여줄 상대 수
-const ANALYSIS_CAT_PER_PAGE = 3;       // '형식별 전적' 한 화면에 보여줄 도넛 수
-
+const ANALYSIS_RATE_MIN = 5; // 월별 승률 선을 그릴 최소 표본(이 미만인 달은 선을 끊는다)
+const ANALYSIS_MAP_STEP = 8; // '맵별 전적' 한 번에 보여줄 개수(4열 x 2줄)
+const ANALYSIS_RIVAL_STEP = 8; // '동티어 맞대결' 한 번에 보여줄 상대 수
+const ANALYSIS_CAT_PER_PAGE = 3; // '형식별 전적' 한 화면에 보여줄 도넛 수
 
 const AnalysisState = {
-    rows: {},              // 선수id -> 경기 로그(최신순)
+    rows: {}, // 선수id -> 경기 로그(최신순)
     period: 'all',
-    picked: null,          // 선수id (null이면 검색 안내 화면)
+    picked: null, // 선수id (null이면 검색 안내 화면)
     query: '',
     suggestOpen: false,
     suggestShown: ANALYSIS_SUGGEST_STEP,
-    matchPage: 1,           // 최근 전적 페이지(10경기씩)
-    matchFilter: '전체',    // 최근 전적 형식 필터(H2H_CAT_GROUPS의 이름 또는 '전체')
-    catPage: 0,             // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
+    matchPage: 1, // 최근 전적 페이지(10경기씩)
+    matchFilter: '전체', // 최근 전적 형식 필터(H2H_CAT_GROUPS의 이름 또는 '전체')
+    catPage: 0, // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
     mapShown: ANALYSIS_MAP_STEP,
     rivalShown: ANALYSIS_RIVAL_STEP,
-    rating: null,           // 레이팅 변화 데이터 { months, players } - 고른 선수만 채운다
-    ratingLoading: null,    // 선수별 받는 중인 요청
-    ratingMonths: null,     // 월 축(모든 선수 공통, 한 번만)
+    rating: null, // 레이팅 변화 데이터 { months, players } - 고른 선수만 채운다
+    ratingLoading: null, // 선수별 받는 중인 요청
+    ratingMonths: null, // 월 축(모든 선수 공통, 한 번만)
 };
 
 // 선수를 바꾸거나 기간을 바꾸면 '더 보기'로 펼쳐둔 것들과 페이지를 처음으로 되돌린다.
@@ -38,7 +37,9 @@ function analysisResetLists() {
 // ---------------------------------------------------------------------------
 // 데이터
 // ---------------------------------------------------------------------------
-async function analysisLoadData() { return h2hLoadIndex(); }
+async function analysisLoadData() {
+    return h2hLoadIndex();
+}
 
 // 레이팅 변화: 고른 선수의 이력만 받는다(전 선수 × 달은 약 8천 줄).
 // 월 축은 모든 선수 공통(첫 달 ~ 마지막 달, 달마다 빠짐없이 계산된다)이라 첫 달·마지막 달만 받아 만들고,
@@ -50,7 +51,10 @@ function analysisMonthRange(first, last) {
     let [y, m] = first.split('-').map(Number);
     while (`${y}-${String(m).padStart(2, '0')}` <= last && out.length < 600) {
         out.push(`${y}-${String(m).padStart(2, '0')}`);
-        if (m === 12) { y += 1; m = 1; } else m += 1;
+        if (m === 12) {
+            y += 1;
+            m = 1;
+        } else m += 1;
     }
     return out;
 }
@@ -61,7 +65,9 @@ async function analysisLoadRatingMonths() {
             const { first, last } = await Api.eloRatingRange();
             return analysisMonthRange(first.slice(0, 7), last.slice(0, 7));
         })();
-        AnalysisState.ratingMonths.catch(() => { AnalysisState.ratingMonths = null; });
+        AnalysisState.ratingMonths.catch(() => {
+            AnalysisState.ratingMonths = null;
+        });
     }
     return AnalysisState.ratingMonths;
 }
@@ -82,11 +88,10 @@ async function analysisLoadRating(pid) {
             });
             AnalysisState.rating.months = months;
             AnalysisState.rating.players[key] = series;
-        })()
-            .catch(err => {
-                console.error('[분석] 레이팅 기록 조회 실패:', err);
-                delete AnalysisState.ratingLoading[key];   // 다음에 다시 받는다
-            });
+        })().catch(err => {
+            console.error('[분석] 레이팅 기록 조회 실패:', err);
+            delete AnalysisState.ratingLoading[key]; // 다음에 다시 받는다
+        });
     }
     await AnalysisState.ratingLoading[key];
     return AnalysisState.rating;
@@ -109,7 +114,7 @@ function analysisRows(pid) {
     return rows.filter(r => String(r[0]) >= since);
 }
 function analysisSummary(rows) {
-    const e = {m: rows.length, w: 0, l: 0, cat: {}, race: {}};
+    const e = { m: rows.length, w: 0, l: 0, cat: {}, race: {} };
     rows.forEach(r => {
         const i = r[2] ? 0 : 1;
         e[r[2] ? 'w' : 'l']++;
@@ -124,7 +129,7 @@ function analysisSummary(rows) {
         const win = rows[0][2];
         let n = 0;
         while (n < rows.length && rows[n][2] === win) n++;
-        e.st = {t: win ? 'W' : 'L', n};
+        e.st = { t: win ? 'W' : 'L', n };
     }
     return e;
 }
@@ -152,7 +157,7 @@ function analysisRateColor(rate) {
 }
 
 function analysisWlText(w, l) {
-    return (w + l) ? `${formatNum(w)}승 ${formatNum(l)}패` : '-';
+    return w + l ? `${formatNum(w)}승 ${formatNum(l)}패` : '-';
 }
 
 // 전적 페이지와 같은 도넛(conic-gradient). page-records.js의 donutBackground와 같은 규칙이다.
@@ -161,7 +166,7 @@ function analysisDonutHtml(label, w, l, opts) {
     const o = opts || {};
     const rate = analysisRate(w, l);
     const pct = rate === null ? 0 : rate;
-    const color = rate === null ? 'var(--color-donut-track)' : (o.ringColor || analysisRateColor(rate));
+    const color = rate === null ? 'var(--color-donut-track)' : o.ringColor || analysisRateColor(rate);
     return `
         <div class="donut-box">
             <div class="donut" style="background:conic-gradient(${color} ${pct}%, var(--color-donut-track) 0)">
@@ -196,10 +201,10 @@ function analysisSuggestScroll(el) {
     const from = AnalysisState.suggestShown;
     if (from >= list.length) return;
     AnalysisState.suggestShown = Math.min(list.length, from + ANALYSIS_SUGGEST_STEP);
-    el.insertAdjacentHTML('beforeend', playerSuggestItemsHtml(
-        list.slice(from, AnalysisState.suggestShown),
-        pid => act('analysisPick', pid)
-    ));
+    el.insertAdjacentHTML(
+        'beforeend',
+        playerSuggestItemsHtml(list.slice(from, AnalysisState.suggestShown), pid => act('analysisPick', pid))
+    );
 }
 
 function analysisOnQuery(value) {
@@ -226,9 +231,12 @@ document.addEventListener('click', e => {
 // 머리 카드 (전적 페이지의 .profile-head와 같은 틀)
 // ---------------------------------------------------------------------------
 function analysisHeadHtml(pid, p, e) {
-    return playerSummaryHtml(p, {total: e.m, win: e.w, lose: e.l},
+    return playerSummaryHtml(
+        p,
+        { total: e.m, win: e.w, lose: e.l },
         '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" data-click="analysisBack">✕</button>',
-        h2hRankInfo(p));
+        h2hRankInfo(p)
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -269,7 +277,7 @@ function analysisCatPages() {
 
 function analysisSetCatPage(page) {
     const pages = analysisCatPages();
-    AnalysisState.catPage = ((page % pages) + pages) % pages;   // 끝에서 누르면 처음으로 돈다
+    AnalysisState.catPage = ((page % pages) + pages) % pages; // 끝에서 누르면 처음으로 돈다
     renderAnalysisSection('cat');
 }
 
@@ -279,10 +287,12 @@ function analysisCatHtml(e) {
     const totals = analysisCatTotals(e);
     const pages = analysisCatPages();
     const from = AnalysisState.catPage * ANALYSIS_CAT_PER_PAGE;
-    const boxes = ANALYSIS_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE).map(([label]) => {
-        const [w, l] = totals.get(label) || [0, 0];
-        return analysisDonutHtml(label, w, l);
-    }).join('');
+    const boxes = ANALYSIS_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE)
+        .map(([label]) => {
+            const [w, l] = totals.get(label) || [0, 0];
+            return analysisDonutHtml(label, w, l);
+        })
+        .join('');
     return `
         <div class="section-title has-shelf-nav" data-en="BY FORMAT">
             <span class="section-title-label">형식별 전적</span>
@@ -304,10 +314,12 @@ function analysisRaceHtml(e) {
         ['T', 'vs T', 'donut-label-t', 'var(--color-race-t)'],
         ['Z', 'vs Z', 'donut-label-z', 'var(--color-race-z)'],
         ['P', 'vs P', 'donut-label-p', 'var(--color-race-p)'],
-    ].map(([code, label, cls, color]) => {
-        const [w, l] = race[code] || [0, 0];
-        return analysisDonutHtml(label, w, l, { labelClass: cls, ringColor: color });
-    }).join('');
+    ]
+        .map(([code, label, cls, color]) => {
+            const [w, l] = race[code] || [0, 0];
+            return analysisDonutHtml(label, w, l, { labelClass: cls, ringColor: color });
+        })
+        .join('');
     return `
         <div class="section-title" data-en="BY MATCHUP">
             <span class="section-title-label">종족전 전적</span>
@@ -325,14 +337,18 @@ function analysisRaceHtml(e) {
 // 오른쪽에 요약 글(몇승 몇패 · 연승)을 붙이면 휴대폰에서 줄이 두 줄로 접혀서 뺐다.
 function analysisFormHtml(rows) {
     if (!rows.length) return '';
-    const recent = rows.slice(0, ANALYSIS_FORM_COUNT).reverse();   // 로그가 최신순이다
+    const recent = rows.slice(0, ANALYSIS_FORM_COUNT).reverse(); // 로그가 최신순이다
     return `
         <div class="analysis-formline">
             <span class="analysis-formline-label">최근 ${recent.length}경기</span>
             <span class="analysis-formline-badges">
-                ${recent.map(([date, opp, win]) => `
+                ${recent
+                    .map(
+                        ([date, opp, win]) => `
                     <span class="match-badge ${win ? 'badge-win' : 'badge-lose'}"
-                          title="${escapeHTML(shortMatchDate(date))} vs ${escapeHTML(h2hName(String(opp)))}">${win ? 'W' : 'L'}</span>`).join('')}
+                          title="${escapeHTML(shortMatchDate(date))} vs ${escapeHTML(h2hName(String(opp)))}">${win ? 'W' : 'L'}</span>`
+                    )
+                    .join('')}
             </span>
         </div>`;
 }
@@ -356,9 +372,10 @@ function analysisMonthlyHtml(rows) {
     // 기간을 고르면 이번 달까지 그린다(최근에 쉬었으면 빈 달로 보인다). 전체는 마지막 경기 달까지.
     const now = new Date();
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const lastKey = AnalysisState.period === 'all' || keys[keys.length - 1] > thisMonth ? keys[keys.length - 1] : thisMonth;
+    const lastKey =
+        AnalysisState.period === 'all' || keys[keys.length - 1] > thisMonth ? keys[keys.length - 1] : thisMonth;
     const [ey, em] = lastKey.split('-').map(Number);
-    for (let y = sy, m = sm; y < ey || (y === ey && m <= em); m === 12 ? (y++, m = 1) : m++) {
+    for (let y = sy, m = sm; y < ey || (y === ey && m <= em); m === 12 ? (y++, (m = 1)) : m++) {
         months.push(`${y}-${String(m).padStart(2, '0')}`);
     }
     const want = ANALYSIS_MONTH_WINDOW[AnalysisState.period] || ANALYSIS_MONTH_WINDOW.all;
@@ -369,7 +386,12 @@ function analysisMonthlyHtml(rows) {
     if (data.reduce((n, d) => n + d.total, 0) < 2) return '';
 
     // 왼쪽에 경기 수, 오른쪽에 승률(%) 축을 따로 둔다(눈금이 없으면 막대·선 높이를 읽을 수 없다).
-    const W = 660, H = 220, PAD_T = 12, PAD_B = 26, PAD_L = 30, PAD_R = 34;
+    const W = 660,
+        H = 220,
+        PAD_T = 12,
+        PAD_B = 26,
+        PAD_L = 30,
+        PAD_R = 34;
     const plotH = H - PAD_T - PAD_B;
     const plotW = W - PAD_L - PAD_R;
     const maxTotal = Math.max(...data.map(d => d.total), 1);
@@ -378,25 +400,33 @@ function analysisMonthlyHtml(rows) {
     const yOf = ratio => PAD_T + plotH - ratio * plotH;
 
     // 가로 눈금 다섯 줄(0 · 25 · 50 · 75 · 100%). 왼쪽 숫자는 경기 수, 오른쪽은 승률.
-    const grid = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
-        const y = yOf(ratio);
-        return `<line class="analysis-chart-grid${ratio === 0.5 ? ' is-mid' : ''}" x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}"></line>`
-             + `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${Math.round(maxTotal * ratio)}</text>`
-             + `<text class="analysis-chart-axis" x="${W - PAD_R + 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="start">${Math.round(ratio * 100)}%</text>`;
-    }).join('');
+    const grid = [0, 0.25, 0.5, 0.75, 1]
+        .map(ratio => {
+            const y = yOf(ratio);
+            return (
+                `<line class="analysis-chart-grid${ratio === 0.5 ? ' is-mid' : ''}" x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}"></line>` +
+                `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${Math.round(maxTotal * ratio)}</text>` +
+                `<text class="analysis-chart-axis" x="${W - PAD_R + 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="start">${Math.round(ratio * 100)}%</text>`
+            );
+        })
+        .join('');
 
-    const bars = data.map((d, i) => {
-        if (!d.total) return '';
-        const x = PAD_L + slot * i + (slot - barW) / 2;
-        const h = (d.total / maxTotal) * plotH;
-        const y = PAD_T + (plotH - h);
-        const winH = (d.w / d.total) * h;
-        const tip = `<title>${d.key} · ${d.total}전 ${d.w}승 ${d.l}패 (${Math.round((d.w / d.total) * 100)}%)</title>`;
-        return `<g class="analysis-bar">`
-             + `<rect class="analysis-bar-win" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${winH.toFixed(1)}">${tip}</rect>`
-             + `<rect class="analysis-bar-lose" x="${x.toFixed(1)}" y="${(y + winH).toFixed(1)}" width="${barW.toFixed(1)}" height="${(h - winH).toFixed(1)}">${tip}</rect>`
-             + `</g>`;
-    }).join('');
+    const bars = data
+        .map((d, i) => {
+            if (!d.total) return '';
+            const x = PAD_L + slot * i + (slot - barW) / 2;
+            const h = (d.total / maxTotal) * plotH;
+            const y = PAD_T + (plotH - h);
+            const winH = (d.w / d.total) * h;
+            const tip = `<title>${d.key} · ${d.total}전 ${d.w}승 ${d.l}패 (${Math.round((d.w / d.total) * 100)}%)</title>`;
+            return (
+                `<g class="analysis-bar">` +
+                `<rect class="analysis-bar-win" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${winH.toFixed(1)}">${tip}</rect>` +
+                `<rect class="analysis-bar-lose" x="${x.toFixed(1)}" y="${(y + winH).toFixed(1)}" width="${barW.toFixed(1)}" height="${(h - winH).toFixed(1)}">${tip}</rect>` +
+                `</g>`
+            );
+        })
+        .join('');
 
     // 표본이 적은 달(ANALYSIS_RATE_MIN 미만)은 승률 선을 끊는다 - 1~2경기짜리 달이 0%/100%로
     // 튀면서 추세를 못 읽게 만들기 때문. 점을 같이 찍어 어느 달이 이어진 건지 보이게 한다.
@@ -404,21 +434,28 @@ function analysisMonthlyHtml(rows) {
     let open = false;
     const dots = [];
     data.forEach((d, i) => {
-        if (d.total < ANALYSIS_RATE_MIN) { open = false; return; }
+        if (d.total < ANALYSIS_RATE_MIN) {
+            open = false;
+            return;
+        }
         const x = PAD_L + slot * i + slot / 2;
         const y = yOf(d.w / d.total);
         path += `${open ? 'L' : 'M'} ${x.toFixed(1)} ${y.toFixed(1)} `;
         open = true;
-        dots.push(`<circle class="analysis-rate-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"><title>${d.key} 승률 ${Math.round((d.w / d.total) * 100)}%</title></circle>`);
+        dots.push(
+            `<circle class="analysis-rate-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"><title>${d.key} 승률 ${Math.round((d.w / d.total) * 100)}%</title></circle>`
+        );
     });
 
     const step = Math.max(1, Math.ceil(data.length / 12));
-    const labels = data.map((d, i) => {
-        if (i % step !== 0) return '';
-        const [y, m] = d.key.split('-');
-        const x = PAD_L + slot * i + slot / 2;
-        return `<text class="analysis-chart-label" x="${x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${m === '01' ? `${y.slice(2)}.${m}` : m}</text>`;
-    }).join('');
+    const labels = data
+        .map((d, i) => {
+            if (i % step !== 0) return '';
+            const [y, m] = d.key.split('-');
+            const x = PAD_L + slot * i + slot / 2;
+            return `<text class="analysis-chart-label" x="${x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${m === '01' ? `${y.slice(2)}.${m}` : m}</text>`;
+        })
+        .join('');
 
     const sum = data.reduce((acc, d) => ({ w: acc.w + d.w, l: acc.l + d.l }), { w: 0, l: 0 });
     return `
@@ -507,53 +544,84 @@ function analysisRatingHtml(pid) {
     // 점이 하나뿐이면 선을 못 그린다. 칸을 비우면 옆의 월별 전적과 높이가 어긋나므로
     // 제목과 안내만 남긴다.
     if (have.length < 2) {
-        return analysisRatingTitleHtml('')
-            + '<div class="clean-card p-3 analysis-rating-empty">이 기간에는 그릴 만한 기록이 없습니다</div>';
+        return (
+            analysisRatingTitleHtml('') +
+            '<div class="clean-card p-3 analysis-rating-empty">이 기간에는 그릴 만한 기록이 없습니다</div>'
+        );
     }
 
     // 월별 전적 그래프와 같은 틀(660x220)이어야 두 카드가 같은 크기로 나란히 선다.
-    const W = 660, H = 220, PAD_T = 12, PAD_B = 26, PAD_L = 42, PAD_R = 14;
+    const W = 660,
+        H = 220,
+        PAD_T = 12,
+        PAD_B = 26,
+        PAD_L = 42,
+        PAD_R = 14;
     const plotH = H - PAD_T - PAD_B;
     const plotW = W - PAD_L - PAD_R;
     const vals = have.map(p => p.v);
-    let lo = Math.min(...vals), hi = Math.max(...vals);
-    if (hi - lo < 40) { const mid = (hi + lo) / 2; lo = mid - 20; hi = mid + 20; }   // 평평한 선이 납작해 보이지 않게
+    let lo = Math.min(...vals),
+        hi = Math.max(...vals);
+    if (hi - lo < 40) {
+        const mid = (hi + lo) / 2;
+        lo = mid - 20;
+        hi = mid + 20;
+    } // 평평한 선이 납작해 보이지 않게
     const pad = (hi - lo) * 0.15;
-    lo -= pad; hi += pad;
+    lo -= pad;
+    hi += pad;
     const x = i => PAD_L + (months.length === 1 ? plotW / 2 : (plotW * i) / (months.length - 1));
     const y = v => PAD_T + plotH - ((v - lo) / (hi - lo)) * plotH;
 
     // 가로 눈금 3줄. 점수는 정수로 읽히는 게 편하다.
-    const grid = [0, 0.5, 1].map(r => {
-        const v = lo + (hi - lo) * r;
-        return `<line class="analysis-chart-grid" x1="${PAD_L}" y1="${y(v).toFixed(1)}" x2="${W - PAD_R}" y2="${y(v).toFixed(1)}"></line>`
-             + `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`;
-    }).join('');
+    const grid = [0, 0.5, 1]
+        .map(r => {
+            const v = lo + (hi - lo) * r;
+            return (
+                `<line class="analysis-chart-grid" x1="${PAD_L}" y1="${y(v).toFixed(1)}" x2="${W - PAD_R}" y2="${y(v).toFixed(1)}"></line>` +
+                `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`
+            );
+        })
+        .join('');
 
     // 쉰 달은 선을 잇지 않고 끊는다
     let path = '';
     let open = false;
     pts.forEach(p => {
-        if (!p) { open = false; return; }
+        if (!p) {
+            open = false;
+            return;
+        }
         path += `${open ? 'L' : 'M'} ${x(p.i).toFixed(1)} ${y(p.v).toFixed(1)} `;
         open = true;
     });
-    const dots = have.map(p =>
-        `<circle class="analysis-rate-dot" cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6"><title>${escapeHTML(p.key)} ${p.v}점</title></circle>`).join('');
+    const dots = have
+        .map(
+            p =>
+                `<circle class="analysis-rate-dot" cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6"><title>${escapeHTML(p.key)} ${p.v}점</title></circle>`
+        )
+        .join('');
 
     const step = Math.max(1, Math.ceil(months.length / 6));
-    const labels = months.map((k, i) => {
-        if (i % step !== 0) return '';
-        const [yy, mm] = k.split('-');
-        return `<text class="analysis-chart-label" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${mm === '01' ? `${yy.slice(2)}.${mm}` : mm}</text>`;
-    }).join('');
+    const labels = months
+        .map((k, i) => {
+            if (i % step !== 0) return '';
+            const [yy, mm] = k.split('-');
+            return `<text class="analysis-chart-label" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${mm === '01' ? `${yy.slice(2)}.${mm}` : mm}</text>`;
+        })
+        .join('');
 
-    const first = have[0].v, last = have[have.length - 1].v;
+    const first = have[0].v,
+        last = have[have.length - 1].v;
     const diff = Number((last - first).toFixed(1));
-    const sign = diff > 0 ? 'h2h-win' : (diff < 0 ? 'h2h-lose' : '');
-    const top = Math.max(...vals), bottom = Math.min(...vals);
-    return analysisRatingTitleHtml(
-        `<span class="title-count">${have.length}개월 · ${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>`) + `
+    const sign = diff > 0 ? 'h2h-win' : diff < 0 ? 'h2h-lose' : '';
+    const top = Math.max(...vals),
+        bottom = Math.min(...vals);
+    return (
+        analysisRatingTitleHtml(
+            `<span class="title-count">${have.length}개월 · ${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>`
+        ) +
+        `
         <div class="clean-card p-3">
             <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 레이팅">
                 ${grid}
@@ -565,7 +633,8 @@ function analysisRatingHtml(pid) {
                 <span><i class="analysis-legend-line"></i>레이팅 (달 말일 기준)</span>
                 <span>최고 ${top}점 · 최저 ${bottom}점</span>
             </div>
-        </div>`;
+        </div>`
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -589,7 +658,7 @@ function analysisMapHtml(rows) {
         if (!byMap.has(key)) byMap.set(key, [0, 0]);
         byMap.get(key)[win ? 0 : 1] += 1;
     });
-    const all = [...byMap.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+    const all = [...byMap.entries()].sort((a, b) => b[1][0] + b[1][1] - (a[1][0] + a[1][1]));
     if (!all.length) return '';
     const list = all.slice(0, AnalysisState.mapShown);
     // 상대전적 탭의 '맵별 전적'과 같은 부품(.h2h-maps)을 쓴다.
@@ -599,17 +668,25 @@ function analysisMapHtml(rows) {
             <span class="title-count">${all.length}개</span>
         </div>
         <div class="h2h-maps">
-            ${list.map(([mapId, [w, l]]) => `
+            ${list
+                .map(
+                    ([mapId, [w, l]]) => `
                 <div class="h2h-map">
                     <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId))}</span>
                     <span class="h2h-map-rec">${winLoseText(w, l)}<span class="h2h-rate-sub"> · ${h2hRateText(w, l)}</span></span>
                     <span class="h2h-map-bar"><span style="width:${w + l ? (w / (w + l)) * 100 : 0}%"></span></span>
-                </div>`).join('')}
+                </div>`
+                )
+                .join('')}
         </div>
-        ${all.length > list.length ? `
+        ${
+            all.length > list.length
+                ? `
         <div class="news-load-more-wrap h2h-more-wrap">
             <button type="button" class="news-load-more" data-click="analysisShowMoreMaps">더 보기 ${chevronDownSvg(9)}</button>
-        </div>` : ''}`;
+        </div>`
+                : ''
+        }`;
 }
 
 function analysisRivalHtml(rows, myTier) {
@@ -618,11 +695,11 @@ function analysisRivalHtml(rows, myTier) {
     rows.forEach(([, opp, win]) => {
         const key = String(opp);
         const info = h2hPlayer(key);
-        if (!info || String(info.t) !== String(myTier)) return;    // 같은 티어만
+        if (!info || String(info.t) !== String(myTier)) return; // 같은 티어만
         if (!byOpp.has(key)) byOpp.set(key, [0, 0]);
         byOpp.get(key)[win ? 0 : 1] += 1;
     });
-    const all = [...byOpp.entries()].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+    const all = [...byOpp.entries()].sort((a, b) => b[1][0] + b[1][1] - (a[1][0] + a[1][1]));
     if (!all.length) return '';
     const list = all.slice(0, AnalysisState.rivalShown);
     // 상대전적 탭의 '자주 만난 상대'와 같은 부품(.h2h-rivals)을 쓴다 - 누르면 그 선수로 넘어간다.
@@ -634,10 +711,14 @@ function analysisRivalHtml(rows, myTier) {
         <div class="h2h-rivals">
             ${list.map(([pid, [w, l]]) => h2hRivalCardHtml(pid, w, l, act('analysisPick', pid))).join('')}
         </div>
-        ${all.length > list.length ? `
+        ${
+            all.length > list.length
+                ? `
         <div class="news-load-more-wrap h2h-more-wrap">
             <button type="button" class="news-load-more" data-click="analysisShowMoreRivals">더 보기 ${chevronDownSvg(9)}</button>
-        </div>` : ''}`;
+        </div>`
+                : ''
+        }`;
 }
 
 // ---------------------------------------------------------------------------
@@ -660,7 +741,10 @@ function analysisSetPage(page) {
 
 function analysisMatchesHtml(rows) {
     const filtered = analysisFilterRows(rows);
-    const page = Math.min(Math.max(1, AnalysisState.matchPage), Math.max(1, Math.ceil(filtered.length / ANALYSIS_PAGE_SIZE)));
+    const page = Math.min(
+        Math.max(1, AnalysisState.matchPage),
+        Math.max(1, Math.ceil(filtered.length / ANALYSIS_PAGE_SIZE))
+    );
     const shown = filtered.slice((page - 1) * ANALYSIS_PAGE_SIZE, page * ANALYSIS_PAGE_SIZE);
     const chips = matchCategoryFilterHtml(AnalysisState.matchFilter, 'analysisSetFilter');
     return `
@@ -678,8 +762,9 @@ function analysisMatchesHtml(rows) {
                         <th scope="col" class="colw-15">결과</th>
                         <th scope="col" class="colw-20">날짜</th>
                     </tr></thead>
-                    <tbody>${shown.length ? h2hMatchRowsHtml(shown, true)
-                        : emptyRowHtml(5, '이 형식의 경기가 없습니다')}</tbody>
+                    <tbody>${
+                        shown.length ? h2hMatchRowsHtml(shown, true) : emptyRowHtml(5, '이 형식의 경기가 없습니다')
+                    }</tbody>
                 </table>
             </div>
         </div>
@@ -714,7 +799,10 @@ function analysisProfileHtml(pid) {
 function renderAnalysisSection(name) {
     const pid = AnalysisState.picked;
     const el = pid && document.getElementById(`analysis-sec-${name}`);
-    if (!el) { renderAnalysisBody(); return; }
+    if (!el) {
+        renderAnalysisBody();
+        return;
+    }
     const rows = analysisRows(pid);
     if (name === 'cat') el.innerHTML = analysisCatHtml(analysisSummary(rows));
     else if (name === 'map') el.innerHTML = analysisMapHtml(rows);
@@ -806,7 +894,10 @@ function analysisSyncUrl() {
 let analysisStarted = false;
 
 async function analysisEnter() {
-    if (analysisStarted) { analysisSyncUrl(); return; }
+    if (analysisStarted) {
+        analysisSyncUrl();
+        return;
+    }
     analysisStarted = true;
     try {
         await analysisLoadData();

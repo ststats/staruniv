@@ -36,7 +36,9 @@ function mediaLightboxOpen(opts) {
     // 임베드가 막힌 영상은 이 링크로 원래 사이트에서 볼 수 있다.
     const outLink = yt
         ? `<a class="media-lightbox-yt" href="https://www.youtube.com/watch?v=${yt}" target="_blank" rel="noopener">YouTube에서 보기</a>`
-        : (soop ? `<a class="media-lightbox-yt" href="https://vod.sooplive.co.kr/player/${soop}" target="_blank" rel="noopener">숲에서 보기</a>` : '');
+        : soop
+          ? `<a class="media-lightbox-yt" href="https://vod.sooplive.co.kr/player/${soop}" target="_blank" rel="noopener">숲에서 보기</a>`
+          : '';
     layer.innerHTML = `
         <div class="media-lightbox-inner">
             <div class="media-lightbox-head">
@@ -46,7 +48,9 @@ function mediaLightboxOpen(opts) {
             </div>
             ${body}
         </div>`;
-    layer.addEventListener('click', e => { if (e.target === layer) mediaLightboxClose(); });
+    layer.addEventListener('click', e => {
+        if (e.target === layer) mediaLightboxClose();
+    });
     layer.querySelector('.media-lightbox-close').addEventListener('click', mediaLightboxClose);
     document.body.appendChild(layer);
     document.body.classList.add('media-lightbox-open');
@@ -58,7 +62,7 @@ let mediaLightboxOpener = null;
 
 function mediaLightboxClose() {
     const layer = document.getElementById('media-lightbox');
-    if (layer) layer.remove();   // iframe을 지워야 영상 소리도 멈춘다
+    if (layer) layer.remove(); // iframe을 지워야 영상 소리도 멈춘다
     document.body.classList.remove('media-lightbox-open');
     document.removeEventListener('keydown', mediaLightboxKey);
     const opener = mediaLightboxOpener;
@@ -67,15 +71,24 @@ function mediaLightboxClose() {
 }
 
 function mediaLightboxKey(e) {
-    if (e.key === 'Escape') { mediaLightboxClose(); return; }
+    if (e.key === 'Escape') {
+        mediaLightboxClose();
+        return;
+    }
     // Tab은 창 안에서만 돈다(닫기 · 원래 사이트 링크 · 플레이어)
     if (e.key !== 'Tab') return;
     const layer = document.getElementById('media-lightbox');
     if (!layer) return;
     const items = [...layer.querySelectorAll('a[href], button:not([disabled]), iframe')];
     if (!items.length) return;
-    const first = items[0], last = items[items.length - 1];
+    const first = items[0],
+        last = items[items.length - 1];
     const inside = layer.contains(document.activeElement);
-    if (e.shiftKey && (document.activeElement === first || !inside)) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
+    if (e.shiftKey && (document.activeElement === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+    }
 }

@@ -6,9 +6,9 @@ const mvEsc = mvSharedEscapeHTML;
 let mvOrder = [];
 let mvCols = MV_AUTO_COLS;
 let mvFocus = true;
-let mvFocusId = null;  // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
-let mvMembers = [];    // 사이트 멤버(활동 중 + 숲 아이디 있음) - 사이트 데이터(data/site_shell.json)에서
-let mvLiveMap = {};    // soopId(소문자) -> 방송 중
+let mvFocusId = null; // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
+let mvMembers = []; // 사이트 멤버(활동 중 + 숲 아이디 있음) - 사이트 데이터(data/site_shell.json)에서
+let mvLiveMap = {}; // soopId(소문자) -> 방송 중
 
 function mvSaveState() {
     try {
@@ -16,14 +16,20 @@ function mvSaveState() {
         localStorage.setItem('mv-grid-cols', String(mvCols));
         localStorage.setItem('mv-focus', mvFocus ? '1' : '0');
         localStorage.setItem('mv-focus-id', mvFocusId || '');
-    } catch (e) { /* localStorage 접근 불가한 환경이면 그냥 무시 */ }
+    } catch (e) {
+        /* localStorage 접근 불가한 환경이면 그냥 무시 */
+    }
 }
 
 function mvInit() {
     const params = new URLSearchParams(location.search);
     let list = null;
     if (params.has('list')) {
-        try { list = JSON.parse(params.get('list')); } catch (e) { list = null; }
+        try {
+            list = JSON.parse(params.get('list'));
+        } catch (e) {
+            list = null;
+        }
     }
     if (Array.isArray(list) && list.length > 0) {
         mvOrder = list
@@ -42,13 +48,19 @@ function mvInit() {
         // URL에 아무것도 없으면(직접 이 페이지를 열었거나 새로고침한 경우) 마지막으로
         // 저장해둔 상태를 이어서 보여준다.
         try {
-            mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]')
-                .filter((e, i, arr) => e && typeof e.soopId === 'string' && arr.findIndex(x => x && x.soopId === e.soopId) === i);
+            mvOrder = JSON.parse(localStorage.getItem('mv-order') || '[]').filter(
+                (e, i, arr) => e && typeof e.soopId === 'string' && arr.findIndex(x => x && x.soopId === e.soopId) === i
+            );
             // 예전 'mv-cols'(기본 2가 늘 저장됨)는 무시하고, 자동이 기본인 새 키만 읽는다.
             mvCols = mvParseCols(localStorage.getItem('mv-grid-cols'));
             mvFocus = localStorage.getItem('mv-focus') !== null ? localStorage.getItem('mv-focus') === '1' : true;
             mvFocusId = localStorage.getItem('mv-focus-id') || null;
-        } catch (e) { mvOrder = []; mvCols = MV_AUTO_COLS; mvFocus = true; mvFocusId = null; }
+        } catch (e) {
+            mvOrder = [];
+            mvCols = MV_AUTO_COLS;
+            mvFocus = true;
+            mvFocusId = null;
+        }
     }
     mvApplyModeButtons();
 }
@@ -99,15 +111,21 @@ function mvApplyGridColumns() {
 // 커지는 일은 없다. 같은 크기면 빈 칸이 적은 쪽 → 칸 비율이 16:9에 가까운 쪽 → 화면 방향으로 긴 쪽.
 // 배치는 CSS Grid 자동배치 - 메인이 왼쪽 위, 나머지는 목록 순서대로 오른쪽 → 아래를 채우고 남는 칸은 빈 칸.
 function mvComputeFocusGridDims(totalW, totalH, restCount) {
-    const W = totalW || 1, H = totalH || 1;
+    const W = totalW || 1,
+        H = totalH || 1;
     let best = null;
     for (let cols = 2; cols <= 8; cols++) {
         for (let rows = 2; rows <= 8; rows++) {
             const empty = cols * rows - (4 + restCount);
             if (empty < 0) continue;
-            const cw = W / cols, ch = H / rows;
-            const key = [Math.round(Math.min(cw, ch * MV_VIDEO_AR)), -empty,
-                -Math.round(Math.abs(Math.log(cw / ch / MV_VIDEO_AR)) * 100), W >= H ? cols : rows];
+            const cw = W / cols,
+                ch = H / rows;
+            const key = [
+                Math.round(Math.min(cw, ch * MV_VIDEO_AR)),
+                -empty,
+                -Math.round(Math.abs(Math.log(cw / ch / MV_VIDEO_AR)) * 100),
+                W >= H ? cols : rows,
+            ];
             const diff = best ? key.findIndex((v, i) => v !== best.key[i]) : 0;
             if (!best || (diff !== -1 && key[diff] > best.key[diff])) best = { key, cols, rows };
         }
@@ -145,12 +163,23 @@ function mvRenderMemberChips() {
     const container = document.getElementById('mv-chip-row');
     if (!container) return;
     container.innerHTML = mvMembers.length
-        ? mvMembers.map(m => mvChipHtml(m, mvOrder.some(e => e.soopId === m['SOOP ID']), !!mvLiveMap[m['SOOP ID']])).join('')
+        ? mvMembers
+              .map(m =>
+                  mvChipHtml(
+                      m,
+                      mvOrder.some(e => e.soopId === m['SOOP ID']),
+                      !!mvLiveMap[m['SOOP ID']]
+                  )
+              )
+              .join('')
         : '<div class="mv-chip-empty">멤버 목록을 불러오지 못했습니다</div>';
 }
 function mvToggleMember(soopId, name) {
     const idx = mvOrder.findIndex(e => e.soopId === soopId);
-    if (idx !== -1) { mvRemove(idx); return; }
+    if (idx !== -1) {
+        mvRemove(idx);
+        return;
+    }
     mvOrder.push({ soopId, name, isMember: true });
     mvAfterOrderChange();
 }
@@ -160,9 +189,20 @@ async function mvLoadMembers() {
     try {
         const data = await Api.siteData('shell');
         mvMembers = (Array.isArray(data.members) ? data.members : [])
-            .filter(m => m && !m['퇴단일'] && MV_SHARED_SOOP_ID_PATTERN.test(String(m['SOOP ID'] || '').trim().toLowerCase()))
+            .filter(
+                m =>
+                    m &&
+                    !m['퇴단일'] &&
+                    MV_SHARED_SOOP_ID_PATTERN.test(
+                        String(m['SOOP ID'] || '')
+                            .trim()
+                            .toLowerCase()
+                    )
+            )
             .map(m => ({ '이름': m['이름'] || '', 'SOOP ID': String(m['SOOP ID']).trim().toLowerCase() }));
-    } catch (e) { mvMembers = []; }
+    } catch (e) {
+        mvMembers = [];
+    }
     mvRenderMemberChips();
     mvCheckLiveMembers();
 }
@@ -173,9 +213,13 @@ async function mvCheckLiveMembers() {
     try {
         const rows = await Api.liveSoopIds();
         mvLiveMap = {};
-        rows.forEach(r => { if (r && r.soop_id) mvLiveMap[String(r.soop_id).toLowerCase()] = true; });
+        rows.forEach(r => {
+            if (r && r.soop_id) mvLiveMap[String(r.soop_id).toLowerCase()] = true;
+        });
         mvRenderMemberChips();
-    } catch (e) { /* 방송 중 표시만 빠진다 */ }
+    } catch (e) {
+        /* 방송 중 표시만 빠진다 */
+    }
 }
 
 // ===== 순서 목록 =====
@@ -235,11 +279,12 @@ function mvRelayoutGridDims() {
     } else {
         // 남은 칸이 열 개수보다 적으면 그만큼만 컬럼을 써서 빈 칸이 오른쪽에 휑하게 남지 않게 하고,
         // 행 개수를 못박아 세로도 뷰포트 안에 딱 맞게 나눈다. (포커스 모드에 혼자면 1×1 = 화면 전체)
-        const want = mvFocus ? 1 : (mvCols || mvAutoGridCols(count, area.clientWidth, area.clientHeight));
+        const want = mvFocus ? 1 : mvCols || mvAutoGridCols(count, area.clientWidth, area.clientHeight);
         cols = Math.max(1, Math.min(want, count));
         rows = Math.ceil(count / cols);
     }
-    const colsValue = `repeat(${cols}, 1fr)`, rowsValue = `repeat(${rows}, 1fr)`;
+    const colsValue = `repeat(${cols}, 1fr)`,
+        rowsValue = `repeat(${rows}, 1fr)`;
     if (grid.style.gridTemplateColumns !== colsValue) grid.style.gridTemplateColumns = colsValue;
     if (grid.style.gridTemplateRows !== rowsValue) grid.style.gridTemplateRows = rowsValue;
 }
@@ -248,7 +293,10 @@ function mvAddCustom() {
     const input = document.getElementById('mv-add-input');
     const result = mvResolveCustomInput(input.value, mvOrder, mvMembers);
     if (!result) return;
-    if (result.error) { alert(result.error); return; }
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
     mvOrder.push(result.entry);
     mvAfterOrderChange();
     input.value = '';
@@ -266,12 +314,14 @@ function mvEmbedUrl(soopId) {
     return `https://play.sooplive.com/${encodeURIComponent(soopId)}/embed?${params.toString()}`;
 }
 
-const MV_ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>';
+const MV_ICON_REFRESH =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>';
 
 // 칸 하나의 영상만 다시 불러온다(다른 칸의 재생에는 영향 없음). 새 iframe으로 통째로 바꾸면
 // 로드가 딱 한 번이라, 그 load 이벤트로 로딩 표시를 끈다(src를 about:blank로 비웠다가 다시 넣으면
 // load 이벤트가 두 번 와서 "로딩 끝" 시점을 알 수 없다).
-const MV_SPIN_MIN_MS = 500, MV_SPIN_MAX_MS = 10000;
+const MV_SPIN_MIN_MS = 500,
+    MV_SPIN_MAX_MS = 10000;
 
 // iframe에 넘기는 권한. local-network-access/loopback-network는 SOOP 플레이어가 PC의
 // '고화질 스트리머' 로컬 프로그램에 접속할 때 쓰는 권한으로, 실제 방송 재생에 영향이 없는지
@@ -352,7 +402,10 @@ function mvRenderGrid() {
     const cellsById = new Map(Array.from(grid.children).map(cell => [cell.dataset.soopId, cell]));
     const wanted = new Set(mvOrder.map(e => e.soopId));
     cellsById.forEach((cell, soopId) => {
-        if (!wanted.has(soopId)) { cell.remove(); cellsById.delete(soopId); }
+        if (!wanted.has(soopId)) {
+            cell.remove();
+            cellsById.delete(soopId);
+        }
     });
 
     const sequence = mvDisplaySequence();
@@ -392,11 +445,13 @@ window.addEventListener('resize', () => {
 // 코드상 순서로는 알 수 없어서, 실제 렌더링된 위치(가장 위 줄에서 가장 오른쪽)로 판단한다.
 function mvMarkCornerCell() {
     const cells = Array.from(document.querySelectorAll('#mv-grid-area .mv-cell'));
-    let corner = null, best = null;
+    let corner = null,
+        best = null;
     cells.forEach(cell => {
         const r = cell.getBoundingClientRect();
         if (!best || r.top < best.top - 1 || (Math.abs(r.top - best.top) <= 1 && r.right > best.right)) {
-            best = r; corner = cell;
+            best = r;
+            corner = cell;
         }
     });
     const MV_CORNER_MIN_WIDTH = 115; // 이름(최소)+새로고침 버튼+설정 버튼 자리가 한 줄에 들어가는 폭
@@ -411,8 +466,16 @@ let mvCornerScheduled = false;
 new MutationObserver(() => {
     if (mvCornerScheduled) return;
     mvCornerScheduled = true;
-    requestAnimationFrame(() => { mvCornerScheduled = false; mvMarkCornerCell(); });
-}).observe(document.getElementById('mv-grid-area'), { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+    requestAnimationFrame(() => {
+        mvCornerScheduled = false;
+        mvMarkCornerCell();
+    });
+}).observe(document.getElementById('mv-grid-area'), {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style'],
+});
 
 // ===== 초기화 =====
 mvApplyTheme(localStorage.getItem('mv-theme') || 'light');

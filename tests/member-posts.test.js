@@ -1,6 +1,7 @@
 // 멤버 공지: 첫 페이지는 모아 둔 표(member_posts)에서, 표에 없는 멤버·2쪽부터는 SOOP에 직접(soop.js)
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { code } = require('./code-pattern');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -69,5 +70,5 @@ test('홈 카드용 최근 글은 카드 칸만 받아 카드 모양(post)으로
     assert.equal(rows[1].post.photos.length, 0);
     assert.equal(rows[1].post.content.textContent, '');
     const api = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', 'api.js'), 'utf8');
-    assert.match(api, /select\('soop_id,titleName:post->>titleName,regDate:post->>regDate,text:post->content->>textContent,thumb:post->photos->0->>url'\)/);
+    assert.match(api, code("select('soop_id,titleName:post->>titleName,regDate:post->>regDate,text:post->content->>textContent,thumb:post->photos->0->>url')"));
 });

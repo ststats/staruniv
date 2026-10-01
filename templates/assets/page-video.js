@@ -10,16 +10,19 @@
  * kind가 'soop'이며, 재생은 숲 임베드 플레이어로 연다(유튜브는 유튜브 플레이어로).
  */
 
-const VIDEO_TABS = { fantube: ['tab-video-fantube', 'view-video-fantube'], pick: ['tab-video-pick', 'view-video-pick'] };
-const VIDEO_PAGE_SIZE = 20;      // 최신 영상 한 번에 보여줄 개수
-const VIDEO_TOP_COUNT = 3;       // 이번 달 인기
+const VIDEO_TABS = {
+    fantube: ['tab-video-fantube', 'view-video-fantube'],
+    pick: ['tab-video-pick', 'view-video-pick'],
+};
+const VIDEO_PAGE_SIZE = 20; // 최신 영상 한 번에 보여줄 개수
+const VIDEO_TOP_COUNT = 3; // 이번 달 인기
 const VIDEO_TOP_DAYS = 30;
-const VIDEO_SHORTS_MAX = 24;     // 쇼츠 선반에 올릴 최대 개수
+const VIDEO_SHORTS_MAX = 24; // 쇼츠 선반에 올릴 최대 개수
 
 const VideoState = {
     data: { channels: {}, videos: [], picks: [] },
-    channelKeys: [],      // 등록 순서 그대로의 채널 키(등록 url)
-    channel: '',          // 선택한 채널 키('' = 전체)
+    channelKeys: [], // 등록 순서 그대로의 채널 키(등록 url)
+    channel: '', // 선택한 채널 키('' = 전체)
     shown: VIDEO_PAGE_SIZE,
     byId: new Map(),
 };
@@ -79,7 +82,7 @@ function videoChannelAvatar(ch, cls) {
     const t = String(ch.thumb || '');
     const ok = /^https:\/\/(yt\d\.ggpht\.com|yt\d\.googleusercontent\.com|i\d?\.ytimg\.com)\//.test(t);
     const name1 = videoChannelName(ch).slice(0, 1);
-    const initial = escapeHTML(name1);          // HTML 글자 자리
+    const initial = escapeHTML(name1); // HTML 글자 자리
     return ok
         ? `<img class="${cls}" src="${escapeHTML(t)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, cls, name1)}>`
         : `<span class="${cls}">${initial}</span>`;
@@ -89,14 +92,17 @@ function videoChannelAvatar(ch, cls) {
 function videoCardHtml(v, opts) {
     opts = opts || {};
     const ch = videoChannel(v.channel);
-    const channelName = v.channel ? videoChannelName(ch) : (v.author || (videoIsSoop(v) ? '숲 VOD' : ''));
+    const channelName = v.channel ? videoChannelName(ch) : v.author || (videoIsSoop(v) ? '숲 VOD' : '');
     // 채널 이름 · 조회수 · 올린 때를 한 줄에 점으로 잇는다(줄을 나눠 쓰면 카드가 길어진다).
     // '보자'는 어드민이 고른 영상이라 추가한 날짜는 보여주지 않는다(정렬에만 쓴다).
     const meta = [
         channelName,
         v.views ? `조회수 ${videoFormatViews(v.views)}` : '',
         opts.pick ? '' : videoAgo(v.published),
-    ].filter(Boolean).map(escapeHTML).join('<span class="video-meta-dot">·</span>');
+    ]
+        .filter(Boolean)
+        .map(escapeHTML)
+        .join('<span class="video-meta-dot">·</span>');
     const rank = opts.rank ? `<span class="video-rank">${opts.rank}</span>` : '';
     const avatar = v.channel ? videoChannelAvatar(ch, 'video-card-avatar') : '';
     return `
@@ -131,9 +137,7 @@ function videoShortHtml(v) {
 // 썸네일 이미지가 없을 때(숲 VOD 등)는 글자 썸네일로 대신한다.
 function videoThumbInnerHtml(v) {
     const t = videoThumb(v);
-    return t
-        ? `<img src="${escapeHTML(t)}" alt="" loading="lazy">`
-        : '<span class="video-thumb-blank">SOOP</span>';
+    return t ? `<img src="${escapeHTML(t)}" alt="" loading="lazy">` : '<span class="video-thumb-blank">SOOP</span>';
 }
 
 // 유튜브 기본 썸네일(hqdefault)은 480×360이라 크게 보이는 칸에서는 흐릿하다. 더 큰 썸네일을 쓰고,
@@ -144,8 +148,10 @@ function videoThumbInnerHtml(v) {
 function videoHiResThumbHtml(v, file) {
     if (videoIsSoop(v) || !/^[\w-]{6,}$/.test(String(v.id || ''))) return videoThumbInnerHtml(v);
     const fallback = videoThumb(v);
-    return `<img src="https://i.ytimg.com/vi/${v.id}/${file}" alt="" loading="lazy"`
-        + `${actOn('error', 'imgSrc', ACT.el, fallback)} data-load="videoThumbCheck">`;
+    return (
+        `<img src="https://i.ytimg.com/vi/${v.id}/${file}" alt="" loading="lazy"` +
+        `${actOn('error', 'imgSrc', ACT.el, fallback)} data-load="videoThumbCheck">`
+    );
 }
 function videoThumbCheck(img, fallback) {
     if (img.naturalWidth && img.naturalWidth <= 120 && img.src !== fallback) img.src = fallback;
@@ -169,7 +175,7 @@ function updateShortsNav() {
     const nav = document.getElementById('video-shorts-nav');
     if (!shelf || !nav) return;
     const max = shelf.scrollWidth - shelf.clientWidth;
-    nav.hidden = max <= 1;                       // 다 보이면 버튼 자체를 숨긴다
+    nav.hidden = max <= 1; // 다 보이면 버튼 자체를 숨긴다
     const [prev, next] = nav.querySelectorAll('.shelf-nav-btn');
     if (prev) prev.disabled = shelf.scrollLeft <= 1;
     if (next) next.disabled = shelf.scrollLeft >= max - 1;
@@ -191,7 +197,7 @@ function videoEmptyHtml(text) {
 function videoPlay(id) {
     const v = VideoState.byId.get(String(id));
     if (!v) return;
-    const ch = v.channel ? videoChannelName(videoChannel(v.channel)) : (v.author || '');
+    const ch = v.channel ? videoChannelName(videoChannel(v.channel)) : v.author || '';
     const caption = ch ? `${ch} · ${v.title}` : v.title;
     if (videoIsSoop(v)) {
         mediaLightboxOpen({ caption, soopVodNo: soopVodNo(v) });
@@ -209,15 +215,24 @@ function videoFiltered() {
 function renderVideoChannels() {
     const keys = VideoState.channelKeys;
     const all = VideoState.data.videos || [];
-    renderAvatarBar('video-channel-row',
+    renderAvatarBar(
+        'video-channel-row',
         avatarSelectAllItemHtml('video-ch-all', act('selectVideoChannel', ''), `${all.length}`),
-        keys.map((k, i) => `<div class="avatar-select-item" id="video-ch-${i}" role="button" tabindex="0"${act('selectVideoChannel', k)}>
+        keys
+            .map(
+                (
+                    k,
+                    i
+                ) => `<div class="avatar-select-item" id="video-ch-${i}" role="button" tabindex="0"${act('selectVideoChannel', k)}>
                 ${videoChannelAvatar(videoChannel(k), 'video-bar-avatar')}
                 <span class="avatar-select-name">${escapeHTML(videoChannelName(videoChannel(k)))}</span>
                 <span class="avatar-select-tier">${all.filter(v => v.channel === k).length}</span>
-            </div>`).join(''));
+            </div>`
+            )
+            .join('')
+    );
     const bar = document.getElementById('video-channel-row').closest('.avatar-bar');
-    if (bar) bar.hidden = keys.length < 2;   // 채널이 하나뿐이면 거를 게 없다
+    if (bar) bar.hidden = keys.length < 2; // 채널이 하나뿐이면 거를 게 없다
     const idx = keys.indexOf(VideoState.channel);
     setActiveAvatarItem('video-channel-row', document.getElementById(idx >= 0 ? `video-ch-${idx}` : 'video-ch-all'));
 }
@@ -229,17 +244,27 @@ function renderFantube() {
 
     const since = Date.now() - VIDEO_TOP_DAYS * 86400000;
     const top = normal
-        .filter(v => { const d = videoDate(v.published); return d && d.getTime() >= since; })
+        .filter(v => {
+            const d = videoDate(v.published);
+            return d && d.getTime() >= since;
+        })
         .sort((a, b) => (b.views || 0) - (a.views || 0))
         .slice(0, VIDEO_TOP_COUNT);
     const topWrap = document.getElementById('video-top-wrap');
     topWrap.hidden = !top.length;
-    document.getElementById('video-top-grid').innerHTML = top.map((v, i) => videoCardHtml(v, { rank: i + 1, top: true })).join('');
+    document.getElementById('video-top-grid').innerHTML = top
+        .map((v, i) => videoCardHtml(v, { rank: i + 1, top: true }))
+        .join('');
 
     const shortsWrap = document.getElementById('video-shorts-wrap');
     shortsWrap.hidden = !shorts.length;
-    document.getElementById('video-shorts-shelf').innerHTML = shorts.slice(0, VIDEO_SHORTS_MAX).map(videoShortHtml).join('');
-    document.getElementById('video-shorts-count').textContent = shorts.length ? `${Math.min(shorts.length, VIDEO_SHORTS_MAX)}개` : '';
+    document.getElementById('video-shorts-shelf').innerHTML = shorts
+        .slice(0, VIDEO_SHORTS_MAX)
+        .map(videoShortHtml)
+        .join('');
+    document.getElementById('video-shorts-count').textContent = shorts.length
+        ? `${Math.min(shorts.length, VIDEO_SHORTS_MAX)}개`
+        : '';
 
     const grid = document.getElementById('video-latest-grid');
     const shown = normal.slice(0, VideoState.shown);
@@ -284,23 +309,25 @@ function renderPicks() {
         box.innerHTML = videoEmptyHtml('추천 영상이 아직 없습니다');
         return;
     }
-    const groups = [];                       // [[분류 이름, [영상...]], ...] - 처음 나온 순서대로
+    const groups = []; // [[분류 이름, [영상...]], ...] - 처음 나온 순서대로
     picks.forEach(v => {
         const key = String(v.group || '').trim();
         const last = groups[groups.length - 1];
         if (last && last[0] === key) last[1].push(v);
         else groups.push([key, [v]]);
     });
-    box.innerHTML = groups.map(([name, list], i) => {
-        // 맨 위 묶음만 제목 없이 둘 수 있다. 분류 뒤에 오는 무분류는 앞 묶음에 딸려 보이므로 '기타'를 붙인다.
-        const label = name || (i ? '기타' : '');
-        // 제목줄 위 작은 영문 라벨. 어드민에서 분류마다 적을 수 있고, 비우면 라벨 없이 나온다.
-        const labelEn = String((list.find(v => String(v.groupEn || '').trim()) || {}).groupEn || '').trim();
-        const enAttr = labelEn ? ` data-en="${escapeHTML(labelEn)}"` : '';
-        return `
+    box.innerHTML = groups
+        .map(([name, list], i) => {
+            // 맨 위 묶음만 제목 없이 둘 수 있다. 분류 뒤에 오는 무분류는 앞 묶음에 딸려 보이므로 '기타'를 붙인다.
+            const label = name || (i ? '기타' : '');
+            // 제목줄 위 작은 영문 라벨. 어드민에서 분류마다 적을 수 있고, 비우면 라벨 없이 나온다.
+            const labelEn = String((list.find(v => String(v.groupEn || '').trim()) || {}).groupEn || '').trim();
+            const enAttr = labelEn ? ` data-en="${escapeHTML(labelEn)}"` : '';
+            return `
         ${label ? `<div class="section-title${i ? ' section-title-spaced' : ''} video-pick-title"${enAttr}><span class="section-title-label">${escapeHTML(label)}</span><span class="title-count">${list.length}개</span></div>` : ''}
         <div class="video-grid video-pick-grid">${list.map(v => videoCardHtml(v, { pick: true })).join('')}</div>`;
-    }).join('');
+        })
+        .join('');
 }
 
 // ----- 탭 · 주소 -----
@@ -311,7 +338,10 @@ function currentVideoView() {
 function updateVideoUrl() {
     const view = currentVideoView();
     const idx = VideoState.channelKeys.indexOf(VideoState.channel);
-    PageState.update({ view: view === 'pick' ? 'pick' : '', ch: view === 'fantube' && idx >= 0 ? String(idx + 1) : '' });
+    PageState.update({
+        view: view === 'pick' ? 'pick' : '',
+        ch: view === 'fantube' && idx >= 0 ? String(idx + 1) : '',
+    });
 }
 
 function switchVideoView(view) {
@@ -324,20 +354,36 @@ async function loadVideoDataFromSupabase() {
     const channels = {};
     (res.channels || []).forEach(ch => {
         channels[ch.channel_url] = {
-            title: ch.title || '', name: ch.display_name || ch.title || '', thumb: ch.thumb || ''
+            title: ch.title || '',
+            name: ch.display_name || ch.title || '',
+            thumb: ch.thumb || '',
         };
     });
     return {
         updatedAt: '',
         channels,
-        videos: (res.videos || []).filter(v => !!channels[v.channel_url]).map(v => ({
-            id:v.id, channel:v.channel_url, title:v.title, published:v.published, thumb:v.thumb,
-            views:Number(v.views)||0, short:!!v.short
-        })),
+        videos: (res.videos || [])
+            .filter(v => !!channels[v.channel_url])
+            .map(v => ({
+                id: v.id,
+                channel: v.channel_url,
+                title: v.title,
+                published: v.published,
+                thumb: v.thumb,
+                views: Number(v.views) || 0,
+                short: !!v.short,
+            })),
         picks: (res.picks || []).map(v => ({
-            id:v.id, kind:v.kind, title:v.title, note:v.note || '', group:v.group_name || '', groupEn:v.group_en || '',
-            author:v.author || '', thumb:v.thumb || '', short:!!v.short
-        }))
+            id: v.id,
+            kind: v.kind,
+            title: v.title,
+            note: v.note || '',
+            group: v.group_name || '',
+            groupEn: v.group_en || '',
+            author: v.author || '',
+            thumb: v.thumb || '',
+            short: !!v.short,
+        })),
     };
 }
 
@@ -351,33 +397,44 @@ async function loadVideoData() {
 }
 
 // 영상 페이지는 Supabase에서 운영 데이터를 직접 읽는다.
-bootPage(async () => {
-    const data = await loadVideoData();
-    VideoState.data = {
-        channels: data.channels || {},
-        // hidden은 어드민이 감춘 영상이다(파일에는 남아 있고 화면에서만 뺀다)
-        videos: (Array.isArray(data.videos) ? data.videos : []).filter(v => v && !v.hidden && /^[A-Za-z0-9_-]{11}$/.test(v.id))
-            .sort((a, b) => String(b.published || '').localeCompare(String(a.published || ''))),
-        // 보자에는 유튜브 영상(11자 id)과 숲 VOD('soop:<번호>')가 같이 올 수 있다.
-        picks: (Array.isArray(data.picks) ? data.picks : []).filter(v => v && !v.hidden && /^([A-Za-z0-9_-]{11}|soop:\d{1,20})$/.test(v.id)),
-    };
-    VideoState.channelKeys = Object.keys(VideoState.data.channels);
-    [...VideoState.data.videos, ...VideoState.data.picks].forEach(v => {
-        if (!VideoState.byId.has(v.id)) VideoState.byId.set(v.id, v);
-    });
-    renderPicks();
-    bindShortsNav();
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        const idx = parseInt(params.get('ch'), 10);
-        VideoState.channel = VideoState.channelKeys[idx - 1] || '';
-        VideoState.shown = VIDEO_PAGE_SIZE;
-        const rawView = params.get('view') || runtimeDefaultSubtab('video','fantube');
-        activateTabView(VIDEO_TABS, rawView === 'pick' ? 'pick' : 'fantube');
-        renderVideoChannels();
-        renderFantube();
-    }));
-}, {
-    siteData: false,
-    view: params => activateTabView(VIDEO_TABS,
-        (params.get('view') || runtimeDefaultSubtab('video', 'fantube')) === 'pick' ? 'pick' : 'fantube'),
-});
+bootPage(
+    async () => {
+        const data = await loadVideoData();
+        VideoState.data = {
+            channels: data.channels || {},
+            // hidden은 어드민이 감춘 영상이다(파일에는 남아 있고 화면에서만 뺀다)
+            videos: (Array.isArray(data.videos) ? data.videos : [])
+                .filter(v => v && !v.hidden && /^[A-Za-z0-9_-]{11}$/.test(v.id))
+                .sort((a, b) => String(b.published || '').localeCompare(String(a.published || ''))),
+            // 보자에는 유튜브 영상(11자 id)과 숲 VOD('soop:<번호>')가 같이 올 수 있다.
+            picks: (Array.isArray(data.picks) ? data.picks : []).filter(
+                v => v && !v.hidden && /^([A-Za-z0-9_-]{11}|soop:\d{1,20})$/.test(v.id)
+            ),
+        };
+        VideoState.channelKeys = Object.keys(VideoState.data.channels);
+        [...VideoState.data.videos, ...VideoState.data.picks].forEach(v => {
+            if (!VideoState.byId.has(v.id)) VideoState.byId.set(v.id, v);
+        });
+        renderPicks();
+        bindShortsNav();
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                const idx = parseInt(params.get('ch'), 10);
+                VideoState.channel = VideoState.channelKeys[idx - 1] || '';
+                VideoState.shown = VIDEO_PAGE_SIZE;
+                const rawView = params.get('view') || runtimeDefaultSubtab('video', 'fantube');
+                activateTabView(VIDEO_TABS, rawView === 'pick' ? 'pick' : 'fantube');
+                renderVideoChannels();
+                renderFantube();
+            })
+        );
+    },
+    {
+        siteData: false,
+        view: params =>
+            activateTabView(
+                VIDEO_TABS,
+                (params.get('view') || runtimeDefaultSubtab('video', 'fantube')) === 'pick' ? 'pick' : 'fantube'
+            ),
+    }
+);

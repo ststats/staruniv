@@ -35,7 +35,9 @@ function histSafeImage(path) {
     if (/^history\/[\w.-]+\.(jpe?g|png|webp|gif)$/i.test(s)) {
         if (typeof contentMediaPublicUrl === 'function') return contentMediaPublicUrl(s);
         const base = String(window.STARUNIV_SUPABASE_CONFIG?.url || '').replace(/\/$/, '');
-        return base ? `${base}/storage/v1/object/public/staruniv-media/${s.split('/').map(encodeURIComponent).join('/')}` : '';
+        return base
+            ? `${base}/storage/v1/object/public/staruniv-media/${s.split('/').map(encodeURIComponent).join('/')}`
+            : '';
     }
     return /^https:\/\//i.test(s) ? s : '';
 }
@@ -51,7 +53,10 @@ function histThumbUrl(item) {
 function histAutoItems(members) {
     const groups = new Map();
     (members || []).forEach(m => {
-        [['join', m['입단일']], ['leave', m['퇴단일']]].forEach(([type, date]) => {
+        [
+            ['join', m['입단일']],
+            ['leave', m['퇴단일']],
+        ].forEach(([type, date]) => {
             const d = String(date || '').trim();
             if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
             const id = `auto-${type}-${d}`;
@@ -61,7 +66,10 @@ function histAutoItems(members) {
     });
     return [...groups.values()].map(item => ({
         ...item,
-        title: item.members.length > 1 ? `${item.members.length}명 ${HISTORY_TYPES[item.type]}` : `${item.members[0]} ${HISTORY_TYPES[item.type]}`,
+        title:
+            item.members.length > 1
+                ? `${item.members.length}명 ${HISTORY_TYPES[item.type]}`
+                : `${item.members[0]} ${HISTORY_TYPES[item.type]}`,
         desc: '',
     }));
 }
@@ -73,10 +81,12 @@ function histMergeItems(data, members, includeHidden) {
         const o = overrides[item.id] || {};
         // 멤버는 DB가 정한다. 관리자가 붙인 괄호 설명만 이름을 맞춰 다시 붙인다
         // (DB에서 사람이 늘거나 빠져도 설명이 엉뚱한 사람에게 붙지 않는다).
-        const notes = new Map((Array.isArray(o.members) ? o.members : []).map(e => {
-            const p = histParseMember(e);
-            return [p.name, p.note];
-        }));
+        const notes = new Map(
+            (Array.isArray(o.members) ? o.members : []).map(e => {
+                const p = histParseMember(e);
+                return [p.name, p.note];
+            })
+        );
         return {
             ...item,
             members: item.members.map(name => histFormatMember(name, notes.get(name) || '')),
@@ -88,7 +98,11 @@ function histMergeItems(data, members, includeHidden) {
             hidden: !!o.hidden,
         };
     });
-    const manual = ((data && data.items) || []).map(item => ({ ...item, auto: false, members: Array.isArray(item.members) ? item.members : [] }));
+    const manual = ((data && data.items) || []).map(item => ({
+        ...item,
+        auto: false,
+        members: Array.isArray(item.members) ? item.members : [],
+    }));
     return [...auto, ...manual]
         .filter(item => includeHidden || !item.hidden)
         .filter(item => /^\d{4}-\d{2}-\d{2}$/.test(String(item.date || '')))
@@ -123,7 +137,7 @@ function histFormatMember(name, note) {
 // 한 항목에 이름이 수십 개 붙는 날이 있다(단체 입단 등). 다섯까지만 펼쳐 두고
 // 나머지는 겹친 프로필 사진 + '+N명' 한 칸으로 접는다 - 누르면 펼쳐진다.
 const HIST_CHIP_VISIBLE = 5;
-const HIST_STACK_FACES = 3;      // '+N명' 칸에 겹쳐 보일 사진 수
+const HIST_STACK_FACES = 3; // '+N명' 칸에 겹쳐 보일 사진 수
 
 function histAvatarSrc(entry, members, avatarUrlFn) {
     const name = typeof entry === 'string' ? entry : (entry && entry.name) || '';
@@ -132,12 +146,15 @@ function histAvatarSrc(entry, members, avatarUrlFn) {
 }
 
 function histMoreChipHtml(rest, members, avatarUrlFn, key) {
-    const faces = rest.slice(0, HIST_STACK_FACES).map(e => {
-        const url = histAvatarSrc(e, members, avatarUrlFn);
-        return url
-            ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-stack-face', '👤')}>`
-            : `<span class="hist-stack-face">👤</span>`;
-    }).join('');
+    const faces = rest
+        .slice(0, HIST_STACK_FACES)
+        .map(e => {
+            const url = histAvatarSrc(e, members, avatarUrlFn);
+            return url
+                ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-stack-face', '👤')}>`
+                : `<span class="hist-stack-face">👤</span>`;
+        })
+        .join('');
     return `<button type="button" class="hist-chip hist-chip-more" data-hist-more="${key}"
                 ${act('histToggleMembers', key)} aria-expanded="false">
                 <span class="hist-stack">${faces}</span>
@@ -176,14 +193,23 @@ function histRenderTypeBar(items) {
     if (!list || typeof renderAvatarBar !== 'function') return;
     const types = Object.keys(HISTORY_TYPES).filter(t => items.some(x => x.type === t));
     if (!types.includes(histTypeFilter)) histTypeFilter = '';
-    renderAvatarBar('history-type-list',
+    renderAvatarBar(
+        'history-type-list',
         avatarSelectAllItemHtml('history-type-all', act('histPickType', ''), `${items.length}`),
-        types.map(t => `<div class="avatar-select-item hist-bar-item hist-type-${t}" id="history-type-${t}" role="button" tabindex="0"${act('histPickType', t)}>
+        types
+            .map(
+                t => `<div class="avatar-select-item hist-bar-item hist-type-${t}" id="history-type-${t}" role="button" tabindex="0"${act('histPickType', t)}>
                 <span class="hist-bar-dot" aria-hidden="true"></span>
                 <span class="avatar-select-name">${HISTORY_TYPES[t]}</span>
                 <span class="avatar-select-tier">${items.filter(x => x.type === t).length}</span>
-            </div>`).join(''));
-    setActiveAvatarItem('history-type-list', document.getElementById(histTypeFilter ? `history-type-${histTypeFilter}` : 'history-type-all'));
+            </div>`
+            )
+            .join('')
+    );
+    setActiveAvatarItem(
+        'history-type-list',
+        document.getElementById(histTypeFilter ? `history-type-${histTypeFilter}` : 'history-type-all')
+    );
 }
 function histPickType(type) {
     histTypeFilter = HISTORY_TYPES[type] ? type : '';
@@ -226,11 +252,13 @@ function histItemHtml(item, opts) {
     const thumb = histThumbUrl(item);
     const yt = histYoutubeId(item.youtube);
     const key = escapeHTML(item.id);
-    const media = thumb ? `
-            <button type="button" class="hist-media${yt && !histSafeImage(item.image) ? ' is-video' : (yt ? ' has-video' : '')}"${act('histOpenMedia', key)} aria-label="${yt ? '영상 보기' : '사진 크게 보기'}">
+    const media = thumb
+        ? `
+            <button type="button" class="hist-media${yt && !histSafeImage(item.image) ? ' is-video' : yt ? ' has-video' : ''}"${act('histOpenMedia', key)} aria-label="${yt ? '영상 보기' : '사진 크게 보기'}">
                 <img src="${escapeHTML(thumb)}" alt="" loading="lazy">
                 ${yt ? '<span class="hist-play" aria-hidden="true"></span>' : ''}
-            </button>` : '';
+            </button>`
+        : '';
     const members = (item.members || []).filter(Boolean);
     const chip = n => histMemberChipHtml(n, opts.members, opts.avatarUrl);
     let chips = '';
@@ -240,11 +268,13 @@ function histItemHtml(item, opts) {
     } else if (members.length) {
         const shown = members.slice(0, HIST_CHIP_VISIBLE);
         const rest = members.slice(HIST_CHIP_VISIBLE);
-        chips = `<div class="hist-chips">${shown.map(chip).join('')}`
-            + `<span class="hist-chips-rest" data-hist-rest="${key}" hidden>${rest.map(chip).join('')}</span>`
-            + `${histMoreChipHtml(rest, opts.members, opts.avatarUrl, key)}</div>`;
+        chips =
+            `<div class="hist-chips">${shown.map(chip).join('')}` +
+            `<span class="hist-chips-rest" data-hist-rest="${key}" hidden>${rest.map(chip).join('')}</span>` +
+            `${histMoreChipHtml(rest, opts.members, opts.avatarUrl, key)}</div>`;
     }
-    const adminBar = opts.admin ? `
+    const adminBar = opts.admin
+        ? `
             <div class="hist-admin-bar">
                 <span class="hist-move">
                     <button type="button" aria-label="위로" ${opts.firstOfDay ? 'disabled' : ''} ${act('histAdminMove', key, -1)}>▲</button>
@@ -253,7 +283,8 @@ function histItemHtml(item, opts) {
                 ${item.auto ? '<span class="hist-auto">자동</span>' : ''}${item.hidden ? '<span class="hist-auto is-hidden">숨김</span>' : ''}
                 <button type="button" class="edit-btn"${act('histAdminEdit', key)}>수정</button>
                 <button type="button" class="delete-btn"${act('histAdminRemove', key)}>${item.auto ? (item.hidden ? '보이기' : '숨기기') : '삭제'}</button>
-            </div>` : '';
+            </div>`
+        : '';
     return `
         <li class="hist-item hist-type-${type}${item.hidden ? ' is-hidden' : ''}" data-hist-id="${key}">
           <div class="hist-card">
@@ -295,10 +326,18 @@ async function histLoadData(client) {
         const data = await Api.history(client);
         const out = { items: [], overrides: {} };
         (data || []).forEach(r => {
-            const value = { title:r.title||'', desc:r.description||'', members:Array.isArray(r.members)?r.members:[], youtube:r.youtube_url||'', image:r.image_path||'', hidden:!!r.hidden };
+            const value = {
+                title: r.title || '',
+                desc: r.description || '',
+                members: Array.isArray(r.members) ? r.members : [],
+                youtube: r.youtube_url || '',
+                image: r.image_path || '',
+                hidden: !!r.hidden,
+            };
             if (Number.isFinite(r.sort_order)) value.ord = r.sort_order;
             if (r.entry_kind === 'override') out.overrides[r.id] = value;
-            else out.items.push({ id:r.id, date:String(r.event_date||''), type:r.event_type||'event', ...value });
+            else
+                out.items.push({ id: r.id, date: String(r.event_date || ''), type: r.event_type || 'event', ...value });
         });
         return out;
     } catch (e) {

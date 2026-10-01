@@ -23,17 +23,17 @@ const TIER_HIDDEN_TEAMS = new Set(['휴면']);
 const TIER_RACE_ORDER = ['테란', '저그', '프로토스'];
 
 const TierState = {
-    members: [],       // 표시 대상 전체
-    byId: {},          // soopId(소문자) -> member
-    live: {},          // soopId(소문자) -> { id, member, broadNo, title, viewers }
-    liveOnly: true,    // 방송 중인 사람만 보기 (첫 진입 기본값)
-    sections: [],      // [{ tier, id, count }] - 티어 제목·바로가기 바가 쓴다
-    activeId: null,    // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
-    jump: null,        // 바로가기로 이동한 직후 { id, y } - 사용자가 스크롤하기 전까지 그 티어를 강조한다
+    members: [], // 표시 대상 전체
+    byId: {}, // soopId(소문자) -> member
+    live: {}, // soopId(소문자) -> { id, member, broadNo, title, viewers }
+    liveOnly: true, // 방송 중인 사람만 보기 (첫 진입 기본값)
+    sections: [], // [{ tier, id, count }] - 티어 제목·바로가기 바가 쓴다
+    activeId: null, // 지금 강조 중인 티어 섹션 id (같으면 바를 다시 안 건드린다)
+    jump: null, // 바로가기로 이동한 직후 { id, y } - 사용자가 스크롤하기 전까지 그 티어를 강조한다
     visibleThumbs: new Set(),
     thumbObserver: null,
-    view: '',          // 지금 보고 있는 탭(list · h2h · analysis) - 방송 상태는 list일 때만 갱신
-    listInit: null,    // 티어 목록 초기화(처음 열 때 한 번)
+    view: '', // 지금 보고 있는 탭(list · h2h · analysis) - 방송 상태는 list일 때만 갱신
+    listInit: null, // 티어 목록 초기화(처음 열 때 한 번)
 };
 
 // ---------------------------------------------------------------------------
@@ -54,9 +54,9 @@ function switchTierView(view) {
     // 아닐 때만) 이전 뷰의 파라미터를 정리한다.
     if (!PageState.restoring) PageState.update(key === 'list' ? {} : { view: key });
     TierState.view = key;
-    if (key === 'list') safeInit('티어표', enterTierList);   // 처음 열 때만 명단을 받는다(아래 initTierList)
-    if (key === 'h2h') safeInit('상대전적', h2hEnter);   // page-h2h.js (처음 열 때만 데이터를 읽는다)
-    if (key === 'analysis') safeInit('분석', analysisEnter);   // page-analysis.js (처음 열 때만 데이터를 읽는다)
+    if (key === 'list') safeInit('티어표', enterTierList); // 처음 열 때만 명단을 받는다(아래 initTierList)
+    if (key === 'h2h') safeInit('상대전적', h2hEnter); // page-h2h.js (처음 열 때만 데이터를 읽는다)
+    if (key === 'analysis') safeInit('분석', analysisEnter); // page-analysis.js (처음 열 때만 데이터를 읽는다)
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +68,9 @@ let _tierMembersRequest = null;
 function requestTierMembers() {
     if (!_tierMembersRequest) {
         _tierMembersRequest = Api.tierMembers();
-        _tierMembersRequest.catch(() => { _tierMembersRequest = null; });
+        _tierMembersRequest.catch(() => {
+            _tierMembersRequest = null;
+        });
     }
     return _tierMembersRequest;
 }
@@ -77,15 +79,22 @@ function requestTierMembers() {
 async function fetchTierMembers() {
     try {
         const data = await requestTierMembers();
-        const members = asArray(data).map(r => ({
-            id: String(r.soop_id || '').trim(),
-            nickname: String(r.nickname || '').trim(),
-            team: String(r.affiliation || '').trim(),
-            tier: r.tier == null ? '' : String(r.tier).trim(),
-            race: String(r.race || '').trim(),
-        })).filter(m => m && isValidSoopId(m.id) && m.nickname && !TIER_HIDDEN_TEAMS.has(m.team));
+        const members = asArray(data)
+            .map(r => ({
+                id: String(r.soop_id || '').trim(),
+                nickname: String(r.nickname || '').trim(),
+                team: String(r.affiliation || '').trim(),
+                tier: r.tier == null ? '' : String(r.tier).trim(),
+                race: String(r.race || '').trim(),
+            }))
+            .filter(m => m && isValidSoopId(m.id) && m.nickname && !TIER_HIDDEN_TEAMS.has(m.team));
         if (!members.length) return null;
-        const updatedAt = asArray(data).map(r => String(r.modified_at || '')).filter(Boolean).sort().pop() || '';
+        const updatedAt =
+            asArray(data)
+                .map(r => String(r.modified_at || ''))
+                .filter(Boolean)
+                .sort()
+                .pop() || '';
         return { date: '', updatedAt, members };
     } catch (e) {
         console.error('[티어표] Supabase 명단 조회 실패:', e);
@@ -97,7 +106,7 @@ async function fetchTierMembers() {
 // 카드
 // ---------------------------------------------------------------------------
 function tierGroupKey(member) {
-    const raw = (member.tier === null || member.tier === undefined) ? '' : String(member.tier).trim();
+    const raw = member.tier === null || member.tier === undefined ? '' : String(member.tier).trim();
     // DB의 '체크'는 아직 티어를 안 매긴 사람이라 미분류 묶음으로 보낸다(맨 뒤에 온다).
     if (!raw || TIER_UNRANKED.has(raw)) return '미분류';
     return raw;
@@ -116,7 +125,7 @@ function tierIdKey(member) {
 // 헷갈려서 "3티어"로 적는다. 갓/킹/잭처럼 이름이 있는 티어는 그대로 둔다
 // ("갓티어"는 어색하다). 그룹 키는 원본 값 그대로 쓰고 표기만 바꾼다.
 function tierDisplayName(tier) {
-    const label = (tier === null || tier === undefined) ? '' : String(tier);
+    const label = tier === null || tier === undefined ? '' : String(tier);
     return /^\d+$/.test(label) ? `${label}티어` : label;
 }
 
@@ -190,13 +199,13 @@ function tierCardHtml(member, live) {
 const TIER_PEEK_DELAY_MS = 250;
 const tierPeekHover = window.matchMedia('(hover: hover) and (pointer: fine)');
 const TierPeek = { el: null, card: null, timer: 0, x: 0, y: 0, frame: 0, inside: false, scrollTimer: 0 };
-const TIER_PEEK_OFFSET = 16;   // 커서와 미리보기 사이 가로 간격(커서가 미리보기를 가리지 않게)
+const TIER_PEEK_OFFSET = 16; // 커서와 미리보기 사이 가로 간격(커서가 미리보기를 가리지 않게)
 
 function tierPeekEl() {
     if (!TierPeek.el) {
         TierPeek.el = document.createElement('div');
         TierPeek.el.className = 'tier-peek';
-        TierPeek.el.setAttribute('aria-hidden', 'true');   // 카드 링크와 같은 내용을 크게 보여 줄 뿐이다
+        TierPeek.el.setAttribute('aria-hidden', 'true'); // 카드 링크와 같은 내용을 크게 보여 줄 뿐이다
         document.body.appendChild(TierPeek.el);
     }
     return TierPeek.el;
@@ -226,7 +235,10 @@ function tierPeekPlace() {
     TierPeek.frame = 0;
     const el = TierPeek.el;
     if (!el || !el.classList.contains('is-open')) return;
-    const w = el.offsetWidth, h = el.offsetHeight, off = TIER_PEEK_OFFSET, pad = 8;
+    const w = el.offsetWidth,
+        h = el.offsetHeight,
+        off = TIER_PEEK_OFFSET,
+        pad = 8;
     let left = TierPeek.x + off;
     if (left + w > window.innerWidth - pad) left = TierPeek.x - off - w;
     const top = Math.min(Math.max(pad, TierPeek.y - h / 2), window.innerHeight - h - pad);
@@ -258,7 +270,9 @@ function tierPeekTrack(card) {
     tierPeekHide();
     if (!card) return;
     TierPeek.card = card;
-    TierPeek.timer = setTimeout(() => { if (TierPeek.card === card) tierPeekShow(card); }, TIER_PEEK_DELAY_MS);
+    TierPeek.timer = setTimeout(() => {
+        if (TierPeek.card === card) tierPeekShow(card);
+    }, TIER_PEEK_DELAY_MS);
 }
 
 function initTierPeek() {
@@ -277,18 +291,27 @@ function initTierPeek() {
     };
     root.addEventListener('mouseover', onPointer);
     root.addEventListener('mousemove', onPointer, { passive: true });
-    root.addEventListener('mouseenter', () => { TierPeek.inside = true; });
-    root.addEventListener('mouseleave', () => { TierPeek.inside = false; tierPeekHide(); });
-    // 스크롤하면 카드가 움직이므로 닫고, 스크롤이 멈추면 그 자리에서 마우스 아래 카드를 다시 찾는다
-    window.addEventListener('scroll', () => {
+    root.addEventListener('mouseenter', () => {
+        TierPeek.inside = true;
+    });
+    root.addEventListener('mouseleave', () => {
+        TierPeek.inside = false;
         tierPeekHide();
-        clearTimeout(TierPeek.scrollTimer);
-        TierPeek.scrollTimer = setTimeout(() => {
-            if (!TierPeek.inside) return;
-            const under = document.elementFromPoint(TierPeek.x, TierPeek.y);
-            tierPeekTrack(under && under.closest('#tier-root .tier-card.is-live'));
-        }, 150);
-    }, { passive: true });
+    });
+    // 스크롤하면 카드가 움직이므로 닫고, 스크롤이 멈추면 그 자리에서 마우스 아래 카드를 다시 찾는다
+    window.addEventListener(
+        'scroll',
+        () => {
+            tierPeekHide();
+            clearTimeout(TierPeek.scrollTimer);
+            TierPeek.scrollTimer = setTimeout(() => {
+                if (!TierPeek.inside) return;
+                const under = document.elementFromPoint(TierPeek.x, TierPeek.y);
+                tierPeekTrack(under && under.closest('#tier-root .tier-card.is-live'));
+            }, 150);
+        },
+        { passive: true }
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -314,19 +337,26 @@ function tierRaceBlocksHtml(members) {
         .filter(r => !TIER_RACE_ORDER.includes(r))
         .sort((a, b) => a.localeCompare(b, 'ko'));
 
-    return known.concat(unknown).map(race => `
+    return known
+        .concat(unknown)
+        .map(
+            race => `
         <div class="tier-race-block" data-race="${escapeHTML(race)}">
             <div class="tier-grid">
-                ${byRace.get(race).map(m => tierCardHtml(m, TierState.live[tierIdKey(m)])).join('')}
+                ${byRace
+                    .get(race)
+                    .map(m => tierCardHtml(m, TierState.live[tierIdKey(m)]))
+                    .join('')}
             </div>
-        </div>`).join('');
+        </div>`
+        )
+        .join('');
 }
 
 function renderTierGroups() {
     // 다시 그리면 문서 높이가 바뀐다 - 그 전에 지금 보던 티어의 위치를 재둔다.
     const anchor = captureTierAnchor();
     const list = tierVisibleMembers();
-
 
     const groups = new Map();
     list.forEach(m => {
@@ -352,15 +382,19 @@ function renderTierGroups() {
         count: groups.get(tier).length,
     }));
 
-    tierPeekHide();   // 카드를 새로 그리면 보고 있던 미리보기의 카드가 없어진다
+    tierPeekHide(); // 카드를 새로 그리면 보고 있던 미리보기의 카드가 없어진다
     document.getElementById('tier-root').innerHTML = TierState.sections.length
-        ? TierState.sections.map(sec => `
+        ? TierState.sections
+              .map(
+                  sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title" data-en="${tierLatinLabel(sec.tier)}">
                     <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span><span class="title-count">${sec.count}명</span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
-            </div>`).join('')
+            </div>`
+              )
+              .join('')
         : `<div class="tier-empty">${TierState.liveOnly ? '방송 중인 사람이 없습니다' : '표시할 인원이 없습니다'}</div>`;
 
     observeTierThumbs();
@@ -368,7 +402,7 @@ function renderTierGroups() {
     renderTierBar();
     ensureTierPick();
     restoreTierAnchor(anchor);
-    highlightTierBar();  // 칩을 새로 만들었으니 지금 보고 있는 티어를 바로 강조해준다
+    highlightTierBar(); // 칩을 새로 만들었으니 지금 보고 있는 티어를 바로 강조해준다
     syncTierPickLabel();
 }
 
@@ -376,8 +410,7 @@ function observeTierThumbs() {
     if (!TierState.thumbObserver) return;
     TierState.thumbObserver.disconnect();
     TierState.visibleThumbs.clear();
-    document.querySelectorAll('#tier-root .tier-card-thumb')
-        .forEach(img => TierState.thumbObserver.observe(img));
+    document.querySelectorAll('#tier-root .tier-card-thumb').forEach(img => TierState.thumbObserver.observe(img));
 }
 
 // ---------------------------------------------------------------------------
@@ -388,13 +421,17 @@ function observeTierThumbs() {
 function renderTierBar() {
     const list = document.getElementById('tier-bar-list');
     if (!list) return;
-    list.innerHTML = TierState.sections.map(sec => `
+    list.innerHTML = TierState.sections
+        .map(
+            sec => `
         <button type="button" class="tier-bar-item" data-target="${sec.id}">
             <span class="tier-bar-name">${escapeHTML(tierDisplayName(sec.tier))}</span>
             <span class="tier-bar-count">${sec.count}</span>
-        </button>`).join('');
-    TierState.activeId = null;  // 칩을 새로 만들었으니 강조도 다시 붙여야 한다
-    attachBarScroll(list);      // PC 가로 바: 끌어서 넘기기 + 아래 스크롤 막대(core.js)
+        </button>`
+        )
+        .join('');
+    TierState.activeId = null; // 칩을 새로 만들었으니 강조도 다시 붙여야 한다
+    attachBarScroll(list); // PC 가로 바: 끌어서 넘기기 + 아래 스크롤 막대(core.js)
     syncTierBarHeight();
 }
 
@@ -415,9 +452,10 @@ function ensureTierPick() {
     pick.type = 'button';
     pick.className = 'tier-bar-pick';
     pick.setAttribute('aria-expanded', 'false');
-    pick.innerHTML = '<span class="tier-bar-pick-label">티어 바로가기</span>'
-        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" '
-        + 'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    pick.innerHTML =
+        '<span class="tier-bar-pick-label">티어 바로가기</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+        'stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
     pick.addEventListener('click', () => {
         const closed = bar.classList.toggle('is-closed');
         pick.setAttribute('aria-expanded', closed ? 'false' : 'true');
@@ -437,7 +475,10 @@ function syncTierPickLabel() {
     const label = pick.querySelector('.tier-bar-pick-label');
     // 칩 안의 이름과 인원수 사이에 공백이 없어서 '갓12'처럼 붙어 나온다 - 따로 읽어서 띄운다.
     if (!label) return;
-    if (!active) { label.textContent = '티어 바로가기'; return; }
+    if (!active) {
+        label.textContent = '티어 바로가기';
+        return;
+    }
     const count = active.querySelector('.tier-bar-count');
     const name = active.cloneNode(true);
     const dropCount = name.querySelector('.tier-bar-count');
@@ -523,27 +564,34 @@ function highlightTierBar() {
     let activeBtn = null;
     document.querySelectorAll('#tier-bar .tier-bar-item').forEach(btn => {
         const on = btn.dataset.target === currentId;
-        btn.classList.toggle('active', on);   // 아바타 바와 같은 클래스명
+        btn.classList.toggle('active', on); // 아바타 바와 같은 클래스명
         if (on) activeBtn = btn;
     });
     if (activeBtn) scrollTierBarItemIntoView(activeBtn);
-    syncTierPickLabel();   // 모바일 선택 줄의 라벨도 같이 따라간다
+    syncTierPickLabel(); // 모바일 선택 줄의 라벨도 같이 따라간다
 }
 
 // 티어가 많으면 바가 좌우로 스크롤되는데, 강조된 항목이 화면 밖이면 의미가 없다.
 // scrollIntoView 대신 바 자체의 scrollLeft만 건드린다 - scrollIntoView는 조상 요소까지
 // 같이 움직여서, 사용자가 스크롤하는 중에 페이지가 세로로 튀는 일이 생길 수 있다.
 function scrollTierBarItemIntoView(btn) {
-    centerBarItem(btn);   // core.js - 개인 전적·멤버 공지 바와 같은 가운데 맞춤
+    centerBarItem(btn); // core.js - 개인 전적·멤버 공지 바와 같은 가운데 맞춤
 }
 
 // [리디자인] 티어 제목 위에 붙는 라틴 라벨: 'GOD TIER', '1 TIER'처럼 끝에 TIER를 한 번만 붙인다
 // (제목 쪽에서는 붙이지 않는다 - 두 번 붙으면 '1 TIER TIER'가 된다).
-const TIER_EN = { '갓': 'GOD', '킹': 'KING', '잭': 'JACK', '조커': 'JOKER', '스페이드': 'SPADE',
-                 '베이비': 'BABY', '미분류': 'UNRANKED' };
+const TIER_EN = {
+    '갓': 'GOD',
+    '킹': 'KING',
+    '잭': 'JACK',
+    '조커': 'JOKER',
+    '스페이드': 'SPADE',
+    '베이비': 'BABY',
+    '미분류': 'UNRANKED',
+};
 function tierLatinLabel(tier) {
     // 0티어가 있어서 `tier || ''`로 읽으면 안 된다(0은 falsy라 통째로 사라진다).
-    const key = ((tier === null || tier === undefined) ? '' : String(tier)).replace('티어', '').trim();
+    const key = (tier === null || tier === undefined ? '' : String(tier)).replace('티어', '').trim();
     const word = TIER_EN[key] || (/^\d+$/.test(key) ? key : '');
     return word ? word + ' TIER' : 'TIER';
 }
@@ -559,13 +607,15 @@ function syncTierCardHeight() {
     card.classList.add('is-measure');
     // 방금 붙인 카드는 바로 재면 안 된다 - 브라우저가 아직 '건너뛸지' 판정 전이라 예상
     // 높이를 그대로 돌려준다. 한 번 그려진 다음 프레임에 재야 진짜 높이가 나온다.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        const h = Math.round(card.getBoundingClientRect().height);
-        const root = document.documentElement;
-        if (h > 0 && root.style.getPropertyValue('--tier-card-h') !== `${h}px`) {
-            root.style.setProperty('--tier-card-h', `${h}px`);
-        }
-    }));
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+            const h = Math.round(card.getBoundingClientRect().height);
+            const root = document.documentElement;
+            if (h > 0 && root.style.getPropertyValue('--tier-card-h') !== `${h}px`) {
+                root.style.setProperty('--tier-card-h', `${h}px`);
+            }
+        })
+    );
 }
 
 function tierStickyOffset() {
@@ -607,7 +657,7 @@ function onTierScopeClick(event) {
     const wantLive = btn.dataset.liveOnly === '1';
     // '방송중'을 다시 눌러도 꺼지게 둔다(필터 버튼처럼 누르는 사람용).
     const next = wantLive ? !TierState.liveOnly : false;
-    if (next === TierState.liveOnly) return;  // 이미 그 보기면 다시 그릴 필요가 없다
+    if (next === TierState.liveOnly) return; // 이미 그 보기면 다시 그릴 필요가 없다
     TierState.liveOnly = next;
     renderTierScope();
     renderTierGroups();
@@ -631,7 +681,7 @@ function captureTierAnchor() {
 
 function restoreTierAnchor(anchor) {
     if (!anchor) return;
-    const offset = tierStickyOffset() + 16;  // .tier-row의 scroll-margin-top과 같은 기준
+    const offset = tierStickyOffset() + 16; // .tier-row의 scroll-margin-top과 같은 기준
 
     let sec = TierState.sections.find(s => s.tier === anchor.tier);
     let keepOffset = true;
@@ -639,9 +689,9 @@ function restoreTierAnchor(anchor) {
         // 보던 티어가 통째로 사라진 경우(그 티어에 방송 중인 사람이 한 명도 없음).
         // 맨 위로 튕기지 말고 원래 순서상 바로 다음 티어로 - 없으면 마지막 티어로 - 데려간다.
         const idx = tierIndex(anchor.tier);
-        sec = TierState.sections.find(s => tierIndex(s.tier) >= idx)
-            || TierState.sections[TierState.sections.length - 1];
-        keepOffset = false;  // 남의 티어에 원래 높이를 맞출 이유는 없다. 그 티어의 처음부터.
+        sec =
+            TierState.sections.find(s => tierIndex(s.tier) >= idx) || TierState.sections[TierState.sections.length - 1];
+        keepOffset = false; // 남의 티어에 원래 높이를 맞출 이유는 없다. 그 티어의 처음부터.
     }
     const el = sec && document.getElementById(sec.id);
     if (!el) return;
@@ -651,7 +701,7 @@ function restoreTierAnchor(anchor) {
     const top = keepOffset ? Math.max(anchor.top, offset + 80 - el.offsetHeight) : offset;
     const delta = el.getBoundingClientRect().top - top;
     if (Math.abs(delta) < 1) return;
-    window.scrollBy({ top: delta, behavior: 'auto' });  // 순간이동이어야 자리가 안 흔들린 것처럼 보인다
+    window.scrollBy({ top: delta, behavior: 'auto' }); // 순간이동이어야 자리가 안 흔들린 것처럼 보인다
 }
 
 // ---------------------------------------------------------------------------
@@ -758,7 +808,7 @@ function applyLiveToCards(setChanged) {
 // 바로 들어오면 보이지 않는 티어 목록 명단을 받지 않는다(두 탭은 이 명단을 쓰지 않는다).
 function enterTierList() {
     if (TierState.listInit) {
-        refreshTierLive();   // 다른 탭에 있던 사이 바뀌었을 수 있다(방송 상태는 목록을 볼 때만 갱신한다)
+        refreshTierLive(); // 다른 탭에 있던 사이 바뀌었을 수 있다(방송 상태는 목록을 볼 때만 갱신한다)
         return TierState.listInit;
     }
     TierState.listInit = initTierList();
@@ -772,8 +822,9 @@ async function initTierList() {
         if (!payload) throw new Error('Supabase tier_members is empty');
     } catch (e) {
         console.error('티어 명단을 불러오지 못했습니다:', e);
-        document.getElementById('tier-root').innerHTML = '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요</div>';
-        TierState.listInit = null;   // 다시 탭을 열면 새로 받는다
+        document.getElementById('tier-root').innerHTML =
+            '<div class="tier-empty">티어 명단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요</div>';
+        TierState.listInit = null; // 다시 탭을 열면 새로 받는다
         return;
     }
 
@@ -782,17 +833,22 @@ async function initTierList() {
     loadTeamLogos(payload.members.map(m => m.team)).then(swapTierTeamLogos);
     TierState.members = payload.members;
     TierState.byId = {};
-    TierState.members.forEach(m => { TierState.byId[tierIdKey(m)] = m; });
+    TierState.members.forEach(m => {
+        TierState.byId[tierIdKey(m)] = m;
+    });
 
     // 썸네일은 화면에 보이는 것만 갱신한다. 방송 중인 사람이 100명을 넘어가면
     // 30초마다 전부 새로 받는 순간 수 MB가 나간다.
     if ('IntersectionObserver' in window) {
-        TierState.thumbObserver = new IntersectionObserver(entries => {
-            entries.forEach(e => {
-                if (e.isIntersecting) TierState.visibleThumbs.add(e.target);
-                else TierState.visibleThumbs.delete(e.target);
-            });
-        }, { rootMargin: '200px' });
+        TierState.thumbObserver = new IntersectionObserver(
+            entries => {
+                entries.forEach(e => {
+                    if (e.isIntersecting) TierState.visibleThumbs.add(e.target);
+                    else TierState.visibleThumbs.delete(e.target);
+                });
+            },
+            { rootMargin: '200px' }
+        );
     }
 
     document.getElementById('tier-scope').addEventListener('click', onTierScopeClick);
@@ -801,11 +857,18 @@ async function initTierList() {
 
     // 스크롤 이벤트는 초당 수십 번 온다. 프레임당 한 번만 계산한다.
     let highlightScheduled = false;
-    window.addEventListener('scroll', () => {
-        if (highlightScheduled) return;
-        highlightScheduled = true;
-        requestAnimationFrame(() => { highlightScheduled = false; highlightTierBar(); });
-    }, { passive: true });
+    window.addEventListener(
+        'scroll',
+        () => {
+            if (highlightScheduled) return;
+            highlightScheduled = true;
+            requestAnimationFrame(() => {
+                highlightScheduled = false;
+                highlightTierBar();
+            });
+        },
+        { passive: true }
+    );
 
     window.addEventListener('resize', syncTierBarHeight);
     window.addEventListener('resize', syncTierCardHeight);
@@ -822,47 +885,59 @@ async function initTierList() {
         tierLiveTimer = setInterval(refreshTierLive, TIER_LIVE_REFRESH_MS);
     };
     const stopTierLive = () => {
-        if (tierLiveTimer) { clearInterval(tierLiveTimer); tierLiveTimer = null; }
+        if (tierLiveTimer) {
+            clearInterval(tierLiveTimer);
+            tierLiveTimer = null;
+        }
     };
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) { stopTierLive(); return; }
+        if (document.hidden) {
+            stopTierLive();
+            return;
+        }
         refreshTierLive();
         startTierLive();
     });
 
     refreshTierLive();
     if (!document.hidden) startTierLive();
-
 }
 
 // ---------------------------------------------------------------------------
 // 시작
 // ---------------------------------------------------------------------------
 // 티어표는 우리 팀 멤버·경기 기록을 쓰지 않으므로 해당 Supabase 요청을 생략한다.
-bootPage(async () => {
-    // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
-    // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
-    ensureTierPick();
+bootPage(
+    async () => {
+        // [리디자인] 모바일 선택 줄은 명단이 오기 전에도 있어야 한다 - 명단 로딩이 실패하면
+        // 아래 renderTierBar가 아예 안 돌아서, 거기서만 만들면 바가 펼쳐진 채로 남는다.
+        ensureTierPick();
 
-    // 주소로 들어온 탭(?view=h2h&p1=..&p2=..)을 되살린다. 상대전적은 자기 몫의 주소를
-    // page-h2h.js가 직접 챙긴다(선수 두 명까지 주소에 담아야 링크 공유가 된다).
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        switchTierView(params.get('view'));
-    }));
-}, {
-    siteData: false,
-    view: params => activateTabView(TIER_TABS, TIER_TABS[params.get('view')] ? params.get('view') : 'list'),
-    // 들어온 탭이 쓰는 데이터를 로고·설정을 기다리지 않고 바로 받기 시작한다. 실패하면 탭이 다시 받는다.
-    prefetch: () => {
-        const params = new URLSearchParams(location.search);
-        const view = params.get('view');
-        if (view === 'h2h' || view === 'analysis') h2hLoadIndex().catch(() => {});
-        // 분석 탭에 선수까지 담긴 주소(공유 링크)면 그 선수의 레이팅 기록도 미리 받는다
-        if (view === 'analysis' && params.get('p')) analysisLoadRating(params.get('p'));
-        // 티어 목록(기본 탭): 명단과 방송 상태(20초 캐시)를 함께 받는다
-        if (!view || view === 'list') {
-            requestTierMembers().then(rows => loadTeamLogos(asArray(rows).map(r => r.affiliation))).catch(() => {});
-            fetchLiveBroadcasts().catch(() => {});
-        }
+        // 주소로 들어온 탭(?view=h2h&p1=..&p2=..)을 되살린다. 상대전적은 자기 몫의 주소를
+        // page-h2h.js가 직접 챙긴다(선수 두 명까지 주소에 담아야 링크 공유가 된다).
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                switchTierView(params.get('view'));
+            })
+        );
     },
-});
+    {
+        siteData: false,
+        view: params => activateTabView(TIER_TABS, TIER_TABS[params.get('view')] ? params.get('view') : 'list'),
+        // 들어온 탭이 쓰는 데이터를 로고·설정을 기다리지 않고 바로 받기 시작한다. 실패하면 탭이 다시 받는다.
+        prefetch: () => {
+            const params = new URLSearchParams(location.search);
+            const view = params.get('view');
+            if (view === 'h2h' || view === 'analysis') h2hLoadIndex().catch(() => {});
+            // 분석 탭에 선수까지 담긴 주소(공유 링크)면 그 선수의 레이팅 기록도 미리 받는다
+            if (view === 'analysis' && params.get('p')) analysisLoadRating(params.get('p'));
+            // 티어 목록(기본 탭): 명단과 방송 상태(20초 캐시)를 함께 받는다
+            if (!view || view === 'list') {
+                requestTierMembers()
+                    .then(rows => loadTeamLogos(asArray(rows).map(r => r.affiliation)))
+                    .catch(() => {});
+                fetchLiveBroadcasts().catch(() => {});
+            }
+        },
+    }
+);

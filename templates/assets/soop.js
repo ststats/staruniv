@@ -8,11 +8,21 @@
 // 돌려주는 모양: { broad: { broad_no, broad_title, current_sum_viewer }, broadStart }. 시청자 수는 최대 2분 전 값이다.
 async function getLiveRealtimeStatus(soopId) {
     try {
-        const row = (await fetchLiveBroadcasts())[String(soopId || '').trim().toLowerCase()];
-        const live = row ? {
-            broad: { broad_no: row.broad_no, broad_title: row.broad_title, current_sum_viewer: row.current_sum_viewer },
-            broadStart: row.broad_start || null,
-        } : null;
+        const row = (await fetchLiveBroadcasts())[
+            String(soopId || '')
+                .trim()
+                .toLowerCase()
+        ];
+        const live = row
+            ? {
+                  broad: {
+                      broad_no: row.broad_no,
+                      broad_title: row.broad_title,
+                      current_sum_viewer: row.current_sum_viewer,
+                  },
+                  broadStart: row.broad_start || null,
+              }
+            : null;
         return { ok: true, live };
     } catch (e) {
         return { ok: false, live: null, error: e };
@@ -29,7 +39,7 @@ async function checkIsLiveRealtime(soopId) {
 function noticeCardFields(member, post) {
     return {
         soopId: member ? member['SOOP ID'] : post.userId,
-        name: member ? member['이름'] : (post.userNick || ''),
+        name: member ? member['이름'] : post.userNick || '',
         title: post.titleName || '(제목 없음)',
         snippet: (post.content && post.content.textContent) || '',
         timeText: formatRelativeTime(post.regDate),
@@ -42,7 +52,9 @@ function noticeCardFields(member, post) {
 // 서로 달라서 링크 주소(href) 또는 동작 속성(act(...)의 결과)을 받는다.
 function homeNoticeCardHtml({ soopId, name, title, snippet, timeText, thumbUrl }, opts) {
     const { href, action, extraClass, dataAttr } = opts || {};
-    const thumbHtml = thumbUrl ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy"${actOn('error', 'imgRemove', ACT.el)}>` : '';
+    const thumbHtml = thumbUrl
+        ? `<img class="home-notice-thumb" src="${escapeHTML(thumbUrl)}" alt="" loading="lazy"${actOn('error', 'imgRemove', ACT.el)}>`
+        : '';
     const cls = `home-notice-card${extraClass ? ' ' + extraClass : ''}`;
     // 다른 페이지로 가는 카드(홈 → 멤버 공지)는 진짜 링크(<a href>)라 새 탭 열기/Ctrl+클릭이 된다.
     // 같은 페이지 안에서 동작만 하는 카드(지난 글 → 최신 글로 올리기)는 버튼 역할로 둔다.
@@ -71,7 +83,8 @@ function homeNoticeCardHtml({ soopId, name, title, snippet, timeText, thumbUrl }
 
 const NEWS_PAGE_SIZE = 10;
 
-const sortNewsByDateDesc = items => items.slice().sort((a, b) => soopDateMs(b.post.regDate) - soopDateMs(a.post.regDate));
+const sortNewsByDateDesc = items =>
+    items.slice().sort((a, b) => soopDateMs(b.post.regDate) - soopDateMs(a.post.regDate));
 
 // SOOP 게시판 API의 regDate("YYYY-MM-DD HH:MM:SS")를 "N분 전" 식으로 변환
 function formatRelativeTime(dateStr) {
@@ -124,7 +137,9 @@ function fetchStoredMemberPosts() {
         return bySoop;
     })().catch(() => null);
     _storedPostsRequest = request;
-    request.then(result => { if (!result && _storedPostsRequest === request) _storedPostsRequest = null; });
+    request.then(result => {
+        if (!result && _storedPostsRequest === request) _storedPostsRequest = null;
+    });
     return request;
 }
 
@@ -135,10 +150,17 @@ async function fetchRecentStoredPosts(limit) {
         const data = await Api.recentPosts(limit);
         if (!Array.isArray(data) || !data.length) return null;
         // 카드가 쓰는 모양(noticeCardFields)으로 되돌린다
-        return data.filter(r => r.regDate).map(r => ({
-            soopId: String(r.soop_id || '').toLowerCase(),
-            post: { titleName: r.titleName, regDate: r.regDate, content: { textContent: r.text || '' }, photos: r.thumb ? [{ url: r.thumb }] : [] },
-        }));
+        return data
+            .filter(r => r.regDate)
+            .map(r => ({
+                soopId: String(r.soop_id || '').toLowerCase(),
+                post: {
+                    titleName: r.titleName,
+                    regDate: r.regDate,
+                    content: { textContent: r.text || '' },
+                    photos: r.thumb ? [{ url: r.thumb }] : [],
+                },
+            }));
     } catch (e) {
         return null;
     }
@@ -149,7 +171,11 @@ async function fetchMemberFeed(soopId, page) {
     if (Number(page) === 1) {
         const stored = await fetchStoredMemberPosts();
         const hit = stored && stored.get(String(soopId || '').toLowerCase());
-        if (hit) return { posts: hit.posts.slice().sort((a, b) => soopDateMs(b.regDate) - soopDateMs(a.regDate)), totalPages: hit.totalPages };
+        if (hit)
+            return {
+                posts: hit.posts.slice().sort((a, b) => soopDateMs(b.regDate) - soopDateMs(a.regDate)),
+                totalPages: hit.totalPages,
+            };
     }
     try {
         const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board?perPage=${NEWS_PAGE_SIZE}&page=${page}`;

@@ -50,16 +50,20 @@ function entryWithTimeout(promise, label) {
 // Api 조회에 넘기는 옵션: 요청에 시간 제한(label은 오류 문구)
 const entryPaging = label => ({ wrap: q => entryWithTimeout(q, label) });
 // 맞대결 기간. 상대전적·분석 탭의 기간 칩과 같은 칸이다.
-const ENTRY_PERIODS = [['all', '전체'], ['365', '최근 1년'], ['90', '최근 90일'], ['30', '최근 30일']];
-const ENTRY_POSTER_W = 1200;      // 저장되는 포스터 가로(px)
+const ENTRY_PERIODS = [
+    ['all', '전체'],
+    ['365', '최근 1년'],
+    ['90', '최근 90일'],
+    ['30', '최근 30일'],
+];
+const ENTRY_POSTER_W = 1200; // 저장되는 포스터 가로(px)
 // 대학대전은 경기 수가 정해져 있다(9경기 5선승이 흔하다). 동일 티어로 각자 한 번씩만
 // 짝지으면 그 수가 안 채워지는 일이 잦은데, 그때는 채워진 만큼 두고 한 번 더 돌려
 // 중복으로 나머지를 메운다.
 const ENTRY_TARGET_DEFAULT = 9;
 // 후보를 늘어놓는 차례. 티어 사다리 순서(갓이 맨 위)가 아니라 대학대전에서 경기를
 // 올리는 차례를 따른다 - 숫자 티어가 앞이고, 카드 티어는 뒤에 붙는다.
-const ENTRY_TIER_SEQ = ['1', '2', '3', '4', '5', '6', '7', '8',
-    '갓', '킹', '잭', '조커', '스페이드', '0', '베이비'];
+const ENTRY_TIER_SEQ = ['1', '2', '3', '4', '5', '6', '7', '8', '갓', '킹', '잭', '조커', '스페이드', '0', '베이비'];
 
 function entrySeqIndex(tier) {
     const i = ENTRY_TIER_SEQ.indexOf(String(tier));
@@ -70,26 +74,26 @@ const EntryState = {
     index: null,
     loading: null,
     ratingMetaLoading: null,
-    teams: [null, null],     // 소속 이름
-    matches: [],             // [{a, b}]  a/b는 선수 id
-    sel: [null, null],       // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
-    query: ['', ''],         // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
-    labels: ['', ''],        // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
-    note: '',                // 포스터 제목(예: '결승전 · 2026-09-21'). 비우면 오늘 날짜
-    period: '90',            // 맞대결 기간(ENTRY_PERIODS). 기본은 최근 90일 - 옛날 천적
-                             // 관계보다 지금 폼이 엔트리를 짜는 데 쓸모 있다.
-    rows: {},                // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
-    rowsLoaded: {},          // 선수id -> true: 통산 전적을 받아 둠(예측은 늘 통산을 쓴다)
-    rowLoads: {},            // 선수id -> 진행 중 요청(같은 선수를 연속 클릭해도 중복 조회 금지)
+    teams: [null, null], // 소속 이름
+    matches: [], // [{a, b}]  a/b는 선수 id
+    sel: [null, null], // 지금 고른 선수(양쪽에서 하나씩 고르면 매치가 된다)
+    query: ['', ''], // 칸별 검색어. 비어 있으면 그 소속 명단을 보여 준다
+    labels: ['', ''], // 직접 적은 진영 이름(대학대전이 아닐 때 쓴다)
+    note: '', // 포스터 제목(예: '결승전 · 2026-09-21'). 비우면 오늘 날짜
+    period: '90', // 맞대결 기간(ENTRY_PERIODS). 기본은 최근 90일 - 옛날 천적
+    // 관계보다 지금 폼이 엔트리를 짜는 데 쓸모 있다.
+    rows: {}, // 선수id -> 경기 행 [날짜, 상대id, 이김, 맵, 형식] (받아 온 것)
+    rowsLoaded: {}, // 선수id -> true: 통산 전적을 받아 둠(예측은 늘 통산을 쓴다)
+    rowLoads: {}, // 선수id -> 진행 중 요청(같은 선수를 연속 클릭해도 중복 조회 금지)
     refreshToken: 0,
-    h2hCache: {},            // "기간|a|b" -> {w, l}
-    probCache: new Map(),    // "a|b|맵" -> 예상승률 결과. 입력(선수 전적·레이팅·명단)이 바뀌면 비운다
-    shards: {},              // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
-    target: ENTRY_TARGET_DEFAULT,   // 채워야 하는 경기 수
-    autoTiers: new Set(),       // 자동매칭에 포함할 티어
-    analysisOpen: {},           // 경기별 상세 분석 펼침 상태
-    mapPickerOpen: null,        // 열려 있는 경기별 맵 선택창
-    mapPickerAll: {},           // 경기별 전체 맵 목록 펼침 여부
+    h2hCache: {}, // "기간|a|b" -> {w, l}
+    probCache: new Map(), // "a|b|맵" -> 예상승률 결과. 입력(선수 전적·레이팅·명단)이 바뀌면 비운다
+    shards: {}, // 샤드 경계 -> 진행 중이거나 끝난 요청(같은 샤드 재요청 방지)
+    target: ENTRY_TARGET_DEFAULT, // 채워야 하는 경기 수
+    autoTiers: new Set(), // 자동매칭에 포함할 티어
+    analysisOpen: {}, // 경기별 상세 분석 펼침 상태
+    mapPickerOpen: null, // 열려 있는 경기별 맵 선택창
+    mapPickerAll: {}, // 경기별 전체 맵 목록 펼침 여부
 };
 
 // ---------------------------------------------------------------------------
@@ -201,7 +205,9 @@ async function entryEnsureLoaded() {
                 entryProbsChanged();
                 throw e;
             })
-            .finally(() => { EntryState.loading = null; });
+            .finally(() => {
+                EntryState.loading = null;
+            });
     }
 
     try {
@@ -211,15 +217,16 @@ async function entryEnsureLoaded() {
         renderEntryPeriod();
         renderEntry();
         if (!EntryState.ratingMetaLoading) {
-            EntryState.ratingMetaLoading = entryLoadRatingMetaInBackground()
-                .finally(() => { EntryState.ratingMetaLoading = null; });
+            EntryState.ratingMetaLoading = entryLoadRatingMetaInBackground().finally(() => {
+                EntryState.ratingMetaLoading = null;
+            });
         }
     } catch (e) {
         console.error('엔트리 데이터를 불러오지 못했습니다:', e);
         ['a', 'b'].forEach(k => {
             const box = document.getElementById(`entry-body-${k}`);
-            if (box) box.innerHTML =
-                `<div class="h2h-suggest-empty">명단을 불러오지 못했습니다<br><small>${escapeHTML(e.message || String(e))}</small></div>`;
+            if (box)
+                box.innerHTML = `<div class="h2h-suggest-empty">명단을 불러오지 못했습니다<br><small>${escapeHTML(e.message || String(e))}</small></div>`;
         });
     }
     return EntryState.index;
@@ -252,8 +259,12 @@ function entryRoster(team) {
             return team ? t === team : true;
         })
         .map(([pid, p]) => ({ pid, ...p }))
-        .sort((a, b) => entrySeqIndex(a.t) - entrySeqIndex(b.t) || (a.k || 99) - (b.k || 99)
-            || String(a.n).localeCompare(String(b.n), 'ko'));
+        .sort(
+            (a, b) =>
+                entrySeqIndex(a.t) - entrySeqIndex(b.t) ||
+                (a.k || 99) - (b.k || 99) ||
+                String(a.n).localeCompare(String(b.n), 'ko')
+        );
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +281,8 @@ function entryMapDict() {
 function entryMapName(idOrName) {
     const maps = entryMapDict();
     if (idOrName === undefined || idOrName === null || idOrName === '') return '';
-    if (Object.prototype.hasOwnProperty.call(maps, String(idOrName))) return String(maps[String(idOrName)] || '').trim();
+    if (Object.prototype.hasOwnProperty.call(maps, String(idOrName)))
+        return String(maps[String(idOrName)] || '').trim();
     return String(idOrName || '').trim();
 }
 
@@ -279,17 +291,21 @@ function entryNormalizeMapName(value) {
 }
 
 function entryMapList() {
-    const names = Object.values(entryMapDict()).map(v => String(v || '').trim()).filter(Boolean);
+    const names = Object.values(entryMapDict())
+        .map(v => String(v || '').trim())
+        .filter(Boolean);
     return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'ko'));
 }
 
 function entryRecentMapList() {
     const maps = entryMapDict();
     const raw = (EntryState.index && EntryState.index.recentMaps) || [];
-    const names = raw.map(item => {
-        const id = Array.isArray(item) ? item[0] : item;
-        return entryMapName(id);
-    }).filter(Boolean);
+    const names = raw
+        .map(item => {
+            const id = Array.isArray(item) ? item[0] : item;
+            return entryMapName(id);
+        })
+        .filter(Boolean);
     if (names.length) return [...new Set(names)];
     return entryMapList();
 }
@@ -297,7 +313,9 @@ function entryRecentMapList() {
 function renderEntryMapDatalist() {
     const list = document.getElementById('entry-map-options');
     if (!list) return;
-    list.innerHTML = entryMapList().map(name => `<option value="${escapeHTML(name)}"></option>`).join('');
+    list.innerHTML = entryMapList()
+        .map(name => `<option value="${escapeHTML(name)}"></option>`)
+        .join('');
 }
 
 // 선수 한 명의 레이팅(Elo 점수). 전 선수 θ(ststat v4) -> 순위 선수 rawRating ->
@@ -316,13 +334,16 @@ function entryRating(p) {
 
 // Elo 점수 차이 <-> 로짓. ststat가 400/ln10 배율로 내보내서 그대로 맞아떨어진다.
 const ENTRY_ELO_TO_LOGIT = Math.LN10 / 400;
-function entrySigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+function entrySigmoid(x) {
+    return 1 / (1 + Math.exp(-x));
+}
 
 // 종족 상성(Elo 점수): x 종족이 y 종족을 상대로 가진 공통 우위. ststat 메타의
 // raceMatchup {TZ, ZP, PT}에서 읽고, 반대 방향은 부호만 바꾼다. 없으면 0.
 function entryRaceEdge(xRace, yRace) {
     const table = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.raceMatchup) || {};
-    const x = entryNormalizeRace(xRace), y = entryNormalizeRace(yRace);
+    const x = entryNormalizeRace(xRace),
+        y = entryNormalizeRace(yRace);
     if (!x || !y || x === y) return 0;
     const direct = Number(table[x + y]);
     if (Number.isFinite(direct)) return direct;
@@ -333,8 +354,10 @@ function entryRaceEdge(xRace, yRace) {
 // 두 선수의 모델 로짓(레이팅 차이 + 종족 상성). 예측의 중심값이다.
 function entryModelLogit(aPid, bPid) {
     const players = entryPlayers();
-    const a = players[aPid], b = players[bPid];
-    const ra = entryRating(a), rb = entryRating(b);
+    const a = players[aPid],
+        b = players[bPid];
+    const ra = entryRating(a),
+        rb = entryRating(b);
     if (!ra || !rb) return null;
     return (ra.value - rb.value + entryRaceEdge(a && a.r, b && b.r)) * ENTRY_ELO_TO_LOGIT;
 }
@@ -368,7 +391,9 @@ const ENTRY_MAX_ADJ_LOGIT = 0.6;
 const ENTRY_ANALYSIS_SMALL_SAMPLE = 5;
 const ENTRY_ANALYSIS_GOOD_SAMPLE = 12;
 
-function entryClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function entryClamp(v, lo, hi) {
+    return Math.max(lo, Math.min(hi, v));
+}
 function entryAdjLabel(v) {
     const pp = v * 100;
     return `${pp >= 0 ? '+' : ''}${pp.toFixed(1)}%p`;
@@ -390,7 +415,10 @@ function entryRecentWeight(dateText) {
 // 행 형식: [날짜, 상대id, 이김(1/0), 맵, 형식]. 상대 레이팅이 없는 경기는 기대를 못 세우니 뺀다.
 function entryResidualEdge(pid, predicate, tau) {
     const rows = entryRowsInPeriod(EntryState.rows[pid] || [], ENTRY_PREDICTION_PERIOD);
-    let num = 0, info = 0, rawW = 0, rawL = 0;
+    let num = 0,
+        info = 0,
+        rawW = 0,
+        rawL = 0;
     rows.forEach(r => {
         if (predicate && !predicate(r)) return;
         const logit = entryModelLogit(pid, String(r[1]));
@@ -400,7 +428,8 @@ function entryResidualEdge(pid, predicate, tau) {
         const won = Number(r[2]) === 1;
         num += w * ((won ? 1 : 0) - p);
         info += w * p * (1 - p);
-        if (won) rawW += 1; else rawL += 1;
+        if (won) rawW += 1;
+        else rawL += 1;
     });
     const edge = entryClamp(num / (info + tau), -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
     return { edge, info, rawW, rawL, rawM: rawW + rawL };
@@ -416,7 +445,7 @@ function entrySampleLabel(n) {
 
 function entryRaceLabel(code) {
     const key = entryNormalizeRace(code);
-    return ({ T:'테란', Z:'저그', P:'프로토스' })[key] || key || '미상';
+    return { T: '테란', Z: '저그', P: '프로토스' }[key] || key || '미상';
 }
 
 // 예상승률은 선수마다 경기 기록을 여러 번 훑어서 비싸다. 설명 펼치기·맵 선택창 열기처럼 입력이
@@ -434,7 +463,8 @@ function entryWinProb(aPid, bPid, mapName) {
 
 function entryComputeWinProb(aPid, bPid, mapName) {
     const players = entryPlayers();
-    const a = players[aPid], b = players[bPid];
+    const a = players[aPid],
+        b = players[bPid];
     const ra = entryRating(a);
     const rb = entryRating(b);
     if (!ra || !rb) return null;
@@ -449,20 +479,34 @@ function entryComputeWinProb(aPid, bPid, mapName) {
     const h2hLogit = h2h.edge;
 
     // 2) 종족전: 각자가 상대 종족에게 레이팅 + 공통 상성 기대보다 얼마나 더 강한지, 양쪽 차이.
-    let raceLogit = 0, raceA = null, raceB = null;
+    let raceLogit = 0,
+        raceA = null,
+        raceB = null;
     if (a && b && a.r && b.r) {
-        raceA = entryResidualEdge(aPid, row => {
-            const opp = players[row[1]]; return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(b.r);
-        }, ENTRY_RACE_TAU);
-        raceB = entryResidualEdge(bPid, row => {
-            const opp = players[row[1]]; return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(a.r);
-        }, ENTRY_RACE_TAU);
+        raceA = entryResidualEdge(
+            aPid,
+            row => {
+                const opp = players[row[1]];
+                return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(b.r);
+            },
+            ENTRY_RACE_TAU
+        );
+        raceB = entryResidualEdge(
+            bPid,
+            row => {
+                const opp = players[row[1]];
+                return opp && entryNormalizeRace(opp.r) === entryNormalizeRace(a.r);
+            },
+            ENTRY_RACE_TAU
+        );
         raceLogit = entryClamp(raceA.edge - raceB.edge, -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
     }
 
     // 3) 선택 맵: 각자 그 맵에서 기대보다 얼마나 더 잘했는지, 양쪽 차이.
     const normalizedMap = entryNormalizeMapName(mapName);
-    let mapLogit = 0, mapA = null, mapB = null;
+    let mapLogit = 0,
+        mapA = null,
+        mapB = null;
     if (normalizedMap) {
         mapA = entryResidualEdge(aPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_MAP_TAU);
         mapB = entryResidualEdge(bPid, row => entryNormalizeMapName(row[3]) === normalizedMap, ENTRY_MAP_TAU);
@@ -470,15 +514,25 @@ function entryComputeWinProb(aPid, bPid, mapName) {
     }
 
     const p = entrySigmoid(baseLogit + h2hLogit + raceLogit + mapLogit);
-    const h2hAdj = asPp(h2hLogit), raceAdj = asPp(raceLogit), mapAdj = asPp(mapLogit);
+    const h2hAdj = asPp(h2hLogit),
+        raceAdj = asPp(raceLogit),
+        mapAdj = asPp(mapLogit);
     const factors = [
-        { key:'h2h', adj:h2hAdj, logit:h2hLogit, n:h2h.rawM, rawW:h2h.rawW, rawL:h2h.rawL, rawM:h2h.rawM },
-        { key:'race', adj:raceAdj, logit:raceLogit, a:raceA, b:raceB },
-        { key:'map', adj:mapAdj, logit:mapLogit, a:mapA, b:mapB, map:entryMapName(mapName) },
+        { key: 'h2h', adj: h2hAdj, logit: h2hLogit, n: h2h.rawM, rawW: h2h.rawW, rawL: h2h.rawL, rawM: h2h.rawM },
+        { key: 'race', adj: raceAdj, logit: raceLogit, a: raceA, b: raceB },
+        { key: 'map', adj: mapAdj, logit: mapLogit, a: mapA, b: mapB, map: entryMapName(mapName) },
     ];
     return {
-        p, base, n:h2h.rawM, w:h2h.rawW, l:h2h.rawL, exact:ra.exact && rb.exact,
-        factors, h2hAdj, raceAdj, mapAdj,
+        p,
+        base,
+        n: h2h.rawM,
+        w: h2h.rawW,
+        l: h2h.rawL,
+        exact: ra.exact && rb.exact,
+        factors,
+        h2hAdj,
+        raceAdj,
+        mapAdj,
         raceEdge: entryRaceEdge(a && a.r, b && b.r),
     };
 }
@@ -509,10 +563,9 @@ async function entryLoadPlayerRows(pid) {
 
     if (EntryState.index) {
         EntryState.index.maps = maps;
-        EntryState.index.recentMaps = [
-            ...recent,
-            ...(EntryState.index.recentMaps || []),
-        ].filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 30);
+        EntryState.index.recentMaps = [...recent, ...(EntryState.index.recentMaps || [])]
+            .filter((v, i, a) => v && a.indexOf(v) === i)
+            .slice(0, 30);
     }
 
     return out;
@@ -526,34 +579,39 @@ async function entryLoadH2h(pids) {
     const unique = [...new Set(pids)].filter(Boolean);
     let changed = false;
 
-    await Promise.all(unique.map(async pid => {
-        if (EntryState.rowsLoaded[pid]) return;
-        changed = true;
+    await Promise.all(
+        unique.map(async pid => {
+            if (EntryState.rowsLoaded[pid]) return;
+            changed = true;
 
-        const loading = EntryState.rowLoads[pid];
-        if (loading) {
-            await loading;
-            return;
-        }
+            const loading = EntryState.rowLoads[pid];
+            if (loading) {
+                await loading;
+                return;
+            }
 
-        const promise = entryLoadPlayerRows(pid)
-            .then(rows => {
-                EntryState.rows[pid] = rows;
-                EntryState.rowsLoaded[pid] = true;
-                entryProbsChanged();
-                renderEntryMapDatalist();
-            })
-            .catch(e => {
-                console.warn(`엔트리 선수 ${pid} 전적 조회 실패:`, e);
-                if (!EntryState.rows[pid]) { EntryState.rows[pid] = []; entryProbsChanged(); }
-            })
-            .finally(() => {
-                if (EntryState.rowLoads[pid] === promise) delete EntryState.rowLoads[pid];
-            });
+            const promise = entryLoadPlayerRows(pid)
+                .then(rows => {
+                    EntryState.rows[pid] = rows;
+                    EntryState.rowsLoaded[pid] = true;
+                    entryProbsChanged();
+                    renderEntryMapDatalist();
+                })
+                .catch(e => {
+                    console.warn(`엔트리 선수 ${pid} 전적 조회 실패:`, e);
+                    if (!EntryState.rows[pid]) {
+                        EntryState.rows[pid] = [];
+                        entryProbsChanged();
+                    }
+                })
+                .finally(() => {
+                    if (EntryState.rowLoads[pid] === promise) delete EntryState.rowLoads[pid];
+                });
 
-        EntryState.rowLoads[pid] = promise;
-        await promise;
-    }));
+            EntryState.rowLoads[pid] = promise;
+            await promise;
+        })
+    );
     return changed;
 }
 
@@ -577,15 +635,20 @@ function entryH2hRec(a, b, period) {
     const key = `${per}|${a}|${b}`;
     if (EntryState.h2hCache[key]) return EntryState.h2hCache[key];
     const since = per === 'all' ? '' : entrySinceKey(per);
-    let w = 0; let l = 0;
+    let w = 0;
+    let l = 0;
     let rows = EntryState.rows[a];
     let flip = false;
-    if (!rows) { rows = EntryState.rows[b]; flip = true; }
+    if (!rows) {
+        rows = EntryState.rows[b];
+        flip = true;
+    }
     if (!rows) return null;
     const opp = String(flip ? a : b);
     rows.forEach(r => {
         if (String(r[1]) !== opp || (since && String(r[0]) < since)) return;
-        if (r[2]) w += 1; else l += 1;
+        if (r[2]) w += 1;
+        else l += 1;
     });
     const rec = flip ? { w: l, l: w } : { w, l };
     EntryState.h2hCache[key] = rec;
@@ -607,17 +670,19 @@ function entryRowsInPeriod(rows, period) {
 
 function entryRecordText(w, l) {
     const n = w + l;
-    return n ? `${w}승 ${l}패 · ${(w / n * 100).toFixed(1)}%` : '전적 없음';
+    return n ? `${w}승 ${l}패 · ${((w / n) * 100).toFixed(1)}%` : '전적 없음';
 }
 
 function entryRaceRecord(pid, oppRace, period) {
     const targetRace = entryNormalizeRace(oppRace);
     const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
-    let w = 0; let l = 0;
+    let w = 0;
+    let l = 0;
     rows.forEach(r => {
         const opp = entryPlayers()[String(r[1])];
         if (!opp || entryNormalizeRace(opp.r) !== targetRace) return;
-        if (Number(r[2]) === 1) w += 1; else l += 1;
+        if (Number(r[2]) === 1) w += 1;
+        else l += 1;
     });
     return { w, l, m: w + l };
 }
@@ -626,10 +691,12 @@ function entryMapRecord(pid, mapName, period) {
     const key = entryNormalizeMapName(mapName);
     if (!key) return { w: 0, l: 0, m: 0 };
     const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
-    let w = 0; let l = 0;
+    let w = 0;
+    let l = 0;
     rows.forEach(r => {
         if (entryNormalizeMapName(r[3]) !== key) return;
-        if (Number(r[2]) === 1) w += 1; else l += 1;
+        if (Number(r[2]) === 1) w += 1;
+        else l += 1;
     });
     return { w, l, m: w + l };
 }
@@ -644,7 +711,8 @@ function entryAnalysisStat(label, adj, detail, sampleClass) {
 
 function entryAnalysisHtml(match, wp) {
     const players = entryPlayers();
-    const a = players[match.a]; const b = players[match.b];
+    const a = players[match.a];
+    const b = players[match.b];
     if (!a || !b || !wp) return '';
     const ra = entryRating(a);
     const rb = entryRating(b);
@@ -653,15 +721,17 @@ function entryAnalysisHtml(match, wp) {
     const raceA = entryRaceRecord(match.a, b.r, EntryState.period);
     const raceB = entryRaceRecord(match.b, a.r, EntryState.period);
     const raceN = Math.min(raceA.m, raceB.m);
-    const mapA = mapName ? entryMapRecord(match.a, mapName, EntryState.period) : {w:0,l:0,m:0};
-    const mapB = mapName ? entryMapRecord(match.b, mapName, EntryState.period) : {w:0,l:0,m:0};
+    const mapA = mapName ? entryMapRecord(match.a, mapName, EntryState.period) : { w: 0, l: 0, m: 0 };
+    const mapB = mapName ? entryMapRecord(match.b, mapName, EntryState.period) : { w: 0, l: 0, m: 0 };
     const mapN = Math.min(mapA.m, mapB.m);
-    const displayH2h = entryH2hRec(match.a, match.b, EntryState.period) || { w:0, l:0 };
+    const displayH2h = entryH2hRec(match.a, match.b, EntryState.period) || { w: 0, l: 0 };
     const h2hN = displayH2h.w + displayH2h.l;
     const totalAdj = wp.p - base;
     const strongest = [
-        ['맞대결', wp.h2hAdj || 0], ['종족전', wp.raceAdj || 0], ['맵', wp.mapAdj || 0]
-    ].sort((x,y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
+        ['맞대결', wp.h2hAdj || 0],
+        ['종족전', wp.raceAdj || 0],
+        ['맵', wp.mapAdj || 0],
+    ].sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
     let summary = '레이팅 차이가 예측의 중심입니다';
     if (strongest && Math.abs(strongest[1]) >= 0.008) {
         const side = strongest[1] > 0 ? a.n : b.n;
@@ -675,14 +745,15 @@ function entryAnalysisHtml(match, wp) {
         ? `${entryPeriodLabel()} ${displayH2h.w}승 ${displayH2h.l}패 · ${entrySampleLabel(h2hN)}`
         : '맞대결 표본 없음';
     const raceEdge = Number(wp.raceEdge) || 0;
-    const raceEdgeText = Math.abs(raceEdge) >= 0.5
-        ? ` · 종족 상성 ${raceEdge > 0 ? escapeHTML(a.n) : escapeHTML(b.n)} +${Math.abs(raceEdge).toFixed(0)}점`
-        : '';
+    const raceEdgeText =
+        Math.abs(raceEdge) >= 0.5
+            ? ` · 종족 상성 ${raceEdge > 0 ? escapeHTML(a.n) : escapeHTML(b.n)} +${Math.abs(raceEdge).toFixed(0)}점`
+            : '';
     const ratingDetail = `${escapeHTML(a.n)} ${ra ? ra.value.toFixed(0) : '—'} · ${escapeHTML(b.n)} ${rb ? rb.value.toFixed(0) : '—'}${raceEdgeText} · 최근 90일 가중`;
     return `<div class="entry-analysis-panel">
         <div class="entry-analysis-head">
-            <div><span class="entry-analysis-eyebrow">WIN PROBABILITY</span><strong>${escapeHTML(a.n)} ${(wp.p*100).toFixed(1)}%</strong><span class="entry-analysis-vs">${escapeHTML(b.n)} ${((1-wp.p)*100).toFixed(1)}%</span></div>
-            <span class="entry-analysis-total">기본 ${(base*100).toFixed(1)}% → ${entryAdjLabel(totalAdj)}</span>
+            <div><span class="entry-analysis-eyebrow">WIN PROBABILITY</span><strong>${escapeHTML(a.n)} ${(wp.p * 100).toFixed(1)}%</strong><span class="entry-analysis-vs">${escapeHTML(b.n)} ${((1 - wp.p) * 100).toFixed(1)}%</span></div>
+            <span class="entry-analysis-total">기본 ${(base * 100).toFixed(1)}% → ${entryAdjLabel(totalAdj)}</span>
         </div>
         <p class="entry-analysis-summary">${summary}</p>
         <div class="entry-analysis-grid">
@@ -728,11 +799,14 @@ function renderEntryTeamChips() {
     [0, 1].forEach(side => {
         const el = document.getElementById(side === 0 ? 'entry-team-a' : 'entry-team-b');
         if (!el) return;
-        el.innerHTML = '<option value="">전체</option>'
-            + list.map(t => {
-                const taken = EntryState.teams[1 - side] === t;
-                return `<option value="${escapeHTML(t)}"${taken ? ' disabled' : ''}>${escapeHTML(t)}</option>`;
-            }).join('');
+        el.innerHTML =
+            '<option value="">전체</option>' +
+            list
+                .map(t => {
+                    const taken = EntryState.teams[1 - side] === t;
+                    return `<option value="${escapeHTML(t)}"${taken ? ' disabled' : ''}>${escapeHTML(t)}</option>`;
+                })
+                .join('');
         el.value = EntryState.teams[side] || '';
     });
 }
@@ -804,10 +878,13 @@ function entrySameTierPairs() {
     // 경기를 올리는 차례대로 세운다(ENTRY_TIER_SEQ). 같은 티어 안에서는 티어 안 순위 순.
     const players = entryPlayers();
     out.sort((x, y) => {
-        const px = players[x.a]; const py = players[y.a];
-        return entrySeqIndex(px.t) - entrySeqIndex(py.t)
-            || (px.k || 99) - (py.k || 99)
-            || (players[x.b].k || 99) - (players[y.b].k || 99);
+        const px = players[x.a];
+        const py = players[y.a];
+        return (
+            entrySeqIndex(px.t) - entrySeqIndex(py.t) ||
+            (px.k || 99) - (py.k || 99) ||
+            (players[x.b].k || 99) - (players[y.b].k || 99)
+        );
     });
     return out;
 }
@@ -817,8 +894,16 @@ function entrySameTierPairs() {
 // 여러 줄에 있는 것도 그대로 둔다(9칸을 같은 티어로 다 못 채우면 그렇게 메운다).
 // 여기서 사람이 × 로 추려 경기 수만큼 남기면 그게 곧 엔트리다.
 function entryAutoTierChoices() {
-    const a = new Set(entryRoster(EntryState.teams[0]).map(p => String(p.t || '')).filter(Boolean));
-    const b = new Set(entryRoster(EntryState.teams[1]).map(p => String(p.t || '')).filter(Boolean));
+    const a = new Set(
+        entryRoster(EntryState.teams[0])
+            .map(p => String(p.t || ''))
+            .filter(Boolean)
+    );
+    const b = new Set(
+        entryRoster(EntryState.teams[1])
+            .map(p => String(p.t || ''))
+            .filter(Boolean)
+    );
     return ENTRY_TIER_SEQ.filter(t => a.has(t) && b.has(t));
 }
 
@@ -827,10 +912,14 @@ function renderEntryAutoTierPicker() {
     if (!root) return;
     const tiers = entryAutoTierChoices();
     for (const t of [...EntryState.autoTiers]) if (!tiers.includes(t)) EntryState.autoTiers.delete(t);
-    root.innerHTML = tiers.length ? tiers.map(t => {
-        const on = EntryState.autoTiers.has(t);
-        return `<button type="button" class="entry-auto-tier-chip${on ? ' is-active' : ''}" aria-pressed="${on}"${act('entryToggleAutoTier', t)}>${escapeHTML(tierLabel(t))}</button>`;
-    }).join('') : '<span class="entry-auto-tier-empty">양쪽 소속에 공통으로 있는 티어가 없습니다</span>';
+    root.innerHTML = tiers.length
+        ? tiers
+              .map(t => {
+                  const on = EntryState.autoTiers.has(t);
+                  return `<button type="button" class="entry-auto-tier-chip${on ? ' is-active' : ''}" aria-pressed="${on}"${act('entryToggleAutoTier', t)}>${escapeHTML(tierLabel(t))}</button>`;
+              })
+              .join('')
+        : '<span class="entry-auto-tier-empty">양쪽 소속에 공통으로 있는 티어가 없습니다</span>';
 }
 
 function entryToggleAutoTierPicker() {
@@ -916,7 +1005,7 @@ async function entryRefreshProbs() {
 const ENTRY_SERIES_FORM_SIGMA = 0.25;
 // 표준정규 N(0,1) 기대값용 5점 가우스-에르미트 마디와 가중치
 const ENTRY_GH_NODES = [-2.0201828705, -0.9585724646, 0, 0.9585724646, 2.0201828705];
-const ENTRY_GH_WEIGHTS = [0.0112574113, 0.2220759220, 0.5333333333, 0.2220759220, 0.0112574113];
+const ENTRY_GH_WEIGHTS = [0.0112574113, 0.222075922, 0.5333333333, 0.222075922, 0.0112574113];
 
 function entrySeriesSim(ps, games) {
     const logit = p => Math.log(entryClamp(p, 1e-6, 1 - 1e-6) / (1 - entryClamp(p, 1e-6, 1 - 1e-6)));
@@ -925,14 +1014,26 @@ function entrySeriesSim(ps, games) {
     let first = null;
     ENTRY_GH_NODES.forEach((z, i) => {
         const shift = z * ENTRY_SERIES_FORM_SIGMA;
-        const run = entrySeriesSimIndependent(ps.map(p => entrySigmoid(logit(p) + shift)), games);
+        const run = entrySeriesSimIndependent(
+            ps.map(p => entrySigmoid(logit(p) + shift)),
+            games
+        );
         const w = ENTRY_GH_WEIGHTS[i];
         if (!first) first = run;
-        mixed.pA += w * run.pA; mixed.pB += w * run.pB;
-        mixed.eA += w * run.eA; mixed.eB += w * run.eB;
-        run.all.forEach(([a, b, v]) => { const k = `${a}|${b}`; scores.set(k, (scores.get(k) || 0) + w * v); });
+        mixed.pA += w * run.pA;
+        mixed.pB += w * run.pB;
+        mixed.eA += w * run.eA;
+        mixed.eB += w * run.eB;
+        run.all.forEach(([a, b, v]) => {
+            const k = `${a}|${b}`;
+            scores.set(k, (scores.get(k) || 0) + w * v);
+        });
     });
-    const all = [...scores.entries()].map(([k, v]) => { const [a, b] = k.split('|').map(Number); return [a, b, v]; })
+    const all = [...scores.entries()]
+        .map(([k, v]) => {
+            const [a, b] = k.split('|').map(Number);
+            return [a, b, v];
+        })
         .sort((x, y) => y[2] - x[2]);
     return { need: first.need, ...mixed, top: all.slice(0, 2), filled: first.filled };
 }
@@ -948,21 +1049,29 @@ function entrySeriesSimIndependent(ps, games) {
         const next = new Map();
         live.forEach((v, key) => {
             const [a, b] = key.split('|').map(Number);
-            [[a + 1, b, v * p], [a, b + 1, v * (1 - p)]].forEach(([x, y, q]) => {
+            [
+                [a + 1, b, v * p],
+                [a, b + 1, v * (1 - p)],
+            ].forEach(([x, y, q]) => {
                 const k = `${x}|${y}`;
-                const bag = (x >= need || y >= need) ? done : next;
+                const bag = x >= need || y >= need ? done : next;
                 bag.set(k, (bag.get(k) || 0) + q);
             });
         });
         live = next;
     });
-    live.forEach((v, k) => done.set(k, (done.get(k) || 0) + v));   // 짝수 경기에서 비긴 경우
-    let pA = 0; let pB = 0; let eA = 0; let eB = 0;
+    live.forEach((v, k) => done.set(k, (done.get(k) || 0) + v)); // 짝수 경기에서 비긴 경우
+    let pA = 0;
+    let pB = 0;
+    let eA = 0;
+    let eB = 0;
     const scores = [];
     done.forEach((v, k) => {
         const [a, b] = k.split('|').map(Number);
-        if (a >= need) pA += v; else if (b >= need) pB += v;
-        eA += a * v; eB += b * v;
+        if (a >= need) pA += v;
+        else if (b >= need) pB += v;
+        eA += a * v;
+        eB += b * v;
         scores.push([a, b, v]);
     });
     scores.sort((x, y) => y[2] - x[2]);
@@ -977,18 +1086,23 @@ function entrySeriesSimIndependent(ps, games) {
 const ENTRY_SEARCH_MAX = 40;
 
 function entrySearch(q) {
-    const key = String(q || '').trim().toLowerCase();
+    const key = String(q || '')
+        .trim()
+        .toLowerCase();
     if (!key) return [];
     const players = entryPlayers();
     return Object.entries(players)
         .filter(([, p]) => {
             if (String(p.tm || '').trim() === ENTRY_DORMANT) return false;
-            return [p.n, p.en, p.tm].filter(Boolean)
-                .some(v => String(v).toLowerCase().includes(key));
+            return [p.n, p.en, p.tm].filter(Boolean).some(v => String(v).toLowerCase().includes(key));
         })
         .map(([pid, p]) => ({ pid, ...p }))
-        .sort((a, b) => entrySeqIndex(a.t) - entrySeqIndex(b.t) || (a.k || 99) - (b.k || 99)
-            || String(a.n).localeCompare(String(b.n), 'ko'))
+        .sort(
+            (a, b) =>
+                entrySeqIndex(a.t) - entrySeqIndex(b.t) ||
+                (a.k || 99) - (b.k || 99) ||
+                String(a.n).localeCompare(String(b.n), 'ko')
+        )
         .slice(0, ENTRY_SEARCH_MAX);
 }
 
@@ -1008,14 +1122,19 @@ function entrySetQuery(side, value) {
 // ---------------------------------------------------------------------------
 
 // 종족·티어 뱃지는 사이트 공용(.tag-badge)을 그대로 쓴다.
-function entryRaceBadgeHtml(p) { return p.r ? raceBadgeHtml(p.r) : ''; }
-
-function entryTierBadgeHtml(p) {
-    return (p.t !== undefined && p.t !== '')
-        ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>` : '';
+function entryRaceBadgeHtml(p) {
+    return p.r ? raceBadgeHtml(p.r) : '';
 }
 
-function entryBadgesHtml(p) { return entryRaceBadgeHtml(p) + entryTierBadgeHtml(p); }
+function entryTierBadgeHtml(p) {
+    return p.t !== undefined && p.t !== ''
+        ? `<span class="tag-badge tier-badge">${escapeHTML(tierLabel(p.t))}</span>`
+        : '';
+}
+
+function entryBadgesHtml(p) {
+    return entryRaceBadgeHtml(p) + entryTierBadgeHtml(p);
+}
 
 // 선수 한 줄. 프로필 사진은 넣지 않는다 - 이름 길이가 제각각이라 사진까지 붙이면
 // 뱃지 줄이 들쭉날쭉해진다. 종족은 이름 왼쪽에, 티어는 줄 오른쪽 끝에 맞춘다.
@@ -1078,10 +1197,12 @@ function entryMapPickerHtml(index, current) {
     const primary = recent.slice(0, 8);
     const chosen = entryMapName(current);
     const list = showAll ? all : primary;
-    const buttons = list.map(name => {
-        const picked = chosen && entryNormalizeMapName(chosen) === entryNormalizeMapName(name);
-        return `<button type="button" class="entry-map-option${picked ? ' is-picked' : ''}"${act('entryChooseMap', index, name)}>${escapeHTML(name)}</button>`;
-    }).join('');
+    const buttons = list
+        .map(name => {
+            const picked = chosen && entryNormalizeMapName(chosen) === entryNormalizeMapName(name);
+            return `<button type="button" class="entry-map-option${picked ? ' is-picked' : ''}"${act('entryChooseMap', index, name)}>${escapeHTML(name)}</button>`;
+        })
+        .join('');
     return `<div class="entry-map-popover">
         <div class="entry-map-popover-head"><strong>${showAll ? '전체 맵' : '최근 많이 하는 맵'}</strong><span>${showAll ? all.length : Math.min(primary.length, all.length)}개</span></div>
         <div class="entry-map-options">${buttons || '<span class="entry-map-empty">맵 정보가 없습니다</span>'}</div>
@@ -1102,9 +1223,10 @@ function renderEntryColBody(side) {
     const q = EntryState.query[side];
     const searching = !!String(q || '').trim();
     const list = searching ? entrySearch(q) : entryRoster(team);
-    const label = searching ? '검색 결과' : (team || '전체');
-    body.innerHTML = `<div class="h2h-suggest-head">${escapeHTML(label)} ${formatNum(list.length)}명</div>`
-        + (list.length
+    const label = searching ? '검색 결과' : team || '전체';
+    body.innerHTML =
+        `<div class="h2h-suggest-head">${escapeHTML(label)} ${formatNum(list.length)}명</div>` +
+        (list.length
             ? list.map(p => entryPlayerItemHtml(side, p, searching || !team)).join('')
             : `<div class="h2h-suggest-empty">${searching ? '찾는 선수가 없습니다' : '명단이 비어 있습니다'}</div>`);
 }
@@ -1118,7 +1240,8 @@ function renderEntryRosters() {
 // '시뮬 돌리기'를 눌렀을 때만 맨 아래 한 줄로 붙는다. wp는 renderEntryResult가 한 번 계산해 넘긴다.
 function entryMatchRowHtml(m, i, wp) {
     const players = entryPlayers();
-    const a = players[m.a]; const b = players[m.b];
+    const a = players[m.a];
+    const b = players[m.b];
     if (!a || !b) return '';
 
     // 화면에 보이는 일반 맞대결 전적은 기간필터를 따른다.
@@ -1127,8 +1250,9 @@ function entryMatchRowHtml(m, i, wp) {
     const rawTotal = Number(displayRec.w || 0) + Number(displayRec.l || 0);
     const has = rawTotal > 0;
     const pct = has ? (Number(displayRec.w || 0) / rawTotal) * 100 : 0;
-    const rec = `<span class="entry-rec-label">${escapeHTML(entryPeriodLabel())}</span>`
-        + (has
+    const rec =
+        `<span class="entry-rec-label">${escapeHTML(entryPeriodLabel())}</span>` +
+        (has
             ? `<span class="entry-rec-nums"><span class="entry-vs-num is-a">${displayRec.w}</span><span class="entry-vs">VS</span><span class="entry-vs-num is-b">${displayRec.l}</span></span>`
             : '<span class="entry-match-none">맞대결 없음</span>');
     const probText = wp
@@ -1136,7 +1260,7 @@ function entryMatchRowHtml(m, i, wp) {
         : '<span class="entry-match-probval">예상 승률을 계산할 수 없습니다</span>';
     const mapValue = entryMapName(m.map);
     const isOpen = Boolean(EntryState.analysisOpen[i]);
-    const analysis = (wp && isOpen) ? entryAnalysisHtml(m, wp) : '';
+    const analysis = wp && isOpen ? entryAnalysisHtml(m, wp) : '';
     return `<div class="entry-match${isOpen ? ' is-open' : ''}">
         <div class="entry-match-top">
             <span class="entry-match-no">${i + 1}경기</span>
@@ -1265,9 +1389,10 @@ function renderEntryResult() {
     const sum = document.getElementById('entry-summary');
     if (sum) sum.innerHTML = entrySummaryHtml(ps);
     const box = document.getElementById('entry-result');
-    if (box) box.innerHTML = n
-        ? `<div class="entry-matches">${EntryState.matches.map((m, i) => entryMatchRowHtml(m, i, wps[i])).join('')}</div>`
-        : '';
+    if (box)
+        box.innerHTML = n
+            ? `<div class="entry-matches">${EntryState.matches.map((m, i) => entryMatchRowHtml(m, i, wps[i])).join('')}</div>`
+            : '';
 }
 
 function renderEntry() {
@@ -1286,7 +1411,10 @@ function renderEntry() {
 // 더럽히지 않도록 이름 첫 글자를 넣은 원으로 대신 그린다(저장 자체가 막히는 것보다 낫다).
 function entryLoadImage(url) {
     return new Promise(resolve => {
-        if (!url) { resolve(null); return; }
+        if (!url) {
+            resolve(null);
+            return;
+        }
         const im = new Image();
         im.crossOrigin = 'anonymous';
         im.onload = () => resolve(im);
@@ -1349,14 +1477,21 @@ function entryDrawBadgeRow(ctx, p, x, y, h, align) {
     ctx.restore();
     const total = raceW + (raceW && tierW ? gap : 0) + tierW;
     let cur = align === 'right' ? x - total : x;
-    if (raceW) { entryDrawRaceBadge(ctx, p.r, cur, y, h); cur += raceW + gap; }
+    if (raceW) {
+        entryDrawRaceBadge(ctx, p.r, cur, y, h);
+        cur += raceW + gap;
+    }
     if (tierW) entryDrawTierBadge(ctx, p.t, cur, y, h);
     return total;
 }
 
 function entryInitialColor(name) {
     let h = 0;
-    String(name || '?').split('').forEach(c => { h = (h * 31 + c.charCodeAt(0)) % 360; });
+    String(name || '?')
+        .split('')
+        .forEach(c => {
+            h = (h * 31 + c.charCodeAt(0)) % 360;
+        });
     return `hsl(${h} 45% 42%)`;
 }
 
@@ -1383,49 +1518,67 @@ function entryPosterRows() {
     const players = entryPlayers();
     return EntryState.matches.map(m => {
         const h2h = entryH2hRec(m.a, m.b, EntryState.period);
-        const face = p => (p ? {
-            n: p.n,
-            s: p.s || '',
-            r: raceShortLabel(p.r),          // 'T' / 'Z' / 'P'
-            t: tierLabel(p.t),
-        } : null);
+        const face = p =>
+            p
+                ? {
+                      n: p.n,
+                      s: p.s || '',
+                      r: raceShortLabel(p.r), // 'T' / 'Z' / 'P'
+                      t: tierLabel(p.t),
+                  }
+                : null;
         return {
             a: face(players[m.a]),
             b: face(players[m.b]),
-            h2h: (h2h && (h2h.w + h2h.l)) ? [h2h.w, h2h.l] : null,
+            h2h: h2h && h2h.w + h2h.l ? [h2h.w, h2h.l] : null,
             map: entryMapName(m.map),
             // 고른 기간에 맞대결이 없을 수 있어서 통산도 같이 싣는다(참고용)
-            all: (() => { const r = entryH2hRec(m.a, m.b, 'all'); return (r && r.w + r.l) ? [r.w, r.l] : null; })(),
+            all: (() => {
+                const r = entryH2hRec(m.a, m.b, 'all');
+                return r && r.w + r.l ? [r.w, r.l] : null;
+            })(),
         };
     });
 }
 
-
 async function entrySavePoster() {
-    const ta = entrySideName(0); const tb = entrySideName(1);
+    const ta = entrySideName(0);
+    const tb = entrySideName(1);
     const rows = entryPosterRows();
-    if (!rows.length) { alert('대진을 먼저 만들어 주세요'); return; }
+    if (!rows.length) {
+        alert('대진을 먼저 만들어 주세요');
+        return;
+    }
     // 맞대결을 아직 안 받았으면 먼저 받는다(포스터의 가운데 칸이 그 값이다)
     await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
 
     const W = ENTRY_POSTER_W;
     // 공유해서 보는 그림이라 휴대폰에서 줄어들어도 읽혀야 한다 - 글자를 넉넉히 키운다
-    const PAD = 64, HEAD = 246, FOOT = 86;
+    const PAD = 64,
+        HEAD = 246,
+        FOOT = 86;
     const ROW = 164;
     const H = HEAD + rows.length * ROW + FOOT;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
-    cv.width = W * scale; cv.height = H * scale;
+    cv.width = W * scale;
+    cv.height = H * scale;
     const ctx = cv.getContext('2d');
     ctx.scale(scale, scale);
 
     // 사진을 먼저 다 받아 둔다(캔버스는 동기로 그린다)
-    const imgs = await Promise.all(rows.flatMap(r => [r.a, r.b])
-        .map(p => entryLoadImage(p ? getProfileImgUrl(p.s || '') : null)));
+    const imgs = await Promise.all(
+        rows.flatMap(r => [r.a, r.b]).map(p => entryLoadImage(p ? getProfileImgUrl(p.s || '') : null))
+    );
 
-    const NAVY = '#14264a', GOLD = '#f0b429', TEXT = '#0f172a', SUB = '#64748b';
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = NAVY; ctx.fillRect(0, 0, W, HEAD);
+    const NAVY = '#14264a',
+        GOLD = '#f0b429',
+        TEXT = '#0f172a',
+        SUB = '#64748b';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = NAVY;
+    ctx.fillRect(0, 0, W, HEAD);
 
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = 'rgba(255,255,255,.55)';
@@ -1447,7 +1600,10 @@ async function entrySavePoster() {
 
     rows.forEach((r, i) => {
         const y = HEAD + i * ROW;
-        if (i % 2 === 1) { ctx.fillStyle = '#f5f7fb'; ctx.fillRect(0, y, W, ROW); }
+        if (i % 2 === 1) {
+            ctx.fillStyle = '#f5f7fb';
+            ctx.fillRect(0, y, W, ROW);
+        }
         const cy = y + ROW / 2;
         const D = 68;
         entryDrawAvatar(ctx, imgs[i * 2], r.a && r.a.n, PAD, cy - D / 2, D);
@@ -1516,7 +1672,8 @@ async function entrySavePoster() {
     });
 
     const fy = HEAD + rows.length * ROW;
-    ctx.fillStyle = '#eef1f6'; ctx.fillRect(0, fy, W, FOOT);
+    ctx.fillStyle = '#eef1f6';
+    ctx.fillRect(0, fy, W, FOOT);
     ctx.fillStyle = SUB;
     ctx.font = '700 21px Pretendard, sans-serif';
     ctx.textAlign = 'left';
@@ -1525,8 +1682,12 @@ async function entrySavePoster() {
     ctx.fillText(`${rows.length}경기`, W - PAD, fy + 52);
 
     let url;
-    try { url = cv.toDataURL('image/png'); }
-    catch (e) { alert('포스터를 만들지 못했습니다. 프로필 사진을 불러올 수 없는 환경일 수 있습니다'); return; }
+    try {
+        url = cv.toDataURL('image/png');
+    } catch (e) {
+        alert('포스터를 만들지 못했습니다. 프로필 사진을 불러올 수 없는 환경일 수 있습니다');
+        return;
+    }
     const a = document.createElement('a');
     a.href = url;
     a.download = `엔트리_${ta}_vs_${tb}.png`;

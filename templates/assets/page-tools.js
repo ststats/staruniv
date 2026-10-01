@@ -134,7 +134,10 @@ function switchToolsView(viewType, skipHashUpdate) {
     // 엔트리 명단·레이팅(Supabase 조회)은 이 탭을 실제로 열 때 한 번만 받는다.
     if (viewType === 'entry' && typeof entryEnsureLoaded === 'function') entryEnsureLoaded();
     // 외부 도구·사이트 목록도 이 탭을 처음 열 때 받는다
-    if (viewType === 'external' && !toolsExternalLoaded) { toolsExternalLoaded = true; safeInit('도구 목록', loadToolsData); }
+    if (viewType === 'external' && !toolsExternalLoaded) {
+        toolsExternalLoaded = true;
+        safeInit('도구 목록', loadToolsData);
+    }
     if (!skipHashUpdate) updateToolsHash();
 }
 
@@ -143,12 +146,12 @@ function switchToolsView(viewType, skipHashUpdate) {
 // 맡는다. 새 창을 열 때 지금 상태를 URL로 넘긴다. 칩·목록 마크업과 목록 계산은 창과 같이 쓰는
 // mv-shared.js에 있고, 이 탭엔 그리드가 없어서 목록이 바뀔 때마다 통째로 다시 그리면 된다.
 const MvState = {
-    order: [],       // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
+    order: [], // [{ soopId, name, isMember }] - 화면에 보여줄 순서 그대로
     cols: MV_AUTO_COLS, // 자동 - 새 창이 화면·인원 수에 맞춰 고른다
     dark: false,
     focus: true,
-    focusId: null,   // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
-    liveMap: {},     // soopId(소문자) -> 방송 중. 페이지를 열 때 한 번만 조회한다
+    focusId: null, // 포커스 모드에서 크게 보여줄 대상(soopId) - 목록 순서와 무관하게 별도 지정
+    liveMap: {}, // soopId(소문자) -> 방송 중. 페이지를 열 때 한 번만 조회한다
 };
 
 function mvSetFocusTarget(soopId) {
@@ -170,7 +173,11 @@ function mvRenderChips() {
     }
     const members = activeMembersWithSoopId();
     container.innerHTML = members.length
-        ? members.map(m => mvChipHtml(m, mvIndexOf(m['SOOP ID']) !== -1, !!MvState.liveMap[String(m['SOOP ID']).toLowerCase()])).join('')
+        ? members
+              .map(m =>
+                  mvChipHtml(m, mvIndexOf(m['SOOP ID']) !== -1, !!MvState.liveMap[String(m['SOOP ID']).toLowerCase()])
+              )
+              .join('')
         : emptyStateHtml('선택 가능한 멤버가 없습니다');
     container.setAttribute('aria-busy', 'false');
 }
@@ -222,7 +229,10 @@ function mvAddCustom() {
     const input = document.getElementById('mv-custom-id');
     const result = mvResolveCustomInput(input.value, MvState.order, activeMembersWithSoopId());
     if (!result) return;
-    if (result.error) { alert(result.error); return; }
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
     MvState.order.push(result.entry);
     input.value = '';
     mvRenderAll();
@@ -278,7 +288,7 @@ function openMultiviewer() {
         cols: String(cols),
         theme: dark ? 'dark' : 'light',
         focus: focus ? '1' : '0',
-        focusId: focus ? (mvFocusEntryId(order, focusId) || '') : '',
+        focusId: focus ? mvFocusEntryId(order, focusId) || '' : '',
     });
     window.open(`multiview.html?${params.toString()}`, '_blank', 'noopener');
 }
@@ -304,12 +314,20 @@ function toolCardHtml(tool) {
         // 인코딩(이중 인코딩)해서 구글이 도메인을 못 알아본다. 한 번 풀었다가 다시 인코딩하면
         // 전부 한 번만 인코딩된 상태로 맞춰진다(인코딩 문자가 없는 링크는 결과가 그대로다).
         let normalizedUrl = url;
-        try { normalizedUrl = decodeURIComponent(url); } catch (e) { /* 잘못된 인코딩이면 원본 사용 */ }
+        try {
+            normalizedUrl = decodeURIComponent(url);
+        } catch (e) {
+            /* 잘못된 인코딩이면 원본 사용 */
+        }
         iconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(normalizedUrl)}`;
     }
     // 멤버 프로필 카드와 같은 틀: 위는 네이비 면(아이콘), 아래는 이름 + 주소 한 줄.
     let host = '';
-    try { host = new URL(safeHttpUrl(url)).hostname.replace(/^www\./, ''); } catch (e) { /* 주소가 없거나 잘못되면 비워 둔다 */ }
+    try {
+        host = new URL(safeHttpUrl(url)).hostname.replace(/^www\./, '');
+    } catch (e) {
+        /* 주소가 없거나 잘못되면 비워 둔다 */
+    }
     return `
         <a class="tool-card" data-tool-id="${escapeHTML(tool.id || '')}" data-tool-category="${escapeHTML(tool.category || '')}"${safeHttpUrl(url) ? ` href="${escapeHTML(safeHttpUrl(url))}"` : ''} target="_blank" rel="noopener">
             <div class="tool-card-media">
@@ -341,7 +359,13 @@ async function loadToolsData() {
         const grouped = { extTools: { items: [] }, extSites: { items: [] } };
         asArray(data).forEach(row => {
             if (!grouped[row.category]) return;
-            grouped[row.category].items.push({ id: row.id, category: row.category, name: row.name, url: row.url, favicon: row.favicon || '' });
+            grouped[row.category].items.push({
+                id: row.id,
+                category: row.category,
+                name: row.name,
+                url: row.url,
+                favicon: row.favicon || '',
+            });
         });
         renderExternalTools(grouped);
     } catch (e) {
@@ -350,12 +374,27 @@ async function loadToolsData() {
     }
 }
 
-bootPage(() => {
-    safeInit('멀티뷰어', () => { mvRenderAll(); return mvCheckLiveAndRerenderChips(); });
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        switchToolsView(toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW)), true);
-    }));
-}, {
-    prefetch: () => fetchLiveIds().catch(() => {}),   // 멀티뷰어 방송 중 표시
-    view: params => activateTabView(TOOLS_TABS, toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW))),
-});
+bootPage(
+    () => {
+        safeInit('멀티뷰어', () => {
+            mvRenderAll();
+            return mvCheckLiveAndRerenderChips();
+        });
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                switchToolsView(
+                    toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW)),
+                    true
+                );
+            })
+        );
+    },
+    {
+        prefetch: () => fetchLiveIds().catch(() => {}), // 멀티뷰어 방송 중 표시
+        view: params =>
+            activateTabView(
+                TOOLS_TABS,
+                toolsViewFromUrl(params.get('view') || runtimeDefaultSubtab('tools', TOOLS_DEFAULT_VIEW))
+            ),
+    }
+);

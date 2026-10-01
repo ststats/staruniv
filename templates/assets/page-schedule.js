@@ -11,11 +11,13 @@
 window.calOffAirExtra = (dateStr, type) => {
     const soopIds = calOffAirForDate(dateStr);
     if (!soopIds.length) return '';
-    const chips = soopIds.map(soopId => {
-        const m = findMemberBySoopId(soopId);
-        const name = m ? m['이름'] : soopId;
-        return `<div class="cal-offair-chip" data-offair-date="${escapeHTML(dateStr)}" data-soop-id="${escapeHTML(soopId)}">${avatarHtml(soopId, 'cal-offair-avatar')}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
-    }).join('');
+    const chips = soopIds
+        .map(soopId => {
+            const m = findMemberBySoopId(soopId);
+            const name = m ? m['이름'] : soopId;
+            return `<div class="cal-offair-chip" data-offair-date="${escapeHTML(dateStr)}" data-soop-id="${escapeHTML(soopId)}">${avatarHtml(soopId, 'cal-offair-avatar')}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
+        })
+        .join('');
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
 };
 
@@ -31,8 +33,14 @@ if (new URLSearchParams(location.search).get('capture') === 'calendar') {
         const days = document.getElementById('daysGrid');
         const today = document.getElementById('todayList');
         const layout = document.querySelector('.cal-main-layout');
-        if (!layout || days?.getAttribute('aria-busy') !== 'false' || today?.getAttribute('aria-busy') !== 'false'
-            || !days.querySelector('.cal-day-cell') || ![...document.images].every(img => img.complete)) return;
+        if (
+            !layout ||
+            days?.getAttribute('aria-busy') !== 'false' ||
+            today?.getAttribute('aria-busy') !== 'false' ||
+            !days.querySelector('.cal-day-cell') ||
+            ![...document.images].every(img => img.complete)
+        )
+            return;
         clearInterval(markCaptureReady);
         document.body.dataset.captureHeight = String(Math.ceil(layout.getBoundingClientRect().bottom));
         document.body.dataset.captureViewport = `${window.innerWidth}x${window.innerHeight}`;
@@ -64,21 +72,34 @@ async function renderHistory() {
     histRegisterItems(items);
     window.histRedraw = () => {
         histRenderTypeBar(items);
-        root.innerHTML = histTimelineHtml(histFilterItems(items), { members: SiteData.members, avatarUrl: getProfileImgUrl });
+        root.innerHTML = histTimelineHtml(histFilterItems(items), {
+            members: SiteData.members,
+            avatarUrl: getProfileImgUrl,
+        });
     };
     window.histRedraw();
 }
 
-bootPage(() => {
-    safeInit('일정표', () => {
-        calSelectedDateStr = calTodayStr();
-        return calLoadPublicData();
-    });
-    safeInit('URL 상태 복원', () => PageState.bindRestore(params => {
-        switchScheduleView(params.get('view') || runtimeDefaultSubtab('schedule','calendar'));
-    }));
-}, {
-    prefetch: calPrefetchPublicData,
-    view: params => activateTabView(SCHEDULE_TABS,
-        (params.get('view') || runtimeDefaultSubtab('schedule', 'calendar')) === 'history' ? 'history' : 'calendar'),
-});
+bootPage(
+    () => {
+        safeInit('일정표', () => {
+            calSelectedDateStr = calTodayStr();
+            return calLoadPublicData();
+        });
+        safeInit('URL 상태 복원', () =>
+            PageState.bindRestore(params => {
+                switchScheduleView(params.get('view') || runtimeDefaultSubtab('schedule', 'calendar'));
+            })
+        );
+    },
+    {
+        prefetch: calPrefetchPublicData,
+        view: params =>
+            activateTabView(
+                SCHEDULE_TABS,
+                (params.get('view') || runtimeDefaultSubtab('schedule', 'calendar')) === 'history'
+                    ? 'history'
+                    : 'calendar'
+            ),
+    }
+);

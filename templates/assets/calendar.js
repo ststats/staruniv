@@ -1,323 +1,387 @@
-    // ===== 일정(캘린더) 페이지 로직 =====
-    // 일정 페이지(page-schedule.js)와 어드민 일정 편집(admin-schedule.js)이 같이 쓴다.
-    //
-    // [공개 인터페이스 - 이름을 바꾸면 위 두 파일이 깨진다]
-    //   상태: calEvents, calOffAir, calSelectedDateStr(전역 let - 두 파일이 이름으로 직접 읽고 대입한다)
-    //   함수: calGetFormatDate, calTodayStr, loadPublicHolidays,
-    //         calLoadPublicData, calPrefetchPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
-    //         calRenderTodaySchedules, calRenderSelectedDateSchedules
-    //   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
-    // 월 이동 전에는 날짜를 1일로 맞춘다(31일에 setMonth(+1)하면 한 달을 건너뛴다).
-    let calCurrentDate = new Date();
-    let calSelectedDateStr = "";
-    // 하루짜리 일정과 기간(장기) 일정을 완전히 통합한 단일 배열.
-    // 각 항목: { id, startDate, endDate, time(선택), person(타이틀), desc(간략내용),
-    //           detail(상세내용, 선택), color }
-    // 하루짜리 일정은 startDate === endDate 인 항목일 뿐, 기간 일정과 데이터/렌더링 방식이 동일하다.
-    let calEvents = [];
-    // 일정/휴방 운영 데이터는 Supabase를 직접 읽는다.
+// ===== 일정(캘린더) 페이지 로직 =====
+// 일정 페이지(page-schedule.js)와 어드민 일정 편집(admin-schedule.js)이 같이 쓴다.
+//
+// [공개 인터페이스 - 이름을 바꾸면 위 두 파일이 깨진다]
+//   상태: calEvents, calOffAir, calSelectedDateStr(전역 let - 두 파일이 이름으로 직접 읽고 대입한다)
+//   함수: calGetFormatDate, calTodayStr, loadPublicHolidays,
+//         calLoadPublicData, calPrefetchPublicData, calRenderCalendar, changeMonth, calSelectDate, calOffAirForDate,
+//         calRenderTodaySchedules, calRenderSelectedDateSchedules
+//   훅(window): calCardExtra, calOnDateSelect, calOffAirExtra
+// 월 이동 전에는 날짜를 1일로 맞춘다(31일에 setMonth(+1)하면 한 달을 건너뛴다).
+let calCurrentDate = new Date();
+let calSelectedDateStr = '';
+// 하루짜리 일정과 기간(장기) 일정을 완전히 통합한 단일 배열.
+// 각 항목: { id, startDate, endDate, time(선택), person(타이틀), desc(간략내용),
+//           detail(상세내용, 선택), color }
+// 하루짜리 일정은 startDate === endDate 인 항목일 뿐, 기간 일정과 데이터/렌더링 방식이 동일하다.
+let calEvents = [];
+// 일정/휴방 운영 데이터는 Supabase를 직접 읽는다.
 
-    // 날짜별 휴방 멤버 목록 - { "YYYY-MM-DD": ["soopId1", "soopId2"] } 형태.
-    // 휴방은 시간/제목이 있는 "일정"이 아니라 그날의 멤버 상태라 calEvents와 별개로 관리한다.
-    let calOffAir = {};
-    const calOffAirForDate = (dateStr) => (calOffAir && Array.isArray(calOffAir[dateStr])) ? calOffAir[dateStr] : [];
+// 날짜별 휴방 멤버 목록 - { "YYYY-MM-DD": ["soopId1", "soopId2"] } 형태.
+// 휴방은 시간/제목이 있는 "일정"이 아니라 그날의 멤버 상태라 calEvents와 별개로 관리한다.
+let calOffAir = {};
+const calOffAirForDate = dateStr => (calOffAir && Array.isArray(calOffAir[dateStr]) ? calOffAir[dateStr] : []);
 
-    const CAL_COLOR_PALETTE = {
-        red: '#ff2538',
-        orange: '#ff8a00',
-        yellow: '#ffd43b',
-        green: '#16c75b',
-        blue: '#1677ff',
-        indigo: '#3346b5',
-        purple: '#7c3aed',
-        light_gray: '#e5e7eb',
-    };
-    const CAL_DEFAULT_EVENT_COLOR = CAL_COLOR_PALETTE.blue;
-    const CAL_DEFAULT_LONGTERM_COLOR = CAL_COLOR_PALETTE.orange;
+const CAL_COLOR_PALETTE = {
+    red: '#ff2538',
+    orange: '#ff8a00',
+    yellow: '#ffd43b',
+    green: '#16c75b',
+    blue: '#1677ff',
+    indigo: '#3346b5',
+    purple: '#7c3aed',
+    light_gray: '#e5e7eb',
+};
+const CAL_DEFAULT_EVENT_COLOR = CAL_COLOR_PALETTE.blue;
+const CAL_DEFAULT_LONGTERM_COLOR = CAL_COLOR_PALETTE.orange;
 
-    const calGetFormatDate = (year, month, day) => {
-        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    };
-    const calDateToStr = (d) => calGetFormatDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
-    // 오늘 날짜(로컬 기준) "YYYY-MM-DD"
-    const calTodayStr = () => calDateToStr(new Date());
+const calGetFormatDate = (year, month, day) => {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+const calDateToStr = d => calGetFormatDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+// 오늘 날짜(로컬 기준) "YYYY-MM-DD"
+const calTodayStr = () => calDateToStr(new Date());
 
-    // 일정 색상은 style 속성에 들어가므로, 색상 형식(#hex / rgb()·hsl() / 영문 색 이름)만 허용한다.
-    // 어드민의 <input type="color">는 항상 #rrggbb라 정상 데이터는 그대로 통과한다.
-    const CAL_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|(rgb|hsl)a?\([\w\s.,%\/]+\)|[a-zA-Z]+)$/;
-    const calSafeColor = (color, fallback) => {
-        const raw = String(color || '').trim();
-        if (CAL_COLOR_PALETTE[raw]) return CAL_COLOR_PALETTE[raw];
-        return CAL_COLOR_PATTERN.test(raw) ? raw : fallback;
-    };
+// 일정 색상은 style 속성에 들어가므로, 색상 형식(#hex / rgb()·hsl() / 영문 색 이름)만 허용한다.
+// 어드민의 <input type="color">는 항상 #rrggbb라 정상 데이터는 그대로 통과한다.
+const CAL_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|(rgb|hsl)a?\([\w\s.,%\/]+\)|[a-zA-Z]+)$/;
+const calSafeColor = (color, fallback) => {
+    const raw = String(color || '').trim();
+    if (CAL_COLOR_PALETTE[raw]) return CAL_COLOR_PALETTE[raw];
+    return CAL_COLOR_PATTERN.test(raw) ? raw : fallback;
+};
 
-    // 이어붙는 막대(장기 일정)의 좌우 모서리 스타일. 옆 칸과 이어지는 쪽은 각지게 하고
-    // 칸 경계 밖으로 살짝 튀어나가게(bleed) 해서 끊김 없이 이어진 것처럼 보이게 하고, 끊기는 쪽은
-    // 모서리를 마감한다. 번진 만큼 padding을 더 줘서 글자는 항상 하루짜리 일정 칩과 같은 자리에 온다.
-    // 오른쪽으로 이어질 때는 칸 경계선(1px)까지 덮어야 옆 칸 막대와 틈 없이 붙는다(-9px).
-    const calBarEdgeStyle = (roundLeft, roundRight) => ({
-        contLeft: !roundLeft,
-        contRight: !roundRight,
-        bleedLeft: roundLeft ? '0' : '-8px',
-        bleedRight: roundRight ? '0' : '-9px',
-        // 하루짜리 일정 칩(style.css: 왼쪽 색 막대 3px + 여백 6px, 오른쪽 6px)과 글자 위치를 맞춘다.
-        // 이어지는 쪽은 색 막대가 없고 번진 만큼(왼쪽 8px, 오른쪽 9px) 더 들인다: 3+6+8 = 17px.
-        padLeft: roundLeft ? '6px' : '17px',
-        padRight: roundRight ? '6px' : '15px',
-        radius: '0',
+// 이어붙는 막대(장기 일정)의 좌우 모서리 스타일. 옆 칸과 이어지는 쪽은 각지게 하고
+// 칸 경계 밖으로 살짝 튀어나가게(bleed) 해서 끊김 없이 이어진 것처럼 보이게 하고, 끊기는 쪽은
+// 모서리를 마감한다. 번진 만큼 padding을 더 줘서 글자는 항상 하루짜리 일정 칩과 같은 자리에 온다.
+// 오른쪽으로 이어질 때는 칸 경계선(1px)까지 덮어야 옆 칸 막대와 틈 없이 붙는다(-9px).
+const calBarEdgeStyle = (roundLeft, roundRight) => ({
+    contLeft: !roundLeft,
+    contRight: !roundRight,
+    bleedLeft: roundLeft ? '0' : '-8px',
+    bleedRight: roundRight ? '0' : '-9px',
+    // 하루짜리 일정 칩(style.css: 왼쪽 색 막대 3px + 여백 6px, 오른쪽 6px)과 글자 위치를 맞춘다.
+    // 이어지는 쪽은 색 막대가 없고 번진 만큼(왼쪽 8px, 오른쪽 9px) 더 들인다: 3+6+8 = 17px.
+    padLeft: roundLeft ? '6px' : '17px',
+    padRight: roundRight ? '6px' : '15px',
+    radius: '0',
+});
+
+// 일정 색 → 칩에 쓰는 색(강조색·옅은 바탕·호버 바탕)을 라이트/다크용으로 미리 계산한다.
+// CSS color-mix()로 섞으면 관리자 페이지 저장 때 쓰는 html2canvas가 그 색을 해석하지 못해
+// "unsupported color function" 오류로 저장이 막히므로, 섞은 결과를 #rrggbb로 넘긴다.
+// 섞는 기준색은 style.css 토큰과 같다: 라이트 글자 #0b1220 / 카드 #ffffff, 다크 글자 #eef2f8 / 카드 #10131a.
+const CAL_EV_THEME = {
+    l: { text: [11, 18, 32], card: [255, 255, 255], sub: [93, 104, 122], bg: 0.14, hover: 0.24 },
+    d: { text: [238, 242, 248], card: [16, 19, 26], sub: [143, 152, 166], bg: 0.22, hover: 0.32 },
+};
+const calColorCache = new Map();
+const calToRgb = color => {
+    if (calColorCache.has(color)) return calColorCache.get(color);
+    let rgb = null;
+    const hex = /^#([0-9a-f]{3,8})$/i.exec(color);
+    if (hex) {
+        let h = hex[1];
+        if (h.length <= 4)
+            h = h
+                .split('')
+                .map(ch => ch + ch)
+                .join('');
+        rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+    } else {
+        // rgb()/hsl()/색 이름은 브라우저에게 정규화를 맡긴다.
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillStyle = color;
+        const m = /^#([0-9a-f]{6})$/i.exec(ctx.fillStyle) || null;
+        const r = /rgba?\(([^)]+)\)/.exec(ctx.fillStyle);
+        if (m) rgb = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+        else if (r)
+            rgb = r[1]
+                .split(',')
+                .slice(0, 3)
+                .map(v => Math.round(parseFloat(v)));
+    }
+    rgb = rgb || [22, 199, 91];
+    calColorCache.set(color, rgb);
+    return rgb;
+};
+const calMix = (a, b, t) =>
+    '#' +
+    a
+        .map((v, i) =>
+            Math.round(v * t + b[i] * (1 - t))
+                .toString(16)
+                .padStart(2, '0')
+        )
+        .join('');
+// 명암 대비(WCAG). 일정 색은 관리자가 아무 색이나 고를 수 있어서, 칩 글자(시간·이름)는
+// 바탕(평소·호버 둘 다)과 4.5:1이 될 때까지 글자색(라이트는 검정, 다크는 흰색) 쪽으로 더 섞는다.
+const calLum = rgb => {
+    const c = rgb.map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
     });
-
-    // 일정 색 → 칩에 쓰는 색(강조색·옅은 바탕·호버 바탕)을 라이트/다크용으로 미리 계산한다.
-    // CSS color-mix()로 섞으면 관리자 페이지 저장 때 쓰는 html2canvas가 그 색을 해석하지 못해
-    // "unsupported color function" 오류로 저장이 막히므로, 섞은 결과를 #rrggbb로 넘긴다.
-    // 섞는 기준색은 style.css 토큰과 같다: 라이트 글자 #0b1220 / 카드 #ffffff, 다크 글자 #eef2f8 / 카드 #10131a.
-    const CAL_EV_THEME = {
-        l: { text: [11, 18, 32], card: [255, 255, 255], sub: [93, 104, 122], bg: 0.14, hover: 0.24 },
-        d: { text: [238, 242, 248], card: [16, 19, 26], sub: [143, 152, 166], bg: 0.22, hover: 0.32 },
-    };
-    const calColorCache = new Map();
-    const calToRgb = (color) => {
-        if (calColorCache.has(color)) return calColorCache.get(color);
-        let rgb = null;
-        const hex = /^#([0-9a-f]{3,8})$/i.exec(color);
-        if (hex) {
-            let h = hex[1];
-            if (h.length <= 4) h = h.split('').map(ch => ch + ch).join('');
-            rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
-        } else {
-            // rgb()/hsl()/색 이름은 브라우저에게 정규화를 맡긴다.
-            const ctx = document.createElement('canvas').getContext('2d');
-            ctx.fillStyle = '#000';
-            ctx.fillStyle = color;
-            const m = /^#([0-9a-f]{6})$/i.exec(ctx.fillStyle) || null;
-            const r = /rgba?\(([^)]+)\)/.exec(ctx.fillStyle);
-            if (m) rgb = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
-            else if (r) rgb = r[1].split(',').slice(0, 3).map(v => Math.round(parseFloat(v)));
-        }
-        rgb = rgb || [22, 199, 91];
-        calColorCache.set(color, rgb);
-        return rgb;
-    };
-    const calMix = (a, b, t) => '#' + a.map((v, i) => Math.round(v * t + b[i] * (1 - t)).toString(16).padStart(2, '0')).join('');
-    // 명암 대비(WCAG). 일정 색은 관리자가 아무 색이나 고를 수 있어서, 칩 글자(시간·이름)는
-    // 바탕(평소·호버 둘 다)과 4.5:1이 될 때까지 글자색(라이트는 검정, 다크는 흰색) 쪽으로 더 섞는다.
-    const calLum = (rgb) => {
-        const c = rgb.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
-        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    };
-    const calContrast = (a, b) => { const x = calLum(a), y = calLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-    const calReadable = (rgb, towards, bgs) => {
-        for (let t = 1; t > 0; t -= 0.05) {
-            const hex = calMix(rgb, towards, t);
-            if (bgs.every(bg => calContrast(calToRgb(hex), bg) >= 4.5)) return hex;
-        }
-        return calMix(towards, towards, 1);
-    };
-    const calEventColorVars = (color) => {
-        const base = calToRgb(color);
-        return Object.entries(CAL_EV_THEME).map(([k, th]) => {
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const calContrast = (a, b) => {
+    const x = calLum(a),
+        y = calLum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+};
+const calReadable = (rgb, towards, bgs) => {
+    for (let t = 1; t > 0; t -= 0.05) {
+        const hex = calMix(rgb, towards, t);
+        if (bgs.every(bg => calContrast(calToRgb(hex), bg) >= 4.5)) return hex;
+    }
+    return calMix(towards, towards, 1);
+};
+const calEventColorVars = color => {
+    const base = calToRgb(color);
+    return Object.entries(CAL_EV_THEME)
+        .map(([k, th]) => {
             const accentHex = calMix(base, th.text, 0.78);
             const accent = calToRgb(accentHex);
-            const bgHex = calMix(accent, th.card, th.bg), hoverHex = calMix(accent, th.card, th.hover);
+            const bgHex = calMix(accent, th.card, th.bg),
+                hoverHex = calMix(accent, th.card, th.hover);
             const bgs = [calToRgb(bgHex), calToRgb(hoverHex)];
-            return `--ev-accent-${k}:${accentHex};--ev-bg-${k}:${bgHex};--ev-hover-${k}:${hoverHex};`
-                + `--ev-text-${k}:${calReadable(accent, th.text, bgs)};--ev-sub-${k}:${calReadable(th.sub, th.text, bgs)};`;
-        }).join('');
-    };
+            return (
+                `--ev-accent-${k}:${accentHex};--ev-bg-${k}:${bgHex};--ev-hover-${k}:${hoverHex};` +
+                `--ev-text-${k}:${calReadable(accent, th.text, bgs)};--ev-sub-${k}:${calReadable(th.sub, th.text, bgs)};`
+            );
+        })
+        .join('');
+};
 
-    // 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
-    // 일정 색은 CSS 변수로 전달한다(calEventColorVars).
-    const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
-        const timeHtml = timeText ? `<span class="cal-event-time">${escapeHTML(timeText)}</span>` : '';
-        const personHtml = personText ? `<span class="cal-event-person">${escapeHTML(personText)}</span>` : '';
-        const descHtml = descText ? `<div class="cal-event-desc">${escapeHTML(descText)}</div>` : '';
-        const barStyle = bar
-            ? `--bar-bleed-left:${bar.bleedLeft}; --bar-bleed-right:${bar.bleedRight}; --bar-pad-left:${bar.padLeft}; --bar-pad-right:${bar.padRight}; --bar-radius:${bar.radius}; `
-            : '';
-        return `
+// 달력 칸 안의 일정 카드/막대 공용 마크업. bar가 있으면 이어붙는 막대 스타일을 적용한다.
+// 일정 색은 CSS 변수로 전달한다(calEventColorVars).
+const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
+    const timeHtml = timeText ? `<span class="cal-event-time">${escapeHTML(timeText)}</span>` : '';
+    const personHtml = personText ? `<span class="cal-event-person">${escapeHTML(personText)}</span>` : '';
+    const descHtml = descText ? `<div class="cal-event-desc">${escapeHTML(descText)}</div>` : '';
+    const barStyle = bar
+        ? `--bar-bleed-left:${bar.bleedLeft}; --bar-bleed-right:${bar.bleedRight}; --bar-pad-left:${bar.padLeft}; --bar-pad-right:${bar.padRight}; --bar-radius:${bar.radius}; `
+        : '';
+    return `
             <div class="cal-cell-event${bar ? ' cal-longterm-bar' : ''}${bar && bar.contLeft ? ' is-cont-left' : ''}${bar && bar.contRight ? ' is-cont-right' : ''}" style="${barStyle}${calEventColorVars(color)}">
                 <div class="cal-cell-top">${timeHtml}${personHtml}</div>
                 ${descHtml}
             </div>
         `;
-    };
+};
 
-    // 공휴일 목록은 해마다 바뀌므로 별도 JSON(holidays.json)에서 fetch해온다.
-    let calPublicHolidays = {};
-    const loadPublicHolidays = async () => {
-        try {
-            const res = await fetch('holidays.json', { cache: 'no-cache' });
-            if (res.ok) {
-                const data = await res.json();
-                calPublicHolidays = (data && typeof data === 'object') ? data : {};
-            }
-        } catch (e) {
-            console.error('공휴일 데이터를 불러오지 못했습니다:', e);
+// 공휴일 목록은 해마다 바뀌므로 별도 JSON(holidays.json)에서 fetch해온다.
+let calPublicHolidays = {};
+const loadPublicHolidays = async () => {
+    try {
+        const res = await fetch('holidays.json', { cache: 'no-cache' });
+        if (res.ok) {
+            const data = await res.json();
+            calPublicHolidays = data && typeof data === 'object' ? data : {};
         }
-    };
+    } catch (e) {
+        console.error('공휴일 데이터를 불러오지 못했습니다:', e);
+    }
+};
 
-    // 일정 배열을 시간순으로 정렬. 시간이 없는 일정은 항상 최상단(등록 순서 유지).
-    const calSortByTime = (items) => {
-        return items.slice().sort((a, b) => {
-            const aHas = !!a.time, bHas = !!b.time;
-            if (aHas !== bHas) return aHas ? 1 : -1; // 시간 없는 쪽이 먼저
-            if (!aHas) return 0; // 둘 다 시간 없음: 등록 순서 유지
-            return String(a.time).localeCompare(String(b.time));
+// 일정 배열을 시간순으로 정렬. 시간이 없는 일정은 항상 최상단(등록 순서 유지).
+const calSortByTime = items => {
+    return items.slice().sort((a, b) => {
+        const aHas = !!a.time,
+            bHas = !!b.time;
+        if (aHas !== bHas) return aHas ? 1 : -1; // 시간 없는 쪽이 먼저
+        if (!aHas) return 0; // 둘 다 시간 없음: 등록 순서 유지
+        return String(a.time).localeCompare(String(b.time));
+    });
+};
+
+// 이 일정의 마지막 날. endDate가 없으면(과거 데이터 호환용) startDate와 같은 것으로 취급.
+const calEventEnd = ev => ev.endDate || ev.startDate;
+const calEventCoversDate = (ev, dateStr) => dateStr >= ev.startDate && dateStr <= calEventEnd(ev);
+const calIsMultiDay = ev => !!ev.endDate && ev.endDate !== ev.startDate;
+
+// 특정 날짜에 걸리는 일정들을 시간순으로 반환 - 캘린더 칸/오늘의 일정/선택한 날짜 목록이
+// 전부 이 함수를 써서, 하루짜리든 기간이든 같은 방식으로 다뤄진다. (source: 미리 추린 후보, 선택)
+const calEventsForDate = (dateStr, source) =>
+    calSortByTime((source || calEvents).filter(ev => ev && calEventCoversDate(ev, dateStr)));
+
+// 공휴일 파일과 일정 조회는 서로 무관하니 함께 받는다. calPrefetchPublicData()로 먼저 시작해 두었으면
+// 그 결과를 한 번만 쓴다(어드민이 편집한 뒤 다시 부를 때는 새로 받는다).
+let calPublicPrefetch = null;
+const calPrefetchPublicData = () => {
+    if (calPublicPrefetch) return;
+    calPublicPrefetch = [loadPublicHolidays(), Api.schedule()];
+    calPublicPrefetch[1].catch(() => {}); // 실패는 calLoadPublicData가 받아서 처리한다
+};
+const calLoadPublicData = async () => {
+    const [holidays, schedule] = calPublicPrefetch || [loadPublicHolidays(), Api.schedule()];
+    calPublicPrefetch = null;
+    await holidays;
+    try {
+        const { events, offAir } = await schedule;
+        calEvents = (events || []).map(r => ({
+            id: r.id,
+            startDate: r.start_date,
+            endDate: r.end_date || r.start_date,
+            time: r.event_time || '',
+            person: r.person || '',
+            desc: r.description || '',
+            detail: r.detail || '',
+            color: r.color || '',
+        }));
+        calOffAir = {};
+        (offAir || []).forEach(r => {
+            (calOffAir[r.off_date] ||= []).push(r.soop_id);
         });
-    };
+    } catch (e) {
+        console.error('Supabase 일정 조회 실패:', e);
+        calEvents = [];
+        calOffAir = {};
+    }
+    calRenderCalendar();
+};
 
-    // 이 일정의 마지막 날. endDate가 없으면(과거 데이터 호환용) startDate와 같은 것으로 취급.
-    const calEventEnd = (ev) => ev.endDate || ev.startDate;
-    const calEventCoversDate = (ev, dateStr) => dateStr >= ev.startDate && dateStr <= calEventEnd(ev);
-    const calIsMultiDay = (ev) => !!ev.endDate && ev.endDate !== ev.startDate;
-
-    // 특정 날짜에 걸리는 일정들을 시간순으로 반환 - 캘린더 칸/오늘의 일정/선택한 날짜 목록이
-    // 전부 이 함수를 써서, 하루짜리든 기간이든 같은 방식으로 다뤄진다. (source: 미리 추린 후보, 선택)
-    const calEventsForDate = (dateStr, source) =>
-        calSortByTime((source || calEvents).filter(ev => ev && calEventCoversDate(ev, dateStr)));
-
-    // 공휴일 파일과 일정 조회는 서로 무관하니 함께 받는다. calPrefetchPublicData()로 먼저 시작해 두었으면
-    // 그 결과를 한 번만 쓴다(어드민이 편집한 뒤 다시 부를 때는 새로 받는다).
-    let calPublicPrefetch = null;
-    const calPrefetchPublicData = () => {
-        if (calPublicPrefetch) return;
-        calPublicPrefetch = [loadPublicHolidays(), Api.schedule()];
-        calPublicPrefetch[1].catch(() => {});   // 실패는 calLoadPublicData가 받아서 처리한다
-    };
-    const calLoadPublicData = async () => {
-        const [holidays, schedule] = calPublicPrefetch || [loadPublicHolidays(), Api.schedule()];
-        calPublicPrefetch = null;
-        await holidays;
-        try {
-            const { events, offAir } = await schedule;
-            calEvents = (events || []).map(r => ({
-                id: r.id, startDate: r.start_date, endDate: r.end_date || r.start_date, time: r.event_time || '',
-                person: r.person || '', desc: r.description || '', detail: r.detail || '', color: r.color || ''
-            }));
-            calOffAir = {};
-            (offAir || []).forEach(r => { (calOffAir[r.off_date] ||= []).push(r.soop_id); });
-        } catch (e) {
-            console.error('Supabase 일정 조회 실패:', e);
-            calEvents = [];
-            calOffAir = {};
-        }
-        calRenderCalendar();
-    };
-
-    const calGetEventHTML = (item) => calCellEventHtml({
-        timeText: item.time, personText: item.person, descText: item.desc,
+const calGetEventHTML = item =>
+    calCellEventHtml({
+        timeText: item.time,
+        personText: item.person,
+        descText: item.desc,
         color: calSafeColor(item.color, CAL_DEFAULT_EVENT_COLOR),
     });
 
-    // 기간(장기) 일정 막대 한 칸(하루치) - 하루짜리 카드와 같은 2줄 레이아웃을 매일 찍어서 옆 칸과
-    // 이어붙인다. 주가 바뀌어도 이어지는 것처럼 보이도록, 그 주의 첫/마지막 칸(일/토)에서도
-    // 끝처럼 둥글게 마감하지 않고 실제 시작일/종료일에서만 둥글게 마감한다.
-    const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) => calCellEventHtml({
-        timeText: ev.time, personText: ev.person, descText: ev.desc,
+// 기간(장기) 일정 막대 한 칸(하루치) - 하루짜리 카드와 같은 2줄 레이아웃을 매일 찍어서 옆 칸과
+// 이어붙인다. 주가 바뀌어도 이어지는 것처럼 보이도록, 그 주의 첫/마지막 칸(일/토)에서도
+// 끝처럼 둥글게 마감하지 않고 실제 시작일/종료일에서만 둥글게 마감한다.
+const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) =>
+    calCellEventHtml({
+        timeText: ev.time,
+        personText: ev.person,
+        descText: ev.desc,
         color: calSafeColor(ev.color, CAL_DEFAULT_LONGTERM_COLOR),
         bar: calBarEdgeStyle(dateStr === ev.startDate || isWeekStart, dateStr === ev.endDate || isWeekEnd),
     });
 
-    // 이번 달 칸 하나(날짜 숫자 + 장기 일정 막대 + 하루짜리 일정 카드)
-    const calDayCellHtml = (dateStr, dayNum, dayOfWeek, todayStr, monthEvents) => {
-        const classes = ['cal-day-cell'];
-        if (dateStr === todayStr) classes.push('today');
-        if (dateStr === calSelectedDateStr) classes.push('selected');
-        if (calPublicHolidays[dateStr]) classes.push('holiday');
-        const isWeekStart = dayOfWeek === 0, isWeekEnd = dayOfWeek === 6;
+// 이번 달 칸 하나(날짜 숫자 + 장기 일정 막대 + 하루짜리 일정 카드)
+const calDayCellHtml = (dateStr, dayNum, dayOfWeek, todayStr, monthEvents) => {
+    const classes = ['cal-day-cell'];
+    if (dateStr === todayStr) classes.push('today');
+    if (dateStr === calSelectedDateStr) classes.push('selected');
+    if (calPublicHolidays[dateStr]) classes.push('holiday');
+    const isWeekStart = dayOfWeek === 0,
+        isWeekEnd = dayOfWeek === 6;
 
-        const todayAttr = dateStr === todayStr ? ` aria-current="date" aria-label="오늘, ${dateStr}"` : '';
-        let html = `<span class="cal-day-number"${todayAttr}>${dayNum}</span>`;
-        // 기간 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는 막대로, 하루짜리 일정은 그 아래 카드로.
-        const dayEvents = calEventsForDate(dateStr, monthEvents);
-        dayEvents.filter(calIsMultiDay).forEach(ev => { html += calGetLongTermBarHTML(ev, dateStr, isWeekStart, isWeekEnd); });
-        dayEvents.filter(ev => !calIsMultiDay(ev)).forEach(item => { html += calGetEventHTML(item); });
-
-        return `<div class="${classes.join(' ')}" data-date="${dateStr}">${html}</div>`;
-    };
-
-    // 날짜 칸 클릭은 칸마다 핸들러를 달지 않고 그리드 하나에 위임한다(한 번만 등록).
-    let calGridClickBound = false;
-    const calBindGridClick = (daysGrid) => {
-        if (calGridClickBound) return;
-        calGridClickBound = true;
-        daysGrid.addEventListener('click', (e) => {
-            const cell = e.target.closest('.cal-day-cell[data-date]');
-            if (cell && daysGrid.contains(cell)) calSelectDate(cell.dataset.date);
+    const todayAttr = dateStr === todayStr ? ` aria-current="date" aria-label="오늘, ${dateStr}"` : '';
+    let html = `<span class="cal-day-number"${todayAttr}>${dayNum}</span>`;
+    // 기간 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는 막대로, 하루짜리 일정은 그 아래 카드로.
+    const dayEvents = calEventsForDate(dateStr, monthEvents);
+    dayEvents.filter(calIsMultiDay).forEach(ev => {
+        html += calGetLongTermBarHTML(ev, dateStr, isWeekStart, isWeekEnd);
+    });
+    dayEvents
+        .filter(ev => !calIsMultiDay(ev))
+        .forEach(item => {
+            html += calGetEventHTML(item);
         });
-    };
 
-    const calRenderCalendar = () => {
-        const year = calCurrentDate.getFullYear();
-        const month = calCurrentDate.getMonth();
-        const titleEl = document.getElementById('monthTitle');
-        const daysGrid = document.getElementById('daysGrid');
-        if (!titleEl || !daysGrid) return;
-        titleEl.innerText = `${year}. ${String(month + 1).padStart(2, '0')}`;
-        // [리디자인] 카드 맨 위 잉크 띠의 연도 + 영문 월 이름. 시안 구조.
-        const YEAR_EL = document.getElementById('monthYear');
-        const NAME_EL = document.getElementById('monthName');
-        if (YEAR_EL) YEAR_EL.innerText = year;
-        if (NAME_EL) {
-            const MONTH_EN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-                'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-            NAME_EL.innerText = MONTH_EN[month];
-        }
+    return `<div class="${classes.join(' ')}" data-date="${dateStr}">${html}</div>`;
+};
 
-        const firstDayIndex = new Date(year, month, 1).getDay();
-        const lastDay = new Date(year, month + 1, 0).getDate();
-        const prevLastDay = new Date(year, month, 0).getDate();
-        const todayStr = calTodayStr();
+// 날짜 칸 클릭은 칸마다 핸들러를 달지 않고 그리드 하나에 위임한다(한 번만 등록).
+let calGridClickBound = false;
+const calBindGridClick = daysGrid => {
+    if (calGridClickBound) return;
+    calGridClickBound = true;
+    daysGrid.addEventListener('click', e => {
+        const cell = e.target.closest('.cal-day-cell[data-date]');
+        if (cell && daysGrid.contains(cell)) calSelectDate(cell.dataset.date);
+    });
+};
 
-        // 이번 달에 한 칸이라도 걸치는 일정만 먼저 추린다(날짜 칸마다 전체 일정을 훑지 않도록).
-        const monthStart = calGetFormatDate(year, month + 1, 1);
-        const monthEnd = calGetFormatDate(year, month + 1, lastDay);
-        const monthEvents = calEvents.filter(ev => ev && ev.startDate <= monthEnd && calEventEnd(ev) >= monthStart);
-
-        const cells = [];
-        for (let i = firstDayIndex; i > 0; i--) {
-            cells.push(`<div class="cal-day-cell other-month"><span class="cal-day-number">${prevLastDay - i + 1}</span></div>`);
-        }
-        for (let i = 1; i <= lastDay; i++) {
-            const dayOfWeek = (firstDayIndex + i - 1) % 7; // 0=일 ... 6=토
-            cells.push(calDayCellHtml(calGetFormatDate(year, month + 1, i), i, dayOfWeek, todayStr, monthEvents));
-        }
-        const totalCellsCount = firstDayIndex + lastDay;
-        const nextDaysCount = totalCellsCount % 7 === 0 ? 0 : 7 - (totalCellsCount % 7);
-        for (let i = 1; i <= nextDaysCount; i++) {
-            cells.push(`<div class="cal-day-cell other-month"><span class="cal-day-number">${i}</span></div>`);
-        }
-        daysGrid.innerHTML = cells.join('');
-        daysGrid.setAttribute('aria-busy', 'false');
-        calBindGridClick(daysGrid);
-
-        calRenderTodaySchedules();
-        calRenderSelectedDateSchedules();
-    };
-
-    // 달 이동 버튼(data-click)이 이름으로 부르므로 function으로 둔다.
-    function changeMonth(direction) {
-        // 날짜를 1일로 먼저 맞춰야 31일에 다음 달(30일까지) 이동 시 한 달을 건너뛰지 않는다.
-        calCurrentDate.setDate(1);
-        calCurrentDate.setMonth(calCurrentDate.getMonth() + direction);
-        calRenderCalendar();
+const calRenderCalendar = () => {
+    const year = calCurrentDate.getFullYear();
+    const month = calCurrentDate.getMonth();
+    const titleEl = document.getElementById('monthTitle');
+    const daysGrid = document.getElementById('daysGrid');
+    if (!titleEl || !daysGrid) return;
+    titleEl.innerText = `${year}. ${String(month + 1).padStart(2, '0')}`;
+    // [리디자인] 카드 맨 위 잉크 띠의 연도 + 영문 월 이름. 시안 구조.
+    const YEAR_EL = document.getElementById('monthYear');
+    const NAME_EL = document.getElementById('monthName');
+    if (YEAR_EL) YEAR_EL.innerText = year;
+    if (NAME_EL) {
+        const MONTH_EN = [
+            'JANUARY',
+            'FEBRUARY',
+            'MARCH',
+            'APRIL',
+            'MAY',
+            'JUNE',
+            'JULY',
+            'AUGUST',
+            'SEPTEMBER',
+            'OCTOBER',
+            'NOVEMBER',
+            'DECEMBER',
+        ];
+        NAME_EL.innerText = MONTH_EN[month];
     }
 
-    const calSelectDate = (dateStr) => {
-        calSelectedDateStr = dateStr;
-        // 달력에서 선택한 칸 표시만 갈아끼운다(달력 전체를 다시 그리지 않음).
-        document.querySelectorAll('.cal-day-cell.selected').forEach(el => el.classList.remove('selected'));
-        document.querySelectorAll(`.cal-day-cell[data-date="${dateStr}"]`).forEach(el => el.classList.add('selected'));
-        // 선택한 날짜 제목은 고정하고, 선택일 자체는 카드 안의 날짜 라벨로만 표시한다.
-        calRenderSelectedDateSchedules();
-        if (typeof window.calOnDateSelect === 'function') window.calOnDateSelect(dateStr);
-    };
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const prevLastDay = new Date(year, month, 0).getDate();
+    const todayStr = calTodayStr();
 
-    // "오늘의 일정"/"선택한 날짜 일정" 카드 한 장의 마크업 - type으로 today/selected 각각의
-    // CSS 클래스(cal-today-card/cal-selected-card)를 유지한다.
-    const calEventCardHtml = (item, dateStr, type) => {
-        const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
-        return `
+    // 이번 달에 한 칸이라도 걸치는 일정만 먼저 추린다(날짜 칸마다 전체 일정을 훑지 않도록).
+    const monthStart = calGetFormatDate(year, month + 1, 1);
+    const monthEnd = calGetFormatDate(year, month + 1, lastDay);
+    const monthEvents = calEvents.filter(ev => ev && ev.startDate <= monthEnd && calEventEnd(ev) >= monthStart);
+
+    const cells = [];
+    for (let i = firstDayIndex; i > 0; i--) {
+        cells.push(
+            `<div class="cal-day-cell other-month"><span class="cal-day-number">${prevLastDay - i + 1}</span></div>`
+        );
+    }
+    for (let i = 1; i <= lastDay; i++) {
+        const dayOfWeek = (firstDayIndex + i - 1) % 7; // 0=일 ... 6=토
+        cells.push(calDayCellHtml(calGetFormatDate(year, month + 1, i), i, dayOfWeek, todayStr, monthEvents));
+    }
+    const totalCellsCount = firstDayIndex + lastDay;
+    const nextDaysCount = totalCellsCount % 7 === 0 ? 0 : 7 - (totalCellsCount % 7);
+    for (let i = 1; i <= nextDaysCount; i++) {
+        cells.push(`<div class="cal-day-cell other-month"><span class="cal-day-number">${i}</span></div>`);
+    }
+    daysGrid.innerHTML = cells.join('');
+    daysGrid.setAttribute('aria-busy', 'false');
+    calBindGridClick(daysGrid);
+
+    calRenderTodaySchedules();
+    calRenderSelectedDateSchedules();
+};
+
+// 달 이동 버튼(data-click)이 이름으로 부르므로 function으로 둔다.
+function changeMonth(direction) {
+    // 날짜를 1일로 먼저 맞춰야 31일에 다음 달(30일까지) 이동 시 한 달을 건너뛰지 않는다.
+    calCurrentDate.setDate(1);
+    calCurrentDate.setMonth(calCurrentDate.getMonth() + direction);
+    calRenderCalendar();
+}
+
+const calSelectDate = dateStr => {
+    calSelectedDateStr = dateStr;
+    // 달력에서 선택한 칸 표시만 갈아끼운다(달력 전체를 다시 그리지 않음).
+    document.querySelectorAll('.cal-day-cell.selected').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll(`.cal-day-cell[data-date="${dateStr}"]`).forEach(el => el.classList.add('selected'));
+    // 선택한 날짜 제목은 고정하고, 선택일 자체는 카드 안의 날짜 라벨로만 표시한다.
+    calRenderSelectedDateSchedules();
+    if (typeof window.calOnDateSelect === 'function') window.calOnDateSelect(dateStr);
+};
+
+// "오늘의 일정"/"선택한 날짜 일정" 카드 한 장의 마크업 - type으로 today/selected 각각의
+// CSS 클래스(cal-today-card/cal-selected-card)를 유지한다.
+const calEventCardHtml = (item, dateStr, type) => {
+    const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
+    return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
                     ${item.time ? `<span class="cal-card-time">${escapeHTML(item.time)}</span>` : ''}
@@ -327,62 +391,62 @@
                 </div>
             </div>
         `;
-    };
+};
 
-    // 휴방자 섹션은 window.calOffAirExtra가 정의돼 있을 때만(멤버 사진·이름을 아는 쪽) 렌더링한다.
-    const calOffAirExtraHtml = (dateStr, type) =>
-        typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr, type) : '';
+// 휴방자 섹션은 window.calOffAirExtra가 정의돼 있을 때만(멤버 사진·이름을 아는 쪽) 렌더링한다.
+const calOffAirExtraHtml = (dateStr, type) =>
+    typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr, type) : '';
 
-    // 일정 목록 + (항상 아래에 붙는) 휴방자 섹션을 그린다. 오늘/선택한 날짜 공용.
-    const calRenderScheduleList = (containerId, dateStr, type, emptyText) => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        const items = calEventsForDate(dateStr);
-        container.classList.toggle('is-empty', items.length === 0);
-        container.setAttribute('aria-busy', 'false');
-        const eventsHtml = items.length
-            ? items.map(item => calEventCardHtml(item, dateStr, type)).join('')
-            : `<div class="cal-no-schedule">${emptyText}</div>`;
-        container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr, type);
-    };
+// 일정 목록 + (항상 아래에 붙는) 휴방자 섹션을 그린다. 오늘/선택한 날짜 공용.
+const calRenderScheduleList = (containerId, dateStr, type, emptyText) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const items = calEventsForDate(dateStr);
+    container.classList.toggle('is-empty', items.length === 0);
+    container.setAttribute('aria-busy', 'false');
+    const eventsHtml = items.length
+        ? items.map(item => calEventCardHtml(item, dateStr, type)).join('')
+        : `<div class="cal-no-schedule">${emptyText}</div>`;
+    container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr, type);
+};
 
-    // [리디자인] 카드 오른쪽 위의 '09.14 MON' 라벨. 시안에 있던 표시다.
-    const calDayLabel = (dateStr) => {
-        if (!dateStr) return '';
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-        return `${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} ${DOW[new Date(y, m - 1, d).getDay()]}`;
-    };
-    const calSetDayLabel = (id, dateStr) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = calDayLabel(dateStr);
-    };
+// [리디자인] 카드 오른쪽 위의 '09.14 MON' 라벨. 시안에 있던 표시다.
+const calDayLabel = dateStr => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    return `${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} ${DOW[new Date(y, m - 1, d).getDay()]}`;
+};
+const calSetDayLabel = (id, dateStr) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = calDayLabel(dateStr);
+};
 
-    const calRenderTodaySchedules = () => {
-        calSetDayLabel('todayDateLabel', calTodayStr());
-        calRenderScheduleList('todayList', calTodayStr(), 'today', '오늘 등록된 일정이 없습니다');
-    };
+const calRenderTodaySchedules = () => {
+    calSetDayLabel('todayDateLabel', calTodayStr());
+    calRenderScheduleList('todayList', calTodayStr(), 'today', '오늘 등록된 일정이 없습니다');
+};
 
-    const calRenderSelectedDateSchedules = () => {
-        if (!calSelectedDateStr) {
-            const container = document.getElementById('selectedDateList');
-            if (container) {
-                container.classList.add('is-empty');
-                container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요</div>`;
-            }
-            return;
+const calRenderSelectedDateSchedules = () => {
+    if (!calSelectedDateStr) {
+        const container = document.getElementById('selectedDateList');
+        if (container) {
+            container.classList.add('is-empty');
+            container.innerHTML = `<div class="cal-no-schedule">날짜를 클릭하세요</div>`;
         }
-        calSetDayLabel('selectedDateLabel', calSelectedDateStr);
-        calRenderScheduleList('selectedDateList', calSelectedDateStr, 'selected', '등록된 일정이 없습니다');
-    };
+        return;
+    }
+    calSetDayLabel('selectedDateLabel', calSelectedDateStr);
+    calRenderScheduleList('selectedDateList', calSelectedDateStr, 'selected', '등록된 일정이 없습니다');
+};
 
-    window.StarUnivCalendar = {
-        refresh: () => calRenderCalendar(),
-        setData(events, offAir) {
-            calEvents = events;
-            calOffAir = offAir;
-            calRenderCalendar();
-        },
-    };
+window.StarUnivCalendar = {
+    refresh: () => calRenderCalendar(),
+    setData(events, offAir) {
+        calEvents = events;
+        calOffAir = offAir;
+        calRenderCalendar();
+    },
+};
 
 window.CAL_COLOR_PALETTE = CAL_COLOR_PALETTE;
