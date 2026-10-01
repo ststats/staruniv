@@ -250,10 +250,10 @@ test('대학 로고는 로고를 그리는 페이지(전적·티어표)가 화�
 });
 
 test('현황판에 아직 없는 대학(teams.off_board)은 티어표 갱신이 소속을 FA·휴면으로 바꾸지 않는다', () => {
-  const py = read('scripts/tier_table.py');
+  const py = read('scripts/tiertable/compare.py');
   assert.match(py, /kept_teams = set\(off_board\) - shown/);
   assert.match(py, /- shown - kept_teams\)/);
-  assert.match(py, /compare\(sections, fa, db, load_candidates_sql\(conn\), load_off_board_sql\(conn\)\)/);
+  assert.match(read('scripts/tiertable/job.py'), /compare\(sections, fa, db, load_candidates_sql\(conn\), load_off_board_sql\(conn\)\)/);
   assert.match(read('supabase/staruniv.sql'), /alter table public\.teams add column if not exists off_board boolean not null default false;/);
   const teams = read('templates/assets/admin-teams.js');
   assert.match(teams, /checkbox\('tm_off_board'/);
