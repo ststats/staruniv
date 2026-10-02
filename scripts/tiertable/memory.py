@@ -86,6 +86,14 @@ def recall_photo(card, memory):
     return who if best <= PHOTO_SAME else None
 
 
+NAME_READS_KEEP = 5   # 선수마다 기억할 닉네임 칸 OCR 결과 수(줄바꿈으로 이어 name_read 한 칸에 둔다)
+
+
+def name_reads(entry) -> list:
+    """기억(또는 카드)의 닉네임 칸 OCR 결과 목록. 예전 기억은 한 줄이라 그대로 하나짜리 목록이 된다."""
+    return [x for x in str((entry or {}).get('name_read') or '').split('\n') if x]
+
+
 def learn(memory, confirmed):
     """confirmed: [(카드, DB 선수)] - 사람이 확인했거나 이름·사진으로 확실히 맞은 짝.
     글씨는 값마다 TEMPLATES_PER_VALUE개까지(아직 없는 구역 색을 먼저), 사진은 선수마다 최신 하나."""
@@ -104,10 +112,18 @@ def learn(memory, confirmed):
     for card, r in confirmed:
         add('tier', str(r['tier']), card.get('tier_feat'), card.get('bg'))
         add('race', r['race'], card.get('race_feat'), card.get('bg'))
-        memory['photos'] = [p for p in memory['photos'] if hash_distance(p['hash'], card['photo']) > PHOTO_SAME
-                            and not (r.get('soop_id') and p.get('soop_id') == r.get('soop_id'))]
+        same_player = [p for p in memory['photos'] if hash_distance(p['hash'], card['photo']) <= PHOTO_SAME
+                       or (r.get('soop_id') and p.get('soop_id') == r.get('soop_id'))]
+        # 지난번까지 읽었던 글씨도 이어 둔다(닉네임이 그대로일 때만): 같은 카드도 이미지가 조금 달라지면
+        # OCR이 '주이'·'쑤이'처럼 번갈아 읽어서, 마지막 하나만 기억하면 매번 '닉네임 변경'으로 다시 뜬다.
+        reads = name_reads(card)
+        for p in same_player:
+            if p.get('nickname') == r['nickname']:
+                reads += name_reads(p)
+        reads = list(dict.fromkeys(x for x in reads if x))[:NAME_READS_KEEP]
+        memory['photos'] = [p for p in memory['photos'] if not any(p is q for q in same_player)]
         memory['photos'].append({'hash': card['photo'], 'soop_id': r.get('soop_id'), 'nickname': r['nickname'],
                                  'tier': str(r['tier']), 'race': r['race'],
                                  'tier_feat': card.get('tier_feat'), 'race_feat': card.get('race_feat'),
-                                 'name_read': card.get('name_read'), 'name_feat': card.get('name_feat')})
+                                 'name_read': '\n'.join(reads) or None, 'name_feat': card.get('name_feat')})
     return memory

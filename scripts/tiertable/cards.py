@@ -8,7 +8,7 @@ from PIL import Image, ImageOps
 
 from .features import glyph_feat, name_distance, pack_feat, photo_hash, unpack_feat
 from .layout import HEADER, NAME_BOX, NAME_SAME, PHOTO, RACES, RACE_BOX, ROLES, TIER_BOX, TIER_WORDS
-from .memory import classify_race, classify_tier, recall_photo
+from .memory import classify_race, classify_tier, name_reads, recall_photo
 
 
 try:
@@ -300,7 +300,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
         tier_raw = ocr(text_mask(tier_img, bg), 'eng+kor') if not tier else ''
         race_raw = ocr(text_mask(race_img, bg), 'eng') if not race else ''
         # 닉네임 글씨는 사진으로 아는 선수도 늘 읽는다 - 사진만 보고 넘어가면 닉네임 변경(박쭈이 → 쭈이)을
-        # 놓친다. 같은 카드 그림은 매번 같게 읽히므로, 지난번에 이 선수 카드를 읽은 글씨(name_read)와 같으면
+        # 놓친다. 지난번까지 이 선수 카드를 읽은 글씨(name_read, 최근 몇 개)와 같으면
         # 글자 인식이 조금 틀렸더라도 바뀐 게 아니다(기억한 닉네임을 쓴다). 다르면 읽은 글씨를 그대로 넘겨
         # 비교 단계에서 '닉네임 변경' 후보가 된다.
         # 아는 선수이고 닉네임 칸 그림이 지난번과 같으면 이름도 같다 - 글씨를 읽지 않는다.
@@ -313,7 +313,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
         else:
             role, nick, name_raw = read_name(name_img, bg)
             card['name_read'] = nick
-            if known and nick and known.get('name_read') == nick:
+            if known and nick and nick in name_reads(known):
                 nick = known['nickname']
                 card['name_unchanged'] = True
         # 기억 글씨로 읽었으면 두 번째 후보와의 여유(작으면 비교 단계에서 '확인 필요'), OCR로 읽었으면 표시만
