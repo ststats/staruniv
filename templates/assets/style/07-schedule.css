@@ -170,6 +170,7 @@ body.calendar-capture .cal-calendar-inner {
     overflow: hidden;
 }
 .cal-cell-event:hover { background: var(--ev-hover); }
+.cal-cell-break { display: none; }
 html[data-theme="dark"] .cal-cell-event,
 html[data-theme="dark"] .cal-longterm-bar {
     --ev-accent: var(--ev-accent-d);
@@ -579,8 +580,10 @@ html[data-theme="dark"] .cal-longterm-bar {
         flex-wrap: wrap;
         align-content: flex-start;
         justify-content: center;
-        gap: 3px;
-        padding: 5px 2px;
+        /* 줄 사이 간격은 점 쪽 여백으로 준다(아래 줄바꿈 칸이 빈 줄 하나만큼 간격을 더 만들지 않게) */
+        gap: 0 3px;
+        /* 아래 여백을 1px 줄여 가장 좁은 폰(320px)에서도 점 두 줄이 칸 안에 들어간다 */
+        padding: 5px 2px 4px;
         overflow: hidden;
     }
     /* 날짜 숫자는 20px 네모로 두고, 좌우 여백으로 한 줄을 다 차지하게 만들어
@@ -590,7 +593,7 @@ html[data-theme="dark"] .cal-longterm-bar {
         align-self: center;
         width: 20px;
         height: 20px;
-        margin: 0 calc(50% - 10px) 3px;
+        margin: 0 calc(50% - 10px) 6px;
         font-size: 11px;
     }
 
@@ -609,8 +612,15 @@ html[data-theme="dark"] .cal-longterm-bar {
         background: var(--ev-accent);
     }
     .cal-day-cell .cal-cell-event > * { display: none; }
-    /* 좁은 칸에서도 한 줄에 최대 네 개의 노치 박스를 유지한다. */
-    .cal-day-cell .cal-cell-event:nth-of-type(n + 5) { display: none; }
+    /* 한 줄에 네 개씩 두 줄(최대 여덟 개)까지. 네 개 뒤의 줄바꿈 칸(calendar.js)이 한 줄을 다 차지해
+       다음 점을 아랫줄로 보내고, 아랫줄 점만 위로 3px 띄운다. 나머지는 '선택한 날'에서 본다. */
+    .cal-day-cell .cal-cell-break {
+        display: block;
+        flex: 0 0 100%;
+        height: 0;
+    }
+    .cal-day-cell .cal-cell-break ~ .cal-cell-event { margin-top: 3px; }
+    .cal-day-cell .cal-cell-event:nth-of-type(n + 9) { display: none; }
 
     /* 오늘 · 고른 날: 숫자에 표시를 준다(칸 전체를 칠하면 일정 표시가 묻힌다).
        PC와 같은 노치 박스를 쓰되 20px에 맞춰 모서리를 작게 잡는다. */
@@ -622,6 +632,11 @@ html[data-theme="dark"] .cal-longterm-bar {
         background: var(--color-card);
         box-shadow: inset 0 0 0 2px var(--select-on-light);
     }
+}
+
+/* 가장 좁은 폰(360px 미만)은 칸이 43px 남짓이라 점 두 줄이 들어가도록 위 여백을 2px 줄인다 */
+@media (max-width: 359.98px) {
+    .cal-day-cell { padding-top: 3px; }
 }
 
 @media (max-width: 888px) {

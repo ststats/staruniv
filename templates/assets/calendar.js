@@ -261,6 +261,8 @@ const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) =>
         bar: calBarEdgeStyle(dateStr === ev.startDate || isWeekStart, dateStr === ev.endDate || isWeekEnd),
     });
 
+const CAL_DOTS_PER_ROW = 4; // 좁은 화면 점 달력의 한 줄 점 수(style/07-schedule.css와 같다)
+
 // 이번 달 칸 하나(날짜 숫자 + 장기 일정 막대 + 하루짜리 일정 카드)
 const calDayCellHtml = (dateStr, dayNum, dayOfWeek, todayStr, monthEvents) => {
     const classes = ['cal-day-cell'];
@@ -274,14 +276,15 @@ const calDayCellHtml = (dateStr, dayNum, dayOfWeek, todayStr, monthEvents) => {
     let html = `<span class="cal-day-number"${todayAttr}>${dayNum}</span>`;
     // 기간 일정은 날짜 숫자 바로 아래(하루짜리 일정보다 위)에 이어지는 막대로, 하루짜리 일정은 그 아래 카드로.
     const dayEvents = calEventsForDate(dateStr, monthEvents);
-    dayEvents.filter(calIsMultiDay).forEach(ev => {
-        html += calGetLongTermBarHTML(ev, dateStr, isWeekStart, isWeekEnd);
+    const items = [
+        ...dayEvents.filter(calIsMultiDay).map(ev => calGetLongTermBarHTML(ev, dateStr, isWeekStart, isWeekEnd)),
+        ...dayEvents.filter(ev => !calIsMultiDay(ev)).map(calGetEventHTML),
+    ];
+    // 좁은 화면(점 달력)은 한 줄에 네 개씩 두 줄까지 보인다. 네 개 뒤에 줄바꿈 칸을 둔다(PC에서는 안 보임).
+    items.forEach((item, i) => {
+        if (i === CAL_DOTS_PER_ROW) html += '<span class="cal-cell-break" aria-hidden="true"></span>';
+        html += item;
     });
-    dayEvents
-        .filter(ev => !calIsMultiDay(ev))
-        .forEach(item => {
-            html += calGetEventHTML(item);
-        });
 
     return `<div class="${classes.join(' ')}" data-date="${dateStr}">${html}</div>`;
 };
