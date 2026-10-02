@@ -121,9 +121,11 @@
                     cand: '',
                     elo: '',
                     soop: '',
+                    gender: '',
                 };
             else if (x.type === '표에서 빠짐') d.missing[i] = 'keep';
-            else if (x.type && x.type.startsWith('FA 명단에만 있음')) d.faOnly[i] = { mode: 'skip', pick: '' };
+            else if (x.type && x.type.startsWith('FA 명단에만 있음'))
+                d.faOnly[i] = { mode: 'skip', pick: '', gender: '' };
         });
         U.decide = d;
     }
@@ -203,7 +205,13 @@
                     if (!id) throw new Error(`FA '${x.nickname}' 기존 선수를 목록에서 골라 주세요`);
                     put(id, { affiliation: 'FA', tier: x.tier, race: x.race, nickname: x.nickname });
                 } else if (dc.mode === 'new') {
-                    inserts.push({ nickname: x.nickname, tier: x.tier, race: x.race, affiliation: 'FA' });
+                    inserts.push({
+                        nickname: x.nickname,
+                        tier: x.tier,
+                        race: x.race,
+                        affiliation: 'FA',
+                        gender: dc.gender || null,
+                    });
                 }
             }
         });
@@ -363,6 +371,12 @@
                 }`
             );
         return parts.join('<br>');
+    }
+    // 새 선수 성별 고르기(kind: card 또는 fa). 저장 값은 '남자'/'여자'만(DB도 이 두 값만 받는다)
+    function genderSelect(kind, i, value) {
+        return `<select class="admin-input" data-tu-gender="${kind}:${i}">${['', '남자', '여자']
+            .map(v => `<option value="${v}"${v === (value || '') ? ' selected' : ''}>${v || '성별'}</option>`)
+            .join('')}</select>`;
     }
     function pickInput(id, value) {
         return `<input class="admin-input" list="tuPeople" data-tu-pick="${id}" value="${esc(value)}" placeholder="닉네임으로 찾기">`;
@@ -545,7 +559,8 @@
             dc.mode === 'new'
                 ? `<input class="admin-input" data-tu-card-nick="${i}" value="${esc(dc.nick)}" placeholder="닉네임">
           <select class="admin-input" data-tu-card-tier="${i}">${optionList(['', ...SITE_ORDER.tiers], dc.tier)}</select>
-          <select class="admin-input" data-tu-card-race="${i}">${optionList(['', ...RACES], dc.race)}</select>`
+          <select class="admin-input" data-tu-card-race="${i}">${optionList(['', ...RACES], dc.race)}</select>
+          ${genderSelect('card', i, dc.gender)}`
                 : ''
         }</div></div>`;
         }
@@ -569,7 +584,7 @@
         ]
             .map(([k, l]) => `<option value="${k}"${dc.mode === k ? ' selected' : ''}>${l}</option>`)
             .join('')}</select>
-        ${dc.mode === 'pick' ? pickInput(`fa-${i}`, dc.pick) : ''}</div></div>`;
+        ${dc.mode === 'pick' ? pickInput(`fa-${i}`, dc.pick) : ''}${dc.mode === 'new' ? genderSelect('fa', i, dc.gender) : ''}</div></div>`;
         }
         if (x.type === '현황판에 없는 대학 소속(소속 유지)')
             return `<div class="admin-tu-review"><div><b>현황판에 없는 대학 소속</b> · ${esc(x.nickname)} (${esc(x.team)})<br><small>FA 명단에 있지만 팀 관리에서 '현황판에 아직 없음'인 대학이라 소속을 그대로 둡니다</small></div></div>`;
@@ -682,6 +697,11 @@
         });
         on('[data-tu-race]', 'onchange', n => {
             U.decide.race[n.dataset.tuRace] = n.value;
+        });
+        // 새 선수 성별: 티어표 카드·FA 글에는 성별이 없어 여기서 고른다(비우면 나중에 선수 관리에서)
+        on('[data-tu-gender]', 'onchange', n => {
+            const [kind, i] = n.dataset.tuGender.split(':');
+            (kind === 'card' ? U.decide.cards : U.decide.faOnly)[i].gender = n.value;
         });
         on('[data-tu-card-tier]', 'onchange', n => {
             U.decide.cards[n.dataset.tuCardTier].tier = n.value;
