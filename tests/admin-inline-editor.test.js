@@ -268,6 +268,14 @@ test('종족은 DB가 테란·저그·프로토스로 맞춰 저장하고, 종�
     assert.match(sql, new RegExp(`create trigger ${table}_normalize_race before insert or update of [a-z_, ]+ on public\\.${table}`), table);
   }
   assert.match(read('scripts/write_site_data.py'), /race_code\(row\.get\("상대 종족"\)\)/);
+  // 티어도 사다리 값으로 맞춘다('5티어' → '5', 체 → 체크)
+  assert.match(sql, /create or replace function public\.normalize_tier\(v text\)/);
+  for (const table of ['tier_members', 'members', 'rounds']) {
+    assert.match(sql, new RegExp(`create trigger ${table}_normalize_tier before insert or update of [a-z_, ]+ on public\\.${table}`), table);
+  }
+  // 뱃지는 T/Z/P(랜덤은 R)로 줄여 적는다
+  const core = read('templates/assets/core.js');
+  assert.match(core, /if \(race\.includes\('랜덤'\)\) return 'R';/);
   // 관리자 입력은 고르기(예전 값도 보이게)
   assert.match(read('templates/assets/admin-records.js'), code("raceField('종족','our_race')"));
   assert.match(read('templates/assets/admin-tier.js'), code("field('종족',raceSelect(r.race))"));
