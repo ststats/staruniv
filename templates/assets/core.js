@@ -840,6 +840,7 @@ function raceShortLabel(race) {
     if (race.includes('테란')) return 'T';
     if (race.includes('저그')) return 'Z';
     if (race.includes('프로토스')) return 'P';
+    if (race.includes('랜덤')) return 'R';
     return race;
 }
 
@@ -852,9 +853,10 @@ function raceCode(value) {
     if (upper === 'T' || upper === 'TERRAN' || raw === '테란') return 'T';
     if (upper === 'P' || upper === 'PROTOSS' || raw === '프로토스') return 'P';
     if (upper === 'Z' || upper === 'ZERG' || raw === '저그') return 'Z';
+    if (upper === 'R' || upper === 'RANDOM' || raw === '랜덤') return 'R';
     return upper;
 }
-const RACE_NAMES = { T: '테란', Z: '저그', P: '프로토스' };
+const RACE_NAMES = { T: '테란', Z: '저그', P: '프로토스', R: '랜덤' };
 
 // 종족 뱃지 클래스(T/Z/P별 색상)
 function raceBadgeClass(race) {

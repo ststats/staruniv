@@ -64,6 +64,16 @@ def clean(value) -> str:
     return "" if value is None else INVISIBLE_CHARS.sub("", str(value)).strip()
 
 
+# 상대 종족 → T/Z/P(종족전 통계 칸). DB는 '테란'처럼 저장한다(staruniv.sql 11번); 예전 T/Z/P 표기도 받는다.
+RACE_CODE = {"테란": "T", "저그": "Z", "프로토스": "P", "T": "T", "Z": "Z", "P": "P",
+             "TERRAN": "T", "ZERG": "Z", "PROTOSS": "P", "토스": "P"}
+
+
+def race_code(value) -> str:
+    text = clean(value)
+    return RACE_CODE.get(text.upper(), RACE_CODE.get(text, text.upper()))
+
+
 def fmt_wl_rate(wins: int, losses: int) -> str:
     total = wins + losses
     return f"{wins}승 {losses}패 ({wins / total * 100:.1f}%)" if total else "-"
@@ -80,7 +90,7 @@ def player_stats(rounds: list[dict]) -> list[dict]:
         players.add(name)
         result = clean(row.get("결과"))
         counts[(name, "fmt", clean(row.get("형식")), result)] += 1
-        counts[(name, "race", clean(row.get("상대 종족")).upper(), result)] += 1
+        counts[(name, "race", race_code(row.get("상대 종족")), result)] += 1
 
     def wl(name, kind, key):
         return fmt_wl_rate(counts[(name, kind, key, "승")], counts[(name, kind, key, "패")])
