@@ -51,6 +51,13 @@
         if (g && !list.includes(g)) list.push(g);
         return `<select class="admin-input" id="ati_gender">${list.map(v => `<option value="${C().esc(v)}"${g === v ? ' selected' : ''}>${C().esc(v || '-')}</option>`).join('')}</select>`;
     }
+    // 종족은 고르게 한다(저장할 때 DB가 '테란'·'저그'·'프로토스'로 맞춘다). 예전 값은 목록 끝에 그대로 보여 준다.
+    function raceSelect(value) {
+        const v = String(value || ''),
+            list = ['', '테란', '저그', '프로토스', '랜덤'];
+        if (v && !list.includes(v)) list.push(v);
+        return `<select class="admin-input" id="ati_race">${list.map(x => `<option value="${C().esc(x)}"${v === x ? ' selected' : ''}>${C().esc(x || '-')}</option>`).join('')}</select>`;
+    }
     function modifiedStamp(day) {
         const kst = new Date(Date.now() + 9 * 3600e3).toISOString();
         const d = /^\d{4}-\d{2}-\d{2}$/.test(String(day || '')) ? day : kst.slice(0, 10);
@@ -129,7 +136,7 @@
       ${C().field('SOOP ID', C().input('ati_soop', r.soop_id || ''))}
       ${C().field('ELO ID(메인 종족 계정)', C().input('ati_elo', r.elo_id ?? '', 'number', 'min="1"'))}
       ${C().field('성별', genderSelect(r.gender))}
-      ${C().field('종족', C().input('ati_race', r.race || ''))}
+      ${C().field('종족', raceSelect(r.race))}
       ${C().field('생년월일', C().input('ati_birth', r.birth_date || '', 'date'))}
       ${C().field('티어', C().input('ati_tier', r.tier || ''))}
       ${C().field('소속', C().input('ati_aff', r.affiliation || '', 'text', 'placeholder="소속 / FA / 휴면"'))}

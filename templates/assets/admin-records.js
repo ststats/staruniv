@@ -1,6 +1,7 @@
 (function () {
     'use strict';
     const C = () => window.AdminCore;
+    const RACE_CHOICES = ['테란', '저그', '프로토스', '랜덤'];
     // 머리의 보기 전환 탭
     const VIEW_TABS = [
         ['matches', '매치 관리'],
@@ -61,6 +62,14 @@
     function roundRow(r = {}, idx = 0) {
         const f = (label, k, attrs = '', cls = '') =>
             `<label class="admin-round-field${cls}"><span>${label}</span><input class="admin-input" data-k="${k}" value="${esc(r[k] || '')}"${attrs}></label>`;
+        // 종족은 고르게 한다(저장할 때 DB가 '테란'·'저그'·'프로토스'로 맞춘다). 예전 값(T 등)도 그대로 보여 준다.
+        const raceField = (label, k) => {
+            const v = r[k] || '';
+            const list = ['', ...RACE_CHOICES, ...(v && !RACE_CHOICES.includes(v) ? [v] : [])];
+            return `<label class="admin-round-field"><span>${label}</span><select class="admin-input" data-k="${k}">${list
+                .map(x => `<option value="${esc(x)}"${x === v ? ' selected' : ''}>${esc(x || '-')}</option>`)
+                .join('')}</select></label>`;
+        };
         return `<div class="admin-round-row admin-round-card" data-round-index="${idx}">
       <div class="admin-round-head">
         <b><span class="admin-round-no">${idx + 1}</span>세트</b>
@@ -69,8 +78,8 @@
       </div>
       <div class="admin-round-grid">
         ${f('세트명', 'set_name')}${f('라운드명', 'round_name', '', ' is-wide')}
-        ${f('캄몬 선수', 'our_player', ' list="ar_member_names" placeholder="멤버 또는 용병"')}${f('종족', 'our_race')}${f('티어', 'our_tier')}
-        ${f('상대 선수', 'opponent_player')}${f('종족', 'opponent_race')}${f('티어', 'opponent_tier')}
+        ${f('캄몬 선수', 'our_player', ' list="ar_member_names" placeholder="멤버 또는 용병"')}${raceField('종족', 'our_race')}${f('티어', 'our_tier')}
+        ${f('상대 선수', 'opponent_player')}${raceField('종족', 'opponent_race')}${f('티어', 'opponent_tier')}
         ${f('맵', 'map_name', '', ' is-full')}
       </div>
     </div>`;

@@ -260,3 +260,15 @@ test('현황판에 아직 없는 대학(teams.off_board)은 티어표 갱신이 
   assert.match(teams, code("if(hasOffBoard)row.off_board="));
   assert.match(read('templates/assets/admin-tier-update.js'), /현황판에 없는 대학 소속\(소속 유지\)/);
 });
+
+test('종족은 DB가 테란·저그·프로토스로 맞춰 저장하고, 종족전 통계는 두 표기를 다 센다', () => {
+  const sql = read('supabase/staruniv.sql');
+  assert.match(sql, /create or replace function public\.normalize_race\(v text\)/);
+  for (const table of ['tier_members', 'members', 'rounds', 'tier_member_elo_links', 'elo_players']) {
+    assert.match(sql, new RegExp(`create trigger ${table}_normalize_race before insert or update of [a-z_, ]+ on public\\.${table}`), table);
+  }
+  assert.match(read('scripts/write_site_data.py'), /race_code\(row\.get\("상대 종족"\)\)/);
+  // 관리자 입력은 고르기(예전 값도 보이게)
+  assert.match(read('templates/assets/admin-records.js'), code("raceField('종족','our_race')"));
+  assert.match(read('templates/assets/admin-tier.js'), code("field('종족',raceSelect(r.race))"));
+});

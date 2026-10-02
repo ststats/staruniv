@@ -17,7 +17,7 @@
 --
 -- 구성(순서대로): 1 기본 스키마·관리자 권한·영상·도구 → 2 공개 읽기 권한 → 3 어드민 편집 보조
 --                 → 4 어드민 ELO 통계 → 5 사이트 빌드 버튼 → 6 티어표 갱신 → 7 대학 로고
---                 → 8 다른 ELO 계정 → 9 멤버 ↔ 티어표 연동 → 10 성별 표기 통일
+--                 → 8 다른 ELO 계정 → 9 멤버 ↔ 티어표 연동 → 10 성별 표기 통일 → 11 종족 표기 통일
 
 
 -- ############################################################################
@@ -1449,3 +1449,81 @@ update public.members set gender = public.normalize_gender(gender)
 -- union all
 -- select 'members', gender, count(*) from public.members
 --  where gender is not null and gender not in ('남자', '여자') group by gender;
+
+
+-- ############################################################################
+-- 11. 종족 표기 통일('테란' / '저그' / '프로토스')
+-- ############################################################################
+-- EloBoard 경기 기록은 종족을 T/Z/P로 주고, 티어표·멤버는 '테란'처럼 적는다. 두 표기가 섞이면 상대전적
+-- 목록에 T와 테란이 같이 보이고, 전적 입력에 '테란'으로 적은 세트는 종족전 통계에서 빠진다(T/Z/P만 셌다).
+-- 저장할 때 DB가 한 표기로 맞춘다: T·Terran·테 → 테란, Z·Zerg·저 → 저그, P·Protoss·토스·프 → 프로토스,
+-- R·Random → 랜덤. 모르는 값은 앞뒤 공백만 지우고 그대로 둔다(빈 값은 null).
+create or replace function public.normalize_race(v text)
+returns text
+language sql
+immutable
+set search_path = public
+as $$
+  select case
+    when nullif(btrim(v), '') is null then null
+    when upper(btrim(v)) in ('T', 'TERRAN', '테란', '테') then '테란'
+    when upper(btrim(v)) in ('Z', 'ZERG', '저그', '저') then '저그'
+    when upper(btrim(v)) in ('P', 'PROTOSS', '프로토스', '토스', '프') then '프로토스'
+    when upper(btrim(v)) in ('R', 'RANDOM', '랜덤') then '랜덤'
+    else btrim(v)
+  end
+$$;
+
+-- 표마다 종족 칸 이름이 다르다: 전적 세트(rounds)는 our_race·opponent_race, 나머지는 race
+create or replace function public.normalize_race_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if tg_table_name = 'rounds' then
+    new.our_race := public.normalize_race(new.our_race);
+    new.opponent_race := public.normalize_race(new.opponent_race);
+  else
+    new.race := public.normalize_race(new.race);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists tier_members_normalize_race on public.tier_members;
+create trigger tier_members_normalize_race before insert or update of race on public.tier_members
+  for each row execute function public.normalize_race_columns();
+drop trigger if exists members_normalize_race on public.members;
+create trigger members_normalize_race before insert or update of race on public.members
+  for each row execute function public.normalize_race_columns();
+drop trigger if exists rounds_normalize_race on public.rounds;
+create trigger rounds_normalize_race before insert or update of our_race, opponent_race on public.rounds
+  for each row execute function public.normalize_race_columns();
+drop trigger if exists tier_member_elo_links_normalize_race on public.tier_member_elo_links;
+create trigger tier_member_elo_links_normalize_race before insert or update of race on public.tier_member_elo_links
+  for each row execute function public.normalize_race_columns();
+-- EloBoard 경기 기록에서 모은 선수(ststat이 쓴다). ststat.sql의 upsert_elo_batch도 같은 함수로 맞춘 값을 비교한다.
+drop trigger if exists elo_players_normalize_race on public.elo_players;
+create trigger elo_players_normalize_race before insert or update of race on public.elo_players
+  for each row execute function public.normalize_race_columns();
+
+-- 처음 한 번 기존 값 맞추기
+update public.tier_members set race = public.normalize_race(race)
+ where race is distinct from public.normalize_race(race);
+update public.members set race = public.normalize_race(race)
+ where race is distinct from public.normalize_race(race);
+update public.rounds set our_race = public.normalize_race(our_race), opponent_race = public.normalize_race(opponent_race)
+ where our_race is distinct from public.normalize_race(our_race)
+    or opponent_race is distinct from public.normalize_race(opponent_race);
+update public.tier_member_elo_links set race = public.normalize_race(race)
+ where race is distinct from public.normalize_race(race);
+update public.elo_players set race = public.normalize_race(race)
+ where race is distinct from public.normalize_race(race);
+
+-- 확인: 테란·저그·프로토스·랜덤·비어 있음 말고 남은 값(있으면 어드민에서 고친다)
+-- select 'tier_members' as tbl, race, count(*) from public.tier_members
+--  where race is not null and race not in ('테란', '저그', '프로토스', '랜덤') group by race
+-- union all
+-- select 'rounds', our_race, count(*) from public.rounds
+--  where our_race is not null and our_race not in ('테란', '저그', '프로토스', '랜덤') group by our_race;
