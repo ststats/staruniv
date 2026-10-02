@@ -152,9 +152,15 @@
             });
         };
         (r.changes || []).forEach((c, i) => {
-            // 닉네임 줄은 글씨만 확인하는 것이라(같은 사람인지는 이미 맞춤) 체크를 안 해도 카드 학습은 막지 않는다
+            // 체크를 뺀 변동의 카드는 배우지 않는다(짝이 틀렸을 수 있음). 다만 아래 두 경우는 짝이 맞으니 배운다:
+            // - 닉네임 줄: 글씨만 확인하는 것이다(같은 사람인지는 이미 맞춤)
+            // - 값이 그대로인 '확인 필요' 줄(예: 8티어 → 8티어, 8·6 헷갈림): 카드도 DB와 같은 값으로 읽혔다.
+            //   이걸 막으면 그 카드의 글씨를 끝내 배우지 못해 매번 같은 줄이 다시 뜬다(쭈이 카드).
             if (!U.decide.changes[i]) {
-                if (c.ref && !c.diff.nickname) unchecked.add(c.ref.join(','));
+                const unchangedOnly = Object.values(c.diff || {}).every(
+                    ([before, after]) => after == null || String(before ?? '') === String(after)
+                );
+                if (c.ref && !c.diff.nickname && !unchangedOnly) unchecked.add(c.ref.join(','));
                 return;
             }
             if (c.id == null) return;
