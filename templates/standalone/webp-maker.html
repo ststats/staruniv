@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>움짤생성기</title>
+<!-- 도구 > 움짤생성기. 사이트 도구 페이지가 iframe으로 띄우는 단독 페이지다(캄몬라이더와 같은 방식 -
+     사이트 CSS와 섞이지 않게). 화면 글꼴은 사이트와 같은 Pretendard(필요한 글자 조각만 받는 dynamic subset),
+     아래 Google Fonts·눈누 글꼴은 영상 위에 얹는 텍스트용이다(vercel.json CSP가 두 주소를 허용한다).
+     영상은 서버로 보내지 않고 브라우저 안에서만 처리한다. 동작은 webp-maker.js. -->
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Black+Han+Sans&family=Cute+Font&family=Do+Hyeon&family=Dongle:wght@700&family=Gaegu:wght@700&family=Gamja+Flower&family=Hi+Melody&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;700;900&family=Yeon+Sung&display=swap" rel="stylesheet">
+<script src="webp-maker.js"></script>
+<style>
+  @font-face { font-family: 'Cafe24Ssurround'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/Cafe24Ssurround.woff') format('woff'); }
+  @font-face { font-family: 'Maplestory'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/MaplestoryOTFBold.woff') format('woff'); }
+  @font-face { font-family: 'TmonMonsori'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/TmonMonsori.woff') format('woff'); }
+  @font-face { font-family: 'SBAggro'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroB.woff') format('woff'); }
+  @font-face { font-family: 'GmarketSans'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); }
+  @font-face { font-family: 'ONE-Mobile-POP'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff'); }
+  @font-face { font-family: 'GangwonEduPower'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEduPowerExtraBoldA.woff') format('woff'); }
+  @font-face { font-family: 'NexonLv2Gothic'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/NEXON%20Lv2%20Gothic%20Bold.woff') format('woff'); }
+  @font-face { font-family: 'DungGeunMo'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
+
+  /* =====================================================================
+     1. 사이트 디자인 토큰 (templates/assets/style/01-tokens.css에서 이 화면이 쓰는 것만 옮김)
+     ===================================================================== */
+  :root {
+    color-scheme: light;
+    --color-bg: #eef2f8; --color-card: #ffffff; --color-row-hover: #f2f5fa; --color-bg-subtle: #f1f5fb;
+    --color-border: #dde4ee; --color-border-strong: #cdd6e3;
+    --color-text-main: #0b1220; --color-text-strong: #050a14; --color-text-sub: #5d687a; --color-text-muted: #666f7d; --color-text-faint: #707782;
+    --color-primary: #1f6dfb; --color-primary-tint: #eaf1ff; --color-lose: #f03e3e; --color-warn: #b7791f;
+    --panel-text: #0b1220; --panel-muted: #56627a; --select-on-light: #14264a;
+    --navy: #14264a; --navy-deco: #1c3563; --navy-deco-fill: #1c3563; --navy-on-text: #e6ecf7; --navy-on-muted: #b3c2de;
+    --navy-pattern: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 8px);
+    --hero-glow: none; --title-eyebrow: #1c3563;
+    --checker-a: #e4eaf3; --checker-b: #f7f9fc;
+    --pop-shadow: 0 12px 28px rgba(10, 20, 40, 0.16);
+    --notch-xs: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+    --notch-sm: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    --notch-md: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    --notch-lg: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    --fs-heading: 16px; --fs-body: 13px; --fs-meta: 11px; --fs-eyebrow: 9px;
+    --space-block-gap: 24px; --space-title-gap: 16px; --space-content-gap: 16px; --space-label-gap: 6px;
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%230b1220' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.5-5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg: #07090d; --color-card: #10131a; --color-row-hover: #1a202b; --color-bg-subtle: #171c26;
+    --color-border: #1f2531; --color-border-strong: #353b46;
+    --color-text-main: #eef2f8; --color-text-strong: #ffffff; --color-text-sub: #8f98a6; --color-text-muted: #98a0ad; --color-text-faint: #767f8c;
+    --color-primary: #3b82ff; --color-primary-tint: #0f1d36; --color-warn: #ffc56b;
+    --panel-text: #eef2f8; --panel-muted: #a0a8b5; --select-on-light: #1f6dfb;
+    --navy: #111a2c; --navy-deco: #3b82ff; --navy-deco-fill: #2563eb; --navy-on-text: #e9ecf1; --navy-on-muted: #9aa0ab;
+    --navy-pattern: repeating-linear-gradient(135deg, rgba(90, 149, 255, 0.07) 0 1px, transparent 1px 8px);
+    --hero-glow: radial-gradient(120% 140% at 100% 0%, rgba(59, 130, 255, 0.22), transparent 55%);
+    --title-eyebrow: #c9cdd4;
+    --checker-a: #191d25; --checker-b: #11141a;
+    --pop-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23eef2f8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  /* =====================================================================
+     2. 기본
+     ===================================================================== */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--color-bg); color: var(--color-text-main);
+    font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-size: var(--fs-body); }
+  :focus-visible { outline: none; }
+  .hidden { display: none !important; }
+  [data-panel]:not(.show) { display: none; }
+  input, select, textarea, button { font: inherit; color: var(--color-text-main); }
+  .stage::-webkit-scrollbar { width: 10px; }
+  .stage::-webkit-scrollbar-thumb { border: 3px solid transparent; background: var(--color-border-strong) padding-box; }
+
+  /* =====================================================================
+     4. 배치 - 엔트리 탭처럼 넓은 쪽(미리보기) + 좁은 쪽(설정)
+     ===================================================================== */
+  /* 사이트 도구 탭 안(iframe)에 들어가므로 바깥 여백·최대 폭은 사이트(.container)가 준다 */
+  main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--space-block-gap); align-items: start; padding: 0 0 8px; }
+  .stage, aside { display: flex; flex-direction: column; min-width: 0; }
+
+  /* 섹션 제목: 사이트 .section-title (영문 눈썹 라벨, 아래 선, 제목 밑 파란 줄, 개수 배지, 오른쪽 글자 버튼) */
+  .section-title { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; min-height: 32px; padding-bottom: 9px;
+    margin-bottom: var(--space-title-gap); border-bottom: 1px solid var(--color-border); font-size: 18px; font-weight: 700; letter-spacing: -0.025em; }
+  .section-title[data-en]::before { content: attr(data-en); flex: 0 0 100%; order: -1; margin-bottom: 5px; color: var(--title-eyebrow);
+    font-size: var(--fs-eyebrow); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+  .section-title-label { position: relative; align-self: stretch; display: inline-flex; align-items: center; }
+  .section-title-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -10px; height: 2px; background: var(--navy-deco); }
+  .section-title > :not(.section-title-label) { align-self: center; }
+  .title-count { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; background: var(--navy-deco-fill); color: #fff;
+    font-size: var(--fs-meta); font-weight: 700; letter-spacing: 0; font-variant-numeric: tabular-nums; clip-path: var(--notch-xs); }
+  .title-actions { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
+  .section-spaced { margin-top: 32px; }
+
+  /* 글자 버튼: 사이트 .text-action (진영 교체 · 비우기 · 포스터 저장) */
+  .text-action { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-label-gap); min-height: 26px; padding: 0 8px;
+    border: 0; background: transparent; color: var(--panel-muted); font-size: var(--fs-meta); font-weight: 700; line-height: 1; white-space: nowrap;
+    text-decoration: none; clip-path: var(--notch-xs); cursor: pointer; transition: color .15s, background-color .15s; }
+  .text-action:hover:not(:disabled) { color: var(--panel-text); background: color-mix(in srgb, var(--panel-text) 7%, transparent); }
+  .text-action:disabled { opacity: .4; cursor: not-allowed; }
+  .text-action svg { width: 12px; height: 12px; flex: none; }
+  .text-action.on { background: var(--select-on-light); color: #fff; }
+  .text-action.danger:hover:not(:disabled) { color: var(--color-lose); }
+
+  /* =====================================================================
+     5. 입력 - 사이트 .h2h-slot-label(작은 라벨) + .h2h-input(흰 칸, 노치, 테두리 없음)
+     ===================================================================== */
+  .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 8px; }
+  .field { display: flex; flex-direction: column; min-width: 0; }
+  .field.wide { grid-column: 1 / -1; }
+  .slot { display: block; height: 14px; line-height: 14px; margin-bottom: 5px; font-size: var(--fs-eyebrow);
+    font-weight: 700; letter-spacing: .1em; color: var(--color-text-sub); white-space: nowrap; }
+  .row { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .grow { flex: 1; min-width: 0; }
+  .between { justify-content: space-between; }
+  .info { font-size: var(--fs-meta); line-height: 1.6; color: var(--color-text-muted); }
+  .warn { color: var(--color-warn); }
+  .err { color: var(--color-lose); }
+
+  input[type=number], select, textarea { width: 100%; height: 36px; padding: 0 12px; border: 0; border-radius: 0; background: var(--color-card);
+    clip-path: var(--notch-md); font-size: var(--fs-body); outline: none; transition: background-color .15s; }
+  select { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer;
+    background-image: var(--select-chevron); background-repeat: no-repeat; background-position: right 11px center; background-size: 11px; }
+  textarea { height: auto; min-height: 64px; padding: 9px 12px; line-height: 1.5; resize: vertical; }
+  textarea::placeholder { color: var(--color-text-faint); }
+  input:focus, select:focus, textarea:focus { background-color: var(--color-bg-subtle); }
+  /* 묶음 카드(흰 면) 안에서는 칸을 옅은 면으로 바꿔 구분한다 */
+  .panel-body input[type=number], .panel-body select, .panel-body textarea { background-color: var(--color-bg-subtle); }
+  .panel-body input:focus, .panel-body select:focus, .panel-body textarea:focus { background-color: var(--color-primary-tint); }
+
+  /* 숫자 칸: − 값 + (테두리 없이 한 덩어리, 오른쪽 끝만 노치) */
+  .stepper { display: inline-flex; flex: none; height: 30px; clip-path: var(--notch-sm); }
+  .stepper input { width: 48px; height: 30px; padding: 0 2px; clip-path: none; text-align: center; font-size: 12px; font-weight: 700;
+    font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+  .stepper input::-webkit-inner-spin-button, .stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper button { width: 26px; padding: 0; border: 0; background: var(--color-bg-subtle); color: var(--color-text-sub); font-size: 14px;
+    font-weight: 700; cursor: pointer; user-select: none; touch-action: manipulation; }
+  .panel-body .stepper button { background: var(--color-row-hover); }
+  html[data-theme="dark"] .panel-body .stepper button { background: var(--color-border); }
+  .stepper button:hover { color: var(--color-primary); }
+  .stepper button:active { background: var(--select-on-light); color: #fff; }
+  .unit { font-size: var(--fs-meta); color: var(--color-text-faint); }
+  .times { font-size: 12px; color: var(--color-text-faint); }
+
+  /* 슬라이더: 얇은 선 + 각진 손잡이 */
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 18px; margin: 0; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: var(--color-border); }
+  input[type=range]::-moz-range-track { height: 4px; background: var(--color-border); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; margin-top: -6px; border: 0; background: var(--select-on-light); clip-path: var(--notch-xs); }
+  input[type=range]::-moz-range-thumb { width: 12px; height: 16px; border: 0; border-radius: 0; background: var(--select-on-light); }
+  input[type=range]:hover::-webkit-slider-thumb { background: var(--color-primary); }
+
+  /* 체크: 각진 네모, 고르면 네이비 + ✓ */
+  .check { display: inline-flex; align-items: center; gap: 7px; min-height: 22px; font-size: 12px; font-weight: 600; color: var(--color-text-sub); cursor: pointer; }
+  .check input { -webkit-appearance: none; appearance: none; flex: none; width: 15px; height: 15px; margin: 0; background: var(--color-border);
+    clip-path: var(--notch-xs); cursor: pointer; }
+  .check input:checked { background: var(--select-on-light) var(--check-mark) center / 12px no-repeat; }
+  .check input:disabled { opacity: .45; cursor: not-allowed; }
+  .check:hover { color: var(--color-text-main); }
+
+  /* 색 칸: 테두리 없이 색만 꽉 차게 */
+  /* 색 칸: 틀 없이 색만. 흰색이 흰 바탕에 묻히지 않게 아주 옅은 안쪽 선만 둔다(노치를 안 써서 선이 잘리지 않는다) */
+  input[type=color] { flex: none; width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; }
+  input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type=color]::-webkit-color-swatch { border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+  input[type=color]::-moz-color-swatch { border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+  html[data-theme="dark"] input[type=color]::-webkit-color-swatch { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+  html[data-theme="dark"] input[type=color]::-moz-color-swatch { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+  .swatches { position: absolute; top: calc(100% + 6px); z-index: 30; display: grid; grid-template-columns: repeat(7, 24px); gap: 6px; padding: 10px;
+    background: var(--color-card); filter: drop-shadow(var(--pop-shadow)); clip-path: var(--notch-md); }
+  .swatches:not(.open) { display: none; }
+  /* 팔레트 점: 노치 없이 네모 + 안쪽 옅은 선(흰색 점이 흰 팝업에 묻히지 않게) */
+  .swatches .dot { position: relative; width: 24px; height: 24px; padding: 0; border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); cursor: pointer; }
+  html[data-theme="dark"] .swatches .dot { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+  .swatches .dot:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  /* 고른 색: 가운데 작은 네모(어느 색 위에서도 보이게 반전) */
+  .swatches .dot.on::after { content: ""; position: absolute; inset: 8px; background: #fff; mix-blend-mode: difference; }
+  .swatches .custom { grid-column: 1 / -1; justify-content: flex-start; }
+
+  /* 띠 선택: 사이트 기간 선택(.h2h-period) - 옅은 띠 안에서 고르면 네이비 */
+  .seg { display: inline-flex; flex-wrap: wrap; align-self: flex-start; gap: 2px; padding: 3px; background: var(--color-bg-subtle); clip-path: var(--notch-sm); }
+  .seg button { min-height: 22px; padding: 0 9px; border: 0; background: transparent; color: var(--color-text-sub); font-size: var(--fs-meta);
+    font-weight: 600; cursor: pointer; transition: color .15s, background-color .15s; }
+  .seg button:hover:not(.on) { background: var(--color-row-hover); color: var(--color-primary); }
+  .seg button.on { background: var(--select-on-light); color: #fff; font-weight: 700; clip-path: var(--notch-xs); }
+  /* 설정 탭은 회색 바탕 위라 띠를 카드 면으로 띄우고 칸을 넓힌다 */
+  .seg.tabs { display: flex; align-self: stretch; width: 100%; margin-bottom: var(--space-content-gap); background: var(--color-card); }
+  .seg.tabs button { flex: 1; min-height: 30px; font-size: 12px; }
+  html[data-theme="dark"] .seg.tabs { background: var(--color-card); }
+
+  /* 작은 칩 버튼(현재 위치 · 적용 · 원래대로 · 텍스트 레이어) */
+  .chip { flex: none; min-height: 26px; padding: 0 9px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-sub);
+    font-size: var(--fs-meta); font-weight: 700; white-space: nowrap; clip-path: var(--notch-xs); cursor: pointer; transition: color .15s, background-color .15s; }
+  .chip:hover:not(:disabled) { background: var(--color-row-hover); color: var(--color-primary); }
+  .panel-body .chip { background: var(--color-bg-subtle); }
+  #layerTabs { display: flex; flex-wrap: wrap; gap: 4px; }
+  #layerTabs button { max-width: 140px; min-height: 26px; padding: 0 9px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-sub);
+    font-size: var(--fs-meta); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; clip-path: var(--notch-xs); cursor: pointer; }
+  #layerTabs button:hover:not(.on) { background: var(--color-row-hover); color: var(--color-primary); }
+  #layerTabs button.on { background: var(--select-on-light); color: #fff; }
+  #layerTabs .add { background: transparent; }
+  #layerTabs .add:hover { background: color-mix(in srgb, var(--panel-text) 7%, transparent); color: var(--panel-text); }
+  #layerTabs .del { margin-left: auto; background: transparent; color: var(--color-text-faint); }
+  #layerTabs .del:hover { background: transparent; color: var(--color-lose); }
+
+  /* =====================================================================
+     6. 묶음 카드 - 사이트 엔트리 '자동매칭 티어 고르기'(네이비 빗금 머리줄 + 흰 몸통)
+     ===================================================================== */
+  .panel { margin-bottom: 12px; background: var(--color-card); clip-path: var(--notch-md); }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; padding: 0 12px;
+    background: var(--navy); background-image: var(--navy-pattern); color: var(--navy-on-text); font-size: var(--fs-meta); font-weight: 800; }
+  .panel-head .en { font-size: var(--fs-eyebrow); font-weight: 600; letter-spacing: .16em; color: var(--navy-on-muted); }
+  .panel-body { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+  .panel-body .fields { gap: 12px 10px; }
+
+  /* =====================================================================
+     7. 미리보기 · 결과
+     ===================================================================== */
+  /* 빈 화면: 사이트 .h2h-empty (네이비 빗금 + 제목 + 보조 문구) */
+  #drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 300px; padding: 24px;
+    background: var(--navy); background-image: var(--hero-glow), var(--navy-pattern); clip-path: var(--notch-lg); text-align: center; cursor: pointer; transition: filter .15s; }
+  #drop .icon { width: 40px; height: 40px; margin-bottom: 10px; color: var(--navy-on-muted); }
+  #drop .drop-title { font-size: 14px; font-weight: 700; color: var(--navy-on-text); }
+  #drop .drop-sub { font-size: 12px; color: var(--navy-on-muted); }
+  #drop .drop-btn { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 14px; background: rgba(255, 255, 255, .1);
+    color: #fff; font-size: var(--fs-meta); font-weight: 700; clip-path: var(--notch-sm); }
+  #drop:hover { filter: brightness(1.15); }
+  #drop.over { filter: brightness(1.3); }
+
+  .viewer { background: var(--color-card); clip-path: var(--notch-md); }
+  .checker { background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0 / 16px 16px; }
+  .canvasWrap { display: flex; align-items: center; justify-content: center; min-height: 240px; padding: 16px; overflow: hidden; }
+  #preview { display: block; max-width: 100%; max-height: 58vh; cursor: move; touch-action: none; box-shadow: 0 6px 18px rgba(10, 20, 40, .18); }
+  .controls { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--color-border); }
+  #play { flex: none; width: 30px; height: 26px; padding: 0; border: 0; background: var(--select-on-light); color: #fff; font-size: 11px; clip-path: var(--notch-xs); cursor: pointer; }
+  #play:hover { background: var(--color-primary); }
+  .time { min-width: 86px; text-align: right; font-size: var(--fs-meta); font-weight: 700; color: var(--color-text-sub); font-variant-numeric: tabular-nums; }
+  .viewer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 12px 10px; }
+  .crop-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 0 12px 10px; }
+  .cropNums { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 4px 12px; padding: 0 12px 14px; }
+  .cropNums .field .slot { margin-bottom: 4px; }
+
+  .result-body { background: var(--color-card); clip-path: var(--notch-md); }
+  .result-body .checker { padding: 16px; }
+  #resultImg { display: block; max-width: 100%; margin: 0 auto; box-shadow: 0 6px 18px rgba(10, 20, 40, .18); }
+  .result-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--color-border); }
+  /* 다운로드: 변환 버튼과 같은 네이비 빗금(다크에선 사이트처럼 파랑) */
+  .dl { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 14px; background: var(--navy); background-image: var(--navy-pattern);
+    color: var(--navy-on-text); font-size: var(--fs-meta); font-weight: 800; text-decoration: none; clip-path: var(--notch-sm); }
+  .dl:hover { color: #fff; filter: brightness(1.15); }
+  html[data-theme="dark"] .dl { background: var(--select-on-light); background-image: var(--navy-pattern); }
+  .dl svg { width: 12px; height: 12px; }
+
+  /* 변환 버튼: 사이트 '자동매칭 적용'(네이비 빗금 큰 버튼) */
+  /* 변환: 미리보기 바로 아래 - 고친 모습을 보고 바로 누르고, 결과가 그 아래에 나온다 */
+  #convertCard { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  #drop:not(.hidden) ~ #convertCard { display: none; }   /* 영상을 넣기 전에는 숨긴다 */
+  .primary { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 40px; border: 0; background: var(--navy);
+    background-image: var(--navy-pattern); color: var(--navy-on-text); font-size: 13px; font-weight: 800; clip-path: var(--notch-sm); cursor: pointer; }
+  .primary:hover:not(:disabled) { color: #fff; filter: brightness(1.15); }
+  .primary:disabled { opacity: .45; cursor: not-allowed; }
+  html[data-theme="dark"] .primary { background: var(--select-on-light); background-image: var(--navy-pattern); }
+  progress { width: 100%; height: 4px; appearance: none; -webkit-appearance: none; border: 0; background: var(--color-border); }
+  progress::-webkit-progress-bar { background: var(--color-border); }
+  progress::-webkit-progress-value { background: var(--color-primary); }
+  progress::-moz-progress-bar { background: var(--color-primary); }
+  .group { display: flex; flex-direction: column; gap: 8px; }
+
+  /* =====================================================================
+     8. 좁은 화면
+     ===================================================================== */
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; gap: 32px; }
+    .cropNums { grid-template-columns: repeat(2, minmax(0, auto)); }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section class="stage">
+    <div class="section-title" data-en="Preview">
+      <span class="section-title-label">미리보기</span>
+      <span class="title-count hidden" id="srcBadge"></span>
+      <span class="title-actions">
+        <button class="text-action" id="cropToggle"></button>
+        <button class="text-action" id="cropReset" disabled>자르기 해제</button>
+        <button class="text-action" id="newFile"><span>다른 영상</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15m0 5v-5h5"/></svg></button>
+      </span>
+    </div>
+
+    <div id="drop">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14"/><path d="M3 9h18M7 5v4M12 5v4M17 5v4"/><path d="M10.5 12.5v4l3.5-2z" fill="currentColor"/></svg>
+      <div class="drop-title">아직 영상이 없습니다</div>
+      <div class="drop-sub">영상 파일을 끌어다 놓거나 눌러서 고르세요 · MP4, WebM, MOV 등</div>
+      <span class="drop-btn"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V7m-5 5 5-5 5 5M5 4h14"/></svg>영상 고르기</span>
+    </div>
+    <input type="file" id="file" accept="video/*" class="hidden">
+
+    <div id="editor" class="viewer hidden">
+      <div class="canvasWrap checker"><canvas id="preview"></canvas></div>
+      <div class="controls">
+        <button id="play" aria-label="재생">▶</button>
+        <input type="range" id="seek" class="grow" min="0" max="1" step="0.01" value="0">
+        <span class="time" id="timeLabel"></span>
+      </div>
+      <div class="viewer-foot">
+        <span class="info" id="previewHint"></span>
+      </div>
+      <div class="crop-opt hidden" id="cropLockWrap">
+        <label class="check"><input type="checkbox" id="cropLock" checked> 출력 크기 비율로 자르기</label>
+        <span class="info">출력 크기(예: 200×200)와 같은 모양으로만 잘려서, 결과가 찌그러지거나 여백이 생기지 않아요</span>
+      </div>
+      <div class="cropNums hidden" id="cropNums">
+        <div class="field"><span class="slot">가로</span><input type="number" id="cropW" min="8"></div>
+        <div class="field"><span class="slot">세로</span><input type="number" id="cropH" min="8"></div>
+        <div class="field"><span class="slot">X 위치</span><input type="number" id="cropX" min="0"></div>
+        <div class="field"><span class="slot">Y 위치</span><input type="number" id="cropY" min="0"></div>
+      </div>
+      <span class="hidden" id="srcInfo"></span>
+    </div>
+
+    <div id="convertCard">
+      <button class="primary" id="convert" disabled><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5M20 5v14"/></svg>WebP로 변환</button>
+      <div id="progWrap" class="group hidden">
+        <progress id="prog" max="1" value="0"></progress>
+        <div class="row between">
+          <span class="info" id="progLabel"></span>
+          <button class="text-action danger" id="cancel">취소</button>
+        </div>
+      </div>
+      <div class="info err" id="error"></div>
+    </div>
+
+    <div id="result" class="hidden">
+      <div class="section-title section-spaced" data-en="Result">
+        <span class="section-title-label">결과</span>
+      </div>
+      <div class="result-body">
+        <div class="checker"><img id="resultImg" alt="변환 결과"></div>
+        <div class="result-foot">
+          <span class="info" id="resultInfo"></span>
+          <a class="dl" id="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>다운로드</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="section-title" data-en="Settings"><span class="section-title-label">설정</span></div>
+    <div class="seg tabs" id="tabs" role="tablist">
+      <button data-v="output" class="on">출력</button>
+      <button data-v="text">텍스트</button>
+      <button data-v="frame">테두리</button>
+    </div>
+
+    <div class="panel show" data-panel="output">
+      <div class="panel-head"><span>출력 크기</span><span class="en">SIZE</span></div>
+      <div class="panel-body">
+        <div class="field">
+          <span class="slot">크기</span>
+          <select id="sizeMode">
+            <option value="orig" selected>원본 크기</option>
+            <option value="200">200 × 200</option>
+            <option value="custom">직접 입력</option>
+          </select>
+        </div>
+        <div id="customSize" class="group hidden">
+          <span class="slot">가로 × 세로 (px)</span>
+          <div class="row">
+            <input type="number" id="cw" min="1" max="4096" value="200"> <span class="times">×</span>
+            <input type="number" id="ch" min="1" max="4096" value="200">
+          </div>
+          <label class="check"><input type="checkbox" id="lockAR"> 원본 비율 유지</label>
+        </div>
+        <div id="fitRow" class="group hidden">
+          <span class="slot">맞춤 · 여백 색</span>
+          <div class="row">
+            <select id="fit" class="grow">
+              <option value="cover">채우기 (넘치는 부분 잘라냄)</option>
+              <option value="contain">맞추기 (여백 추가)</option>
+              <option value="stretch">늘리기</option>
+            </select>
+            <input type="color" id="bg" value="#000000" title="여백 색">
+          </div>
+        </div>
+        <div class="info" id="sizeInfo"></div>
+      </div>
+    </div>
+
+    <div class="panel show" data-panel="output">
+      <div class="panel-head"><span>구간 · 품질</span><span class="en">RANGE · QUALITY</span></div>
+      <div class="panel-body">
+        <div class="fields">
+          <div class="field">
+            <span class="slot">시작 (초)</span>
+            <div class="row"><input type="number" id="start" min="0" step="0.1" value="0"><button class="chip" id="setStart">현재 위치</button></div>
+          </div>
+          <div class="field">
+            <span class="slot">끝 (초)</span>
+            <div class="row"><input type="number" id="end" min="0" step="0.1" value="0"><button class="chip" id="setEnd">현재 위치</button></div>
+          </div>
+          <div class="field">
+            <span class="slot">FPS</span>
+            <select id="fps">
+              <option>5</option><option>10</option><option>15</option>
+              <option>20</option><option>24</option><option selected>30</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="slot">반복</span>
+            <select id="loop">
+              <option value="0" selected>무한 반복</option>
+              <option value="1">1번 재생</option>
+              <option value="2">2번</option>
+              <option value="3">3번</option>
+            </select>
+          </div>
+          <div class="field wide" id="qualityRow">
+            <span class="slot">품질</span>
+            <div class="row"><input type="range" id="quality" class="grow" min="10" max="99" value="95" data-unit=""></div>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="lossless"> 무손실 (화질 손실 없음)</label>
+        <div class="info" id="qualityHint"></div>
+        <div class="info" id="frameInfo"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="textCard" data-panel="text">
+      <div class="panel-head"><span>텍스트</span><span class="en">TEXT LAYERS</span></div>
+      <div class="panel-body">
+        <div id="layerTabs"></div>
+        <textarea id="text" placeholder="여기에 텍스트 입력 (줄바꿈 가능)"></textarea>
+        <div class="fields">
+          <div class="field">
+            <span class="slot">글꼴</span>
+            <select id="font">
+              <optgroup label="콘·이모티콘 인기">
+                <option value="'Cafe24Ssurround', sans-serif" selected>카페24 써라운드</option>
+                <option value="'Maplestory', sans-serif">메이플스토리</option>
+                <option value="'TmonMonsori', sans-serif">티몬 몬소리</option>
+                <option value="'SBAggro', sans-serif">어그로체</option>
+                <option value="'ONE-Mobile-POP', sans-serif">원스토어 모바일 POP</option>
+                <option value="'Jua', sans-serif">배민 주아</option>
+                <option value="'Do Hyeon', sans-serif">배민 도현</option>
+                <option value="'Bagel Fat One', sans-serif">베이글 팻 원 (통통)</option>
+                <option value="'GangwonEduPower', sans-serif">강원교육튼튼</option>
+              </optgroup>
+              <optgroup label="귀여운 손글씨">
+                <option value="'Gaegu', sans-serif">개구</option>
+                <option value="'Dongle', sans-serif">동글</option>
+                <option value="'Gamja Flower', sans-serif">감자꽃</option>
+                <option value="'Hi Melody', sans-serif">하이멜로디</option>
+                <option value="'Cute Font', sans-serif">귀여운체</option>
+                <option value="'Yeon Sung', sans-serif">연성</option>
+                <option value="'Nanum Pen Script', sans-serif">나눔펜</option>
+              </optgroup>
+              <optgroup label="깔끔·임팩트">
+                <option value="'GmarketSans', sans-serif">G마켓 산스</option>
+                <option value="'NexonLv2Gothic', sans-serif">넥슨 Lv2 고딕</option>
+                <option value="'Black Han Sans', sans-serif">검은고딕</option>
+                <option value="'Noto Sans KR', 'Malgun Gothic', sans-serif">노토 산스</option>
+                <option value="'DungGeunMo', monospace">둥근모꼴 (픽셀)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <span class="slot">굵기</span>
+            <select id="weight">
+              <option value="400" selected>보통</option>
+              <option value="700">굵게</option>
+              <option value="900">아주 굵게</option>
+            </select>
+          </div>
+          <div class="field wide">
+            <span class="slot">크기</span>
+            <div class="row"><input type="range" id="fsize" class="grow" min="8" max="200" value="30" data-unit="px"></div>
+          </div>
+          <div class="field">
+            <span class="slot">글자색</span>
+            <div class="row"><input type="color" id="color" value="#ffffff"></div>
+          </div>
+          <div class="field">
+            <span class="slot">드래그한 글자색</span>
+            <div class="row">
+              <input type="color" id="selColor" value="#ff4b4b" title="텍스트에서 드래그한 부분에 적용">
+              <button class="chip" id="selApply">적용</button>
+              <button class="chip" id="selClear">원래대로</button>
+            </div>
+          </div>
+        </div>
+        <span class="info" id="selInfo"></span>
+        <div class="field">
+          <span class="slot">외곽선</span>
+          <div class="seg" id="outlineMode">
+            <button data-v="none">없음</button>
+            <button data-v="single">외곽선</button>
+            <button data-v="double">이중 외곽선</button>
+          </div>
+        </div>
+        <div class="field" id="strokeRow">
+          <label class="slot" id="strokeLabel"></label>
+          <div class="row">
+            <input type="color" id="strokeColor" value="#000000">
+            <input type="range" id="strokeW" class="grow" min="1" max="30" value="3" data-unit="px">
+          </div>
+        </div>
+        <div class="field" id="outerRow">
+          <span class="slot">바깥 외곽선</span>
+          <div class="row">
+            <input type="color" id="outerColor" value="#ffffff">
+            <input type="range" id="outerW" class="grow" min="1" max="30" value="3" data-unit="px">
+          </div>
+        </div>
+        <div class="field">
+          <span class="slot">위치</span>
+          <div class="seg" id="anchorMode">
+            <button data-v="top">위</button>
+            <button data-v="middle">가운데</button>
+            <button data-v="bottom">아래</button>
+          </div>
+        </div>
+        <div class="field">
+          <span class="slot">정렬 여백</span>
+          <div class="row"><input type="range" id="margin" class="grow" min="0" max="60" value="8" data-unit="px"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="timeOn"> 특정 시간에만 보이기</label>
+        <div id="timeGroup" class="fields hidden">
+          <div class="field">
+            <span class="slot">나타남 (초)</span>
+            <div class="row"><input type="number" id="tFrom" min="0" step="0.1" value="0"><button class="chip" id="setFrom">현재 위치</button></div>
+          </div>
+          <div class="field">
+            <span class="slot">사라짐 (초)</span>
+            <div class="row"><input type="number" id="tTo" min="0" step="0.1" value="0"><button class="chip" id="setTo">현재 위치</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="frame">
+      <div class="panel-head"><span>테두리</span><span class="en">FRAME</span></div>
+      <div class="panel-body">
+        <div class="field">
+          <span class="slot">모양</span>
+          <div class="seg" id="frameMode">
+            <button data-v="none" class="on">없음</button>
+            <button data-v="single">테두리</button>
+            <button data-v="double">이중 테두리</button>
+          </div>
+        </div>
+        <div class="field hidden" id="frameRow">
+          <label class="slot" id="frameLabel"></label>
+          <div class="row">
+            <input type="color" id="frameColor" value="#ffffff">
+            <input type="range" id="frameW" class="grow" min="1" max="60" value="2" data-unit="px">
+          </div>
+        </div>
+        <div class="field hidden" id="frameOuterRow">
+          <span class="slot">바깥 테두리</span>
+          <div class="row">
+            <input type="color" id="frameOuterColor" value="#000000">
+            <input type="range" id="frameOuterW" class="grow" min="1" max="60" value="2" data-unit="px">
+          </div>
+        </div>
+        <div class="field">
+          <span class="slot">모서리</span>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="radiusOn"> 둥글게</label>
+            <input type="range" id="radius" class="grow" min="1" max="100" value="10" data-unit="px">
+          </div>
+        </div>
+        <div class="info">둥근 모서리 바깥은 투명하게 처리돼요</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<video id="video" muted playsinline preload="auto" class="hidden"></video>
+
+</body>
+</html>

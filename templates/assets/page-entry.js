@@ -1,6 +1,6 @@
 /**
- * 도구 > 엔트리: 대학대전 엔트리를 짜 보고, 우리 레이팅으로 승부를 미리 굴려 본다.
- * (core.js -> page-tools.js -> 이 파일)
+ * 티어표 > 엔트리: 대학대전 엔트리를 짜 보고, 우리 레이팅으로 승부를 미리 굴려 본다.
+ * (core.js -> 이 파일 -> page-tier.js)
  *
  * [데이터]
  * Supabase 활성 Elo 스냅샷에서 명단·순위·레이팅·티어별 기준선을 읽는다.
@@ -1193,7 +1193,7 @@ function entryMapPickerHtml(index, current) {
     </div>`;
 }
 
-// 한쪽 목록만 갈아 끼운다. 검색창·소속 고르기는 tools.html에 고정으로 있어서 절대
+// 한쪽 목록만 갈아 끼운다. 검색창·소속 고르기는 tier.html에 고정으로 있어서 절대
 // 다시 그리지 않는다 - 다시 그리면 <input>이 새로 생겨 한글 조합이 끊긴다.
 function renderEntryColBody(side) {
     const key = side === 0 ? 'a' : 'b';

@@ -43,6 +43,7 @@ const TIER_TABS = {
     list: ['tab-tier-list', 'view-tier-list'],
     h2h: ['tab-tier-h2h', 'view-tier-h2h'],
     analysis: ['tab-tier-analysis', 'view-tier-analysis'],
+    entry: ['tab-tier-entry', 'view-tier-entry'],
 };
 
 function switchTierView(view) {
@@ -57,6 +58,7 @@ function switchTierView(view) {
     if (key === 'list') safeInit('티어표', enterTierList); // 처음 열 때만 명단을 받는다(아래 initTierList)
     if (key === 'h2h') safeInit('상대전적', h2hEnter); // page-h2h.js (처음 열 때만 데이터를 읽는다)
     if (key === 'analysis') safeInit('분석', analysisEnter); // page-analysis.js (처음 열 때만 데이터를 읽는다)
+    if (key === 'entry') safeInit('엔트리', entryEnsureLoaded); // page-entry.js (명단·레이팅은 처음 열 때 한 번만 받는다)
 }
 
 // ---------------------------------------------------------------------------

@@ -14,7 +14,7 @@
         schedule: ['calendar', 'history'],
         members: ['status', 'news'],
         video: ['fantube', 'pick'],
-        tools: ['multiviewer', 'entry', 'rider', 'external'],
+        tools: ['multiviewer', 'rider', 'webp', 'external'],
     };
 
     function configDefaults(cfg) {
