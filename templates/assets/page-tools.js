@@ -143,8 +143,15 @@ function webpFrameDoc() {
 function webpFitHeight() {
     const frame = document.getElementById('webp-frame');
     const doc = webpFrameDoc();
-    if (!frame || !doc || !doc.documentElement) return;
-    frame.style.height = doc.documentElement.scrollHeight + 'px';
+    const main = doc && doc.querySelector('main');
+    if (!frame || !main) return;
+    // 문서 전체 높이(scrollHeight)는 iframe 자신의 높이보다 작아지지 않아서, 한 번 길어지면 내용이
+    // 짧아져도 아래가 비어 있었다. 실제 내용(main)의 끝과 열려 있는 색 팔레트의 끝 중 아래쪽에 맞춘다.
+    let bottom = main.getBoundingClientRect().bottom;
+    doc.querySelectorAll('.swatches.open').forEach(pop => {
+        bottom = Math.max(bottom, pop.getBoundingClientRect().bottom + 8);
+    });
+    frame.style.height = Math.ceil(bottom + (doc.defaultView ? doc.defaultView.scrollY : 0)) + 'px';
 }
 
 function webpSyncTheme() {
