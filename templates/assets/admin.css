@@ -705,7 +705,8 @@ html[data-theme="dark"] .admin-pick-item input:checked + span::before {
     padding-bottom: 8px;
     border-bottom: 1px solid var(--color-border);
 }
-.admin-section-head b { color: var(--color-text-strong); font-size: 14px; font-weight: 800; }
+/* 제목은 줄지 않는다 - 폰에서 옆 설명이 길면 "로고"가 "로/고"로 세로로 꺾였다 */
+.admin-section-head b { flex: none; white-space: nowrap; color: var(--color-text-strong); font-size: 14px; font-weight: 800; }
 .admin-section-head small { color: var(--color-text-muted); font-size: 12px; text-align: right; }
 
 .admin-mini-table { width: 100%; font-size: 12px; }
@@ -1553,7 +1554,6 @@ body.admin-actions-on:not(.admin-edit-disabled) {
 .admin-tu-review > .admin-field { flex: 0 0 200px; }
 .admin-tu-choice { display: flex; flex-wrap: wrap; gap: 6px; flex: 2 1 320px !important; }
 .admin-tu-choice .admin-input { width: auto; min-width: 110px; flex: 1 1 110px; }
-.admin-tu-box .admin-section-head b { flex: 0 0 auto; white-space: nowrap; }
 /* 폰: 변동 표를 카드처럼 세로로 쌓는다(체크 | 카드 조각 · 선수 · 바뀌는 내용) */
 @media (max-width: 700px) {
     .admin-tu-table { min-width: 0 !important; }

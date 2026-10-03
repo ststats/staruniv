@@ -87,8 +87,10 @@
         return `<select class="admin-input" id="${id}" ${attrs}>${html}</select>`;
     }
     // 관리 화면 머리의 보기 전환 탭(공개 페이지 서브탭과 같은 모양). views: [[값, 이름], ...]
+    // 4~5개면 공개 서브탭처럼 폰에서 한 줄에 나눠 담는다(core.js syncSubTabDensity는 처음 그린 탭만 센다)
     function viewTabsHtml(views, current) {
-        return `<div class="sub-tabs tab-scroll" role="tablist">${views
+        const dense = views.length >= 4 && views.length <= 5 ? ' data-tab-dense' : '';
+        return `<div class="sub-tabs tab-scroll" role="tablist"${dense}>${views
             .map(
                 ([k, l]) =>
                     `<div class="sub-tab${current === k ? ' active' : ''}" role="tab" tabindex="0" aria-selected="${current === k}" data-admin-view="${esc(k)}">${esc(l)}</div>`

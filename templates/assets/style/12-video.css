@@ -263,6 +263,8 @@
     color: var(--color-text-strong);
     word-break: keep-all;
     overflow-wrap: anywhere;
+    /* 선반(.tab-scroll)의 nowrap이 물려 내려와 두 줄 제목이 한 줄로 잘렸다 - 제목은 다시 줄바꿈한다 */
+    white-space: normal;
 }
 .video-short:hover .video-short-title { color: var(--color-primary); }
 .video-short-meta {
