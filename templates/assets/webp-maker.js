@@ -50,7 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------- 공통 입력 UI ----------
     function segmented(id, onPick) {
         const buttons = $$(`#${id} button`);
-        const set = v => buttons.forEach(b => b.classList.toggle('on', b.dataset.v === v));
+        // 고른 버튼을 화면 읽기 프로그램에도 알린다(색만으로 표시하지 않게)
+        const set = v =>
+            buttons.forEach(b => {
+                b.classList.toggle('on', b.dataset.v === v);
+                b.setAttribute('aria-pressed', String(b.dataset.v === v));
+            });
+        buttons.forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('on'))));
         buttons.forEach(b =>
             b.addEventListener('click', () => {
                 onPick(b.dataset.v);
@@ -63,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // data-unit이 붙은 슬라이더 옆에 숫자 칸을 붙임 (px 값은 슬라이더 범위를 넘겨 입력 가능)
     $$('input[type=range][data-unit]').forEach(range => {
         const num = Object.assign(document.createElement('input'), { type: 'number', min: range.min });
+        const name =
+            range.getAttribute('aria-label') ||
+            (range.labels && range.labels[0] ? range.labels[0].textContent.trim() : '');
+        if (name) num.setAttribute('aria-label', `${name} 값`);
         range.after(num);
         if (range.dataset.unit)
             num.after(
