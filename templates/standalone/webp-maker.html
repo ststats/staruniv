@@ -101,11 +101,9 @@
   .text-action { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-label-gap); min-height: 26px; padding: 0 8px;
     border: 0; background: transparent; color: var(--panel-muted); font-size: var(--fs-meta); font-weight: 700; line-height: 1; white-space: nowrap;
     text-decoration: none; clip-path: var(--notch-xs); cursor: pointer; transition: color .15s, background-color .15s; }
-  .text-action:hover:not(:disabled) { color: var(--panel-text); background: color-mix(in srgb, var(--panel-text) 7%, transparent); }
   .text-action:disabled { opacity: .4; cursor: not-allowed; }
   .text-action svg { width: 12px; height: 12px; flex: none; }
   .text-action.on { background: var(--select-on-light); color: #fff; }
-  .text-action.danger:hover:not(:disabled) { color: var(--color-lose); }
 
   /* =====================================================================
      5. 입력 - 사이트 .h2h-slot-label(작은 라벨) + .h2h-input(흰 칸, 노치, 테두리 없음)
@@ -186,7 +184,6 @@
   .seg { display: inline-flex; flex-wrap: wrap; align-self: flex-start; gap: 2px; padding: 3px; background: var(--color-bg-subtle); clip-path: var(--notch-sm); }
   .seg button { min-height: 22px; padding: 0 9px; border: 0; background: transparent; color: var(--color-text-sub); font-size: var(--fs-meta);
     font-weight: 600; cursor: pointer; transition: color .15s, background-color .15s; }
-  .seg button:hover:not(.on) { background: var(--color-row-hover); color: var(--color-primary); }
   .seg button.on { background: var(--select-on-light); color: #fff; font-weight: 700; clip-path: var(--notch-xs); }
   /* 설정 탭은 회색 바탕 위라 띠를 카드 면으로 띄우고 칸을 넓힌다 */
   .seg.tabs { display: flex; align-self: stretch; width: 100%; margin-bottom: var(--space-content-gap); background: var(--color-card); }
@@ -196,17 +193,13 @@
   /* 작은 칩 버튼(현재 위치 · 적용 · 원래대로 · 텍스트 레이어) */
   .chip { flex: none; min-height: 26px; padding: 0 9px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-sub);
     font-size: var(--fs-meta); font-weight: 700; white-space: nowrap; clip-path: var(--notch-xs); cursor: pointer; transition: color .15s, background-color .15s; }
-  .chip:hover:not(:disabled) { background: var(--color-row-hover); color: var(--color-primary); }
   .panel-body .chip { background: var(--color-bg-subtle); }
   #layerTabs { display: flex; flex-wrap: wrap; gap: 4px; }
   #layerTabs button { max-width: 140px; min-height: 26px; padding: 0 9px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-sub);
     font-size: var(--fs-meta); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; clip-path: var(--notch-xs); cursor: pointer; }
-  #layerTabs button:hover:not(.on) { background: var(--color-row-hover); color: var(--color-primary); }
   #layerTabs button.on { background: var(--select-on-light); color: #fff; }
   #layerTabs .add { background: transparent; }
-  #layerTabs .add:hover { background: color-mix(in srgb, var(--panel-text) 7%, transparent); color: var(--panel-text); }
   #layerTabs .del { margin-left: auto; background: transparent; color: var(--color-text-faint); }
-  #layerTabs .del:hover { background: transparent; color: var(--color-lose); }
 
   /* =====================================================================
      6. 묶음 카드 - 사이트 엔트리 '자동매칭 티어 고르기'(네이비 빗금 머리줄 + 흰 몸통)
@@ -229,7 +222,6 @@
   #drop .drop-sub { font-size: 12px; color: var(--navy-on-muted); }
   #drop .drop-btn { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 14px; background: rgba(255, 255, 255, .1);
     color: #fff; font-size: var(--fs-meta); font-weight: 700; clip-path: var(--notch-sm); }
-  #drop:hover { filter: brightness(1.15); }
   #drop.over { filter: brightness(1.3); }
 
   .viewer { background: var(--color-card); clip-path: var(--notch-md); }
@@ -238,7 +230,6 @@
   #preview { display: block; max-width: 100%; max-height: 58vh; cursor: move; touch-action: none; box-shadow: 0 6px 18px rgba(10, 20, 40, .18); }
   .controls { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--color-border); }
   #play { flex: none; width: 30px; height: 26px; padding: 0; border: 0; background: var(--select-on-light); color: #fff; font-size: 11px; clip-path: var(--notch-xs); cursor: pointer; }
-  #play:hover { background: var(--color-primary); }
   .time { min-width: 86px; text-align: right; font-size: var(--fs-meta); font-weight: 700; color: var(--color-text-sub); font-variant-numeric: tabular-nums; }
   .viewer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 12px 10px; }
   .crop-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 0 12px 10px; }
@@ -252,7 +243,6 @@
   /* 다운로드: 변환 버튼과 같은 네이비 빗금(다크에선 사이트처럼 파랑) */
   .dl { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 14px; background: var(--navy); background-image: var(--navy-pattern);
     color: var(--navy-on-text); font-size: var(--fs-meta); font-weight: 800; text-decoration: none; clip-path: var(--notch-sm); }
-  .dl:hover { color: #fff; filter: brightness(1.15); }
   html[data-theme="dark"] .dl { background: var(--select-on-light); background-image: var(--navy-pattern); }
   .dl svg { width: 12px; height: 12px; }
 
@@ -262,7 +252,6 @@
   #drop:not(.hidden) ~ #convertCard { display: none; }   /* 영상을 넣기 전에는 숨긴다 */
   .primary { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 40px; border: 0; background: var(--navy);
     background-image: var(--navy-pattern); color: var(--navy-on-text); font-size: 13px; font-weight: 800; clip-path: var(--notch-sm); cursor: pointer; }
-  .primary:hover:not(:disabled) { color: #fff; filter: brightness(1.15); }
   .primary:disabled { opacity: .45; cursor: not-allowed; }
   html[data-theme="dark"] .primary { background: var(--select-on-light); background-image: var(--navy-pattern); }
   progress { width: 100%; height: 4px; appearance: none; -webkit-appearance: none; border: 0; background: var(--color-border); }
@@ -274,6 +263,24 @@
   /* =====================================================================
      8. 좁은 화면
      ===================================================================== */
+  /* 마우스를 올렸을 때 색은 마우스가 있는 기기에서만 - 터치 화면에서는 누른 뒤에도 그 색이 남아 다른 걸 고른 것처럼 보인다 */
+  @media (hover: hover) {
+    .text-action:hover:not(:disabled) { color: var(--panel-text); background: color-mix(in srgb, var(--panel-text) 7%, transparent); }
+    .text-action.danger:hover:not(:disabled) { color: var(--color-lose); }
+    .seg button:hover:not(.on) { background: var(--color-row-hover); color: var(--color-primary); }
+    .chip:hover:not(:disabled) { background: var(--color-row-hover); color: var(--color-primary); }
+    #layerTabs button:hover:not(.on) { background: var(--color-row-hover); color: var(--color-primary); }
+    #layerTabs .add:hover { background: color-mix(in srgb, var(--panel-text) 7%, transparent); color: var(--panel-text); }
+    #layerTabs .del:hover { background: transparent; color: var(--color-lose); }
+    #drop:hover { filter: brightness(1.15); }
+    #play:hover { background: var(--color-primary); }
+    .dl:hover { color: #fff; filter: brightness(1.15); }
+    .primary:hover:not(:disabled) { color: #fff; filter: brightness(1.15); }
+  }
+  /* 폰 폭에서는 두 칸씩 나란히 두면 숫자 칸 + '현재 위치'가 안 들어가 잘린다 - 한 줄에 하나씩 */
+  @media (max-width: 520px) {
+    .fields { grid-template-columns: 1fr; }
+  }
   @media (max-width: 900px) {
     main { grid-template-columns: 1fr; gap: 32px; }
     .cropNums { grid-template-columns: repeat(2, minmax(0, auto)); }
