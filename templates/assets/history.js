@@ -320,10 +320,10 @@ function histOpenMedia(id) {
     });
 }
 
-// 숨긴 항목은 공개 조회(anon)에 나오지 않는다 - 어드민은 로그인한 클라이언트를 넘겨 숨긴 항목까지 받는다.
-async function histLoadData(client) {
+// 숨긴 항목은 공개 조회(anon)에 나오지 않는다 - 어드민은 숨긴 항목까지 주는 읽기(AdminApi.history.timeline)를 넘긴다.
+async function histLoadData(load) {
     try {
-        const data = await Api.history(client);
+        const data = await (load ? load() : Api.history());
         const out = { items: [], overrides: {} };
         (data || []).forEach(r => {
             const value = {

@@ -64,12 +64,11 @@
                     color,
                 };
                 let error;
-                if (row?.id)
-                    ({ error } = await C().state.client.from('calendar_events').update(dbRow).eq('id', row.id));
+                if (row?.id) ({ error } = await AdminApi.schedule.update(row.id, dbRow));
                 else {
                     dbRow.id = Date.now();
                     dbRow.source_order = await C().nextSourceOrder('calendar_events');
-                    ({ error } = await C().state.client.from('calendar_events').insert(dbRow));
+                    ({ error } = await AdminApi.schedule.insert(dbRow));
                 }
                 if (error) throw error;
                 C().toast('일정을 저장했습니다');
@@ -77,7 +76,7 @@
             },
             onDelete: row?.id
                 ? async () => {
-                      const { error } = await C().state.client.from('calendar_events').delete().eq('id', row.id);
+                      const { error } = await AdminApi.schedule.remove(row.id);
                       if (error) throw error;
                       await C().audit('delete', 'calendar_events', row.id, {
                           start_date: row.startDate,
@@ -126,22 +125,15 @@
                 const remove = [...before].filter(id => !after.has(id));
                 if (!add.length && !remove.length) throw new Error('바뀐 내용이 없습니다');
                 if (remove.length) {
-                    const { error } = await C()
-                        .state.client.from('calendar_off_air')
-                        .delete()
-                        .eq('off_date', offDate)
-                        .in('soop_id', remove);
+                    const { error } = await AdminApi.schedule.removeOffAir(offDate, remove);
                     if (error) throw error;
                     await C().audit('delete', 'calendar_off_air', `${offDate}:${remove.join(',')}`, {});
                 }
                 if (add.length) {
                     const start = await C().nextSourceOrder('calendar_off_air');
-                    const { error } = await C()
-                        .state.client.from('calendar_off_air')
-                        .upsert(
-                            add.map((soop_id, i) => ({ off_date: offDate, soop_id, source_order: start + i })),
-                            { onConflict: 'off_date,soop_id' }
-                        );
+                    const { error } = await AdminApi.schedule.addOffAir(
+                        add.map((soop_id, i) => ({ off_date: offDate, soop_id, source_order: start + i }))
+                    );
                     if (error) throw error;
                 }
                 C().toast(`휴방을 저장했습니다. (추가 ${add.length} · 삭제 ${remove.length})`);

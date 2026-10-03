@@ -176,18 +176,9 @@ const Api = {
         return apiCall('api_schedule_on', { p_date: date });
     },
 
-    // GET /api/v1/history - 연혁(수동 항목 + 자동 항목 덮어쓰기). 어드민은 숨긴 항목까지 보려고 로그인 클라이언트를
-    // 넘긴다 - 그때만 표를 읽는다(공개 함수는 숨긴 항목을 뺀다).
-    async history(client) {
-        if (!client) return apiCall('api_history');
-        return apiRows(
-            client
-                .from('history_entries')
-                .select(
-                    'id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden'
-                )
-                .order('event_date', { ascending: false, nullsFirst: false })
-        );
+    // GET /api/v1/history - 연혁(수동 항목 + 자동 항목 덮어쓰기). 숨긴 항목은 빠진다(어드민은 AdminApi.history.timeline).
+    async history() {
+        return apiCall('api_history');
     },
 
     // GET /api/v1/posts - 멤버 공지 모음(최신순) [{soop_id, total_pages, post}]

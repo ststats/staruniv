@@ -3,7 +3,7 @@
     const C = () => window.AdminCore;
     let rows = [];
     async function load() {
-        const { data, error } = await C().state.client.from('external_tools').select('*').order('source_order');
+        const { data, error } = await AdminApi.tools.list();
         if (error) throw error;
         rows = data || [];
         const grouped = { extTools: { items: [] }, extSites: { items: [] } };
@@ -60,16 +60,15 @@
                     updated_at: new Date().toISOString(),
                 };
                 let error;
-                if (row.id)
-                    ({ error } = await C().state.client.from('external_tools').update(payload).eq('id', row.id));
-                else ({ error } = await C().state.client.from('external_tools').insert(payload));
+                if (row.id) ({ error } = await AdminApi.tools.update(row.id, payload));
+                else ({ error } = await AdminApi.tools.insert(payload));
                 if (error) throw error;
                 C().toast('도구를 저장했습니다');
                 await load();
             },
             onDelete: row.id
                 ? async () => {
-                      const { error } = await C().state.client.from('external_tools').delete().eq('id', row.id);
+                      const { error } = await AdminApi.tools.remove(row.id);
                       if (error) throw error;
                       await C().audit('delete', 'external_tools', row.id, { name: row.name, url: row.url });
                       await load();

@@ -111,9 +111,7 @@
     }
     async function duplicateElo(elo, id) {
         if (!elo) return null;
-        let q = C().state.client.from('tier_members').select('id,nickname,elo_id').eq('elo_id', elo).limit(2);
-        if (id) q = q.neq('id', id);
-        const { data, error } = await q;
+        const { data, error } = await AdminApi.tierMembers.withElo(elo, id);
         if (error) throw error;
         return data?.[0] || null;
     }
@@ -193,10 +191,10 @@
                 if (warnings.length && !confirm(`${warnings.join('\n')}\n그래도 저장할까요?`))
                     throw new Error('검증 경고로 저장을 취소했습니다');
                 let error;
-                if (r.id) ({ error } = await C().state.client.from('tier_members').update(p).eq('id', r.id));
+                if (r.id) ({ error } = await AdminApi.tierMembers.update(r.id, p));
                 else {
                     p.source_order = await C().nextSourceOrder('tier_members');
-                    ({ error } = await C().state.client.from('tier_members').insert(p));
+                    ({ error } = await AdminApi.tierMembers.insert(p));
                 }
                 if (error) throw error;
                 C().toast('티어 선수를 저장했습니다');
@@ -205,7 +203,7 @@
             },
             onDelete: r.id
                 ? async () => {
-                      const { error } = await C().state.client.from('tier_members').delete().eq('id', r.id);
+                      const { error } = await AdminApi.tierMembers.remove(r.id);
                       if (error) throw error;
                       await C().audit('delete', 'tier_members', r.id, { nickname: r.nickname, elo_id: r.elo_id });
                       await load(S.page);
@@ -218,11 +216,7 @@
     async function showLinks(memberId) {
         const box = document.getElementById('ati_links');
         if (!box) return;
-        const { data, error } = await C()
-            .state.client.from('tier_member_elo_links')
-            .select('elo_id,elo_name,race')
-            .eq('tier_member_id', memberId)
-            .order('elo_id');
+        const { data, error } = await AdminApi.eloLinks.ofMember(memberId);
         if (!box.isConnected) return;
         if (error) {
             box.textContent = `연결 계정을 불러오지 못했습니다: ${C().errorText(error)}`;
@@ -267,10 +261,7 @@
                         race: tr.querySelector('[data-link-race]').value || null,
                     };
                     b.disabled = true;
-                    const { error } = await C()
-                        .state.client.from('tier_member_elo_links')
-                        .update(payload)
-                        .eq('elo_id', Number(b.dataset.linkSave));
+                    const { error } = await AdminApi.eloLinks.update(Number(b.dataset.linkSave), payload);
                     b.disabled = false;
                     if (error) return C().toast(C().errorText(error), 'error');
                     C().toast(`ELO ${b.dataset.linkSave} 연결 계정을 저장했습니다`);
@@ -288,10 +279,7 @@
                     )
                         return;
                     b.disabled = true;
-                    const { error } = await C().state.client.rpc('admin_set_main_elo', {
-                        p_member_id: memberId,
-                        p_elo_id: elo,
-                    });
+                    const { error } = await AdminApi.tierMembers.setMainElo(memberId, elo);
                     if (error) {
                         b.disabled = false;
                         return C().toast(C().errorText(error), 'error');
@@ -306,10 +294,7 @@
                 (b.onclick = async () => {
                     if (!confirm(`ELO ${b.dataset.unlink} 연결을 해제할까요? 다음 동기화 때 신규 인원에 다시 뜹니다`))
                         return;
-                    const { error } = await C()
-                        .state.client.from('tier_member_elo_links')
-                        .delete()
-                        .eq('elo_id', Number(b.dataset.unlink));
+                    const { error } = await AdminApi.eloLinks.remove(Number(b.dataset.unlink));
                     if (error) return C().toast(C().errorText(error), 'error');
                     showLinks(memberId);
                 })
@@ -325,11 +310,7 @@
                 const aff = C().empty(C().value('atb_aff')),
                     tier = C().empty(C().value('atb_tier'));
                 if (!aff && !tier) throw new Error('소속 또는 티어 중 하나를 입력하세요');
-                const { error } = await C().state.client.rpc('admin_bulk_update_tier_members', {
-                    p_ids: [...S.selected],
-                    p_affiliation: aff,
-                    p_tier: tier,
-                });
+                const { error } = await AdminApi.tierMembers.bulkUpdate([...S.selected], aff, tier);
                 if (error) throw error;
                 C().toast('일괄 수정했습니다');
                 S.selected.clear();
@@ -338,13 +319,7 @@
         });
     }
     async function loadFilterOptions() {
-        const all = await fetchAllPages((from, to) =>
-            C()
-                .state.client.from('tier_members')
-                .select('tier,affiliation,race')
-                .order('id', { ascending: true })
-                .range(from, to)
-        );
+        const all = await AdminApi.tierMembers.all('tier,affiliation,race');
         const clean = key =>
             [...new Set(all.map(r => String(r[key] || '').trim()).filter(Boolean))].sort((a, b) =>
                 a.localeCompare(b, 'ko', { numeric: true, sensitivity: 'base' })
@@ -365,20 +340,17 @@
         }
         const from = S.page * S.size,
             to = from + S.size - 1;
-        let q = C()
-            .state.client.from('tier_members')
-            .select('*', { count: 'exact' })
-            .order(S.sort, { ascending: S.asc })
-            .range(from, to);
         const { q: search, tier, aff, race } = S.filters;
-        if (search)
-            q = q.or(
-                `name.ilike.%${search}%,nickname.ilike.%${search}%,soop_id.ilike.%${search}%,elo_id.eq.${/^\d+$/.test(search) ? search : -1}`
-            );
-        if (tier) q = q.eq('tier', tier);
-        if (aff) q = q.eq('affiliation', aff);
-        if (race) q = q.eq('race', race);
-        const { data, count, error } = await q;
+        const { data, count, error } = await AdminApi.tierMembers.page({
+            from,
+            to,
+            sort: S.sort,
+            ascending: S.asc,
+            search,
+            tier,
+            affiliation: aff,
+            race,
+        });
         if (error) throw error;
         S.rows = data || [];
         S.count = count || 0;
@@ -500,37 +472,24 @@
     // ---------------------------------------------------------------------------
     // 티어 랭킹 보기: ststat가 계산한 활성 스냅샷 전체(순위에 오른 모든 선수)
     // ---------------------------------------------------------------------------
-    function pagedSelect(table, cols, order) {
-        return fetchAllPages((from, to) =>
-            C().state.client.from(table).select(cols).order(order, { ascending: true }).range(from, to)
-        );
-    }
     async function loadRanking() {
         if (R.loaded) return;
         if (!R.loading)
             R.loading = (async () => {
                 const [ranks, people] = await Promise.all([
-                    pagedSelect(
-                        'elo_rankings',
-                        'elo_id,tier,tier_rank,tier_count,raw_rating,rating,data_tier,tier_gap,recent_365_games,recent_365_wins,recent_90_games,recent_90_wins,recent_30_games,recent_30_wins,as_of',
-                        'elo_id'
-                    ),
-                    pagedSelect('elo_public_players', 'elo_id,elo_name,nickname,race,affiliation', 'elo_id'),
+                    AdminApi.ranking.rankingsAll(),
+                    AdminApi.ranking.playersAll(),
                 ]);
                 // 표준오차(elo_player_ratings)를 못 읽으면 칸만 비운다.
                 let se = {};
                 try {
-                    (await pagedSelect('elo_player_ratings', 'elo_id,rating_se', 'elo_id')).forEach(r => {
+                    (await AdminApi.ranking.ratingSeAll()).forEach(r => {
                         se[r.elo_id] = r.rating_se;
                     });
                 } catch (e) {
                     se = {};
                 }
-                const metaRes = await C()
-                    .state.client.from('elo_ranking_meta')
-                    .select('as_of')
-                    .order('as_of', { ascending: false })
-                    .limit(1);
+                const metaRes = await AdminApi.ranking.latestAsOf();
                 if (metaRes.error) throw metaRes.error;
                 const who = {};
                 people.forEach(p => {
@@ -725,22 +684,8 @@
     // 무시한 선수는 ststat이 다시 올리지 않는다(같은 ELO ID 줄이 남아 있으므로).
     // ---------------------------------------------------------------------------
     async function loadCandidates() {
-        N.members = await fetchAllPages((from, to) =>
-            C()
-                .state.client.from('tier_members')
-                .select('id,nickname,name,soop_id,elo_id,race,affiliation')
-                .order('id')
-                .range(from, to)
-        );
-        N.rows = await fetchAllPages((from, to) =>
-            C()
-                .state.client.from('tier_member_candidates')
-                .select('id,nickname,elo_id,soop_id,gender,race,tier,affiliation,source,found_at,last_seen_at,status')
-                .eq('status', N.status)
-                .order('found_at', { ascending: false, nullsFirst: false })
-                .order('id')
-                .range(from, to)
-        );
+        N.members = await AdminApi.tierMembers.all('id,nickname,name,soop_id,elo_id,race,affiliation');
+        N.rows = await AdminApi.candidates.all(N.status);
     }
     async function showCandidates() {
         N.rows = null;
@@ -756,10 +701,7 @@
         }
     }
     async function setCandidateStatus(c, status) {
-        const { error } = await C()
-            .state.client.from('tier_member_candidates')
-            .update({ status, updated_at: new Date().toISOString() })
-            .eq('id', c.id);
+        const { error } = await AdminApi.candidates.setStatus(c.id, status);
         if (error) throw error;
         N.rows = N.rows.filter(x => x.id !== c.id);
         renderCandidates();
@@ -779,7 +721,7 @@
                 affiliation: c.affiliation,
             },
             async () => {
-                const { error } = await C().state.client.from('tier_member_candidates').delete().eq('id', c.id);
+                const { error } = await AdminApi.candidates.remove(c.id);
                 if (error) throw error;
                 N.rows = N.rows.filter(x => x.id !== c.id);
                 membersLoaded = false;
@@ -823,11 +765,14 @@
                     (N.members || []).find(x => memberLabel(x) === label) ||
                     (N.members || []).find(x => x.nickname === label);
                 if (!m) throw new Error('목록에서 선수를 고르세요');
-                const { error } = await C()
-                    .state.client.from('tier_member_elo_links')
-                    .insert({ elo_id: c.elo_id, tier_member_id: m.id, elo_name: c.nickname, race: c.race });
+                const { error } = await AdminApi.eloLinks.insert({
+                    elo_id: c.elo_id,
+                    tier_member_id: m.id,
+                    elo_name: c.nickname,
+                    race: c.race,
+                });
                 if (error) throw error;
-                const del = await C().state.client.from('tier_member_candidates').delete().eq('id', c.id);
+                const del = await AdminApi.candidates.remove(c.id);
                 if (del.error) throw del.error;
                 C().toast(`${m.nickname} 선수에 연결했습니다`);
                 N.rows = N.rows.filter(x => x.id !== c.id);

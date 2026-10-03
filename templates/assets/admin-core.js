@@ -199,7 +199,7 @@
         const {
             data: { user },
             error,
-        } = await state.client.auth.getUser();
+        } = await window.AdminApi.auth.user();
         if (error || !user) {
             state.user = null;
             setVisible('loginView', true);
@@ -207,11 +207,7 @@
             $('adminView')?.classList.add('admin-hidden');
             return false;
         }
-        const { data, error: roleError } = await state.client
-            .from('admin_users')
-            .select('role,is_active')
-            .eq('user_id', user.id)
-            .maybeSingle();
+        const { data, error: roleError } = await window.AdminApi.auth.role(user.id);
         if (roleError || !data?.is_active) {
             setVisible('loginView', false);
             setVisible('deniedView', true);
@@ -239,7 +235,7 @@
         const password = value('loginPassword');
         const status = $('loginStatus');
         if (status) status.textContent = '로그인 중';
-        const { error } = await state.client.auth.signInWithPassword({ email, password });
+        const { error } = await window.AdminApi.auth.signIn(email, password);
         if (error) {
             if (status) status.textContent = errorText(error);
             return false;
@@ -250,13 +246,13 @@
     }
 
     async function logout() {
-        await state.client.auth.signOut();
+        await window.AdminApi.auth.signOut();
         location.reload();
     }
 
     async function loadMembers(force = false) {
         if (state.members && !force) return state.members;
-        const { data, error } = await state.client.from('members').select('*').order('source_order');
+        const { data, error } = await window.AdminApi.members.list();
         if (error) throw error;
         state.members = data || [];
         return state.members;
@@ -264,36 +260,21 @@
 
     async function loadSiteConfig(force = false) {
         if (state.siteConfig && !force) return state.siteConfig;
-        const { data, error } = await state.client
-            .from('site_config')
-            .select('config_value')
-            .eq('config_key', 'nav')
-            .maybeSingle();
+        const { data, error } = await window.AdminApi.siteConfig.get('nav');
         if (error) throw error;
         state.siteConfig = data?.config_value || {};
         return state.siteConfig;
     }
 
     async function saveSiteConfig(config) {
-        const { error } = await state.client.from('site_config').upsert(
-            {
-                config_key: 'nav',
-                config_value: config,
-                updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'config_key' }
-        );
+        const { error } = await window.AdminApi.siteConfig.save(config, 'nav');
         if (error) throw error;
         state.siteConfig = config;
         document.dispatchEvent(new CustomEvent('admin:site-config-saved', { detail: config }));
     }
 
     async function nextSourceOrder(table) {
-        const { data, error } = await state.client
-            .from(table)
-            .select('source_order')
-            .order('source_order', { ascending: false })
-            .limit(1);
+        const { data, error } = await window.AdminApi.nextSourceOrder(table);
         if (error) throw error;
         return Number(data?.[0]?.source_order || 0) + 1;
     }
@@ -310,27 +291,19 @@
         const path = `${folder}/${safeStem}-${Date.now()}.${ext}`;
         // 경로에 올린 시각이 붙어 파일마다 주소가 달라서, 브라우저가 1년 동안 다시 받지 않게 해도 된다
         // (기본 1시간이면 방송통계 움짤 같은 큰 파일을 한 시간마다 다시 받는다)
-        const { error } = await state.client.storage
-            .from('staruniv-media')
-            .upload(path, file, { upsert: false, cacheControl: '31536000' });
+        const { error } = await window.AdminApi.media.upload(path, file, { upsert: false, cacheControl: '31536000' });
         if (error) throw error;
         return path;
     }
 
     function mediaUrl(path) {
         if (!path) return '';
-        const { data } = state.client.storage.from('staruniv-media').getPublicUrl(path);
-        return data?.publicUrl || '';
+        return window.AdminApi.media.publicUrl(path);
     }
 
     async function audit(action, entity, entityId, details = {}) {
         try {
-            await state.client.rpc('admin_write_audit', {
-                p_action: action,
-                p_entity: entity,
-                p_entity_id: String(entityId ?? ''),
-                p_details: details,
-            });
+            await window.AdminApi.audit(action, entity, String(entityId ?? ''), details);
         } catch (_) {
             /* migration may not yet be installed; primary operation must still surface its own error */
         }
@@ -357,7 +330,7 @@
         btn.disabled = true;
         btn.textContent = '빌드 요청 중';
         try {
-            const { data: requestId, error } = await state.client.rpc('admin_request_calendar_capture');
+            const { data: requestId, error } = await window.AdminApi.calendarCapture.request();
             if (error) {
                 if (
                     /admin_request_calendar_capture/.test(error.message || '') &&
@@ -370,7 +343,7 @@
                 detail = '';
             for (let i = 0; i < 10 && status === null; i++) {
                 await new Promise(r => setTimeout(r, 1000));
-                const res = await state.client.rpc('admin_calendar_capture_status', { p_request_id: requestId });
+                const res = await window.AdminApi.calendarCapture.status(requestId);
                 const row = (res.data || [])[0];
                 if (row && (row.status_code !== null || row.error)) {
                     status = row.status_code;
@@ -514,7 +487,7 @@
         }
         setVisible('configError', false);
 
-        state.client.auth.onAuthStateChange((_event, session) => {
+        window.AdminApi.auth.onChange(session => {
             if (session?.user) {
                 queueMicrotask(() => requireAdmin().catch(err => console.error('관리자 세션 확인 실패:', err)));
             } else {

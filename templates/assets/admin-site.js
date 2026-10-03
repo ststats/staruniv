@@ -380,7 +380,7 @@
         const esc = C().esc;
         box.innerHTML =
             '<summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>불러오는 중</span></summary>';
-        const { data, error } = await C().state.client.rpc('admin_dashboard_stats');
+        const { data, error } = await AdminApi.dashboardStats();
         if (error || !data) {
             box.innerHTML = `<summary class="admin-rank-explain-head" data-en="ADMIN"><b>운영 현황</b><span>조회 실패 · ${esc(C().errorText ? C().errorText(error) : '')}</span></summary>`;
             return;

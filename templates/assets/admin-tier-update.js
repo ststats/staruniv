@@ -5,7 +5,6 @@
     'use strict';
     const C = () => window.AdminCore;
     const esc = v => C().esc(v);
-    const sb = () => C().state.client;
     const RACES = ['테란', '저그', '프로토스'];
     const NO_TEAM = new Set(['FA', '휴면']);
     const STATUS = { queued: '대기', running: '분석 중', done: '확인 대기', failed: '실패', applied: '반영됨' };
@@ -50,23 +49,13 @@
     // 데이터
     // ---------------------------------------------------------------------------
     async function loadJobs() {
-        const { data, error } = await sb()
-            .from('tier_update_jobs')
-            .select('id,created_at,status,error,started_at,finished_at,applied_at,image_url')
-            .order('id', { ascending: false })
-            .limit(12);
+        const { data, error } = await AdminApi.tierJobs.list();
         if (error) throw error;
         U.jobs = data || [];
     }
     async function loadPeople() {
         if (U.people) return;
-        U.people = await fetchAllPages((from, to) =>
-            sb()
-                .from('tier_members')
-                .select('id,nickname,soop_id,tier,race,affiliation')
-                .order('id', { ascending: true })
-                .range(from, to)
-        );
+        U.people = await AdminApi.tierMembers.all('id,nickname,soop_id,tier,race,affiliation');
         U.byId = {};
         U.pickIndex = {};
         U.people.forEach(p => {
@@ -80,14 +69,7 @@
         U.job = null;
         U.decide = {};
         render();
-        const [{ data, error }] = await Promise.all([
-            sb()
-                .from('tier_update_jobs')
-                .select('id,status,error,image_url,fa_text,result,applied,created_at,applied_at')
-                .eq('id', id)
-                .maybeSingle(),
-            loadPeople(),
-        ]);
+        const [{ data, error }] = await Promise.all([AdminApi.tierJobs.get(id), loadPeople()]);
         if (error) throw error;
         U.job = data;
         U.date = kstToday();
@@ -250,12 +232,12 @@
         U.busy = true;
         render();
         try {
-            const { data, error } = await sb().rpc('admin_apply_tier_update', {
-                p_job_id: U.jobId,
-                p_updates: p.updates,
-                p_inserts: p.inserts,
-                p_confirmed: p.confirmed,
-                p_date: U.date || null,
+            const { data, error } = await AdminApi.tierJobs.apply({
+                jobId: U.jobId,
+                updates: p.updates,
+                inserts: p.inserts,
+                confirmed: p.confirmed,
+                date: U.date || null,
             });
             if (error) throw error;
             C().toast(`반영했습니다: 수정 ${data.updated}명 · 추가 ${data.inserted}명`);
@@ -288,7 +270,7 @@
         U.busy = true;
         render();
         try {
-            const { data, error } = await sb().rpc('admin_request_tier_analysis', { p_image_url: img, p_fa_text: fa });
+            const { data, error } = await AdminApi.tierJobs.request(img, fa);
             if (error) throw error;
             U.form = { img: '', fa: '' };
             C().toast(`분석을 요청했습니다(작업 ${data}) 1~2분 걸립니다`);
@@ -317,7 +299,7 @@
                 for (const j of U.jobs.filter(
                     j => j.status === 'queued' && Date.now() - new Date(j.created_at) > 45e3
                 )) {
-                    const { data } = await sb().rpc('admin_tier_job_dispatch_status', { p_job_id: j.id });
+                    const { data } = await AdminApi.tierJobs.dispatchStatus(j.id);
                     const s = (data || [])[0];
                     if (s && s.status_code && s.status_code !== 204)
                         j.dispatchError = `GitHub 실행 요청 실패(${s.status_code}) ${s.error || ''}`;
