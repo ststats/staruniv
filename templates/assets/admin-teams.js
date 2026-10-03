@@ -5,7 +5,6 @@
     'use strict';
     const C = () => window.AdminCore;
     const esc = v => C().esc(v);
-    const sb = () => C().state.client;
     const SIZE = 96;
     const NO_TEAM = new Set(['FA', '휴면', '체크', '미분류', '']);
     const T = { teams: [], logos: {}, count: {} };
@@ -19,11 +18,9 @@
 
     async function load() {
         const [teams, logos, people] = await Promise.all([
-            sb().from('teams').select('*').order('source_order'),
-            sb().from('university_logos').select('name,path,color,updated_at'),
-            fetchAllPages((from, to) =>
-                sb().from('tier_members').select('affiliation').order('id', { ascending: true }).range(from, to)
-            ),
+            AdminApi.teams.list(),
+            AdminApi.logos.list(),
+            AdminApi.tierMembers.all('affiliation'),
         ]);
         if (teams.error) throw teams.error;
         T.teams = teams.data || [];
@@ -103,18 +100,16 @@
         const small = await shrink(bitmap);
         const ext = small.type === 'image/png' ? 'png' : 'webp';
         const path = `logos/${hexName(name)}-${Date.now()}.${ext}`;
-        const up = await sb()
-            .storage.from('staruniv-media')
-            .upload(path, small, { contentType: small.type, upsert: false });
+        const up = await AdminApi.media.upload(path, small, { contentType: small.type, upsert: false });
         if (up.error) throw up.error;
         const prev = T.logos[name];
         const row = { name, path, color: color || topbarColor(bitmap), updated_at: new Date().toISOString() };
-        const { error } = await sb().from('university_logos').upsert(row, { onConflict: 'name' });
+        const { error } = await AdminApi.logos.save(row);
         if (error) {
-            await sb().storage.from('staruniv-media').remove([path]);
+            await AdminApi.media.remove([path]);
             throw error;
         }
-        if (prev && prev.path && prev.path !== path) await sb().storage.from('staruniv-media').remove([prev.path]);
+        if (prev && prev.path && prev.path !== path) await AdminApi.media.remove([prev.path]);
         T.logos[name] = row;
         clearLogoCache();
         return row;
@@ -122,16 +117,16 @@
     async function removeLogo(name) {
         const prev = T.logos[name];
         if (!prev) return;
-        const { error } = await sb().from('university_logos').delete().eq('name', name);
+        const { error } = await AdminApi.logos.remove(name);
         if (error) throw error;
-        await sb().storage.from('staruniv-media').remove([prev.path]);
+        await AdminApi.media.remove([prev.path]);
         delete T.logos[name];
         clearLogoCache();
     }
     // 팀 이름을 바꾸면 로고도 새 이름으로 옮긴다(로고는 이름으로 찾는다)
     async function renameLogo(from, to) {
         if (!T.logos[from] || T.logos[to]) return;
-        const { error } = await sb().from('university_logos').update({ name: to }).eq('name', from);
+        const { error } = await AdminApi.logos.rename(from, to);
         if (error) throw error;
         T.logos[to] = { ...T.logos[from], name: to };
         delete T.logos[from];
@@ -190,10 +185,10 @@
                     throw new Error('저장을 취소했습니다');
                 if (hasOffBoard) row.off_board = !!document.getElementById('tm_off_board')?.checked;
                 let error;
-                if (r.id) ({ error } = await sb().from('teams').update(row).eq('id', r.id));
+                if (r.id) ({ error } = await AdminApi.teams.update(r.id, row));
                 else {
                     row.source_order = await C().nextSourceOrder('teams');
-                    ({ error } = await sb().from('teams').insert(row));
+                    ({ error } = await AdminApi.teams.insert(row));
                 }
                 if (error) throw error;
                 if (r.id && r.team_name && r.team_name !== name) await renameLogo(r.team_name, name);
@@ -210,7 +205,7 @@
             },
             onDelete: r.id
                 ? async () => {
-                      const { error } = await sb().from('teams').delete().eq('id', r.id);
+                      const { error } = await AdminApi.teams.remove(r.id);
                       if (error) throw error;
                       await C().audit('delete', 'teams', r.id, { team_name: r.team_name });
                       C().toast(`${r.team_name} 팀을 지웠습니다(로고는 남겨 둡니다)`);

@@ -5,9 +5,7 @@
     let people = null; // 티어표 선수(연결용): {id,nickname,soop_id,tier}
     async function loadPeople() {
         if (people) return people;
-        people = await fetchAllPages((from, to) =>
-            C().state.client.from('tier_members').select('id,nickname,soop_id,tier').order('id').range(from, to)
-        );
+        people = await AdminApi.tierMembers.all('id,nickname,soop_id,tier');
         return people;
     }
     const low = v =>
@@ -307,10 +305,10 @@
                     );
                 }
                 let error;
-                if (row.id) ({ error } = await C().state.client.from('members').update(payload).eq('id', row.id));
+                if (row.id) ({ error } = await AdminApi.members.update(row.id, payload));
                 else {
                     payload.source_order = await C().nextSourceOrder('members');
-                    ({ error } = await C().state.client.from('members').insert(payload));
+                    ({ error } = await AdminApi.members.insert(payload));
                 }
                 if (error) throw error;
                 C().toast('멤버를 저장했습니다');
@@ -318,17 +316,16 @@
             },
             onDelete: row.id
                 ? async () => {
-                      const { count, error: countErr } = await C()
-                          .state.client.from('rounds')
-                          .select('*', { head: true, count: 'exact' })
-                          .ilike('our_player', row.nickname || row.name || '');
+                      const { count, error: countErr } = await AdminApi.rounds.countOfOurPlayer(
+                          row.nickname || row.name || ''
+                      );
                       if (countErr) throw countErr;
                       if (
                           Number(count || 0) > 0 &&
                           !confirm(`이 멤버 이름이 연결된 세트가 ${count}개 있습니다. 그래도 실제 삭제할까요?`)
                       )
                           return;
-                      const { error } = await C().state.client.from('members').delete().eq('id', row.id);
+                      const { error } = await AdminApi.members.remove(row.id);
                       if (error) throw error;
                       await C().audit('delete', 'members', row.id, { name: row.name, linked_rounds: count || 0 });
                       C().toast('멤버를 삭제했습니다');

@@ -20,11 +20,7 @@
     }
 
     async function load() {
-        const { data, error } = await C()
-            .state.client.from('history_entries')
-            .select('*')
-            .order('event_date', { ascending: false, nullsFirst: false })
-            .order('sort_order');
+        const { data, error } = await AdminApi.history.list();
         if (error) throw error;
         rows = (data || []).map(normalize);
         await render();
@@ -33,7 +29,7 @@
     async function render() {
         const root = document.getElementById('history-root');
         if (!root) return;
-        const data = await histLoadData(C().state.client);
+        const data = await histLoadData(AdminApi.history.timeline);
         const merged = histMergeItems(data, SiteData.members, true);
         histRegisterItems(merged);
         histRenderTypeBar(merged);
@@ -205,14 +201,14 @@
                     updated_at: new Date().toISOString(),
                 };
                 if (!payload.event_date || !payload.title) throw new Error('날짜와 제목은 필수입니다');
-                const { error } = await C().state.client.from('history_entries').upsert(payload, { onConflict: 'id' });
+                const { error } = await AdminApi.history.upsert(payload);
                 if (error) throw error;
                 C().toast('연혁을 저장했습니다');
                 await load();
             },
             onDelete: row.id
                 ? async () => {
-                      const { error } = await C().state.client.from('history_entries').delete().eq('id', row.id);
+                      const { error } = await AdminApi.history.remove(row.id);
                       if (error) throw error;
                       await C().audit('delete', 'history_entries', row.id, { title: row.title });
                       C().toast('연혁을 삭제했습니다');
@@ -287,26 +283,28 @@
 
     // 화면에 보이는 그날의 항목들(자동 항목 포함), 화면과 같은 순서
     async function dayItems(date) {
-        const merged = histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
+        const merged = histMergeItems(await histLoadData(AdminApi.history.timeline), SiteData.members, true);
         return merged.filter(x => x.date === date);
     }
     // 한 항목의 같은 날 순서/숨김을 저장한다. 자동 항목(입단·퇴단 등)은 원본이 멤버 데이터라
     // 'override' 줄에 덮어쓸 값만 둔다(없는 칸은 원래 값을 그대로 쓴다).
     async function saveItem(item, fields) {
-        const q = C().state.client.from('history_entries');
         const now = new Date().toISOString();
         const { error } = item.auto
-            ? await q.upsert(
-                  { id: item.id, entry_kind: 'override', event_date: item.date, ...fields, updated_at: now },
-                  { onConflict: 'id' }
-              )
-            : await q.update({ ...fields, updated_at: now }).eq('id', item.id);
+            ? await AdminApi.history.upsert({
+                  id: item.id,
+                  entry_kind: 'override',
+                  event_date: item.date,
+                  ...fields,
+                  updated_at: now,
+              })
+            : await AdminApi.history.update(item.id, { ...fields, updated_at: now });
         if (error) throw error;
     }
     // ▲▼: 화면에 보이는 순서 그대로 옆 항목과 자리를 바꾸고, 그날 항목 전체를 0,1,2...로 다시 번호 매긴다
     // (sort_order 값만 맞바꾸면 값이 모두 0일 때 아무 일도 안 일어나고, 자동 항목은 DB 행이 없어 빠진다).
     async function move(id, dir) {
-        const all = histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
+        const all = histMergeItems(await histLoadData(AdminApi.history.timeline), SiteData.members, true);
         const item = all.find(x => String(x.id) === String(id));
         if (!item) return;
         const day = all.filter(x => x.date === item.date);
@@ -320,7 +318,7 @@
         await load();
     }
     async function toggle(id) {
-        const all = histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
+        const all = histMergeItems(await histLoadData(AdminApi.history.timeline), SiteData.members, true);
         const item = all.find(x => String(x.id) === String(id));
         if (!item) return;
         await saveItem(item, { hidden: !item.hidden });
@@ -335,7 +333,7 @@
         window.histAdminEdit = async id => {
             const manual = rows.find(x => String(x.id) === String(id) && x.entry_kind === 'manual');
             if (manual) return open(manual);
-            const all = histMergeItems(await histLoadData(C().state.client), SiteData.members, true);
+            const all = histMergeItems(await histLoadData(AdminApi.history.timeline), SiteData.members, true);
             const item = all.find(x => String(x.id) === String(id));
             if (item) open(item);
         };

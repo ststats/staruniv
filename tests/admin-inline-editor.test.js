@@ -45,7 +45,8 @@ test('schedule uses stable fixed palette and public renderer accepts keys', () =
 
 test('records use atomic match RPC and validate set results before save', () => {
   const admin = read('templates/assets/admin-records.js');
-  assert.match(admin, /rpc\('admin_save_match'/);
+  assert.match(admin, /AdminApi\.matches\.save\(p_match, p_rounds\)/);
+  assert.match(read('templates/assets/admin-api.js'), /rpc\('admin_save_match'/);
   assert.match(admin, code("validateScore(p_match,p_rounds)"));
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_save_match/);
@@ -55,8 +56,10 @@ test('records use atomic match RPC and validate set results before save', () => 
 test('tier editor checks duplicate ELO IDs and bulk update is admin-only RPC', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, /function duplicateElo/);
-  assert.match(tier, code(".eq('elo_id',elo)"));
-  assert.match(tier, /admin_bulk_update_tier_members/);
+  assert.match(tier, code("AdminApi.tierMembers.withElo(elo,id)"));
+  const api = read('templates/assets/admin-api.js');
+  assert.match(api, code(".eq('elo_id',eloId)"));
+  assert.match(api, /admin_bulk_update_tier_members/);
   const migration = read('supabase/staruniv.sql');
   assert.match(migration, /if not public\.is_admin\(\) then raise exception 'admin only'/);
   assert.match(migration, /admin_audit_log/);
@@ -105,9 +108,8 @@ test('공개 페이지는 표를 읽지 않고 공개 읽기 함수(api_*)만 �
   const api = read('templates/assets/api.js');
   const sql = read('supabase/staruniv.sql');
   const body = api.slice(api.indexOf('const Api = {'));
-  // 표 조회는 관리자 클라이언트를 넘긴 연혁(숨긴 항목까지 보는 어드민)뿐이다
-  assert.deepStrictEqual([...body.matchAll(/\.from\('(\w+)'\)/g)].map(m => m[1]), ['history_entries']);
-  assert.match(body, /if \(!client\) return apiCall\('api_history'\);/);
+  // 표 조회는 없다(어드민의 숨긴 연혁까지는 AdminApi.history.timeline)
+  assert.match(body, /async history\(\) \{\n        return apiCall\('api_history'\);/);
   assert.doesNotMatch(api, /from: table =>/);
   // staruniv.sql에 있는 함수는 정의와 anon 실행 권한이 있다(나머지 api_*는 ststat.sql 14번)
   const called = [...new Set([...api.matchAll(/apiCall\('(api_\w+)'/g)].map(m => m[1]))];
@@ -128,19 +130,38 @@ test('공개 페이지는 표를 읽지 않고 공개 읽기 함수(api_*)만 �
   assert.match(sql, /from public\.site_config where config_key = 'nav'/);
   // anon에게 표 읽기 권한(열 권한 포함)을 주지 않는다 - 함수 실행 권한만
   assert.doesNotMatch(sql, /grant select[^;]* to anon/);
+  assert.doesNotMatch(body, /\.from\('/);
+  assert.match(read('templates/assets/history.js'), code("await (load?load():Api.history())"));
+});
+
+test('관리자 화면의 DB·파일·로그인은 admin-api.js(AdminApi) 한 곳에서만 한다(나중에 서버 /api/v1/admin으로 바꿀 자리)', () => {
+  const dir = path.join(ROOT, 'templates', 'assets');
+  for (const f of fs.readdirSync(dir).filter(f => /^admin-.*\.js$/.test(f) && f !== 'admin-api.js')) {
+    const js = fs.readFileSync(path.join(dir, f), 'utf8');
+    assert.doesNotMatch(js, /(?<!Array)\.(from|rpc)\(['"`a-z]|\.storage\b|(?<!AdminApi)\.auth\.(getUser|sign|onAuth)|\bsb\(\)/, `${f}: AdminApi를 쓴다`);
+    assert.doesNotMatch(js.replace(/state\.client = window\.supabase\.createClient/, ''), /state\.client\./, `${f}: 클라이언트를 직접 쓰지 않는다`);
+  }
+  const api = read('templates/assets/admin-api.js');
+  // 함수마다 나중 서버 주소 주석이 붙는다(공개 api.js와 같은 짝)
+  const fns = [...api.matchAll(/^ {12}(\w+): (?:async )?\(?[\w, {}=']*\)? =>/gm)].map(m => m[1]);
+  assert.ok(fns.length > 50, String(fns.length));
+  assert.match(read('templates/base.html'), /asset_url\('admin-core\.js'\) \}\}"><\/script>\r?\n<script src="\{\{ asset_url\('admin-api\.js'\)/);
 });
 
 test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, code("['candidates','신규 인원']"));
-  assert.match(tier, /from\('tier_member_candidates'\)/);
   assert.match(tier, code("setCandidateStatus(find(b.dataset.candIgnore),'ignored')"));
-  assert.match(tier, code("from('tier_member_candidates').delete().eq('id',c.id)"));
+  assert.match(tier, code("AdminApi.candidates.remove(c.id)"));
+  const api = read('templates/assets/admin-api.js');
+  assert.match(api, /from\('tier_member_candidates'\)/);
+  assert.match(api, code("from('tier_member_candidates').delete().eq('id',id)"));
 });
 
 test('other-race ELO accounts are linked, and duplicate SOOP IDs are blocked in the DB', () => {
   const tier = read('templates/assets/admin-tier.js');
-  assert.match(tier, code("from('tier_member_elo_links').insert"));
+  assert.match(tier, code("AdminApi.eloLinks.insert({"));
+  assert.match(read('templates/assets/admin-api.js'), code("from('tier_member_elo_links').insert"));
   assert.match(tier, /data-cand-link/);
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create table if not exists public\.tier_member_elo_links/);
@@ -149,7 +170,8 @@ test('other-race ELO accounts are linked, and duplicate SOOP IDs are blocked in 
 
 test('main ELO account can be switched, and dotted EloBoard names match existing players', () => {
   const tier = read('templates/assets/admin-tier.js');
-  assert.match(tier, /rpc\('admin_set_main_elo'/);
+  assert.match(tier, code("AdminApi.tierMembers.setMainElo(memberId,elo)"));
+  assert.match(read('templates/assets/admin-api.js'), /rpc\('admin_set_main_elo'/);
   assert.match(tier, code("replace(/[.\\s]+/g,'')"));
   const sql = read('supabase/staruniv.sql');
   assert.match(sql, /create or replace function public\.admin_set_main_elo\(p_member_id bigint, p_elo_id integer\)/);
@@ -177,7 +199,8 @@ test('member rows link to tier players; person fields come from the tier table',
 
 test('linked ELO accounts: name and race are editable in the player drawer', () => {
   const tier = read('templates/assets/admin-tier.js');
-  assert.match(tier, code("from('tier_member_elo_links').update(payload).eq('elo_id'"));
+  assert.match(tier, code("AdminApi.eloLinks.update(Number(b.dataset.linkSave),payload)"));
+  assert.match(read('templates/assets/admin-api.js'), code("from('tier_member_elo_links').update(row).eq('elo_id',eloId)"));
   assert.match(tier, /data-link-race/);
 });
 

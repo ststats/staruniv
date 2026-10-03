@@ -27,9 +27,9 @@
 
     async function fetchAll() {
         const [ch, v, p] = await Promise.all([
-            C().state.client.from('video_channels').select('*').order('source_order'),
-            C().state.client.from('videos').select('*').order('published', { ascending: false }).limit(3000),
-            C().state.client.from('video_picks').select('*').order('source_order'),
+            AdminApi.video.channels(),
+            AdminApi.video.videos(),
+            AdminApi.video.picks(),
         ]);
         const error = ch.error || v.error || p.error;
         if (error) throw error;
@@ -103,19 +103,8 @@
         syncRenderer();
     }
 
-    // 주소(키)가 바뀐 저장: 지우고 다시 넣으면 두 번째 요청이 실패할 때 원래 항목까지 사라진다.
-    // 키 열을 바꾸는 UPDATE 한 번으로 처리해 실패하면(새 주소가 이미 있는 등) 원래 항목이 그대로 남는다.
-    // 원래 항목이 그사이 지워졌으면 새로 넣는다.
-    async function saveRenamed(table, key, oldKey, payload) {
-        const db = C().state.client.from(table);
-        if (oldKey != null && oldKey !== payload[key]) {
-            const { data, error } = await db.update(payload).eq(key, oldKey).select(key);
-            if (error) throw error;
-            if (data && data.length) return;
-        }
-        const { error } = await C().state.client.from(table).upsert(payload, { onConflict: key });
-        if (error) throw error;
-    }
+    // 주소(키)가 바뀌어도 원래 항목을 잃지 않는 저장(지우고 다시 넣지 않는다) - AdminApi.video.saveKeyed
+    const saveRenamed = (table, key, oldKey, payload) => AdminApi.video.saveKeyed(table, key, oldKey, payload);
 
     function openChannel(row) {
         row = row || {};
@@ -162,7 +151,7 @@
     }
 
     async function toggleHidden(id, hidden) {
-        const { error } = await C().state.client.from('videos').update({ hidden }).eq('id', id);
+        const { error } = await AdminApi.video.setHidden(id, hidden);
         if (error) throw error;
         C().toast(hidden ? '영상을 숨겼습니다' : '영상을 표시했습니다');
         await refresh();
@@ -271,10 +260,7 @@
                 await saveRenamed('video_picks', 'id', row.id, payload);
                 // 분류 영문을 바꾸면 같은 분류의 다른 영상도 같이 바꾼다(분류마다 하나)
                 if (group && groupEn && groupEn !== groupEnOf(group)) {
-                    const { error: en } = await C()
-                        .state.client.from('video_picks')
-                        .update({ group_en: groupEn })
-                        .eq('group_name', group);
+                    const { error: en } = await AdminApi.video.setPickGroupEn(group, groupEn);
                     if (en) throw en;
                 }
                 C().toast('보자 영상을 저장했습니다');
@@ -282,7 +268,7 @@
             },
             onDelete: row.id
                 ? async () => {
-                      const { error } = await C().state.client.from('video_picks').delete().eq('id', row.id);
+                      const { error } = await AdminApi.video.removePick(row.id);
                       if (error) throw error;
                       await C().audit('delete', 'video_picks', row.id, { title: row.title });
                       await refresh();

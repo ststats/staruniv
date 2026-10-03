@@ -125,20 +125,12 @@
         set.readOnly = res.readOnly = !!check;
     }
     async function nextMatchNo() {
-        const { data, error } = await C()
-            .state.client.from('matches')
-            .select('match_no')
-            .order('match_no', { ascending: false })
-            .limit(1);
+        const { data, error } = await AdminApi.matches.nextNo();
         if (error) return null;
         return Number(data?.[0]?.match_no || 0) + 1;
     }
     async function getRounds(matchNo) {
-        const { data, error } = await C()
-            .state.client.from('rounds')
-            .select('*')
-            .eq('match_no', matchNo)
-            .order('source_order');
+        const { data, error } = await AdminApi.rounds.ofMatch(matchNo);
         if (error) throw error;
         return data || [];
     }
@@ -171,7 +163,7 @@
                     !confirm(`세트 결과와 매치 결과가 다릅니다.\n${check.mismatches.join('\n')}\n그래도 저장할까요?`)
                 )
                     throw new Error('결과 불일치로 저장을 취소했습니다');
-                const { data, error } = await C().state.client.rpc('admin_save_match', { p_match, p_rounds });
+                const { data, error } = await AdminApi.matches.save(p_match, p_rounds);
                 if (error) throw error;
                 C().toast(`경기 ${data}번을 저장했습니다`);
                 await load(S.page);
@@ -179,7 +171,7 @@
             onDelete:
                 sourceNo && !clone
                     ? async () => {
-                          const { error } = await C().state.client.from('matches').delete().eq('match_no', sourceNo);
+                          const { error } = await AdminApi.matches.remove(sourceNo);
                           if (error) throw error;
                           await C().audit('delete', 'matches', sourceNo, { opponent_team: match.opponent_team });
                           await load(S.page);
@@ -210,13 +202,7 @@
         let allowed = null;
         const player = C().value('recordsPlayer').trim();
         if (player) {
-            const { data, error } = await C()
-                .state.client.from('rounds')
-                .select('match_no')
-                .or(
-                    `our_player.ilike.%${player.replace(/[%_,]/g, '')}%,opponent_player.ilike.%${player.replace(/[%_,]/g, '')}%`
-                )
-                .limit(5000);
+            const { data, error } = await AdminApi.rounds.matchNosOfPlayer(player);
             if (error) throw error;
             allowed = [...new Set((data || []).map(x => x.match_no))];
             if (!allowed.length) {
@@ -228,30 +214,21 @@
         }
         const from = S.page * S.size,
             to = from + S.size - 1;
-        let q = C()
-            .state.client.from('matches')
-            .select('*', { count: 'exact' })
-            .order('match_date', { ascending: false })
-            .order('match_no', { ascending: false })
-            .range(from, to);
-        const date = C().value('recordsDate'),
-            opp = C().value('recordsOpponent').trim(),
-            fmt = C().value('recordsFormat').trim();
-        if (date) q = q.eq('match_date', date);
-        if (opp) q = q.ilike('opponent_team', `%${opp}%`);
-        if (fmt) q = q.ilike('match_format', `%${fmt}%`);
-        if (allowed) q = q.in('match_no', allowed);
-        const { data, count, error } = await q;
+        const { data, count, error } = await AdminApi.matches.page({
+            from,
+            to,
+            date: C().value('recordsDate'),
+            opponent: C().value('recordsOpponent').trim(),
+            format: C().value('recordsFormat').trim(),
+            matchNos: allowed,
+        });
         if (error) throw error;
         S.rows = data || [];
         S.count = count || 0;
         S.roundCounts = {};
         const matchNos = S.rows.map(r => r.match_no).filter(v => v !== null && v !== undefined);
         if (matchNos.length) {
-            const { data: roundRows, error: roundError } = await C()
-                .state.client.from('rounds')
-                .select('match_no')
-                .in('match_no', matchNos);
+            const { data: roundRows, error: roundError } = await AdminApi.rounds.matchNosIn(matchNos);
             if (roundError) throw roundError;
             (roundRows || []).forEach(r => {
                 const k = String(r.match_no);
