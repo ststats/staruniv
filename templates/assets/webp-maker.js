@@ -654,7 +654,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
     }
 
-    function drawFrame(ctx, w, h, t, o = readOpts()) {
+    // clip=false: 모서리 바깥까지 그대로 채운 그림(투명 없음) - 압축용 색을 얻을 때만 쓴다(convert 주석)
+    function drawFrame(ctx, w, h, t, o = readOpts(), clip = true) {
         const c = state.crop || { x: 0, y: 0, w: video.videoWidth, h: video.videoHeight };
         let sx = c.x,
             sy = c.y,
@@ -684,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ctx.clearRect(0, 0, w, h);
         ctx.save();
-        ctx.clip(shape);
+        if (clip) ctx.clip(shape);
         ctx.fillStyle = o.bg;
         ctx.fillRect(0, 0, w, h);
         drawScaled(ctx, video, sx, sy, sw, sh, dx, dy, dw, dh);
@@ -1029,6 +1030,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const opts = readOpts();
             const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
             const ctx = canvas.getContext('2d');
+            // 둥근 모서리(투명)를 손실 압축하면 투명한 바깥이 검정으로 취급돼 모서리 픽셀에 번져서, 가장자리가
+            // 어둡고 계단처럼 보인다. 그래서 모양(알파)은 모서리를 깎은 그림에서, 색은 바깥까지 채운 그림에서
+            // 따로 인코딩해 한 프레임으로 합친다(WebP는 알파(ALPH)와 색(VP8)을 따로 담는다). 무손실은 번지지 않는다.
+            const splitAlpha = q < 1 && opts.radius > 0;
+            const colorCanvas = splitAlpha
+                ? Object.assign(document.createElement('canvas'), { width: w, height: h })
+                : null;
+            const colorCtx = colorCanvas && colorCanvas.getContext('2d');
             if (pv.width !== w || pv.height !== h) {
                 pv.width = w;
                 pv.height = h;
@@ -1036,17 +1045,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const frames = [];
             let prevData = null,
+                prevColor = null,
                 done = 0;
-            const finish = async ({ blobP, duration }) => {
+            const webpBytes = async blobP => {
                 const blob = await blobP;
                 if (blob?.type !== 'image/webp')
                     throw new Error(
                         '이 브라우저는 WebP 인코딩을 지원하지 않아요. 크롬, 엣지 또는 파이어폭스를 사용해주세요'
                     );
-                const data = new Uint8Array(await blob.arrayBuffer());
-                if (prevData && bytesEqual(prevData, data)) frames[frames.length - 1].duration += duration;
-                else frames.push({ ...extractImageChunks(data), duration });
+                return new Uint8Array(await blob.arrayBuffer());
+            };
+            const finish = async ({ blobP, colorP, duration }) => {
+                const data = await webpBytes(blobP);
+                const colorData = colorP ? await webpBytes(colorP) : null;
+                if (prevData && bytesEqual(prevData, data) && (!colorData || bytesEqual(prevColor, colorData)))
+                    frames[frames.length - 1].duration += duration;
+                else frames.push({ ...mergeAlphaColor(extractImageChunks(data), colorData), duration });
                 prevData = data;
+                prevColor = colorData;
                 $('prog').value = ++done / n;
                 $('progLabel').textContent = `프레임 ${done} / ${n}`;
             };
@@ -1057,9 +1073,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const t = Math.min(start + i / fps, video.duration - 0.001);
                 await seekTo(t);
                 drawFrame(ctx, w, h, t, opts);
+                if (colorCtx) drawFrame(colorCtx, w, h, t, opts, false);
                 pctx.drawImage(canvas, 0, 0);
                 pending.push({
                     blobP: new Promise(r => canvas.toBlob(r, 'image/webp', q)),
+                    colorP: colorCanvas && new Promise(r => colorCanvas.toBlob(r, 'image/webp', q)),
                     duration: Math.round(((i + 1) * 1000) / fps) - Math.round((i * 1000) / fps),
                 });
                 if (pending.length >= 4) await finish(pending.shift());
@@ -1105,6 +1123,17 @@ document.addEventListener('DOMContentLoaded', () => {
             o += 8 + size + (size & 1);
         }
         return { chunks, alpha };
+    }
+
+    // 알파는 모서리를 깎은 프레임의 ALPH 청크, 색은 바깥까지 채운 프레임의 VP8 청크로 한 프레임을 만든다.
+    // 색 쪽은 불투명이라 VP8 하나만 있다. 어느 한쪽이 예상과 다르면(예: 무손실 VP8L) 원래 프레임을 그대로 쓴다.
+    function mergeAlphaColor(frame, colorData) {
+        if (!colorData) return frame;
+        const tagOf = c => String.fromCharCode(c[0], c[1], c[2], c[3]);
+        const alpha = frame.chunks.filter(c => tagOf(c) === 'ALPH');
+        const color = extractImageChunks(colorData).chunks.filter(c => tagOf(c) === 'VP8 ');
+        if (alpha.length !== 1 || color.length !== 1) return frame;
+        return { chunks: [alpha[0], color[0]], alpha: true };
     }
 
     // 구조: RIFF/WEBP → VP8X(애니메이션 플래그) → ANIM(반복) → 프레임마다 ANMF(위치·크기·시간 + 이미지 청크)
