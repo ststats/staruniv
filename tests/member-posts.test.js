@@ -70,5 +70,6 @@ test('홈 카드용 최근 글은 카드 칸만 받아 카드 모양(post)으로
     assert.equal(rows[1].post.photos.length, 0);
     assert.equal(rows[1].post.content.textContent, '');
     const api = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', 'api.js'), 'utf8');
-    assert.match(api, code("select('soop_id,titleName:post->>titleName,regDate:post->>regDate,text:post->content->>textContent,thumb:post->photos->0->>url')"));
+    // 카드 칸만 골라 주는 것은 공개 읽기 함수(ststat.sql api_recent_posts)다
+    assert.match(api, code("apiCall('api_recent_posts', { p_limit: limit })"));
 });
