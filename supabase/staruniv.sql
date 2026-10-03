@@ -539,8 +539,9 @@ revoke all on public.matches from anon;
 revoke all on public.rounds from anon;
 revoke all on public.tier_members from anon;
 revoke all on public.settings, public.admin_users from anon;   -- 페이지가 읽지 않는다(관리자 확인은 is_admin())
+-- anon은 표를 읽지 않는다: 공개 페이지는 아래 공개 읽기 함수(api_*)만 부른다(표 권한은 위에서 전부 회수).
+-- 아래 anon 정책은 함수가 따르는 공개 범위의 기준으로 남겨 둔다(함수의 거르기 조건과 같아야 한다).
 
-grant select (source_order,nickname,soop_id,race,tier,affiliation,modified_at) on public.tier_members to anon;
 
 drop policy if exists public_read_teams on public.teams;
 drop policy if exists public_read_members on public.members;
@@ -555,9 +556,6 @@ create policy public_read_tier_members on public.tier_members for select to anon
 revoke all on public.calendar_events from anon;
 revoke all on public.calendar_off_air from anon;
 revoke all on public.site_config from anon;
-grant select (id,source_order,start_date,end_date,event_time,person,description,detail,color) on public.calendar_events to anon;
-grant select (off_date,soop_id,source_order) on public.calendar_off_air to anon;
-grant select (config_key,config_value) on public.site_config to anon;
 drop policy if exists public_read_calendar_events on public.calendar_events;
 create policy public_read_calendar_events on public.calendar_events for select to anon using (true);
 drop policy if exists public_read_calendar_off_air on public.calendar_off_air;
@@ -566,16 +564,12 @@ drop policy if exists public_read_site_config on public.site_config;
 create policy public_read_site_config on public.site_config for select to anon using (config_key='nav');
 
 revoke all on public.history_entries from anon;
-grant select (id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden) on public.history_entries to anon;
 drop policy if exists public_read_history_entries on public.history_entries;
 create policy public_read_history_entries on public.history_entries for select to anon using (not hidden or entry_kind = 'override');
 
 revoke all on public.video_channels from anon;
 revoke all on public.videos from anon;
 revoke all on public.video_picks from anon;
-grant select (channel_url,title,display_name,thumb,source_order,active) on public.video_channels to anon;
-grant select (id,channel_url,title,published,thumb,views,short) on public.videos to anon;
-grant select (id,kind,title,note,group_name,group_en,author,thumb,short,source_order) on public.video_picks to anon;
 drop policy if exists public_read_video_channels on public.video_channels;
 create policy public_read_video_channels on public.video_channels for select to anon using (active=true);
 drop policy if exists public_read_videos on public.videos;
@@ -585,7 +579,6 @@ drop policy if exists public_read_video_picks on public.video_picks;
 create policy public_read_video_picks on public.video_picks for select to anon using (not hidden);
 
 revoke all on public.external_tools from anon;
-grant select (id,category,name,url,favicon,source_order,active) on public.external_tools to anon;
 drop policy if exists public_read_external_tools on public.external_tools;
 create policy public_read_external_tools on public.external_tools for select to anon using (active=true);
 
@@ -1251,7 +1244,6 @@ drop policy if exists university_logos_admin_write on public.university_logos;
 create policy university_logos_admin_write on public.university_logos for all to authenticated
   using ((select public.is_admin())) with check ((select public.is_admin()));
 revoke all on public.university_logos from anon;
-grant select (name,path,color) on public.university_logos to anon;
 grant select, insert, update, delete on public.university_logos to authenticated;
 
 -- ############################################################################
