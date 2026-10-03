@@ -75,7 +75,7 @@ test('inline domains call their public renderers after save', () => {
 test('public runtime site config comes from Supabase rather than raw nav json', () => {
   const core = read('templates/assets/core.js');
   assert.match(core, /await Api\.navConfig\(\)/);
-  assert.match(read('templates/assets/api.js'), /\.from\('site_config'\)/);
+  assert.match(read('templates/assets/api.js'), /apiCall\('api_site_nav'\)/);
   assert.doesNotMatch(core, /fetch\('data\/nav\.json'/);
 });
 
@@ -99,6 +99,33 @@ test('공개 페이지의 데이터 조회는 api.js 한 곳에만 있다(나중
     const html = fs.readFileSync(path.join(ROOT, 'templates', 'pages', f), 'utf8');
     assert.match(html, /asset_url\('core\.js'\) \}\}"><\/script>\r?\n<script src="\{\{ asset_url\('api\.js'\)/, `${f}: core.js 다음에 api.js`);
   }
+});
+
+test('공개 페이지는 표를 읽지 않고 공개 읽기 함수(api_*)만 부른다(나중에 서버가 같은 함수를 부르면 된다)', () => {
+  const api = read('templates/assets/api.js');
+  const sql = read('supabase/staruniv.sql');
+  const body = api.slice(api.indexOf('const Api = {'));
+  // 표 조회는 관리자 클라이언트를 넘긴 연혁(숨긴 항목까지 보는 어드민)뿐이다
+  assert.deepStrictEqual([...body.matchAll(/\.from\('(\w+)'\)/g)].map(m => m[1]), ['history_entries']);
+  assert.match(body, /if \(!client\) return apiCall\('api_history'\);/);
+  assert.doesNotMatch(api, /from: table =>/);
+  // staruniv.sql에 있는 함수는 정의와 anon 실행 권한이 있다(나머지 api_*는 ststat.sql 14번)
+  const called = [...new Set([...api.matchAll(/apiCall\('(api_\w+)'/g)].map(m => m[1]))];
+  const own = called.filter(fn => sql.includes(`function public.${fn}(`));
+  assert.ok(own.length >= 7, own.join(','));
+  for (const fn of own) {
+    const def = sql.slice(sql.indexOf(`function public.${fn}(`));
+    assert.match(def.slice(0, def.indexOf('$$;')), /security definer set search_path = public/, `${fn}: 정의자 권한·경로 고정`);
+  }
+  const grant = sql.slice(sql.indexOf('grant execute on function public.api_site_nav()'));
+  for (const fn of own) assert.match(grant.slice(0, grant.indexOf(';')), new RegExp(`public\\.${fn}\\(`), `${fn}: anon 실행 권한`);
+  // 숨김·휴면·비활성 거르기는 표 정책과 같은 조건을 함수에 적는다
+  assert.match(sql, /from public\.history_entries where not hidden or entry_kind = 'override';/);
+  assert.match(sql, /from public\.tier_members where coalesce\(affiliation, ''\) <> '휴면';/);
+  assert.match(sql, /where not v\.hidden and exists \(select 1 from public\.video_channels c where c\.channel_url = v\.channel_url and c\.active\)/);
+  assert.match(sql, /from public\.video_picks where not hidden\)/);
+  assert.match(sql, /from public\.external_tools where active;/);
+  assert.match(sql, /from public\.site_config where config_key = 'nav'/);
 });
 
 test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
@@ -237,7 +264,8 @@ test('공개 조회(anon)는 화면에 나오는 것만: 멤버·전적 표는 �
 test('대학 로고는 로고를 그리는 페이지(전적·티어표)가 화면에 나오는 대학 것만 받는다', () => {
   const core = read('templates/assets/core.js');
   assert.match(core, /typeof opts\.logos === 'function' \? loadTeamLogos\(opts\.logos\(\)\)/);
-  assert.match(read('templates/assets/api.js'), /from\('university_logos'\)\.select\('name,path'\)\.in\('name', names\)/);
+  // 화면에 나오는 대학 이름만 넘기고, 그중 공개 대상(ststat.sql university_logo_shown)만 받는다
+  assert.match(read('templates/assets/api.js'), /apiCall\('api_university_logos', \{ p_names: JSON\.stringify\(/);
   const fs = require('node:fs');
   const path = require('node:path');
   const dir = path.join(__dirname, '..', 'templates', 'assets');

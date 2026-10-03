@@ -589,6 +589,81 @@ grant select (id,category,name,url,favicon,source_order,active) on public.extern
 drop policy if exists public_read_external_tools on public.external_tools;
 create policy public_read_external_tools on public.external_tools for select to anon using (active=true);
 
+-- 공개 읽기 함수(/api/v1): 공개 페이지(api.js)는 표 대신 이 함수들만 부른다. 함수 하나가 주소 하나
+-- (api/openapi.yaml)에 대응하고, 화면이 그리는 열만 JSON으로 돌려준다(행 수 제한 없이 요청 한 번).
+-- security definer라 표의 정책·열 권한을 거치지 않으므로, 거르는 조건은 위 anon 정책과 똑같이 여기에 적는다.
+-- 나중에 서버를 붙이면 서버가 이 함수를 그대로 부르면 된다. 방송·통계·공지·ELO는 ststat.sql 14번.
+create or replace function public.api_site_nav() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce((select config_value from public.site_config where config_key = 'nav'), '{}'::jsonb);
+$$;
+
+create or replace function public.api_schedule() returns json
+language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'events', coalesce((select json_agg(json_build_object('id', id, 'start_date', start_date, 'end_date', end_date,
+        'event_time', event_time, 'person', person, 'description', description, 'detail', detail, 'color', color)
+        order by source_order) from public.calendar_events), '[]'::json),
+    'offAir', coalesce((select json_agg(json_build_object('off_date', off_date, 'soop_id', soop_id)
+        order by off_date, source_order) from public.calendar_off_air), '[]'::json));
+$$;
+
+-- 홈 오늘 일정: 그날에 걸친 일정만
+create or replace function public.api_schedule_on(p_date date) returns json
+language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('start_date', start_date, 'end_date', end_date, 'event_time', event_time,
+      'person', person, 'description', description) order by source_order), '[]'::json)
+  from public.calendar_events where start_date <= p_date and end_date >= p_date;
+$$;
+
+-- 숨긴 연혁은 빼되, 자동 항목을 숨기는 override 행은 준다(페이지가 무엇을 숨길지 알아야 한다)
+create or replace function public.api_history() returns json
+language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('id', id, 'entry_kind', entry_kind, 'event_date', event_date,
+      'event_type', event_type, 'title', title, 'description', description, 'members', members,
+      'youtube_url', youtube_url, 'image_path', image_path, 'sort_order', sort_order, 'hidden', hidden)
+      order by event_date desc nulls last), '[]'::json)
+  from public.history_entries where not hidden or entry_kind = 'override';
+$$;
+
+-- 티어표 명단: 휴면 선수는 사이트에 나오지 않으므로 뺀다(운영 결정 2026-09-27)
+create or replace function public.api_tier_members() returns json
+language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('nickname', nickname, 'soop_id', soop_id, 'race', race, 'tier', tier,
+      'affiliation', affiliation, 'modified_at', modified_at) order by source_order, soop_id), '[]'::json)
+  from public.tier_members where coalesce(affiliation, '') <> '휴면';
+$$;
+
+-- 영상 페이지: 쓰는 채널, 그 채널의 숨기지 않은 영상(최신 3000개), 숨기지 않은 추천 영상.
+-- (표 정책은 채널 표의 anon 정책(active)까지 겹쳐 걸려 쓰는 채널의 영상만 보였다 - 같은 조건을 적는다)
+create or replace function public.api_videos() returns json
+language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'channels', coalesce((select json_agg(json_build_object('channel_url', channel_url, 'title', title,
+        'display_name', display_name, 'thumb', thumb) order by source_order)
+        from public.video_channels where active), '[]'::json),
+    'videos', coalesce((select json_agg(json_build_object('id', id, 'channel_url', channel_url, 'title', title,
+        'published', published, 'thumb', thumb, 'views', views, 'short', short) order by published desc)
+        from (select v.* from public.videos v
+              where not v.hidden and exists (select 1 from public.video_channels c where c.channel_url = v.channel_url and c.active)
+              order by v.published desc limit 3000) v), '[]'::json),
+    'picks', coalesce((select json_agg(json_build_object('id', id, 'kind', kind, 'title', title, 'note', note,
+        'group_name', group_name, 'group_en', group_en, 'author', author, 'thumb', thumb, 'short', short)
+        order by source_order) from public.video_picks where not hidden), '[]'::json));
+$$;
+
+create or replace function public.api_tools() returns json
+language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('id', id, 'category', category, 'name', name, 'url', url,
+      'favicon', favicon) order by source_order), '[]'::json)
+  from public.external_tools where active;
+$$;
+
+revoke all on function public.api_site_nav(), public.api_schedule(), public.api_schedule_on(date),
+  public.api_history(), public.api_tier_members(), public.api_videos(), public.api_tools() from public;
+grant execute on function public.api_site_nav(), public.api_schedule(), public.api_schedule_on(date),
+  public.api_history(), public.api_tier_members(), public.api_videos(), public.api_tools() to anon, authenticated;
+
 
 -- ############################################################################
 -- 3. 어드민 편집 보조(일정 색·감사 기록·일괄 수정)

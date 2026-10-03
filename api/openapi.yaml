@@ -4,9 +4,10 @@ info:
   version: 1.0.0
   description: |
     공개 페이지가 쓰는 데이터 API 규격. 브라우저 쪽 구현은 templates/assets/api.js의 Api 객체이고,
-    함수 하나가 아래 주소 하나에 대응한다(주석의 GET /api/v1/…). 지금은 서버 없이 api.js가 Supabase
-    공개 조회(anon)로 같은 모양을 만들어 돌려준다. 서버를 붙이면 이 규격대로 구현하고 api.js 안의 조회만
-    fetch('/api/v1/…')로 바꾼다. 그 뒤에는 anon의 표 직접 조회를 모두 막는다.
+    함수 하나가 아래 주소 하나에 대응한다(주석의 GET /api/v1/…). 지금은 서버 없이 api.js가 Supabase의
+    공개 읽기 함수를 바로 부른다 - 주소마다 x-db-function이 그 DB 함수다(supabase/staruniv.sql 2번,
+    ststat.sql 14번. site/{part}는 빌드 파일). 서버를 붙이면 서버가 같은 함수를 불러 이 규격대로 돌려주고,
+    api.js 안의 호출만 fetch('/api/v1/…')로 바꾼다.
 
     원칙: 응답에는 화면이 그리는 것만 넣는다(열·행 모두). 목록은 전부 한 번에 돌려준다(쪽 나누기는 서버 안의 일).
     오류는 HTTP 상태 코드와 { "message": "…" }.
@@ -24,6 +25,7 @@ paths:
   /site/nav:
     get:
       summary: 메뉴·히어로 설명·서브탭 설정 (Api.navConfig)
+      x-db-function: api_site_nav
       responses:
         '200':
           description: 설정 JSON(없으면 {})
@@ -31,6 +33,7 @@ paths:
   /logos:
     get:
       summary: 대학 로고 (Api.universityLogos)
+      x-db-function: api_university_logos
       description: 그 화면에 나오는 대학만(전적은 상대팀, 티어표는 명단 소속, 시너지는 카드가 그려지는 대학).
       parameters:
         - { name: names, in: query, required: true, description: "쉼표로 구분한 대학 이름", schema: { type: string } }
@@ -39,6 +42,7 @@ paths:
   /live:
     get:
       summary: 지금 방송 중인 선수 (Api.liveBroadcasts)
+      x-db-function: api_live
       description: 휴면이 아닌 명단 선수만. 수집이 5분 넘게 멈추면 빈 목록.
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/LiveBroadcast' } } } } }
@@ -50,11 +54,13 @@ paths:
   /stats/dates:
     get:
       summary: 방송통계가 있는 날짜, 최신순 (Api.statsDates)
+      x-db-function: api_stats_dates
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { stat_date: { type: string, format: date } } } } } } }
   /stats/latest:
     get:
       summary: 가장 최근 날짜의 월 누적 방송통계, 날짜(stat_date) 포함 (Api.statsLatest)
+      x-db-function: player_stats
       parameters:
         - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID(한 번에 300개까지). 휴면 선수도 준다(그 선수 칸에 보이므로)", schema: { type: string } }
       responses:
@@ -62,6 +68,7 @@ paths:
   /stats:
     get:
       summary: 그날까지의 월 누적 방송통계 (Api.stats)
+      x-db-function: player_stats
       parameters:
         - { name: date, in: query, required: true, schema: { type: string, format: date } }
         - { name: ids, in: query, required: true, description: "쉼표로 구분한 SOOP ID(한 번에 300개까지). 휴면 선수도 준다", schema: { type: string } }
@@ -85,6 +92,7 @@ paths:
   /history:
     get:
       summary: 연혁 (Api.history)
+      x-db-function: api_history
       description: 숨긴 수동 항목은 빠진다. 자동 항목을 덮어쓰는 override 행(숨김 포함)은 들어 있다.
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/HistoryEntry' } } } } }
@@ -98,11 +106,13 @@ paths:
   /tier/members:
     get:
       summary: 티어표 명단 (Api.tierMembers)
+      x-db-function: api_tier_members
       responses:
         '200': { description: "휴면 제외", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/TierMember' } } } } }
   /videos:
     get:
       summary: 팬 채널·최신 영상·추천 영상 (Api.videos)
+      x-db-function: api_videos
       description: 활성 채널과 그 채널의 숨기지 않은 영상만.
       responses:
         '200':
@@ -118,11 +128,13 @@ paths:
   /tools:
     get:
       summary: 외부 도구·사이트 링크 (Api.tools)
+      x-db-function: api_tools
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Tool' } } } } }
   /elo/players:
     get:
       summary: EloBoard 선수 목록 (Api.eloPlayers)
+      x-db-function: elo_players_list
       parameters:
         - { name: ranked, in: query, required: false, description: "1이면 티어 안 순위·기준일까지(상대전적·분석)", schema: { type: integer, enum: [0, 1] } }
       responses:
@@ -130,6 +142,7 @@ paths:
   /elo/players/{id}/matches:
     get:
       summary: 한 선수의 경기, 최신순 (Api.eloPlayerMatches)
+      x-db-function: elo_player_match_list
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: since, in: query, required: false, schema: { type: string, format: date } }
@@ -138,6 +151,7 @@ paths:
   /elo/players/{id}/ratings:
     get:
       summary: 한 선수의 월말 레이팅 (Api.eloRatingHistory)
+      x-db-function: api_elo_rating_history
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -145,21 +159,25 @@ paths:
   /elo/ratings/range:
     get:
       summary: 레이팅 기록이 있는 첫 달·마지막 달 (Api.eloRatingRange)
+      x-db-function: api_elo_rating_range
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: object, properties: { first: { type: string }, last: { type: string } } } } } }
   /elo/rankings:
     get:
       summary: 티어 안 순위·레이팅 (Api.eloRankings)
+      x-db-function: elo_rankings_list
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/EloRanking' } } } } }
   /elo/rankings/meta:
     get:
       summary: 가장 최근 랭킹의 티어 기준선·종족 상성 (Api.eloRankingMeta)
+      x-db-function: api_elo_ranking_meta
       responses:
         '200': { description: "없으면 {}", content: { application/json: { schema: { $ref: '#/components/schemas/EloRankingMeta' } } } }
   /elo/ratings:
     get:
       summary: 순위 밖 선수까지 전 선수 레이팅 (Api.eloPlayerRatings)
+      x-db-function: elo_player_ratings_list
       responses:
         '200': { description: "ok", content: { application/json: { schema: { type: array, items: { type: object, properties: { elo_id: { type: integer }, rating: { type: [number, 'null'] }, rating_se: { type: [number, 'null'] } } } } } } }
 components:
