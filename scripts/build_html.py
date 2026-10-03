@@ -142,7 +142,7 @@ def standalone_html(versions):
     """templates/standalone(없으면 기존 docs 파일)의 독립 페이지에 자산 버전을 붙인 내용."""
     pages = {}
     standalone_src_dir = os.path.join(TEMPLATE_DIR, 'standalone')
-    for filename in ('multiview.html', 'calmmon-rider.html'):
+    for filename in ('multiview.html', 'calmmon-rider.html', 'webp-maker.html'):
         source = os.path.join(standalone_src_dir, filename)
         if not os.path.isfile(source):
             source = os.path.join(OUT_DIR, filename)
@@ -254,6 +254,10 @@ def main():
     rider_html = standalone_pages.get('calmmon-rider.html')
     env.globals['rider_url'] = ('calmmon-rider.html?v=' + content_version(rider_html.encode('utf-8'))
                                 if rider_html is not None else 'calmmon-rider.html')
+    # 움짤생성기도 같은 방식: 바뀌었을 때만 새로 받는다(안의 webp-maker.js는 ?v=로 따로 버전이 붙는다)
+    webp_html = standalone_pages.get('webp-maker.html')
+    env.globals['webp_url'] = ('webp-maker.html?v=' + content_version(webp_html.encode('utf-8'))
+                               if webp_html is not None else 'webp-maker.html')
 
     os.makedirs(os.path.join(OUT_DIR, 'data'), exist_ok=True)
     env.globals['site_data_version'] = site_data_version()
@@ -276,7 +280,7 @@ def main():
     write_search_files()
 
     copy_static_assets()
-    # 독립 관리자/멀티뷰어/캄몬라이더도 docs를 직접 원본으로 두지 않는다.
+    # 독립 관리자/멀티뷰어/캄몬라이더/움짤생성기도 docs를 직접 원본으로 두지 않는다.
     # templates/standalone을 소스로 관리하고 빌드 때 docs로 복사한 뒤 자산 버전을 붙인다.
     for filename, html in standalone_pages.items():
         write_text_atomic(os.path.join(OUT_DIR, filename), html, newline='')

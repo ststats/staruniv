@@ -59,7 +59,7 @@ test('모든 페이지 주소가 CSP 헤더를 받고, 인라인 스크립트는
   assert.match(policy, /frame-ancestors 'self'/);
   const src = new RegExp(route.src);
   const pages = fs.readdirSync(path.join(root, 'pages')).map(f => f.replace(/\.html$/, ''));
-  const urls = ['/', '/index.html', '/multiview.html', '/admin.html'];
+  const urls = ['/', '/index.html', '/multiview.html', '/webp-maker.html', '/admin.html'];
   for (const p of pages.filter(p => p !== 'home')) urls.push(`/${p}/`, `/${p}/index.html`, `/admin-${p}.html`);
   for (const u of urls) assert.match(u, src, `${u}에 CSP 헤더가 안 붙는다`);
   // 인라인 코드가 있는 단독 페이지와 없는 주소(GitHub Pages 404 안내)는 빼야 한다

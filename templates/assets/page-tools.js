@@ -6,8 +6,8 @@
 
 const TOOLS_TABS = {
     multiviewer: ['tab-tools-multiviewer', 'view-tools-multiviewer'],
-    entry: ['tab-tools-entry', 'view-tools-entry'],
     rider: ['tab-tools-rider', 'view-tools-rider'],
+    webp: ['tab-tools-webp', 'view-tools-webp'],
     external: ['tab-tools-external', 'view-tools-external'],
 };
 // 기본 탭(멀티뷰어)만 주소에 아무것도 안 붙이고, 나머지는 ?view=<탭>으로 남겨 새로고침/공유해도 유지된다.
@@ -16,6 +16,11 @@ const TOOLS_VIEW_IDS = Object.keys(TOOLS_TABS);
 
 function toolsViewFromUrl(value) {
     return TOOLS_VIEW_IDS.includes(value) ? value : TOOLS_DEFAULT_VIEW;
+}
+
+// 엔트리는 티어표 페이지로 옮겼다. 예전 주소(/tools/?view=entry)로 들어오면 그쪽으로 보낸다.
+if (new URLSearchParams(location.search).get('view') === 'entry') {
+    location.replace(new URL('../tier/?view=entry', location.href).href);
 }
 
 function currentToolsView() {
@@ -122,6 +127,57 @@ function riderOpenWindow() {
     window.open(riderPageUrl(), '_blank', 'noopener');
 }
 
+// ----- 움짤생성기 (단독 페이지 webp-maker.html을 iframe으로) -----
+// 캄몬라이더처럼 이 탭을 처음 열 때 src를 채운다. 안쪽 높이가 설정 탭·결과에 따라 바뀌므로 iframe
+// 높이를 내용에 맞춰 늘려 페이지 하나처럼 스크롤되게 하고, 사이트 테마(라이트/다크)도 안쪽에 넘겨 준다.
+// 같은 도메인 파일이라 안쪽 문서를 직접 볼 수 있다.
+function webpFrameDoc() {
+    const frame = document.getElementById('webp-frame');
+    try {
+        return frame && frame.contentDocument;
+    } catch (_) {
+        return null;
+    }
+}
+
+function webpFitHeight() {
+    const frame = document.getElementById('webp-frame');
+    const doc = webpFrameDoc();
+    if (!frame || !doc || !doc.documentElement) return;
+    frame.style.height = doc.documentElement.scrollHeight + 'px';
+}
+
+function webpSyncTheme() {
+    const doc = webpFrameDoc();
+    if (doc && doc.documentElement)
+        doc.documentElement.dataset.theme = document.documentElement.dataset.theme || 'light';
+}
+
+function webpEnsureLoaded() {
+    const frame = document.getElementById('webp-frame');
+    if (!frame || frame.getAttribute('src')) return;
+    frame.addEventListener('load', () => {
+        const doc = webpFrameDoc();
+        if (!doc) return;
+        webpSyncTheme();
+        webpFitHeight();
+        // 내용 크기가 바뀔 때(탭 전환·결과 표시)와 색 팔레트처럼 떠 있는 상자가 열릴 때 다시 맞춘다
+        if (typeof ResizeObserver === 'function') new ResizeObserver(webpFitHeight).observe(doc.body);
+        ['click', 'input', 'change'].forEach(type =>
+            doc.addEventListener(type, () => requestAnimationFrame(webpFitHeight))
+        );
+    });
+    frame.src = frame.dataset.src || 'webp-maker.html';
+}
+
+// 사이트에서 테마를 바꾸면(html data-theme) 열려 있는 움짤생성기에도 바로 넘긴다
+if (typeof MutationObserver === 'function') {
+    new MutationObserver(webpSyncTheme).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+    });
+}
+
 function switchToolsView(viewType, skipHashUpdate) {
     const wasRider = isToolsTabActive('rider');
     activateTabView(TOOLS_TABS, viewType);
@@ -131,8 +187,7 @@ function switchToolsView(viewType, skipHashUpdate) {
     } else if (wasRider) {
         riderSuspend();
     }
-    // 엔트리 명단·레이팅(Supabase 조회)은 이 탭을 실제로 열 때 한 번만 받는다.
-    if (viewType === 'entry' && typeof entryEnsureLoaded === 'function') entryEnsureLoaded();
+    if (viewType === 'webp') webpEnsureLoaded();
     // 외부 도구·사이트 목록도 이 탭을 처음 열 때 받는다
     if (viewType === 'external' && !toolsExternalLoaded) {
         toolsExternalLoaded = true;
