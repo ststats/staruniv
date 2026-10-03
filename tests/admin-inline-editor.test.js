@@ -126,6 +126,8 @@ test('공개 페이지는 표를 읽지 않고 공개 읽기 함수(api_*)만 �
   assert.match(sql, /from public\.video_picks where not hidden\)/);
   assert.match(sql, /from public\.external_tools where active;/);
   assert.match(sql, /from public\.site_config where config_key = 'nav'/);
+  // anon에게 표 읽기 권한(열 권한 포함)을 주지 않는다 - 함수 실행 권한만
+  assert.doesNotMatch(sql, /grant select[^;]* to anon/);
 });
 
 test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
