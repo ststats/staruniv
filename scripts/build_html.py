@@ -232,11 +232,12 @@ def nav_config_default():
 
 
 def site_data_version():
-    """사이트 데이터 파일(write_site_data.py가 먼저 만든다)마다 내용 해시 - 'shell:ab12…,records:…,profiles:…'.
+    """사이트 데이터 파일(write_site_data.py가 먼저 만든다)마다 내용 해시 - 'records:ab12…'.
+    (멤버 목록·프로필은 파일이 아니라 공개 읽기 함수 api_site_members·api_member_profiles로 받는다)
     api.js가 파일 주소에 붙여, 바뀐 파일만 새로 받고 나머지는 브라우저 캐시를 그대로 쓴다(vercel.json이 ?v= 주소에 1년 캐시).
     파일이 없으면(로컬 빌드 등) 빈 문자열 - 그러면 페이지는 매번 변경 여부만 확인한다."""
     parts = []
-    for part in ('shell', 'records', 'profiles'):
+    for part in ('records',):
         path = os.path.join(OUT_DIR, 'data', f'site_{part}.json')
         if os.path.exists(path):
             with open(path, 'rb') as f:

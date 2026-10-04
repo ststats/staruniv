@@ -128,6 +128,16 @@
                 db().from('calendar_off_air').delete().eq('off_date', date).in('soop_id', soopIds),
         },
 
+        // ---- 공휴일 ----
+        holidays: {
+            // GET /api/v1/admin/holidays
+            list: () => db().from('holidays').select('day,name').order('day'),
+            // PUT /api/v1/admin/holidays - 날짜별로 넣거나 이름을 고친다
+            save: rows => db().from('holidays').upsert(rows, { onConflict: 'day' }),
+            // DELETE /api/v1/admin/holidays?days=
+            remove: days => db().from('holidays').delete().in('day', days),
+        },
+
         // ---- 전적(경기·세트) ----
         matches: {
             // GET /api/v1/admin/matches/next-no

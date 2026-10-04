@@ -11,6 +11,7 @@ on:
       - 'scripts/export_supabase.py'
       - 'scripts/match_link.py'
       - 'scripts/write_site_data.py'
+      - 'scripts/sync_holidays.py'
       - 'scripts/write_supabase_browser_config.py'
       - 'scripts/capture_calendar.py'
       - 'scripts/minify_assets.mjs'
@@ -53,6 +54,13 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: python scripts/export_supabase.py
 
+      # 올해·내년 공휴일을 DB(public.holidays)에 맞춘다. 실패해도 달력은 DB에 있던 공휴일을 그대로 쓴다.
+      - name: Sync Korean holidays
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python scripts/sync_holidays.py
+
       - name: Build internal StarUniv stats and pages
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
@@ -64,7 +72,7 @@ jobs:
           echo "=== docs/data ==="
           ls -la docs/data
 
-          if [ ! -f docs/data/site_shell.json ] || [ ! -f docs/data/site_records.json ] || [ ! -f docs/data/site_profiles.json ]; then
+          if [ ! -f docs/data/site_records.json ]; then
             echo "split site data files were not generated"
             exit 1
           fi

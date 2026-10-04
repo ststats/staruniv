@@ -148,6 +148,22 @@ test('관리자 화면의 DB·파일·로그인은 admin-api.js(AdminApi) 한 �
   assert.match(read('templates/base.html'), /asset_url\('admin-core\.js'\) \}\}"><\/script>\r?\n<script src="\{\{ asset_url\('admin-api\.js'\)/);
 });
 
+test('멤버 목록 함수의 정렬 순서는 core.js SITE_ORDER와 같다, 공휴일은 DB(자동 맞춤 + 관리자)', () => {
+  const core = read('templates/assets/core.js');
+  const order = JSON.parse(core.match(/const SITE_ORDER = (\{[\s\S]*?\n\});/)[1]);
+  const sql = read('supabase/staruniv.sql');
+  const fn = sql.slice(sql.indexOf('create or replace function public.api_site_members'));
+  const arr = name => JSON.parse(fn.match(new RegExp(`array\\[([^\\]]*)\\] as ${name}`))[1].replace(/'/g, '"').replace(/^/, '[').replace(/$/, ']'));
+  assert.deepStrictEqual(arr('roles'), order.roles);
+  assert.deepStrictEqual(arr('tiers'), order.tiers);
+  assert.ok(!fs.existsSync(path.join(ROOT, 'templates/assets/holidays.json')));
+  assert.match(read('templates/assets/calendar.js'), /await Api\.holidays\(\)/);
+  assert.match(read('.github/workflows/build.yml'), /python scripts\/sync_holidays\.py/);
+  const sync = read('scripts/sync_holidays.py');
+  assert.match(sync, /where public\.holidays\.source = 'auto'/);
+  assert.match(sync, /where source = 'auto' and extract\(year from day\)/);
+});
+
 test('tier admin has a new-player (ELO candidates) view with add and ignore', () => {
   const tier = read('templates/assets/admin-tier.js');
   assert.match(tier, code("['candidates','신규 인원']"));
@@ -211,9 +227,11 @@ test('admin shows members by nickname (same as the public site), not by the base
 });
 
 test('site member data keeps join tier and ELO ID for the profile', () => {
-  const s = read('scripts/write_site_data.py');
-  assert.match(s, /"ELO ID"/);
-  assert.match(s, /"입단 티어"/);
+  const sql = read('supabase/staruniv.sql');
+  const fn = sql.slice(sql.indexOf('create or replace function public.api_member_profiles'));
+  assert.match(fn.slice(0, fn.indexOf('$$;')), /'ELO ID'[\s\S]*'입단 티어'/);
+  // 프로필 칸은 이름이 아니라 멤버 줄(_id)로 붙인다(같은 이름 재입단도 섞이지 않게)
+  assert.match(read('templates/assets/core.js'), code("Object.assign(m,SiteData.profiles[m._id]||{})"));
   assert.match(read('templates/partials/profile_modal.html'), /id="mp-join-tier"/);
 });
 
@@ -232,9 +250,10 @@ test('stats TOP card uses repo media files (media/members/<SOOP ID>), no DB uplo
   const js = read('templates/assets/page-stats.js');
   assert.match(js, /\^media\\\/members\\\//);
   assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
-  assert.match(read('scripts/write_site_data.py'), /MEMBER_MEDIA_DIR = ROOT \/ "templates" \/ "static" \/ "media" \/ "members"/);
   assert.match(js, /storageMediaUrl\(raw\)/);
-  assert.match(read('scripts/write_site_data.py'), /row\.get\("대표 사진"\) or member_media_url/);
+  // 대표 사진은 DB(members.photo_path) 그대로 - 저장소 파일은 'media/members/…' 경로로 적혀 있다(관리자 미리보기도 사이트 파일로)
+  assert.match(read('supabase/staruniv.sql'), /'대표 사진', coalesce\(m\.photo_path, ''\)/);
+  assert.match(read('templates/assets/admin-core.js'), /\^media\\\/members\\\//);
 });
 
 test('admin upload of feature photo/video stays: PC browser re-encodes video, no server encoding', () => {

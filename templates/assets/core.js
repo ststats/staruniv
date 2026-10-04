@@ -406,8 +406,8 @@ document.addEventListener('keydown', e => {
 // =====================================================================
 // 2. 페이지별 사이트 데이터
 // =====================================================================
-// 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접
-// 박아넣지 않고 shell/records JSON에서 필요한 묶음만 비동기로 가져온다.
+// 멤버/매치/라운드/개인통계는 경기가 쌓일수록 계속 커지는 데이터라, HTML에 직접 박아넣지 않고 필요한 묶음만
+// 비동기로 가져온다. shell(멤버 목록)·profiles(프로필 칸)는 공개 읽기 함수, records(전적·통산 계산값)는 빌드 파일.
 const SiteData = {
     members: [],
     matches: [],
@@ -452,10 +452,18 @@ async function loadSiteData(parts) {
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        const payloads = await Promise.all(requested.map(async part => [part, await Api.siteData(part)]));
+        const load = {
+            shell: () => Api.members(),
+            profiles: () => Api.memberProfiles(),
+            records: () => Api.siteData('records'),
+        };
+        const payloads = await Promise.all(requested.map(async part => [part, await load[part]()]));
         payloads.forEach(([part, data]) => {
             if (part === 'shell') {
-                SiteData.members = asArray(data && data.members);
+                // _id(프로필 칸을 붙이는 열쇠)는 화면에 칸으로 나오지 않게 숨긴 속성으로 둔다
+                SiteData.members = asArray(data && data.members).map(({ _id, ...m }) =>
+                    Object.defineProperty(m, '_id', { value: _id })
+                );
                 SiteData.matchCount = Number(data && data.matchCount) || 0;
                 SiteData.roundCount = Number(data && data.roundCount) || 0;
             } else if (part === 'profiles') {
@@ -467,13 +475,9 @@ async function loadSiteData(parts) {
             }
             SiteDataLoad.loaded.add(part);
         });
-        // 프로필 창에서만 보이는 칸(생년월일·MBTI 등, 멤버 페이지만 받는다)을 멤버 목록에 이름으로 붙인다.
-        // 같은 이름(재입단)은 목록 순서대로 하나씩 붙인다.
+        // 프로필 창에서만 보이는 칸(생년월일·MBTI 등, 멤버 페이지만 받는다)을 멤버 줄(_id)에 붙인다.
         if (SiteData.profiles && SiteDataLoad.loaded.has('shell')) {
-            const queues = Object.fromEntries(
-                Object.entries(SiteData.profiles).map(([k, v]) => [k, asArray(v).slice()])
-            );
-            SiteData.members.forEach(m => Object.assign(m, (queues[m['이름']] || []).shift() || {}));
+            SiteData.members.forEach(m => Object.assign(m, SiteData.profiles[m._id] || {}));
             SiteData.profiles = null;
         }
         SiteDataLoad.status = 'loaded';

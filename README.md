@@ -86,7 +86,8 @@ Supabase(`admin_request_tier_analysis`)가 GitHub Actions(`tier-analysis.yml`)�
 python -m pip install -r requirements.txt
 python scripts/export_supabase.py     # SUPABASE_DB_URL 필요. 없으면 이 줄을 건너뛰고 기존 data/db.json 캐시로 빌드
 python scripts/build_html.py          # templates → docs (HTML, 자산 복사, 캐시용 ?v=해시)
-python scripts/write_site_data.py     # docs/data/site_shell.json · site_records.json
+python scripts/write_site_data.py     # docs/data/site_records.json(전적·선수별 통산 계산값)
+python scripts/sync_holidays.py       # (선택) SUPABASE_DB_URL 필요. 올해·내년 공휴일을 DB에 맞춤(정기 빌드가 함)
 npm test                              # node --test (의존성 없음)
 npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·HTML 주석·공백 빼기
 ```
@@ -101,7 +102,7 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
   그 부품 파일의 원래 규칙을 고칩니다. `14-surfaces.css`는 남색 면의 색 변수만 두는 곳입니다. 어드민 CSS는 `admin.css`.
 - 공개 페이지의 데이터는 **`templates/assets/api.js`의 `Api` 함수로만** 받습니다(페이지 파일에 표 이름·열을 쓰지 않음, `npm test`가 검사).
   함수 하나가 서버 API 주소 하나(`/api/v1/…`, 규격 `api/openapi.yaml`)에 대응하고 화면이 그리는 것만 돌려줍니다.
-  멤버·전적·프로필 묶음은 빌드가 만든 `data/site_*.json`이고, 나머지는 Supabase의 **공개 읽기 함수**(`api_*`·`player_*`·`elo_*_list`,
+  전적 묶음(선수별 통산 계산값 포함)만 빌드가 만든 `data/site_records.json`이고, 멤버 목록·프로필·공휴일을 포함한 나머지는 Supabase의 **공개 읽기 함수**(`api_*`·`player_*`·`elo_*_list`,
   `supabase/staruniv.sql` 2번·`ststat.sql` 14번)를 부릅니다(작은 호출 클라이언트, supabase-js 없음). 브라우저(anon)는 표를 하나도
   직접 읽지 못합니다 - 함수가 정의자 권한으로 화면에 나오는 열·행만 돌려주고, 거르는 조건(휴면·숨김·활성 스냅샷 등)은 함수 안에
   적습니다. 주소마다 담당 함수가 `api/openapi.yaml`의 `x-db-function`에 있습니다. 나중에 서버를 붙이면 서버가 같은 함수를 부르고

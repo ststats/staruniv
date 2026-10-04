@@ -156,8 +156,62 @@
         });
     }
 
+    // 공휴일(달력의 빨간 날): 올해·내년은 정기 빌드가 자동으로 맞춘다(scripts/sync_holidays.py). 여기서는 라이브러리에
+    // 아직 없는 임시공휴일 등을 더한다 - 한 줄에 'YYYY-MM-DD 이름'. 여기서 적거나 고친 날은 자동 맞춤이 건드리지 않는다.
+    async function openHolidays() {
+        const { data, error } = await AdminApi.holidays.list();
+        if (error) throw error;
+        const before = new Map((data || []).map(r => [r.day, r.name || '']));
+        C().openDrawer({
+            eyebrow: 'HOLIDAYS',
+            title: '공휴일 관리',
+            html: `
+        ${C().field('공휴일', C().textarea('ah_days', (data || []).map(r => `${r.day}${r.name ? ` ${r.name}` : ''}`).join('\n'), 'rows="16" spellcheck="false"'))}
+        <p class="admin-help">올해·내년 공휴일(설·추석·대체공휴일·선거일 등)은 매일 자동으로 채워집니다. 갑자기 정해진 임시공휴일처럼 빠진 날만 한 줄에 <b>날짜 이름</b>(예: 2027-01-04 임시공휴일)으로 더하세요. 자동으로 채워진 날을 지워도 다음 자동 맞춤 때 다시 들어옵니다</p>
+      `,
+            onSubmit: async () => {
+                const after = new Map();
+                for (const line of C().value('ah_days').split('\n')) {
+                    const text = line.trim();
+                    if (!text) continue;
+                    const m = text.match(/^(\d{4}-\d{2}-\d{2})\s*(.*)$/);
+                    if (!m || Number.isNaN(Date.parse(m[1]))) throw new Error(`날짜를 읽을 수 없습니다: ${text}`);
+                    after.set(m[1], m[2].trim());
+                }
+                const remove = [...before.keys()].filter(d => !after.has(d));
+                const save = [...after]
+                    .filter(([d, name]) => before.get(d) !== name)
+                    .map(([day, name]) => ({
+                        day,
+                        name: name || null,
+                        source: 'manual',
+                        updated_at: new Date().toISOString(),
+                    }));
+                if (!remove.length && !save.length) throw new Error('바뀐 내용이 없습니다');
+                if (remove.length) {
+                    const { error: e } = await AdminApi.holidays.remove(remove);
+                    if (e) throw e;
+                    await C().audit('delete', 'holidays', remove.join(','), {});
+                }
+                if (save.length) {
+                    const { error: e } = await AdminApi.holidays.save(save);
+                    if (e) throw e;
+                }
+                C().toast(`공휴일을 저장했습니다. (추가·수정 ${save.length} · 삭제 ${remove.length})`);
+                await refresh();
+            },
+        });
+    }
+
     async function init() {
         if (document.body.dataset.adminPage !== 'schedule') return;
+        C().addPageTool({
+            id: 'adminHolidays',
+            label: '공휴일 관리',
+            icon: 'edit',
+            scope: '#view-calendar',
+            onClick: () => openHolidays().catch(e => C().toast(C().errorText(e), 'error')),
+        });
         await C().loadMembers();
         const publicOffAirExtra = window.calOffAirExtra;
         window.calCardExtra = item =>

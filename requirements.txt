@@ -6,3 +6,4 @@ jinja2>=3.0,<4
 psycopg[binary]>=3.2,<4  # Supabase PostgreSQL import/export
 pytesseract>=0.3,<1  # 티어표 분석(scripts/tier_table.py)
 Pillow>=10,<13
+holidays>=0.80,<1  # 공휴일 자동 맞춤(scripts/sync_holidays.py)
