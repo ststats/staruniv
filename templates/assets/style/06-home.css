@@ -17,6 +17,12 @@
     line-height: 1.5;
     text-align: center;
 }
+/* 방송 상태를 확인하는 동안은 아래 공지 구역을 보이지 않게 둔다. 방송 카드가 늦게 들어오면 이미 보이던 공지 제목이
+   화면 밖으로 밀려났다(CLS). 확인이 끝나면(성공·없음·오류) 보이고, 확인이 멈춰도 3초 뒤에는 보인다. */
+.home-live-broadcast[data-state="loading"] ~ * {
+    visibility: hidden;
+    animation: view-pending-reveal 0s 3s forwards;
+}
 .home-live-state[hidden],
 .live-broadcast-grid[hidden] {
     display: none;
