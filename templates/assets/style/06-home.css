@@ -407,7 +407,8 @@ a.home-notice-card:hover {
     background: transparent;
     text-decoration: none;
 }
-.home-video-preview:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+.home-video-preview:hover,
+.home-video-preview:focus-visible { color: #fff; background: rgba(255, 255, 255, 0.06); }
 .home-video-play {
     width: 0;
     height: 0;
@@ -416,7 +417,6 @@ a.home-notice-card:hover {
     border-bottom: 22px solid transparent;
     border-left: 34px solid currentColor;
 }
-.home-video-preview:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
 
 /* 일정마다 글자 수가 달라도 시간 · 제목 · 내용의 시작 위치를 맞춘다. */
 .home-carousel-preview[data-preview="0"] .home-preview-row {

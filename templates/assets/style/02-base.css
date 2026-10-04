@@ -51,6 +51,11 @@
     box-sizing: border-box;
 }
 
+/* 스크롤바 자리는 처음부터 비워 둔다. 모달을 열 때만 켜면(예전 방식) 최신 Chrome은 그 순간 화면 폭 단위(vw)에서
+   스크롤바 폭을 빼서, vw로 여백을 잡는 히어로 글자가 옆으로 밀렸다. */
+html {
+    scrollbar-gutter: stable;
+}
 body {
     overflow-y: scroll;
     font-family: "Pretendard", sans-serif;

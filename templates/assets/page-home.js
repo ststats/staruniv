@@ -118,6 +118,11 @@ function goHomeCarousel(index) {
     homeCarouselIndex = (index + dots.length) % dots.length;
     track.style.transform = `translateX(-${homeCarouselIndex * 100}%)`;
     dots.forEach((dot, i) => dot.classList.toggle('active', i === homeCarouselIndex));
+    // 보이지 않는 장은 키보드(Tab)로 들어가지 못하게 한다. 들어가면 브라우저가 그 링크를 보이려고 히어로 상자를
+    // 옆으로 스크롤해 장이 반쯤 걸친 채 틀어졌다. 다른 장은 점·화살표로 넘긴다.
+    track.querySelectorAll('.home-carousel-slide').forEach((slide, i) => {
+        slide.inert = i !== homeCarouselIndex;
+    });
 }
 
 // 자동 넘김. 마우스를 올리거나 키보드 초점이 들어오면 멈춘다(읽는 중에 넘어가면 성가시다).
@@ -219,6 +224,11 @@ function initHomeCarousel() {
     const car = document.querySelector('.home-carousel');
     if (!car) return;
     renderHomePreviewPanes();
+    goHomeCarousel(homeCarouselIndex);
+    // 장 이동은 transform으로만 한다 - 찾기(Ctrl+F) 등으로 상자 자체가 스크롤되면 바로 되돌린다
+    car.addEventListener('scroll', () => {
+        if (car.scrollLeft) car.scrollLeft = 0;
+    });
     initHomeCarouselSwipe(car);
     car.addEventListener('mouseenter', stopHomeCarouselAuto);
     car.addEventListener('mouseleave', startHomeCarouselAuto);

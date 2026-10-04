@@ -177,10 +177,12 @@
             }
         };
         form.oninput = () => markDirty(true);
-        // 스크롤을 잠그면 스크롤바가 사라지며 뒤 화면이 그만큼 옆으로 밀린다 - 공개 페이지 모달(core.js showModal)처럼 여백으로 메운다
+        // 스크롤을 잠가도 스크롤바 자리는 CSS(html scrollbar-gutter: stable)가 남겨 둬 뒤 화면이 밀리지 않는다.
+        // 그 설정을 못 쓰는 브라우저만 공개 페이지 모달(core.js showModal)처럼 여백으로 메운다.
         if (!document.body.classList.contains('admin-drawer-open')) {
             const scrollbar = window.innerWidth - document.documentElement.clientWidth;
-            if (scrollbar > 0) document.body.style.setProperty('--drawer-lock-gap', `${scrollbar}px`);
+            if (scrollbar > 0 && !(CSS.supports && CSS.supports('scrollbar-gutter', 'stable')))
+                document.body.style.setProperty('--drawer-lock-gap', `${scrollbar}px`);
             const active = document.activeElement;
             state.drawerReturnFocus = active && active !== document.body && !drawer.contains(active) ? active : null;
         }
