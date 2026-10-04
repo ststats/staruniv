@@ -100,11 +100,16 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
   합쳐 `docs/style.css`로 냅니다. **번호 순서가 곧 우선순위**라, 부품을 고칠 때는 뒤에 새 규칙을 덧붙이지 말고
   그 부품 파일의 원래 규칙을 고칩니다. `14-surfaces.css`는 남색 면의 색 변수만 두는 곳입니다. 어드민 CSS는 `admin.css`.
 - 공개 페이지의 데이터는 **`templates/assets/api.js`의 `Api` 함수로만** 받습니다(페이지 파일에 표 이름·열을 쓰지 않음, `npm test`가 검사).
-  함수 하나가 서버 API 주소 하나(`/api/v1/…`, 규격 `api/openapi.yaml`)에 대응하고 화면이 그리는 것만 돌려줍니다. 지금은 서버 없이
-  `api.js`가 Supabase 공개 조회(작은 읽기 클라이언트 `publicSupabaseClient`, supabase-js 없음)로 받고, 나중에 서버를 붙이면
-  `api.js` 안의 조회만 `fetch('/api/v1/…')`로 바꿉니다. 화면에 새 데이터를 쓰려면 `api.js` 함수 → `api/openapi.yaml` →
-  익명 권한(`supabase/staruniv.sql` 2번, `ststat.sql` 14번) 순서로 함께 고칩니다. ELO 선수·순위·레이팅·선수별 경기처럼 긴 목록은
-  1000줄씩 나눠 받지 않고 `ststat.sql` 14번 끝의 DB 함수(`elo_*_list`)가 요청 한 번에 돌려줍니다. 관리자 화면만 로그인 때문에 supabase-js를 받습니다.
+  함수 하나가 서버 API 주소 하나(`/api/v1/…`, 규격 `api/openapi.yaml`)에 대응하고 화면이 그리는 것만 돌려줍니다.
+  멤버·전적·프로필 묶음은 빌드가 만든 `data/site_*.json`이고, 나머지는 Supabase의 **공개 읽기 함수**(`api_*`·`player_*`·`elo_*_list`,
+  `supabase/staruniv.sql` 2번·`ststat.sql` 14번)를 부릅니다(작은 호출 클라이언트, supabase-js 없음). 브라우저(anon)는 표를 하나도
+  직접 읽지 못합니다 - 함수가 정의자 권한으로 화면에 나오는 열·행만 돌려주고, 거르는 조건(휴면·숨김·활성 스냅샷 등)은 함수 안에
+  적습니다. 주소마다 담당 함수가 `api/openapi.yaml`의 `x-db-function`에 있습니다. 나중에 서버를 붙이면 서버가 같은 함수를 부르고
+  `api.js` 안의 호출만 `fetch('/api/v1/…')`로 바꿉니다. 화면에 새 데이터를 쓰려면 DB 함수(SQL) → `api.js` 함수 →
+  `api/openapi.yaml` 순서로 함께 고칩니다. 시너지도 같은 함수만 부릅니다.
+- 관리자 화면의 DB 읽기·쓰기·파일 올리기·로그인은 **`templates/assets/admin-api.js`의 `AdminApi`로만** 합니다(`npm test`가 검사).
+  기능마다 함수 하나가 나중 서버의 관리자 주소(`/api/v1/admin/…`, 주석)에 대응하고, 지금은 로그인한 supabase-js로 바로 부릅니다
+  (권한은 DB의 `is_admin` 정책·`admin_*` 함수). 서버를 붙이면 이 파일 안만 바꿉니다.
 - 화면 코드에는 `onclick="…"` 같은 인라인 핸들러와 인라인 `<script>`를 쓰지 않습니다(CSP로 막을 수 있게, `npm test`가 검사).
   버튼 동작은 `data-click="함수" data-args='[인자]'`(JS에서는 `act('함수', 인자…)`)로 적고 `templates/assets/actions.js`가
   한 곳에서 받아 그 전역 함수(`function` 선언)를 부릅니다. 입력은 `data-input`·`data-change`·`data-enter`, 스크롤은 `data-scroll`,
