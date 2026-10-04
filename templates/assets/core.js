@@ -233,12 +233,10 @@ function showModal(id) {
     document.body.classList.add('modal-open');
     document.body.style.overflow = 'hidden';
     // 스크롤바가 사라진 만큼 폭이 넓어지면 페이지 전체(멤버 카드 목록 등)를 다시 배치하느라 창이 열리는 순간 멈춘다.
-    // 스크롤바 자리를 비워 두면(scrollbar-gutter) 폭이 그대로라 다시 배치할 게 없다. 못 쓰는 브라우저는 예전처럼 여백으로 메운다.
-    if (scrollbar > 0) {
-        if (CSS.supports && CSS.supports('scrollbar-gutter', 'stable'))
-            document.documentElement.style.scrollbarGutter = 'stable';
-        else document.body.style.paddingRight = `${scrollbar}px`;
-    }
+    // 스크롤바 자리는 CSS(html scrollbar-gutter: stable)가 처음부터 비워 둬서 폭이 그대로다. 그 설정을 못 쓰는 브라우저만
+    // 예전처럼 여백으로 메운다.
+    if (scrollbar > 0 && !(CSS.supports && CSS.supports('scrollbar-gutter', 'stable')))
+        document.body.style.paddingRight = `${scrollbar}px`;
     if (!modalBackdrop) {
         modalBackdrop = document.createElement('div');
         modalBackdrop.className = 'modal-backdrop fade';
@@ -284,7 +282,6 @@ function hideModal(el, keepBackdrop) {
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
-        document.documentElement.style.scrollbarGutter = '';
     });
 }
 
