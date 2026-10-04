@@ -407,8 +407,6 @@ a.home-notice-card:hover {
     background: transparent;
     text-decoration: none;
 }
-.home-video-preview:hover,
-.home-video-preview:focus-visible { color: #fff; background: rgba(255, 255, 255, 0.06); }
 .home-video-play {
     width: 0;
     height: 0;
