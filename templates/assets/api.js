@@ -113,7 +113,22 @@ async function playerStats(soopIds, date) {
 }
 
 const Api = {
-    // GET /api/v1/site/{shell|records|profiles} - 멤버·전적 묶음(지금은 빌드가 만든 data/site_*.json)
+    // GET /api/v1/members - 멤버 목록(사이트 순서)과 누적 매치·세트 수 { members, matchCount, roundCount }
+    async members() {
+        return apiCall('api_site_members');
+    },
+
+    // GET /api/v1/members/profiles - 프로필 창에서만 보이는 칸 { profiles: { 멤버 _id: {…} } }(멤버 페이지만)
+    async memberProfiles() {
+        return apiCall('api_member_profiles');
+    },
+
+    // GET /api/v1/holidays - 공휴일 { "YYYY-MM-DD": true }(일정 달력)
+    async holidays() {
+        return apiCall('api_holidays');
+    },
+
+    // GET /api/v1/site/records - 전적 묶음(경기·세트·선수별 통산 계산값, 빌드가 만든 data/site_records.json)
     // [캐시] 빌드가 페이지에 넣어준 파일별 내용 해시(<meta name="site-data-version" content="shell:…,records:…">)를
     // 주소에 붙인다. 그 파일이 바뀐 배포에서만 주소가 바뀌므로 평소엔 브라우저 캐시를 그대로 쓰고(vercel.json 1년 캐시),
     // 해시가 없으면 매번 변경 여부만 확인한다(no-cache → 304).

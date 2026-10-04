@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from collections import Counter
@@ -11,24 +10,11 @@ from match_link import load_linked_db
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "data" / "db.json"
 OUT_DIR = ROOT / "docs" / "data"
-# 방송통계 TOP 대표 영상·사진: 저장소 파일 templates/static/media/members/<SOOP ID>.<확장자>(빌드 때 docs/로 복사).
-# 어드민에서 올린 대표 사진(members.photo_path)이 있으면 그쪽이 먼저다.
-MEMBER_MEDIA_DIR = ROOT / "templates" / "static" / "media" / "members"
-MEMBER_MEDIA_EXTS = (".mp4", ".webm", ".webp", ".gif", ".jpg", ".jpeg", ".png")
+# 전적 묶음(site_records.json): 경기·세트와 선수별 통산 전적(계산값). 멤버 목록·프로필은 파일이 아니라
+# 공개 읽기 함수(supabase/staruniv.sql 2번 api_site_members·api_member_profiles)가 그때그때 돌려준다.
 OUT_PATHS = {
-    "shell": OUT_DIR / "site_shell.json",
     "records": OUT_DIR / "site_records.json",
-    "profiles": OUT_DIR / "site_profiles.json",
 }
-
-# 거의 모든 페이지가 받는 멤버 목록(site_shell.json): 목록·카드·선택 바가 쓰는 칸만. '대표 사진'은 방송통계 TOP 칸이 쓴다.
-SITE_MEMBER_FIELDS = [
-    "이름", "SOOP ID", "성별", "종족", "티어",
-    "직책", "입단일", "퇴단일", "대표 사진",
-]
-# 멤버 페이지 프로필 창에서만 보이는 칸(site_profiles.json, 멤버 페이지만 받는다). 이름으로 멤버 목록에 붙인다.
-# '입단 티어'는 활동기간 줄, 'ELO ID'는 전적 분석 버튼, 'YouTube'는 외부 링크가 쓴다(여기 없으면 사이트에 안 보인다).
-SITE_PROFILE_FIELDS = ["생년월일", "MBTI", "YouTube", "ELO ID", "입단 티어"]
 SITE_MATCH_FIELDS = [
     "매치 번호", "날짜", "상대팀", "형식", "방식",
     "최종 결과", "세트 결과", "_match_key",
@@ -43,22 +29,6 @@ STAT_RACES = [("T", "테란전"), ("Z", "저그전"), ("P", "프로토스전")]
 # 복사·붙여넣기로 섞여 드는 안 보이는 문자(폭 없는 공백·BOM·줄바꿈 없는 공백 등). '승 '처럼 끝에 붙으면
 # 비교에서 조용히 빠지므로 양 끝 공백과 함께 지우고 센다.
 INVISIBLE_CHARS = re.compile(r"[​-‍⁠﻿ ᠎]")
-
-# 멤버 순서: 멤버 현황 페이지(page-members.js)와 같다 - 감독 → 코치 → 선수 → 그 밖의 직책,
-# 같은 직책 안에서는 티어 높은 순, 같은 티어면 입단순(같은 날이면 이름순). 선택 바(멤버 공지·개인 전적)가 이 순서를 그대로 쓴다.
-def load_site_order() -> dict:
-    """core.js 맨 위 SITE_ORDER 블록(티어·직책 순서)을 읽는다 - 순서는 거기 한 곳에서만 고친다."""
-    text = (ROOT / "templates" / "assets" / "core.js").read_text(encoding="utf-8")
-    match = re.search(r"const SITE_ORDER = (\{.*?\n\});", text, re.S)
-    if not match:
-        raise SystemExit("core.js에서 SITE_ORDER를 찾지 못했습니다.")
-    return json.loads(match.group(1))
-
-
-SITE_ORDER = load_site_order()
-ROLE_ORDER = {role: i for i, role in enumerate(SITE_ORDER["roles"])}
-TIER_ORDER = SITE_ORDER["tiers"]   # DB에는 '3'처럼 숫자만 들어 있다
-
 
 def clean(value) -> str:
     return "" if value is None else INVISIBLE_CHARS.sub("", str(value)).strip()
@@ -109,48 +79,11 @@ def pick(row: dict, fields: list[str]) -> dict:
     return {key: row[key] for key in fields if key in row}
 
 
-def tier_index(value) -> int:
-    text = str("" if value is None else value).strip().removesuffix("티어")   # 숫자 0티어(0)도 살린다
-    try:
-        return TIER_ORDER.index(text)
-    except ValueError:
-        return len(TIER_ORDER)
-
-
-def sort_members(rows: list[dict]) -> list[dict]:
-    return sorted(
-        rows,
-        key=lambda row: (
-            ROLE_ORDER.get(str(row.get("직책") or "선수"), len(ROLE_ORDER)),
-            tier_index(row.get("티어")),
-            str(row.get("입단일") or "9999"),
-            str(row.get("이름") or ""),
-        ),
-    )
-
-
-def member_media_url(soop_id) -> str:
-    """SOOP ID의 대표 파일 주소(사이트 기준 상대 경로, 내용이 바뀌면 주소도 바뀌게 ?v=해시). 없으면 빈 문자열."""
-    sid = str(soop_id or "").strip().lower()
-    if not re.fullmatch(r"[a-z0-9_-]+", sid):
-        return ""
-    for ext in MEMBER_MEDIA_EXTS:
-        path = MEMBER_MEDIA_DIR / f"{sid}{ext}"
-        if path.is_file():
-            digest = hashlib.sha1(path.read_bytes()).hexdigest()[:10]
-            return f"media/members/{sid}{ext}?v={digest}"
-    return ""
-
-
 def main() -> None:
     if not DB_PATH.exists():
         raise SystemExit(f"missing: {DB_PATH}")
-    db_data, linked_matches, linked_rounds = load_linked_db(str(DB_PATH))
+    _db, linked_matches, linked_rounds = load_linked_db(str(DB_PATH))
 
-    members = sort_members(db_data.get("members", []))
-    for row in members:
-        # 어드민에서 올린 것(Storage 경로)이 먼저, 없으면 저장소 파일
-        row["대표 사진"] = row.get("대표 사진") or member_media_url(row.get("SOOP ID"))
     matches = sorted(
         linked_matches,
         key=lambda row: str(row.get("날짜", "")),
@@ -162,17 +95,6 @@ def main() -> None:
         reverse=True,
     )
 
-    shell_payload = {
-        "members": [pick(row, SITE_MEMBER_FIELDS) for row in members],
-        "matchCount": len(matches),
-        # 내전은 양쪽 선수 기록을 위해 세트를 뒤집은 복제본(_mirrored)이 한 벌 더 있다 - 세트 수에서는 뺀다
-        "roundCount": sum(1 for row in rounds if not row.get("_mirrored")),
-    }
-    # 이름이 같은 줄(재입단)이 여럿이면 목록 순서와 같게 차례로 붙이도록 이름별 배열로 둔다
-    profiles: dict[str, list[dict]] = {}
-    for row in members:
-        profiles.setdefault(str(row.get("이름") or ""), []).append(pick(row, SITE_PROFILE_FIELDS))
-    profiles_payload = {"profiles": profiles}
     records_payload = {
         "matches": [pick(row, SITE_MATCH_FIELDS) for row in matches],
         "rounds": [pick(row, SITE_ROUND_FIELDS) for row in rounds],
@@ -180,7 +102,7 @@ def main() -> None:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for name, payload in (("shell", shell_payload), ("records", records_payload), ("profiles", profiles_payload)):
+    for name, payload in (("records", records_payload),):
         path = OUT_PATHS[name]
         temp = path.with_suffix(".json.tmp")
         temp.write_text(
@@ -190,8 +112,7 @@ def main() -> None:
         temp.replace(path)
 
     print(
-        f"✅ 사이트 데이터 분리 생성 완료: "
-        f"members={len(shell_payload['members'])}, "
+        f"✅ 사이트 데이터(전적) 생성 완료: "
         f"matches={len(records_payload['matches'])}, "
         f"rounds={len(records_payload['rounds'])}, "
         f"playersStats={len(records_payload['playersStats'])}"

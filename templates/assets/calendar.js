@@ -170,15 +170,12 @@ const calCellEventHtml = ({ timeText, personText, descText, color, bar }) => {
         `;
 };
 
-// 공휴일 목록은 해마다 바뀌므로 별도 JSON(holidays.json)에서 fetch해온다.
+// 공휴일은 해마다 바뀌어 관리자 화면(일정 > 공휴일 관리)에서 고친다 - 공개 읽기 함수(api_holidays)로 받는다.
 let calPublicHolidays = {};
 const loadPublicHolidays = async () => {
     try {
-        const res = await fetch('holidays.json', { cache: 'no-cache' });
-        if (res.ok) {
-            const data = await res.json();
-            calPublicHolidays = data && typeof data === 'object' ? data : {};
-        }
+        const data = await Api.holidays();
+        calPublicHolidays = data && typeof data === 'object' ? data : {};
     } catch (e) {
         console.error('공휴일 데이터를 불러오지 못했습니다:', e);
     }
@@ -205,7 +202,7 @@ const calIsMultiDay = ev => !!ev.endDate && ev.endDate !== ev.startDate;
 const calEventsForDate = (dateStr, source) =>
     calSortByTime((source || calEvents).filter(ev => ev && calEventCoversDate(ev, dateStr)));
 
-// 공휴일 파일과 일정 조회는 서로 무관하니 함께 받는다. calPrefetchPublicData()로 먼저 시작해 두었으면
+// 공휴일과 일정 조회는 서로 무관하니 함께 받는다. calPrefetchPublicData()로 먼저 시작해 두었으면
 // 그 결과를 한 번만 쓴다(어드민이 편집한 뒤 다시 부를 때는 새로 받는다).
 let calPublicPrefetch = null;
 const calPrefetchPublicData = () => {

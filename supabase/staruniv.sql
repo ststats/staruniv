@@ -582,6 +582,31 @@ revoke all on public.external_tools from anon;
 drop policy if exists public_read_external_tools on public.external_tools;
 create policy public_read_external_tools on public.external_tools for select to anon using (active=true);
 
+-- 공휴일(일정 달력의 빨간 날). 해마다 바뀌어 관리자 화면(일정 > 공휴일 관리)에서 고친다. 공개는 api_holidays로만.
+create table if not exists public.holidays (
+  day date primary key,
+  name text,
+  updated_at timestamptz not null default now()
+);
+alter table public.holidays enable row level security;
+drop policy if exists admins_all_holidays on public.holidays;
+create policy admins_all_holidays on public.holidays for all to authenticated
+  using ((select public.is_admin())) with check ((select public.is_admin()));
+revoke all on public.holidays from anon;
+grant select, insert, update, delete on public.holidays to authenticated;
+-- 처음 한 번: 예전 저장소 파일(templates/assets/holidays.json)의 날짜(이미 있으면 그대로 둔다)
+insert into public.holidays (day) values
+  ('2024-01-01'), ('2024-02-09'), ('2024-02-10'), ('2024-02-11'), ('2024-02-12'), ('2024-03-01'),
+  ('2024-04-10'), ('2024-05-05'), ('2024-05-06'), ('2024-05-15'), ('2024-06-06'), ('2024-08-15'),
+  ('2024-09-16'), ('2024-09-17'), ('2024-09-18'), ('2024-10-03'), ('2024-10-09'), ('2024-12-25'),
+  ('2025-01-01'), ('2025-01-28'), ('2025-01-29'), ('2025-01-30'), ('2025-03-01'), ('2025-03-03'),
+  ('2025-05-05'), ('2025-05-06'), ('2025-06-06'), ('2025-08-15'), ('2025-10-03'), ('2025-10-05'),
+  ('2025-10-06'), ('2025-10-07'), ('2025-10-08'), ('2025-10-09'), ('2025-12-25'), ('2026-01-01'),
+  ('2026-02-16'), ('2026-02-17'), ('2026-02-18'), ('2026-03-01'), ('2026-03-02'), ('2026-05-05'),
+  ('2026-05-24'), ('2026-05-25'), ('2026-06-06'), ('2026-08-15'), ('2026-09-24'), ('2026-09-25'),
+  ('2026-09-26'), ('2026-09-28'), ('2026-10-03'), ('2026-10-09'), ('2026-12-25')
+on conflict (day) do nothing;
+
 -- 공개 읽기 함수(/api/v1): 공개 페이지(api.js)는 표 대신 이 함수들만 부른다. 함수 하나가 주소 하나
 -- (api/openapi.yaml)에 대응하고, 화면이 그리는 열만 JSON으로 돌려준다(행 수 제한 없이 요청 한 번).
 -- security definer라 표의 정책·열 권한을 거치지 않으므로, 거르는 조건은 위 anon 정책과 똑같이 여기에 적는다.
@@ -652,10 +677,63 @@ language sql stable security definer set search_path = public as $$
   from public.external_tools where active;
 $$;
 
+-- 멤버 목록(거의 모든 페이지·멀티뷰어): 목록·카드·선택 바가 쓰는 칸만, 사이트 순서(감독 → 코치 → 선수 → 그 밖,
+-- 같은 직책은 티어 높은 순, 같으면 입단순, 같은 날이면 이름순). 순서 목록은 core.js SITE_ORDER와 같아야 한다(npm test가 확인).
+-- 칸 이름·값 모양은 예전 빌드 파일(site_shell.json)과 같다: 빈 값은 '', 숫자만 든 티어·SOOP ID는 숫자, 성별은 남자/여자.
+-- _id는 프로필 칸(api_member_profiles)을 붙이는 열쇠다. matchCount·roundCount는 홈 전적 카드의 누적 매치·세트 수.
+create or replace function public.api_site_members() returns json
+language sql stable security definer set search_path = public as $$
+  with o as (
+    select array['감독','코치','선수'] as roles,
+           array['갓','킹','잭','조커','스페이드','0','1','2','3','4','5','6','7','8','베이비'] as tiers
+  )
+  select json_build_object(
+    'members', coalesce((select json_agg(json_build_object(
+        '_id', m.id,
+        '이름', coalesce(m.nickname, ''),
+        'SOOP ID', case when btrim(m.soop_id) ~ '^-?[0-9]+$' then to_json(btrim(m.soop_id)::numeric) else to_json(coalesce(m.soop_id, '')) end,
+        '성별', case when btrim(m.gender) in ('남', '남성', '남자') or upper(btrim(m.gender)) in ('M', 'MALE') then '남자'
+                     when btrim(m.gender) in ('여', '여성', '여자') or upper(btrim(m.gender)) in ('F', 'FEMALE') then '여자'
+                     else coalesce(m.gender, '') end,
+        '종족', coalesce(m.race, ''),
+        '티어', case when btrim(m.tier) ~ '^-?[0-9]+$' then to_json(btrim(m.tier)::numeric) else to_json(coalesce(m.tier, '')) end,
+        '직책', coalesce(m.role, ''),
+        '입단일', coalesce(m.joined_date::text, ''),
+        '퇴단일', coalesce(m.left_date::text, ''),
+        '대표 사진', coalesce(m.photo_path, ''))
+      order by coalesce(array_position(o.roles, coalesce(nullif(m.role, ''), '선수')), 99),
+               coalesce(array_position(o.tiers, regexp_replace(btrim(coalesce(m.tier, '')), '티어$', '')), 99),
+               coalesce(m.joined_date::text, '9999'), coalesce(m.nickname, '') collate "C", m.source_order)
+      from public.members m, o), '[]'::json),
+    'matchCount', (select count(*) from public.matches),
+    'roundCount', (select count(*) from public.rounds));
+$$;
+
+-- 멤버 프로필 창에서만 보이는 칸(멤버 페이지만 받는다): { _id: {생년월일, MBTI, YouTube, ELO ID, 입단 티어} }
+create or replace function public.api_member_profiles() returns json
+language sql stable security definer set search_path = public as $$
+  select json_build_object('profiles', coalesce(json_object_agg(m.id, json_build_object(
+      '생년월일', coalesce(m.birth_date::text, ''),
+      'MBTI', coalesce(m.mbti, ''),
+      'YouTube', coalesce(m.youtube_url, ''),
+      'ELO ID', coalesce(to_json(m.elo_id), to_json(''::text)),
+      '입단 티어', case when btrim(m.join_tier) ~ '^-?[0-9]+$' then to_json(btrim(m.join_tier)::numeric) else to_json(coalesce(m.join_tier, '')) end)),
+    '{}'::json))
+  from public.members m;
+$$;
+
+-- 공휴일: { "YYYY-MM-DD": true } (일정 달력)
+create or replace function public.api_holidays() returns json
+language sql stable security definer set search_path = public as $$
+  select coalesce(json_object_agg(day::text, true order by day), '{}'::json) from public.holidays;
+$$;
+
 revoke all on function public.api_site_nav(), public.api_schedule(), public.api_schedule_on(date),
-  public.api_history(), public.api_tier_members(), public.api_videos(), public.api_tools() from public;
+  public.api_history(), public.api_tier_members(), public.api_videos(), public.api_tools(),
+  public.api_site_members(), public.api_member_profiles(), public.api_holidays() from public;
 grant execute on function public.api_site_nav(), public.api_schedule(), public.api_schedule_on(date),
-  public.api_history(), public.api_tier_members(), public.api_videos(), public.api_tools() to anon, authenticated;
+  public.api_history(), public.api_tier_members(), public.api_videos(), public.api_tools(),
+  public.api_site_members(), public.api_member_profiles(), public.api_holidays() to anon, authenticated;
 
 
 -- ############################################################################

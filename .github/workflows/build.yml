@@ -64,7 +64,7 @@ jobs:
           echo "=== docs/data ==="
           ls -la docs/data
 
-          if [ ! -f docs/data/site_shell.json ] || [ ! -f docs/data/site_records.json ] || [ ! -f docs/data/site_profiles.json ]; then
+          if [ ! -f docs/data/site_records.json ]; then
             echo "split site data files were not generated"
             exit 1
           fi

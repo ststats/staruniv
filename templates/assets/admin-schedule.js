@@ -156,8 +156,56 @@
         });
     }
 
+    // 공휴일(달력의 빨간 날): 한 줄에 'YYYY-MM-DD 이름'(이름은 비워도 된다). 목록에서 지운 줄은 공휴일에서 빠진다.
+    async function openHolidays() {
+        const { data, error } = await AdminApi.holidays.list();
+        if (error) throw error;
+        const before = new Map((data || []).map(r => [r.day, r.name || '']));
+        C().openDrawer({
+            eyebrow: 'HOLIDAYS',
+            title: '공휴일 관리',
+            html: `
+        ${C().field('공휴일', C().textarea('ah_days', (data || []).map(r => `${r.day}${r.name ? ` ${r.name}` : ''}`).join('\n'), 'rows="16" spellcheck="false"'))}
+        <p class="admin-help">한 줄에 하나씩 <b>날짜 이름</b>(예: 2027-01-01 신정)으로 적습니다. 이름은 비워도 됩니다. 줄을 지우면 공휴일에서 빠집니다. 해가 바뀌기 전에 다음 해 공휴일(대체공휴일 포함)을 넣어 주세요</p>
+      `,
+            onSubmit: async () => {
+                const after = new Map();
+                for (const line of C().value('ah_days').split('\n')) {
+                    const text = line.trim();
+                    if (!text) continue;
+                    const m = text.match(/^(\d{4}-\d{2}-\d{2})\s*(.*)$/);
+                    if (!m || Number.isNaN(Date.parse(m[1]))) throw new Error(`날짜를 읽을 수 없습니다: ${text}`);
+                    after.set(m[1], m[2].trim());
+                }
+                const remove = [...before.keys()].filter(d => !after.has(d));
+                const save = [...after]
+                    .filter(([d, name]) => before.get(d) !== name)
+                    .map(([day, name]) => ({ day, name: name || null, updated_at: new Date().toISOString() }));
+                if (!remove.length && !save.length) throw new Error('바뀐 내용이 없습니다');
+                if (remove.length) {
+                    const { error: e } = await AdminApi.holidays.remove(remove);
+                    if (e) throw e;
+                    await C().audit('delete', 'holidays', remove.join(','), {});
+                }
+                if (save.length) {
+                    const { error: e } = await AdminApi.holidays.save(save);
+                    if (e) throw e;
+                }
+                C().toast(`공휴일을 저장했습니다. (추가·수정 ${save.length} · 삭제 ${remove.length})`);
+                await refresh();
+            },
+        });
+    }
+
     async function init() {
         if (document.body.dataset.adminPage !== 'schedule') return;
+        C().addPageTool({
+            id: 'adminHolidays',
+            label: '공휴일 관리',
+            icon: 'edit',
+            scope: '#view-calendar',
+            onClick: () => openHolidays().catch(e => C().toast(C().errorText(e), 'error')),
+        });
         await C().loadMembers();
         const publicOffAirExtra = window.calOffAirExtra;
         window.calCardExtra = item =>

@@ -183,11 +183,10 @@ function mvToggleMember(soopId, name) {
     mvOrder.push({ soopId, name, isMember: true });
     mvAfterOrderChange();
 }
-// 멤버는 사이트가 빌드 때 만들어 두는 공개 데이터에서 읽는다(도구 탭과 같은 목록·순서).
-// members 표는 공개 조회가 막혀 있어 직접 읽을 수 없다.
+// 멤버는 공개 읽기 함수(api_site_members)로 받는다(도구 탭과 같은 목록·순서).
 async function mvLoadMembers() {
     try {
-        const data = await Api.siteData('shell');
+        const data = await Api.members();
         mvMembers = (Array.isArray(data.members) ? data.members : [])
             .filter(
                 m =>
