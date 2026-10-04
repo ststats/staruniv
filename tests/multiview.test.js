@@ -9,7 +9,7 @@ test('멀티뷰어 창은 공개 데이터로 멤버를 읽고, 방송 중 여�
   const html = read('templates/standalone/multiview.html');
   const js = read('templates/assets/multiview.js');
   assert.doesNotMatch(html, /supabase-js/);              // members 표는 공개 조회가 막혀 있다 - 쓰지 않는다
-  assert.match(js, /await Api\.siteData\('shell'\)/);
+  assert.match(js, /await Api\.members\(\)/);
   assert.match(js, /await Api\.liveSoopIds\(\)/);
   assert.doesNotMatch(js, /bjapi\.afreecatv\.com/);    // 멤버마다 SOOP에 묻지 않는다
 });

@@ -582,29 +582,34 @@ revoke all on public.external_tools from anon;
 drop policy if exists public_read_external_tools on public.external_tools;
 create policy public_read_external_tools on public.external_tools for select to anon using (active=true);
 
--- 공휴일(일정 달력의 빨간 날). 해마다 바뀌어 관리자 화면(일정 > 공휴일 관리)에서 고친다. 공개는 api_holidays로만.
+-- 공휴일(일정 달력의 빨간 날). 정기 빌드가 올해·내년 공휴일을 자동으로 맞춘다(scripts/sync_holidays.py,
+-- source='auto' - 파이썬 holidays 라이브러리: 음력 명절·대체공휴일·선거일 포함). 라이브러리에 아직 없는 임시공휴일은
+-- 관리자 화면(일정 > 공휴일 관리)에서 더한다(source='manual', 자동 맞춤이 건드리지 않는다). 공개는 api_holidays로만.
 create table if not exists public.holidays (
   day date primary key,
   name text,
+  source text not null default 'manual' check (source in ('auto', 'manual')),
   updated_at timestamptz not null default now()
 );
+alter table public.holidays add column if not exists source text not null default 'manual';
 alter table public.holidays enable row level security;
 drop policy if exists admins_all_holidays on public.holidays;
 create policy admins_all_holidays on public.holidays for all to authenticated
   using ((select public.is_admin())) with check ((select public.is_admin()));
 revoke all on public.holidays from anon;
 grant select, insert, update, delete on public.holidays to authenticated;
--- 처음 한 번: 예전 저장소 파일(templates/assets/holidays.json)의 날짜(이미 있으면 그대로 둔다)
-insert into public.holidays (day) values
-  ('2024-01-01'), ('2024-02-09'), ('2024-02-10'), ('2024-02-11'), ('2024-02-12'), ('2024-03-01'),
-  ('2024-04-10'), ('2024-05-05'), ('2024-05-06'), ('2024-05-15'), ('2024-06-06'), ('2024-08-15'),
-  ('2024-09-16'), ('2024-09-17'), ('2024-09-18'), ('2024-10-03'), ('2024-10-09'), ('2024-12-25'),
-  ('2025-01-01'), ('2025-01-28'), ('2025-01-29'), ('2025-01-30'), ('2025-03-01'), ('2025-03-03'),
-  ('2025-05-05'), ('2025-05-06'), ('2025-06-06'), ('2025-08-15'), ('2025-10-03'), ('2025-10-05'),
-  ('2025-10-06'), ('2025-10-07'), ('2025-10-08'), ('2025-10-09'), ('2025-12-25'), ('2026-01-01'),
-  ('2026-02-16'), ('2026-02-17'), ('2026-02-18'), ('2026-03-01'), ('2026-03-02'), ('2026-05-05'),
-  ('2026-05-24'), ('2026-05-25'), ('2026-06-06'), ('2026-08-15'), ('2026-09-24'), ('2026-09-25'),
-  ('2026-09-26'), ('2026-09-28'), ('2026-10-03'), ('2026-10-09'), ('2026-12-25')
+-- 처음 한 번: 예전 저장소 파일(templates/assets/holidays.json)의 날짜(이미 있으면 그대로 둔다). 자동분으로 넣어
+-- 다음 빌드부터 라이브러리 값으로 맞춰진다(올해·내년).
+insert into public.holidays (day, source) values
+  ('2024-01-01', 'auto'), ('2024-02-09', 'auto'), ('2024-02-10', 'auto'), ('2024-02-11', 'auto'), ('2024-02-12', 'auto'), ('2024-03-01', 'auto'),
+  ('2024-04-10', 'auto'), ('2024-05-05', 'auto'), ('2024-05-06', 'auto'), ('2024-05-15', 'auto'), ('2024-06-06', 'auto'), ('2024-08-15', 'auto'),
+  ('2024-09-16', 'auto'), ('2024-09-17', 'auto'), ('2024-09-18', 'auto'), ('2024-10-03', 'auto'), ('2024-10-09', 'auto'), ('2024-12-25', 'auto'),
+  ('2025-01-01', 'auto'), ('2025-01-28', 'auto'), ('2025-01-29', 'auto'), ('2025-01-30', 'auto'), ('2025-03-01', 'auto'), ('2025-03-03', 'auto'),
+  ('2025-05-05', 'auto'), ('2025-05-06', 'auto'), ('2025-06-06', 'auto'), ('2025-08-15', 'auto'), ('2025-10-03', 'auto'), ('2025-10-05', 'auto'),
+  ('2025-10-06', 'auto'), ('2025-10-07', 'auto'), ('2025-10-08', 'auto'), ('2025-10-09', 'auto'), ('2025-12-25', 'auto'), ('2026-01-01', 'auto'),
+  ('2026-02-16', 'auto'), ('2026-02-17', 'auto'), ('2026-02-18', 'auto'), ('2026-03-01', 'auto'), ('2026-03-02', 'auto'), ('2026-05-05', 'auto'),
+  ('2026-05-24', 'auto'), ('2026-05-25', 'auto'), ('2026-06-06', 'auto'), ('2026-08-15', 'auto'), ('2026-09-24', 'auto'), ('2026-09-25', 'auto'),
+  ('2026-09-26', 'auto'), ('2026-09-28', 'auto'), ('2026-10-03', 'auto'), ('2026-10-09', 'auto'), ('2026-12-25', 'auto')
 on conflict (day) do nothing;
 
 -- 공개 읽기 함수(/api/v1): 공개 페이지(api.js)는 표 대신 이 함수들만 부른다. 함수 하나가 주소 하나

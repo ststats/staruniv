@@ -452,7 +452,11 @@ async function loadSiteData(parts) {
     SiteDataLoad.status = 'loading';
     SiteDataLoad.error = null;
     try {
-        const load = { shell: () => Api.members(), profiles: () => Api.memberProfiles(), records: () => Api.siteData('records') };
+        const load = {
+            shell: () => Api.members(),
+            profiles: () => Api.memberProfiles(),
+            records: () => Api.siteData('records'),
+        };
         const payloads = await Promise.all(requested.map(async part => [part, await load[part]()]));
         payloads.forEach(([part, data]) => {
             if (part === 'shell') {

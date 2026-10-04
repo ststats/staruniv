@@ -298,6 +298,8 @@
 
     function mediaUrl(path) {
         if (!path) return '';
+        // 저장소에 둔 대표 영상(media/members/<SOOP ID>.mp4 - 예전 빌드가 채우던 것)은 사이트 파일 그대로
+        if (/^media\/members\/[a-z0-9_-]+\.[a-z0-9]+(\?v=[0-9a-f]+)?$/.test(path)) return path;
         return window.AdminApi.media.publicUrl(path);
     }
 

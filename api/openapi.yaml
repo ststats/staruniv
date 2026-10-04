@@ -14,14 +14,34 @@ info:
 servers:
   - url: /api/v1
 paths:
+  /members:
+    get:
+      summary: 멤버 목록과 누적 매치·세트 수 (Api.members)
+      x-db-function: api_site_members
+      description: 사이트 순서(감독 → 코치 → 선수 → 그 밖, 같은 직책은 티어 높은 순 → 입단순 → 이름순). 목록·카드·선택 바가 쓰는 칸만.
+      responses:
+        '200': { description: "{ members: [ { _id, 이름, SOOP ID, 성별, 종족, 티어, 직책, 입단일, 퇴단일, 대표 사진 } ], matchCount, roundCount } - 빈 값은 '', 숫자만 든 티어·SOOP ID는 숫자", content: { application/json: { schema: { type: object } } } }
+  /members/profiles:
+    get:
+      summary: 멤버 프로필 창 전용 칸 (Api.memberProfiles)
+      x-db-function: api_member_profiles
+      responses:
+        '200': { description: "{ profiles: { 멤버 _id: { 생년월일, MBTI, YouTube, ELO ID, 입단 티어 } } }", content: { application/json: { schema: { type: object } } } }
+  /holidays:
+    get:
+      summary: 공휴일 (Api.holidays)
+      x-db-function: api_holidays
+      description: 올해·내년은 정기 빌드가 자동으로 맞춘다(scripts/sync_holidays.py), 임시공휴일은 관리자가 더한다.
+      responses:
+        '200': { description: '{ "YYYY-MM-DD": true }', content: { application/json: { schema: { type: object, additionalProperties: { type: boolean } } } } }
   /site/{part}:
     get:
-      summary: 멤버·전적 묶음 (Api.siteData)
-      description: 지금은 빌드가 만든 data/site_{part}.json.
+      summary: 전적 묶음 (Api.siteData)
+      description: 빌드가 만든 data/site_records.json(선수별 통산 전적처럼 계산이 무거운 값).
       parameters:
-        - { name: part, in: path, required: true, schema: { type: string, enum: [shell, records, profiles] } }
+        - { name: part, in: path, required: true, schema: { type: string, enum: [records] } }
       responses:
-        '200': { description: "shell은 { members, matchCount, roundCount }(목록에 보이는 칸만), records는 { matches, rounds, playersStats }, profiles는 { profiles: { 이름: [ { 생년월일, MBTI, YouTube, ELO ID, 입단 티어 } ] } }(멤버 페이지 프로필 창 전용)", content: { application/json: { schema: { type: object } } } }
+        '200': { description: "{ matches, rounds, playersStats }", content: { application/json: { schema: { type: object } } } }
   /site/nav:
     get:
       summary: 메뉴·히어로 설명·서브탭 설정 (Api.navConfig)
