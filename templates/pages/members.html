@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<section id="page-members" class="page-section active">
+    {#- 두 탭이 같은 머리를 써서 오갈 때 화면이 덜 튄다. 숫자는 page-members.js가 채운다. #}
+    <div class="page-header">
+        <div class="page-header-main" data-label="ROSTER">
+            <h1 class="page-header-title">멤버</h1>
+            <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식입니다</p>
+            <div class="page-header-stats">
+                <div class="head-stat">
+                    <div class="head-stat-label">ACTIVE</div>
+                    <div class="head-stat-value" id="member-count-active">-</div>
+                </div>
+                <div class="head-stat">
+                    <div class="head-stat-label">ON AIR</div>
+                    <div class="head-stat-value head-stat-live" id="member-count-live">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-member-status" role="tab" tabindex="0" aria-selected="true" data-click="switchMemberView" data-args='["status"]'>현황</div>
+            <div class="sub-tab" id="tab-member-news" role="tab" tabindex="0" aria-selected="false" data-click="switchMemberView" data-args='["news"]'>공지</div>
+        </div>
+    </div>
+    <div class="container">
+    <div id="view-member-status">
+        <div id="members-groups" aria-live="polite" aria-busy="true">
+            <div class="content-state">멤버 정보를 불러오는 중</div>
+        </div>
+    </div>
+
+    <div id="view-member-news" class="d-none">
+        {#- core.js가 .avatar-selector-scroll을 런타임에 .avatar-bar로 감싼다(avatarBarTools). #}
+        <div class="selection-layout">
+            <div class="avatar-selector-scroll scroll-area">
+                <div class="avatar-selector-list" id="news-avatar-list"></div>
+            </div>
+            <div class="selection-content">
+                <div class="section-title" data-en="NOTICE"><span class="section-title-label" id="news-content-title">전체 공지</span></div>
+
+                <div id="news-feed-content" aria-live="polite" aria-busy="true">
+                    <div class="content-state">공지를 불러오는 중</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</section>
+{% endblock %}
+{% block modals %}
+{% include 'partials/profile_modal.html' %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('api.js') }}"></script>
+<script src="{{ asset_url('soop.js') }}"></script>
+<script src="{{ asset_url('page-members.js') }}" data-purify="{{ asset_url('purify.min.js') }}"></script>
+{% endblock %}

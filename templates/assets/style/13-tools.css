@@ -1,0 +1,504 @@
+/* =============================================================================
+   13. 도구. 멀티뷰어 부품은 도구 탭과 멀티뷰어 창 설정 패널(standalone/multiview.html)이 같이 쓴다.
+   ============================================================================= */
+@layer pages {
+    /* ----- 외부 도구 카드: 멤버 카드와 같은 틀 ----- */
+    .tool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); /* 멤버 카드 그리드와 같은 폭 */
+        gap: var(--space-card-gap);
+    }
+    .tool-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0 0 var(--space-compact-gap);
+        text-align: center;
+        transition:
+            transform 0.15s,
+            background-color 0.15s;
+    }
+    .tool-card:hover {
+        transform: translateY(-2px);
+    }
+    .tool-card-media {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        background-color: var(--navy);
+        background-image: var(--navy-pattern);
+    }
+    .tool-card-icon {
+        display: grid;
+        place-items: center;
+        width: 52px; /* 멤버 카드 프로필 사진과 같은 크기 */
+        height: 52px;
+        overflow: hidden;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+    }
+    .tool-card-icon img {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
+    }
+    .tool-card-body {
+        min-width: 0;
+        padding: var(--space-card-pad-y) var(--space-card-pad-x) 0;
+    }
+    .tool-card-name {
+        color: var(--color-text-main);
+        font-size: var(--fs-card-title);
+        font-weight: 700;
+    }
+    .tool-card-host {
+        margin-top: var(--space-label-gap);
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+    }
+
+    /* ----- 멀티뷰어 설정판(네이비 면, 14-surfaces.css) ----- */
+    .mv-console {
+        margin-bottom: var(--space-stack-gap);
+        clip-path: var(--notch-12);
+    }
+    .mv-console-tiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        min-width: 0;
+    }
+    .mv-tile {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: 20px 18px 30px;
+        justify-items: center;
+        align-items: center;
+        align-content: center;
+        min-width: 0;
+        background: var(--panel-control);
+        text-align: center;
+    }
+    .mv-tile.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    .mv-tile-icon {
+        width: 20px;
+        height: 20px;
+        color: var(--panel-muted);
+    }
+    .mv-tile-label {
+        color: var(--panel-text);
+        font-size: var(--fs-badge);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .mv-stepper {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        background: var(--color-card);
+        clip-path: var(--notch-4);
+    }
+    .mv-stepper button {
+        width: 22px;
+        height: 22px;
+        border: none;
+        background: transparent;
+        color: var(--panel-muted);
+        font-size: var(--fs-body);
+        font-weight: 800;
+    }
+    .mv-stepper button:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .mv-stepper button:disabled {
+        background: transparent;
+        color: var(--color-text-faint);
+        cursor: not-allowed;
+    }
+    .mv-stepper-value {
+        min-width: 22px;
+        padding: 0 var(--space-1);
+        border-left: 1px solid var(--panel-line);
+        border-right: 1px solid var(--panel-line);
+        font-size: var(--fs-small);
+        font-weight: 800;
+        line-height: 22px;
+        text-align: center;
+        white-space: nowrap; /* '자동'이 두 줄로 깨지지 않게 */
+    }
+
+    .mv-toggle-switch {
+        position: relative;
+        width: 34px;
+        height: 19px;
+        padding: 0;
+        /* 누르는 영역만 25px 높이로(투명 테두리 3px만큼 여백을 빼 자리는 그대로) */
+        border: 3px solid transparent;
+        margin: -3px;
+        box-sizing: content-box;
+        border-radius: 999px;
+        background-color: var(--color-card);
+        background-clip: padding-box;
+        transition: background 0.15s;
+    }
+    .mv-toggle-switch::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: var(--color-border-strong);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s;
+    }
+    .mv-toggle-switch.active {
+        background-color: var(--color-primary);
+    }
+    .mv-toggle-switch.active::before {
+        transform: translateX(15px);
+        background: #fff;
+    }
+
+    /* 실행 버튼 색은 --cta-on-panel-* */
+    .mv-run-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        height: 100%;
+        border: none;
+        font-size: 14px;
+        font-weight: 800;
+        transition:
+            filter 0.1s,
+            transform 0.1s;
+    }
+    .mv-run-btn:not(:disabled) {
+        background: var(--cta-on-panel-bg);
+        color: var(--cta-on-panel-text);
+    }
+    .mv-run-btn:hover:not(:disabled) {
+        filter: brightness(1.25);
+    }
+    .mv-run-btn:active:not(:disabled) {
+        transform: scale(0.99);
+    }
+    .mv-run-btn:disabled {
+        background: var(--panel-control);
+        color: var(--panel-muted);
+        cursor: not-allowed;
+    }
+    .mv-run-btn svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    #page-tools .mv-console {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+        gap: var(--space-3);
+        padding: var(--space-7);
+    }
+    #page-tools .mv-console-tiles {
+        gap: var(--space-3);
+    }
+    #page-tools .mv-tile {
+        gap: var(--space-1);
+        min-height: 72px;
+        padding: var(--space-3);
+        clip-path: var(--notch-8);
+    }
+    #page-tools .mv-run-btn {
+        justify-content: center;
+        min-width: 0;
+        min-height: 58px;
+        padding: var(--space-4) var(--space-3);
+        clip-path: var(--notch-12);
+    }
+
+    .mv-settings-panel .mv-console {
+        padding: var(--space-6);
+        background-image: none;
+    }
+    .mv-settings-panel .mv-console-tiles {
+        gap: var(--space-2);
+    }
+    .mv-settings-panel .mv-tile {
+        gap: var(--space-2);
+        min-height: 102px;
+        padding: var(--space-4) var(--space-2) var(--space-5);
+        clip-path: var(--notch-8);
+    }
+    .mv-settings-panel .mv-run-btn {
+        width: 100%;
+        min-height: 48px;
+        margin-top: var(--space-3);
+        clip-path: var(--notch-7);
+    }
+
+    /* ----- 멤버 칩 ----- */
+    .mv-chip-box {
+        padding: var(--space-6) var(--space-7);
+        background: var(--color-card);
+        clip-path: var(--notch-12);
+    }
+    .mv-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-inline-gap);
+        margin-bottom: var(--space-5);
+    }
+    .mv-chip {
+        display: flex;
+        align-items: center;
+        gap: var(--space-label-gap);
+        height: 34px;
+        padding: 0 var(--space-5) 0 var(--space-1);
+        background: var(--color-bg-subtle);
+        clip-path: var(--notch-5);
+        user-select: none;
+        transition: 0.12s;
+    }
+    .mv-chip:hover {
+        background: var(--color-subtle-hover);
+    }
+    .mv-chip.active:hover {
+        filter: brightness(1.25);
+    }
+    .mv-chip-avatar {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .mv-chip.active .mv-chip-avatar {
+        background: rgba(255, 255, 255, 0.25);
+    }
+    .mv-chip-name {
+        font-size: var(--fs-small);
+        font-weight: 500;
+    }
+    .mv-chip.active .mv-chip-name {
+        font-weight: 700;
+    }
+
+    /* 숲아이디 직접 입력 */
+    .mv-quickadd {
+        display: flex;
+        align-items: center;
+        gap: var(--space-inline-gap);
+        max-width: 280px;
+        padding: var(--space-1) var(--space-1) var(--space-1) var(--space-6);
+        background: var(--color-bg);
+        clip-path: var(--notch-6);
+    }
+    .mv-quickadd input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: transparent;
+        color: var(--color-text-main);
+        font-size: var(--fs-body);
+    }
+    .mv-quickadd input::placeholder {
+        color: var(--color-text-faint);
+    }
+    .mv-quickadd-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: none;
+        background: var(--btn-solid-bg);
+        clip-path: var(--notch-4);
+        color: #fff;
+    }
+    .mv-quickadd-btn:hover {
+        filter: brightness(1.25);
+    }
+    .mv-quickadd-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* ----- 선택된 목록 ----- */
+    .mv-pick-layout {
+        align-items: start;
+    }
+    .mv-order-row {
+        clip-path: var(--notch-10);
+    }
+    .mv-settings-panel .mv-order-row {
+        margin-bottom: var(--space-stack-gap);
+    } /* 다음 제목과의 간격을 설정판 아래와 같게 */
+    .mv-order-row:has(.mv-order-detail),
+    .mv-order-row:has(> .content-state) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-inline-gap);
+        padding: var(--space-5);
+        background: var(--color-card);
+    }
+    .mv-order-detail {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: auto 24px minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: var(--space-inline-gap);
+        min-width: 0;
+        padding: var(--space-2) var(--space-3);
+        border-left: 3px solid transparent;
+        background: var(--color-bg);
+        clip-path: var(--notch-6);
+    }
+    .mv-order-detail.focus-target {
+        border-left-color: var(--select-on-light);
+    }
+    .mv-order-position {
+        min-width: 18px;
+        color: var(--color-text-faint);
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+    .mv-order-detail.focus-target .mv-order-position {
+        color: var(--select-on-light);
+    }
+    .mv-order-identity {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .mv-order-identity strong {
+        font-size: var(--fs-list-name);
+    }
+    .mv-order-focus {
+        grid-column: 4;
+        min-height: 24px;
+        padding: 0 var(--space-2);
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-4);
+        color: var(--color-text-sub);
+        font-size: var(--fs-badge);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .mv-order-actions {
+        grid-column: 5;
+        display: flex;
+        gap: var(--space-1);
+    }
+    .mv-order-actions button {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-4);
+        color: var(--color-text-sub);
+        font-size: var(--fs-body);
+    }
+    .mv-order-actions button:hover:not(:disabled),
+    .mv-order-focus:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .mv-order-actions .mv-order-remove:hover {
+        color: var(--color-lose);
+    }
+    .mv-order-actions button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    /* ----- 캄몬라이더: 모서리를 깎으면 게임 화면 귀퉁이가 잘려 노치·테두리를 두르지 않는다 ----- */
+    .rider-stage {
+        position: relative;
+        height: min(860px, max(420px, calc(100dvh - var(--nav-h) - var(--space-page-bottom))));
+        overflow: hidden;
+        background: #15201f; /* 게임 첫 화면 바탕색이라 불러오는 동안도 같은 색 */
+    }
+    .rider-stage iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+    .rider-stage:fullscreen {
+        height: 100%;
+    }
+    .rider-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-inline-gap);
+    }
+
+    /* ----- 움짤생성기: webp-maker.html을 그대로 끼운다. 높이는 page-tools.js가 내용에 맞춰 바꾼다(360px은 불러오기 전 자리) ----- */
+    .webp-frame {
+        display: block;
+        width: 100%;
+        height: 360px;
+        background: transparent;
+    }
+
+    /* ----- 화면 폭별 ----- */
+    @media (max-width: 767.98px) {
+        .tool-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #page-tools .mv-console {
+            grid-template-columns: minmax(0, 1fr);
+            padding: var(--space-5);
+        }
+        #page-tools .mv-console-tiles {
+            gap: var(--space-label-gap);
+        }
+        #page-tools .mv-tile {
+            gap: var(--space-2);
+            min-height: 110px;
+            padding: var(--space-4) var(--space-1);
+        }
+        #page-tools .mv-run-btn {
+            min-height: 48px;
+            clip-path: var(--notch-7);
+        }
+        .mv-order-detail {
+            grid-template-columns: auto 22px minmax(0, 1fr) auto auto;
+            gap: var(--space-label-gap);
+            padding: var(--space-3) var(--space-2);
+        }
+        .mv-order-detail .mv-chip-avatar {
+            width: 22px;
+            height: 22px;
+        }
+    }
+    @media (max-width: 575.98px) {
+        .mv-settings-panel .mv-console-tiles {
+            gap: var(--space-1);
+        }
+        .mv-settings-panel .mv-tile {
+            min-height: 94px;
+        }
+    }
+    /* 360px 미만은 − 값 + 가 한 줄에 들어가도록 버튼만 줄인다 */
+    @media (max-width: 359.98px) {
+        .mv-stepper button {
+            width: 18px;
+        }
+    }
+}

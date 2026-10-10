@@ -1,0 +1,365 @@
+/* =============================================================================
+   5. 선택 바: 사람 선택 바(.avatar-bar)와 티어 바(.tier-bar)가 같은 틀을 쓴다(네이비 면, 14-surfaces.css).
+   PC(921px~)는 본문 위 가로 한 줄, 좁은 화면은 접히는 선택 줄.
+   ============================================================================= */
+@layer components {
+    .selection-layout {
+        display: grid;
+        gap: var(--space-block-gap);
+        align-items: start;
+    }
+    .selection-content {
+        min-width: 0;
+    }
+    .avatar-bar,
+    .tier-bar {
+        position: sticky;
+        top: var(--sidebar-top);
+        z-index: 90;
+        clip-path: var(--notch-7);
+    }
+
+    /* 왼쪽 고정 칸: 사람 바는 '전체', 티어 바는 보기 전환. 같은 컨트롤 박스 크기 */
+    .avatar-bar-tools {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        min-height: var(--bar-scope-h);
+    }
+    .avatar-bar-tools .avatar-select-all {
+        display: flex;
+        transition: background 0.15s;
+    }
+    .bar-scope {
+        width: 100%;
+    }
+    .tier-bar .bar-scope {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 2px;
+        padding: 2px;
+        background: var(--color-card);
+        clip-path: var(--notch-5);
+    }
+    /* 켜진 버튼 색은 14-surfaces.css */
+    .tier-scope-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1);
+        width: 100%;
+        min-width: 0;
+        height: 30px;
+        padding: 0 var(--space-1);
+        overflow: hidden;
+        border: none;
+        background: none;
+        clip-path: var(--notch-5);
+        color: var(--panel-muted);
+        font-size: var(--fs-small);
+        font-weight: 600;
+        line-height: 1.7;
+        white-space: nowrap;
+        transition:
+            background 0.15s,
+            color 0.15s;
+    }
+    .tier-scope-btn:hover {
+        background: var(--color-row-hover);
+    }
+    .tier-scope-btn.active {
+        font-weight: 700;
+    }
+    .tier-scope-btn > * {
+        min-width: 0;
+    }
+    .tier-scope-num {
+        font-weight: 800;
+    }
+    .tier-scope-all .tier-scope-num {
+        color: var(--panel-accent);
+    }
+
+    /* 좁은 화면에서만 보이는 '현재 선택' 줄 */
+    .avatar-bar-pick,
+    .tier-bar-pick {
+        display: none;
+    }
+    .tier-bar-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-inline-gap);
+        width: 100%;
+        font-size: var(--fs-small);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--sidebar-title, currentColor);
+    }
+
+    /* 껍데기는 core.js가 감싸기 전(불러오는 중)에도 보여 기본은 가로 한 줄로 둔다 */
+    .avatar-selector-scroll {
+        --scroll-gutter: 6px;
+        --scroll-thumb-inset: 1px;
+        flex: 1;
+        overflow-x: auto;
+        scrollbar-gutter: stable both-edges;
+    }
+    .avatar-selector-list {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        width: max-content;
+    }
+    .avatar-bar .avatar-selector-scroll {
+        width: 100%;
+        scrollbar-gutter: auto;
+    }
+    .avatar-bar .avatar-selector-list {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        width: 100%;
+    }
+    .tier-bar-list {
+        --scroll-gutter: 6px;
+        --scroll-thumb-inset: 1px;
+        align-items: center;
+    }
+
+    .avatar-select-item {
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        gap: var(--space-3);
+        width: 100%;
+        padding: 0 var(--space-5);
+        border-left: 3px solid transparent;
+        clip-path: var(--notch-5);
+        transition:
+            background 0.15s,
+            color 0.15s;
+    }
+    .avatar-select-item:hover {
+        background: var(--color-row-hover);
+    }
+    /* '이전 멤버' 아이콘을 종족 뱃지와 같은 모양·크기로 맞춰 줄이 나란히 서게 한다. */
+    .avatar-select-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        clip-path: var(--notch-4);
+    }
+    .avatar-select-name {
+        flex: 1;
+        min-width: 0;
+        color: var(--panel-muted);
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+    .avatar-select-item.active .avatar-select-name {
+        font-weight: 800;
+    }
+    .avatar-select-toggle .avatar-select-fallback {
+        background: var(--color-bg-subtle);
+        color: var(--color-text-muted);
+        font-weight: 800;
+        font-size: var(--fs-body);
+    }
+    .avatar-select-tier {
+        flex: none;
+        color: var(--color-text-sub);
+        font-size: var(--fs-badge-sm);
+        font-weight: 700;
+    }
+
+    .tier-bar-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-label-gap);
+        width: 100%;
+        padding: 0 var(--space-6);
+        border: none;
+        border-left: 3px solid transparent;
+        background: none;
+        clip-path: var(--notch-5);
+        color: var(--panel-muted);
+        font-size: var(--fs-body);
+        font-weight: 700;
+        transition:
+            background 0.15s,
+            color 0.15s;
+    }
+    .tier-bar-item:hover {
+        background: var(--color-row-hover);
+    }
+    .tier-bar-item.active {
+        font-weight: 800;
+    }
+    .tier-bar-count {
+        color: var(--color-text-faint);
+        font-size: var(--fs-meta);
+        font-weight: 700;
+    }
+
+    /* 좁은 화면: '현재 선택' 줄을 누르면 같은 목록이 아래로 펼쳐진다 */
+    @media (max-width: 920px) {
+        .selection-layout {
+            grid-template-columns: 1fr;
+            gap: var(--space-content-gap);
+        }
+        .avatar-bar,
+        .tier-bar {
+            top: var(--strip-top);
+        }
+        .avatar-bar {
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .avatar-bar-pick,
+        .tier-bar-pick {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            width: 100%;
+            height: 46px;
+            padding: 0 var(--space-6);
+            background: transparent;
+            border: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--panel-text);
+        }
+        .avatar-bar-pick svg,
+        .tier-bar-pick svg {
+            height: 15px;
+            color: var(--panel-muted);
+            transition: transform 0.15s;
+            flex: none;
+        }
+        .avatar-bar:not(.is-closed) .avatar-bar-pick svg,
+        .tier-bar:not(.is-closed) .tier-bar-pick svg {
+            transform: rotate(180deg);
+        }
+        .avatar-bar.is-closed .avatar-bar-tools,
+        .avatar-bar.is-closed .avatar-selector-scroll,
+        .tier-bar.is-closed .tier-bar-list,
+        .tier-bar.is-closed .tier-bar-tools {
+            display: none;
+        }
+        .tier-bar-heading .tier-bar-pick {
+            flex: 1;
+            min-width: 0;
+            width: auto;
+        }
+
+        .avatar-bar-tools {
+            border-top: 1px solid var(--panel-line);
+        }
+        .tier-bar-tools {
+            padding: var(--space-3) var(--space-4);
+            border-top: 1px solid var(--panel-line);
+        }
+        .avatar-bar .avatar-selector-scroll {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .tier-bar-list {
+            width: 100%;
+            max-height: 55vh;
+            padding: var(--space-2) 0;
+            overflow-x: hidden;
+        }
+        .avatar-select-item {
+            height: 40px;
+            clip-path: var(--notch-6);
+        }
+        .tier-bar-item {
+            height: 38px;
+            clip-path: var(--notch-6);
+        }
+    }
+    @media (max-width: 767.98px) {
+        .tier-bar-item {
+            gap: var(--space-1);
+        }
+    }
+
+    /* PC: 본문 위 가로 한 줄. 넘치면 바 안에서 가로로 밀고, 스크롤하면 상단바 아래에 붙는다. */
+    @media (min-width: 921px) {
+        .selection-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .avatar-bar,
+        .tier-bar {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+        .avatar-bar-tools,
+        .tier-bar-tools {
+            flex: none;
+            padding: var(--space-2);
+            border-right: 1px solid var(--panel-line);
+        }
+        .tier-bar-tools {
+            width: 210px;
+        }
+        .tier-bar-heading {
+            display: none;
+        }
+        .avatar-bar .avatar-selector-scroll,
+        .tier-bar-list {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;
+        }
+        .avatar-bar .avatar-selector-list {
+            flex-direction: row;
+            width: max-content;
+            padding: var(--space-2);
+            gap: 2px;
+        }
+        .tier-bar-list {
+            display: flex;
+            padding: var(--space-2);
+            gap: 2px;
+        }
+        .avatar-select-item,
+        .tier-bar-item {
+            flex: none;
+            width: auto;
+            height: 34px;
+            gap: var(--space-inline-gap);
+            border-left: 0;
+        }
+
+        /* 스크롤바 없이 끌어서 넘긴다(core.js attachBarScroll) */
+        .avatar-bar .avatar-selector-scroll::-webkit-scrollbar,
+        .tier-bar-list::-webkit-scrollbar {
+            display: none;
+        }
+        .is-scrollable .avatar-selector-scroll,
+        .is-scrollable .tier-bar-list {
+            cursor: grab;
+        }
+        .is-dragging .avatar-selector-scroll,
+        .is-dragging .tier-bar-list {
+            cursor: grabbing;
+            user-select: none;
+        }
+        .is-dragging .avatar-select-item,
+        .is-dragging .tier-bar-item {
+            pointer-events: none;
+        }
+    }
+}

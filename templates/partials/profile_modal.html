@@ -1,0 +1,31 @@
+{#- 멤버 현황 프로필: 원형 사진과 공통 노치·제목 레일. -#}
+<div class="modal fade" id="memberProfileModal" tabindex="-1" aria-labelledby="mp-name">
+    <div class="modal-dialog modal-dialog-centered profile-dialog">
+        <div class="modal-content">
+            <div class="profile-modal-hero">
+                <button type="button" class="btn-close btn-close-white profile-modal-close" data-dismiss="modal" aria-label="닫기"></button>
+                <div class="profile-modal-identity">
+                    <div class="profile-avatar" id="mp-avatar">👤</div>
+                    <div class="profile-modal-identity-text">
+                        <h2 class="profile-modal-name" id="mp-name">이름</h2>
+                        <div class="d-flex gap-2 flex-wrap"><span class="tag-badge" id="mp-role-badge"></span><span class="tag-badge" id="mp-tier-badge"></span><span class="tag-badge" id="mp-race-badge"></span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body profile-modal-body">
+                <div class="section-title profile-modal-section" data-en="PROFILE"><h3 class="section-title-label">기본 정보</h3></div>
+                <dl class="profile-modal-facts" id="mp-info-body"></dl>
+                {#- 위 기본 정보 첫 칸(성별) 폭에 맞춘다 -#}
+                <div class="profile-modal-period"><div><div class="profile-modal-label">입단 티어</div><div id="mp-join-tier">-</div></div><div class="profile-modal-period-main"><div class="profile-modal-label profile-modal-period-label">활동기간<span class="tag-badge profile-modal-days" id="mp-days" hidden></span></div><div id="mp-period">-</div></div></div>
+                <div class="section-title profile-modal-section" data-en="MONTHLY ACTIVITY"><h3 class="section-title-label">이번 달 방송 활동</h3></div>
+                <div class="profile-modal-status" id="mp-activity-status" role="status"></div>
+                <div class="profile-modal-metrics">
+                    {% for stat_id, stat_label in [('mp-balloons', '별풍선'), ('mp-broadcast-hours', '방송시간'), ('mp-viewers', '누적시청자'), ('mp-sponsor-record', '스폰전적')] %}
+                    <div class="profile-modal-metric"><div class="profile-modal-label">{{ stat_label }}</div><div class="profile-modal-value" id="{{ stat_id }}">-</div></div>
+                    {% endfor %}
+                </div>
+                <div class="profile-modal-shortcuts"><a id="mp-analysis-link" class="profile-modal-link" hidden><span class="profile-modal-link-label">티어표 분석</span><span class="i-arrow" aria-hidden="true"></span></a><a id="mp-records-link" class="profile-modal-link"><span class="profile-modal-link-label">개인 전적</span><span class="i-arrow" aria-hidden="true"></span></a></div><div id="mp-external-links" class="profile-modal-shortcuts" hidden><a id="mp-station-link" class="profile-modal-link profile-modal-station" hidden><span class="profile-modal-link-label">SOOP 방송국</span><span class="i-arrow" aria-hidden="true"></span></a><a id="mp-youtube-link" class="profile-modal-link profile-modal-youtube" hidden><span class="profile-modal-link-label">YOUTUBE</span><span class="i-arrow" aria-hidden="true"></span></a></div>
+            </div>
+        </div>
+    </div>
+</div>

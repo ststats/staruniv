@@ -1,0 +1,5 @@
+# 전체 개발 환경. CI는 작업에 필요한 묶음만 설치한다.
+# 버전 범위는 requirements/ 안에서 패키지마다 한 번만 선언한다.
+-r requirements/web.txt
+-r requirements/media.txt
+-r requirements/ocr.txt

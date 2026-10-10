@@ -1,0 +1,21 @@
+[
+  "templates/**",
+  "scripts/build_html.py",
+  "scripts/build_member_strip.py",
+  "scripts/export_supabase.py",
+  "scripts/match_link.py",
+  "scripts/write_site_data.py",
+  "scripts/sync_holidays.py",
+  "scripts/write_supabase_browser_config.py",
+  "scripts/capture_calendar.mjs",
+  "scripts/capture_page.mjs",
+  "scripts/minify_assets.mjs",
+  "requirements.txt",
+  "requirements/**",
+  "package.json",
+  "package-lock.json",
+  "scripts/build_tools/**",
+  ".github/build-paths.json",
+  ".github/build-tools.json",
+  ".github/workflows/build.yml"
+]

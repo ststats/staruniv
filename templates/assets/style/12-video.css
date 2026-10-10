@@ -1,0 +1,276 @@
+/* =============================================================================
+   12. 영상 (팬튜브 · 보자)
+   ============================================================================= */
+@layer pages {
+    /* 채널 선택 바의 채널 아바타(멤버 줄의 종족 뱃지 자리) */
+    .video-bar-avatar,
+    .video-card-avatar {
+        display: inline-grid;
+        flex: none;
+        place-items: center;
+        overflow: hidden;
+        object-fit: cover;
+        background: var(--navy);
+        font-weight: 700;
+        color: #fff;
+    }
+    .video-bar-avatar {
+        width: 20px;
+        height: 20px;
+        font-size: var(--fs-badge-sm);
+    }
+    .video-card-avatar {
+        width: 34px;
+        height: 34px;
+        margin-top: 2px;
+        font-size: var(--fs-small);
+    }
+
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-block-gap) var(--space-content-gap);
+    }
+    .video-top-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-content-gap);
+    }
+    .video-card {
+        min-width: 0;
+    }
+    .video-thumb {
+        position: relative;
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+        background: var(--navy);
+        clip-path: var(--notch-12);
+    }
+    .video-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* hqdefault(4:3)의 위아래 검은 띠를 잘라낸다 */
+        transition: transform 0.25s;
+    }
+    /* 썸네일·제목 어느 쪽에 올려도 카드 전체가 반응한다 */
+    .video-card:has(.video-thumb:hover, .video-card-title:hover) .video-thumb img {
+        transform: scale(1.04);
+    }
+    /* 썸네일을 못 받아온 영상(숲 VOD 등)은 이름만 넣은 판으로 대신한다 */
+    .video-thumb-blank {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--navy-on-muted);
+    }
+    .video-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 48px;
+        height: 34px;
+        background: var(--color-scrim);
+        clip-path: var(--notch-5);
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        transition:
+            opacity 0.15s,
+            background 0.15s;
+    }
+    .video-play::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-style: solid;
+        border-width: 8px 0 8px 13px;
+        border-color: transparent transparent transparent #fff;
+        transform: translate(-35%, -50%);
+    }
+    .video-card:has(.video-thumb:hover, .video-card-title:hover) .video-play,
+    .video-thumb:focus-visible .video-play {
+        opacity: 1;
+        background: var(--color-youtube);
+    }
+    /* 인기 영상 순위(맨 위 세 개만) */
+    .video-rank {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 52px;
+        height: 52px;
+        padding: var(--space-2) 0 0 var(--space-4);
+        background: var(--navy-deco-fill);
+        clip-path: polygon(0 0, 100% 0, 0 100%);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1;
+        text-align: left; /* 썸네일이 <button>이라 가운데 정렬을 물려받으면 숫자가 빗변에 잘린다 */
+    }
+    .video-badge {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        padding: 2px var(--space-2);
+        background: var(--color-scrim);
+        clip-path: var(--notch-4);
+        font-size: var(--fs-badge-sm);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: #fff;
+    }
+    .video-card-body {
+        display: flex;
+        gap: var(--space-4);
+        padding-top: var(--space-4);
+    }
+    .video-card-text {
+        flex: 1;
+        min-width: 0;
+    }
+    .video-card-title {
+        display: -webkit-box;
+        width: 100%;
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+        background: none;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        text-align: left;
+        font-size: var(--fs-card-title);
+        font-weight: 700;
+        line-height: 1.4;
+        color: var(--color-text-strong);
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+    }
+    .video-card.is-top .video-card-title {
+        font-size: var(--fs-heading);
+    }
+    .video-card-meta {
+        margin-top: 3px;
+        font-size: var(--fs-meta);
+        color: var(--color-text-sub);
+    }
+
+    .video-meta-dot {
+        margin: 0 var(--space-1);
+        color: var(--color-icon-faint);
+    }
+    .video-card-note {
+        margin: var(--space-3) 0 0;
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-card);
+        clip-path: var(--notch-7);
+        font-size: var(--fs-small);
+        line-height: 1.55;
+        color: var(--color-text-main);
+        white-space: pre-wrap;
+        word-break: keep-all;
+    }
+
+    .video-shorts-shelf {
+        display: flex;
+        gap: var(--space-compact-gap);
+        scroll-behavior: smooth;
+    }
+
+    .video-short {
+        display: flex;
+        flex: 0 0 calc((100% - var(--space-compact-gap) * 5) / 6);
+        flex-direction: column;
+        min-width: 150px;
+        padding: 0;
+        border: 0;
+        background: none;
+        text-align: left;
+    }
+    .video-short-thumb {
+        display: block;
+        width: 100%;
+        aspect-ratio: 9 / 16;
+        overflow: hidden;
+        background: var(--navy);
+        clip-path: var(--notch-12);
+    }
+    .video-short-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.25s;
+    }
+    .video-short:hover .video-short-thumb img {
+        transform: scale(1.04);
+    }
+    .video-short-title {
+        display: -webkit-box;
+        margin-top: var(--space-3);
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+        line-height: 1.4;
+        color: var(--color-text-strong);
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+        /* 선반(.tab-scroll)의 nowrap을 물려받지 않고 두 줄까지 줄바꿈한다 */
+        white-space: normal;
+    }
+    .video-short-meta {
+        margin-top: 2px;
+        font-size: var(--fs-meta);
+        color: var(--color-text-sub);
+    }
+
+    .video-empty {
+        grid-column: 1 / -1;
+    }
+    .video-more-wrap {
+        margin-top: var(--space-block-gap);
+    }
+
+    @media (max-width: 1199.98px) {
+        .video-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .video-short {
+            flex-basis: calc((100% - var(--space-compact-gap) * 4) / 5);
+        }
+    }
+    @media (max-width: 991.98px) {
+        .video-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .video-short {
+            flex-basis: calc((100% - var(--space-compact-gap) * 3) / 4);
+        }
+    }
+    @media (max-width: 767.98px) {
+        .video-top-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--space-stack-gap);
+        }
+        .video-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--space-stack-gap);
+        }
+        .video-short {
+            flex-basis: 42%;
+            min-width: 0;
+        }
+    }
+}

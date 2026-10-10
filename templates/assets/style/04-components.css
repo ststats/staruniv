@@ -1,0 +1,1070 @@
+/* =============================================================================
+   4. 공용 부품: 카드 · 배지 · 버튼 · 필터 · 표 · 도넛 · 아이콘
+   ============================================================================= */
+
+@layer components {
+    /* 뱃지 모양은 여기서만 정한다. 크기는 .badge-cell 쪽에서 --badge-h·--badge-pad·--badge-fs로 바꾼다. */
+    .tag-badge {
+        --badge-h: 20px;
+        --badge-pad: 8px;
+        --badge-fs: var(--fs-badge);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        vertical-align: middle;
+        height: var(--badge-h);
+        padding: 0 var(--badge-pad);
+        background: var(--color-badge-format);
+        color: #fff;
+        font-size: var(--badge-fs);
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        clip-path: var(--notch-4);
+    }
+    .tag-badge.race-badge {
+        width: var(--badge-h);
+        padding: 0;
+    }
+    .tag-badge.race-T {
+        background: var(--color-race-t);
+    }
+    .tag-badge.race-Z {
+        background: var(--color-race-z);
+    }
+    .tag-badge.race-P {
+        background: var(--color-race-p);
+        color: var(--color-race-p-text);
+    }
+    .tag-badge.tier-badge {
+        background: var(--color-tier-badge);
+    }
+    /* 바탕색은 page-members.js가 인라인으로 준다 */
+    .tag-badge.role-badge {
+        color: var(--color-badge-role-text);
+    }
+
+    /* 표 칸의 형식 뱃지와 같은 작은 크기 */
+    .match-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 18px;
+        vertical-align: middle;
+        clip-path: var(--notch-4);
+        color: #fff;
+        font-size: var(--fs-badge-sm);
+        font-weight: 800;
+        line-height: 1;
+    }
+    .analysis-formline-badges .match-badge {
+        width: 26px;
+        height: 20px;
+        font-size: var(--fs-badge);
+    }
+    @media (max-width: 767.98px) {
+        /* 자리가 남아도 커지지 않고, 아주 좁은 화면에서만 줄어든다. */
+        .analysis-formline-badges .match-badge {
+            flex: 0 1 20px;
+            width: 20px;
+            height: 18px;
+            font-size: var(--fs-badge-sm);
+        }
+    }
+    .badge-win {
+        background-color: var(--color-primary);
+    }
+    .badge-lose {
+        background-color: var(--color-lose);
+    }
+    .badge-draw {
+        background-color: var(--color-draw);
+    }
+
+    /* 칸 색·선은 .stat-table이 정한다 */
+    .table {
+        vertical-align: top;
+    }
+    .table > :not(caption) > * > * {
+        padding: 0.5rem;
+    }
+    .table > tbody {
+        vertical-align: inherit;
+    }
+    .table > thead {
+        vertical-align: bottom;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .stat-table tbody td {
+        vertical-align: middle;
+        background: var(--color-card);
+    }
+    /* 세트 상세를 담는 칸은 선 없이 안쪽 표가 바로 붙는다 */
+    .stat-table tbody td:not(.set-detail-host) {
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    /* 세트 상세 표는 .table이 아니라 너비를 직접 준다. */
+    .stat-table,
+    .set-detail-table {
+        width: 100%;
+    }
+    .stat-table {
+        font-size: var(--fs-body);
+    }
+    .stat-table thead th {
+        text-transform: uppercase;
+        background-color: var(--color-head-bg);
+        color: var(--color-head-text);
+        border: 0;
+        letter-spacing: 0;
+        background-image: var(--navy-pattern);
+        background-attachment: fixed;
+    }
+    /* 목록 표는 한 줄 높이를 맞추고, 상세 펼침·두 줄 정보는 내용만큼 늘어난다. */
+    .stat-table > thead > tr > th,
+    .stat-table > tbody > tr > td:not(.set-detail-host) {
+        line-height: 20px;
+        vertical-align: middle;
+    }
+    /* 투명하게 두면 고정 칸 머리만 반 픽셀 일찍 끝나 아래 줄 바탕이 비쳐서 머리 바탕색으로 칠한다. */
+    .stat-table > thead > tr > th {
+        border-bottom: 1px solid var(--color-head-bg);
+    }
+    .stat-table-sticky-col {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--color-card);
+    }
+    .stat-table tbody td.stat-table-sticky-col {
+        font-weight: 700;
+        color: var(--color-text-main);
+    }
+
+    /* > 없이 쓰면 표 안에 표가 든 줄에서 안쪽 세트 줄까지 한꺼번에 칠한다. */
+    .stat-table tbody tr:hover > .stat-table-sticky-col,
+    .stat-table tbody tr:hover > td {
+        background: var(--color-row-hover);
+    }
+    .stat-table thead .stat-table-sticky-col {
+        z-index: 3;
+    }
+    .stat-table tbody td.cell-muted {
+        color: var(--color-text-sub);
+    }
+
+    /* 표 두 개를 나란히 놓는 구간은 칸이 좁아 글자·여백을 한 단계 줄인다 */
+    @media (min-width: 768px) and (max-width: 1279.98px) {
+        .stat-table {
+            font-size: var(--fs-table-sm);
+        }
+        .stat-table thead th,
+        .stat-table tbody td {
+            padding: var(--space-3) var(--space-2);
+        }
+    }
+
+    /* 좁은 화면은 아래 압축 표가 칸 비율을 풀어 준다 */
+    .table-fixed {
+        table-layout: fixed;
+    }
+    .colw-6 {
+        width: 6%;
+    }
+    .colw-15 {
+        width: 15%;
+    }
+    .colw-16-66 {
+        width: 16.66%;
+    }
+    .colw-18-8 {
+        width: 18.8%;
+    }
+    .colw-20 {
+        width: 20%;
+    }
+    .colw-25 {
+        width: 25%;
+    }
+    .colw-40 {
+        width: 40%;
+    }
+
+    /* ----- 좁은 화면 압축 표: 가로 스크롤 없이 화면 폭에 들어가게 칸 비율을 풀고
+       글자·여백을 줄이고 긴 이름은 자른다 ----- */
+    @media (max-width: 767.98px) {
+        .stat-table.table-fixed {
+            table-layout: auto;
+        }
+        /* 세트 상세표는 칸 비율을 그대로 둔다. 내용에 맡기면 펼칠 때마다 칸 폭이 달라진다. */
+        .stat-table th[class*='colw-'],
+        .stat-table td[class*='colw-']:not(.set-detail-table td) {
+            width: auto;
+        }
+
+        .stat-table {
+            font-size: var(--fs-table-xs);
+        }
+        .stat-table thead th,
+        .stat-table tbody td {
+            padding: var(--space-2) var(--space-1);
+            white-space: nowrap;
+        }
+        /* td의 max-width는 브라우저가 지키지 않아 칸 안의 span에서 자른다. */
+        .stat-table .cell-clip,
+        .stat-table .ellipsis-text {
+            display: inline-block;
+            max-width: 78px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+        .stat-table :is(.team-logo-icon, .team-logo-fallback) {
+            width: 14px;
+            height: 14px;
+        }
+        /* 상대 이름 밑 줄의 팀 로고는 더 작게 */
+        .stat-table .cell-subline :is(.team-logo-icon, .team-logo-fallback) {
+            width: 11px;
+            height: 11px;
+        }
+        .stat-table .cell-subline .team-logo-fallback {
+            font-size: 7px;
+        }
+        .stat-table .cell-subline > .team-cell {
+            gap: 3px;
+        }
+
+        /* 나란히 보는 두 표라 첫 칸 폭을 같게 맞춘다 */
+        .stat-table th.stat-table-sticky-col {
+            width: 88px;
+        }
+    }
+
+    /* 360~389px 기기에서 몇 px씩 넘쳐 한 단계 더 조인다. 펼침 화살표는 줄을 눌러도 열려 칸째로 뺀다. */
+    @media (max-width: 389.98px) {
+        .stat-table thead th,
+        .stat-table tbody td {
+            padding: var(--space-1) 3px;
+        }
+        .stat-table .cell-clip,
+        .stat-table .ellipsis-text {
+            max-width: 58px;
+        }
+    }
+
+    /* 320px 기기에서 2~3px씩 넘쳐 더 줄인다. */
+    @media (max-width: 359.98px) {
+        .stat-table {
+            font-size: var(--fs-table-xxs);
+        }
+        .stat-table thead th,
+        .stat-table tbody td {
+            padding: var(--space-1) 2px;
+        }
+        .stat-table .cell-clip,
+        .stat-table .ellipsis-text {
+            max-width: 48px;
+        }
+    }
+
+    /* 필터(세그먼트). 선택 색은 14-surfaces.css */
+    .filter-nav {
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+        width: fit-content;
+        max-width: 100%;
+        height: 28px;
+        padding: 3px;
+        background: var(--color-bg-subtle);
+        clip-path: var(--notch-4);
+    }
+    .filter-item {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        min-width: 36px;
+        padding: 0 var(--space-3);
+        border: 0;
+        background: transparent;
+        clip-path: var(--notch-4);
+        cursor: pointer;
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+        font-weight: 600;
+        line-height: 1;
+        transition: color 0.15s;
+    }
+    .filter-item:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .filter-item.active {
+        font-weight: 700;
+    }
+    @media (max-width: 767.98px) {
+        .filter-nav {
+            height: 32px;
+            padding: 2px;
+            gap: 1px;
+        }
+    }
+    /* 최근 전적 제목줄: 섹션 제목에 형식 필터·개수를 한 줄로 얹는 격자 */
+    .record-recent-header {
+        display: grid;
+        grid-template-columns: max-content minmax(0, max-content) minmax(max-content, 1fr);
+        justify-content: normal;
+        gap: var(--space-1) var(--space-5);
+        align-items: stretch;
+    }
+    .record-recent-header[data-en]::before {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+    }
+    .record-recent-title {
+        white-space: nowrap;
+    }
+    @media (max-width: 767.98px) {
+        /* 좁은 화면에서도 형식 필터를 제목 줄에 두고, 넘치면 그 칸 안에서 옆으로 민다. */
+        :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header {
+            grid-template-columns: max-content minmax(0, 1fr) max-content;
+            align-items: center;
+        }
+        :is(#view-tier-analysis, #view-tier-h2h) .record-recent-header .filter-nav {
+            grid-column: 2;
+            grid-row: auto;
+            min-width: 0;
+            overflow-x: auto;
+        }
+        /* 칸이 좁아 칩을 한 단계 작게 */
+        .record-recent-header {
+            column-gap: var(--space-4);
+        }
+        .record-recent-header .filter-item {
+            min-width: 28px;
+            padding: 0 var(--space-2);
+            font-size: var(--fs-badge);
+        }
+    }
+
+    .team-logo-icon {
+        object-fit: contain;
+        flex-shrink: 0;
+        vertical-align: middle;
+    }
+    /* teamLogoHtml이 그린 로고: 크기는 --logo-size(인라인 변수) */
+    [data-logo-size] {
+        width: var(--logo-size);
+        height: var(--logo-size);
+    }
+    .team-logo-fallback[data-logo-size] {
+        font-size: max(8px, round(var(--logo-size) * 0.5, 1px));
+    }
+
+    .team-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-inline-gap);
+        min-width: 0;
+    }
+    .team-logo-fallback {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-bg-subtle);
+        color: var(--color-text-muted);
+        font-weight: 800;
+        line-height: 1;
+        flex-shrink: 0;
+        clip-path: var(--notch-4);
+    }
+
+    .content-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: var(--space-card-pad-y) var(--space-card-pad-x);
+        color: var(--color-text-muted);
+        font-size: var(--fs-body);
+        line-height: 1.5;
+        text-align: center;
+        word-break: keep-all;
+    }
+    /* 목록 자리를 통째로 대신하는 안내는 카드 상자로 */
+    .content-state.is-boxed {
+        display: block;
+        padding: 48px var(--space-7);
+        background: var(--color-card);
+        clip-path: var(--notch-12);
+    }
+
+    .donut-wrap {
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .donut-box {
+        text-align: center;
+    }
+
+    .donut {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto var(--space-3) auto;
+        background: var(--color-donut-track);
+        position: relative;
+    }
+    .donut::before {
+        content: '';
+        width: 56px;
+        height: 56px;
+        background: var(--color-card);
+        border-radius: 50%;
+        position: absolute;
+    }
+
+    .donut-text {
+        position: relative;
+        font-size: var(--fs-body);
+        font-weight: 800;
+    }
+
+    .donut-label {
+        font-size: var(--fs-body);
+        font-weight: 700;
+        margin-bottom: var(--space-1);
+    }
+    .donut-label-t {
+        color: var(--color-race-t);
+    }
+    .donut-label-z {
+        color: var(--color-race-z);
+    }
+    .donut-label-p {
+        color: var(--color-race-p);
+    }
+
+    .donut-sub {
+        font-size: var(--fs-body);
+    }
+    /* 전적 요약 박스(네이비 면) 안: 가운데 승률 글자만 밝은 승패 색으로 */
+    .stat-card-box .donut {
+        grid-area: donut;
+        width: 66px;
+        height: 66px;
+        margin: 0;
+        --color-donut-track: var(--panel-line);
+    }
+    .stat-card-box .donut-text {
+        --color-win: var(--navy-win);
+        --color-lose: var(--navy-lose);
+    }
+    .stat-card-box .donut::before {
+        width: 48px;
+        height: 48px;
+    }
+    #statContent .clean-card:has(.donut-wrap) .donut-sub {
+        color: var(--navy-on-muted);
+    }
+
+    .ellipsis-text {
+        line-height: normal;
+    }
+
+    .cell-ellipsis,
+    .ellipsis-text,
+    .avatar-select-name,
+    .live-card-title,
+    .live-card-name,
+    .home-notice-name,
+    .home-notice-title,
+    .home-notice-snippet,
+    .home-carousel-preview[data-preview='0'] .home-preview-row > *,
+    .member-card-name,
+    .head-plate-value,
+    .tier-card-name,
+    .tier-card-team-name,
+    .h2h-suggest-team,
+    .h2h-score-name,
+    .h2h-map-name,
+    .h2h-rival-name,
+    .video-card-meta,
+    .tool-card-name,
+    .tool-card-host,
+    .mv-order-identity strong,
+    .player-summary-name,
+    .player-summary-badges .team-badge,
+    .profile-modal-link-label,
+    .media-lightbox-caption,
+    .entry-sum-name,
+    .entry-map-trigger span,
+    .entry-map-option {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 대체 글자 칸은 .team-logo-fallback을 같이 달아 그 뒤에 둔다 */
+    .home-notice-avatar,
+    .live-card-avatar,
+    .live-card-avatar-ring,
+    .mv-chip-avatar,
+    .news-post-avatar,
+    .player-avatar-sm,
+    .tier-card-avatar,
+    .cal-offair-avatar,
+    .hist-chip-ava,
+    .hist-stack-face,
+    .member-avatar-img,
+    .h2h-suggest-avatar,
+    .h2h-rival-avatar,
+    .video-bar-avatar,
+    .video-card-avatar,
+    .player-summary-avatar,
+    .profile-avatar {
+        border-radius: 50%;
+    }
+
+    .chevron-rotatable {
+        transition: transform 0.2s;
+    }
+    .chevron-rotatable.is-open {
+        transform: rotate(180deg);
+    }
+
+    /* 방송 중 점(멀티뷰어 멤버 칩 · 선수 선택 사이드바) */
+    .mv-chip-live,
+    .avatar-select-live {
+        flex: none;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--color-live);
+        animation: live-dot-pulse 1.4s infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .mv-chip-live,
+        .avatar-select-live {
+            animation: none;
+        }
+    }
+    @keyframes live-dot-pulse {
+        0% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-live) 55%, transparent);
+        }
+        70% {
+            box-shadow: 0 0 0 3px transparent;
+        }
+        100% {
+            box-shadow: 0 0 0 0 transparent;
+        }
+    }
+
+    .g2 {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--space-block-gap);
+    }
+
+    .i-arrow {
+        display: inline-block;
+        flex: none;
+        width: 10px;
+        height: 10px;
+        font-size: 0;
+        vertical-align: 0;
+        background-color: currentColor;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14 3h7v7M21 3l-9 9M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14 3h7v7M21 3l-9 9M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+    }
+
+    /* 형식 뱃지는 글자 수와 상관없이 같은 폭으로 줄을 맞춘다 */
+    .badge-cell .tag-badge {
+        --badge-h: 18px;
+        --badge-fs: var(--fs-badge-sm);
+        width: 34px;
+        min-width: 34px;
+        padding: 0;
+    }
+    /* 모바일에서는 선수 머리 카드·검색 제안의 뱃지도 작은 뱃지로 */
+    @media (max-width: 767.98px) {
+        .player-summary-badges .tag-badge,
+        .player-summary-position .tag-badge,
+        .h2h-suggest-item .tag-badge {
+            --badge-h: 18px;
+            --badge-pad: 5px;
+            --badge-fs: var(--fs-badge-sm);
+        }
+    }
+
+    @media (max-width: 920px) {
+        .g2 {
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--space-stack-gap);
+        }
+    }
+
+    /* ----- 상대 카드 · 승패 글자 · 빈 안내 ----- */
+    .h2h-win {
+        color: var(--color-win);
+        font-weight: 700;
+    }
+    .h2h-lose {
+        color: var(--color-lose);
+        font-weight: 700;
+    }
+
+    /* 8개씩 보여주므로 한 줄에 4장(두 줄) */
+    .h2h-maps,
+    .h2h-rivals {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-4);
+    }
+
+    /* 자주 만난 상대 · 동티어 맞대결: 맵 카드 짜임에 왼쪽 사진을 두 줄에 걸쳐 세운다 */
+    .h2h-rival {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 2px var(--space-3);
+        padding: var(--space-4) var(--space-5);
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-7);
+        text-align: left;
+    }
+    .h2h-rival:hover:not(:disabled) {
+        background: var(--color-row-hover);
+    }
+    .h2h-rival:disabled {
+        cursor: default;
+    }
+    .h2h-rival-name {
+        grid-column: 2;
+        grid-row: 1;
+        font-size: var(--fs-small);
+        font-weight: 700;
+        color: var(--color-text-main);
+    }
+    .h2h-rival-rec {
+        grid-column: 3;
+        grid-row: 1;
+        justify-self: end;
+        font-size: var(--fs-small);
+        white-space: nowrap;
+        color: var(--color-text-sub);
+    }
+    .h2h-rival-avatar {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+        font-size: var(--fs-small);
+    }
+    /* 팀 로고는 도형이라 동그랗게 자르지 않는다 */
+    .h2h-rival-avatar.is-logo {
+        display: grid;
+        place-items: center;
+        border-radius: 0;
+        background: none;
+    }
+    .h2h-rival-bar {
+        grid-column: 2 / 4;
+        grid-row: 2;
+        display: block;
+        height: 6px;
+        margin: var(--space-1) 0 0;
+        overflow: hidden;
+        background: var(--color-lose);
+        clip-path: var(--notch-2);
+    }
+    .h2h-rival-bar > span {
+        display: block;
+        height: 100%;
+        background: var(--color-win);
+    }
+    /* 칸을 없애면 카드 높이가 제각각이 되어 비워만 둔다 */
+    .h2h-rival-bar.is-empty {
+        background: var(--color-bg-subtle);
+    }
+    .entry-match .h2h-rival-rec {
+        justify-self: center;
+    }
+
+    @media (max-width: 1199.98px) {
+        .h2h-maps,
+        .h2h-rivals {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .h2h-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1);
+        min-height: 120px;
+        padding: 28px var(--space-7);
+        background: var(--navy);
+        background-image: var(--navy-pattern);
+        clip-path: var(--notch-12);
+        text-align: center;
+        font-size: var(--fs-body);
+        color: var(--navy-on-muted);
+    }
+    .h2h-empty-title {
+        font-size: var(--fs-card-title);
+        font-weight: 700;
+        color: var(--navy-on-text);
+    }
+    .h2h-empty-sub {
+        font-size: var(--fs-small);
+        color: var(--navy-on-muted);
+    }
+    /* 바로 위 점수판에 붙지 않게 띄운다 */
+    .h2h-empty-spaced {
+        margin-top: var(--space-block-gap);
+    }
+    @media (max-width: 767.98px) {
+        .h2h-rivals,
+        .h2h-maps {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--space-inline-gap);
+        }
+        .h2h-rival {
+            padding: var(--space-3) var(--space-4);
+            gap: 2px var(--space-2);
+        }
+        .h2h-rival-rec {
+            font-size: var(--fs-meta);
+        }
+        .h2h-rival-avatar {
+            width: 26px;
+            height: 26px;
+        }
+        /* 좁은 화면에서는 승률 숫자를 빼 이름 자리를 확보한다(아래 막대가 같은 걸 보여준다). */
+        .h2h-rate-sub {
+            display: none;
+        }
+    }
+
+    /* ----- 작은 버튼들 ----- */
+    /* 글자 버튼: --panel-* 토큰을 따라 네이비 면에서는 흰 계열이 된다. */
+    .text-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        gap: var(--space-label-gap);
+        min-height: 28px;
+        padding: 0 var(--space-inline-gap);
+        border: 0;
+        clip-path: var(--notch-4);
+        background: transparent;
+        color: var(--panel-muted);
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0;
+        white-space: nowrap;
+        transition:
+            color 0.15s,
+            background-color 0.15s;
+    }
+    .text-action:hover,
+    .text-action:focus-visible {
+        color: var(--panel-text);
+        background: color-mix(in srgb, var(--panel-text) 7%, transparent);
+    }
+    .text-action:active {
+        color: var(--panel-text);
+        background: color-mix(in srgb, var(--panel-text) 12%, transparent);
+    }
+    .text-action svg,
+    .text-action .i-arrow {
+        width: 12px;
+        height: 12px;
+        flex: none;
+        margin: 0;
+    }
+
+    /* 더 보기: 목록 박스 아래에 붙는 별도 박스 */
+    .news-load-more-wrap {
+        padding-top: var(--space-3);
+    }
+    .news-load-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-label-gap);
+        width: 100%;
+        min-height: 44px;
+        padding: 0 var(--space-7);
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-6);
+        font-size: var(--fs-small);
+        font-weight: 700;
+        color: var(--color-text-sub);
+        transition:
+            background 0.15s,
+            color 0.15s;
+    }
+    .news-load-more:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+
+    /* 제목줄 칩: 개수 뱃지 · 넘김 · 달 이동 버튼이 같은 모양을 쓴다. 제목줄 안 자리는 03-layout.css */
+    .section-title .title-count,
+    .shelf-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 20px;
+        padding: 0 var(--space-3);
+        font-size: var(--fs-badge);
+        line-height: 1;
+        clip-path: var(--notch-4);
+    }
+    .section-title .title-count,
+    .section-title .cal-nav-btn,
+    .shelf-nav-btn {
+        background: var(--navy-deco-fill);
+        color: #fff;
+    }
+    .section-title .cal-nav-btn:hover:not(:disabled),
+    .shelf-nav-btn:hover:not(:disabled) {
+        filter: brightness(1.25);
+    }
+    .section-title .cal-nav-btn:disabled,
+    .shelf-nav-btn:disabled {
+        opacity: 0.3;
+    }
+    .shelf-nav {
+        display: inline-flex;
+        gap: var(--space-label-gap);
+        margin-left: auto;
+    }
+    .shelf-nav-btn {
+        border: 0;
+        transition:
+            opacity 0.15s,
+            filter 0.15s;
+    }
+
+    /* 달 이동: 제목줄에서는 제목줄 칩 모양, 일정 달력 월 띠에서는 면 컨트롤 바탕 */
+    .cal-nav-group {
+        display: flex;
+        align-items: center;
+        gap: var(--space-label-gap);
+    }
+    .cal-nav-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        transition: 0.15s;
+    }
+    .cal-nav-badge {
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+    }
+    .section-title .cal-nav-btn {
+        width: 26px;
+        height: 26px;
+        clip-path: var(--notch-4);
+    }
+    .section-title .cal-nav-badge {
+        min-width: 88px;
+        color: var(--color-text-strong);
+    }
+    .cal-month-bar .cal-nav-group {
+        flex: none;
+        padding: 3px;
+    }
+    .cal-month-bar .cal-nav-btn {
+        width: 32px;
+        height: 32px;
+        clip-path: var(--notch-5);
+        background: var(--panel-control);
+        color: var(--panel-text);
+    }
+    .cal-month-bar .cal-nav-btn:hover {
+        background: var(--color-row-hover);
+    }
+    .cal-month-bar .cal-nav-badge {
+        min-width: 74px;
+    }
+
+    @media (max-width: 767.98px) {
+        .text-action {
+            min-height: 32px;
+            clip-path: var(--notch-5);
+        }
+        /* 쇼츠 선반은 손가락으로 밀 수 있어 넘김 버튼을 숨긴다(밀 수 없는 곳은 is-always) */
+        .shelf-nav:not(.is-always) {
+            display: none;
+        }
+    }
+
+    /* 카드 공통. 네이비 면 카드는 14-surfaces.css가 바탕을 고정해 호버에도 그대로다. */
+    .clean-card,
+    .live-broadcast-card,
+    .member-card,
+    .news-post-card,
+    .tier-card,
+    .tool-card {
+        background: var(--color-card);
+    }
+    .edge-T {
+        --profile-race-color: var(--color-race-t);
+        border-left: 3px solid var(--color-race-t);
+    }
+    .edge-Z {
+        --profile-race-color: var(--color-race-z);
+        border-left: 3px solid var(--color-race-z);
+    }
+    .edge-P {
+        --profile-race-color: var(--color-race-p);
+        border-left: 3px solid var(--color-race-p);
+    }
+    .clean-card:hover,
+    .live-broadcast-card:hover,
+    .member-card:hover,
+    .news-post-card:hover,
+    .tier-card:hover,
+    .tool-card:hover {
+        background-color: var(--color-row-hover);
+    }
+    .home-carousel-dots button,
+    .photo-dot {
+        width: 7px;
+        height: 7px;
+        background-color: rgba(255, 255, 255, 0.3);
+        transition:
+            width 0.2s,
+            background 0.2s;
+    }
+    .home-carousel-dots button.active,
+    .photo-dot.active {
+        width: 22px;
+        background-color: var(--dot-active);
+        clip-path: var(--notch-2) padding-box;
+    }
+    .clean-card,
+    .live-broadcast-card,
+    .member-card,
+    .nc,
+    .news-post-card,
+    .tier-card,
+    .tool-card {
+        clip-path: var(--notch-12);
+    }
+    /* 홈 방송 카드와 티어표 호버 미리보기가 같이 쓴다 */
+    .live-broadcast-card {
+        overflow: hidden;
+        transition: transform 0.15s;
+    }
+    .live-broadcast-card:hover {
+        transform: translateY(-2px);
+    }
+    .live-thumb-wrap {
+        position: relative;
+        overflow: hidden;
+        background: var(--color-placeholder-bg);
+    }
+    .live-thumb {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        transition: transform 0.25s ease;
+    }
+    .live-broadcast-card:hover .live-thumb {
+        transform: scale(1.04);
+    }
+    .live-thumb-overlay {
+        position: absolute;
+        z-index: 2;
+        inset: 0;
+        color: #fff;
+        font-size: var(--fs-micro);
+        font-weight: 600;
+        pointer-events: none;
+    }
+    .live-thumb-overlay span {
+        position: absolute;
+        right: 9px;
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 3px var(--space-1);
+        background: rgba(10, 14, 23, 0.78);
+        clip-path: var(--notch-4);
+    }
+    .live-thumb-overlay span:first-child {
+        top: 9px;
+    }
+    .live-thumb-overlay span:last-child {
+        bottom: 8px;
+        background: rgba(10, 14, 23, 0.55);
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .live-card-body {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: 'avatar name' 'avatar title';
+        align-items: center;
+        gap: 1px var(--space-4);
+        padding: var(--space-4) var(--space-5) var(--space-4);
+    }
+    .live-card-avatar-ring {
+        grid-area: avatar;
+        display: flex;
+    }
+    .live-card-avatar {
+        width: 34px;
+        height: 34px;
+        border: 2px solid var(--color-card);
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .live-card-name {
+        grid-area: name;
+        align-self: end;
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+    }
+    .live-card-title {
+        grid-area: title;
+        align-self: start;
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+        line-height: 1.35;
+    }
+}

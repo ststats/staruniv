@@ -1,0 +1,199 @@
+/* =============================================================================
+   9. 전적
+   ============================================================================= */
+@layer pages {
+    .stat-card-box {
+        position: relative;
+        height: 100%;
+        transition: transform 0.15s;
+        padding: var(--space-8) var(--space-8) var(--space-8);
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: 'label label' 'donut wl';
+        align-items: center;
+        gap: var(--space-content-gap);
+        text-align: left;
+    }
+    .stat-card-box:hover {
+        transform: translateY(-2px);
+    }
+    .stat-card-box .label {
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        grid-area: label;
+        font-weight: 700;
+    }
+
+    /* 승패 비율 바. 폭은 page-records.js가 실제 비율로 준다 */
+    .wl-block {
+        grid-area: wl;
+        min-width: 0;
+    }
+    .wl {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 20px;
+        margin-top: var(--space-3);
+        overflow: hidden;
+        clip-path: var(--notch-4);
+        font-size: var(--fs-badge);
+        font-weight: 700;
+        color: var(--color-text-muted);
+    }
+    .wl .wl-win,
+    .wl .wl-lose {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        min-width: 0;
+        color: #fff;
+    }
+    .wl .wl-win {
+        background: var(--color-primary);
+    }
+    .wl .wl-lose {
+        background: var(--color-lose);
+    }
+    .wl .wl-none {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--panel-control);
+        color: var(--panel-muted);
+        font-weight: 600;
+    }
+    .wl-text {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .wl-text small {
+        font-size: var(--fs-body);
+        color: var(--panel-muted);
+    }
+    .wl-text i {
+        font-style: normal;
+        color: var(--panel-muted);
+    }
+
+    .m-arrow {
+        color: var(--color-text-faint);
+        display: inline-flex;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    .match-row[aria-expanded='true'] .m-arrow {
+        transform: rotate(180deg);
+    }
+    .team-row-clickable {
+        transition: background 0.1s;
+    }
+    .team-row-clickable:hover > :not(.h2h-rival-bar) {
+        background-color: var(--color-row-hover);
+    }
+    /* 글자와 이미지가 섞여 있어 하나의 flex 줄로 묶고 간격을 gap 하나로 맞춘다. */
+    .modal-title-vs {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-label-gap);
+        vertical-align: middle;
+    }
+    /* 좁은 화면에서만 쓰는 상대 팀 작은 줄 */
+    .cell-subline {
+        display: none;
+    }
+
+    .stat-table td.set-detail-host {
+        padding: 0;
+    }
+    .set-detail-panel {
+        background-color: var(--color-card);
+        border-top: 1px dashed var(--color-border);
+        padding: var(--space-3) clamp(var(--space-5), 3vw, var(--space-9));
+    }
+    .set-detail-table {
+        table-layout: fixed;
+    }
+    .set-detail-table td.set-detail-label {
+        font-weight: 800;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+    }
+    .set-detail-table td.set-detail-map {
+        color: var(--color-text-soft);
+    }
+    .set-res {
+        font-weight: 700;
+    }
+    .set-res.is-win {
+        color: var(--color-win);
+    }
+    .set-res.is-lose {
+        color: var(--color-lose);
+    }
+    .set-res.is-draw {
+        color: var(--color-draw);
+    }
+
+    .wl-empty {
+        color: var(--color-text-faint);
+        font-size: var(--fs-small);
+    }
+
+    @media (max-width: 767.98px) {
+        .stat-card-box {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-areas: 'label' 'donut' 'wl';
+            justify-items: center;
+            gap: var(--space-compact-gap);
+            padding: var(--space-7) var(--space-6) var(--space-7);
+            text-align: center;
+        }
+        .stat-card-box .label {
+            justify-self: start;
+        }
+        .wl {
+            width: 100%;
+        }
+
+        /* 압축 표(04)에서 전적 표만의 조각 */
+        .stat-table .set-detail-table td {
+            padding: var(--space-1) var(--space-1);
+        }
+        /* 개인 최근전적은 6칸이라 빠듯해 상대 팀은 칸 대신 상대 이름 밑 작은 줄로 붙인다. */
+        .stat-table .col-oppteam {
+            display: none;
+        }
+        .stat-table .cell-subline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-1);
+            margin-top: 1px;
+            font-size: var(--fs-micro);
+            font-weight: 500;
+            color: var(--color-text-muted);
+        }
+        /* 화살표가 글자보다 커 보이지 않게 같이 줄인다 */
+        .stat-table .col-arrow {
+            padding-left: 0;
+            padding-right: 2px;
+        }
+        .stat-table .col-arrow .m-arrow svg {
+            width: 8px;
+            height: 8px;
+        }
+    }
+    /* 펼침 화살표는 줄 전체를 눌러도 열려 아주 좁은 화면에서는 칸째로 뺀다 */
+    @media (max-width: 389.98px) {
+        .stat-table .col-arrow {
+            display: none;
+        }
+        .stat-table .set-detail-table td {
+            padding: var(--space-1) 3px;
+        }
+    }
+}

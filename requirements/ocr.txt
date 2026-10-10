@@ -1,0 +1,2 @@
+-r common.txt
+pytesseract>=0.3,<1

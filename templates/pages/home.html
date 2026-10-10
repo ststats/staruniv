@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{#- JSON-LD는 실행되는 스크립트가 아니라 데이터라 CSP에 걸리지 않는다. #}
+{% block head_scripts %}
+    <script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "WebSite", "name": "스타대학", "url": canonical_url, "description": description} | tojson }}</script>
+{% endblock %}
+{% block content %}
+{#- .container의 max-width 안에서는 음수 마진으로도 화면 끝에 닿지 않아 히어로를 .container 밖에 둔다. #}
+<section id="page-home" class="page-section active">
+    {#- 첫 화면 캐러셀. 첫 장 배경은 현역 멤버 얼굴 띠 영상이고, 나머지 장 오른쪽 칸은 page-home.js가 채운다. #}
+    <section class="home-carousel" aria-label="스타대학 안내" aria-roledescription="carousel">
+        <div class="home-carousel-track" id="home-carousel-track">
+            <article class="home-carousel-slide page-header is-brand">
+                <div class="home-brand-media" aria-hidden="true">
+                    <video poster="media/home/members-strip.jpg" muted loop playsinline preload="metadata">
+                        <source src="media/home/members-strip.webm" type='video/webm; codecs="av01.0.08M.08"'>
+                        <source src="media/home/members-strip.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="page-header-main" data-label="CALM MONSTARZ">
+                    <h1 class="page-header-title"><span>캄몬</span><i>스타즈</i></h1>
+                    <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식을 확인하세요</p>
+                </div>
+                <div class="home-hero-links"><a href="members/">멤버 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
+            </article>
+            <article class="home-carousel-slide page-header">
+                <div class="page-header-main" data-label="CALMMON CALENDAR">
+                    <h2 class="page-header-title">캄몬<i>캘린더</i></h2>
+                    <p class="page-header-subtitle">캄몬스타즈의 일정을 한곳에서 확인하세요</p>
+                </div>
+                <div class="home-hero-links"><a href="schedule/">일정 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
+                <div class="home-carousel-preview nc" data-preview="0" aria-live="polite">
+                    <div class="home-preview-label">TODAY SCHEDULE</div>
+                    <div class="home-preview-loading">오늘 일정을 불러오는 중</div>
+                </div>
+            </article>
+            <article class="home-carousel-slide page-header">
+                <div class="page-header-main" data-label="RECORD ARCHIVE">
+                    <h2 class="page-header-title">전적<i>아카이브</i></h2>
+                    <p class="page-header-subtitle">캄몬스타즈의 모든 전적을 저장합니다</p>
+                </div>
+                <div class="home-hero-links"><a href="records/">전적 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
+                <div class="home-carousel-preview nc" data-preview="1" aria-live="polite"></div>
+            </article>
+            <article class="home-carousel-slide page-header">
+                <div class="page-header-main" data-label="CALMMON PLAY">
+                    <h2 class="page-header-title">캄몬<i>플레이</i></h2>
+                    <p class="page-header-subtitle">캄몬스타즈를 재생하세요</p>
+                </div>
+                <div class="home-hero-links"><a href="video/">영상 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
+                <div class="home-carousel-preview nc" data-preview="2" aria-live="polite"></div>
+            </article>
+        </div>
+        <div class="home-carousel-controls"><button type="button" data-click="moveHomeCarousel" data-args='[-1]' aria-label="이전 안내">‹</button><div class="home-carousel-dots" id="home-carousel-dots"><button type="button" class="active" aria-label="1번 안내" data-click="goHomeCarousel" data-args='[0]'></button><button type="button" aria-label="2번 안내" data-click="goHomeCarousel" data-args='[1]'></button><button type="button" aria-label="3번 안내" data-click="goHomeCarousel" data-args='[2]'></button><button type="button" aria-label="4번 안내" data-click="goHomeCarousel" data-args='[3]'></button></div><button type="button" data-click="moveHomeCarousel" data-args='[1]' aria-label="다음 안내">›</button></div>
+    </section>
+    <div class="container">
+    <div class="section-title" data-en="ON AIR"><span class="section-title-label">방송 중</span></div>
+    {#- JS는 노드를 갈아끼우지 않고 문구와 hidden만 바꿔 첫 화면과 최종 화면을 맞춘다. #}
+    <div id="home-live-broadcast" class="home-live-broadcast" data-state="loading" aria-live="polite" aria-busy="true">
+        <div id="home-live-state" class="content-state home-live-state" role="status">
+            <span id="home-live-state-text">방송 상태 확인 중</span>
+        </div>
+        <div id="home-live-grid" class="live-broadcast-grid" hidden></div>
+    </div>
+
+    <div class="section-title has-actions mt-4" data-en="NOTICE">
+        <span class="section-title-label">최근 공지</span>
+        <a class="text-action" href="members/?view=news"><span>전체 보기</span><span class="i-arrow" aria-hidden="true"></span></a>
+    </div>
+    <div class="home-notice-list" id="home-notice-list" aria-live="polite" aria-busy="true">
+        <div class="content-state clean-card">최근 공지를 불러오는 중</div>
+    </div>
+    </div>{#- /.container #}
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('api.js') }}"></script>
+<script src="{{ asset_url('soop.js') }}"></script>
+<script src="{{ asset_url('page-home.js') }}"></script>
+{% endblock %}

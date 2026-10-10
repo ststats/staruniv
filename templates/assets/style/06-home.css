@@ -1,0 +1,358 @@
+/* =============================================================================
+   6. 홈 (넘기는 히어로 · 방송 중 카드 · 최근 공지 카드)
+   ============================================================================= */
+@layer pages {
+    #page-home {
+        padding-top: 0;
+    }
+    #page-home > .container {
+        padding-top: var(--space-page-top);
+    }
+
+    /* ----- 넘기는 히어로: 한 장이 .page-header 하나. 네이비 면 토큰은 14-surfaces.css ----- */
+    .home-carousel {
+        position: relative;
+        overflow: hidden;
+        margin: 0 0 var(--space-hero-gap);
+    }
+    .home-carousel-track {
+        display: flex;
+        transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-carousel-track {
+            transition: none;
+        }
+    }
+    .home-carousel-slide {
+        flex: 0 0 100%;
+        min-width: 0;
+        margin: 0;
+    }
+    .home-carousel .page-header-title {
+        white-space: nowrap;
+    }
+    .home-carousel .page-header-title i {
+        font-style: normal;
+        color: var(--panel-accent);
+    }
+
+    /* 첫 장: 멤버 얼굴 띠 영상을 배경으로 깔고 글자 쪽은 네이비로 덮어 읽히게 한다. */
+    .home-brand-media {
+        position: absolute;
+        inset: 0;
+        background: var(--navy) url(media/home/members-strip.jpg) center / cover no-repeat;
+    }
+    .home-brand-media video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .home-brand-media::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            90deg,
+            var(--navy) 0%,
+            color-mix(in srgb, var(--navy) 86%, transparent) 30%,
+            color-mix(in srgb, var(--navy) 30%, transparent) 62%,
+            transparent 100%
+        );
+    }
+    .home-carousel-slide.is-brand > .page-header-main,
+    .home-carousel-slide.is-brand > .home-hero-links {
+        position: relative;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-brand-media video {
+            display: none;
+        }
+    }
+
+    .home-hero-links {
+        display: flex;
+        gap: var(--space-inline-gap);
+    }
+    .home-hero-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        height: 40px;
+        padding: 0 var(--space-6);
+        background: #fff;
+        clip-path: var(--notch-6);
+        color: var(--navy);
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+
+    /* 점 묶음은 이 칸의 가운데 정렬로 가로 가운데에 선다 */
+    .home-carousel-controls {
+        position: absolute;
+        z-index: 2;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+    }
+    .home-carousel-controls > button {
+        position: absolute;
+        top: 50%;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        background: var(--panel-control);
+        clip-path: var(--notch-5);
+        color: var(--panel-text);
+        font-size: 18px;
+        line-height: 1;
+        transform: translateY(-50%);
+        pointer-events: auto;
+    }
+    .home-carousel-controls > button:hover {
+        background: var(--color-row-hover);
+    }
+    .home-carousel-controls > button:first-child {
+        left: max(0px, calc((100vw - 1280px) / 4));
+    }
+    .home-carousel-controls > button:last-child {
+        right: max(0px, calc((100vw - 1280px) / 4));
+    }
+    .home-carousel-dots {
+        position: absolute;
+        bottom: 22px;
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        pointer-events: auto;
+    }
+    .home-carousel-dots button {
+        padding: 0;
+        /* 누르는 영역만 25px로 넓히고(투명 테두리 9px만큼 여백을 빼) 보이는 점은 7px */
+        border: 9px solid transparent;
+        margin: -9px;
+        box-sizing: content-box;
+        background-clip: padding-box;
+    }
+
+    /* 오른쪽 미리보기 칸(page-home.js renderHomePreviewPanes) */
+    .home-carousel-preview {
+        /* 최대 네 일정만 보여 히어로 높이를 유지한다. */
+        position: absolute;
+        top: 48px;
+        bottom: 60px;
+        right: max(32px, calc((100vw - 1280px) / 2 + 40px));
+        width: 360px;
+        overflow: hidden;
+        padding: var(--space-5) var(--space-8);
+        background: var(--panel-control);
+    }
+    .home-carousel-preview:hover {
+        background: var(--color-row-hover);
+    }
+    .home-carousel-preview[data-preview='0'],
+    .home-carousel-preview[data-preview='1'] {
+        display: grid;
+        grid-template-rows: auto;
+        grid-auto-rows: minmax(0, 1fr);
+    }
+    .home-carousel-preview:has(.home-video-preview) {
+        padding: 0;
+    }
+    .home-preview-link {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+    .home-preview-label {
+        margin-bottom: var(--space-2);
+        color: var(--panel-muted);
+        font-size: var(--fs-eyebrow);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+    }
+    .home-preview-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--panel-muted);
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: center;
+    }
+    /* 첫 줄도 위에 선이 있어 이름표와 나뉜다 */
+    .home-preview-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: baseline;
+        align-content: center;
+        gap: var(--space-4);
+        border-top: 1px solid var(--panel-line);
+    }
+    .home-preview-row > * {
+        line-height: 20px;
+    }
+    .home-preview-row span {
+        color: var(--panel-muted);
+        font-size: var(--fs-small);
+    }
+    .home-preview-row b {
+        font-size: var(--fs-card-title);
+    }
+    /* 일정마다 글자 수가 달라도 시간 · 제목 · 내용의 시작 위치를 맞춘다. */
+    .home-carousel-preview[data-preview='0'] .home-preview-row {
+        grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1.3fr);
+    }
+    .home-video-preview {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #fff;
+    }
+    .home-video-play {
+        width: 0;
+        height: 0;
+        margin-left: var(--space-3);
+        border-top: 22px solid transparent;
+        border-bottom: 22px solid transparent;
+        border-left: 34px solid currentColor;
+    }
+
+    /* ----- 홈 방송 중 구역(카드 공통 모양은 04-components.css) ----- */
+    .live-broadcast-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: var(--space-compact-gap);
+    }
+    .home-live-state {
+        min-height: 58px;
+    }
+    /* 방송 확인 중에는 아래 공지를 숨긴다. 방송 카드가 늦게 들어오면 공지가 밀려나서(CLS)다.
+       확인이 끝나거나 3초가 지나면 보인다. */
+    .home-live-broadcast[data-state='loading'] ~ * {
+        visibility: hidden;
+        animation: view-pending-reveal 0s 3s forwards;
+    }
+    .home-live-broadcast[data-state='partial'] .home-live-state {
+        min-height: auto;
+        align-items: flex-start;
+        padding: 0 0 var(--space-inline-gap);
+        font-size: var(--fs-meta);
+        text-align: left;
+    }
+
+    /* ----- 최근 공지 카드(멤버 공지 탭의 지난 글 목록도 같이 쓴다) ----- */
+    .home-notice-list {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        clip-path: var(--notch-12);
+    }
+    .home-notice-card {
+        display: flex;
+        align-items: stretch;
+        gap: var(--space-compact-gap);
+        padding: var(--space-5) var(--space-6);
+        background: var(--color-card);
+        transition: background 0.15s;
+    }
+    .home-notice-card:hover {
+        background: var(--color-row-hover);
+    }
+    .home-notice-avatar {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .home-notice-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--space-label-gap);
+    }
+    .home-notice-top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+    .home-notice-toptext {
+        flex: 1;
+        min-width: 0;
+    }
+    .home-notice-name {
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+    }
+    .home-notice-title-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        margin-top: 2px;
+    }
+    .home-notice-title {
+        min-width: 0;
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+    }
+    .home-notice-dot {
+        flex-shrink: 0;
+        color: var(--color-icon-faint);
+        font-size: var(--fs-badge);
+    }
+    .home-notice-meta {
+        flex-shrink: 0;
+        color: var(--color-text-faint);
+        font-size: var(--fs-meta);
+        white-space: nowrap;
+    }
+    .home-notice-snippet {
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+    }
+    .home-notice-thumb {
+        flex-shrink: 0;
+        align-self: center;
+        height: 64px;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+        clip-path: var(--notch-10);
+    }
+
+    /* ----- 화면 폭별 ----- */
+    @media (max-width: 1199.98px) {
+        .home-carousel-preview {
+            width: 300px;
+        }
+    }
+    @media (max-width: 920px) {
+        .live-broadcast-grid {
+            grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+        }
+        .home-carousel-slide > .home-carousel-preview {
+            display: none;
+        } /* 위 data-preview별 display:grid보다 세게 */
+    }
+    @media (max-width: 767.98px) {
+        .home-carousel-controls > button {
+            display: none;
+        }
+        .home-brand-media::after {
+            background: linear-gradient(
+                180deg,
+                color-mix(in srgb, var(--navy) 35%, transparent) 0%,
+                color-mix(in srgb, var(--navy) 85%, transparent) 62%,
+                var(--navy) 100%
+            );
+        }
+    }
+}

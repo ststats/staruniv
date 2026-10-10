@@ -1,0 +1,139 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+# 빌드 결과(docs/)는 커밋하지 않고 GitHub Pages에 바로 배포한다(Pages Source: GitHub Actions).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: staruniv-web-build
+  cancel-in-progress: false
+
+jobs:
+  scope:
+    runs-on: ubuntu-24.04
+    outputs:
+      deploy: ${{ steps.scope.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: scope
+        run: python3 scripts/build_tools/build_scope.py
+
+  test:
+    uses: ./.github/workflows/test.yml
+
+  build:
+    needs: [test, scope]
+    if: needs.scope.outputs.deploy == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements/**/*.txt'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements/web.txt -r requirements/media.txt
+
+      - name: Export web build cache from Supabase
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python scripts/export_supabase.py
+
+      # 실패해도 달력은 DB에 있던 공휴일을 그대로 쓴다.
+      - name: Sync Korean holidays
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python scripts/sync_holidays.py
+
+      - name: Build internal StarUniv stats and pages
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+        run: |
+          # 페이지가 데이터 파일 해시를 달므로 사이트 데이터를 먼저 만든다
+          python scripts/write_site_data.py
+          python scripts/build_html.py
+
+          echo "=== docs/data ==="
+          ls -la docs/data
+
+          if [ ! -f docs/data/site_records_v2.json ]; then
+            echo "split site data files were not generated"
+            exit 1
+          fi
+
+      - name: Write browser Supabase config
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: python scripts/write_supabase_browser_config.py
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Minify assets
+        run: node scripts/minify_assets.mjs docs
+
+      - id: pages
+        uses: actions/configure-pages@v6
+
+      # 실패하면 배포된 영상을 그대로 둔다(빌드는 계속).
+      - name: Build member strip video
+        continue-on-error: true
+        timeout-minutes: 20
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: python scripts/build_member_strip.py
+
+      # 외부 자동화가 가져가는 달력 사진. 캡처가 실패해도 비지 않게 배포된 사진을 먼저 받아 둔다.
+      - name: Keep last published calendar image
+        run: curl -fsSL "${{ steps.pages.outputs.base_url }}/data/calendar.png" -o docs/data/calendar.png || true
+      - name: Capture calendar image
+        continue-on-error: true
+        run: node scripts/capture_calendar.mjs
+      # 게시판이 쓰는 calendar.png 주소가 이 Storage 사진을 보여 준다(docs/vercel.json). 캐시하지 않게 올린다.
+      - name: Upload calendar image to Supabase Storage
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ ! -s docs/data/calendar.png ]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY 또는 달력 사진이 없어 건너뜀"; exit 0
+          fi
+          curl -fsS -X POST "${SUPABASE_URL%/}/storage/v1/object/staruniv-media/calendar.png" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: image/png" -H "x-upsert: true" -H "cache-control: no-cache" \
+            --data-binary @docs/data/calendar.png
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

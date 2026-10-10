@@ -1,0 +1,772 @@
+/* =============================================================================
+   7. 일정 (달력 탭 · 연혁 탭)
+   ============================================================================= */
+@layer pages {
+    /* ----- 배치: PC는 달력 + 오른쪽 카드 -----
+       사이드바가 마크업에서 먼저 오므로 PC에서는 칸을 직접 지정한다. */
+    .cal-main-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: var(--space-block-gap);
+        align-items: start;
+    }
+    .cal-sidebar {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-block-gap);
+    }
+    .cal-calendar-area {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    /* 캡처 모드(?capture=calendar, scripts/capture_calendar.mjs): 캡처할 두 영역만 한 열로 둔다.
+       너비를 JS에서 덮어쓰지 않아 결과가 반응형 규칙에 흔들리지 않는다. */
+    body.calendar-capture .top-navbar,
+    body.calendar-capture .page-header,
+    body.calendar-capture .cal-selected-card-wrapper {
+        display: none;
+    }
+    body.calendar-capture #page-schedule,
+    body.calendar-capture #page-schedule > .container {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+    body.calendar-capture .cal-main-layout,
+    body.calendar-capture .cal-sidebar,
+    body.calendar-capture .cal-calendar-area,
+    body.calendar-capture .cal-today-card-wrapper {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin: 0;
+    }
+    body.calendar-capture .cal-today-card-wrapper {
+        margin-bottom: var(--space-block-gap);
+    }
+    body.calendar-capture .cal-calendar-inner {
+        overflow: visible;
+        padding-bottom: 0;
+    }
+
+    /* ----- 오늘의 일정 · 선택한 날짜 일정 카드 -----
+       오늘 카드는 네이비 면(14-surfaces.css), 안쪽 선·글자는 --panel-* 토큰을 따라간다. */
+    .cal-day-card {
+        padding: var(--space-8) var(--space-8) 0;
+    }
+    .cal-selected-card-wrapper > .cal-day-card {
+        background-color: var(--panel-bg);
+    }
+    /* 날짜 라벨은 아래 일정 줄과 같은 글자 크기 */
+    .cal-day-card-date {
+        padding-bottom: var(--space-4);
+        border-bottom: 1px solid var(--panel-line);
+        font-size: var(--fs-body);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-align: left;
+    }
+    .cal-selected-card-wrapper .cal-day-card-date {
+        color: var(--title-eyebrow);
+    }
+
+    .cal-selected-list,
+    .cal-today-list {
+        display: flex;
+        flex-direction: column;
+        max-height: var(--day-list-h);
+        overflow-y: auto;
+    }
+    .cal-no-schedule {
+        width: 100%;
+        color: var(--color-text-sub);
+        font-size: var(--fs-body);
+        text-align: center;
+    }
+    .is-empty > .cal-no-schedule {
+        display: grid;
+        place-items: center;
+        min-height: 104px;
+        padding: var(--space-5) 0;
+    }
+
+    .cal-selected-card,
+    .cal-today-card {
+        padding: var(--space-5) 0;
+    }
+    .cal-today-card + .cal-today-card,
+    .cal-selected-card + .cal-selected-card {
+        border-top: 1px solid var(--panel-line);
+    }
+    .cal-card-main {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-5);
+        font-size: var(--fs-body);
+    }
+    .cal-card-time,
+    .cal-card-person,
+    .cal-card-desc {
+        line-height: 1.35;
+    }
+    .cal-card-time {
+        flex: none;
+        color: var(--color-primary);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .cal-today-card-wrapper .cal-card-time {
+        color: var(--panel-accent);
+    }
+    .cal-card-person {
+        flex: none; /* 시간 없는 일정에서 설명이 길면 이름이 한 글자씩 줄바꿈되지 않게 */
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .cal-card-desc {
+        flex-grow: 1;
+        font-weight: 500;
+    }
+    /* 간략내용과의 간격은 .cal-card-main gap과 같게 */
+    .cal-card-detail {
+        margin-left: var(--space-5);
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+        font-weight: 400;
+    }
+
+    .cal-offair-section {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-5);
+        padding: var(--space-5) 0;
+        border-top: 1px solid var(--panel-line);
+    }
+    /* '휴방'은 바로 위 일정 줄의 시간 칸 자리에 와서 시간 칸과 똑같이 맞춘다 */
+    .cal-offair-label {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        min-height: 26px;
+        font-size: var(--fs-body);
+        font-weight: 700;
+        line-height: 1.35;
+        white-space: nowrap;
+    }
+    .cal-offair-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-label-gap);
+        flex: 1;
+        min-width: 0;
+    }
+    /* 사람 칩: 휴방 칩과 연혁 참여자 칩이 같은 짜임을 쓴다(관리자 팀 칩도 같은 크기) */
+    .cal-offair-chip,
+    .hist-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-label-gap);
+        min-height: 28px;
+        /* 글줄 높이를 1로 고정해야 이름과 괄호 설명이 같은 중심선에 선다 */
+        padding: 3px var(--space-4) 3px 3px;
+        background: var(--color-bg-subtle);
+        clip-path: var(--notch-4);
+        font-size: var(--fs-small);
+        line-height: 1;
+    }
+    .cal-offair-avatar,
+    .hist-chip-ava,
+    .hist-stack-face {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        object-fit: cover;
+    }
+    .cal-offair-avatar {
+        background: var(--color-border);
+    }
+    .cal-offair-name {
+        color: var(--color-text-sub);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    /* 휴방자가 없는 날의 '없음'(높이는 '휴방' 글자 칸과 같게) */
+    .cal-offair-none {
+        display: flex;
+        align-items: center;
+        min-height: 26px;
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+    }
+
+    /* ----- 달력 카드: 월 띠(네이비 면) + 요일 줄 + 날짜 칸 ----- */
+    .cal-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .cal-month-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-card-gap);
+        padding: var(--space-7) var(--space-8);
+        background-attachment: fixed;
+        border-bottom: var(--head-line-w) solid var(--head-line); /* 캡처(html2canvas) 때문에 inset 그림자 대신 테두리 */
+    }
+    .cal-month-id {
+        min-width: 0;
+    }
+    .cal-month-year {
+        color: var(--panel-muted);
+        font-size: var(--fs-eyebrow);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+    }
+    .cal-month-name {
+        font-size: 23px;
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.01em;
+    }
+    /* 칸 폭을 화면에 맞춰 줄인다(최소 폭을 잡으면 2단 배치에서 가로 스크롤이 생긴다). */
+    .cal-calendar-inner {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: var(--space-3);
+    }
+    .cal-weekdays,
+    .cal-days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        width: 100%;
+    }
+    .cal-weekdays {
+        padding: var(--space-3) 0;
+        background-color: var(--color-head-bg);
+        background-image: var(--navy-pattern);
+        background-attachment: fixed;
+        color: var(--color-head-text);
+        text-align: center;
+    }
+    .cal-weekdays > div {
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+    }
+    .cal-weekdays > div:first-child {
+        color: var(--color-head-sun);
+    }
+    .cal-weekdays > div:last-child {
+        color: var(--color-head-sat);
+    }
+    .cal-days-loading {
+        grid-column: 1 / -1;
+        display: grid;
+        place-items: center;
+        min-height: 320px;
+        color: var(--color-text-muted);
+        font-size: var(--fs-body);
+        text-align: center;
+    }
+
+    .cal-day-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-height: 120px;
+        padding: var(--space-2) var(--space-3) var(--space-3);
+        border-right: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-card);
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .cal-day-cell:nth-child(7n) {
+        border-right: none;
+    }
+    .cal-day-cell:nth-last-child(-n + 7) {
+        border-bottom: none;
+    }
+    .cal-day-cell:hover {
+        background: var(--color-row-hover);
+    }
+    .cal-day-cell.other-month {
+        background: var(--calendar-outside-bg);
+        cursor: default;
+    }
+    .cal-day-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: flex-start;
+        flex: none;
+        width: 26px;
+        height: 26px;
+        clip-path: var(--notch-4);
+        margin-bottom: 2px;
+        font-size: var(--fs-body);
+        font-weight: 700;
+        line-height: 1;
+    }
+    .cal-day-cell:nth-child(7n) .cal-day-number {
+        color: var(--color-primary);
+    }
+    /* 토요일이 공휴일이면 빨강이 이기도록 토요일 다음에 둔다 */
+    .cal-day-cell:nth-child(7n + 1) .cal-day-number,
+    .cal-day-cell.holiday .cal-day-number {
+        color: var(--color-holiday);
+    }
+    .cal-day-cell.other-month .cal-day-number {
+        color: var(--calendar-outside-text);
+        font-weight: 500;
+    }
+    .cal-day-cell.today .cal-day-number {
+        background: var(--navy-deco-fill);
+        color: #fff;
+    }
+
+    /* ----- 일정 칩 -----
+       관리자 캡처(html2canvas)가 color-mix()와 inset box-shadow를 제대로 못 그려서
+       섞은 색은 calendar.js가 hex로 넘기고 막대는 border로 그린다. */
+    .cal-cell-event {
+        --ev-accent: var(--ev-accent-l);
+        --ev-bg: var(--ev-bg-l);
+        --ev-hover: var(--ev-hover-l);
+        --ev-text: var(--ev-text-l);
+        --ev-sub: var(--ev-sub-l);
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: var(--space-1) var(--space-2);
+        border-left: 3px solid var(--ev-accent);
+        background: var(--ev-bg);
+        clip-path: var(--notch-5);
+        text-align: left;
+    }
+    html[data-theme='dark'] .cal-cell-event {
+        --ev-accent: var(--ev-accent-d);
+        --ev-bg: var(--ev-bg-d);
+        --ev-hover: var(--ev-hover-d);
+        --ev-text: var(--ev-text-d);
+        --ev-sub: var(--ev-sub-d);
+    }
+    .cal-cell-event:hover {
+        background: var(--ev-hover);
+    }
+    .cal-cell-top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        overflow: hidden;
+        line-height: 1.3;
+        white-space: nowrap;
+    }
+    .cal-cell-break {
+        display: none;
+    }
+    .cal-event-time {
+        flex: none;
+        color: var(--ev-text); /* 일정 색을 바탕 대비 4.5:1까지 진하게(calendar.js calEventColorVars) */
+        font-size: var(--fs-micro);
+        font-weight: 700;
+    }
+    .cal-event-person {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--ev-sub);
+        font-size: var(--fs-micro);
+        font-weight: 600;
+        text-overflow: ellipsis;
+    }
+    .cal-event-desc {
+        font-size: var(--fs-meta);
+        font-weight: 600;
+        line-height: 1.3;
+        white-space: pre-wrap;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+    }
+
+    /* 여러 날 막대: 칸 여백 밖으로 번져 옆 칸 막대와 붙는다(calendar.js calBarEdgeStyle). 색 막대·모서리는 시작/끝 칸에만,
+       중간 칸은 글자를 숨긴다. relative는 옆 칸 배경보다 위에 그려 이음매를 가리기 위해서다. */
+    .cal-longterm-bar {
+        position: relative;
+        z-index: 1;
+        margin-left: var(--bar-bleed-left, 0);
+        margin-right: var(--bar-bleed-right, 0);
+        padding-left: var(--bar-pad-left, var(--space-2));
+        padding-right: var(--bar-pad-right, var(--space-2));
+    }
+    .cal-longterm-bar.is-cont-right {
+        clip-path: none;
+    }
+    .cal-longterm-bar.is-cont-left {
+        border-left: 0;
+    }
+    .cal-longterm-bar.is-cont-left .cal-cell-top,
+    .cal-longterm-bar.is-cont-left .cal-event-desc {
+        visibility: hidden;
+    }
+
+    @media (min-width: 768px) and (max-width: 1279.98px) {
+        .cal-cell-event {
+            padding: 3px var(--space-1);
+        }
+    }
+
+    /* ----- 연혁 탭 (history.js) -----
+       목록 아래 여백이 다음 연도와의 간격이고, 마지막 연도 아래는 비운다(.page-section 여백에 더해지므로). */
+    .hist-list {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+        margin: 0;
+        padding: 0 0 0 26px;
+        list-style: none;
+    }
+    .hist-list:not(:last-child) {
+        margin-bottom: var(--space-block-gap);
+    }
+    .hist-list::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        bottom: 6px;
+        left: 6px;
+        width: 2px;
+        background: var(--color-border-strong);
+    }
+    .hist-item {
+        --hist-color: var(--color-primary);
+        position: relative;
+    }
+    .hist-item::before {
+        content: '';
+        position: absolute;
+        top: 22px;
+        left: -25px;
+        width: 12px;
+        height: 12px;
+        background: var(--hist-color);
+        clip-path: var(--notch-2);
+    }
+    .hist-item.is-hidden {
+        opacity: 0.5;
+    }
+    /* 형식 선택 바·관리자 연혁 형식 고르기의 색 점도 같은 색을 쓴다. */
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-founding {
+        --hist-color: var(--navy-deco-fill);
+    }
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-join {
+        --hist-color: var(--color-primary);
+    }
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-leave {
+        --hist-color: var(--color-text-faint);
+    }
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-match {
+        --hist-color: var(--color-lose);
+    }
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-broadcast {
+        --hist-color: var(--color-race-z);
+    }
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-event {
+        --hist-color: var(--color-hist-event);
+    }
+    :is(.hist-item, .hist-bar-item, .admin-type-dot).hist-type-other {
+        --hist-color: var(--color-hist-other);
+    }
+    .hist-bar-dot {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        background: var(--hist-color);
+        clip-path: var(--notch-4);
+    }
+
+    .hist-card {
+        display: flex;
+        align-items: stretch;
+        gap: var(--space-7);
+        padding: var(--space-7) var(--space-7);
+        background: var(--color-card);
+        clip-path: var(--notch-12);
+    }
+    .hist-main {
+        flex: 1;
+        min-width: 0;
+    }
+    .hist-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--space-inline-gap);
+        margin-bottom: var(--space-2);
+    }
+    /* 요일(한글)과 자간이 어긋나지 않게 본문 글꼴을 두고 숫자 폭만 고정한다. */
+    .hist-date {
+        color: var(--color-text-main);
+        font-size: var(--fs-body);
+        font-weight: 700;
+    }
+    .hist-date small {
+        margin-left: var(--space-1);
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+        font-weight: 600;
+    }
+    .hist-type {
+        display: inline-flex;
+        align-items: center;
+        height: 18px;
+        padding: 0 var(--space-2);
+        background: var(--hist-color);
+        clip-path: var(--notch-4);
+        color: #fff;
+        font-size: var(--fs-badge-sm);
+        font-weight: 700;
+    }
+    .hist-title {
+        color: var(--color-text-strong);
+        font-size: 15px;
+        font-weight: 800;
+        word-break: keep-all;
+    }
+    .hist-desc {
+        margin-top: var(--space-1);
+        color: var(--color-text-sub);
+        font-size: var(--fs-body);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: keep-all;
+    }
+
+    /* 참여자 칩. 접어둔 이름을 여는 칸은 나머지 인원의 프로필을 겹쳐 보여준다. */
+    .hist-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-label-gap);
+        margin-top: var(--space-4);
+    }
+    .hist-chips-rest {
+        display: contents;
+    }
+    .hist-chip-ava,
+    .hist-stack-face {
+        display: inline-grid;
+        place-items: center;
+        background: var(--color-placeholder-bg);
+        font-size: var(--fs-badge);
+    }
+    .hist-chip-name {
+        color: var(--color-text-main);
+        font-weight: 700;
+    }
+    .hist-chip-role {
+        color: var(--color-text-sub);
+        font-size: var(--fs-badge-sm);
+    }
+    .hist-chip.is-unknown {
+        padding-left: var(--space-4);
+    }
+    .hist-chip.is-unknown .hist-chip-ava {
+        display: none;
+    }
+    .hist-chip-more {
+        border: 0;
+    }
+    .hist-chip-more:hover {
+        background: var(--color-subtle-hover);
+        color: var(--color-text-strong);
+    }
+    .hist-stack {
+        display: inline-flex;
+        flex: none;
+    }
+    .hist-stack-face {
+        box-shadow: 0 0 0 2px var(--color-bg-subtle);
+    } /* 칩 바탕색 테두리로 겹친 얼굴을 떼어 보인다 */
+    .hist-stack-face + .hist-stack-face {
+        margin-left: -9px;
+    }
+
+    .hist-media {
+        position: relative;
+        flex: 0 0 216px;
+        align-self: center;
+        aspect-ratio: 16 / 9;
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+        background: var(--navy);
+        clip-path: var(--notch-12);
+    }
+    .hist-media img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.2s;
+    }
+    .hist-media:hover img {
+        transform: scale(1.04);
+    }
+    .hist-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 44px;
+        height: 30px;
+        background: var(--color-scrim);
+        clip-path: var(--notch-5);
+        transform: translate(-50%, -50%);
+    }
+    .hist-play::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-style: solid;
+        border-width: 7px 0 7px 12px;
+        border-color: transparent transparent transparent #fff;
+        transform: translate(-35%, -50%);
+    }
+    .hist-media:hover .hist-play {
+        background: var(--color-youtube);
+    }
+
+    /* ----- 화면 폭별 ----- */
+    /* 태블릿: 카드 두 장을 달력 위에 나란히 */
+    @media (max-width: 991.98px) {
+        .cal-main-layout {
+            grid-template-columns: 1fr;
+        }
+        .cal-calendar-area,
+        .cal-sidebar {
+            grid-column: 1;
+            grid-row: auto;
+        }
+        .cal-sidebar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    /* 폰: 오늘 카드 → 달력 → 선택한 날 카드 순서 */
+    @media (max-width: 767.98px) {
+        .cal-main-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--space-stack-gap);
+        }
+        .cal-sidebar {
+            display: contents;
+        }
+        .cal-selected-card-wrapper {
+            order: 1;
+        }
+
+        .cal-month-bar {
+            padding: var(--space-5) var(--space-6);
+        }
+        .cal-month-name {
+            font-size: 19px;
+        }
+
+        /* ----- 좁은 화면 점 달력: 칸이 좁아 일정은 색 점으로만 찍고, 칸을 누르면 '선택한 날' 카드에 나온다 ----- */
+        .cal-weekdays > div {
+            font-size: var(--fs-micro);
+            letter-spacing: 0.04em;
+        }
+
+        .cal-day-cell {
+            min-height: 0;
+            aspect-ratio: 1 / 1.05;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: center;
+            /* 줄 간격은 점 쪽 여백으로 준다(줄바꿈 칸이 빈 줄만큼 간격을 더하지 않게) */
+            gap: 0 3px;
+            /* 아래 여백을 1px 줄여 320px 폰에서도 점 두 줄이 들어간다 */
+            padding: var(--space-1) 2px var(--space-1);
+            overflow: hidden;
+        }
+        /* 좌우 여백으로 한 줄을 다 차지해 뒤 표시들을 아랫줄로 보낸다(폭 100%면 네모가 납작해진다). */
+        .cal-day-number {
+            flex: 0 0 20px;
+            align-self: center;
+            width: 20px;
+            height: 20px;
+            margin: 0 calc(50% - var(--space-4)) var(--space-2);
+            font-size: var(--fs-meta);
+        }
+
+        /* 5x5를 유지하고 모서리만 2px 잘라 삼각형처럼 무너지지 않게 한다. */
+        .cal-day-cell .cal-cell-event {
+            flex: 0 0 5px;
+            width: 5px;
+            height: 5px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            clip-path: var(--notch-2);
+            background: var(--ev-accent);
+        }
+        .cal-day-cell .cal-cell-event > * {
+            display: none;
+        }
+        /* 네 개씩 두 줄까지. 줄바꿈 칸(calendar.js)이 다음 점을 아랫줄로 보낸다. */
+        .cal-day-cell .cal-cell-break {
+            display: block;
+            flex: 0 0 100%;
+            height: 0;
+        }
+        .cal-day-cell .cal-cell-break ~ .cal-cell-event {
+            margin-top: 3px;
+        }
+        .cal-day-cell .cal-cell-event:nth-of-type(n + 9) {
+            display: none;
+        }
+
+        /* 칸 전체를 칠하면 일정 표시가 묻혀 테두리로 표시한다. */
+        .cal-day-cell.active {
+            box-shadow: inset 0 0 0 2px var(--select-on-light);
+        }
+
+        .hist-list {
+            padding-left: var(--space-8);
+        }
+        .hist-list::before {
+            left: 4px;
+        }
+        .hist-card {
+            flex-direction: column;
+            gap: var(--space-compact-gap);
+            padding: var(--space-6);
+        }
+        .hist-item::before {
+            left: -21px;
+            top: 20px;
+            width: 10px;
+            height: 10px;
+        }
+        .hist-media {
+            flex: none;
+            width: 100%;
+            align-self: stretch;
+        }
+    }
+    /* 360px 미만은 칸이 43px 남짓이라 점 두 줄이 들어가도록 위 여백을 줄인다 */
+    @media (max-width: 359.98px) {
+        .cal-day-cell {
+            padding-top: 3px;
+        }
+    }
+}

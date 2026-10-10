@@ -1,0 +1,873 @@
+/**
+ * 티어표 > 분석 탭: 선수 한 명의 형식별·종족전·월별·레이팅·맵별·동티어 전적.
+ * (core.js → api.js → page-h2h.js → 이 파일 → page-entry.js → page-tier.js)
+ */
+const ANALYSIS_PAGE_SIZE = 10; // 최근 전적 한 페이지에 보여줄 경기 수
+const ANALYSIS_SUGGEST_STEP = 40;
+const ANALYSIS_FORM_COUNT = 10; // '최근 10경기'
+// 월별 전적의 달 수(이번 달 포함). 날짜로 자른 경기를 묶으면 첫 달이 며칠치만 든 채 한 칸 더 생기므로
+// 칩에 맞는 '최근 N개월 전체'를 쓴다.
+const ANALYSIS_MONTH_WINDOW = { all: 18, 365: 12, 90: 3, 30: 1 };
+const ANALYSIS_RATE_MIN = 5; // 월별 승률 선을 그릴 최소 표본(이 미만인 달은 선을 끊는다)
+const ANALYSIS_MAP_STEP = 8; // '맵별 전적' 한 번에 보여줄 개수(4열 x 2줄)
+const ANALYSIS_RIVAL_STEP = 8; // '동티어 맞대결' 한 번에 보여줄 상대 수
+const ANALYSIS_CAT_PER_PAGE = 3; // '형식별 전적' 한 화면에 보여줄 도넛 수
+
+const AnalysisState = {
+    period: 'all',
+    picked: null, // 선수id (null이면 검색 안내 화면)
+    query: '',
+    suggestOpen: false,
+    suggestShown: ANALYSIS_SUGGEST_STEP,
+    matchPage: 1, // 최근 전적 페이지(10경기씩)
+    matchFilter: '전체', // 최근 전적 형식 필터(H2H_CAT_LABELS의 이름 또는 '전체')
+    catPage: 0, // 형식별 전적에서 보고 있는 묶음(0: 개인·대회·대학, 1: 미니·리그·스폰)
+    mapShown: ANALYSIS_MAP_STEP,
+    rivalShown: ANALYSIS_RIVAL_STEP,
+    rating: null, // { months, players } - 고른 선수만 채운다
+    ratingLoading: null, // 선수별 받는 중인 요청
+    ratingMonths: null, // 월 축(모든 선수 공통, 한 번만)
+};
+
+function analysisResetLists() {
+    AnalysisState.matchPage = 1;
+    AnalysisState.mapShown = ANALYSIS_MAP_STEP;
+    AnalysisState.rivalShown = ANALYSIS_RIVAL_STEP;
+}
+
+// ---------------------------------------------------------------------------
+// 데이터 - 선수 목록과 경기 기록은 상대전적 탭(page-h2h.js)이 받아 둔 것을 같이 쓴다
+// ---------------------------------------------------------------------------
+// 레이팅은 고른 선수의 이력만 받는다(전 선수 × 달은 약 8천 줄). 월 축은 모든 선수 공통이라 첫·마지막 달만
+// 받아 만들고, 기록이 없는 달은 null로 둬서 선이 끊기게 한다.
+function analysisMonthRange(first, last) {
+    const out = [];
+    if (!first || !last) return out;
+    let [y, m] = first.split('-').map(Number);
+    while (`${y}-${String(m).padStart(2, '0')}` <= last && out.length < 600) {
+        out.push(`${y}-${String(m).padStart(2, '0')}`);
+        if (m === 12) {
+            y += 1;
+            m = 1;
+        } else m += 1;
+    }
+    return out;
+}
+
+async function analysisLoadRatingMonths() {
+    if (!AnalysisState.ratingMonths) {
+        AnalysisState.ratingMonths = (async () => {
+            const { first, last } = await Api.eloRatingRange();
+            return analysisMonthRange(first.slice(0, 7), last.slice(0, 7));
+        })();
+        AnalysisState.ratingMonths.catch(() => {
+            AnalysisState.ratingMonths = null;
+        });
+    }
+    return AnalysisState.ratingMonths;
+}
+
+async function analysisLoadRating(pid) {
+    const key = String(pid || '');
+    if (!AnalysisState.rating) AnalysisState.rating = { months: [], players: {} };
+    if (!key || AnalysisState.rating.players[key]) return AnalysisState.rating;
+    AnalysisState.ratingLoading ||= {};
+    if (!AnalysisState.ratingLoading[key]) {
+        AnalysisState.ratingLoading[key] = (async () => {
+            const [months, rows] = await Promise.all([analysisLoadRatingMonths(), Api.eloRatingHistory(key)]);
+            const monthIndex = new Map(months.map((month, index) => [month, index]));
+            const series = Array(months.length).fill(null);
+            (rows || []).forEach(row => {
+                const index = monthIndex.get(String(row.month_end || '').slice(0, 7));
+                if (index !== undefined) series[index] = row.rating == null ? null : Number(row.rating);
+            });
+            AnalysisState.rating.months = months;
+            AnalysisState.rating.players[key] = series;
+        })().catch(err => {
+            console.error('[분석] 레이팅 기록 조회 실패:', err);
+            delete AnalysisState.ratingLoading[key]; // 다음에 다시 받는다
+        });
+    }
+    await AnalysisState.ratingLoading[key];
+    return AnalysisState.rating;
+}
+
+function analysisRows(pid) {
+    const rows = H2hState.rows[pid] || [];
+    const since = h2hSince(AnalysisState.period);
+    return since ? rows.filter(r => String(r[0]) >= since) : rows;
+}
+function analysisSummary(rows) {
+    const e = { m: rows.length, w: 0, l: 0, cat: {}, race: {} };
+    rows.forEach(r => {
+        const i = r[2] ? 0 : 1;
+        e[r[2] ? 'w' : 'l']++;
+        (e.cat[r[4]] ||= [0, 0])[i]++;
+        const rawRace = (h2hPlayer(String(r[1])) || {}).r || (H2hState.index.otherRaces || {})[r[1]];
+        const race = raceCode(rawRace);
+        if (race === 'T' || race === 'P' || race === 'Z') {
+            (e.race[race] ||= [0, 0])[i]++;
+        }
+    });
+    if (rows.length) {
+        const win = rows[0][2];
+        let n = 0;
+        while (n < rows.length && rows[n][2] === win) n++;
+        e.st = { t: win ? 'W' : 'L', n };
+    }
+    return e;
+}
+function analysisSetPeriod(period) {
+    AnalysisState.period = period;
+    analysisResetLists();
+    renderAnalysisBody();
+}
+function analysisPeriodHtml() {
+    return `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="기간 선택">${H2H_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${AnalysisState.period === key ? ' active' : ''}" aria-pressed="${AnalysisState.period === key}"${act('analysisSetPeriod', key)}>${label}</button>`).join('')}</div></div>`;
+}
+
+function analysisRate(w, l) {
+    const total = w + l;
+    return total ? Math.round((w / total) * 1000) / 10 : null;
+}
+
+function analysisRateColor(rate) {
+    return rate >= 50 ? 'var(--color-win)' : 'var(--color-lose)';
+}
+
+function analysisWlText(w, l) {
+    return w + l ? `${formatNum(w)}승 ${formatNum(l)}패` : '-';
+}
+
+// page-records.js의 donutBackground와 같은 규칙이다. ringColor가 없으면 50% 기준 승/패 색.
+function analysisDonutHtml(label, w, l, opts) {
+    const o = opts || {};
+    const rate = analysisRate(w, l);
+    const pct = rate === null ? 0 : rate;
+    const color = rate === null ? 'var(--color-donut-track)' : o.ringColor || analysisRateColor(rate);
+    return `
+        <div class="donut-box">
+            <div class="donut" style="background:conic-gradient(${color} ${pct}%, var(--color-donut-track) 0)">
+                <span class="donut-text" style="${rate === null ? '' : `color:${color}`}">${rate === null ? '-' : `${rate}%`}</span>
+            </div>
+            <div class="donut-label${o.labelClass ? ` ${o.labelClass}` : ''}">${escapeHTML(label)}</div>
+            <div class="donut-sub">${analysisWlText(w, l)}</div>
+        </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 검색 (상대전적 탭과 같은 입력 · 추천 목록 부품을 쓴다)
+// ---------------------------------------------------------------------------
+function analysisSuggestHtml() {
+    if (!AnalysisState.query.trim()) return '';
+    const list = h2hSuggest(AnalysisState.query);
+    if (!list.length) return '<div class="h2h-suggest"><div class="content-state">찾는 선수가 없습니다</div></div>';
+    const shown = Math.min(list.length, AnalysisState.suggestShown);
+    return `<div class="h2h-suggest"${actOn('scroll', 'analysisSuggestScroll', ACT.el)}>
+        <div class="h2h-suggest-head">검색 결과 ${formatNum(list.length)}명</div>
+        ${playerSuggestItemsHtml(list.slice(0, shown), pid => act('analysisPick', pid))}
+    </div>`;
+}
+
+function analysisSuggestScroll(el) {
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - 120) return;
+    const list = h2hSuggest(AnalysisState.query);
+    const from = AnalysisState.suggestShown;
+    if (from >= list.length) return;
+    AnalysisState.suggestShown = Math.min(list.length, from + ANALYSIS_SUGGEST_STEP);
+    el.insertAdjacentHTML(
+        'beforeend',
+        playerSuggestItemsHtml(list.slice(from, AnalysisState.suggestShown), pid => act('analysisPick', pid))
+    );
+}
+
+function analysisOnQuery(value) {
+    AnalysisState.query = value;
+    AnalysisState.suggestOpen = true;
+    AnalysisState.suggestShown = ANALYSIS_SUGGEST_STEP;
+    const box = document.getElementById('analysis-search');
+    if (!box) return;
+    const old = box.querySelector('.h2h-suggest');
+    if (old) old.remove();
+    box.insertAdjacentHTML('beforeend', analysisSuggestHtml());
+}
+
+document.addEventListener('click', e => {
+    if (!AnalysisState.suggestOpen) return;
+    if (e.target.closest && e.target.closest('#analysis-search')) return;
+    AnalysisState.suggestOpen = false;
+    const box = document.getElementById('analysis-search');
+    const old = box && box.querySelector('.h2h-suggest');
+    if (old) old.remove();
+});
+
+// ---------------------------------------------------------------------------
+// 머리 카드 (전적 페이지와 같은 선수 요약 카드 .player-summary)
+// ---------------------------------------------------------------------------
+function analysisHeadHtml(pid, p, e) {
+    return playerSummaryHtml(
+        p,
+        { total: e.m, win: e.w, lose: e.l },
+        '<button type="button" class="h2h-card-clear" aria-label="선수 선택 지우기" data-click="analysisBack">✕</button>',
+        h2hRankInfo(p)
+    );
+}
+
+// ---------------------------------------------------------------------------
+// 형식별 전적 · 종족전 전적 (도넛)
+// 7개 형식 중 리그와 CK만 한 묶음으로 보여준다.
+const ANALYSIS_CAT_GROUPS = [
+    ['개인', ['개인']],
+    ['대회', ['대회']],
+    ['대학', ['대학']],
+    ['미니', ['미니']],
+    ['리그·CK', ['리그', 'CK']],
+    ['스폰', ['스폰']],
+];
+
+// ---------------------------------------------------------------------------
+function analysisCatTotals(e) {
+    const cats = (H2hState.index && H2hState.index.cats) || [];
+    const totals = new Map();
+    ANALYSIS_CAT_GROUPS.forEach(([label]) => totals.set(label, [0, 0]));
+
+    cats.forEach((name, i) => {
+        const pair = (e.cat && e.cat[i]) || [0, 0];
+        const group = ANALYSIS_CAT_GROUPS.find(([, members]) => members.includes(name));
+        if (!group) return;
+
+        const acc = totals.get(group[0]);
+        acc[0] += pair[0];
+        acc[1] += pair[1];
+    });
+
+    return totals;
+}
+
+function analysisCatPages() {
+    return Math.max(1, Math.ceil(ANALYSIS_CAT_GROUPS.length / ANALYSIS_CAT_PER_PAGE));
+}
+
+function analysisSetCatPage(page) {
+    const pages = analysisCatPages();
+    AnalysisState.catPage = ((page % pages) + pages) % pages; // 끝에서 누르면 처음으로 돈다
+    renderAnalysisSection('cat');
+}
+
+function analysisCatHtml(e) {
+    const totals = analysisCatTotals(e);
+    const pages = analysisCatPages();
+    const from = AnalysisState.catPage * ANALYSIS_CAT_PER_PAGE;
+    const boxes = ANALYSIS_CAT_GROUPS.slice(from, from + ANALYSIS_CAT_PER_PAGE)
+        .map(([label]) => {
+            const [w, l] = totals.get(label) || [0, 0];
+            return analysisDonutHtml(label, w, l);
+        })
+        .join('');
+    return `
+        <div class="section-title has-shelf-nav" data-en="BY FORMAT">
+            <span class="section-title-label">형식별 전적</span>
+            <span class="shelf-nav is-always">
+                <button type="button" class="shelf-nav-btn" aria-label="이전 형식"${act('analysisSetCatPage', AnalysisState.catPage - 1)}>&lsaquo;</button>
+                <button type="button" class="shelf-nav-btn" aria-label="다음 형식"${act('analysisSetCatPage', AnalysisState.catPage + 1)}>&rsaquo;</button>
+            </span>
+            <span class="title-count">${AnalysisState.catPage + 1} / ${pages}</span>
+        </div>
+        <div class="clean-card analysis-panel p-3">
+            <div class="donut-wrap analysis-donut-wrap">${boxes}</div>
+        </div>`;
+}
+
+function analysisRaceHtml(e) {
+    const race = e.race || {};
+    const boxes = [
+        ['T', 'vs T', 'donut-label-t', 'var(--color-race-t)'],
+        ['Z', 'vs Z', 'donut-label-z', 'var(--color-race-z)'],
+        ['P', 'vs P', 'donut-label-p', 'var(--color-race-p)'],
+    ]
+        .map(([code, label, cls, color]) => {
+            const [w, l] = race[code] || [0, 0];
+            return analysisDonutHtml(label, w, l, { labelClass: cls, ringColor: color });
+        })
+        .join('');
+    return `
+        <div class="section-title" data-en="BY MATCHUP">
+            <span class="section-title-label">종족전 전적</span>
+        </div>
+        <div class="clean-card analysis-panel p-3">
+            <div class="donut-wrap analysis-donut-wrap">${boxes}</div>
+        </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 최근 10경기 (폼)
+// ---------------------------------------------------------------------------
+// 요약 글(몇승 몇패 · 연승)은 붙이지 않는다. 휴대폰에서 두 줄로 접힌다.
+function analysisFormHtml(rows) {
+    if (!rows.length) return '';
+    const recent = rows.slice(0, ANALYSIS_FORM_COUNT).reverse(); // 로그가 최신순이다
+    return `
+        <div class="analysis-formline">
+            <span class="analysis-formline-label">최근 ${recent.length}경기</span>
+            <span class="analysis-formline-badges">
+                ${recent
+                    .map(
+                        ([date, opp, win]) => `
+                    <span class="match-badge ${win ? 'badge-win' : 'badge-lose'}"
+                          title="${escapeHTML(shortMatchDate(date))} vs ${escapeHTML(h2hName(String(opp)))}">${win ? 'W' : 'L'}</span>`
+                    )
+                    .join('')}
+            </span>
+        </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 월별 전적
+// ---------------------------------------------------------------------------
+function analysisMonthlyHtml(rows) {
+    // rows는 기간으로 자르지 않은 전체 경기다(달 단위로 자른다).
+    if (!rows.length) return '';
+    const byMonth = new Map();
+    rows.forEach(r => {
+        const key = String(r[0]).slice(0, 7);
+        if (!byMonth.has(key)) byMonth.set(key, [0, 0]);
+        byMonth.get(key)[r[2] ? 0 : 1] += 1;
+    });
+    const keys = [...byMonth.keys()].sort();
+    // 빈 달도 자리를 남겨 쉬었던 구간이 보이게 한다.
+    const months = [];
+    const [sy, sm] = keys[0].split('-').map(Number);
+    // 기간을 고르면 이번 달까지 그린다(최근에 쉬었으면 빈 달로 보인다). 전체는 마지막 경기 달까지.
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const lastKey =
+        AnalysisState.period === 'all' || keys[keys.length - 1] > thisMonth ? keys[keys.length - 1] : thisMonth;
+    const [ey, em] = lastKey.split('-').map(Number);
+    for (let y = sy, m = sm; y < ey || (y === ey && m <= em); m === 12 ? (y++, (m = 1)) : m++) {
+        months.push(`${y}-${String(m).padStart(2, '0')}`);
+    }
+    const want = ANALYSIS_MONTH_WINDOW[AnalysisState.period] || ANALYSIS_MONTH_WINDOW.all;
+    const data = months.slice(-want).map(key => {
+        const [w, l] = byMonth.get(key) || [0, 0];
+        return { key, w, l, total: w + l };
+    });
+    if (data.reduce((n, d) => n + d.total, 0) < 2) return '';
+
+    // 왼쪽 축은 경기 수, 오른쪽 축은 승률(%)이다.
+    const W = 660,
+        H = 220,
+        PAD_T = 12,
+        PAD_B = 26,
+        PAD_L = 30,
+        PAD_R = 34;
+    const plotH = H - PAD_T - PAD_B;
+    const plotW = W - PAD_L - PAD_R;
+    const maxTotal = Math.max(...data.map(d => d.total), 1);
+    const slot = plotW / data.length;
+    const barW = Math.min(26, Math.max(5, slot * 0.56));
+    const yOf = ratio => PAD_T + plotH - ratio * plotH;
+
+    const grid = [0, 0.25, 0.5, 0.75, 1]
+        .map(ratio => {
+            const y = yOf(ratio);
+            return (
+                `<line class="analysis-chart-grid${ratio === 0.5 ? ' is-mid' : ''}" x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}"></line>` +
+                `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${Math.round(maxTotal * ratio)}</text>` +
+                `<text class="analysis-chart-axis" x="${W - PAD_R + 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="start">${Math.round(ratio * 100)}%</text>`
+            );
+        })
+        .join('');
+
+    const bars = data
+        .map((d, i) => {
+            if (!d.total) return '';
+            const x = PAD_L + slot * i + (slot - barW) / 2;
+            const h = (d.total / maxTotal) * plotH;
+            const y = PAD_T + (plotH - h);
+            const winH = (d.w / d.total) * h;
+            const tip = `<title>${d.key} · ${d.total}전 ${d.w}승 ${d.l}패 (${Math.round((d.w / d.total) * 100)}%)</title>`;
+            return (
+                `<g class="analysis-bar">` +
+                `<rect class="analysis-bar-win" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${winH.toFixed(1)}">${tip}</rect>` +
+                `<rect class="analysis-bar-lose" x="${x.toFixed(1)}" y="${(y + winH).toFixed(1)}" width="${barW.toFixed(1)}" height="${(h - winH).toFixed(1)}">${tip}</rect>` +
+                `</g>`
+            );
+        })
+        .join('');
+
+    // 표본이 적은 달은 0%/100%로 튀어 추세를 가리므로 승률 선을 끊는다.
+    let path = '';
+    let open = false;
+    const dots = [];
+    data.forEach((d, i) => {
+        if (d.total < ANALYSIS_RATE_MIN) {
+            open = false;
+            return;
+        }
+        const x = PAD_L + slot * i + slot / 2;
+        const y = yOf(d.w / d.total);
+        path += `${open ? 'L' : 'M'} ${x.toFixed(1)} ${y.toFixed(1)} `;
+        open = true;
+        dots.push(
+            `<circle class="analysis-rate-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"><title>${d.key} 승률 ${Math.round((d.w / d.total) * 100)}%</title></circle>`
+        );
+    });
+
+    const step = Math.max(1, Math.ceil(data.length / 12));
+    const labels = data
+        .map((d, i) => {
+            if (i % step !== 0) return '';
+            const [y, m] = d.key.split('-');
+            const x = PAD_L + slot * i + slot / 2;
+            return `<text class="analysis-chart-label" x="${x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${m === '01' ? `${y.slice(2)}.${m}` : m}</text>`;
+        })
+        .join('');
+
+    const sum = data.reduce((acc, d) => ({ w: acc.w + d.w, l: acc.l + d.l }), { w: 0, l: 0 });
+    return `
+        <div class="section-title section-title-spaced" data-en="BY MONTH">
+            <span class="section-title-label">월별 전적</span>
+            <span class="title-count">${data.length}개월 · ${analysisWlText(sum.w, sum.l)}</span>
+        </div>
+        <div class="clean-card p-3">
+            <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 전적과 승률 추세">
+                ${grid}
+                ${bars}
+                ${path ? `<path class="analysis-rate-line" d="${path.trim()}" fill="none"></path>` : ''}
+                ${dots.join('')}
+                ${labels}
+            </svg>
+            <div class="analysis-chart-legend">
+                <span><i class="analysis-legend-dot is-win"></i>승</span>
+                <span><i class="analysis-legend-dot is-lose"></i>패</span>
+                <span><i class="analysis-legend-line"></i>승률 (${ANALYSIS_RATE_MIN}경기 이상인 달)</span>
+            </div>
+        </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 레이팅
+// ---------------------------------------------------------------------------
+// 달마다 그 시점의 티어를 기준선 삼아 계산한 점수(ststat)라 승급한 선수는 계단처럼 오른다.
+// 티어가 다른 선수끼리는 비교하지 않는다. 기간 칩은 가로축만 자르고, 30일은 점이 하나라 직전 달을 붙인다.
+const RATING_WINDOW = { all: 18, 365: 12, 90: 3, 30: 2 };
+// 30일은 점이 둘뿐이라 오른쪽에 빈 달 한 칸을 둬 이번 달이 가운데 오게 한다.
+const RATING_PAD_RIGHT = { 30: 1 };
+
+function nextMonthKey(key) {
+    const [y, m] = String(key).split('-').map(Number);
+    return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+
+const RATING_HELP = {
+    title: '레이팅',
+    lead: '티어 기준선과 최근 경기력을 합친 실력 추정치입니다. 같은 티어 순위도 이 값 순서입니다',
+    rows: [
+        ['계산', '상대 강도 · 경기 형식 · 종족 상성을 반영'],
+        ['최근성', '개인 폼 반감기 90일'],
+        ['기준선', '티어 간격 반감기 540일'],
+        ['승급', '티어 기준선은 당시 티어, 개인 폼은 지금 티어 기준'],
+        ['표본', '기록이 적으면 티어 기준선 쪽으로 당겨짐'],
+        ['비교', '같은 티어 순위와 개인 변화 확인용'],
+        ['기간 칩', '가로축만 자릅니다 (계산은 동일)'],
+    ],
+    note: '그 시점에 최근 1년 기록이 없으면 선이 끊깁니다',
+};
+
+function analysisRatingTitleHtml(count) {
+    return `
+        <div class="section-title section-title-spaced" data-en="RATING">
+            <span class="section-title-label">레이팅</span>
+            ${helpBadgeHtml(RATING_HELP)}
+            ${count}
+        </div>`;
+}
+
+function analysisRatingHtml(pid) {
+    const data = AnalysisState.rating;
+    const all = data && data.players && data.players[String(pid)];
+    const allMonths = (data && data.months) || [];
+    if (!all || !allMonths.length) return '';
+
+    const want = RATING_WINDOW[AnalysisState.period] || RATING_WINDOW.all;
+    const from = Math.max(0, allMonths.length - want);
+    const months = allMonths.slice(from);
+    const series = all.slice(from);
+    for (let k = RATING_PAD_RIGHT[AnalysisState.period] || 0; k > 0; k--) {
+        months.push(nextMonthKey(months[months.length - 1]));
+        series.push(null);
+    }
+
+    const pts = series.map((v, i) => (v === null || v === undefined ? null : { i, v, key: months[i] }));
+    const have = pts.filter(Boolean);
+    // 칸을 비우면 옆의 월별 전적과 높이가 어긋나므로 제목과 안내는 남긴다.
+    if (have.length < 2) {
+        return (
+            analysisRatingTitleHtml('') +
+            '<div class="clean-card p-3 analysis-rating-empty">이 기간에는 그릴 만한 기록이 없습니다</div>'
+        );
+    }
+
+    // 월별 전적 그래프와 같은 틀(660x220)이어야 두 카드가 나란히 맞는다.
+    const W = 660,
+        H = 220,
+        PAD_T = 12,
+        PAD_B = 26,
+        PAD_L = 42,
+        PAD_R = 14;
+    const plotH = H - PAD_T - PAD_B;
+    const plotW = W - PAD_L - PAD_R;
+    const vals = have.map(p => p.v);
+    let lo = Math.min(...vals),
+        hi = Math.max(...vals);
+    if (hi - lo < 40) {
+        const mid = (hi + lo) / 2;
+        lo = mid - 20;
+        hi = mid + 20;
+    } // 평평한 선이 납작해 보이지 않게
+    const pad = (hi - lo) * 0.15;
+    lo -= pad;
+    hi += pad;
+    const x = i => PAD_L + (months.length === 1 ? plotW / 2 : (plotW * i) / (months.length - 1));
+    const y = v => PAD_T + plotH - ((v - lo) / (hi - lo)) * plotH;
+
+    const grid = [0, 0.5, 1]
+        .map(r => {
+            const v = lo + (hi - lo) * r;
+            return (
+                `<line class="analysis-chart-grid" x1="${PAD_L}" y1="${y(v).toFixed(1)}" x2="${W - PAD_R}" y2="${y(v).toFixed(1)}"></line>` +
+                `<text class="analysis-chart-axis" x="${PAD_L - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`
+            );
+        })
+        .join('');
+
+    let path = '';
+    let open = false;
+    pts.forEach(p => {
+        if (!p) {
+            open = false;
+            return;
+        }
+        path += `${open ? 'L' : 'M'} ${x(p.i).toFixed(1)} ${y(p.v).toFixed(1)} `;
+        open = true;
+    });
+    const dots = have
+        .map(
+            p =>
+                `<circle class="analysis-rate-dot" cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6"><title>${escapeHTML(p.key)} ${p.v}점</title></circle>`
+        )
+        .join('');
+
+    const step = Math.max(1, Math.ceil(months.length / 6));
+    const labels = months
+        .map((k, i) => {
+            if (i % step !== 0) return '';
+            const [yy, mm] = k.split('-');
+            return `<text class="analysis-chart-label" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${mm === '01' ? `${yy.slice(2)}.${mm}` : mm}</text>`;
+        })
+        .join('');
+
+    const first = have[0].v,
+        last = have[have.length - 1].v;
+    const diff = Number((last - first).toFixed(1));
+    const sign = diff > 0 ? 'h2h-win' : diff < 0 ? 'h2h-lose' : '';
+    const top = Math.max(...vals),
+        bottom = Math.min(...vals);
+    return (
+        analysisRatingTitleHtml(
+            `<span class="title-count">${have.length}개월 · ${last}점 <span class="${sign}">${diff > 0 ? '+' : ''}${diff}</span></span>`
+        ) +
+        `
+        <div class="clean-card p-3">
+            <svg viewBox="0 0 ${W} ${H}" class="analysis-chart-svg" role="img" aria-label="월별 레이팅">
+                ${grid}
+                <path class="analysis-rate-line" d="${path.trim()}" fill="none"></path>
+                ${dots}
+                ${labels}
+            </svg>
+            <div class="analysis-chart-legend">
+                <span><i class="analysis-legend-line"></i>레이팅 (달 말일 기준)</span>
+                <span>최고 ${top}점 · 최저 ${bottom}점</span>
+            </div>
+        </div>`
+    );
+}
+
+// ---------------------------------------------------------------------------
+// 맵별 전적 · 동티어 맞대결 (둘 다 8개씩 + 더 보기)
+// ---------------------------------------------------------------------------
+function analysisShowMoreMaps() {
+    AnalysisState.mapShown += ANALYSIS_MAP_STEP;
+    renderAnalysisSection('map');
+}
+
+function analysisShowMoreRivals() {
+    AnalysisState.rivalShown += ANALYSIS_RIVAL_STEP;
+    renderAnalysisSection('rival');
+}
+
+function analysisMapHtml(rows) {
+    const byMap = new Map();
+    rows.forEach(([, , win, mapId]) => {
+        const key = String(mapId);
+        if (!h2hMapName(key)) return;
+        if (!byMap.has(key)) byMap.set(key, [0, 0]);
+        byMap.get(key)[win ? 0 : 1] += 1;
+    });
+    const all = [...byMap.entries()].sort((a, b) => b[1][0] + b[1][1] - (a[1][0] + a[1][1]));
+    if (!all.length) return '';
+    const list = all.slice(0, AnalysisState.mapShown);
+    return `
+        <div class="section-title section-title-spaced" data-en="BY MAP">
+            <span class="section-title-label">맵별 전적</span>
+            <span class="title-count">${all.length}개</span>
+        </div>
+        <div class="h2h-maps">
+            ${list
+                .map(
+                    ([mapId, [w, l]]) => `
+                <div class="h2h-map">
+                    <span class="h2h-map-name">${escapeHTML(h2hMapName(mapId))}</span>
+                    <span class="h2h-map-rec">${winLoseText(w, l)}<span class="h2h-rate-sub"> · ${h2hRateText(w, l)}</span></span>
+                    <span class="h2h-map-bar"><span style="width:${w + l ? (w / (w + l)) * 100 : 0}%"></span></span>
+                </div>`
+                )
+                .join('')}
+        </div>
+        ${
+            all.length > list.length
+                ? `
+        <div class="news-load-more-wrap h2h-more-wrap">
+            <button type="button" class="news-load-more" data-click="analysisShowMoreMaps">더 보기 ${chevronDownSvg(9)}</button>
+        </div>`
+                : ''
+        }`;
+}
+
+function analysisRivalHtml(rows, myTier) {
+    if (myTier === undefined || myTier === '') return '';
+    const byOpp = new Map();
+    rows.forEach(([, opp, win]) => {
+        const key = String(opp);
+        const info = h2hPlayer(key);
+        if (!info || String(info.t) !== String(myTier)) return; // 같은 티어만
+        if (!byOpp.has(key)) byOpp.set(key, [0, 0]);
+        byOpp.get(key)[win ? 0 : 1] += 1;
+    });
+    const all = [...byOpp.entries()].sort((a, b) => b[1][0] + b[1][1] - (a[1][0] + a[1][1]));
+    if (!all.length) return '';
+    const list = all.slice(0, AnalysisState.rivalShown);
+    return `
+        <div class="section-title section-title-spaced" data-en="SAME TIER">
+            <span class="section-title-label">동티어 맞대결</span>
+            <span class="title-count">${escapeHTML(tierLabel(myTier))} · ${all.length}명</span>
+        </div>
+        <div class="h2h-rivals">
+            ${list.map(([pid, [w, l]]) => h2hRivalCardHtml(pid, w, l, act('analysisPick', pid))).join('')}
+        </div>
+        ${
+            all.length > list.length
+                ? `
+        <div class="news-load-more-wrap h2h-more-wrap">
+            <button type="button" class="news-load-more" data-click="analysisShowMoreRivals">더 보기 ${chevronDownSvg(9)}</button>
+        </div>`
+                : ''
+        }`;
+}
+
+// ---------------------------------------------------------------------------
+// 최근 전적 (형식 필터)
+// ---------------------------------------------------------------------------
+function analysisSetFilter(label) {
+    AnalysisState.matchFilter = label;
+    AnalysisState.matchPage = 1;
+    renderAnalysisSection('matches');
+}
+
+function analysisSetPage(page) {
+    AnalysisState.matchPage = page;
+    renderAnalysisSection('matches');
+}
+
+function analysisMatchesHtml(rows) {
+    const filtered = h2hFilterRowsByCategory(rows, AnalysisState.matchFilter);
+    const page = Math.min(
+        Math.max(1, AnalysisState.matchPage),
+        Math.max(1, Math.ceil(filtered.length / ANALYSIS_PAGE_SIZE))
+    );
+    const shown = filtered.slice((page - 1) * ANALYSIS_PAGE_SIZE, page * ANALYSIS_PAGE_SIZE);
+    const chips = matchCategoryFilterHtml(AnalysisState.matchFilter, 'analysisSetFilter');
+    return `
+        <div class="section-title record-recent-header section-title-spaced" data-en="RECENT">
+            <span class="record-recent-title section-title-label">최근 전적</span>
+            <div class="filter-nav tab-scroll" role="group" aria-label="최근 전적 형식">${chips}</div>
+        </div>
+        <div class="clean-card p-0 overflow-hidden">
+            <div class="table-responsive scroll-area">
+                <table class="table mb-0 text-center stat-table table-fixed">
+                    <thead><tr>
+                        <th scope="col" class="stat-table-sticky-col colw-25">상대</th>
+                        <th scope="col" class="colw-15">형식</th>
+                        <th scope="col" class="colw-25">맵</th>
+                        <th scope="col" class="colw-15">결과</th>
+                        <th scope="col" class="colw-20">날짜</th>
+                    </tr></thead>
+                    <tbody>${
+                        shown.length ? h2hMatchRowsHtml(shown, true) : emptyRowHtml(5, '이 형식의 경기가 없습니다')
+                    }</tbody>
+                </table>
+            </div>
+        </div>
+        ${matchPaginationHtml(filtered.length, page, ANALYSIS_PAGE_SIZE, 'analysisSetPage')}`;
+}
+
+// ---------------------------------------------------------------------------
+// 전체 조립
+// ---------------------------------------------------------------------------
+function analysisProfileHtml(pid) {
+    const p = h2hPlayer(pid);
+    const rows = analysisRows(pid);
+    const e = analysisSummary(rows);
+    if (!p) return '<div class="h2h-empty">이 선수의 분석 데이터가 아직 없습니다</div>';
+    return `
+        ${analysisFormHtml(rows)}
+        <div class="row g-3 mb-block">
+            <div class="col-lg-6" id="analysis-sec-cat">${analysisCatHtml(e)}</div>
+            <div class="col-lg-6">${analysisRaceHtml(e)}</div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">${analysisMonthlyHtml(H2hState.rows[pid] || [])}</div>
+            <div class="col-lg-6">${analysisRatingHtml(pid)}</div>
+        </div>
+        <div id="analysis-sec-map" class="analysis-sec">${analysisMapHtml(rows)}</div>
+        <div id="analysis-sec-rival" class="analysis-sec">${analysisRivalHtml(rows, p.t)}</div>
+        <div id="analysis-sec-matches" class="analysis-sec">${analysisMatchesHtml(rows)}</div>`;
+}
+
+// 그래프·요약까지 다시 만들지 않게 바뀐 구역만 그린다(구역이 없으면 전체).
+function renderAnalysisSection(name) {
+    const pid = AnalysisState.picked;
+    const el = pid && document.getElementById(`analysis-sec-${name}`);
+    if (!el) {
+        renderAnalysisBody();
+        return;
+    }
+    const rows = analysisRows(pid);
+    if (name === 'cat') el.innerHTML = analysisCatHtml(analysisSummary(rows));
+    else if (name === 'map') el.innerHTML = analysisMapHtml(rows);
+    else if (name === 'rival') el.innerHTML = analysisRivalHtml(rows, h2hPlayer(pid)?.t);
+    else if (name === 'matches') el.innerHTML = analysisMatchesHtml(rows);
+}
+
+function analysisEmptyHtml() {
+    return `
+        <div class="h2h-empty">
+            <span class="h2h-empty-title">선수를 검색해주세요</span>
+            <span class="h2h-empty-sub">이름 · 대학으로 검색</span>
+        </div>`;
+}
+
+// 검색칸이 이미 있으면 그대로 둔다(적던 글자·포커스 유지).
+function renderAnalysisSearch() {
+    const box = document.getElementById('analysis-search');
+    if (!box) return;
+    const pid = AnalysisState.picked;
+    const p = pid && h2hPlayer(pid);
+    if (p) {
+        const e = analysisSummary(analysisRows(pid));
+        box.classList.remove('is-empty');
+        box.innerHTML = `<div class="h2h-slot-label">PLAYER</div>${analysisHeadHtml(pid, p, e)}`;
+        return;
+    }
+    box.classList.add('is-empty');
+    if (box.querySelector('#analysis-search-input')) return;
+    box.innerHTML = `
+        <label class="h2h-slot-label" for="analysis-search-input">선수 검색</label>
+        <input type="search" class="h2h-input" id="analysis-search-input" autocomplete="off"
+               placeholder="이름 또는 대학으로 검색"${actOn('input', 'analysisOnQuery', ACT.value)}>`;
+}
+
+function renderAnalysisBody() {
+    const box = document.getElementById('analysis-body');
+    if (!box) return;
+    const period = document.getElementById('analysis-period');
+    if (period) period.innerHTML = analysisPeriodHtml();
+    renderAnalysisSearch();
+    box.innerHTML = AnalysisState.picked ? analysisProfileHtml(AnalysisState.picked) : analysisEmptyHtml();
+}
+
+function analysisPick(pid) {
+    const pending = analysisRenderSelection(pid, tierViewRequest('analysis'), true);
+    analysisSyncUrl();
+    return pending;
+}
+
+async function analysisRenderSelection(pid, isCurrent, userSelection = false) {
+    if (userSelection || pid !== AnalysisState.picked) {
+        AnalysisState.picked = pid;
+        analysisResetLists();
+        AnalysisState.matchFilter = '전체';
+        AnalysisState.catPage = 0;
+        AnalysisState.query = '';
+        AnalysisState.suggestOpen = false;
+        const input = document.getElementById('analysis-search-input');
+        if (input) input.value = '';
+        const box = document.getElementById('analysis-search');
+        const old = box && box.querySelector('.h2h-suggest');
+        if (old) old.remove();
+    }
+
+    if (!pid) {
+        renderAnalysisBody();
+        return;
+    }
+
+    document.getElementById('analysis-body').innerHTML = '<div class="h2h-empty">불러오는 중</div>';
+    try {
+        // 레이팅은 실패해도 analysisLoadRating이 삼키므로 나머지는 그려진다.
+        await Promise.all([h2hLoadPlayer(pid), analysisLoadRating(pid)]);
+    } catch (err) {
+        if (!isCurrent()) return;
+        console.error(err);
+        document.getElementById('analysis-body').innerHTML =
+            `<div class="h2h-empty">${escapeHTML(err.message || '경기 기록을 불러오지 못했습니다')}</div>`;
+        return;
+    }
+    if (!isCurrent()) return;
+    renderAnalysisBody();
+    if (userSelection) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function analysisBack() {
+    analysisPick(null);
+    const input = document.getElementById('analysis-search-input');
+    if (input) input.focus();
+}
+
+function analysisSyncUrl() {
+    PageState.update({ view: 'analysis', p: AnalysisState.picked || '' });
+}
+
+// ---------------------------------------------------------------------------
+// 탭 진입
+// ---------------------------------------------------------------------------
+async function analysisEnter(params = new URLSearchParams(location.search)) {
+    const isCurrent = tierViewRequest('analysis');
+    const wanted = params ? params.get('p') : AnalysisState.picked;
+    try {
+        await h2hLoadIndex();
+    } catch (e) {
+        if (!isCurrent()) return;
+        console.error('분석 데이터를 불러오지 못했습니다:', e);
+        document.getElementById('analysis-body').innerHTML =
+            '<div class="h2h-empty">분석 데이터를 아직 불러올 수 없습니다. 잠시 후 다시 시도해주세요</div>';
+        return;
+    }
+    if (!isCurrent()) return;
+    const updated = document.getElementById('analysis-updated');
+    if (updated && H2hState.index.syncedAt) {
+        updated.textContent = `${String(H2hState.index.syncedAt).slice(0, 10).replace(/-/g, '.')} 기준`;
+    }
+
+    await analysisRenderSelection(wanted && h2hPlayer(wanted) ? wanted : null, isCurrent);
+}

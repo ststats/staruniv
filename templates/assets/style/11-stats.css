@@ -1,0 +1,208 @@
+/* =============================================================================
+   11. 방송통계
+   ============================================================================= */
+@layer pages {
+    /* 아래 .synergy-* 카드가 덮어쓰는 기본이라 맨 앞에 둔다 */
+    .head-plate {
+        padding: var(--space-8) var(--space-8) var(--space-8);
+    }
+    .head-plate-label {
+        font-size: var(--fs-eyebrow);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--label-accent);
+    }
+    .head-plate-value {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+    }
+
+    .player-avatar-sm {
+        width: 18px;
+        height: 18px;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+        flex-shrink: 0;
+    }
+    @media (max-width: 767.98px) {
+        .stat-table .player-avatar-sm {
+            width: 16px;
+            height: 16px;
+            font-size: 8px;
+        }
+    }
+
+    .synergy-rank {
+        font-weight: 700;
+        color: var(--synergy-rank-color);
+    }
+    .stat-table td.synergy-value {
+        color: var(--color-primary);
+    }
+    .synergy-val-text {
+        display: block;
+    }
+
+    /* 요약: PC(992px~)는 TOP 사진 카드 + 타일 세 개 세로. 더 좁으면 낮은 줄 세 개로 둔다
+       (방송시간 합계처럼 값이 길어 한 줄 세 칸엔 안 들어간다). */
+    .synergy-summary {
+        display: grid;
+        gap: var(--space-compact-gap);
+    }
+    .synergy-tiles {
+        display: grid;
+        gap: var(--space-compact-gap);
+    }
+    .synergy-tiles > * {
+        min-width: 0;
+    }
+    .synergy-tile {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .synergy-tile-label {
+        color: var(--label-accent);
+        font-size: var(--fs-small);
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        white-space: nowrap;
+    }
+    .synergy-tile .head-plate-value {
+        margin-top: var(--space-4);
+    }
+    @media (min-width: 992px) {
+        .synergy-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .synergy-tiles {
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(3, 1fr);
+        }
+    }
+    .synergy-tile-ko i {
+        margin: 0 var(--space-2);
+        font-style: normal;
+        opacity: 0.6;
+    }
+    .synergy-tile-ko {
+        letter-spacing: 0;
+    }
+    .synergy-tile-ko-short {
+        display: none;
+    }
+    @media (max-width: 991.98px) {
+        .synergy-tiles {
+            grid-template-columns: 1fr;
+            gap: var(--space-label-gap);
+        }
+        .synergy-tile {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-compact-gap);
+            padding: var(--space-5) var(--space-7);
+        }
+        .synergy-tile .head-plate-value {
+            margin-top: 0;
+            font-size: 20px;
+        }
+    }
+    /* 375px 미만은 긴 설명에 값이 잘려 짧게, 330px 미만은 그것도 잘려 영문만 */
+    @media (max-width: 389.98px) {
+        .synergy-tile-ko-long {
+            display: none;
+        }
+        .synergy-tile-ko-short {
+            display: inline;
+        }
+    }
+    @media (max-width: 359.98px) {
+        .synergy-tile-ko {
+            display: none;
+        }
+    }
+
+    /* TOP 칸: 대표 사진이 카드를 꽉 채우고 아래쪽 어둡게 깐 위에 글자를 둔다 */
+    .synergy-top {
+        position: relative;
+        padding: 0;
+        overflow: hidden;
+    }
+    .synergy-top-photo {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: var(--panel-control);
+    }
+    .synergy-top-photo img,
+    .synergy-top-photo video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 35%;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+    }
+    .synergy-top-photo img.is-in,
+    .synergy-top-photo video.is-in {
+        opacity: 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .synergy-top-photo img,
+        .synergy-top-photo video {
+            transition: none;
+        }
+    }
+    /* SOOP 프로필 사진(작은 정사각형)은 크게 늘리면 뭉개져 가운데 원으로 둔다 */
+    .synergy-top-photo.is-fallback {
+        display: grid;
+        place-items: center;
+    }
+    .synergy-top-photo.is-fallback img {
+        width: 42%;
+        max-width: 180px;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+    }
+    .synergy-top-body {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        min-width: 0;
+        padding: 48px var(--space-9) var(--space-8);
+        background: linear-gradient(transparent, rgba(5, 10, 30, 0.88));
+    }
+    .synergy-top-name {
+        margin-top: var(--space-3);
+        font-size: 36px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        overflow-wrap: anywhere;
+    }
+    .synergy-top-value {
+        margin-top: var(--space-3);
+        color: var(--panel-accent);
+        font-size: 20px;
+        font-weight: 700;
+    }
+    @media (max-width: 575.98px) {
+        .synergy-top-body {
+            padding: 36px var(--space-7) var(--space-6);
+        }
+        .synergy-top-name {
+            font-size: 26px;
+            margin-top: var(--space-2);
+        }
+        .synergy-top-value {
+            font-size: 16px;
+            margin-top: var(--space-2);
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{% set tabs = [('team', 'tab-team', '팀'), ('individual', 'tab-individual', '개인')] if page_id == 'records' else [('list', 'tab-tier-list', '티어표'), ('h2h', 'tab-tier-h2h', '상대전적'), ('analysis', 'tab-tier-analysis', '분석'), ('entry', 'tab-tier-entry', '엔트리')] %}
+<div class="sub-tabs tab-scroll" role="tablist">
+    {% for key, id, label in tabs %}
+    <div class="sub-tab{% if loop.first %} active{% endif %}" id="{{ id }}" role="tab" tabindex="0" aria-selected="{{ 'true' if loop.first else 'false' }}" data-click="{{ 'switchStatView' if page_id == 'records' else 'switchTierView' }}" data-args='["{{ key }}"]'>{{ label }}</div>
+    {% endfor %}
+</div>

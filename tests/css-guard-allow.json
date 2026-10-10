@@ -1,0 +1,45 @@
+{
+  "설명": "css-guard.test.js의 예외 목록. 키는 검사가 찾은 위치, 값은 남겨 둔 이유. 고치면 지운다(목록은 줄기만 한다).",
+  "redefine": {
+    "container | max-width": "일정 캡처 모드(body.calendar-capture, 07)에서 페이지 폭을 푸는 상태 규칙. 캡처 모드 규칙은 07 한 곳에 모아 두려고 레이아웃 부품 쪽으로 나누지 않는다(2026-10-06 결정)",
+    "nav-item | display": "관리자 모드: 숨긴 메뉴·서브탭도 관리자에게는 보이게 [hidden]을 이긴다(admin.css, 의도)",
+    "page-header | display": "일정 캡처 모드(body.calendar-capture, 07)에서 숨기는 상태 규칙. 캡처 모드 규칙은 07 한 곳에 모아 두려고 레이아웃 부품 쪽으로 나누지 않는다(2026-10-06 결정)",
+    "sub-tab | display": "관리자 모드: 숨긴 메뉴·서브탭도 관리자에게는 보이게 [hidden]을 이긴다(admin.css, 의도)",
+    "top-navbar | top": "관리자 모드: 편집 바(40px) 아래로 상단바를 내린다(admin.css, 의도)"
+  },
+  "rawValue": {
+    "admin.css | .admin-icon-btn | font-size 16px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 관리자 화면 한 곳에서만 쓰는 값",
+    "admin.css | .admin-ops-grid b | font-size 16px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 관리자 화면 한 곳에서만 쓰는 값",
+    "admin.css | .admin-order-row, .admin-list-row | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 관리자 화면 한 곳에서만 쓰는 값",
+    "style/03-layout.css | .nav-menu .nav-item | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)",
+    "style/04-components.css | .cal-nav-badge | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-card-title). 달 이동 글자(제목줄·월 띠 공용), 이 한 곳",
+    "style/05-selection-bar.css | .avatar-bar-pick, .tier-bar-pick | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)",
+    "style/06-home.css | .home-preview-loading | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)",
+    "style/11-stats.css | .synergy-top-value | font-size 16px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)",
+    "style/13-tools.css | .mv-run-btn | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-card-title). 멀티뷰어 실행 버튼 글자, 이 한 곳",
+    "style/15-player-summary.css | .player-summary-wl, .player-summary-rate | font-size 14px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)",
+    "style/18-tools-entry.css | .entry-map-trigger, .entry-analysis-toggle | font-size 9px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)",
+    "style/18-tools-entry.css | .entry-match-sim | font-size 9px": "값만 같고 역할이 다른 토큰뿐(--fs-* 같은 값). 한 곳에서만 쓰는 값이라 그대로 둔다(2026-10-05 결정)"
+  },
+  "important": {},
+  "spacing": {
+    "admin.css | .admin-inline-bar | padding 1280px": "페이지 폭(1280px)에 맞춘 좌우 여백 계산식 - 간격이 아니라 폭 값",
+    "admin.css | .home-carousel-slide > .admin-hero-tools | margin-left 100px": "--cta-w(JS가 넣는 바로가기 폭)가 없을 때의 기본값 - 폭 값",
+    "admin.css | select.admin-input | padding-right 30px": "선택 상자 오른쪽 화살표 자리",
+    "style/03-layout.css | .page-header | padding 1280px": "페이지 폭(1280px)에 맞춘 좌우 여백 계산식 - 간격이 아니라 폭 값",
+    "style/03-layout.css | .page-header | padding 34px": "폰 페이지 머리 위 여백(히어로 자리) - 넓은 여백",
+    "style/03-layout.css | .page-header | padding 48px": "PC 페이지 머리 위 여백(히어로 자리) - 넓은 여백",
+    "style/03-layout.css | .page-header | padding 56px": "폰 페이지 머리 아래 여백(서브탭이 걸치는 자리) - 넓은 여백",
+    "style/03-layout.css | .page-header | padding 60px": "PC 페이지 머리 아래 여백(서브탭이 걸치는 자리) - 넓은 여백",
+    "style/04-components.css | .content-state.is-boxed | padding 48px": "빈 상태 상자 위아래 - 넓은 여백",
+    "style/04-components.css | .h2h-empty | padding 28px": "상대전적 빈 안내 위아래 - 넓은 여백",
+    "style/07-schedule.css | .hist-list | padding 26px": "연혁 목록 왼쪽 세로줄·점 들여쓰기 자리",
+    "style/10-tier.css | .tier-row | margin-bottom 30px": "티어표 티어 줄 사이(폰) - 넓은 여백",
+    "style/10-tier.css | .tier-row | margin-bottom 36px": "티어표 티어 줄 사이(PC) - 넓은 여백",
+    "style/11-stats.css | .synergy-top-body | padding 36px": "방송통계 1위 카드 위 여백(폰, 사진이 걸치는 자리)",
+    "style/11-stats.css | .synergy-top-body | padding 48px": "방송통계 1위 카드 위 여백(PC, 사진이 걸치는 자리)",
+    "style/15-player-summary.css | .player-summary | padding 26px": "선수 머리 카드 좌우 - 잘린 모서리(notch)와 사진 테두리 자리",
+    "style/16-modal-help.css | .modal-header | padding 56px": "모달 머리 좌우: 가운데 제목이 오른쪽 닫기 단추(32px + 여백)와 겹치지 않는 자리",
+    "style/16-modal-help.css | .profile-modal-identity-text | padding-right 34px": "프로필 이름 오른쪽: 닫기 단추 자리"
+  }
+}

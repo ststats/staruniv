@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko" data-nav-pending>
+<head>
+    <meta charset="UTF-8">
+    {#- CSP는 <meta>가 아니라 Vercel 응답 헤더로 보낸다(docs/vercel.json). <meta>면 Chrome이 preload scanner를 끈다. #}
+    {#- 하위 페이지의 상대 경로를 사이트 루트 기준으로 풀어 GitHub Pages(/staruniv/)와 루트 배포 양쪽에서 동작하게 한다. #}
+    {%- if root %}
+    <base href="{{ root }}">
+    {%- endif %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {%- if nav_config_default and not admin_mode %}
+    <meta name="nav-config" content="{{ nav_config_default|e }}">
+    {%- endif %}
+    {%- if site_data_version %}
+    <meta name="site-data-version" content="{{ site_data_version }}">
+    {%- endif %}
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    {%- if supabase_origin %}
+    <link rel="preconnect" href="{{ supabase_origin }}" crossorigin>
+    {%- endif %}
+    <title>{{ full_title }}</title>
+    <meta name="description" content="{{ description }}">
+    {%- if admin_mode %}
+    <meta name="robots" content="noindex, nofollow">
+    {%- endif %}
+    {#- 링크 미리보기(카카오톡/디스코드 등) #}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="스타대학">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="og:title" content="{{ full_title }}">
+    <meta property="og:description" content="{{ description }}">
+    {%- if canonical_url %}
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    {%- endif %}
+    {%- if og_image_url %}
+    <meta property="og:image" content="{{ og_image_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ full_title }}">
+    {%- endif %}
+    <meta name="twitter:card" content="summary_large_image">
+    {#- 메뉴 설정을 읽기 전에는 메뉴와 서브탭 줄을 감춘다(숨긴 메뉴·탭이 잠깐 보이지 않게, 자리는 둔다). #}
+    <style>html[data-nav-pending] #mainMenu,
+           html[data-nav-pending] .sub-tabs { visibility: hidden; }
+    {#- 주소나 저장된 기본 탭이 HTML 기본 탭과 다르면(actions.js 판단) 맞는 탭이 켜질 때까지 가린다. 스크립트가 안 돌아도 2초 뒤 보인다. #}
+           html[data-view-pending] .sub-tabs,
+           html[data-view-pending] [id^="view-"] { visibility: hidden; animation: view-pending-reveal 0s 2s forwards; }
+           @keyframes view-pending-reveal { to { visibility: visible; } }</style>
+    {#- 공개 페이지는 api.js로 공개 읽기 함수(api_*)만 부르고, 관리자 화면만 supabase-js를 받는다.
+        SRI 해시: openssl dgst -sha384 -binary supabase.js | openssl base64 -A (npm 패키지의 dist/umd/supabase.js) #}
+    {%- if admin_mode %}
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
+            integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+    {%- endif %}
+    <script src="supabase-config.js"></script>
+    {%- block head_scripts %}{% endblock %}
+    <link rel="icon" type="image/webp" href="images/%ED%8C%8C%EB%B9%84%EC%BD%98.webp">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    {#- 모바일 주소창 색. 다크 모드에서는 core.js applyTheme이 바꾼다. #}
+    <meta name="theme-color" content="#ffffff">
+    {#- dynamic subset: 그냥 pretendard.css는 굵기마다 한글 전체(약 770KB)를 받는다. #}
+    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
+    {#- 숫자·라틴용 글꼴을 섞으면 한글 옆에서 자간이 어긋나 Pretendard 하나만 쓴다. #}
+    {% for stylesheet in page_styles(page_id) %}
+    <link rel="stylesheet" href="{{ asset_url(stylesheet) }}">
+    {% endfor %}
+    {#- 첫 화면 전에 탭을 판단해야 해서 <head>에 둔다. #}
+    <script src="{{ asset_url('actions.js') }}"></script>
+{% if admin_mode %}<link rel="stylesheet" href="{{ asset_url('admin.css') }}">{% endif %}
+</head>
+<body{% if admin_mode %} class="admin-mode" data-admin-page="{{ page_id }}"{% endif %}>
+
+{#- [구조] build_html.py가 templates/pages/*.html을 이 레이아웃에 끼워 메뉴마다 실제 페이지를 만든다.
+    홈은 로고 링크다. href="./"는 <base href="../">가 걸린 하위 페이지에서도 사이트 루트다. -#}
+
+<header class="top-navbar">
+    <div class="navbar-inner container">
+        <a class="logo" href="{{ 'admin.html' if admin_mode else './' }}" aria-label="스타대학 홈"><span><span class="logo-black">스타</span><span class="logo-accent">대학</span></span><span class="logo-sub" aria-hidden="true"><span><i>C</i><i>A</i><i>L</i><i>M</i><i>M</i><i>O</i><i>N</i></span><span><i>S</i><i>T</i><i>A</i><i>R</i><i>Z</i></span></span></a>
+        {#- 좁은 화면에서는 메뉴를 서랍으로 넣는다(core.js toggleMainMenu). #}
+        <button type="button" class="nav-drawer-btn" id="navDrawerBtn" aria-label="메뉴 열기"
+                aria-expanded="false" aria-controls="mainMenu" data-click="toggleMainMenu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-menu tab-scroll" id="mainMenu" aria-label="주 메뉴">
+            {%- for nav in nav_items %}
+            {#- 숨긴 메뉴는 core.js가 설정을 읽어 hidden을 붙인다. #}
+            <a class="nav-item{% if nav.id == page_id %} active{% endif %}" href="{{ nav.href }}" data-page="{{ nav.id }}"{% if nav.id == page_id %} aria-current="page"{% endif %}>{{ nav.label }}</a>
+            {%- endfor %}
+        </nav>
+        {#- 고른 테마는 localStorage에 남고, 첫 방문은 OS 설정을 따른다. #}
+        <div class="theme-toggle" role="group" aria-label="테마 선택">
+            <button type="button" data-theme-choice="light" aria-label="라이트 모드" data-click="setTheme" data-args='["light"]'>☀</button>
+            <button type="button" data-theme-choice="dark" aria-label="다크 모드" data-click="setTheme" data-args='["dark"]'>◐</button>
+        </div>
+    </div>
+</header>
+
+{% if admin_mode %}{% include 'partials/admin-auth.html' %}{% endif %}
+<main{% if admin_mode %} id="adminView" class="admin-hidden"{% endif %}>
+{% block content %}{% endblock %}
+{% if admin_mode %}{% include 'partials/admin-editor.html' %}{% endif %}
+</main>
+
+<div class="page-jump" role="group" aria-label="페이지 이동">
+    <button type="button" aria-label="맨 위로" data-click="scrollPageTo" data-args='["top"]'>▲</button>
+    <button type="button" aria-label="맨 아래로" data-click="scrollPageTo" data-args='["bottom"]'>▼</button>
+</div>
+
+{% block modals %}{% endblock %}
+
+{% block scripts %}{% endblock %}
+{% if admin_mode %}
+<script src="{{ asset_url('admin-core.js') }}"></script>
+<script src="{{ asset_url('admin-api.js') }}"></script>
+<script src="{{ asset_url('admin-site.js') }}"></script>
+{% if page_id == 'schedule' %}
+<script src="{{ asset_url('admin-schedule.js') }}"></script>
+<script src="{{ asset_url('admin-history.js') }}"></script>
+{% elif page_id == 'members' %}
+<script src="{{ asset_url('mp4-muxer.js') }}" defer></script>
+<script src="{{ asset_url('admin-members.js') }}"></script>
+{% elif page_id == 'records' %}
+<script src="{{ asset_url('admin-records.js') }}"></script>
+{% elif page_id == 'tier' %}
+<script src="{{ asset_url('admin-teams.js') }}"></script>
+<script src="{{ asset_url('admin-tier-update.js') }}"></script>
+<script src="{{ asset_url('admin-tier.js') }}"></script>
+{% elif page_id == 'video' %}
+<script src="{{ asset_url('admin-video.js') }}"></script>
+{% elif page_id == 'tools' %}
+<script src="{{ asset_url('admin-tools.js') }}"></script>
+{% endif %}
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,36 @@
+<div class="admin-inline-bar" id="adminInlineBar" role="group" aria-label="관리자 편집 도구">
+  <div class="admin-inline-left">
+    <strong id="adminPageLabel">{{ page_id }}</strong>
+    <span class="admin-save-state" id="adminSaveState">저장됨</span>
+  </div>
+  <div class="admin-inline-actions">
+    <a class="text-action admin-inline-public" href="{{ public_href }}" target="_blank" rel="noopener">공개 화면</a>
+    <button type="button" class="text-action" id="adminBuildButton" title="전적과 달력 사진을 새로 만들어 공개 사이트에 반영(2~3분). 멤버·연혁·대표 영상은 저장하면 바로 반영된다">사이트 빌드</button>
+    <button type="button" class="text-action" id="adminEditModeButton" aria-pressed="true">편집 모드</button>
+    <button type="button" class="text-action" id="adminLogoutButton">로그아웃</button>
+  </div>
+</div>
+
+<div class="admin-toast" id="adminToast" role="status" aria-live="polite" hidden></div>
+
+<aside class="admin-drawer" id="adminDrawer" aria-hidden="true" aria-label="편집" inert>
+  <div class="admin-drawer-backdrop" data-admin-close></div>
+  <section class="admin-drawer-sheet" role="dialog" aria-modal="true" aria-labelledby="adminDrawerTitle">
+    <header class="admin-drawer-head">
+      <div>
+        <span class="admin-drawer-eyebrow" id="adminDrawerEyebrow" hidden></span>
+        <h2 id="adminDrawerTitle">편집</h2>
+      </div>
+      <button type="button" class="admin-drawer-close" data-admin-close aria-label="닫기">×</button>
+    </header>
+    <form id="adminDrawerForm" class="admin-drawer-form">
+      <div id="adminDrawerBody"></div>
+      <footer class="admin-drawer-actions">
+        <button type="button" class="admin-btn danger" id="adminDrawerDelete" hidden>삭제</button>
+        <span class="admin-drawer-spacer"></span>
+        <button type="button" class="admin-btn" data-admin-close>취소</button>
+        <button type="submit" class="admin-btn primary" id="adminDrawerSave">저장</button>
+      </footer>
+    </form>
+  </section>
+</aside>

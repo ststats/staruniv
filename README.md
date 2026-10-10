@@ -1,0 +1,168 @@
+# StarUniv (스타대학)
+
+캄몬스타즈 공개 사이트와 관리자 화면 저장소입니다. 데이터는 공유 Supabase에 있고,
+외부 데이터 수집·계산은 [`ststat`](https://github.com/ststats/ststat) 저장소가 맡습니다.
+
+## 한눈에 보기
+
+| 무엇 | 어디서 | 사이트 반영 |
+|---|---|---|
+| 멤버 목록·프로필, 일정·휴방, 연혁, 티어표, 티어 랭킹, 영상, 방송통계(시너지) | Supabase 공개 읽기 함수를 브라우저가 바로 부름 | 저장 즉시 |
+| 캄몬 전적(매치·세트)과 선수별 통산 전적 | 빌드 때 `docs/data/site_records_v2.json`으로 만듦 | 스타유니브 빌드 후 |
+| 달력 사진 `docs/data/calendar.png`(외부 자동화가 가져감) | 빌드 때 크롬으로 캡처 | 스타유니브 빌드 후 |
+| EloBoard 경기·티어 랭킹 계산, 풍고 방송통계, 유튜브 영상 수집 | `ststat` 파이프라인 | 파이프라인 후 |
+
+## 자동 실행
+
+| 무엇 | 언제 | 방법 |
+|---|---|---|
+| 스타유니브 빌드(`.github/workflows/build.yml`) | 매일 00:05·12:05(한국 시간) | cron-job.org가 `workflow_dispatch` 호출 |
+| 〃 | `templates/`·`scripts/` 등을 main에 올릴 때 | push |
+| 〃 | 어드민 상단 **"사이트 빌드"** 버튼 | Supabase 함수가 GitHub에 요청(아래 설정) |
+| ststat 파이프라인(`pipeline.yml`) | 매일 03:50·07:50·11:50·15:50·19:50·23:50(4시간마다) | cron-job.org가 `workflow_dispatch` 호출 |
+| 시너지 빌드(synergy `build.yml`) | 매일 00:05·12:05 | cron-job.org가 `workflow_dispatch` 호출 |
+| 방송 중 표시(`live_broadcasts`) | 2분마다 | Supabase pg_cron이 Edge Function `live-status` 호출(ststat 저장소) |
+| DB·Storage 백업(`.github/workflows/backup.yml`) | 매월 2일 03:30 | GitHub `schedule`(아래 '백업') |
+
+cron-job.org 작업은 `POST https://api.github.com/repos/ststats/<저장소>/actions/workflows/<워크플로 파일>/dispatches`(본문 `{"ref":"main"}`)를
+GitHub 토큰으로 부릅니다(스타유니브 `build.yml`, 시너지 `build.yml`, ststat `pipeline.yml`). 실행이 안 보이면
+cron-job.org 실행 기록(응답 204가 정상) → 각 저장소 Actions 탭 순서로 확인합니다.
+Build·Pipeline은 먼저 테스트(`test.yml`)를 돌리고, 테스트가 실패하면 정기 실행이라도 배포·수집하지 않습니다
+(Actions 탭에 빨갛게 남음). 그동안 페이지가 Supabase에서 바로 읽는 데이터(일정·티어·방송통계 등)는 그대로 갱신됩니다.
+
+빌드는 1~2분입니다(앞의 테스트 포함): Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
+달력을 캡처하고(`scripts/capture_calendar.mjs`, 러너에 깔린 크롬 사용, 한국 시간 기준) →
+결과(`docs/`)를 GitHub Pages에 바로 배포합니다. **빌드 결과는 저장소에 커밋하지 않습니다**
+(저장소 Settings → Pages → Source: GitHub Actions). 사이트: https://ststats.github.io/staruniv/
+
+`https://staruniv.vercel.app/`도 같은 사이트입니다. Vercel은 빌드 결과를 만들지 않고, `docs/vercel.json`이 모든 주소를
+GitHub Pages로 넘깁니다. 그래서 늘 Pages와 같은 최신 내용입니다(Vercel 프로젝트의 Root Directory = `docs`).
+Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand`로 이 파일이 바뀐 커밋만 배포하게 해 두었습니다.
+`rewrites`가 아니라 `routes`를 씁니다. `rewrites`는 Vercel이 먼저 자기 파일을 찾아 폴더 주소(`/`, `/members/`)에서 404를 내기 때문입니다.
+
+달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`입니다. 빌드는 같은 사진을 Supabase Storage
+(`staruniv-media/calendar.png`, 캐시 없음)에도 덮어쓰고, 커뮤니티는 `https://staruniv.vercel.app/calendar.png`
+(`docs/vercel.json`이 Storage 사진을 캐시 금지 헤더와 함께 넘김)를 씁니다. Storage에 올리려면 저장소 Secrets에
+`SUPABASE_SERVICE_ROLE_KEY`가 있어야 합니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 씁니다.
+
+## 관리자
+
+- 주소: 공개 페이지 이름 앞에 `admin-`(홈은 `admin.html`). 공개 페이지를 어드민 모드로 빌드한 것이고, Supabase 로그인 후 관리자만 편집할 수 있습니다.
+- 어드민 홈 맨 위 **운영 현황**: 최근 파이프라인 결과, ELO 경기 수·범위, 테이블 건수.
+- 편집 버튼은 두 곳에 있습니다.
+  - **히어로 편집**(각 페이지 히어로 안): 페이지 설명과 서브탭 표시·기본 탭. 홈은 캐러셀 장마다 제목·설명·바로가기.
+  - **추가·관리 줄**(히어로 바로 아래, 스크롤해도 상단에 붙음): 멤버 추가·연혁 추가·새 매치 등. 지금 보고 있는 서브탭의 버튼만 나옵니다.
+- 상단 **편집 모드**를 끄면 편집 버튼이 모두 숨어 공개 화면처럼 보입니다.
+- 전적을 고친 뒤 공개 사이트에 바로 보이게 하려면 빌드를 한 번 돌리세요(어드민 상단 "사이트 빌드" 버튼, 또는 Actions → Build → Run workflow).
+
+### "사이트 빌드" 버튼 설정(한 번만)
+
+1. GitHub에서 fine-grained 토큰 발급: 저장소 `ststats/staruniv`만, 권한 **Actions: Read and write**
+2. Supabase SQL 편집기: `select vault.create_secret('<토큰>', 'github_actions_token');`
+3. `supabase/staruniv.sql` 실행(아래 Supabase SQL)
+
+토큰 교체: `select vault.update_secret((select id from vault.secrets where name = 'github_actions_token'), '<새 토큰>');`
+
+### 대학 로고(스타유니브·시너지 공용)
+
+어드민 전적 → **팀 관리**(팀 수정 창)에서 올립니다(창단일·해체일·우승 기록도 여기서). 브라우저가 긴 변 96px로 줄이고 대표 색(시너지 카드 윗줄)을 뽑아
+Supabase Storage(`staruniv-media/logos/`)와 `university_logos` 표에 저장하고, 두 사이트가 페이지를 열 때 이 표를 읽습니다
+(다시 빌드할 필요 없음). 로고가 없는 대학은 이름 첫 글자 배지를 보여 줍니다.
+
+### 티어표 갱신(반자동)
+
+어드민 티어표 → **티어표 갱신** 탭. 펨코 티어표 이미지 주소와 FA 명단 글을 넣고 분석을 요청하면
+Supabase(`admin_request_tier_analysis`)가 GitHub Actions(`tier-analysis.yml`)를 실행해
+`scripts/tier_table.py --job`이 이미지를 읽고 DB와 비교합니다(1~2분). 결과 화면에서 변동을 체크해 **반영**하면
+소속·티어·종족이 바뀌고, 대학으로 옮기면 연혁 끝에 대학이, 숫자 티어로 오르면 그 티어 승급일에 날짜가 더해집니다.
+표·FA 명단 어디에도 없는 선수는 휴면, 새 대학·모르는 카드·FA 명단에만 있는 사람은 직접 고릅니다.
+반영한 카드(사진·티어/종족 글씨)는 다음 분석 때 기억에 더해져 점점 덜 묻습니다.
+화면의 **펨코 글에서 가져오기** 버튼을 북마크바로 끌어 두면 펨코 글에서 두 칸을 자동으로 채워 엽니다.
+설정: `supabase/staruniv.sql` 실행(달력 버튼과 같은 토큰을 씀).
+
+## 로컬에서 빌드·확인
+
+`requirements.txt`는 전체 개발 환경이다. 작업별로 설치하려면 `requirements/web.txt`(HTML·데이터·공휴일),
+`requirements/media.txt`(멤버 띠 영상), `requirements/ocr.txt`(티어 분석)를 선택한다.
+공유 패키지는 `requirements/common.txt`에서만 버전 범위를 선언한다. 배포 빌드는 web+media, 티어 분석은 ocr를 설치한다.
+
+```bash
+python -m pip install -r requirements.txt
+python scripts/export_supabase.py     # SUPABASE_DB_URL 필요. 없으면 이 줄을 건너뛰고 기존 data/db.json 캐시로 빌드
+python scripts/write_site_data.py     # docs/data/site_records_v2.json(전적·선수별 통산 계산값) - 먼저 만든다
+python scripts/build_html.py          # templates → docs (HTML, 자산 복사, 캐시용 ?v=해시 - 위 사이트 데이터의 해시도 붙인다)
+python scripts/sync_holidays.py       # (선택) SUPABASE_DB_URL 필요. 올해·내년 공휴일을 DB에 맞춤(정기 빌드가 함)
+npm test                              # node --test (의존성 없음)
+python3 -m unittest discover -s tests/py -p 'test_*.py'   # 파이썬 계산 테스트(표준 라이브러리만)
+npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·HTML 주석·공백 빼기
+```
+
+- 원본은 `templates/`입니다. `docs/`는 빌드 결과(저장소에 없음, `.gitignore`)라 직접 고치지 않습니다. `templates/static/`은 그대로 복사됩니다.
+- 배포 때 `scripts/minify_assets.mjs`가 `docs/`의 JS·CSS·HTML에서 주석과 공백을 뺍니다(변수 이름·코드는 그대로, 원본과 구문 트리가 같을 때만). 원본의 주석은 그대로 두고 필요한 설명을 적으면 됩니다.
+- 압축·공개 설정·배포 범위 판별의 공통 원본과 시너지 배포본 갱신 방법은 [빌드 도구 관리](scripts/build_tools/README.md)를 참조합니다. main push 검사는 Build에서 한 번 실행하고, `.github/build-paths.json`에 해당하는 변경만 배포합니다. 문서·테스트 변경도 검사는 실행하며 수동 실행은 검사 후 항상 빌드합니다.
+- 링크 미리보기 이미지는 페이지마다 `templates/static/images/share/<페이지>.png`(1200×630)입니다. 페이지 이름·설명을 바꾸면 `python scripts/make_share_images.py`로 다시 만듭니다. 카카오톡은 미리보기를 오래 기억하므로 바로 안 바뀌면 카카오 개발자 사이트의 '공유 디버거'에서 캐시를 지웁니다.
+- 빌드가 `sitemap.xml`·`robots.txt`도 만듭니다. 관리자 화면은 `noindex`라 검색에 나오지 않습니다. 구글 서치 콘솔·네이버 서치어드바이저에 `https://ststats.github.io/staruniv/sitemap.xml`을 한 번 등록하면 검색에 빨리 잡힙니다.
+- 티어 순서·직책 순서는 `templates/assets/core.js` 맨 위 `SITE_ORDER` 한 곳에서만 고칩니다(파이썬 빌드도 읽음).
+- 공개 CSS는 `templates/assets/style/`의 섹션 파일(`00-reset.css` … `19-utilities.css`)이고, 빌드가 이름 순서대로
+  합쳐 `docs/style.css`로 냅니다. **우선순위는 `00-reset.css` 맨 위의 `@layer` 계층 순서**(reset → base → layout →
+  components → pages → surfaces → admin → utilities)가 정합니다. 부품을 고칠 때는 뒤에 새 규칙을 덧붙이지 말고 그 부품
+  파일의 원래 규칙을 고칩니다. `14-surfaces.css`는 남색 면의 색·면 토큰을 두는 곳입니다. 어드민 CSS는 `admin.css`.
+- 공개 페이지의 데이터는 **`templates/assets/api.js`의 `Api` 함수로만** 받습니다(페이지 파일에 표 이름·열을 쓰지 않음, `npm test`가 검사).
+  함수 하나가 서버 API 주소 하나(`/api/v1/…`, 규격 `api/openapi.yaml`)에 대응하고 화면이 그리는 것만 돌려줍니다.
+  전적 묶음(선수별 통산 계산값 포함)만 빌드가 만든 `data/site_records_v2.json`이고, 멤버 목록·프로필·공휴일을 포함한 나머지는 Supabase의 **공개 읽기 함수**(`api_*`·`player_*`·`elo_*_list`,
+  `supabase/staruniv.sql` 2번·`ststat.sql` 14번)를 부릅니다(작은 호출 클라이언트, supabase-js 없음). 브라우저(anon)는 표를 하나도
+  직접 읽지 못합니다 - 함수가 정의자 권한으로 화면에 나오는 열·행만 돌려주고, 거르는 조건(휴면·숨김·활성 스냅샷 등)은 함수 안에
+  적습니다. 주소마다 담당 함수가 `api/openapi.yaml`의 `x-db-function`에 있습니다. 나중에 서버를 붙이면 서버가 같은 함수를 부르고
+  `api.js` 안의 호출만 `fetch('/api/v1/…')`로 바꿉니다. 화면에 새 데이터를 쓰려면 DB 함수(SQL) → `api.js` 함수 →
+  `api/openapi.yaml` 순서로 함께 고칩니다. 시너지도 같은 함수만 부릅니다.
+- 관리자 화면의 DB 읽기·쓰기·파일 올리기·로그인은 **`templates/assets/admin-api.js`의 `AdminApi`로만** 합니다(`npm test`가 검사).
+  기능마다 함수 하나가 나중 서버의 관리자 주소(`/api/v1/admin/…`, 주석)에 대응하고, 지금은 로그인한 supabase-js로 바로 부릅니다
+  (권한은 DB의 `is_admin` 정책·`admin_*` 함수). 서버를 붙이면 이 파일 안만 바꿉니다.
+- 화면 코드에는 `onclick="…"` 같은 인라인 핸들러와 인라인 `<script>`를 쓰지 않습니다(CSP로 막을 수 있게, `npm test`가 검사).
+  버튼 동작은 `data-click="함수" data-args='[인자]'`(JS에서는 `act('함수', 인자…)`)로 적고 `templates/assets/actions.js`가
+  한 곳에서 받아 그 전역 함수(`function` 선언)를 부릅니다. 입력은 `data-input`·`data-change`·`data-enter`, 스크롤은 `data-scroll`,
+  이미지 대체는 `data-error`(`imgRemove`·`imgHide`·`imgSwap`·`imgSrc`)입니다. 스크립트는 파일로 두고 `src`로 싣습니다.
+- Bootstrap은 쓰지 않습니다. 브라우저 기본값 맞추기는 `style/00-reset.css`, 모달·접기는 `core.js`의
+  `showModal`/`hideModal`/`toggleCollapse`이고, 닫기·접기 단추는 `data-dismiss="modal"`, `data-toggle="collapse"` + `data-target`으로 답니다.
+  상태 클래스는 고른 것 `.active`, 열린 것 `.is-open` 두 가지만 씁니다(`npm test`가 검사).
+- 화면 문구는 끝에 마침표·말줄임표(`.` `...` `…`)를 붙이지 않습니다. 관리자가 입력한 히어로 설명도 표시할 때 끝을 지웁니다.
+- `npm test`가 같은 선택자 규칙이 두 번 생기거나, 안 쓰는 클래스 규칙이 남거나, 문구 끝에 마침표가 붙으면 실패합니다(`.github/workflows/test.yml`).
+
+## GitHub·Supabase 설정 값
+
+| 이름 | 종류 | 쓰는 곳 |
+|---|---|---|
+| `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Actions secret | 빌드가 달력 사진을 Storage(`staruniv-media/calendar.png`)에 올릴 때(없으면 건너뜀) |
+| `github_actions_token` | Supabase Vault | "사이트 빌드" 버튼, 티어표 갱신 |
+| `BACKUP_PASSPHRASE` | Actions secret | 월간 백업 암호(잃어버리면 백업을 못 푼다 - 따로 적어 둔다) |
+
+## 백업
+
+무료 플랜에는 자동 백업이 없어서 `backup.yml`이 매달 공유 DB(`public` 스키마 전체 구조 + 데이터)와
+Storage `staruniv-media` 파일을 받아 **암호화한 뒤** Actions 아티팩트로 둡니다. Storage 파일이 하나라도 받아지지 않으면 그 달 백업은 실패로 끝나고
+이전 백업은 그대로 남습니다. 새 백업이 올라가면 가장 최근 것과 직전 것 두 개만 남기고 지웁니다. 파생 통계(스냅샷 목록 포함)·방송 중·공지 모음·작업 기록은
+파이프라인이 다시 만들므로 데이터를 뺍니다. 전체를 복구한 뒤에는 ststat의 ELO 통계 계산 작업을 한 번 돌리면 통계가 다시 채워집니다. Actions 탭 → Backup → 실행 → Artifacts에서 받습니다(수동 실행: Run workflow).
+공개 저장소라 60일 동안 커밋이 없으면 GitHub가 `schedule`을 멈추니, 그때는 Actions 탭에서 다시 켭니다.
+
+복구(필요한 표만 골라 넣을 수 있음):
+
+```bash
+gpg -d supabase-backup-YYYYMMDD.tar.gz.gpg | tar -xz       # 암호 입력 → db.dump, storage/
+pg_restore --list db.dump                                    # 들어 있는 것 확인
+pg_restore --no-owner --data-only -t members -d "$SUPABASE_DB_URL" db.dump   # 예: members 표 데이터만
+```
+
+## Supabase SQL
+
+- 공유 DB의 파이프라인 스키마와 공개 뷰: `ststat/supabase/ststat.sql`
+- 이 저장소: **`supabase/staruniv.sql` 한 파일**(사이트·관리자 표, 권한, 사이트 빌드 버튼, 티어표 갱신).
+  SQL 편집기에 통째로 붙여 넣고 실행하면 되고, 여러 번 실행해도 됩니다. 표·열은 없을 때만 만들고
+  함수·정책·권한은 최신으로 다시 쓰며, 운영 데이터(일정·휴방·연혁·메뉴 설정·영상·선수)는 건드리지 않습니다.
+  SQL을 고칠 때는 이 파일만 고치고, 고친 뒤 한 번 실행하면 됩니다.
+
+## 지켜야 할 것
+
+- **EloBoard 요청 간격은 최소 2초**(운영자 요청). ststat 코드에서 2초 미만으로 못 내리게 막혀 있습니다.
+- `calendar.png` 파일 이름·주소는 외부 자동화가 쓰므로 바꾸지 않습니다.
