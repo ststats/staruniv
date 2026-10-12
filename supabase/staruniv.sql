@@ -790,12 +790,16 @@ set config_value = jsonb_build_object(
 -- 4. 사이트 빌드 버튼
 -- ############################################################################
 
--- 어드민 '사이트 빌드' 버튼: build.yml을 실행한다(함수 이름 calendar_capture는 빌드가 달력 사진도 찍던 때 이름이라 그대로 둔다).
+-- 어드민 '사이트 빌드' 버튼: build.yml을 실행한다.
 -- GitHub 토큰은 브라우저에 두지 않고 Vault에서 꺼낸다. 여러 번 눌러도 워크플로 concurrency로 쌓이지 않는다.
 
 create extension if not exists pg_net with schema extensions;
 
-create or replace function public.admin_request_calendar_capture()
+-- 예전 이름(빌드가 달력 사진도 찍던 때)
+drop function if exists public.admin_request_calendar_capture();
+drop function if exists public.admin_calendar_capture_status(bigint);
+
+create or replace function public.admin_request_site_build()
 returns bigint
 language plpgsql
 security definer
@@ -831,7 +835,7 @@ end;
 $$;
 
 -- GitHub 응답 코드(204면 성공). 아직 응답이 없으면 null.
-create or replace function public.admin_calendar_capture_status(p_request_id bigint)
+create or replace function public.admin_site_build_status(p_request_id bigint)
 returns table (status_code integer, error text)
 language plpgsql
 security definer
@@ -848,10 +852,10 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_request_calendar_capture() from public, anon;
-revoke all on function public.admin_calendar_capture_status(bigint) from public, anon;
-grant execute on function public.admin_request_calendar_capture() to authenticated;
-grant execute on function public.admin_calendar_capture_status(bigint) to authenticated;
+revoke all on function public.admin_request_site_build() from public, anon;
+revoke all on function public.admin_site_build_status(bigint) from public, anon;
+grant execute on function public.admin_request_site_build() to authenticated;
+grant execute on function public.admin_site_build_status(bigint) to authenticated;
 
 
 -- ############################################################################

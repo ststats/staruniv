@@ -52,11 +52,11 @@
         // GET /api/v1/admin/dashboard
         dashboardStats: () => db().rpc('admin_dashboard_stats'),
         // 사이트 빌드 버튼(staruniv.sql 4번)
-        calendarCapture: {
-            // POST /api/v1/admin/calendar-capture
-            request: () => db().rpc('admin_request_calendar_capture'),
-            // GET /api/v1/admin/calendar-capture/{id}
-            status: requestId => db().rpc('admin_calendar_capture_status', { p_request_id: requestId }),
+        siteBuild: {
+            // POST /api/v1/admin/site-build
+            request: () => db().rpc('admin_request_site_build'),
+            // GET /api/v1/admin/site-build/{id}
+            status: requestId => db().rpc('admin_site_build_status', { p_request_id: requestId }),
         },
 
         // ---- 파일(Storage staruniv-media) ----
