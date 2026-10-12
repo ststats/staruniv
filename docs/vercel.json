@@ -59,13 +59,6 @@
       }
     },
     {
-      "src": "^/calendar\\.png$",
-      "status": 307,
-      "headers": {
-        "Location": "https://staruniv-badges.vercel.app/staruniv/calendar.png"
-      }
-    },
-    {
       "src": "^/((?:[^/]+/)*[^/.]+)$",
       "status": 308,
       "headers": {

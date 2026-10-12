@@ -38,8 +38,7 @@ GitHub Pages로 넘깁니다. 그래서 늘 Pages와 같은 최신 내용입니�
 Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand`로 이 파일이 바뀐 커밋만 배포하게 해 두었습니다.
 `rewrites`가 아니라 `routes`를 씁니다. `rewrites`는 Vercel이 먼저 자기 파일을 찾아 폴더 주소(`/`, `/members/`)에서 404를 내기 때문입니다.
 
-달력 사진은 이제 이 저장소가 만들지 않습니다. 배지 `https://staruniv-badges.vercel.app/staruniv/calendar.png`(다른 저장소)를 씁니다.
-예전 주소 `https://staruniv.vercel.app/calendar.png`는 `docs/vercel.json`이 이 배지 주소로 넘깁니다(307).
+달력·오늘의 일정 사진은 이 저장소가 아니라 뱃지 저장소(`ststats/badges`)가 그립니다.
 
 ## 관리자
 
