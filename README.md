@@ -9,7 +9,6 @@
 |---|---|---|
 | 멤버 목록·프로필, 일정·휴방, 연혁, 티어표, 티어 랭킹, 영상, 방송통계(시너지) | Supabase 공개 읽기 함수를 브라우저가 바로 부름 | 저장 즉시 |
 | 캄몬 전적(매치·세트)과 선수별 통산 전적 | 빌드 때 `docs/data/site_records_v2.json`으로 만듦 | 스타유니브 빌드 후 |
-| 달력 사진 `docs/data/calendar.png`(외부 자동화가 가져감) | 빌드 때 크롬으로 캡처 | 스타유니브 빌드 후 |
 | EloBoard 경기·티어 랭킹 계산, 풍고 방송통계, 유튜브 영상 수집 | `ststat` 파이프라인 | 파이프라인 후 |
 
 ## 자동 실행
@@ -31,7 +30,6 @@ Build·Pipeline은 먼저 테스트(`test.yml`)를 돌리고, 테스트가 실�
 (Actions 탭에 빨갛게 남음). 그동안 페이지가 Supabase에서 바로 읽는 데이터(일정·티어·방송통계 등)는 그대로 갱신됩니다.
 
 빌드는 1~2분입니다(앞의 테스트 포함): Supabase에서 멤버·전적을 내보내고 → 통계·HTML·사이트 데이터를 만들고 →
-달력을 캡처하고(`scripts/capture_calendar.mjs`, 러너에 깔린 크롬 사용, 한국 시간 기준) →
 결과(`docs/`)를 GitHub Pages에 바로 배포합니다. **빌드 결과는 저장소에 커밋하지 않습니다**
 (저장소 Settings → Pages → Source: GitHub Actions). 사이트: https://ststats.github.io/staruniv/
 
@@ -40,10 +38,8 @@ GitHub Pages로 넘깁니다. 그래서 늘 Pages와 같은 최신 내용입니�
 Vercel 무료 플랜은 하루 배포 횟수 제한이 있어서, `ignoreCommand`로 이 파일이 바뀐 커밋만 배포하게 해 두었습니다.
 `rewrites`가 아니라 `routes`를 씁니다. `rewrites`는 Vercel이 먼저 자기 파일을 찾아 폴더 주소(`/`, `/members/`)에서 404를 내기 때문입니다.
 
-달력 사진 주소는 `https://ststats.github.io/staruniv/data/calendar.png`입니다. 빌드는 같은 사진을 Supabase Storage
-(`staruniv-media/calendar.png`, 캐시 없음)에도 덮어쓰고, 커뮤니티는 `https://staruniv.vercel.app/calendar.png`
-(`docs/vercel.json`이 Storage 사진을 캐시 금지 헤더와 함께 넘김)를 씁니다. Storage에 올리려면 저장소 Secrets에
-`SUPABASE_SERVICE_ROLE_KEY`가 있어야 합니다. 캡처가 실패하면 직전에 배포된 사진을 그대로 다시 씁니다.
+달력 사진은 이제 이 저장소가 만들지 않습니다. 배지 `https://staruniv-badges.vercel.app/staruniv/calendar.png`(다른 저장소)를 씁니다.
+예전 주소 `https://staruniv.vercel.app/calendar.png`는 `docs/vercel.json`이 이 배지 주소로 넘깁니다(307).
 
 ## 관리자
 
@@ -134,7 +130,6 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
 |---|---|---|
 | `SUPABASE_DB_URL` | Actions secret | 빌드의 Supabase 내보내기 |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Actions variable/secret | 브라우저용 `supabase-config.js` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Actions secret | 빌드가 달력 사진을 Storage(`staruniv-media/calendar.png`)에 올릴 때(없으면 건너뜀) |
 | `github_actions_token` | Supabase Vault | "사이트 빌드" 버튼, 티어표 갱신 |
 | `BACKUP_PASSPHRASE` | Actions secret | 월간 백업 암호(잃어버리면 백업을 못 푼다 - 따로 적어 둔다) |
 
@@ -165,4 +160,3 @@ pg_restore --no-owner --data-only -t members -d "$SUPABASE_DB_URL" db.dump   # �
 ## 지켜야 할 것
 
 - **EloBoard 요청 간격은 최소 2초**(운영자 요청). ststat 코드에서 2초 미만으로 못 내리게 막혀 있습니다.
-- `calendar.png` 파일 이름·주소는 외부 자동화가 쓰므로 바꾸지 않습니다.

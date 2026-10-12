@@ -294,7 +294,7 @@
         document.dispatchEvent(new CustomEvent('admin:edit-mode', { detail: { enabled: state.editMode } }));
     }
 
-    // 정기 빌드를 기다리지 않고 build.yml을 실행한다(전적 데이터·달력 사진). 토큰은 DB의 Vault에 있다(staruniv.sql 4번).
+    // 정기 빌드를 기다리지 않고 build.yml을 실행한다(전적 데이터). 토큰은 DB의 Vault에 있다(staruniv.sql 4번).
     async function requestSiteBuild(btn) {
         if (btn.disabled || !state.client) return;
         const idle = btn.textContent;

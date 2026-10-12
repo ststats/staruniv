@@ -1,9 +1,7 @@
 {
   "설명": "css-guard.test.js의 예외 목록. 키는 검사가 찾은 위치, 값은 남겨 둔 이유. 고치면 지운다(목록은 줄기만 한다).",
   "redefine": {
-    "container | max-width": "일정 캡처 모드(body.calendar-capture, 07)에서 페이지 폭을 푸는 상태 규칙. 캡처 모드 규칙은 07 한 곳에 모아 두려고 레이아웃 부품 쪽으로 나누지 않는다(2026-10-06 결정)",
     "nav-item | display": "관리자 모드: 숨긴 메뉴·서브탭도 관리자에게는 보이게 [hidden]을 이긴다(admin.css, 의도)",
-    "page-header | display": "일정 캡처 모드(body.calendar-capture, 07)에서 숨기는 상태 규칙. 캡처 모드 규칙은 07 한 곳에 모아 두려고 레이아웃 부품 쪽으로 나누지 않는다(2026-10-06 결정)",
     "sub-tab | display": "관리자 모드: 숨긴 메뉴·서브탭도 관리자에게는 보이게 [hidden]을 이긴다(admin.css, 의도)",
     "top-navbar | top": "관리자 모드: 편집 바(40px) 아래로 상단바를 내린다(admin.css, 의도)"
   },

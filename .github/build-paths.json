@@ -7,7 +7,6 @@
   "scripts/write_site_data.py",
   "scripts/sync_holidays.py",
   "scripts/write_supabase_browser_config.py",
-  "scripts/capture_calendar.mjs",
   "scripts/capture_page.mjs",
   "scripts/minify_assets.mjs",
   "requirements.txt",

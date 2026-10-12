@@ -790,7 +790,7 @@ set config_value = jsonb_build_object(
 -- 4. 사이트 빌드 버튼
 -- ############################################################################
 
--- 어드민 '사이트 빌드' 버튼: build.yml을 실행한다(함수 이름 calendar_capture는 달력 사진(docs/data/calendar.png)도 만들어서).
+-- 어드민 '사이트 빌드' 버튼: build.yml을 실행한다(함수 이름 calendar_capture는 빌드가 달력 사진도 찍던 때 이름이라 그대로 둔다).
 -- GitHub 토큰은 브라우저에 두지 않고 Vault에서 꺼낸다. 여러 번 눌러도 워크플로 concurrency로 쌓이지 않는다.
 
 create extension if not exists pg_net with schema extensions;
