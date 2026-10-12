@@ -16,12 +16,6 @@ window.calOffAirExtra = (dateStr, type) => {
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
 };
 
-// scripts/capture_calendar.mjs가 찍는 주소. 캡처는 늘 라이트 테마다.
-if (new URLSearchParams(location.search).get('capture') === 'calendar') {
-    document.body.classList.add('calendar-capture');
-    if (typeof applyTheme === 'function') applyTheme('light');
-}
-
 const SCHEDULE_TABS = { calendar: ['tab-calendar', 'view-calendar'], history: ['tab-history', 'view-history'] };
 let historyRendered = false;
 

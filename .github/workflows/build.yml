@@ -103,27 +103,6 @@ jobs:
           PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
         run: python scripts/build_member_strip.py
 
-      # 외부 자동화가 가져가는 달력 사진. 캡처가 실패해도 비지 않게 배포된 사진을 먼저 받아 둔다.
-      - name: Keep last published calendar image
-        run: curl -fsSL "${{ steps.pages.outputs.base_url }}/data/calendar.png" -o docs/data/calendar.png || true
-      - name: Capture calendar image
-        continue-on-error: true
-        run: node scripts/capture_calendar.mjs
-      # 게시판이 쓰는 calendar.png 주소가 이 Storage 사진을 보여 준다(docs/vercel.json). 캐시하지 않게 올린다.
-      - name: Upload calendar image to Supabase Storage
-        continue-on-error: true
-        env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ ! -s docs/data/calendar.png ]; then
-            echo "SUPABASE_SERVICE_ROLE_KEY 또는 달력 사진이 없어 건너뜀"; exit 0
-          fi
-          curl -fsS -X POST "${SUPABASE_URL%/}/storage/v1/object/staruniv-media/calendar.png" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Content-Type: image/png" -H "x-upsert: true" -H "cache-control: no-cache" \
-            --data-binary @docs/data/calendar.png
-
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs

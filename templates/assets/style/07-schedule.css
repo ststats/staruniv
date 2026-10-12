@@ -24,37 +24,6 @@
         overflow: hidden;
     }
 
-    /* 캡처 모드(?capture=calendar, scripts/capture_calendar.mjs): 캡처할 두 영역만 한 열로 둔다.
-       너비를 JS에서 덮어쓰지 않아 결과가 반응형 규칙에 흔들리지 않는다. */
-    body.calendar-capture .top-navbar,
-    body.calendar-capture .page-header,
-    body.calendar-capture .cal-selected-card-wrapper {
-        display: none;
-    }
-    body.calendar-capture #page-schedule,
-    body.calendar-capture #page-schedule > .container {
-        max-width: none;
-        margin: 0;
-        padding: 0;
-    }
-    body.calendar-capture .cal-main-layout,
-    body.calendar-capture .cal-sidebar,
-    body.calendar-capture .cal-calendar-area,
-    body.calendar-capture .cal-today-card-wrapper {
-        display: block;
-        width: 100%;
-        min-width: 0;
-        max-width: none;
-        margin: 0;
-    }
-    body.calendar-capture .cal-today-card-wrapper {
-        margin-bottom: var(--space-block-gap);
-    }
-    body.calendar-capture .cal-calendar-inner {
-        overflow: visible;
-        padding-bottom: 0;
-    }
-
     /* ----- 오늘의 일정 · 선택한 날짜 일정 카드 -----
        오늘 카드는 네이비 면(14-surfaces.css), 안쪽 선·글자는 --panel-* 토큰을 따라간다. */
     .cal-day-card {

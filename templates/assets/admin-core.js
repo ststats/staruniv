@@ -294,20 +294,20 @@
         document.dispatchEvent(new CustomEvent('admin:edit-mode', { detail: { enabled: state.editMode } }));
     }
 
-    // 정기 빌드를 기다리지 않고 build.yml을 실행한다(전적 데이터·달력 사진). 토큰은 DB의 Vault에 있다(staruniv.sql 4번).
+    // 정기 빌드를 기다리지 않고 build.yml을 실행한다(전적 데이터). 토큰은 DB의 Vault에 있다(staruniv.sql 4번).
     async function requestSiteBuild(btn) {
         if (btn.disabled || !state.client) return;
         const idle = btn.textContent;
         btn.disabled = true;
         btn.textContent = '빌드 요청 중';
         try {
-            const { data: requestId, error } = await window.AdminApi.calendarCapture.request();
+            const { data: requestId, error } = await window.AdminApi.siteBuild.request();
             if (error) throw error;
             let status = null,
                 detail = '';
             for (let i = 0; i < 10 && status === null; i++) {
                 await new Promise(r => setTimeout(r, 1000));
-                const res = await window.AdminApi.calendarCapture.status(requestId);
+                const res = await window.AdminApi.siteBuild.status(requestId);
                 const row = (res.data || [])[0];
                 if (row && (row.status_code !== null || row.error)) {
                     status = row.status_code;
