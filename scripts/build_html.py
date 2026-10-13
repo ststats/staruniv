@@ -35,7 +35,7 @@ PAGES = [
 ]
 SITE_NAME = '스타대학'
 # canonical·미리보기 이미지용이라 절대 주소여야 한다(끝의 / 없이).
-SITE_URL = os.environ.get('SITE_URL', 'https://ststats.github.io/staruniv').rstrip('/')
+SITE_URL = os.environ.get('SITE_URL', 'https://staruniv.vercel.app').rstrip('/')
 # 카카오톡이 webp 미리보기를 못 보여 줘서 PNG로 둔다.
 def og_image_path(page_id):
     return f'images/share/{page_id}.png'

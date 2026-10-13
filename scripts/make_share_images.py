@@ -63,7 +63,7 @@ p {{ margin-top: 26px; max-width: 760px; font-size: 30px; font-weight: 500; line
 <h1>{html.escape(title)}</h1>
 <p>{html.escape(description)}</p>
 <div class="team"></div>
-<div class="url">ststats.github.io/staruniv</div>
+<div class="url">staruniv.vercel.app</div>
 <div class="bar"></div>
 </body></html>"""
 

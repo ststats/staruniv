@@ -96,7 +96,7 @@ npm ci && npm run minify              # (선택) 배포처럼 docs/의 JS·CSS·
 - 배포 때 `scripts/minify_assets.mjs`가 `docs/`의 JS·CSS·HTML에서 주석과 공백을 뺍니다(변수 이름·코드는 그대로, 원본과 구문 트리가 같을 때만). 원본의 주석은 그대로 두고 필요한 설명을 적으면 됩니다.
 - 압축·공개 설정·배포 범위 판별의 공통 원본과 시너지 배포본 갱신 방법은 [빌드 도구 관리](scripts/build_tools/README.md)를 참조합니다. main push 검사는 Build에서 한 번 실행하고, `.github/build-paths.json`에 해당하는 변경만 배포합니다. 문서·테스트 변경도 검사는 실행하며 수동 실행은 검사 후 항상 빌드합니다.
 - 링크 미리보기 이미지는 페이지마다 `templates/static/images/share/<페이지>.png`(1200×630)입니다. 페이지 이름·설명을 바꾸면 `python scripts/make_share_images.py`로 다시 만듭니다. 카카오톡은 미리보기를 오래 기억하므로 바로 안 바뀌면 카카오 개발자 사이트의 '공유 디버거'에서 캐시를 지웁니다.
-- 빌드가 `sitemap.xml`·`robots.txt`도 만듭니다. 관리자 화면은 `noindex`라 검색에 나오지 않습니다. 구글 서치 콘솔·네이버 서치어드바이저에 `https://ststats.github.io/staruniv/sitemap.xml`을 한 번 등록하면 검색에 빨리 잡힙니다.
+- 빌드가 `sitemap.xml`·`robots.txt`도 만듭니다. 관리자 화면은 `noindex`라 검색에 나오지 않습니다. 대표 주소(canonical·사이트맵·미리보기)는 `https://staruniv.vercel.app`(`scripts/build_html.py`의 `SITE_URL`)이라 github.io 쪽은 같은 글로 묶입니다. 구글 서치 콘솔·네이버 서치어드바이저에 `https://staruniv.vercel.app/sitemap.xml`을 한 번 등록하면 검색에 빨리 잡힙니다.
 - 티어 순서·직책 순서는 `templates/assets/core.js` 맨 위 `SITE_ORDER` 한 곳에서만 고칩니다(파이썬 빌드도 읽음).
 - 공개 CSS는 `templates/assets/style/`의 섹션 파일(`00-reset.css` … `19-utilities.css`)이고, 빌드가 이름 순서대로
   합쳐 `docs/style.css`로 냅니다. **우선순위는 `00-reset.css` 맨 위의 `@layer` 계층 순서**(reset → base → layout →
