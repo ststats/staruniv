@@ -22,13 +22,13 @@ function updateMembersHash() {
     PageState.update(params);
 }
 
-function switchMemberView(viewType, skipHashUpdate) {
+function switchMemberView(viewType, skipHashUpdate, selectedMember = null) {
     activateTabView(MEMBER_TABS, viewType);
     if (viewType === 'news') {
         if (!NewsState.sidebarRendered) {
             renderNewsSidebar();
             NewsState.sidebarRendered = true;
-            showNewsAll(true);
+            if (!selectedMember) showNewsAll(true);
         } else {
             // 숨겨져 있던 동안 그려졌거나 창 크기가 바뀌었으면 PC/모바일 레이아웃을 다시 맞춘다.
             refreshNewsLayoutIfNeeded();
@@ -385,11 +385,13 @@ async function showNewsAll(skipHashUpdate) {
     showNewsLoading(content);
     const token = ++NewsState.requestSeq;
 
+    const stored = await fetchStoredMemberPosts();
+    if (token !== NewsState.requestSeq) return;
     // mergeOwnPosts가 공지를 합쳐 10개보다 많이 올 수 있으니 자르지 않고 전부 담는다.
     const memberState = new Map();
     const settled = await Promise.allSettled(
         activeMembersWithSoopId().map(async m => {
-            const { posts, totalPages } = await fetchMemberFeed(m['SOOP ID'], 1);
+            const { posts, totalPages } = await fetchMemberFeed(m['SOOP ID'], 1, stored);
             memberState.set(m['SOOP ID'], { nextPage: 2, totalPages });
             return posts.map(post => ({ member: m, post }));
         })
@@ -931,8 +933,8 @@ bootPage(
             PageState.bindRestore(params => {
                 const rawView = params.get('view') || runtimeDefaultSubtab('members', 'status');
                 const view = rawView === 'news' ? 'news' : 'status';
-                switchMemberView(view);
                 const member = params.get('member');
+                switchMemberView(view, true, member);
                 if (view === 'news' && member) selectNewsPlayer(member);
                 // 뒤로가기로 "전체 공지" 주소에 돌아오면 화면도 되돌린다
                 else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
