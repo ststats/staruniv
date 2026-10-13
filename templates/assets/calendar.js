@@ -416,9 +416,6 @@ const calEventCardHtml = (item, dateStr, type) => {
             </button>
         </div>`
         : '';
-    return `<span class="hist-chip">${avatar}<span class="cal-offair-name">${escapeHTML(name + role)}</span></span>`;
-        })
-        .join('');
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
