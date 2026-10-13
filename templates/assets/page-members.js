@@ -490,15 +490,34 @@ async function loadMoreAllNews(token) {
 async function loadMoreMemberNews(token) {
     const S = NewsState;
     const member = S.player;
-    S.memberPage += 1;
-    const { posts, totalPages } = await fetchMemberFeed(member['SOOP ID'], S.memberPage);
-    if (token !== S.requestSeq) return false;
-    S.memberTotalPages = totalPages;
-    // 공지가 페이지마다 딸려올 수 있어 이미 있는 글은 건너뛴다.
     const existingKeys = new Set(S.items.map(newsItemKey));
-    S.items = S.items.concat(
-        posts.map(post => ({ member, post })).filter(item => !existingKeys.has(newsItemKey(item)))
-    );
+    let added = 0;
+    let scanned = 0;
+    // 원본에는 방문자 글과 반복 고정글도 있다. 새 본인 글 한 묶음이
+    // 찰 때까지 빈 쪽을 넘긴다. 매우 드문 글 때문에 무한히 읽지는 않는다.
+    while (added < NEWS_PAGE_SIZE && S.memberPage < S.memberTotalPages && scanned < 50) {
+        const page = S.memberPage + 1;
+        let feed;
+        try {
+            feed = await fetchMemberFeed(member['SOOP ID'], page);
+        } catch (error) {
+            if (token !== S.requestSeq) return false;
+            if (!added) throw error;
+            break; // 받은 글은 표시하고, 실패한 쪽은 다음 클릭에서 다시 읽는다.
+        }
+        if (token !== S.requestSeq) return false;
+        S.memberPage = page;
+        S.memberTotalPages = feed.totalPages;
+        scanned++;
+        for (const post of feed.posts) {
+            const item = { member, post };
+            const key = newsItemKey(item);
+            if (existingKeys.has(key)) continue;
+            existingKeys.add(key);
+            S.items.push(item);
+            added++;
+        }
+    }
     S.hasMore = S.memberPage < S.memberTotalPages;
     return true;
 }
@@ -509,6 +528,11 @@ async function loadMoreNewsFeed() {
     const token = NewsState.requestSeq;
     // 다시 그리면 #news-past-list가 새로 만들어져 스크롤이 0이 된다.
     const restoreScroll = capturePastListScroll();
+    const button = document.querySelector('.news-load-more');
+    if (button) {
+        button.disabled = true;
+        button.textContent = '지난 공지 찾는 중';
+    }
     try {
         let updated = false;
         if (NewsState.mode === 'all') updated = await loadMoreAllNews(token);
@@ -516,8 +540,11 @@ async function loadMoreNewsFeed() {
         if (!updated) return;
         renderNewsLayout(document.getElementById('news-feed-content'));
         restoreScroll();
+    } catch (_error) {
+        if (token === NewsState.requestSeq && button && button.isConnected) button.textContent = '다시 시도';
     } finally {
         NewsState.loading = false;
+        if (button && button.isConnected) button.disabled = false;
     }
 }
 

@@ -185,6 +185,45 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
             await ctx.close();
         }
     });
+    await t.test('방문자 글 때문에 비거나 고정글이 반복되는 쪽도 한 번의 더 보기로 건너뛴다', async () => {
+        const ctx = await browser.newContext();
+        try {
+            await routeFixtures(ctx, base);
+            const calls = [];
+            await ctx.route('**/functions/v1/member-notices*', route => {
+                const url = new URL(route.request().url());
+                const p = Number(url.searchParams.get('page'));
+                calls.push({ id: url.searchParams.get('soop_id'), page: p });
+                const titles =
+                    p === 1 ? [1, 2] : p === 2 ? [] : p === 3 ? [1, 2] : p === 4 ? [3, 4] : [5, 6, 7, 8, 9, 10, 11, 12];
+                return route.fulfill({
+                    json: {
+                        posts: titles.map(titleNo => ({
+                            titleNo,
+                            titleName: '공지 ' + titleNo,
+                            userId: 'user0',
+                            regDate: '2026-10-14 10:00:00',
+                        })),
+                        totalPages: 10,
+                    },
+                });
+            });
+            const page = await ctx.newPage();
+            await page.goto(`${base}members/?view=news&member=${encodeURIComponent('가람')}`);
+            await page.locator('#news-feed-content .news-post-card').waitFor();
+            await page.locator('.news-load-more').click();
+            await page.waitForFunction(
+                () => document.querySelectorAll('#news-past-list .news-past-item').length === 11
+            );
+            assert.deepEqual(
+                calls.map(c => c.page),
+                [1, 2, 3, 4, 5]
+            );
+            assert.ok(calls.every(c => c.id === 'user0'));
+        } finally {
+            await ctx.close();
+        }
+    });
     for (const [route, defaultKey, hiddenKey, prefix, explicit] of [
         ['records', 'individual', 'team', 'tab-', 'team'],
         ['tier', 'h2h', 'list', 'tab-tier-', 'list'],

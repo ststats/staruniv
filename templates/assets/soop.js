@@ -156,15 +156,11 @@ async function fetchMemberFeed(soopId, page, stored = null) {
                 totalPages: hit.totalPages,
             };
     }
-    try {
-        const data = await Api.memberPostPage(soopId, Number(page));
-        return {
-            posts: asArray(data && data.posts),
-            totalPages: Number(data && data.totalPages) || 1,
-        };
-    } catch (e) {
-        return { posts: [], totalPages: 1 };
-    }
+    const data = await Api.memberPostPage(soopId, Number(page));
+    return {
+        posts: asArray(data && data.posts),
+        totalPages: Number(data && data.totalPages) || 1,
+    };
 }
 
 // textContent의 줄바꿈이 <br>로 와서 \n으로 바꾼 뒤 이스케이프한다(pre-wrap으로 표시).
