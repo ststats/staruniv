@@ -5,6 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const source = fs.readFileSync(path.join(__dirname, '../templates/assets/calendar.js'), 'utf8');
+const historySource = fs.readFileSync(path.join(__dirname, '../templates/assets/history.js'), 'utf8');
 const members = [
     { '이름': '김윤환', 'SOOP ID': 'brainzerg7' },
     { '이름': '김민철', 'SOOP ID': 'minchul' },
@@ -26,10 +27,13 @@ const sandbox = {
     Map,
     window: {},
     act: () => 'data-action="histToggleMembers"',
+    actOn: () => '',
+    ACT: { el: {} },
     getProfileImgUrl: id => `/profiles/${id}.webp`,
 };
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox);
+vm.runInContext(historySource, sandbox);
 
 function evaluate(expression) {
     return vm.runInContext(expression, sandbox);
@@ -78,6 +82,12 @@ test('빈 시간은 숨기고 관리자가 직접 적은 미정만 보여준다'
     assert.equal(evaluate("calDisplayTime({ time: '19:00' })"), '19:00');
 });
 
+test('일정과 연혁 뱃지는 하나의 공통 렌더러를 사용한다', () => {
+    const cal = fs.readFileSync(path.join(__dirname, '../templates/assets/calendar.js'), 'utf8');
+    assert.match(cal, /histChipsHtml\(/);
+    assert.doesNotMatch(cal, /calParticipantBadge|calParticipantChip|calParticipantAvatar/);
+});
+
 test('참가자 1~3명은 역할 없이 원래 이름으로 개별 표시한다', () => {
     const people = [
         { soop_id: 'brainzerg7', name: '김윤환', role: '해설' },
@@ -114,6 +124,16 @@ test('4명 이상부터 첫 두 명과 나머지 겹친 세 번째 뱃지를 표
         assert.match(html, /data-hist-rest="schedule-today-15" hidden/);
         assert.doesNotMatch(html, /hist-chip-role/);
     }
+});
+
+test('연혁의 기존 펼침 규칙은 그대로 유지한다', () => {
+    const entries = Array.from({ length: 7 }, (_, i) => '멤버' + i);
+    const html = evaluate('histChipsHtml(' + JSON.stringify(entries) + ',[],null,"hist-seven")');
+    const first = html.split('class="hist-chips-rest"')[0];
+    assert.equal((first.match(/class="hist-chip is-unknown"/g) || []).length, 5);
+    assert.match(html, /\+2명/);
+    const six = evaluate('histChipsHtml(' + JSON.stringify(entries.slice(0, 6)) + ',[],null,"hist-six")');
+    assert.doesNotMatch(six, /hist-chip-more/);
 });
 
 test('빈 시간은 숨기고 뱃지 이름은 HTML 이스케이프한다', () => {

@@ -146,7 +146,7 @@ function histToggleMembers(key) {
 }
 
 function histMemberChipHtml(entry, members, avatarUrlFn) {
-    const { name, note } = histParseMember(entry);
+    const { name, note } = entry && typeof entry === 'object' ? { name: String(entry.name || ''), note: '' } : histParseMember(entry);
     const m = (members || []).find(x => x['이름'] === name);
     const url = m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
     const ava = url
@@ -154,6 +154,23 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
         : `<span class="hist-chip-ava">👤</span>`;
     const noteHtml = note ? `<span class="hist-chip-role">${escapeHTML(note)}</span>` : '';
     return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
+}
+
+// 일정과 연혁은 같은 참가자 뱃지를 사용한다. compact면 세 명까지 펼치고 4명부터 셋째 칸에 접는다.
+function histChipsHtml(entries, members, avatarUrlFn, key, compact = false) {
+    if (!entries.length) return '';
+    const shown = entries.length <= (compact ? 3 : HIST_CHIP_VISIBLE + 1)
+        ? entries
+        : entries.slice(0, compact ? 2 : HIST_CHIP_VISIBLE);
+    const rest = entries.slice(shown.length);
+    const chip = entry => histMemberChipHtml(entry, members, avatarUrlFn);
+    return '<div class="hist-chips">' + shown.map(chip).join('') +
+        (rest.length
+            ? '<span class="hist-chips-rest" data-hist-rest="' + escapeHTML(key) + '" hidden>' +
+              rest.map(chip).join('') + '</span>' +
+              histMoreChipHtml(rest, members, avatarUrlFn, escapeHTML(key))
+            : '') +
+        '</div>';
 }
 
 // 형식 필터. 공개·관리자 페이지가 각자 등록한 histRedraw로 다시 그린다.
@@ -236,19 +253,7 @@ function histItemHtml(item, opts) {
             </button>`
         : '';
     const members = (item.members || []).filter(Boolean);
-    const chip = n => histMemberChipHtml(n, opts.members, opts.avatarUrl);
-    let chips = '';
-    // '+1명' 칸은 이름 칸만큼 자리를 먹으므로 한 명만 남을 때는 접지 않는다
-    if (members.length && members.length <= HIST_CHIP_VISIBLE + 1) {
-        chips = `<div class="hist-chips">${members.map(chip).join('')}</div>`;
-    } else if (members.length) {
-        const shown = members.slice(0, HIST_CHIP_VISIBLE);
-        const rest = members.slice(HIST_CHIP_VISIBLE);
-        chips =
-            `<div class="hist-chips">${shown.map(chip).join('')}` +
-            `<span class="hist-chips-rest" data-hist-rest="${key}" hidden>${rest.map(chip).join('')}</span>` +
-            `${histMoreChipHtml(rest, opts.members, opts.avatarUrl, key)}</div>`;
-    }
+    const chips = histChipsHtml(members, opts.members, opts.avatarUrl, key);
     const adminBar = opts.admin
         ? `
             <div class="hist-admin-bar">

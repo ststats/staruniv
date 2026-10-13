@@ -377,71 +377,17 @@ const calSelectDate = dateStr => {
     calRenderSelectedDateSchedules();
 };
 
-// 오늘/선택 날짜의 참가자 뱃지는 본명으로 표시한다. 4명 이상은 두 명을 보이고 나머지는 세 번째 뱃지로 묶는다.
-const calParticipantName = p => {
-    const member = calMember(p.name, p.soop_id);
-    return String(member?.['이름'] || p.name || p.soop_id || '').trim();
-};
-const calParticipantAvatar = p => {
-    const member = calMember(p.name, p.soop_id);
-    const url = member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
-    return url
-        ? '<img class="hist-chip-ava" src="' + escapeHTML(url) + '" alt="" loading="lazy">'
-        : '<span class="hist-chip-ava">👤</span>';
-};
-const calParticipantChip = p => {
-    const member = calMember(p.name, p.soop_id);
-    return (
-        '<span class="hist-chip' +
-        (member ? '' : ' is-unknown') +
-        '">' +
-        calParticipantAvatar(p) +
-        '<span class="hist-chip-name">' +
-        escapeHTML(calParticipantName(p)) +
-        '</span></span>'
-    );
-};
-const calParticipantBadges = (people, key) => {
-    if (!people.length) return '';
-    const visible = people.length <= 3 ? people : people.slice(0, 2);
-    const remaining = people.length <= 3 ? [] : people.slice(2);
-    const hidden = !remaining.length
-        ? ''
-        : '<span class="hist-chips-rest" data-hist-rest="' +
-          escapeHTML(key) +
-          '" hidden>' +
-          remaining.map(calParticipantChip).join('') +
-          '</span>';
-    const more = !remaining.length
-        ? ''
-        : '<button type="button" class="hist-chip hist-chip-more" data-hist-more="' +
-          escapeHTML(key) +
-          '" ' +
-          act('histToggleMembers', key) +
-          ' aria-expanded="false" title="' +
-          escapeHTML(remaining.map(calParticipantName).join(', ')) +
-          '">' +
-          '<span class="hist-stack">' +
-          remaining
-              .slice(0, 3)
-              .map(p => {
-                  const member = calMember(p.name, p.soop_id);
-                  const url =
-                      member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
-                  return url
-                      ? '<img class="hist-stack-face" src="' + escapeHTML(url) + '" alt="" loading="lazy">'
-                      : '<span class="hist-stack-face">👤</span>';
-              })
-              .join('') +
-          '</span><span class="hist-chip-name">+' +
-          remaining.length +
-          '명</span></button>';
-    return '<div class="hist-chips">' + visible.map(calParticipantChip).join('') + hidden + more + '</div>';
-};
-
+// 참가자 뱃지는 연혁의 단일 렌더러를 재사용한다. 월간 표시만 두 글자 약어를 유지한다.
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
-    const badges = calParticipantBadges(calParticipants(item), 'schedule-' + type + '-' + item.id);
+    const members = typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : [];
+    const people = calParticipants(item).map(p => ({
+        name: calMember(p.name, p.soop_id)?.['이름'] || String(p.name || p.soop_id || '').trim(),
+    }));
+    const badges = histChipsHtml(
+        people, members, typeof getProfileImgUrl === 'function' ? getProfileImgUrl : null,
+        'schedule-' + type + '-' + item.id, true
+    );
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">

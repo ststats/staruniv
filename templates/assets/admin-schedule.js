@@ -49,20 +49,18 @@
         const participants = selected.map(id => {
             const member = members.find(m => m.soop_id === id && activeScheduleMember(m));
             if (!member) throw new Error('현재 소속 멤버만 참가자로 선택할 수 있습니다');
-            const old = previous.find(p => p.soop_id === id);
-            return { ...old, soop_id: id, name: member.name || member.nickname || id };
+            return { soop_id: id, name: member.name || member.nickname || id };
         });
         // 기존 일정에 등록된 퇴단 멤버는 선택 목록에서 숨기되 저장할 때 보존한다.
         for (const old of previous) {
             if (!old.soop_id || selected.includes(old.soop_id)) continue;
             if (members.some(m => m.soop_id === old.soop_id && activeScheduleMember(m))) continue;
-            participants.push(old);
+            participants.push({ soop_id: old.soop_id, name: old.name || old.soop_id });
         }
         for (const value of C().value('as_external').split(/\r?\n/)) {
             const name = value.trim();
             if (!name) continue;
-            const old = previous.find(p => !p.soop_id && p.name === name);
-            participants.push(old ? { ...old, name } : { name });
+            participants.push({ name });
         }
         return participants;
     }
@@ -80,7 +78,7 @@
         <div class="admin-form-grid">
           ${C().field('시작일', C().input('as_start', start, 'date', 'required'))}
           ${C().field('종료일', C().input('as_end', end, 'date', 'required'))}
-          ${C().field('시간', C().input('as_time', row?.time === '비방연습' ? '' : row?.time || '', 'text', 'placeholder="19:00 또는 시간미정"'))}
+          ${C().field('시간', C().input('as_time', row?.time === '비방연습' ? '' : row?.time || '', 'text', 'placeholder="19:00 또는 미정 (비우면 숨김)"'))}
           ${C().field('주체', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, ASL22, 윤환"'))}
         </div>
         ${C().field(
