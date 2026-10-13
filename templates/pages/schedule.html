@@ -14,8 +14,15 @@
     <div class="container">
     <div id="view-calendar">
         <div class="cal-main-layout">
-            {#- 선택한 날짜 일정(좁은 화면에서는 달력 아래로 내려간다) #}
+            {#- 오늘·선택한 날짜 일정(좁은 화면에서는 달력 아래로 내려간다) #}
             <aside class="cal-sidebar" aria-label="일정 목록">
+                <div class="cal-today-card-wrapper">
+                    <div class="section-title" data-en="TODAY"><span class="section-title-label">오늘의 일정</span></div>
+                    <div class="clean-card cal-day-card">
+                        <div class="cal-day-card-date" id="todayDateLabel"></div>
+                        <div class="cal-today-list is-empty" id="todayList" aria-live="polite" aria-busy="true"><div class="cal-no-schedule">오늘 일정을 불러오는 중</div></div>
+                    </div>
+                </div>
                 <div class="cal-selected-card-wrapper">
                     <div class="section-title" id="selectedListTitle" data-en="SELECTED"><span class="section-title-label">선택한 날짜 일정</span></div>
                     <div class="clean-card cal-day-card">
