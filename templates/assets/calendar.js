@@ -235,7 +235,7 @@ const calSubjectLabel = item => {
     return `${subject} · ${participants.length}인`;
 };
 const calEventTitle = item => item.title || item.desc || (item.time === '비방연습' ? '비방연습' : item.person);
-// 미입력 시간은 표시하지 않는다. '미정'은 관리자가 입력한 경우에만 표시한다.
+// 빈 시간은 월간 달력과 날짜별 일정 모두 숨긴다. '미정'은 관리자가 입력한 경우에만 표시한다.
 const calDisplayTime = item => (item.time === '비방연습' ? '' : String(item.time || '').trim());
 
 const calGetEventHTML = item =>
