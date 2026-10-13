@@ -189,14 +189,16 @@ test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일�
     }
 });
 
-test('휴방 라벨과 뱃지는 같은 줄에서 상단 정렬하고 연혁 위쪽 여백을 제외한다', () => {
+test('휴방 라벨 폭은 유지하고 뱃지는 위쪽 여백 없이 정렬한다', () => {
     const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
-    const label = css.match(/\\.cal-offair-label\\s*\\{([^}]+)\\}/)?.[1];
-    const chips = css.match(/\\.cal-offair-chips > \\.hist-chips\\s*\\{([^}]+)\\}/)?.[1];
-    assert.ok(label && chips);
-    assert.match(label, /width:\\s*5ch/);
-    assert.match(label, /min-height:\\s*24px/);
-    assert.match(chips, /margin-top:\\s*0/);
+    const labelStart = css.indexOf('.cal-offair-label {');
+    const chipsStart = css.indexOf('.cal-offair-chips > .hist-chips {');
+    assert.ok(labelStart >= 0 && chipsStart >= 0);
+    const label = css.slice(labelStart, css.indexOf('}', labelStart));
+    const chips = css.slice(chipsStart, css.indexOf('}', chipsStart));
+    assert.match(label, /min-height:\s*24px/);
+    assert.doesNotMatch(label, /width:/);
+    assert.match(chips, /margin-top:\s*0/);
 });
 
 test('오늘과 선택한 날짜 일정은 내부 스크롤 없이 펼쳐진다', () => {
