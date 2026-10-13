@@ -1,4 +1,4 @@
-// 멤버 공지: 첫 페이지는 member_posts 표에서, 표에 없는 멤버·2쪽부터는 SOOP에 직접
+// 멤버 공지: 모든 페이지를 Supabase에서 읽는다
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { code } = require('./code-pattern');
@@ -25,18 +25,17 @@ function setup(tableRows, { tableError = null } = {}) {
                 if (tableError) throw tableError;
                 return tableRows;
             },
+            memberPostPage: async (id, page) => {
+                apiCalls.push({ id, page });
+                return { posts: [{ titleNo: 9, userId: id }], totalPages: 3 };
+            },
             recentPosts: async () => {
                 if (tableError) throw tableError;
                 return tableRows;
             },
         },
-        cachedFetchJson: async url => {
-            apiCalls.push(url);
-            return {
-                contents: [{ titleNo: 9, userId: 'api', regDate: '2026-09-01 10:00:00', titleName: 'api' }],
-                noticeData: [],
-                meta: { totalPages: 3 },
-            };
+        cachedFetchJson: async () => {
+            throw new Error('Browser must not call SOOP');
         },
     });
     vm.runInContext(SOOP, ctx);
@@ -63,23 +62,18 @@ test('첫 페이지는 모아 둔 표에서 읽고 SOOP은 부르지 않는다(�
     assert.equal(apiCalls.length, 0);
 });
 
-test('표에 없는 멤버와 2쪽부터는 SOOP에 직접 묻는다', async () => {
+test('표에 없는 멤버와 2쪽부터도 Supabase에서 읽는다', async () => {
     const { feed, apiCalls } = setup(ROWS);
     await feed('api', 1);
     await feed('aaa', 2);
     assert.equal(apiCalls.length, 2);
-    assert.match(apiCalls[0], /channel\/api\/board\?perPage=10&page=1/);
-    assert.match(apiCalls[1], /channel\/aaa\/board\?perPage=10&page=2/);
-    for (const url of apiCalls) {
-        const params = new URL(url).searchParams;
-        assert.equal(params.get('type'), 'all');
-        assert.equal(params.get('orderBy'), 'reg_date');
-        assert.equal(params.get('field'), 'title,contents,user_nick,user_id,hashtags');
-        assert.equal(params.get('bbsNo'), '');
-    }
+    assert.deepEqual(apiCalls, [
+        { id: 'api', page: 1 },
+        { id: 'aaa', page: 2 },
+    ]);
 });
 
-test('표를 못 읽거나 비어 있으면 예전처럼 SOOP에 직접 묻는다', async () => {
+test('표를 못 읽거나 비어 있으면 Supabase 페이지 함수를 쓴다', async () => {
     for (const opts of [
         [[], {}],
         [null, { tableError: { message: 'x' } }],

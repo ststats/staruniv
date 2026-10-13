@@ -99,7 +99,7 @@ function mergeOwnPosts(data, soopId) {
 }
 
 // 활동 멤버 게시판 첫 페이지 모음(ststat live-status가 2분마다 채움). 멤버마다 SOOP API를 부르지 않으려고 쓴다.
-// 못 읽거나 비면 null(호출 쪽이 SOOP에 직접 묻는다). 실패는 캐시하지 않는다.
+// 못 읽거나 비면 null(호출 쪽이 Supabase 페이지 함수에 묻는다). 실패는 캐시하지 않는다.
 const STORED_POSTS_TTL_MS = 60 * 1000;
 let _storedPostsRequest = null;
 let _storedPostsAt = 0;
@@ -147,7 +147,7 @@ async function fetchRecentStoredPosts(limit) {
 }
 
 async function fetchMemberFeed(soopId, page) {
-    // 모음에 없는 멤버(글이 없거나 막 들어온 멤버)는 SOOP에 직접 묻는다
+    // 첫 쪽은 모아 둔 표를 쓰고, 나머지는 Supabase 서버가 읽는다.
     if (Number(page) === 1) {
         const stored = await fetchStoredMemberPosts();
         const hit = stored && stored.get(String(soopId || '').toLowerCase());
@@ -158,15 +158,10 @@ async function fetchMemberFeed(soopId, page) {
             };
     }
     try {
-        // Same public board query as SOOP's "all posts" view; pinned notices are returned in noticeData.
-        // Page 2+ stays browser-side without forwarding an administrator's login session.
-        const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board` +
-            `?perPage=${NEWS_PAGE_SIZE}&page=${page}&startDate=&endDate=&field=title,contents,user_nick,user_id,hashtags` +
-            '&keyword=&type=all&orderBy=reg_date&bbsNo=';
-        const data = await cachedFetchJson(url, 120000); // 2분
+        const data = await Api.memberPostPage(soopId, Number(page));
         return {
-            posts: mergeOwnPosts(data, soopId),
-            totalPages: (data && data.meta && data.meta.totalPages) || 1,
+            posts: asArray(data && data.posts),
+            totalPages: Number(data && data.totalPages) || 1,
         };
     } catch (e) {
         return { posts: [], totalPages: 1 };
