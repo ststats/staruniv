@@ -143,3 +143,20 @@ test('빈 시간은 숨기고 뱃지 이름은 HTML 이스케이프한다', () =
     assert.doesNotMatch(html, /<script>|hist-chip-role|cal-card-time/);
     assert.match(html, /&lt;script&gt;/);
 });
+
+test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일하고 프로필은 작게 표시한다', () => {
+    const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
+    const chip = css.match(/\.cal-offair-chip,\s*\.hist-chip\s*\{([^}]+)\}/)?.[1];
+    const avatars = css.match(/\.cal-offair-avatar,\s*\.hist-chip-ava,\s*\.hist-stack-face\s*\{([^}]+)\}/)?.[1];
+    const none = css.match(/\.cal-offair-none\s*\{([^}]+)\}/)?.[1];
+    const offAirName = css.match(/\.cal-offair-name\s*\{([^}]+)\}/)?.[1];
+    const historyName = css.match(/\.hist-chip-name\s*\{([^}]+)\}/)?.[1];
+    assert.ok(chip && avatars && none && offAirName && historyName);
+    assert.match(chip, /min-height:\s*24px/);
+    assert.match(chip, /font-size:\s*var\(--fs-small\)/);
+    assert.match(avatars, /width:\s*18px/);
+    assert.match(avatars, /height:\s*18px/);
+    for (const rule of [none, offAirName, historyName]) {
+        assert.match(rule, /font-size:\s*var\(--fs-small\)/);
+    }
+});

@@ -135,15 +135,15 @@
         flex: 1;
         min-width: 0;
     }
-    /* 사람 칩: 휴방 칩과 연혁 참여자 칩이 같은 짜임을 쓴다(관리자 팀 칩도 같은 크기) */
+    /* 휴방·오늘의 일정·연혁에서 공유하는 사람 칩. '없음'과 같은 글자 크기. */
     .cal-offair-chip,
     .hist-chip {
         display: inline-flex;
         align-items: center;
         gap: var(--space-label-gap);
-        min-height: 28px;
+        min-height: 24px;
         /* 글줄 높이를 1로 고정해야 이름과 괄호 설명이 같은 중심선에 선다 */
-        padding: 3px var(--space-4) 3px 3px;
+        padding: 2px var(--space-3) 2px 2px;
         background: var(--color-bg-subtle);
         clip-path: var(--notch-4);
         font-size: var(--fs-small);
@@ -153,8 +153,8 @@
     .hist-chip-ava,
     .hist-stack-face {
         flex-shrink: 0;
-        width: 22px;
-        height: 22px;
+        width: 18px;
+        height: 18px;
         object-fit: cover;
     }
     .cal-offair-avatar {
@@ -162,7 +162,8 @@
     }
     .cal-offair-name {
         color: var(--color-text-sub);
-        font-weight: 700;
+        font-size: var(--fs-small);
+        font-weight: 500;
         white-space: nowrap;
     }
     /* 휴방자가 없는 날의 '없음'(높이는 '휴방' 글자 칸과 같게) */
@@ -531,18 +532,19 @@
         display: inline-grid;
         place-items: center;
         background: var(--color-placeholder-bg);
-        font-size: var(--fs-badge);
+        font-size: var(--fs-badge-sm);
     }
     .hist-chip-name {
         color: var(--color-text-main);
-        font-weight: 700;
+        font-size: var(--fs-small);
+        font-weight: 500;
     }
     .hist-chip-role {
         color: var(--color-text-sub);
         font-size: var(--fs-badge-sm);
     }
     .hist-chip.is-unknown {
-        padding-left: var(--space-4);
+        padding-left: var(--space-3);
     }
     .hist-chip.is-unknown .hist-chip-ava {
         display: none;
@@ -562,7 +564,7 @@
         box-shadow: 0 0 0 2px var(--color-bg-subtle);
     } /* 칩 바탕색 테두리로 겹친 얼굴을 떼어 보인다 */
     .hist-stack-face + .hist-stack-face {
-        margin-left: -9px;
+        margin-left: -7px;
     }
 
     .hist-media {
