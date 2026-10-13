@@ -210,6 +210,22 @@ const Api = {
         return apiCall('api_member_posts');
     },
 
+    // GET /api/v1/posts/page - Supabase serves all pages; SOOP credentials stay on the server.
+    async memberPostPage(soopId, page) {
+        const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
+        if (!cfg.url || !cfg.key) throw new Error('Supabase 설정이 없습니다');
+        const url = new URL('/functions/v1/member-notices', cfg.url);
+        url.searchParams.set('soop_id', soopId);
+        url.searchParams.set('page', String(page));
+        const response = await fetch(url, {
+            headers: { apikey: cfg.key },
+            cache: 'no-store',
+            signal: AbortSignal.timeout(45000),
+        });
+        if (!response.ok) throw new Error('공지를 불러오지 못했습니다');
+        return response.json();
+    },
+
     // GET /api/v1/posts?limit= - 전체 멤버 공지 중 최신 limit개(홈 카드) [{soop_id, titleName, regDate, text, thumb}]
     async recentPosts(limit) {
         return apiCall('api_recent_posts', { p_limit: limit });
