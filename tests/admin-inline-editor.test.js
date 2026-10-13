@@ -51,7 +51,7 @@ test('일정 색은 정해진 팔레트 키로 저장하고, 공개 달력이 �
     assert.match(admin, /\.filter\(activeScheduleMember\)/);
     assert.match(admin, /activeScheduleMember = m => m\.soop_id && !String\(m\.left_date/);
     assert.match(admin, /participants\.push\(previous\)/);
-    assert.match(admin, /function bindParticipantRoles\(/);
+    assert.doesNotMatch(admin, /as_roles|bindParticipantRoles|PARTICIPANT_ROLES/);
     assert.match(admin, /function offAirChecklist[\s\S]*?!m\.left_date/);
     assert.match(admin, /type="checkbox"/);
 });

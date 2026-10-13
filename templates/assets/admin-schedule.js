@@ -29,15 +29,6 @@
         if (keep) calSelectDate(keep);
     }
 
-    const PARTICIPANT_ROLES = [
-        ['', '일반 참가'],
-        ['출전', '출전'],
-        ['해설', '해설'],
-        ['응원', '응원'],
-        ['진행', '진행'],
-    ];
-    // 퇴단일이 없을 때만 현재 소속 멤버로 선택할 수 있다.
-    const activeScheduleMember = m => m.soop_id && !String(m.left_date || '').trim();
     function participantRows(row) {
         const selected = Array.isArray(row?.participants) ? row.participants : [];
         const known = C().state.members || [];
@@ -50,63 +41,27 @@
             .join('')}</div>`;
     }
 
-    // 참가 멤버를 체크한 뒤 역할을 선택할 수 있다. 그리기 전에 기존 선택값을 기억한다.
-    function bindParticipantRoles(row) {
-        const grid = document.getElementById('as_members');
-        const box = document.getElementById('as_roles');
-        if (!grid || !box) return;
-        const roles = new Map((row?.participants || []).filter(p => p.soop_id).map(p => [p.soop_id, p.role || '']));
-        const members = C().state.members || [];
-        const draw = () => {
-            box.querySelectorAll('select[data-participant-role]').forEach(el =>
-                roles.set(el.dataset.participantRole, el.value)
-            );
-            const ids = [...grid.querySelectorAll('input:checked')].map(el => el.value);
-            box.innerHTML = ids
-                .map(id => {
-                    const m = members.find(x => x.soop_id === id);
-                    const role = roles.get(id) || '';
-                    const choices = PARTICIPANT_ROLES.some(([key]) => key === role)
-                        ? PARTICIPANT_ROLES
-                        : [...PARTICIPANT_ROLES, [role, role]];
-                    return C().field(
-                        `${m?.nickname || m?.name || id} 역할`,
-                        C().select(`as_role_${id}`, choices, role, `data-participant-role="${C().esc(id)}"`)
-                    );
-                })
-                .join('');
-        };
-        grid.addEventListener('change', draw);
-        draw();
-    }
-
     function readParticipants(row) {
         const members = C().state.members || [];
-        const roles = new Map(
-            [...document.querySelectorAll('#as_roles select[data-participant-role]')].map(el => [
-                el.dataset.participantRole,
-                el.value,
-            ])
-        );
+        const previous = Array.isArray(row?.participants) ? row.participants : [];
         const selected = [...document.querySelectorAll('#as_members input:checked')].map(el => el.value);
         const participants = selected.map(id => {
             const member = members.find(m => m.soop_id === id && activeScheduleMember(m));
             if (!member) throw new Error('현재 소속 멤버만 참가자로 선택할 수 있습니다');
-            return { soop_id: id, name: member.name || member.nickname || id, role: roles.get(id) || '' };
+            const old = previous.find(p => p.soop_id === id);
+            return { ...old, soop_id: id, name: member.name || member.nickname || id };
         });
-        // 예전 일정에 기록된 퇴단 멤버는 선택 목록에서 숨기되 저장할 때 삭제하지 않는다.
-        for (const previous of row?.participants || []) {
-            if (!previous.soop_id || selected.includes(previous.soop_id)) continue;
-            if (members.some(m => m.soop_id === previous.soop_id && activeScheduleMember(m))) continue;
-            participants.push(previous);
+        // 기존 일정에 등록된 퇴단 멤버는 선택 목록에서 숨기되 저장할 때 보존한다.
+        for (const old of previous) {
+            if (!old.soop_id || selected.includes(old.soop_id)) continue;
+            if (members.some(m => m.soop_id === old.soop_id && activeScheduleMember(m))) continue;
+            participants.push(old);
         }
         for (const value of C().value('as_external').split(/\r?\n/)) {
-            const line = value.trim();
-            if (!line) continue;
-            const [rawName, ...rawRole] = line.split('|');
-            const name = rawName.trim();
-            if (!name) throw new Error('외부 참가자의 이름을 입력하세요');
-            participants.push({ name, role: rawRole.join('|').trim() });
+            const name = value.trim();
+            if (!name) continue;
+            const old = previous.find(p => !p.soop_id && p.name === name);
+            participants.push(old ? { ...old, name } : { name });
         }
         return participants;
     }
@@ -143,15 +98,14 @@
         ${C().field('일정명', C().input('as_title', row?.title || row?.desc || (row?.time === '비방연습' ? '비방연습' : ''), 'text', 'required maxlength="120"'))}
         ${C().field('상세 설명', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
         <div class="admin-field"><span>참가 멤버</span>${participantRows(row)}</div>
-        <div class="admin-field"><span>참가 멤버 역할 (선택)</span><div id="as_roles"></div></div>
         ${C().field(
             '외부 참가자',
             C().textarea(
                 'as_external',
-                otherParticipants.map(p => `${p.name}${p.role ? ` | ${p.role}` : ''}`).join('\n'),
-                'rows="3" placeholder="한 줄에 한 명: 박상현 | 출전"'
+                otherParticipants.map(p => p.name).join('\n'),
+                'rows="3" placeholder="한 줄에 한 명: 박상현"'
             ),
-            '한 줄에 한 명, 역할은 | 뒤에 입력'
+            '한 줄에 한 명씩 입력'
         )}
         <div class="admin-field"><span>색상</span>${colorPicker(selectedColor)}</div>`,
             onSubmit: async () => {
@@ -197,7 +151,6 @@
                 : null,
             deleteConfirm: '이 일정을 삭제할까요?',
         });
-        bindParticipantRoles(row);
     }
 
     // 그날 이미 휴방으로 등록된 사람은 퇴단했어도 선택지에 남겨 둔다.

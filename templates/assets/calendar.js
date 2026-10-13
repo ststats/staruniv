@@ -377,43 +377,49 @@ const calSelectDate = dateStr => {
     calRenderSelectedDateSchedules();
 };
 
+// 참가자 뱃지는 원래 멤버 이름을 사용한다. 4명부터는 세 번째 뱃지로 나머지를 묶는다.
+const calParticipantName = p => {
+    const member = calMember(p.name, p.soop_id);
+    return String(member?.['이름'] || p.name || p.soop_id || '').trim();
+};
+const calParticipantAvatar = p => {
+    const member = calMember(p.name, p.soop_id);
+    const url = member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
+    return url
+        ? '<img class="hist-chip-ava" src="' + escapeHTML(url) + '" alt="" loading="lazy">'
+        : '<span class="hist-chip-ava">👤</span>';
+};
+const calParticipantChip = p => {
+    const member = calMember(p.name, p.soop_id);
+    return '<span class="hist-chip' + (member ? '' : ' is-unknown') + '">' +
+        calParticipantAvatar(p) + '<span class="hist-chip-name">' +
+        escapeHTML(calParticipantName(p)) + '</span></span>';
+};
+const calParticipantBadges = (people, key) => {
+    if (!people.length) return '';
+    const visible = people.length <= 3 ? people : people.slice(0, 2);
+    const remaining = people.length <= 3 ? [] : people.slice(2);
+    const hidden = !remaining.length ? '' :
+        '<span class="hist-chips-rest" data-hist-rest="' + escapeHTML(key) + '" hidden>' +
+        remaining.map(calParticipantChip).join('') + '</span>';
+    const more = !remaining.length ? '' :
+        '<button type="button" class="hist-chip hist-chip-more" data-hist-more="' + escapeHTML(key) + '" ' +
+        act('histToggleMembers', key) + ' aria-expanded="false" title="' +
+        escapeHTML(remaining.map(calParticipantName).join(', ')) + '">' +
+        '<span class="hist-stack">' + remaining.slice(0, 3).map(p => {
+            const member = calMember(p.name, p.soop_id);
+            const url = member && typeof getProfileImgUrl === 'function'
+                ? getProfileImgUrl(member['SOOP ID']) : '';
+            return url
+                ? '<img class="hist-stack-face" src="' + escapeHTML(url) + '" alt="" loading="lazy">'
+                : '<span class="hist-stack-face">👤</span>';
+        }).join('') + '</span><span class="hist-chip-name">+' + remaining.length + '명</span></button>';
+    return '<div class="hist-chips">' + visible.map(calParticipantChip).join('') + hidden + more + '</div>';
+};
+
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
-    const participants = calParticipants(item);
-    const key = `schedule-${type}-${item.id}`;
-    const badges = participants.length
-        ? `<div class="hist-chips">
-            <span class="hist-chips-rest" data-hist-rest="${escapeHTML(key)}" hidden>${participants
-                .map(p => {
-                    const name = calName(p.name || p.soop_id, p.soop_id);
-                    const member = calMember(p.name, p.soop_id);
-                    const avatarUrl =
-                        member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
-                    const avatar = avatarUrl
-                        ? `<img class="hist-chip-ava" src="${escapeHTML(avatarUrl)}" alt="" loading="lazy">`
-                        : '<span class="hist-chip-ava">👤</span>';
-                    const role = p.role ? `<span class="hist-chip-role">${escapeHTML(p.role)}</span>` : '';
-                    return `<span class="hist-chip">${avatar}<span class="hist-chip-name">${escapeHTML(name)}</span>${role}</span>`;
-                })
-                .join('')}</span>
-            <button type="button" class="hist-chip hist-chip-more" data-hist-more="${escapeHTML(key)}"
-                ${act('histToggleMembers', key)} aria-expanded="false"
-                title="${escapeHTML(participants.map(p => calName(p.name || p.soop_id, p.soop_id)).join(', '))}">
-                <span class="hist-stack">${participants
-                    .slice(0, 3)
-                    .map(p => {
-                        const member = calMember(p.name, p.soop_id);
-                        const url =
-                            member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
-                        return url
-                            ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy">`
-                            : '<span class="hist-stack-face">👤</span>';
-                    })
-                    .join('')}</span>
-                <span class="hist-chip-name">참가 ${participants.length}인</span>
-            </button>
-        </div>`
-        : '';
+    const badges = calParticipantBadges(calParticipants(item), 'schedule-' + type + '-' + item.id);
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
