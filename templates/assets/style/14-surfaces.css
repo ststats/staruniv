@@ -54,6 +54,7 @@
     .mv-console,
     .avatar-bar,
     .tier-bar,
+    .cal-today-card-wrapper > .cal-day-card,
     .cal-month-bar {
         --panel-bg: var(--navy);
         --panel-text: #fff;
@@ -86,6 +87,7 @@
     .mv-console,
     .avatar-bar,
     .tier-bar,
+    .cal-today-card-wrapper > .cal-day-card,
     .cal-month-bar {
         --panel-line: rgba(255, 255, 255, 0.16);
         --color-card: var(--navy);
