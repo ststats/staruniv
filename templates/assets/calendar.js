@@ -377,7 +377,7 @@ const calSelectDate = dateStr => {
     calRenderSelectedDateSchedules();
 };
 
-// 참가자 뱃지는 원래 멤버 이름을 사용한다. 4명부터는 세 번째 뱃지로 나머지를 묶는다.
+// 오늘/선택 날짜의 참가자 뱃지는 본명으로 표시한다. 4명 이상은 두 명을 보이고 나머지는 세 번째 뱃지로 묶는다.
 const calParticipantName = p => {
     const member = calMember(p.name, p.soop_id);
     return String(member?.['이름'] || p.name || p.soop_id || '').trim();
