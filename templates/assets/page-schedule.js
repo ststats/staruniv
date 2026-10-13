@@ -13,7 +13,9 @@ window.calOffAirExtra = (dateStr, type) => {
               })),
               SiteData.members,
               getProfileImgUrl,
-              `offair-${type}-${dateStr}`
+              `offair-${type}-${dateStr}`,
+              false,
+              5
           )
         : '<span class="cal-offair-none">없음</span>';
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
