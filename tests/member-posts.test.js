@@ -70,6 +70,13 @@ test('표에 없는 멤버와 2쪽부터는 SOOP에 직접 묻는다', async () 
     assert.equal(apiCalls.length, 2);
     assert.match(apiCalls[0], /channel\/api\/board\?perPage=10&page=1/);
     assert.match(apiCalls[1], /channel\/aaa\/board\?perPage=10&page=2/);
+    for (const url of apiCalls) {
+        const params = new URL(url).searchParams;
+        assert.equal(params.get('type'), 'all');
+        assert.equal(params.get('orderBy'), 'reg_date');
+        assert.equal(params.get('field'), 'title,contents,user_nick,user_id,hashtags');
+        assert.equal(params.get('bbsNo'), '');
+    }
 });
 
 test('표를 못 읽거나 비어 있으면 예전처럼 SOOP에 직접 묻는다', async () => {
