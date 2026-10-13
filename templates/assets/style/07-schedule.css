@@ -121,8 +121,7 @@
     .cal-offair-label {
         display: flex;
         align-items: center;
-        flex: none;
-        width: 5ch;
+        flex-shrink: 0;
         min-height: 24px;
         font-size: var(--fs-body);
         font-weight: 700;
