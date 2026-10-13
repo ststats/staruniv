@@ -193,7 +193,7 @@ const calLoadPublicData = () => {
     return calLoadState.pending;
 };
 
-// 주체와 참가자는 별개다. 개인은 자기 자신을 빼고, 단체·대회는 참가자 전원을 센다.
+// 개인은 자신을 제외하고, 단체와 대회는 등록된 참가자 전원을 센다.
 const calParticipants = item => {
     if (!Array.isArray(item.participants)) return [];
     const seen = new Set();

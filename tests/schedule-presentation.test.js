@@ -24,6 +24,7 @@ const sandbox = {
         ),
     Date,
     Map,
+    window: {},
 };
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox);
