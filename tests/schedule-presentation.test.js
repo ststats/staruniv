@@ -25,6 +25,8 @@ const sandbox = {
     Date,
     Map,
     window: {},
+    act: () => 'data-action="histToggleMembers"',
+    getProfileImgUrl: id => `/profiles/${id}.webp`,
 };
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox);
@@ -66,10 +68,13 @@ test('단체와 대회는 전체 참가자 수를 인으로 표시한다', () =>
     );
 });
 
-test('기존 일정은 제목 대체값을 표시하고 불명확한 시간은 미정으로 표시한다', () => {
+test('빈 시간은 숨기고 관리자가 직접 적은 미정만 보여준다', () => {
     assert.equal(evaluate("calEventTitle({ title: '', desc: '팬미팅', person: '캄몬' })"), '팬미팅');
     assert.equal(evaluate("calEventTitle({ title: '', desc: '', person: '캄몬', time: '비방연습' })"), '비방연습');
-    assert.equal(evaluate("calDisplayTime({ time: '비방연습' })"), '미정');
+    assert.equal(evaluate("calDisplayTime({ time: '' })"), '');
+    assert.equal(evaluate("calDisplayTime({ time: '비방연습' })"), '');
+    assert.equal(evaluate("calDisplayTime({ time: '미정' })"), '미정');
+    assert.equal(evaluate("calDisplayTime({ time: '시간미정' })"), '시간미정');
     assert.equal(evaluate("calDisplayTime({ time: '19:00' })"), '19:00');
 });
 
@@ -78,11 +83,19 @@ test('날짜 카드에는 역할과 참가자 이름이 뱃지로 나타나고 �
         "calEventCardHtml({ id: 1, time: '19:00', person: 'ASL22', subjectType: 'competition', title: '4강', detail: '김민철 출전', participants: [{ soop_id: 'minchul', name: '김민철', role: '출전' }] }, '2026-10-06', 'today')"
     );
     assert.match(html, /ASL22 · 1인/);
-    assert.match(html, /민철 · 출전/);
+    assert.match(html, /hist-stack/);
+    assert.match(html, /hist-stack-face/);
+    assert.match(html, /hist-chips-rest/);
+    assert.match(html, /data-hist-more/);
+    assert.match(html, /민철/);
+    assert.match(html, /hist-chip-role">출전/);
     assert.match(html, /김민철 출전/);
     const unsafe = evaluate(
         "calEventCardHtml({ id: 1, person: 'ASL22', title: '<b>테스트</b>', participants: [{ name: '<script>', role: '출전' }] }, '2026-10-06', 'today')"
     );
     assert.doesNotMatch(unsafe, /<script>/);
     assert.match(unsafe, /&lt;script&gt;/);
+    const emptyTime = evaluate("calEventCardHtml({ id: 2, time: '', person: '캄몬', title: '연습', participants: [] }, '2026-10-06', 'today')");
+    assert.doesNotMatch(emptyTime, /cal-card-time/);
+    assert.doesNotMatch(emptyTime, /hist-chip-more/);
 });

@@ -47,7 +47,10 @@ test('일정 색은 정해진 팔레트 키로 저장하고, 공개 달력이 �
     assert.match(admin, /field\('주체', C\(\)\.input\('as_person'/);
     assert.match(admin, /field\('일정명', C\(\)\.input\('as_title'/);
     assert.match(admin, /subject_type: C\(\)\.value\('as_subject_type'\)/);
-    assert.match(admin, /participants: readParticipants\(\)/);
+    assert.match(admin, /participants: readParticipants\(row\)/);
+    assert.match(admin, /\.filter\(activeScheduleMember\)/);
+    assert.match(admin, /activeScheduleMember = m => m\.soop_id && !String\(m\.left_date/);
+    assert.match(admin, /participants\.push\(previous\)/);
     assert.match(admin, /function bindParticipantRoles\(/);
     assert.match(admin, /function offAirChecklist[\s\S]*?!m\.left_date/);
     assert.match(admin, /type="checkbox"/);

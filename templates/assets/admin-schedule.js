@@ -36,11 +36,13 @@
         ['응원', '응원'],
         ['진행', '진행'],
     ];
+    // 퇴단일이 없을 때만 현재 소속 멤버로 선택할 수 있다.
+    const activeScheduleMember = m => m.soop_id && !String(m.left_date || '').trim();
     function participantRows(row) {
         const selected = Array.isArray(row?.participants) ? row.participants : [];
         const known = C().state.members || [];
         return `<div class="admin-pick-grid" id="as_members">${known
-            .filter(m => m.soop_id)
+            .filter(activeScheduleMember)
             .map(m => {
                 const p = selected.find(x => x.soop_id === m.soop_id);
                 return `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${p ? ' checked' : ''}><span>${C().esc(m.nickname || m.name || m.soop_id)}</span></label>`;
@@ -78,7 +80,7 @@
         draw();
     }
 
-    function readParticipants() {
+    function readParticipants(row) {
         const members = C().state.members || [];
         const roles = new Map(
             [...document.querySelectorAll('#as_roles select[data-participant-role]')].map(el => [
@@ -88,9 +90,16 @@
         );
         const selected = [...document.querySelectorAll('#as_members input:checked')].map(el => el.value);
         const participants = selected.map(id => {
-            const member = members.find(m => m.soop_id === id);
-            return { soop_id: id, name: member?.name || member?.nickname || id, role: roles.get(id) || '' };
+            const member = members.find(m => m.soop_id === id && activeScheduleMember(m));
+            if (!member) throw new Error('현재 소속 멤버만 참가자로 선택할 수 있습니다');
+            return { soop_id: id, name: member.name || member.nickname || id, role: roles.get(id) || '' };
         });
+        // 예전 일정에 기록된 퇴단 멤버는 선택 목록에서 숨기되 저장할 때 삭제하지 않는다.
+        for (const previous of row?.participants || []) {
+            if (!previous.soop_id || selected.includes(previous.soop_id)) continue;
+            if (members.some(m => m.soop_id === previous.soop_id && activeScheduleMember(m))) continue;
+            participants.push(previous);
+        }
         for (const value of C().value('as_external').split(/\r?\n/)) {
             const line = value.trim();
             if (!line) continue;
@@ -163,7 +172,7 @@
                     description: title,
                     title,
                     subject_type: C().value('as_subject_type'),
-                    participants: readParticipants(),
+                    participants: readParticipants(row),
                     detail: C().empty(C().value('as_detail')),
                     color,
                 };
