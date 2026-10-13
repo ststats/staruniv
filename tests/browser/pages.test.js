@@ -203,7 +203,9 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                     return rows;
                 });
                 assert.deepEqual(monthly.map(row => row.time), ['-', '19:00', '미정']);
-                assert.ok(monthly.every(row => row.timeWidth === monthly[0].timeWidth && row.personX === monthly[0].personX));
+                assert.ok(
+                    monthly.every(row => row.timeWidth === monthly[0].timeWidth && row.personX === monthly[0].personX)
+                );
             }
             await ctx.close();
             assert.deepEqual(errors, [], `${url} 스크립트 오류`);
