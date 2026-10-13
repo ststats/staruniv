@@ -158,7 +158,11 @@ async function fetchMemberFeed(soopId, page) {
             };
     }
     try {
-        const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board?perPage=${NEWS_PAGE_SIZE}&page=${page}`;
+        // Same public board query as SOOP's "all posts" view; pinned notices are returned in noticeData.
+        // Page 2+ stays browser-side without forwarding an administrator's login session.
+        const url = `https://api-channel.sooplive.com/v1.1/channel/${encodeURIComponent(soopId)}/board` +
+            `?perPage=${NEWS_PAGE_SIZE}&page=${page}&startDate=&endDate=&field=title,contents,user_nick,user_id,hashtags` +
+            '&keyword=&type=all&orderBy=reg_date&bbsNo=';
         const data = await cachedFetchJson(url, 120000); // 2분
         return {
             posts: mergeOwnPosts(data, soopId),
