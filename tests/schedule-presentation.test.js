@@ -163,6 +163,14 @@ test('빈 시간은 대시로 채우고 뱃지 이름은 HTML 이스케이프한
     assert.match(html, /&lt;script&gt;/);
 });
 
+test('복원한 오늘의 일정과 선택한 날짜 일정은 각각 올바른 카드 스타일을 사용한다', () => {
+    const item = JSON.stringify({ id: 101, person: '캄몬', time: '19:00', title: '방송', participants: [] });
+    const today = evaluate('calEventCardHtml(' + item + ', "2026-10-14", "today")');
+    const selected = evaluate('calEventCardHtml(' + item + ', "2026-10-14", "selected")');
+    assert.match(today, /class="cal-today-card"/);
+    assert.match(selected, /class="cal-selected-card"/);
+});
+
 test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일하고 프로필은 작게 표시한다', () => {
     const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
     const chip = css.match(/\.cal-offair-chip,\s*\.hist-chip\s*\{([^}]+)\}/)?.[1];
