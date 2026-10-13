@@ -235,8 +235,8 @@ const calSubjectLabel = item => {
     return `${subject} · ${participants.length}인`;
 };
 const calEventTitle = item => item.title || item.desc || (item.time === '비방연습' ? '비방연습' : item.person);
-// 빈 시간은 월간 달력과 날짜별 일정 모두 숨긴다. '미정'은 관리자가 입력한 경우에만 표시한다.
-const calDisplayTime = item => (item.time === '비방연습' ? '' : String(item.time || '').trim());
+// 빈 시간도 자리를 유지해 주체·제목의 시작점을 맞춘다.
+const calDisplayTime = item => (item.time === '비방연습' ? '-' : String(item.time || '').trim() || '-');
 
 const calGetEventHTML = item =>
     calCellEventHtml({
@@ -391,7 +391,7 @@ const calEventCardHtml = (item, dateStr, type) => {
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
-                    ${calDisplayTime(item) ? `<span class="cal-card-time">${escapeHTML(calDisplayTime(item))}</span>` : ''}
+                    <span class="cal-card-time">${escapeHTML(calDisplayTime(item))}</span>
                     ${item.person ? `<span class="cal-card-person">${escapeHTML(calSubjectLabel(item))}</span>` : ''}
                     <span class="cal-card-desc">${escapeHTML(calEventTitle(item))}${item.detail ? `<span class="cal-card-detail">${escapeHTML(item.detail)}</span>` : ''}</span>
                     ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, dateStr, type) : ''}

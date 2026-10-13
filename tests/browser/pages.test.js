@@ -162,6 +162,25 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                 assert.equal(layout.maxHeight, 'none');
                 assert.equal(layout.overflow, 'visible');
                 assert.equal(layout.fits, true);
+                const columns = await page.evaluate(() => {
+                    const list = document.getElementById('selectedDateList');
+                    list.innerHTML = ['', '9:00', '19:00', '시간미정']
+                        .map((time, id) =>
+                            calEventCardHtml(
+                                { id, time, person: '캄몬', title: '정렬 확인', participants: [] },
+                                '2026-10-14',
+                                'selected'
+                            )
+                        )
+                        .join('');
+                    return [...list.querySelectorAll('.cal-selected-card')].map(el => ({
+                        time: el.querySelector('.cal-card-time').textContent,
+                        subjectX: el.querySelector('.cal-card-person').getBoundingClientRect().left,
+                        titleX: el.querySelector('.cal-card-desc').getBoundingClientRect().left,
+                    }));
+                });
+                assert.equal(columns[0].time, '-');
+                assert.ok(columns.every(c => c.subjectX === columns[0].subjectX && c.titleX === columns[0].titleX));
             }
             await ctx.close();
             assert.deepEqual(errors, [], `${url} 스크립트 오류`);

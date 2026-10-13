@@ -90,11 +90,11 @@ test('단체와 대회는 전체 참가자 수를 인으로 표시한다', () =>
     );
 });
 
-test('빈 시간은 숨기고 관리자가 직접 적은 미정만 보여준다', () => {
+test('빈 시간은 대시를 표시하고 관리자가 적은 미정과 시간은 유지한다', () => {
     assert.equal(evaluate("calEventTitle({ title: '', desc: '팬미팅', person: '캄몬' })"), '팬미팅');
     assert.equal(evaluate("calEventTitle({ title: '', desc: '', person: '캄몬', time: '비방연습' })"), '비방연습');
-    assert.equal(evaluate("calDisplayTime({ time: '' })"), '');
-    assert.equal(evaluate("calDisplayTime({ time: '비방연습' })"), '');
+    assert.equal(evaluate("calDisplayTime({ time: '' })"), '-');
+    assert.equal(evaluate("calDisplayTime({ time: '비방연습' })"), '-');
     assert.equal(evaluate("calDisplayTime({ time: '미정' })"), '미정');
     assert.equal(evaluate("calDisplayTime({ time: '시간미정' })"), '시간미정');
     assert.equal(evaluate("calDisplayTime({ time: '19:00' })"), '19:00');
@@ -154,11 +154,12 @@ test('연혁의 기존 펼침 규칙은 그대로 유지한다', () => {
     assert.doesNotMatch(six, /hist-chip-more/);
 });
 
-test('빈 시간은 숨기고 뱃지 이름은 HTML 이스케이프한다', () => {
+test('빈 시간은 대시로 채우고 뱃지 이름은 HTML 이스케이프한다', () => {
     const html = evaluate(
         "calEventCardHtml({ id: 1, person: 'ASL22', title: '<b>테스트</b>', participants: [{ name: '<script>', role: '출전' }] }, '2026-10-06', 'today')"
     );
-    assert.doesNotMatch(html, /<script>|hist-chip-role|cal-card-time/);
+    assert.doesNotMatch(html, /<script>|hist-chip-role/);
+    assert.match(html, /class="cal-card-time">-<\/span>/);
     assert.match(html, /&lt;script&gt;/);
 });
 

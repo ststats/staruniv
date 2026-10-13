@@ -82,6 +82,7 @@
     }
     .cal-card-time {
         flex: none;
+        width: 5em;
         color: var(--color-primary);
         font-weight: 700;
         white-space: nowrap;
@@ -330,6 +331,7 @@
     }
     .cal-event-time {
         flex: none;
+        width: 5em;
         color: var(--ev-text); /* 일정 색을 바탕 대비 4.5:1까지 진하게(calendar.js calEventColorVars) */
         font-size: var(--fs-micro);
         font-weight: 700;
