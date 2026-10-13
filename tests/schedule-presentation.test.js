@@ -160,3 +160,16 @@ test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일�
         assert.match(rule, /font-size:\s*var\(--fs-small\)/);
     }
 });
+
+test('오늘과 선택한 날짜의 일정은 모두 내부 스크롤 없이 펼쳐진다', () => {
+    const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
+    const template = fs.readFileSync(path.join(__dirname, '../templates/pages/schedule.html'), 'utf8');
+    const shared = css.match(/\.cal-selected-list,\s*\.cal-today-list\s*\{([^}]+)\}/)?.[1];
+    assert.ok(shared);
+    assert.match(shared, /display:\s*flex/);
+    assert.doesNotMatch(shared, /max-height|overflow|height:/);
+    assert.doesNotMatch(css, /\.cal-(?:selected|today)-list\s*\{[^}]*?(?:max-height|overflow(?:-y)?):/);
+    assert.match(template, /class="cal-selected-list is-empty" id="selectedDateList"/);
+    assert.match(template, /class="cal-today-list is-empty" id="todayList"/);
+    assert.doesNotMatch(template, /class="cal-(?:selected|today)-list scroll-area/);
+});

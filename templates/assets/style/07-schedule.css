@@ -45,12 +45,11 @@
         color: var(--title-eyebrow);
     }
 
+    /* 두 날짜별 일정 목록은 내부 스크롤 없이 전부 펼쳐 페이지 높이에 맞춘다. */
     .cal-selected-list,
     .cal-today-list {
         display: flex;
         flex-direction: column;
-        max-height: var(--day-list-h);
-        overflow-y: auto;
     }
     .cal-no-schedule {
         width: 100%;
