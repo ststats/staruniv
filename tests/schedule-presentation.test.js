@@ -96,7 +96,7 @@ test('빈 시간은 대시를 표시하고 관리자가 적은 미정과 시간�
     assert.equal(evaluate("calDisplayTime({ time: '' })"), '-');
     assert.equal(evaluate("calDisplayTime({ time: '비방연습' })"), '-');
     assert.equal(evaluate("calDisplayTime({ time: '미정' })"), '미정');
-    assert.equal(evaluate("calDisplayTime({ time: '시간미정' })"), '시간미정');
+    assert.equal(evaluate("calDisplayTime({ time: '시간미정' })"), '미정');
     assert.equal(evaluate("calDisplayTime({ time: '19:00' })"), '19:00');
 });
 
@@ -179,15 +179,21 @@ test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일�
     }
 });
 
-test('선택한 날짜 일정은 내부 스크롤 없이 펼쳐지고 오늘 일정 패널은 없다', () => {
+test('오늘과 선택한 날짜 일정은 내부 스크롤 없이 펼쳐진다', () => {
     const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
     const template = fs.readFileSync(path.join(__dirname, '../templates/pages/schedule.html'), 'utf8');
-    const shared = css.match(/\.cal-selected-list\s*\{([^}]+)\}/)?.[1];
+    const shared = css.match(/\.cal-selected-list,\s*\.cal-today-list\s*\{([^}]+)\}/)?.[1];
     assert.ok(shared);
     assert.match(shared, /display:\s*flex/);
     assert.doesNotMatch(shared, /max-height|overflow|height:/);
     assert.doesNotMatch(css, /\.cal-(?:selected|today)-list\s*\{[^}]*?(?:max-height|overflow(?:-y)?):/);
     assert.match(template, /class="cal-selected-list is-empty" id="selectedDateList"/);
-    assert.doesNotMatch(template, /todayList|todayDateLabel|오늘의 일정/);
+    assert.match(template, /class="cal-today-list is-empty" id="todayList"/);
+    assert.match(template, /id="todayDateLabel"/);
+    assert.match(template, /오늘의 일정/);
+    assert.match(css, /\.cal-card-time\s*\{[^}]*width:\s*5ch/);
+    assert.match(css, /\.cal-event-time\s*\{[^}]*width:\s*5ch/);
     assert.doesNotMatch(template, /class="cal-(?:selected|today)-list scroll-area/);
+    const cal = fs.readFileSync(path.join(__dirname, '../templates/assets/calendar.js'), 'utf8');
+    assert.match(cal, /const calRenderTodaySchedules\s*=\s*\(\)\s*=>/);
 });
