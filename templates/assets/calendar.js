@@ -387,9 +387,8 @@ const calEventCardHtml = (item, dateStr, type) => {
                 .map(p => {
                     const name = calName(p.name || p.soop_id, p.soop_id);
                     const member = calMember(p.name, p.soop_id);
-                    const avatarUrl = member && typeof getProfileImgUrl === 'function'
-                        ? getProfileImgUrl(member['SOOP ID'])
-                        : '';
+                    const avatarUrl =
+                        member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
                     const avatar = avatarUrl
                         ? `<img class="hist-chip-ava" src="${escapeHTML(avatarUrl)}" alt="" loading="lazy">`
                         : '<span class="hist-chip-ava">👤</span>';
@@ -404,9 +403,8 @@ const calEventCardHtml = (item, dateStr, type) => {
                     .slice(0, 3)
                     .map(p => {
                         const member = calMember(p.name, p.soop_id);
-                        const url = member && typeof getProfileImgUrl === 'function'
-                            ? getProfileImgUrl(member['SOOP ID'])
-                            : '';
+                        const url =
+                            member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
                         return url
                             ? `<img class="hist-stack-face" src="${escapeHTML(url)}" alt="" loading="lazy">`
                             : '<span class="hist-stack-face">👤</span>';

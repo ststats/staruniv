@@ -95,7 +95,9 @@ test('날짜 카드에는 역할과 참가자 이름이 뱃지로 나타나고 �
     );
     assert.doesNotMatch(unsafe, /<script>/);
     assert.match(unsafe, /&lt;script&gt;/);
-    const emptyTime = evaluate("calEventCardHtml({ id: 2, time: '', person: '캄몬', title: '연습', participants: [] }, '2026-10-06', 'today')");
+    const emptyTime = evaluate(
+        "calEventCardHtml({ id: 2, time: '', person: '캄몬', title: '연습', participants: [] }, '2026-10-06', 'today')"
+    );
     assert.doesNotMatch(emptyTime, /cal-card-time/);
     assert.doesNotMatch(emptyTime, /hist-chip-more/);
 });
