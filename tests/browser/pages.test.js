@@ -66,6 +66,14 @@ async function routeFixtures(ctx, base, navConfig) {
         if (u.startsWith(base)) return route.continue();
         if (navConfig && u.includes('/rpc/api_site_nav')) return route.fulfill({ json: navConfig });
         if (u.startsWith(`${FAKE}/rest/v1/`)) return route.fulfill({ json: fixture.respond(u) });
+        if (u.startsWith(`${FAKE}/functions/v1/member-notices`)) {
+            const params = new URL(u).searchParams;
+            const id = params.get('soop_id');
+            const page = Number(params.get('page'));
+            const rows = fixture.respond(`${FAKE}/rest/v1/rpc/api_member_posts`).filter(r => r.soop_id === id);
+            const posts = rows.map(r => ({ ...r.post, titleNo: r.post.titleNo + (page - 1) * 10000 }));
+            return route.fulfill({ json: { posts, totalPages: 2 } });
+        }
         if (route.request().resourceType() === 'image') return route.fulfill({ body: PIXEL, contentType: 'image/png' });
         return route.abort();
     });
@@ -131,6 +139,52 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
             assert.deepEqual(stuck, [], `${url} 다 그려지지 않음`);
         });
     }
+    await t.test('개인 공지 진입·더 보기·멤버 전환은 그 멤버만 요청하고 전체 선택에서만 묶음을 받는다', async () => {
+        const ctx = await browser.newContext();
+        try {
+            await routeFixtures(ctx, base);
+            const page = await ctx.newPage();
+            const calls = [];
+            page.on('request', request => {
+                const url = new URL(request.url());
+                if (url.pathname.endsWith('/api_member_posts') || url.pathname.endsWith('/member-notices'))
+                    calls.push(url);
+            });
+            await page.goto(`${base}members/?view=news&member=${encodeURIComponent('가람')}`);
+            await page.locator('#news-feed-content .news-post-card').waitFor();
+            assert.equal(calls.filter(u => u.pathname.endsWith('/api_member_posts')).length, 0);
+            assert.deepEqual(
+                calls.map(u => [u.searchParams.get('soop_id'), u.searchParams.get('page')]),
+                [['user0', '1']]
+            );
+            await page.locator('.news-load-more').click();
+            await page.waitForFunction(() => document.querySelectorAll('#news-past-list .news-past-item').length === 3);
+            assert.deepEqual(
+                calls.map(u => [u.searchParams.get('soop_id'), u.searchParams.get('page')]),
+                [
+                    ['user0', '1'],
+                    ['user0', '2'],
+                ]
+            );
+            await page.locator('[id="news-side-player-나래"]').click();
+            await page.waitForFunction(
+                () =>
+                    document.getElementById('news-content-title').textContent === '나래의 공지' &&
+                    document.getElementById('news-feed-content').getAttribute('aria-busy') === 'false'
+            );
+            assert.equal(calls.filter(u => u.pathname.endsWith('/api_member_posts')).length, 0);
+            assert.equal(calls.at(-1).searchParams.get('soop_id'), 'user1');
+            await page.locator('#news-side-btn-all').click();
+            await page.waitForFunction(
+                () =>
+                    document.getElementById('news-content-title').textContent === '전체 공지' &&
+                    document.getElementById('news-feed-content').getAttribute('aria-busy') === 'false'
+            );
+            assert.equal(calls.filter(u => u.pathname.endsWith('/api_member_posts')).length, 1);
+        } finally {
+            await ctx.close();
+        }
+    });
     for (const [route, defaultKey, hiddenKey, prefix, explicit] of [
         ['records', 'individual', 'team', 'tab-', 'team'],
         ['tier', 'h2h', 'list', 'tab-tier-', 'list'],

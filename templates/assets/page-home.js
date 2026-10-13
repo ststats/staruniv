@@ -378,9 +378,10 @@ async function recentNoticesFromStore(activeMembers) {
 
 // 표를 못 읽을 때: 멤버마다 첫 페이지를 받아 섞는다.
 async function recentNoticesPerMember(activeMembers) {
+    const stored = await fetchStoredMemberPosts();
     const settled = await Promise.allSettled(
         activeMembers.map(async m => {
-            const { posts } = await fetchMemberFeed(m['SOOP ID'], 1);
+            const { posts } = await fetchMemberFeed(m['SOOP ID'], 1, stored);
             return posts.slice(0, HOME_NOTICES_PER_MEMBER).map(post => ({ member: m, post }));
         })
     );

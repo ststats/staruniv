@@ -10,6 +10,7 @@ const SOOP = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', '
 
 function setup(tableRows, { tableError = null } = {}) {
     const apiCalls = [];
+    const tableCalls = [];
     const ctx = vm.createContext({
         console,
         Map,
@@ -22,6 +23,7 @@ function setup(tableRows, { tableError = null } = {}) {
         soopDateMs: v => Date.parse(String(v).replace(' ', 'T')),
         Api: {
             memberPosts: async () => {
+                tableCalls.push(true);
                 if (tableError) throw tableError;
                 return tableRows;
             },
@@ -42,7 +44,12 @@ function setup(tableRows, { tableError = null } = {}) {
     return {
         ctx,
         apiCalls,
-        feed: (id, page) => vm.runInContext(`fetchMemberFeed(${JSON.stringify(id)}, ${page})`, ctx),
+        tableCalls,
+        preload: () => vm.runInContext('fetchStoredMemberPosts()', ctx),
+        feed: (id, page, stored = null) => {
+            ctx.preloadedPosts = stored;
+            return vm.runInContext(`fetchMemberFeed(${JSON.stringify(id)}, ${page}, preloadedPosts)`, ctx);
+        },
     };
 }
 
@@ -52,8 +59,8 @@ const ROWS = [
 ];
 
 test('첫 페이지는 모아 둔 표에서 읽고 SOOP은 부르지 않는다(최신순)', async () => {
-    const { feed, apiCalls } = setup(ROWS);
-    const r = await feed('AAA', 1);
+    const { feed, apiCalls, preload } = setup(ROWS);
+    const r = await feed('AAA', 1, await preload());
     assert.deepEqual(
         Array.from(r.posts, p => p.titleNo),
         [2, 1]
@@ -98,4 +105,15 @@ test('홈 카드용 최근 글은 카드 칸만 받아 카드 모양(post)으로
     assert.equal(rows[1].post.content.textContent, '');
     const api = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', 'api.js'), 'utf8');
     assert.match(api, code("apiCall('api_recent_posts', { p_limit: limit })"));
+});
+
+test('개인 첫 쪽과 더 보기는 전체 멤버 묶음을 요청하지 않는다', async () => {
+    const { feed, apiCalls, tableCalls } = setup(ROWS);
+    await feed('aaa', 1);
+    await feed('aaa', 2);
+    assert.equal(tableCalls.length, 0);
+    assert.deepEqual(apiCalls, [
+        { id: 'aaa', page: 1 },
+        { id: 'aaa', page: 2 },
+    ]);
 });

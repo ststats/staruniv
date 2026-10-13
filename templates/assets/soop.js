@@ -146,10 +146,9 @@ async function fetchRecentStoredPosts(limit) {
     }
 }
 
-async function fetchMemberFeed(soopId, page) {
-    // 첫 쪽은 모아 둔 표를 쓰고, 나머지는 Supabase 서버가 읽는다.
-    if (Number(page) === 1) {
-        const stored = await fetchStoredMemberPosts();
+async function fetchMemberFeed(soopId, page, stored = null) {
+    // 전체 화면이 이미 받은 묶음만 재사용한다. 개인 화면은 전체 묶음을 요청하지 않는다.
+    if (Number(page) === 1 && stored) {
         const hit = stored && stored.get(String(soopId || '').toLowerCase());
         if (hit)
             return {
