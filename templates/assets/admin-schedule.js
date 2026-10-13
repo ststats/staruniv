@@ -39,10 +39,13 @@
     function participantRows(row) {
         const selected = Array.isArray(row?.participants) ? row.participants : [];
         const known = C().state.members || [];
-        return `<div class="admin-pick-grid" id="as_members">${known.filter(m => m.soop_id).map(m => {
-            const p = selected.find(x => x.soop_id === m.soop_id);
-            return `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${p ? ' checked' : ''}><span>${C().esc(m.nickname || m.name || m.soop_id)}</span></label>`;
-        }).join('')}</div>`;
+        return `<div class="admin-pick-grid" id="as_members">${known
+            .filter(m => m.soop_id)
+            .map(m => {
+                const p = selected.find(x => x.soop_id === m.soop_id);
+                return `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${p ? ' checked' : ''}><span>${C().esc(m.nickname || m.name || m.soop_id)}</span></label>`;
+            })
+            .join('')}</div>`;
     }
 
     // 참가 멤버를 체크한 뒤 역할을 선택할 수 있다. 그리기 전에 기존 선택값을 기억한다.
@@ -53,16 +56,23 @@
         const roles = new Map((row?.participants || []).filter(p => p.soop_id).map(p => [p.soop_id, p.role || '']));
         const members = C().state.members || [];
         const draw = () => {
-            box.querySelectorAll('select[data-participant-role]').forEach(el => roles.set(el.dataset.participantRole, el.value));
+            box.querySelectorAll('select[data-participant-role]').forEach(el =>
+                roles.set(el.dataset.participantRole, el.value)
+            );
             const ids = [...grid.querySelectorAll('input:checked')].map(el => el.value);
-            box.innerHTML = ids.map(id => {
-                const m = members.find(x => x.soop_id === id);
-                const role = roles.get(id) || '';
-                const choices = PARTICIPANT_ROLES.some(([key]) => key === role)
-                    ? PARTICIPANT_ROLES : [...PARTICIPANT_ROLES, [role, role]];
-                return C().field(`${m?.nickname || m?.name || id} 역할`,
-                    C().select(`as_role_${id}`, choices, role, `data-participant-role="${C().esc(id)}"`));
-            }).join('');
+            box.innerHTML = ids
+                .map(id => {
+                    const m = members.find(x => x.soop_id === id);
+                    const role = roles.get(id) || '';
+                    const choices = PARTICIPANT_ROLES.some(([key]) => key === role)
+                        ? PARTICIPANT_ROLES
+                        : [...PARTICIPANT_ROLES, [role, role]];
+                    return C().field(
+                        `${m?.nickname || m?.name || id} 역할`,
+                        C().select(`as_role_${id}`, choices, role, `data-participant-role="${C().esc(id)}"`)
+                    );
+                })
+                .join('');
         };
         grid.addEventListener('change', draw);
         draw();
@@ -70,8 +80,12 @@
 
     function readParticipants() {
         const members = C().state.members || [];
-        const roles = new Map([...document.querySelectorAll('#as_roles select[data-participant-role]')]
-            .map(el => [el.dataset.participantRole, el.value]));
+        const roles = new Map(
+            [...document.querySelectorAll('#as_roles select[data-participant-role]')].map(el => [
+                el.dataset.participantRole,
+                el.value,
+            ])
+        );
         const selected = [...document.querySelectorAll('#as_members input:checked')].map(el => el.value);
         const participants = selected.map(id => {
             const member = members.find(m => m.soop_id === id);
@@ -104,13 +118,32 @@
           ${C().field('시간', C().input('as_time', row?.time === '비방연습' ? '' : row?.time || '', 'text', 'placeholder="19:00 또는 시간미정"'))}
           ${C().field('주체', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, ASL22, 윤환"'))}
         </div>
-        ${C().field('주체 유형', C().select('as_subject_type', [['other', '미분류 (기존)'], ['person', '개인'], ['group', '단체'], ['competition', '대회']], row?.subjectType || 'other'))}
+        ${C().field(
+            '주체 유형',
+            C().select(
+                'as_subject_type',
+                [
+                    ['other', '미분류 (기존)'],
+                    ['person', '개인'],
+                    ['group', '단체'],
+                    ['competition', '대회'],
+                ],
+                row?.subjectType || 'other'
+            )
+        )}
         ${C().field('일정명', C().input('as_title', row?.title || row?.desc || (row?.time === '비방연습' ? '비방연습' : ''), 'text', 'required maxlength="120"'))}
         ${C().field('상세 설명', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
         <div class="admin-field"><span>참가 멤버</span>${participantRows(row)}</div>
         <div class="admin-field"><span>참가 멤버 역할 (선택)</span><div id="as_roles"></div></div>
-        ${C().field('외부 참가자', C().textarea('as_external', otherParticipants.map(p => `${p.name}${p.role ? ` | ${p.role}` : ''}`).join('\n'),
-            'rows="3" placeholder="한 줄에 한 명: 박상현 | 출전"'), '한 줄에 한 명, 역할은 | 뒤에 입력')}
+        ${C().field(
+            '외부 참가자',
+            C().textarea(
+                'as_external',
+                otherParticipants.map(p => `${p.name}${p.role ? ` | ${p.role}` : ''}`).join('\n'),
+                'rows="3" placeholder="한 줄에 한 명: 박상현 | 출전"'
+            ),
+            '한 줄에 한 명, 역할은 | 뒤에 입력'
+        )}
         <div class="admin-field"><span>색상</span>${colorPicker(selectedColor)}</div>`,
             onSubmit: async () => {
                 const startDate = C().value('as_start'),
@@ -158,7 +191,7 @@
         bindParticipantRoles(row);
     }
 
-        // 그날 이미 휴방으로 등록된 사람은 퇴단했어도 선택지에 남겨 둔다.
+    // 그날 이미 휴방으로 등록된 사람은 퇴단했어도 선택지에 남겨 둔다.
     function offAirChecklist(date) {
         const current = new Set(calOffAirForDate(date));
         const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || current.has(m.soop_id)));

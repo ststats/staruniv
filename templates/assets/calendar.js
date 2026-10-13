@@ -199,7 +199,9 @@ const calParticipants = item => {
     const seen = new Set();
     return item.participants.filter(p => {
         if (!p || typeof p !== 'object') return false;
-        const key = String(p.soop_id || p.name || '').trim().toLowerCase();
+        const key = String(p.soop_id || p.name || '')
+            .trim()
+            .toLowerCase();
         if (!key || seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -233,7 +235,8 @@ const calSubjectLabel = item => {
     return `${subject} · ${participants.length}인`;
 };
 const calEventTitle = item => item.title || item.desc || (item.time === '비방연습' ? '비방연습' : item.person);
-const calDisplayTime = item => !item.time || item.time === '비방연습' || item.time === '시간미정' ? '미정' : item.time;
+const calDisplayTime = item =>
+    !item.time || item.time === '비방연습' || item.time === '시간미정' ? '미정' : item.time;
 
 const calGetEventHTML = item =>
     calCellEventHtml({
@@ -376,13 +379,16 @@ const calSelectDate = dateStr => {
 
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
-    const badges = calParticipants(item).map(p => {
-        const name = calName(p.name || p.soop_id, p.soop_id);
-        const member = calMember(p.name, p.soop_id);
-        const avatar = member && typeof avatarHtml === 'function' ? avatarHtml(member['SOOP ID'], 'cal-offair-avatar') : '';
-        const role = p.role ? ` · ${p.role}` : '';
-        return `<span class="hist-chip">${avatar}<span class="cal-offair-name">${escapeHTML(name + role)}</span></span>`;
-    }).join('');
+    const badges = calParticipants(item)
+        .map(p => {
+            const name = calName(p.name || p.soop_id, p.soop_id);
+            const member = calMember(p.name, p.soop_id);
+            const avatar =
+                member && typeof avatarHtml === 'function' ? avatarHtml(member['SOOP ID'], 'cal-offair-avatar') : '';
+            const role = p.role ? ` · ${p.role}` : '';
+            return `<span class="hist-chip">${avatar}<span class="cal-offair-name">${escapeHTML(name + role)}</span></span>`;
+        })
+        .join('');
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
