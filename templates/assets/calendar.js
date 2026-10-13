@@ -391,29 +391,51 @@ const calParticipantAvatar = p => {
 };
 const calParticipantChip = p => {
     const member = calMember(p.name, p.soop_id);
-    return '<span class="hist-chip' + (member ? '' : ' is-unknown') + '">' +
-        calParticipantAvatar(p) + '<span class="hist-chip-name">' +
-        escapeHTML(calParticipantName(p)) + '</span></span>';
+    return (
+        '<span class="hist-chip' +
+        (member ? '' : ' is-unknown') +
+        '">' +
+        calParticipantAvatar(p) +
+        '<span class="hist-chip-name">' +
+        escapeHTML(calParticipantName(p)) +
+        '</span></span>'
+    );
 };
 const calParticipantBadges = (people, key) => {
     if (!people.length) return '';
     const visible = people.length <= 3 ? people : people.slice(0, 2);
     const remaining = people.length <= 3 ? [] : people.slice(2);
-    const hidden = !remaining.length ? '' :
-        '<span class="hist-chips-rest" data-hist-rest="' + escapeHTML(key) + '" hidden>' +
-        remaining.map(calParticipantChip).join('') + '</span>';
-    const more = !remaining.length ? '' :
-        '<button type="button" class="hist-chip hist-chip-more" data-hist-more="' + escapeHTML(key) + '" ' +
-        act('histToggleMembers', key) + ' aria-expanded="false" title="' +
-        escapeHTML(remaining.map(calParticipantName).join(', ')) + '">' +
-        '<span class="hist-stack">' + remaining.slice(0, 3).map(p => {
-            const member = calMember(p.name, p.soop_id);
-            const url = member && typeof getProfileImgUrl === 'function'
-                ? getProfileImgUrl(member['SOOP ID']) : '';
-            return url
-                ? '<img class="hist-stack-face" src="' + escapeHTML(url) + '" alt="" loading="lazy">'
-                : '<span class="hist-stack-face">👤</span>';
-        }).join('') + '</span><span class="hist-chip-name">+' + remaining.length + '명</span></button>';
+    const hidden = !remaining.length
+        ? ''
+        : '<span class="hist-chips-rest" data-hist-rest="' +
+          escapeHTML(key) +
+          '" hidden>' +
+          remaining.map(calParticipantChip).join('') +
+          '</span>';
+    const more = !remaining.length
+        ? ''
+        : '<button type="button" class="hist-chip hist-chip-more" data-hist-more="' +
+          escapeHTML(key) +
+          '" ' +
+          act('histToggleMembers', key) +
+          ' aria-expanded="false" title="' +
+          escapeHTML(remaining.map(calParticipantName).join(', ')) +
+          '">' +
+          '<span class="hist-stack">' +
+          remaining
+              .slice(0, 3)
+              .map(p => {
+                  const member = calMember(p.name, p.soop_id);
+                  const url =
+                      member && typeof getProfileImgUrl === 'function' ? getProfileImgUrl(member['SOOP ID']) : '';
+                  return url
+                      ? '<img class="hist-stack-face" src="' + escapeHTML(url) + '" alt="" loading="lazy">'
+                      : '<span class="hist-stack-face">👤</span>';
+              })
+              .join('') +
+          '</span><span class="hist-chip-name">+' +
+          remaining.length +
+          '명</span></button>';
     return '<div class="hist-chips">' + visible.map(calParticipantChip).join('') + hidden + more + '</div>';
 };
 

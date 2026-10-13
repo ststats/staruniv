@@ -117,7 +117,9 @@ test('4명 이상부터 첫 두 명과 나머지 겹친 세 번째 뱃지를 표
 });
 
 test('빈 시간은 숨기고 뱃지 이름은 HTML 이스케이프한다', () => {
-    const html = evaluate("calEventCardHtml({ id: 1, person: 'ASL22', title: '<b>테스트</b>', participants: [{ name: '<script>', role: '출전' }] }, '2026-10-06', 'today')");
+    const html = evaluate(
+        "calEventCardHtml({ id: 1, person: 'ASL22', title: '<b>테스트</b>', participants: [{ name: '<script>', role: '출전' }] }, '2026-10-06', 'today')"
+    );
     assert.doesNotMatch(html, /<script>|hist-chip-role|cal-card-time/);
     assert.match(html, /&lt;script&gt;/);
 });
