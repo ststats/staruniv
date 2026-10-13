@@ -11,21 +11,23 @@ const members = [
     { '이름': '김민철', 'SOOP ID': 'minchul' },
 ];
 
-test('휴방은 공통 뱃지로 6명까지, 7명부터 나머지를 합친다', () => {
+test('휴방은 5칸까지 표시하고 6명부터 다섯 번째에 나머지를 합친다', () => {
     const page = fs.readFileSync(path.join(__dirname, '../templates/assets/page-schedule.js'), 'utf8');
     sandbox.findMemberBySoopId = id => members.find(m => String(m['SOOP ID']) === String(id));
     sandbox.bootPage = () => {};
     vm.runInContext(page, sandbox);
-    for (const count of [0, 1, 6, 7, 17]) {
+    for (const count of [0, 1, 4, 5, 6, 7, 17]) {
         evaluate(`calOffAir = { '2026-10-14': ${JSON.stringify(Array.from({ length: count }, (_, i) => 'id' + i))} }`);
         const html = evaluate("window.calOffAirExtra('2026-10-14','selected')");
         if (!count) assert.match(html, /없음/);
         else assert.equal((html.match(/data-offair-date=/g) || []).length, count);
-        if (count > 6) {
-            assert.ok(html.includes('+' + (count - 5) + '명'));
+        if (count > 5) {
+            assert.ok(html.includes('+' + (count - 4) + '명'));
             assert.match(html, /data-hist-rest="offair-selected-2026-10-14" hidden/);
-            assert.equal((html.match(/hist-stack-face/g) || []).length, Math.min(3, count - 5));
+            assert.equal((html.match(/hist-stack-face/g) || []).length, Math.min(3, count - 4));
         } else assert.doesNotMatch(html, /hist-chip-more/);
+        const first = html.split('class="hist-chips-rest"')[0];
+        assert.equal((first.match(/data-offair-date=/g) || []).length, count > 5 ? 4 : count);
     }
 });
 const sandbox = {
@@ -185,6 +187,18 @@ test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일�
     for (const rule of [none, historyName]) {
         assert.match(rule, /font-size:\s*var\(--fs-small\)/);
     }
+});
+
+test('휴방 라벨 폭은 유지하고 뱃지는 위쪽 여백 없이 정렬한다', () => {
+    const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
+    const labelStart = css.indexOf('.cal-offair-label {');
+    const chipsStart = css.indexOf('.cal-offair-chips > .hist-chips {');
+    assert.ok(labelStart >= 0 && chipsStart >= 0);
+    const label = css.slice(labelStart, css.indexOf('}', labelStart));
+    const chips = css.slice(chipsStart, css.indexOf('}', chipsStart));
+    assert.match(label, /min-height:\s*24px/);
+    assert.doesNotMatch(label, /width:/);
+    assert.match(chips, /margin-top:\s*0/);
 });
 
 test('오늘과 선택한 날짜 일정은 내부 스크롤 없이 펼쳐진다', () => {

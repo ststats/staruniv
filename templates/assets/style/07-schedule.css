@@ -122,7 +122,7 @@
         display: flex;
         align-items: center;
         flex-shrink: 0;
-        min-height: 26px;
+        min-height: 24px;
         font-size: var(--fs-body);
         font-weight: 700;
         line-height: 1.35;
@@ -134,6 +134,9 @@
         gap: var(--space-label-gap);
         flex: 1;
         min-width: 0;
+    }
+    .cal-offair-chips > .hist-chips {
+        margin-top: 0;
     }
     /* 휴방·오늘의 일정·연혁에서 공유하는 사람 칩. '없음'과 같은 글자 크기. */
     .cal-offair-chip,
