@@ -377,7 +377,7 @@ const calSelectDate = dateStr => {
     calRenderSelectedDateSchedules();
 };
 
-// 참가자 뱃지는 연혁의 단일 렌더러를 재사용한다. 월간 표시만 두 글자 약어를 유지한다.
+// 연혁과 같은 뱃지 렌더러를 공유한다. 달력 제목의 멤버 이름만 두 글자로 축약한다.
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
     const members = typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : [];
