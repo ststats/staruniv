@@ -24,8 +24,8 @@
         overflow: hidden;
     }
 
-    /* ----- 선택한 날짜 일정 카드 -----
-       선택한 날짜 카드는 네이비 면(14-surfaces.css), 안쪽 선·글자는 --panel-* 토큰을 따라간다. */
+    /* ----- 오늘의 일정 · 선택한 날짜 일정 카드 -----
+       오늘 카드는 네이비 면(14-surfaces.css), 안쪽 선·글자는 --panel-* 토큰을 따라간다. */
     .cal-day-card {
         padding: var(--space-8) var(--space-8) 0;
     }
@@ -45,8 +45,9 @@
         color: var(--title-eyebrow);
     }
 
-    /* 선택한 날짜 일정 목록은 내부 스크롤 없이 전부 펼쳐 페이지 높이에 맞춘다. */
-    .cal-selected-list {
+    /* 두 날짜별 일정 목록은 내부 스크롤 없이 전부 펼쳐 페이지 높이에 맞춘다. */
+    .cal-selected-list,
+    .cal-today-list {
         display: flex;
         flex-direction: column;
     }
@@ -63,9 +64,11 @@
         padding: var(--space-5) 0;
     }
 
-    .cal-selected-card {
+    .cal-selected-card,
+    .cal-today-card {
         padding: var(--space-5) 0;
     }
+    .cal-today-card + .cal-today-card,
     .cal-selected-card + .cal-selected-card {
         border-top: 1px solid var(--panel-line);
     }
@@ -82,10 +85,13 @@
     }
     .cal-card-time {
         flex: none;
-        width: 5em;
+        width: 5ch;
         color: var(--color-primary);
         font-weight: 700;
         white-space: nowrap;
+    }
+    .cal-today-card-wrapper .cal-card-time {
+        color: var(--panel-accent);
     }
     .cal-card-person {
         flex: none; /* 시간 없는 일정에서 설명이 길면 이름이 한 글자씩 줄바꿈되지 않게 */
@@ -331,6 +337,7 @@
     }
     .cal-event-time {
         flex: none;
+        width: 5ch;
         color: var(--ev-text); /* 일정 색을 바탕 대비 4.5:1까지 진하게(calendar.js calEventColorVars) */
         font-size: var(--fs-micro);
         font-weight: 700;
