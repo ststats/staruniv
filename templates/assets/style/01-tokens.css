@@ -1,0 +1,229 @@
+/* 스타대학 style.css: 빌드가 style/NN-*.css를 번호 순으로 합친다.
+   다크 모드는 html[data-theme="dark"]가 토큰을 바꾸고, 토큰으로 안 되는 곳만 부품 옆에 다크 규칙을 둔다. */
+
+/* =============================================================================
+   1. 디자인 토큰 (라이트 / 다크)
+   ============================================================================= */
+:root {
+    /* 바탕 · 카드 · 선 */
+    --color-bg: #eef2f8;
+    --color-card: #ffffff;
+    /* 사이트 공통 호버 바탕. 연회색(--color-bg-subtle) 버튼은 이 색과 거의 같아 --color-subtle-hover를 쓴다. */
+    --color-row-hover: #f2f5fa;
+    --color-border: #dde4ee;
+    --color-bg-subtle: #f1f5fb;
+    --color-subtle-hover: var(--color-border);
+    --color-border-strong: #cdd6e3;
+    --color-placeholder-bg: #e9eff8;
+    --color-donut-track: #e6ecf5;
+    --calendar-outside-bg: #f6f8fb;
+    --calendar-outside-text: #aab3c1;
+
+    /* 글자색 */
+    --color-text-main: #0b1220;
+    --color-text-sub: #5d687a;
+    --color-text-strong: #050a14;
+    --color-text-body: #1f2937;
+    --color-text-soft: #4b5565;
+    --color-text-muted: #666f7d; /* 연회색 바탕에서도 4.5:1 이상 */
+    --color-text-faint: #707782; /* 흰 바탕에서 4.5:1 이상, muted보다 조금 옅게 */
+    --color-icon-faint: #c6cedb;
+
+    /* 강조 · 승패 · 종족 · 배지 */
+    --color-primary: #1f6dfb;
+    --color-primary-deep: #0b55e0;
+    --color-primary-tint: #eaf1ff;
+    --color-win: var(--color-primary);
+    --color-lose: #f03e3e;
+    --color-holiday: #e03131; /* 달력 일요일·휴일. 흰 바탕 4.5:1이 되게 lose보다 진하게 */
+    --color-live: #e03131; /* 흰 바탕 4.5:1 */
+    --color-draw: #868e96;
+    --color-badge-format: #487f85; /* 흰 글씨 대비 4.5:1 */
+    --color-hist-event: #16a34a; /* 다크도 같은 값 */
+    --color-hist-other: #f97316; /* 다크도 같은 값 */
+    --color-badge-role-text: #fff;
+    --color-race-t: #1976d2;
+    --color-race-z: #7b1fa2;
+    --color-race-p: #f57f17;
+    --color-race-p-text: #141821; /* 밝은 주황 바탕이라 글자를 어둡게 */
+    --select-on-light: var(--navy);
+    --kammon: #055df3;
+    --color-tier-badge: #1c3563;
+
+    /* 면(패널) 토큰: 네이비 면 안에서는 흰 계열로 바뀐다 */
+    --panel-bg: #ffffff;
+    --panel-control: #edf2fb;
+    --panel-text: var(--color-text-main);
+    --panel-muted: #56627a;
+    --panel-line: #e1e7f0;
+    --panel-accent: var(--kammon);
+    --nav-bg: rgba(255, 255, 255, 0.9);
+
+    /* 네이비 / 검정 면 · 표 머리글 */
+    --navy: #14264a;
+    --color-accent-gold: #f0b429; /* 엔트리 포스터의 VS */
+    --navy-deco: #1c3563;
+    --navy-deco-fill: #1c3563;
+    --navy-hover: #101e3b;
+    --navy-on-text: #e6ecf7;
+    --navy-on-muted: #b3c2de;
+    --navy-accent: #5a95ff;
+    --navy-win: #6ea8ff; /* 남색 면 위 승·A편 */
+    --navy-lose: #ff7b7b;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ffb0b0;
+    --color-head-sat: var(--navy-accent);
+    --navy-pattern: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 8px);
+    --hero-glow: none; /* 다크만 */
+    --head-line: rgba(255, 255, 255, 0.1);
+    --head-line-w: 1px;
+    --label-accent: var(--navy-on-muted);
+    --dot-active: #fff;
+    --synergy-rank-color: var(--color-text-sub);
+    --btn-solid-bg: var(--navy);
+    --cta-on-panel-bg: #fff;
+    --cta-on-panel-text: var(--navy);
+    --color-video-bg: #0b0c10;
+    --color-scrim: rgba(0, 0, 0, 0.72);
+    --title-eyebrow: var(--navy-deco);
+    --color-youtube: #ff0033;
+    --color-youtube-hover: #d9002b;
+
+    /* 글자 크기 */
+    --fs-hero: 28px;
+    --fs-heading: 16px;
+    --fs-body: 13px;
+    /* 같은 역할이면 같은 토큰을 쓴다(새 부품에서 px를 새로 고르지 않는다). */
+    --fs-card-title: 14px; /* 카드 격자의 이름 */
+    --fs-list-name: 13px; /* 촘촘한 목록 안의 이름 */
+    --fs-meta: 11px;
+    --fs-eyebrow: 9px;
+    --fs-badge: 11px;
+    --fs-badge-sm: 10px;
+    --fs-small: 12px;
+    --fs-micro: 10px;
+    --fs-table-sm: 12px; /* 표 두 개를 나란히 놓는 구간(768~1279px) · 관리자 표(폰) */
+    --fs-table-xs: 11px;
+    --fs-table-xxs: 10px; /* ~339px 기기 */
+
+    /* 간격 단계: padding·margin·gap은 여기서 고른다(1~3px 광학 보정과 음수만 숫자). 역할이 분명한 곳은 아래 역할 토큰. */
+    --space-1: 4px;
+    --space-2: 6px;
+    --space-3: 8px;
+    --space-4: 10px;
+    --space-5: 12px;
+    --space-6: 14px;
+    --space-7: 16px;
+    --space-8: 20px;
+    --space-9: 24px;
+    --space-10: 32px;
+    --space-11: 40px;
+
+    /* 간격 역할 */
+    --space-page-top: var(--space-9);
+    --space-page-bottom: var(--space-11);
+    --space-section-top: 34px; /* 히어로는 이만큼 위로 당겨 상단바에 붙인다 */
+    --space-block-gap: var(--space-9);
+    --space-title-gap: var(--space-7);
+    --space-trailer: var(--space-7);
+    --space-section-gap: var(--space-10);
+    --space-stack-gap: var(--space-8);
+    --space-content-gap: var(--space-7);
+    --space-card-gap: var(--space-6);
+    --space-compact-gap: var(--space-5);
+    --space-inline-gap: var(--space-3);
+    --space-label-gap: var(--space-2);
+    --space-card-pad-y: var(--space-4);
+    --space-card-pad-x: var(--space-5);
+
+    /* 크기: 상단바 · 선택 바 · 스크롤바 · 목록 높이 */
+    --scroll-gutter: 10px;
+    --scroll-thumb-inset: 3px;
+    --scroll-thumb: var(--color-border-strong);
+    --scroll-thumb-hover: var(--color-text-faint);
+    --nav-h: 68px; /* 선택 바·바로가기 위치도 이 값을 쓴다 */
+    --space-hero-gap: 30px;
+    --sidebar-top: var(--nav-h);
+    --strip-top: var(--nav-h); /* 920px 이하의 가로 선택 줄 */
+    --bar-scope-h: 34px;
+    --bar-chip-h: 30px;
+    --bar-pad-y: 7px;
+    --news-photo-h: 400px;
+    --news-past-item-h: 91px; /* 지난 공지 카드 한 장(이름·제목·본문 한 줄) */
+    --day-list-h: 360px;
+    --tier-bar-h: calc(var(--bar-chip-h) + var(--bar-pad-y) * 2 + 2px);
+}
+
+html[data-theme='dark'] {
+    color-scheme: dark;
+    --color-bg: #07090d;
+    --color-card: #10131a;
+    --color-row-hover: #1a202b;
+    --color-border: #1f2531;
+    --color-bg-subtle: #171c26;
+    --color-border-strong: #353b46;
+    --color-placeholder-bg: #1a1e25;
+    --color-donut-track: #1d2129;
+    --calendar-outside-bg: #0b0d12;
+    --calendar-outside-text: #555d69;
+
+    --color-text-main: #eef2f8;
+    --color-text-strong: #ffffff;
+    --color-text-sub: #8f98a6;
+    --color-text-body: #dbe0e8;
+    --color-text-soft: #b1b8c4;
+    --color-text-muted: #98a0ad;
+    --color-text-faint: #767f8c;
+    --color-icon-faint: #3a404b;
+
+    --color-badge-format: #336a71;
+    --color-badge-role-text: #a9c7ff;
+    --logo-accent: #3d82ff; /* 로고 "대학": 검은 바탕에서 캄몬 파랑이 어둡게 보여 밝힌다 */
+    --btn-solid-bg: var(--color-primary);
+    --cta-on-panel-bg: var(--select-on-light);
+    --cta-on-panel-text: #fff;
+    --color-primary: #3b82ff;
+    --color-primary-deep: #2a6cf0;
+    --color-primary-tint: #0f1d36;
+    --select-on-light: #1f6dfb; /* 흰 글씨 대비 4.5:1 */
+    --color-holiday: #f03e3e;
+    --color-tier-badge: #2a2d35;
+
+    --panel-bg: #0b0e14;
+    --panel-control: #1a202c;
+    --panel-muted: #a0a8b5;
+    --panel-line: #242b38;
+    --nav-bg: rgba(7, 9, 13, 0.88);
+
+    /* 면이 무채색이 되지 않게 푸른 기운을 남기고, 라이트의 네이비 장식 자리는 파랑이 맡는다 */
+    --navy: #111a2c;
+    --navy-deco: #3b82ff;
+    --navy-deco-fill: #2563eb;
+    --navy-pattern: repeating-linear-gradient(135deg, rgba(90, 149, 255, 0.07) 0 1px, transparent 1px 8px);
+    --hero-glow: radial-gradient(120% 140% at 100% 0%, rgba(59, 130, 255, 0.22), transparent 55%);
+    --head-line: #3b82ff;
+    --head-line-w: 2px;
+    --label-accent: #6ea2ff;
+    --dot-active: #3b82ff;
+    --title-eyebrow: #c9cdd4;
+    --synergy-rank-color: #6ea2ff;
+    --sidebar-title: #6ea2ff;
+    --navy-hover: #242c3d; /* 남색이 바탕에 묻혀 밝게 */
+    --navy-on-text: #e9ecf1;
+    --navy-on-muted: #9aa0ab;
+    --navy-accent: #3d82ff;
+    --color-head-bg: var(--navy);
+    --color-head-text: var(--navy-on-text);
+    --color-head-sun: #ff9a9a;
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --nav-h: 60px;
+        --bar-scope-h: 32px;
+        --bar-chip-h: 28px;
+        --bar-pad-y: 6px;
+        --space-section-top: 22px;
+    }
+}

@@ -1,0 +1,113 @@
+/* =============================================================================
+   2. 기본 요소 · 동작 상태(.fade · .collapse)
+   ============================================================================= */
+/* Pretendard dynamic subset에 빠진 기호(− ☀ ✓)만 뽑은 작은 파일을 같은 이름에 붙인다.
+   없으면 이 기호들만 다른 글꼴로 보인다. */
+@font-face {
+    font-family: 'Pretendard';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url(fonts/pretendard-extra-400.woff2) format('woff2');
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: 'Pretendard';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500;
+    src: url(fonts/pretendard-extra-500.woff2) format('woff2');
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: 'Pretendard';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 600;
+    src: url(fonts/pretendard-extra-600.woff2) format('woff2');
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: 'Pretendard';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 700;
+    src: url(fonts/pretendard-extra-700.woff2) format('woff2');
+    unicode-range: U+2212, U+2600, U+2713;
+}
+@font-face {
+    font-family: 'Pretendard';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 800;
+    src: url(fonts/pretendard-extra-800.woff2) format('woff2');
+    unicode-range: U+2212, U+2600, U+2713;
+}
+
+@layer base {
+    /* 스크롤바 자리를 미리 비운다. 모달을 열 때 켜면 Chrome이 vw에서 스크롤바 폭을 빼 히어로 글자가 밀린다. */
+    html {
+        scrollbar-gutter: stable;
+    }
+    body {
+        overflow-y: scroll;
+        font-family: 'Pretendard', sans-serif;
+        /* Pretendard 기본 숫자는 비례폭이라 위아래가 어긋난다. 숫자 고정폭은 여기서만 정한다. */
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-main);
+        background: var(--color-bg);
+    }
+
+    a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    /* 포커스 테두리는 그리지 않는다(디자인 결정). */
+    :focus-visible {
+        outline: none;
+    }
+
+    .modal-body,
+    .scroll-area {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scroll-thumb) transparent;
+    }
+    .modal-body::-webkit-scrollbar,
+    .scroll-area::-webkit-scrollbar {
+        width: var(--scroll-gutter);
+        height: var(--scroll-gutter);
+    }
+    .modal-body::-webkit-scrollbar-thumb,
+    .scroll-area::-webkit-scrollbar-thumb {
+        border: var(--scroll-thumb-inset) solid transparent;
+    }
+    .modal-body:hover::-webkit-scrollbar-thumb,
+    .scroll-area:hover::-webkit-scrollbar-thumb {
+        background-color: var(--scroll-thumb-hover);
+    }
+    .scroll-area.scroll-y {
+        overflow-x: hidden;
+    }
+    /* core.js가 붙였다 떼는 동작 상태(.fade + .is-open, .collapse) */
+    .fade {
+        transition: opacity 0.15s linear;
+    }
+    .fade:not(.is-open) {
+        opacity: 0;
+    }
+    .collapse:not(.is-open) {
+        display: none;
+    }
+    .collapsing {
+        height: 0;
+        overflow: hidden;
+        transition: height 0.35s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .fade,
+        .collapsing {
+            transition: none;
+        }
+    }
+}
