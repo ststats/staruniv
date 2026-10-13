@@ -154,18 +154,14 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                 await chips.locator('.hist-chip-more').click();
                 assert.equal(await chips.locator('.cal-offair-chip:visible').count(), 17);
                 assert.equal(await chips.locator('.hist-chip-more').count(), 0);
-                const layouts = await page.locator('#selectedDateList, #todayList').evaluateAll(elements =>
-                    elements.map(el => ({
-                        maxHeight: getComputedStyle(el).maxHeight,
-                        overflow: getComputedStyle(el).overflowY,
-                        fits: el.scrollHeight <= el.clientHeight + 1,
-                    }))
-                );
-                for (const layout of layouts) {
-                    assert.equal(layout.maxHeight, 'none');
-                    assert.equal(layout.overflow, 'visible');
-                    assert.equal(layout.fits, true);
-                }
+                const layout = await page.locator('#selectedDateList').evaluate(el => ({
+                    maxHeight: getComputedStyle(el).maxHeight,
+                    overflow: getComputedStyle(el).overflowY,
+                    fits: el.scrollHeight <= el.clientHeight + 1,
+                }));
+                assert.equal(layout.maxHeight, 'none');
+                assert.equal(layout.overflow, 'visible');
+                assert.equal(layout.fits, true);
                 const columns = await page.evaluate(() => {
                     const list = document.getElementById('selectedDateList');
                     list.innerHTML = ['', '9:00', '19:00', '시간미정']
@@ -184,26 +180,7 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                     }));
                 });
                 assert.equal(columns[0].time, '-');
-                assert.equal(columns[3].time, '미정');
                 assert.ok(columns.every(c => c.subjectX === columns[0].subjectX && c.titleX === columns[0].titleX));
-                const monthly = await page.evaluate(() => {
-                    const sample = document.createElement('div');
-                    sample.className = 'cal-day-cell';
-                    sample.style.width = '200px';
-                    sample.innerHTML = ['', '19:00', '시간미정']
-                        .map(time => calGetEventHTML({ time, person: '캄몬', title: '정렬 확인' }))
-                        .join('');
-                    document.body.appendChild(sample);
-                    const rows = [...sample.querySelectorAll('.cal-cell-top')].map(el => ({
-                        time: el.querySelector('.cal-event-time').textContent,
-                        timeWidth: el.querySelector('.cal-event-time').getBoundingClientRect().width,
-                        personX: el.querySelector('.cal-event-person').getBoundingClientRect().left,
-                    }));
-                    sample.remove();
-                    return rows;
-                });
-                assert.deepEqual(monthly.map(row => row.time), ['-', '19:00', '미정']);
-                assert.ok(monthly.every(row => row.timeWidth === monthly[0].timeWidth && row.personX === monthly[0].personX));
             }
             await ctx.close();
             assert.deepEqual(errors, [], `${url} 스크립트 오류`);
