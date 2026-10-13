@@ -142,15 +142,21 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                     calRenderSelectedDateSchedules();
                 });
                 const chips = page.locator('#selectedDateList .cal-offair-section');
-                assert.equal(await chips.locator('.cal-offair-chip:visible').count(), 5);
+                assert.equal(await chips.locator('.cal-offair-chip:visible').count(), 4);
                 assert.equal(
                     await chips
                         .locator('.hist-chip-more .hist-chip-name')
                         .textContent()
                         .then(s => s.trim()),
-                    '+12명'
+                    '+13명'
                 );
                 assert.equal(await chips.locator('.hist-stack-face').count(), 3);
+                const alignment = await chips.evaluate(section => {
+                    const label = section.querySelector('.cal-offair-label').getBoundingClientRect();
+                    const firstChip = section.querySelector('.cal-offair-chip').getBoundingClientRect();
+                    return { labelY: (label.top + label.bottom) / 2, chipY: (firstChip.top + firstChip.bottom) / 2 };
+                });
+                assert.ok(Math.abs(alignment.labelY - alignment.chipY) <= 1, '휴방 글자와 첫 뱃지의 세로 중심이 같다');
                 await chips.locator('.hist-chip-more').click();
                 assert.equal(await chips.locator('.cal-offair-chip:visible').count(), 17);
                 assert.equal(await chips.locator('.hist-chip-more').count(), 0);
