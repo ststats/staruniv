@@ -29,6 +29,7 @@
         if (keep) calSelectDate(keep);
     }
 
+    const activeScheduleMember = m => m.soop_id && !String(m.left_date || '').trim();
     function participantRows(row) {
         const selected = Array.isArray(row?.participants) ? row.participants : [];
         const known = C().state.members || [];
