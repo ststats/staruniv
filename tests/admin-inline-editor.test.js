@@ -42,9 +42,13 @@ test('일정 색은 정해진 팔레트 키로 저장하고, 공개 달력이 �
     const admin = read('templates/assets/admin-schedule.js');
     assert.doesNotMatch(admin, /type="color"/);
     assert.match(admin, /schedule_color/);
-    // 일정 제목엔 '중만컵' 같은 멤버 이름 아닌 값도 들어가 자유 입력이다
+    // 주체는 대회명 등 자유 입력으로 유지하고 실제 일정명과 참가자는 따로 편집한다
     assert.doesNotMatch(admin, /<select class="admin-input" id="as_person"/);
-    assert.match(admin, /field\('제목', C\(\)\.input\('as_person'/);
+    assert.match(admin, /field\('주체', C\(\)\.input\('as_person'/);
+    assert.match(admin, /field\('일정명', C\(\)\.input\('as_title'/);
+    assert.match(admin, /subject_type: C\(\)\.value\('as_subject_type'\)/);
+    assert.match(admin, /participants: readParticipants\(\)/);
+    assert.match(admin, /function bindParticipantRoles\(/);
     assert.match(admin, /function offAirChecklist[\s\S]*?!m\.left_date/);
     assert.match(admin, /type="checkbox"/);
 });

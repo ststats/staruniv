@@ -193,31 +193,53 @@ const calLoadPublicData = () => {
     return calLoadState.pending;
 };
 
-// 주체 유형에 따른 인원 표기. 개인은 주체를 제외하고, 단체·대회는 전체 인원을 센다.
-const calParticipants = item => Array.isArray(item.participants) ? item.participants : [];
-const calName = name => {
-    const text = String(name || '').trim();
-    const members = (typeof SiteData !== 'undefined' && Array.isArray(SiteData.members)) ? SiteData.members : [];
-    const match = members.find(m => m['이름'] === text || m['닉네임'] === text || m['SOOP ID'] === text);
-    return match ? String(match['이름'] || text).slice(-2) : text;
+// 주체와 참가자는 별개다. 개인은 자기 자신을 빼고, 단체·대회는 참가자 전원을 센다.
+const calParticipants = item => {
+    if (!Array.isArray(item.participants)) return [];
+    const seen = new Set();
+    return item.participants.filter(p => {
+        if (!p || typeof p !== 'object') return false;
+        const key = String(p.soop_id || p.name || '').trim().toLowerCase();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+const calMember = (name, soopId) => {
+    const members = typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : [];
+    const value = String(name || '').trim();
+    return (
+        (soopId && members.find(m => m['SOOP ID'] === soopId)) ||
+        members.find(m => m['이름'] === value || m['SOOP ID'] === value) ||
+        (value.length === 2 ? members.find(m => String(m['이름'] || '').slice(-2) === value) : null)
+    );
+};
+const calName = (name, soopId) => {
+    const member = calMember(name, soopId);
+    return member ? String(member['이름'] || name).slice(-2) : String(name || '').trim();
 };
 const calSubjectLabel = item => {
     const participants = calParticipants(item);
     const subject = calName(item.person);
     if (!participants.length) return subject;
-    const names = participants.map(p => String(p.name || p.soop_id || '').trim());
-    const count = item.subjectType === 'person'
-        ? names.filter(n => n !== item.person && calName(n) !== subject).length
-        : names.length;
-    if (!count) return subject;
-    return item.subjectType === 'person' ? `${subject} 외 ${count}인` : `${subject} · ${count}인`;
+    if (item.subjectType === 'person') {
+        const owner = calMember(item.person);
+        const ownerIndex = participants.findIndex(p =>
+            owner && p.soop_id ? p.soop_id === owner['SOOP ID'] : calName(p.name || p.soop_id, p.soop_id) === subject
+        );
+        const extras = participants.length - (ownerIndex < 0 ? 0 : 1);
+        return extras ? `${subject} 외 ${extras}인` : subject;
+    }
+    return `${subject} · ${participants.length}인`;
 };
-const calDisplayTime = item => item.time === '비방연습' ? '' : item.time;
+const calEventTitle = item => item.title || item.desc || (item.time === '비방연습' ? '비방연습' : item.person);
+const calDisplayTime = item => !item.time || item.time === '비방연습' || item.time === '시간미정' ? '미정' : item.time;
+
 const calGetEventHTML = item =>
     calCellEventHtml({
         timeText: calDisplayTime(item),
         personText: calSubjectLabel(item),
-        descText: item.title || item.desc,
+        descText: calEventTitle(item),
         color: calSafeColor(item.color, CAL_DEFAULT_EVENT_COLOR),
     });
 
@@ -225,7 +247,7 @@ const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) =>
     calCellEventHtml({
         timeText: calDisplayTime(ev),
         personText: calSubjectLabel(ev),
-        descText: ev.title || ev.desc,
+        descText: calEventTitle(ev),
         color: calSafeColor(ev.color, CAL_DEFAULT_LONGTERM_COLOR),
         bar: calBarEdgeStyle(dateStr === ev.startDate || isWeekStart, dateStr === ev.endDate || isWeekEnd),
     });
@@ -355,17 +377,18 @@ const calSelectDate = dateStr => {
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
     const badges = calParticipants(item).map(p => {
-        const name = calName(p.name || p.soop_id);
-        const m = typeof findMemberBySoopId === 'function' ? findMemberBySoopId(p.soop_id) : null;
-        const avatar = m && typeof avatarHtml === 'function' ? avatarHtml(p.soop_id, 'cal-offair-avatar') : '';
-        return `<span class="hist-chip">${avatar}<span class="cal-offair-name">${escapeHTML(name)}${p.role ? ` · ${escapeHTML(p.role)}` : ''}</span></span>`;
+        const name = calName(p.name || p.soop_id, p.soop_id);
+        const member = calMember(p.name, p.soop_id);
+        const avatar = member && typeof avatarHtml === 'function' ? avatarHtml(member['SOOP ID'], 'cal-offair-avatar') : '';
+        const role = p.role ? ` · ${p.role}` : '';
+        return `<span class="hist-chip">${avatar}<span class="cal-offair-name">${escapeHTML(name + role)}</span></span>`;
     }).join('');
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
-                    ${calDisplayTime(item) ? `<span class="cal-card-time">${escapeHTML(calDisplayTime(item))}</span>` : ''}
+                    <span class="cal-card-time">${escapeHTML(calDisplayTime(item))}</span>
                     ${item.person ? `<span class="cal-card-person">${escapeHTML(calSubjectLabel(item))}</span>` : ''}
-                    <span class="cal-card-desc">${escapeHTML(item.title || item.desc)}${item.detail ? `<span class="cal-card-detail">${escapeHTML(item.detail)}</span>` : ''}</span>
+                    <span class="cal-card-desc">${escapeHTML(calEventTitle(item))}${item.detail ? `<span class="cal-card-detail">${escapeHTML(item.detail)}</span>` : ''}</span>
                     ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, dateStr, type) : ''}
                 </div>
                 ${badges ? `<div class="cal-offair-chips">${badges}</div>` : ''}

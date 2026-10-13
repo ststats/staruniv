@@ -29,6 +29,13 @@
         if (keep) calSelectDate(keep);
     }
 
+    const PARTICIPANT_ROLES = [
+        ['', '일반 참가'],
+        ['출전', '출전'],
+        ['해설', '해설'],
+        ['응원', '응원'],
+        ['진행', '진행'],
+    ];
     function participantRows(row) {
         const selected = Array.isArray(row?.participants) ? row.participants : [];
         const known = C().state.members || [];
@@ -38,11 +45,55 @@
         }).join('')}</div>`;
     }
 
+    // 참가 멤버를 체크한 뒤 역할을 선택할 수 있다. 그리기 전에 기존 선택값을 기억한다.
+    function bindParticipantRoles(row) {
+        const grid = document.getElementById('as_members');
+        const box = document.getElementById('as_roles');
+        if (!grid || !box) return;
+        const roles = new Map((row?.participants || []).filter(p => p.soop_id).map(p => [p.soop_id, p.role || '']));
+        const members = C().state.members || [];
+        const draw = () => {
+            box.querySelectorAll('select[data-participant-role]').forEach(el => roles.set(el.dataset.participantRole, el.value));
+            const ids = [...grid.querySelectorAll('input:checked')].map(el => el.value);
+            box.innerHTML = ids.map(id => {
+                const m = members.find(x => x.soop_id === id);
+                const role = roles.get(id) || '';
+                const choices = PARTICIPANT_ROLES.some(([key]) => key === role)
+                    ? PARTICIPANT_ROLES : [...PARTICIPANT_ROLES, [role, role]];
+                return C().field(`${m?.nickname || m?.name || id} 역할`,
+                    C().select(`as_role_${id}`, choices, role, `data-participant-role="${C().esc(id)}"`));
+            }).join('');
+        };
+        grid.addEventListener('change', draw);
+        draw();
+    }
+
+    function readParticipants() {
+        const members = C().state.members || [];
+        const roles = new Map([...document.querySelectorAll('#as_roles select[data-participant-role]')]
+            .map(el => [el.dataset.participantRole, el.value]));
+        const selected = [...document.querySelectorAll('#as_members input:checked')].map(el => el.value);
+        const participants = selected.map(id => {
+            const member = members.find(m => m.soop_id === id);
+            return { soop_id: id, name: member?.name || member?.nickname || id, role: roles.get(id) || '' };
+        });
+        for (const value of C().value('as_external').split(/\r?\n/)) {
+            const line = value.trim();
+            if (!line) continue;
+            const [rawName, ...rawRole] = line.split('|');
+            const name = rawName.trim();
+            if (!name) throw new Error('외부 참가자의 이름을 입력하세요');
+            participants.push({ name, role: rawRole.join('|').trim() });
+        }
+        return participants;
+    }
+
     function openEvent(row, date) {
         const isNew = !row;
         const start = row?.startDate || date || window.calSelectedDateStr || calTodayStr();
         const end = row?.endDate || start;
         const selectedColor = row?.color || 'blue';
+        const otherParticipants = Array.isArray(row?.participants) ? row.participants.filter(p => !p.soop_id) : [];
         C().openDrawer({
             eyebrow: 'SCHEDULE',
             title: isNew ? '일정 추가' : '일정 수정',
@@ -50,14 +101,16 @@
         <div class="admin-form-grid">
           ${C().field('시작일', C().input('as_start', start, 'date', 'required'))}
           ${C().field('종료일', C().input('as_end', end, 'date', 'required'))}
-          ${C().field('시간', C().input('as_time', row?.time || '', 'text', 'placeholder="19:00"'))}
+          ${C().field('시간', C().input('as_time', row?.time === '비방연습' ? '' : row?.time || '', 'text', 'placeholder="19:00 또는 시간미정"'))}
           ${C().field('주체', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, ASL22, 윤환"'))}
         </div>
-        ${C().field('주체 유형', C().select('as_subject_type', [['other','미분류'],['person','개인'],['group','단체'],['competition','대회']], row?.subjectType || 'other'))}
-        ${C().field('일정명', C().input('as_title', row?.title || row?.desc || '', 'text', 'required maxlength="120"'))}
+        ${C().field('주체 유형', C().select('as_subject_type', [['other', '미분류 (기존)'], ['person', '개인'], ['group', '단체'], ['competition', '대회']], row?.subjectType || 'other'))}
+        ${C().field('일정명', C().input('as_title', row?.title || row?.desc || (row?.time === '비방연습' ? '비방연습' : ''), 'text', 'required maxlength="120"'))}
         ${C().field('상세 설명', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
         <div class="admin-field"><span>참가 멤버</span>${participantRows(row)}</div>
-        ${C().field('외부 참가자 (쉼표 구분)', C().input('as_external', (row?.participants || []).filter(x => !x.soop_id).map(x => x.name).join(', '), 'text'))}
+        <div class="admin-field"><span>참가 멤버 역할 (선택)</span><div id="as_roles"></div></div>
+        ${C().field('외부 참가자', C().textarea('as_external', otherParticipants.map(p => `${p.name}${p.role ? ` | ${p.role}` : ''}`).join('\n'),
+            'rows="3" placeholder="한 줄에 한 명: 박상현 | 출전"'), '한 줄에 한 명, 역할은 | 뒤에 입력')}
         <div class="admin-field"><span>색상</span>${colorPicker(selectedColor)}</div>`,
             onSubmit: async () => {
                 const startDate = C().value('as_start'),
@@ -66,28 +119,18 @@
                 if (endDate < startDate) throw new Error('종료일은 시작일보다 빠를 수 없습니다');
                 if (!C().value('as_person').trim()) throw new Error('주체를 입력하세요');
                 if (!C().value('as_title').trim()) throw new Error('일정명을 입력하세요');
-                const selected = [...document.querySelectorAll('#as_members input:checked')].map(x => x.value);
-                const members = C().state.members || [];
-                const previous = row?.participants || [];
-                const participants = selected.map(id => {
-                    const m = members.find(x => x.soop_id === id);
-                    const old = previous.find(x => x.soop_id === id);
-                    return { soop_id: id, name: m?.name || m?.nickname || id, role: old?.role || '' };
-                });
-                C().value('as_external').split(',').map(x => x.trim()).filter(Boolean).forEach(name => {
-                    const old = previous.find(x => !x.soop_id && x.name === name);
-                    participants.push({ name, role: old?.role || '' });
-                });
                 const color = document.querySelector('input[name="schedule_color"]:checked')?.value || 'blue';
+                const title = C().value('as_title').trim();
                 const dbRow = {
                     start_date: startDate,
                     end_date: endDate,
                     event_time: C().empty(C().value('as_time')),
                     person: C().value('as_person').trim(),
-                    description: C().empty(C().value('as_title')),
-                    title: C().value('as_title').trim(),
+                    // 구형 일정 조회 화면에서도 제목이 빠지지 않게 함께 유지한다.
+                    description: title,
+                    title,
                     subject_type: C().value('as_subject_type'),
-                    participants,
+                    participants: readParticipants(),
                     detail: C().empty(C().value('as_detail')),
                     color,
                 };
@@ -107,14 +150,15 @@
                       const { error } = await AdminApi.schedule.remove(row.id);
                       if (error) throw error;
                       C().toast('일정을 삭제했습니다');
-                      await refresh(startDate);
+                      await refresh(start);
                   }
                 : null,
             deleteConfirm: '이 일정을 삭제할까요?',
         });
+        bindParticipantRoles(row);
     }
 
-    // 그날 이미 휴방으로 등록된 사람은 퇴단했어도 선택지에 남겨 둔다.
+        // 그날 이미 휴방으로 등록된 사람은 퇴단했어도 선택지에 남겨 둔다.
     function offAirChecklist(date) {
         const current = new Set(calOffAirForDate(date));
         const members = (C().state.members || []).filter(m => m.soop_id && (!m.left_date || current.has(m.soop_id)));
