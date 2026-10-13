@@ -15,5 +15,6 @@
   "scripts/build_tools/**",
   ".github/build-paths.json",
   ".github/build-tools.json",
-  ".github/workflows/build.yml"
+  ".github/workflows/build.yml",
+  "tests/**"
 ]
