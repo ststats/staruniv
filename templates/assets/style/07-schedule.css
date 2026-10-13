@@ -24,8 +24,8 @@
         overflow: hidden;
     }
 
-    /* ----- 오늘의 일정 · 선택한 날짜 일정 카드 -----
-       오늘 카드는 네이비 면(14-surfaces.css), 안쪽 선·글자는 --panel-* 토큰을 따라간다. */
+    /* ----- 선택한 날짜 일정 카드 -----
+       선택한 날짜 카드는 네이비 면(14-surfaces.css), 안쪽 선·글자는 --panel-* 토큰을 따라간다. */
     .cal-day-card {
         padding: var(--space-8) var(--space-8) 0;
     }
@@ -45,9 +45,8 @@
         color: var(--title-eyebrow);
     }
 
-    /* 두 날짜별 일정 목록은 내부 스크롤 없이 전부 펼쳐 페이지 높이에 맞춘다. */
-    .cal-selected-list,
-    .cal-today-list {
+    /* 선택한 날짜 일정 목록은 내부 스크롤 없이 전부 펼쳐 페이지 높이에 맞춘다. */
+    .cal-selected-list {
         display: flex;
         flex-direction: column;
     }
@@ -64,11 +63,9 @@
         padding: var(--space-5) 0;
     }
 
-    .cal-selected-card,
-    .cal-today-card {
+    .cal-selected-card {
         padding: var(--space-5) 0;
     }
-    .cal-today-card + .cal-today-card,
     .cal-selected-card + .cal-selected-card {
         border-top: 1px solid var(--panel-line);
     }
@@ -88,9 +85,6 @@
         color: var(--color-primary);
         font-weight: 700;
         white-space: nowrap;
-    }
-    .cal-today-card-wrapper .cal-card-time {
-        color: var(--panel-accent);
     }
     .cal-card-person {
         flex: none; /* 시간 없는 일정에서 설명이 길면 이름이 한 글자씩 줄바꿈되지 않게 */
@@ -148,22 +142,16 @@
         font-size: var(--fs-small);
         line-height: 1;
     }
-    .cal-offair-avatar,
     .hist-chip-ava,
     .hist-stack-face {
         flex-shrink: 0;
         width: 18px;
         height: 18px;
         object-fit: cover;
-    }
-    .cal-offair-avatar {
-        background: var(--color-border);
-    }
-    .cal-offair-name {
-        color: var(--color-text-sub);
-        font-size: var(--fs-small);
-        font-weight: 500;
-        white-space: nowrap;
+        display: inline-grid;
+        place-items: center;
+        background: var(--color-placeholder-bg);
+        font-size: var(--fs-badge-sm);
     }
     /* 휴방자가 없는 날의 '없음'(높이는 '휴방' 글자 칸과 같게) */
     .cal-offair-none {
@@ -525,13 +513,6 @@
     }
     .hist-chips-rest {
         display: contents;
-    }
-    .hist-chip-ava,
-    .hist-stack-face {
-        display: inline-grid;
-        place-items: center;
-        background: var(--color-placeholder-bg);
-        font-size: var(--fs-badge-sm);
     }
     .hist-chip-name {
         color: var(--color-text-main);

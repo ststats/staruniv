@@ -1002,8 +1002,7 @@
             background-color 0.15s,
             color 0.15s;
     }
-    .cal-selected-list > .admin-inline-add,
-    .cal-today-list > .admin-inline-add {
+    .cal-selected-list > .admin-inline-add {
         flex: none;
         align-self: stretch;
         min-height: 36px;
@@ -1011,14 +1010,6 @@
         font-size: var(--fs-small);
     }
     /* 네이비 면 위에서는 회색 바탕 + 흰 글씨가 안 읽혀서 면 토큰을 쓴다 */
-    .cal-today-card-wrapper :is(.admin-inline-edit, .admin-inline-add) {
-        background: var(--panel-control);
-        color: var(--panel-text);
-    }
-    .cal-today-card-wrapper :is(.admin-inline-edit, .admin-inline-add):hover {
-        background: #fff;
-        color: var(--navy);
-    }
     .cal-card-main > .admin-inline-edit {
         flex: none;
     }

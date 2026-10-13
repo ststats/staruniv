@@ -268,7 +268,6 @@
             true
         );
         if (typeof calRenderSelectedDateSchedules === 'function') calRenderSelectedDateSchedules();
-        if (typeof calRenderTodaySchedules === 'function') calRenderTodaySchedules();
     }
     document.addEventListener('admin:ready', init);
 })();

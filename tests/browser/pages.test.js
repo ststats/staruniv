@@ -134,6 +134,35 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                 await page.mouse.move(0, 0);
                 await page.locator('.tier-peek').waitFor({ state: 'hidden' });
             }
+            if (url === 'schedule/') {
+                assert.equal(await page.locator('#todayList, #todayDateLabel').count(), 0);
+                await page.evaluate(() => {
+                    calSelectedDateStr = '2026-10-14';
+                    calOffAir = { '2026-10-14': Array.from({ length: 17 }, (_, i) => 'member' + i) };
+                    calRenderSelectedDateSchedules();
+                });
+                const chips = page.locator('#selectedDateList .cal-offair-section');
+                assert.equal(await chips.locator('.cal-offair-chip:visible').count(), 5);
+                assert.equal(
+                    await chips
+                        .locator('.hist-chip-more .hist-chip-name')
+                        .textContent()
+                        .then(s => s.trim()),
+                    '+12명'
+                );
+                assert.equal(await chips.locator('.hist-stack-face').count(), 3);
+                await chips.locator('.hist-chip-more').click();
+                assert.equal(await chips.locator('.cal-offair-chip:visible').count(), 17);
+                assert.equal(await chips.locator('.hist-chip-more').count(), 0);
+                const layout = await page.locator('#selectedDateList').evaluate(el => ({
+                    maxHeight: getComputedStyle(el).maxHeight,
+                    overflow: getComputedStyle(el).overflowY,
+                    fits: el.scrollHeight <= el.clientHeight + 1,
+                }));
+                assert.equal(layout.maxHeight, 'none');
+                assert.equal(layout.overflow, 'visible');
+                assert.equal(layout.fits, true);
+            }
             await ctx.close();
             assert.deepEqual(errors, [], `${url} 스크립트 오류`);
             assert.deepEqual(stuck, [], `${url} 다 그려지지 않음`);

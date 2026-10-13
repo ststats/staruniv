@@ -10,6 +10,24 @@ const members = [
     { '이름': '김윤환', 'SOOP ID': 'brainzerg7' },
     { '이름': '김민철', 'SOOP ID': 'minchul' },
 ];
+
+test('휴방은 공통 뱃지로 6명까지, 7명부터 나머지를 합친다', () => {
+    const page = fs.readFileSync(path.join(__dirname, '../templates/assets/page-schedule.js'), 'utf8');
+    sandbox.findMemberBySoopId = id => members.find(m => String(m['SOOP ID']) === String(id));
+    sandbox.bootPage = () => {};
+    vm.runInContext(page, sandbox);
+    for (const count of [0, 1, 6, 7, 17]) {
+        evaluate(`calOffAir = { '2026-10-14': ${JSON.stringify(Array.from({ length: count }, (_, i) => 'id' + i))} }`);
+        const html = evaluate("window.calOffAirExtra('2026-10-14','selected')");
+        if (!count) assert.match(html, /없음/);
+        else assert.equal((html.match(/data-offair-date=/g) || []).length, count);
+        if (count > 6) {
+            assert.ok(html.includes('+' + (count - 5) + '명'));
+            assert.match(html, /data-hist-rest="offair-selected-2026-10-14" hidden/);
+            assert.equal((html.match(/hist-stack-face/g) || []).length, Math.min(3, count - 5));
+        } else assert.doesNotMatch(html, /hist-chip-more/);
+    }
+});
 const sandbox = {
     SiteData: { members },
     escapeHTML: value =>
@@ -147,29 +165,28 @@ test('빈 시간은 숨기고 뱃지 이름은 HTML 이스케이프한다', () =
 test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일하고 프로필은 작게 표시한다', () => {
     const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
     const chip = css.match(/\.cal-offair-chip,\s*\.hist-chip\s*\{([^}]+)\}/)?.[1];
-    const avatars = css.match(/\.cal-offair-avatar,\s*\.hist-chip-ava,\s*\.hist-stack-face\s*\{([^}]+)\}/)?.[1];
+    const avatars = css.match(/\.hist-chip-ava,\s*\.hist-stack-face\s*\{([^}]+)\}/)?.[1];
     const none = css.match(/\.cal-offair-none\s*\{([^}]+)\}/)?.[1];
-    const offAirName = css.match(/\.cal-offair-name\s*\{([^}]+)\}/)?.[1];
     const historyName = css.match(/\.hist-chip-name\s*\{([^}]+)\}/)?.[1];
-    assert.ok(chip && avatars && none && offAirName && historyName);
+    assert.ok(chip && avatars && none && historyName);
     assert.match(chip, /min-height:\s*24px/);
     assert.match(chip, /font-size:\s*var\(--fs-small\)/);
     assert.match(avatars, /width:\s*18px/);
     assert.match(avatars, /height:\s*18px/);
-    for (const rule of [none, offAirName, historyName]) {
+    for (const rule of [none, historyName]) {
         assert.match(rule, /font-size:\s*var\(--fs-small\)/);
     }
 });
 
-test('오늘과 선택한 날짜의 일정은 모두 내부 스크롤 없이 펼쳐진다', () => {
+test('선택한 날짜 일정은 내부 스크롤 없이 펼쳐지고 오늘 일정 패널은 없다', () => {
     const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
     const template = fs.readFileSync(path.join(__dirname, '../templates/pages/schedule.html'), 'utf8');
-    const shared = css.match(/\.cal-selected-list,\s*\.cal-today-list\s*\{([^}]+)\}/)?.[1];
+    const shared = css.match(/\.cal-selected-list\s*\{([^}]+)\}/)?.[1];
     assert.ok(shared);
     assert.match(shared, /display:\s*flex/);
     assert.doesNotMatch(shared, /max-height|overflow|height:/);
     assert.doesNotMatch(css, /\.cal-(?:selected|today)-list\s*\{[^}]*?(?:max-height|overflow(?:-y)?):/);
     assert.match(template, /class="cal-selected-list is-empty" id="selectedDateList"/);
-    assert.match(template, /class="cal-today-list is-empty" id="todayList"/);
+    assert.doesNotMatch(template, /todayList|todayDateLabel|오늘의 일정/);
     assert.doesNotMatch(template, /class="cal-(?:selected|today)-list scroll-area/);
 });

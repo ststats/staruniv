@@ -116,7 +116,9 @@ const HIST_STACK_FACES = 3;
 
 function histAvatarSrc(entry, members, avatarUrlFn) {
     const name = typeof entry === 'string' ? entry : (entry && entry.name) || '';
-    const m = (members || []).find(x => x['이름'] === name);
+    const m = (members || []).find(x =>
+        entry?.soop_id ? String(x['SOOP ID']) === String(entry.soop_id) : x['이름'] === name
+    );
     return m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
 }
 
@@ -148,13 +150,18 @@ function histToggleMembers(key) {
 function histMemberChipHtml(entry, members, avatarUrlFn) {
     const { name, note } =
         entry && typeof entry === 'object' ? { name: String(entry.name || ''), note: '' } : histParseMember(entry);
-    const m = (members || []).find(x => x['이름'] === name);
+    const m = (members || []).find(x =>
+        entry?.soop_id ? String(x['SOOP ID']) === String(entry.soop_id) : x['이름'] === name
+    );
     const url = m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
     const ava = url
         ? `<img class="hist-chip-ava" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-chip-ava', '👤')}>`
         : `<span class="hist-chip-ava">👤</span>`;
     const noteHtml = note ? `<span class="hist-chip-role">${escapeHTML(note)}</span>` : '';
-    return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
+    const offAir = entry?.offairDate
+        ? ` data-offair-date="${escapeHTML(entry.offairDate)}" data-soop-id="${escapeHTML(entry.soop_id)}"`
+        : '';
+    return `<span class="hist-chip${m ? '' : ' is-unknown'}${offAir ? ' cal-offair-chip' : ''}"${offAir}>${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
 }
 
 // 일정과 연혁은 같은 참가자 뱃지를 사용한다. compact면 세 명까지 펼치고 4명부터 셋째 칸에 접는다.

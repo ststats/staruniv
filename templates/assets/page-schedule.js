@@ -5,13 +5,16 @@
 window.calOffAirExtra = (dateStr, type) => {
     const soopIds = calOffAirForDate(dateStr);
     const chips = soopIds.length
-        ? soopIds
-              .map(soopId => {
-                  const m = findMemberBySoopId(soopId);
-                  const name = m ? m['이름'] : soopId;
-                  return `<div class="cal-offair-chip" data-offair-date="${escapeHTML(dateStr)}" data-soop-id="${escapeHTML(soopId)}">${avatarHtml(soopId, 'cal-offair-avatar')}<span class="cal-offair-name">${escapeHTML(name)}</span></div>`;
-              })
-              .join('')
+        ? histChipsHtml(
+              soopIds.map(soopId => ({
+                  name: findMemberBySoopId(soopId)?.['이름'] || soopId,
+                  soop_id: soopId,
+                  offairDate: dateStr,
+              })),
+              SiteData.members,
+              getProfileImgUrl,
+              `offair-${type}-${dateStr}`
+          )
         : '<span class="cal-offair-none">없음</span>';
     return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
 };

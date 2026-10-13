@@ -325,7 +325,6 @@ const calRenderCalendar = () => {
     if (!calLoadState.hasData) {
         daysGrid.setAttribute('aria-busy', String(!failed));
         daysGrid.innerHTML = `<div class="cal-days-loading">${failed ? '일정을 확인할 수 없습니다' : '달력을 불러오는 중'}</div>`;
-        calRenderTodaySchedules();
         calRenderSelectedDateSchedules();
         return;
     }
@@ -357,8 +356,6 @@ const calRenderCalendar = () => {
     daysGrid.innerHTML = cells.join('');
     daysGrid.setAttribute('aria-busy', 'false');
     calBindGridClick(daysGrid);
-
-    calRenderTodaySchedules();
     calRenderSelectedDateSchedules();
 };
 
@@ -379,7 +376,7 @@ const calSelectDate = dateStr => {
 
 // 연혁과 같은 뱃지 렌더러를 공유한다. 달력 제목의 멤버 이름만 두 글자로 축약한다.
 const calEventCardHtml = (item, dateStr, type) => {
-    const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
+    const cardClass = 'cal-selected-card';
     const members = typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : [];
     const people = calParticipants(item).map(p => ({
         name: calMember(p.name, p.soop_id)?.['이름'] || String(p.name || p.soop_id || '').trim(),
@@ -436,11 +433,6 @@ const calDayLabel = dateStr => {
 const calSetDayLabel = (id, dateStr) => {
     const el = document.getElementById(id);
     if (el) el.textContent = calDayLabel(dateStr);
-};
-
-const calRenderTodaySchedules = () => {
-    calSetDayLabel('todayDateLabel', calTodayStr());
-    calRenderScheduleList('todayList', calTodayStr(), 'today', '오늘 등록된 일정이 없습니다');
 };
 
 const calRenderSelectedDateSchedules = () => {
