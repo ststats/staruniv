@@ -151,7 +151,6 @@
     --bar-pad-y: 7px;
     --news-photo-h: 400px;
     --news-past-item-h: 91px; /* 지난 공지 카드 한 장(이름·제목·본문 한 줄) */
-    --day-list-h: 360px;
     --tier-bar-h: calc(var(--bar-chip-h) + var(--bar-pad-y) * 2 + 2px);
 }
 
