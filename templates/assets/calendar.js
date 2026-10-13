@@ -166,7 +166,10 @@ const calLoadPublicData = () => {
                 time: r.event_time || '',
                 person: r.person || '',
                 desc: r.description || '',
+                title: r.title || r.description || (r.event_time === '비방연습' ? '비방연습' : ''),
                 detail: r.detail || '',
+                subjectType: r.subject_type || 'other',
+                participants: Array.isArray(r.participants) ? r.participants : [],
                 color: r.color || '',
             }));
             const nextOffAir = {};
@@ -190,19 +193,39 @@ const calLoadPublicData = () => {
     return calLoadState.pending;
 };
 
+// 주체 유형에 따른 인원 표기. 개인은 주체를 제외하고, 단체·대회는 전체 인원을 센다.
+const calParticipants = item => Array.isArray(item.participants) ? item.participants : [];
+const calName = name => {
+    const text = String(name || '').trim();
+    const members = (typeof SiteData !== 'undefined' && Array.isArray(SiteData.members)) ? SiteData.members : [];
+    const match = members.find(m => m['이름'] === text || m['닉네임'] === text || m['SOOP ID'] === text);
+    return match ? String(match['이름'] || text).slice(-2) : text;
+};
+const calSubjectLabel = item => {
+    const participants = calParticipants(item);
+    const subject = calName(item.person);
+    if (!participants.length) return subject;
+    const names = participants.map(p => String(p.name || p.soop_id || '').trim());
+    const count = item.subjectType === 'person'
+        ? names.filter(n => n !== item.person && calName(n) !== subject).length
+        : names.length;
+    if (!count) return subject;
+    return item.subjectType === 'person' ? `${subject} 외 ${count}인` : `${subject} · ${count}인`;
+};
+const calDisplayTime = item => item.time === '비방연습' ? '' : item.time;
 const calGetEventHTML = item =>
     calCellEventHtml({
-        timeText: item.time,
-        personText: item.person,
-        descText: item.desc,
+        timeText: calDisplayTime(item),
+        personText: calSubjectLabel(item),
+        descText: item.title || item.desc,
         color: calSafeColor(item.color, CAL_DEFAULT_EVENT_COLOR),
     });
 
 const calGetLongTermBarHTML = (ev, dateStr, isWeekStart, isWeekEnd) =>
     calCellEventHtml({
-        timeText: ev.time,
-        personText: ev.person,
-        descText: ev.desc,
+        timeText: calDisplayTime(ev),
+        personText: calSubjectLabel(ev),
+        descText: ev.title || ev.desc,
         color: calSafeColor(ev.color, CAL_DEFAULT_LONGTERM_COLOR),
         bar: calBarEdgeStyle(dateStr === ev.startDate || isWeekStart, dateStr === ev.endDate || isWeekEnd),
     });
@@ -331,14 +354,21 @@ const calSelectDate = dateStr => {
 
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
+    const badges = calParticipants(item).map(p => {
+        const name = calName(p.name || p.soop_id);
+        const m = typeof findMemberBySoopId === 'function' ? findMemberBySoopId(p.soop_id) : null;
+        const avatar = m && typeof avatarHtml === 'function' ? avatarHtml(p.soop_id, 'cal-offair-avatar') : '';
+        return `<span class="hist-chip">${avatar}<span class="cal-offair-name">${escapeHTML(name)}${p.role ? ` · ${escapeHTML(p.role)}` : ''}</span></span>`;
+    }).join('');
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
-                    ${item.time ? `<span class="cal-card-time">${escapeHTML(item.time)}</span>` : ''}
-                    ${item.person ? `<span class="cal-card-person">${escapeHTML(item.person)}</span>` : ''}
-                    <span class="cal-card-desc">${escapeHTML(item.desc)}${item.detail ? `<span class="cal-card-detail">${escapeHTML(item.detail)}</span>` : ''}</span>
+                    ${calDisplayTime(item) ? `<span class="cal-card-time">${escapeHTML(calDisplayTime(item))}</span>` : ''}
+                    ${item.person ? `<span class="cal-card-person">${escapeHTML(calSubjectLabel(item))}</span>` : ''}
+                    <span class="cal-card-desc">${escapeHTML(item.title || item.desc)}${item.detail ? `<span class="cal-card-detail">${escapeHTML(item.detail)}</span>` : ''}</span>
                     ${typeof window.calCardExtra === 'function' ? window.calCardExtra(item, dateStr, type) : ''}
                 </div>
+                ${badges ? `<div class="cal-offair-chips">${badges}</div>` : ''}
             </div>
         `;
 };

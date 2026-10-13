@@ -29,6 +29,15 @@
         if (keep) calSelectDate(keep);
     }
 
+    function participantRows(row) {
+        const selected = Array.isArray(row?.participants) ? row.participants : [];
+        const known = C().state.members || [];
+        return `<div class="admin-pick-grid" id="as_members">${known.filter(m => m.soop_id).map(m => {
+            const p = selected.find(x => x.soop_id === m.soop_id);
+            return `<label class="admin-pick-item"><input type="checkbox" value="${C().esc(m.soop_id)}"${p ? ' checked' : ''}><span>${C().esc(m.nickname || m.name || m.soop_id)}</span></label>`;
+        }).join('')}</div>`;
+    }
+
     function openEvent(row, date) {
         const isNew = !row;
         const start = row?.startDate || date || window.calSelectedDateStr || calTodayStr();
@@ -42,24 +51,43 @@
           ${C().field('시작일', C().input('as_start', start, 'date', 'required'))}
           ${C().field('종료일', C().input('as_end', end, 'date', 'required'))}
           ${C().field('시간', C().input('as_time', row?.time || '', 'text', 'placeholder="19:00"'))}
-          ${C().field('제목', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, 중만컵, 멤버 이름"'))}
+          ${C().field('주체', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, ASL22, 윤환"'))}
         </div>
-        ${C().field('간략 내용', C().input('as_desc', row?.desc || '', 'text', 'maxlength="120"'))}
-        ${C().field('상세 내용', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
+        ${C().field('주체 유형', C().select('as_subject_type', [['other','미분류'],['person','개인'],['group','단체'],['competition','대회']], row?.subjectType || 'other'))}
+        ${C().field('일정명', C().input('as_title', row?.title || row?.desc || '', 'text', 'required maxlength="120"'))}
+        ${C().field('상세 설명', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
+        <div class="admin-field"><span>참가 멤버</span>${participantRows(row)}</div>
+        ${C().field('외부 참가자 (쉼표 구분)', C().input('as_external', (row?.participants || []).filter(x => !x.soop_id).map(x => x.name).join(', '), 'text'))}
         <div class="admin-field"><span>색상</span>${colorPicker(selectedColor)}</div>`,
             onSubmit: async () => {
                 const startDate = C().value('as_start'),
                     endDate = C().value('as_end') || startDate;
                 if (!startDate || !endDate) throw new Error('시작일과 종료일이 필요합니다');
                 if (endDate < startDate) throw new Error('종료일은 시작일보다 빠를 수 없습니다');
-                if (!C().value('as_person').trim()) throw new Error('제목을 입력하세요');
+                if (!C().value('as_person').trim()) throw new Error('주체를 입력하세요');
+                if (!C().value('as_title').trim()) throw new Error('일정명을 입력하세요');
+                const selected = [...document.querySelectorAll('#as_members input:checked')].map(x => x.value);
+                const members = C().state.members || [];
+                const previous = row?.participants || [];
+                const participants = selected.map(id => {
+                    const m = members.find(x => x.soop_id === id);
+                    const old = previous.find(x => x.soop_id === id);
+                    return { soop_id: id, name: m?.name || m?.nickname || id, role: old?.role || '' };
+                });
+                C().value('as_external').split(',').map(x => x.trim()).filter(Boolean).forEach(name => {
+                    const old = previous.find(x => !x.soop_id && x.name === name);
+                    participants.push({ name, role: old?.role || '' });
+                });
                 const color = document.querySelector('input[name="schedule_color"]:checked')?.value || 'blue';
                 const dbRow = {
                     start_date: startDate,
                     end_date: endDate,
                     event_time: C().empty(C().value('as_time')),
                     person: C().value('as_person').trim(),
-                    description: C().empty(C().value('as_desc')),
+                    description: C().empty(C().value('as_title')),
+                    title: C().value('as_title').trim(),
+                    subject_type: C().value('as_subject_type'),
+                    participants,
                     detail: C().empty(C().value('as_detail')),
                     color,
                 };

@@ -285,6 +285,9 @@ components:
         person: { type: [string, 'null'] }
         description: { type: [string, 'null'] }
         detail: { type: [string, 'null'] }
+        title: { type: [string, 'null'] }
+        subject_type: { type: string, enum: [other, person, group, competition] }
+        participants: { type: array, items: { type: object, properties: { soop_id: { type: string }, name: { type: string }, role: { type: string } } } }
         color: { type: [string, 'null'] }
     HistoryEntry:
       type: object
