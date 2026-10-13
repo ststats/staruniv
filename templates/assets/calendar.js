@@ -385,8 +385,11 @@ const calEventCardHtml = (item, dateStr, type) => {
         name: calMember(p.name, p.soop_id)?.['이름'] || String(p.name || p.soop_id || '').trim(),
     }));
     const badges = histChipsHtml(
-        people, members, typeof getProfileImgUrl === 'function' ? getProfileImgUrl : null,
-        'schedule-' + type + '-' + item.id, true
+        people,
+        members,
+        typeof getProfileImgUrl === 'function' ? getProfileImgUrl : null,
+        'schedule-' + type + '-' + item.id,
+        true
     );
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">

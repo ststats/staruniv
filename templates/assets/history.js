@@ -146,7 +146,8 @@ function histToggleMembers(key) {
 }
 
 function histMemberChipHtml(entry, members, avatarUrlFn) {
-    const { name, note } = entry && typeof entry === 'object' ? { name: String(entry.name || ''), note: '' } : histParseMember(entry);
+    const { name, note } =
+        entry && typeof entry === 'object' ? { name: String(entry.name || ''), note: '' } : histParseMember(entry);
     const m = (members || []).find(x => x['이름'] === name);
     const url = m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
     const ava = url
@@ -159,18 +160,25 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
 // 일정과 연혁은 같은 참가자 뱃지를 사용한다. compact면 세 명까지 펼치고 4명부터 셋째 칸에 접는다.
 function histChipsHtml(entries, members, avatarUrlFn, key, compact = false) {
     if (!entries.length) return '';
-    const shown = entries.length <= (compact ? 3 : HIST_CHIP_VISIBLE + 1)
-        ? entries
-        : entries.slice(0, compact ? 2 : HIST_CHIP_VISIBLE);
+    const shown =
+        entries.length <= (compact ? 3 : HIST_CHIP_VISIBLE + 1)
+            ? entries
+            : entries.slice(0, compact ? 2 : HIST_CHIP_VISIBLE);
     const rest = entries.slice(shown.length);
     const chip = entry => histMemberChipHtml(entry, members, avatarUrlFn);
-    return '<div class="hist-chips">' + shown.map(chip).join('') +
+    return (
+        '<div class="hist-chips">' +
+        shown.map(chip).join('') +
         (rest.length
-            ? '<span class="hist-chips-rest" data-hist-rest="' + escapeHTML(key) + '" hidden>' +
-              rest.map(chip).join('') + '</span>' +
+            ? '<span class="hist-chips-rest" data-hist-rest="' +
+              escapeHTML(key) +
+              '" hidden>' +
+              rest.map(chip).join('') +
+              '</span>' +
               histMoreChipHtml(rest, members, avatarUrlFn, escapeHTML(key))
             : '') +
-        '</div>';
+        '</div>'
+    );
 }
 
 // 형식 필터. 공개·관리자 페이지가 각자 등록한 histRedraw로 다시 그린다.
