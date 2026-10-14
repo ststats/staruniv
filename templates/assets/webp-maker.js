@@ -272,14 +272,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             pop.append(custom);
         }
-        // 색 칸이 든 줄 아래에 팝업을 띄운다(줄은 position: relative)
-        input.closest('.row, .line, .line3, .stroke-line, .grid2').append(pop);
+        // 설정 카드가 clip-path라 그 안에 두면 잘린다. body에 두고 색 칸 아래(모자라면 위)에 띄운다.
+        document.body.append(pop);
         input.addEventListener('click', e => {
             e.preventDefault();
             const open = !pop.classList.contains('is-open');
             closePalettes();
-            pop.style.left = input.offsetLeft + 'px';
-            pop.classList.toggle('is-open', open);
+            if (!open) return;
+            pop.classList.add('is-open');
+            const r = input.getBoundingClientRect();
+            const w = pop.offsetWidth,
+                h = pop.offsetHeight;
+            pop.style.left = `${clamp(r.left, 8, Math.max(8, innerWidth - w - 8))}px`;
+            pop.style.top = `${r.bottom + 6 + h > innerHeight - 8 && r.top - h - 6 > 8 ? r.top - h - 6 : r.bottom + 6}px`;
         });
         input._mark = () =>
             pop.querySelectorAll('.dot').forEach(b => b.classList.toggle('active', b.dataset.c === input.value));
@@ -289,6 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointerdown', e => {
         if (!e.target.closest('.swatches, input[type=color]')) closePalettes();
     });
+    // 화면 기준으로 띄운 팝업이라 스크롤·크기 변경 때는 닫는다
+    ['scroll', 'resize'].forEach(t => window.addEventListener(t, closePalettes, { passive: true }));
 
     segmented('tabs', v => $$('[data-panel]').forEach(p => p.classList.toggle('is-open', p.dataset.panel === v)));
 
@@ -942,16 +949,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function timeUI() {
         const on = $('timeOn').checked;
         $('timeToggle').setAttribute('aria-pressed', String(on));
-        $('timeSummary').textContent = on ? `${round2(+$('tFrom').value)} – ${round2(+$('tTo').value)}초` : '항상';
+        $('timeSummary').textContent = on ? `${round2(+$('tFrom').value)} – ${round2(+$('tTo').value)}초` : '항상 보임';
     }
     $('timeToggle').addEventListener('click', () => {
         $('timeOn').checked = !$('timeOn').checked;
         $('timeOn').dispatchEvent(new Event('change', { bubbles: true }));
     });
-    $('cropFromSize').addEventListener('click', () => $('cropToggle').click());
     ['input', 'change'].forEach(t =>
         $('textCard').addEventListener(t, e => {
-            if (e.target.closest('#layerTabs') || e.target.id === 'selColor') return;
+            if (e.target.closest('#layerTabs')) return;
             saveLayer();
             if (['text', 'font', 'weight'].includes(e.target.id)) ensureFont();
         })
@@ -1057,8 +1063,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const ta = $('text');
         state.sel = { s: ta.selectionStart, e: ta.selectionEnd };
         const n = state.sel.e - state.sel.s;
-        $('selInfo').textContent = n > 0 ? `${n}글자 선택됨` : '텍스트를 드래그해서 선택';
+        $('selInfo').textContent =
+            n > 0
+                ? `${n}글자 고름 · 글자 색을 고르면 이 글자만 바뀌어요`
+                : '글자를 드래그해서 고르면 그 글자만 색을 바꿀 수 있어요';
         $('selInfo').classList.toggle('warn', n > 0);
+        $('colorLabel').textContent = n > 0 ? `고른 ${n}글자만` : '기본 색';
+        show($('selClear'), n > 0 || layer().colors.some(c => c));
     }
     ['select', 'keyup', 'mouseup', 'input', 'focus'].forEach(t => $('text').addEventListener(t, updateSel));
     document.addEventListener('selectionchange', () => {
@@ -1074,14 +1085,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         L.colors = Array.from({ length: L.text.length }, (_, i) => (i >= s && i < e ? color : (L.colors[i] ?? null)));
     }
-    $('selColor').addEventListener('input', () => paintSelection($('selColor').value));
-    $('selApply').addEventListener('click', () => paintSelection($('selColor').value));
+    // 글자를 골라 둔 채 글자 색을 바꾸면 그 글자만 칠하고 기본 글자색은 그대로 둔다.
+    // 텍스트 카드의 저장(이 위의 부모 리스너)보다 먼저 받아 막는다.
+    $('color').addEventListener('input', e => {
+        if (state.sel.e <= state.sel.s) return;
+        e.stopPropagation();
+        paintSelection($('color').value);
+        $('color').value = layer().color;
+        $('color')._mark();
+        updateSel();
+        requestDraw();
+    });
     $('selClear').addEventListener('click', () => {
         if (state.sel.e > state.sel.s) paintSelection(null);
         else layer().colors = [];
+        updateSel();
+        requestDraw();
     });
     // 버튼을 눌러도 텍스트 선택이 풀리지 않게
-    ['selApply', 'selClear'].forEach(id => $(id).addEventListener('mousedown', e => e.preventDefault()));
+    $('selClear').addEventListener('mousedown', e => e.preventDefault());
 
     // ---------- 사진 테두리 ----------
     segmented('frameMode', v => {
@@ -1435,7 +1457,7 @@ document.addEventListener('DOMContentLoaded', () => {
             syncBound();
         }
         show($('cropLockWrap'), state.cropEditing);
-        $('cropToggle').textContent = state.cropEditing ? '자르기 완료' : '자르기';
+        $('cropToggle').textContent = state.cropEditing ? '자르기 완료' : '영역 정하기';
         $('cropToggle').classList.toggle('active', state.cropEditing);
         $('previewHint').textContent = state.cropEditing
             ? '자르기: 박스를 드래그해서 옮기고, 모서리로 크기 조절. 바깥에서 드래그하면 새로 그려요'
@@ -1668,7 +1690,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const { w, h } = outSize();
             const fps = +$('fps').value;
             // 브라우저는 품질 1.0을 무손실(VP8L)로 인코딩함
-            const q = $('lossless').checked ? 1 : +$('quality').value / 100;
+            const q = $('lossless').checked ? 1 : clamp(+$('quality').value || 95, 10, 99) / 100;
             const n = still ? 1 : Math.max(1, Math.floor((end - start) * fps));
             const opts = readOpts();
             const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });

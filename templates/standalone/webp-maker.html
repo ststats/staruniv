@@ -168,7 +168,8 @@
   input[type=color]::-moz-color-swatch { border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
   html[data-theme="dark"] input[type=color]::-webkit-color-swatch { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
   html[data-theme="dark"] input[type=color]::-moz-color-swatch { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
-  .swatches { position: absolute; top: calc(100% + 6px); z-index: 30; display: grid; grid-template-columns: repeat(7, 24px); gap: 6px; padding: 10px;
+  /* 카드(clip-path) 안에 두면 잘리므로 body에 붙여 화면 기준으로 띄운다(위치는 JS) */
+  .swatches { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(7, 24px); gap: 6px; padding: 10px;
     background: var(--color-card); filter: drop-shadow(var(--pop-shadow)); clip-path: var(--notch-8); }
   .swatches:not(.is-open) { display: none; }
   /* 흰색 점이 흰 팝업에 묻히지 않게 안쪽 선을 둔다 */
@@ -219,9 +220,14 @@
   #play { flex: none; width: 30px; height: 26px; padding: 0; border: 0; background: var(--select-on-light); color: #fff; font-size: 11px; clip-path: var(--notch-4); cursor: pointer; }
   .time { min-width: 86px; text-align: right; font-size: var(--fs-meta); font-weight: 700; color: var(--color-text-sub); font-variant-numeric: tabular-nums; }
   .viewer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 12px 10px; }
-  .crop-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 12px; }
+  .crop-group { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+  .crop-btn { min-height: 32px; padding: 0 14px; border: 0; background: var(--select-on-light); color: #fff; font-size: 12px; font-weight: 700;
+    clip-path: var(--notch-6); cursor: pointer; }
+  .crop-btn.active { background: var(--color-primary); }
+  .crop-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .sel-line { min-height: 20px; margin-top: -6px; }
   .crop-opt .slot { margin: 0; }
-  .cropNums { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 4px 12px; padding: 0 12px 14px; }
+  .cropNums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
   .cropNums .field .slot { margin-bottom: 4px; }
 
   .result-body { background: var(--color-card); clip-path: var(--notch-8); }
@@ -307,9 +313,13 @@
 
   /* 숫자 칸: −  40 px  + */
   .fill { min-width: 0; }
-  .fill > .stepper { display: flex; width: 100%; height: 40px; background: var(--color-bg-subtle); clip-path: var(--notch-6); }
-  .fill > .stepper input { flex: 1; width: auto; min-width: 0; height: 40px; background: transparent; font-size: 14px; }
-  .fill > .stepper button { width: 40px; background: transparent; font-size: 17px; color: var(--color-text-main); }
+  /* 설정 카드 안의 숫자 칸은 모두 같은 모양(옅은 면 위에 − 값 +) */
+  .settings-card .stepper { height: 40px; background: var(--color-bg-subtle); clip-path: var(--notch-6); }
+  .settings-card .stepper input { height: 40px; background: transparent; font-size: 14px; }
+  .settings-card .stepper button { width: 36px; background: transparent; font-size: 17px; color: var(--color-text-main); }
+  .fill > .stepper, .cropNums .stepper { display: flex; width: 100%; }
+  .fill > .stepper input, .cropNums .stepper input { flex: 1; width: auto; min-width: 0; }
+  .settings-card .chip { min-height: 40px; }
   .stepper .unit { align-self: center; }
   /* 숫자와 단위를 한 덩어리로 가운데에 */
   .stepper:has(.unit) input { text-align: right; padding-right: 4px; }
@@ -321,7 +331,7 @@
   .swatch-box input[type=color]::-moz-color-swatch { border-radius: 50%; }
 
   /* 색·시간 카드 */
-  .card-btn { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 0; background: var(--color-bg-subtle);
+  .card-btn { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border: 0; background: var(--color-bg-subtle);
     color: var(--color-text-main); font-size: 12px; font-weight: 700; text-align: left; clip-path: var(--notch-6); cursor: pointer; }
   .card-btn input[type=color] { width: 24px; height: 24px; }
   .card-btn input[type=color]::-webkit-color-swatch { border-radius: 50%; }
@@ -419,7 +429,6 @@
   }
   @media (max-width: 900px) {
     main { grid-template-columns: 1fr; gap: 32px; }
-    .cropNums { grid-template-columns: repeat(2, minmax(0, auto)); }
   }
 </style>
 </head>
@@ -431,8 +440,6 @@
       <span class="section-title-label">미리보기</span>
       <span class="title-count hidden" id="srcBadge"></span>
       <span class="title-actions">
-        <button class="text-action" id="cropToggle"></button>
-        <button class="text-action" id="cropReset" disabled>자르기 해제</button>
         <button class="text-action" id="newFile"><span>다른 파일</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15m0 5v-5h5"/></svg></button>
       </span>
     </div>
@@ -448,31 +455,6 @@
     <div id="editor" class="hidden">
       <div class="viewer">
         <div class="canvasWrap checker"><canvas id="preview"></canvas><span class="hint-chip" id="previewHint"></span></div>
-        <div class="crop-opt hidden" id="cropLockWrap">
-          <span class="slot">자르기 비율</span>
-          <select id="cropRatio" class="hidden" aria-hidden="true" tabindex="-1">
-            <option value="out" selected>출력 크기</option>
-            <option value="free">자유</option>
-            <option value="1">1:1</option>
-            <option value="1.777778">16:9</option>
-            <option value="1.333333">4:3</option>
-            <option value="0.5625">9:16</option>
-          </select>
-          <div class="seg" data-for="cropRatio" role="group" aria-label="자르기 비율">
-            <button data-v="out" id="cropRatioOut" title="출력 크기(예: 200×200)와 같은 모양으로 잘라 찌그러지거나 여백이 생기지 않아요">출력 크기</button>
-            <button data-v="free">자유</button>
-            <button data-v="1">1:1</button>
-            <button data-v="1.777778">16:9</button>
-            <button data-v="1.333333">4:3</button>
-            <button data-v="0.5625">9:16</button>
-          </div>
-        </div>
-        <div class="cropNums hidden" id="cropNums">
-          <div class="field"><label class="slot" for="cropW">가로</label><input type="number" id="cropW" min="8"></div>
-          <div class="field"><label class="slot" for="cropH">세로</label><input type="number" id="cropH" min="8"></div>
-          <div class="field"><label class="slot" for="cropX">X 위치</label><input type="number" id="cropX" min="0"></div>
-          <div class="field"><label class="slot" for="cropY">Y 위치</label><input type="number" id="cropY" min="0"></div>
-        </div>
       </div>
 
       <!-- 구간 · 텍스트 시간: 장면 띠 위에서 손잡이를 끈다 -->
@@ -560,9 +542,40 @@
           </div>
           <input type="color" id="bg" value="#000000" title="여백 색" aria-label="여백 색">
         </div>
-        <div class="row between">
-          <span class="info" id="sizeInfo"></span>
-          <button class="text-action link" id="cropFromSize">자르기 영역 정하기</button>
+        <div class="info" id="sizeInfo"></div>
+        <div class="crop-group">
+          <div class="row between">
+            <span class="slot">자르기</span>
+            <span class="row">
+              <button class="text-action" id="cropReset" disabled>자르기 해제</button>
+              <button class="crop-btn" id="cropToggle"></button>
+            </span>
+          </div>
+        <div class="crop-opt hidden" id="cropLockWrap">
+          <span class="slot">자르기 비율</span>
+          <select id="cropRatio" class="hidden" aria-hidden="true" tabindex="-1">
+            <option value="out" selected>출력 크기</option>
+            <option value="free">자유</option>
+            <option value="1">1:1</option>
+            <option value="1.777778">16:9</option>
+            <option value="1.333333">4:3</option>
+            <option value="0.5625">9:16</option>
+          </select>
+          <div class="seg" data-for="cropRatio" role="group" aria-label="자르기 비율">
+            <button data-v="out" id="cropRatioOut" title="출력 크기(예: 200×200)와 같은 모양으로 잘라 찌그러지거나 여백이 생기지 않아요">출력 크기</button>
+            <button data-v="free">자유</button>
+            <button data-v="1">1:1</button>
+            <button data-v="1.777778">16:9</button>
+            <button data-v="1.333333">4:3</button>
+            <button data-v="0.5625">9:16</button>
+          </div>
+        </div>
+        <div class="cropNums hidden" id="cropNums">
+          <div class="field"><label class="slot" for="cropW">가로</label><input type="number" id="cropW" min="8"></div>
+          <div class="field"><label class="slot" for="cropH">세로</label><input type="number" id="cropH" min="8"></div>
+          <div class="field"><label class="slot" for="cropX">X 위치</label><input type="number" id="cropX" min="0"></div>
+          <div class="field"><label class="slot" for="cropY">Y 위치</label><input type="number" id="cropY" min="0"></div>
+        </div>
         </div>
       </div>
     </div>
@@ -574,6 +587,10 @@
           <span class="slot">내용</span>
           <textarea id="text" placeholder="여기에 텍스트 입력 (줄바꿈 가능)"></textarea>
         </label>
+        <div class="row between sel-line">
+          <span class="info" id="selInfo"></span>
+          <button class="text-action link hidden" id="selClear">고른 글자 원래 색으로</button>
+        </div>
 
         <div class="group">
           <div class="row between">
@@ -619,12 +636,8 @@
             <div class="fill"><input type="number" id="fsize" min="1" value="30" data-unit="px"></div>
           </div>
           <div class="group">
-            <span class="slot">위치 <span class="slot-sub">· 화면에서 끌어도 돼요</span></span>
-            <div class="seg full" id="anchorMode" role="group" aria-label="위치">
-              <button data-v="top">위</button>
-              <button data-v="middle">가운데</button>
-              <button data-v="bottom">아래</button>
-            </div>
+            <span class="slot">글자 색</span>
+            <label class="card-btn"><input type="color" id="color" value="#ffffff"><span id="colorLabel">기본 색</span></label>
           </div>
         </div>
 
@@ -648,11 +661,21 @@
         </div>
 
         <div class="grid2">
-          <label class="card-btn"><input type="color" id="color" value="#ffffff"><span>글자 색</span></label>
-          <button class="card-btn anim-only" id="timeToggle" aria-pressed="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
-            <span>보일 시간 <em id="timeSummary">항상</em></span>
-          </button>
+          <div class="group">
+            <span class="slot">위치 <span class="slot-sub">· 화면에서 끌어도 돼요</span></span>
+            <div class="seg full" id="anchorMode" role="group" aria-label="위치">
+              <button data-v="top">위</button>
+              <button data-v="middle">가운데</button>
+              <button data-v="bottom">아래</button>
+            </div>
+          </div>
+          <div class="group anim-only">
+            <span class="slot">보일 시간</span>
+            <button class="card-btn" id="timeToggle" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+              <em id="timeSummary">항상</em>
+            </button>
+          </div>
         </div>
         <input type="checkbox" id="timeOn" class="hidden" tabindex="-1" aria-hidden="true">
         <div id="timeGroup" class="fields anim-only hidden">
@@ -667,7 +690,7 @@
         </div>
 
         <details class="more">
-          <summary>세부 설정 <span>굵기 · 여백 · 글자별 색</span></summary>
+          <summary>세부 설정 <span>굵기 · 여백</span></summary>
           <div class="more-body">
             <div class="grid2">
               <div class="group">
@@ -688,15 +711,6 @@
                 <div class="fill"><input type="number" id="margin" min="0" value="8" data-unit="px"></div>
               </div>
             </div>
-            <div class="group">
-              <span class="slot">드래그한 글자만 색 바꾸기</span>
-              <div class="row wrap color-chip">
-                <input type="color" id="selColor" value="#ff4b4b" title="텍스트에서 드래그한 부분에 적용" aria-label="드래그한 글자 색">
-                <button class="chip" id="selApply">적용</button>
-                <button class="chip" id="selClear">원래대로</button>
-                <span class="info" id="selInfo"></span>
-              </div>
-            </div>
           </div>
         </details>
       </div>
@@ -712,17 +726,17 @@
         <div class="line3 hidden" id="frameRow">
           <label class="slot" id="frameLabel" for="frameColor"></label>
           <span class="swatch-box"><input type="color" id="frameColor" value="#ffffff"></span>
-          <div class="row"><input type="range" id="frameW" class="grow" min="1" max="60" value="2" data-unit="px" aria-label="테두리 두께"></div>
+          <div class="fill"><input type="number" id="frameW" min="1" max="200" value="2" data-unit="px" aria-label="테두리 두께"></div>
         </div>
         <div class="line3 hidden" id="frameOuterRow">
           <label class="slot" for="frameOuterColor">바깥</label>
           <span class="swatch-box"><input type="color" id="frameOuterColor" value="#000000"></span>
-          <div class="row"><input type="range" id="frameOuterW" class="grow" min="1" max="60" value="2" data-unit="px" aria-label="바깥 테두리 두께"></div>
+          <div class="fill"><input type="number" id="frameOuterW" min="1" max="200" value="2" data-unit="px" aria-label="바깥 테두리 두께"></div>
         </div>
         <div class="line3">
           <span class="slot">모서리</span>
           <label class="check"><input type="checkbox" id="radiusOn"> 둥글게</label>
-          <div class="row"><input type="range" id="radius" class="grow" min="1" max="100" value="10" data-unit="px" aria-label="모서리 둥글기"></div>
+          <div class="fill"><input type="number" id="radius" min="1" value="10" data-unit="px" aria-label="모서리 둥글기"></div>
         </div>
         <div class="info">둥근 모서리 바깥은 투명하게 저장돼요</div>
       </div>
@@ -730,9 +744,10 @@
 
     <div class="panel" data-panel="save">
       <div class="panel-body">
-        <div class="field" id="qualityRow">
+        <div class="line" id="qualityRow">
           <label class="slot" for="quality">품질</label>
-          <div class="row"><input type="range" id="quality" class="grow" min="10" max="99" value="95" data-unit=""></div>
+          <div class="fill"><input type="number" id="quality" min="10" max="99" value="95"></div>
+          <span></span>
         </div>
         <label class="check"><input type="checkbox" id="lossless"> 무손실 (화질 손실 없음)</label>
         <div class="info" id="qualityHint"></div>
