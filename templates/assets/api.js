@@ -210,7 +210,7 @@ const Api = {
         return apiCall('api_member_posts');
     },
 
-    // GET /api/v1/posts/page - Supabase serves all pages; SOOP credentials stay on the server.
+    // GET /api/v1/posts/page - 모든 쪽을 Supabase가 준다. SOOP 로그인 정보는 서버에만 있다.
     async memberPostPage(soopId, page) {
         const cfg = window.STARUNIV_SUPABASE_CONFIG || {};
         if (!cfg.url || !cfg.key) throw new Error('Supabase 설정이 없습니다');
