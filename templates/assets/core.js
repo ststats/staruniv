@@ -437,6 +437,22 @@ async function loadSiteData(parts) {
     );
 }
 
+// 데이터를 못 받았는데 화면이 '기록 없음'으로만 보이지 않게, 본문 맨 위에 알리고 새로고침 링크를 둔다
+const SITE_DATA_NAMES = { members: '멤버', profiles: '멤버 프로필', records: '전적' };
+function showSiteDataErrors(parts) {
+    const failed = parts.filter(part => SiteDataLoad.errors.has(part));
+    const main = document.querySelector('main');
+    if (!failed.length || !main || main.querySelector('.site-data-error')) return;
+    const box = document.createElement('div');
+    box.className = 'content-state is-boxed site-data-error';
+    box.setAttribute('role', 'alert');
+    box.append(
+        `${failed.map(part => SITE_DATA_NAMES[part] || part).join(', ')} 데이터를 불러오지 못했습니다. `,
+        Object.assign(document.createElement('a'), { href: location.href, textContent: '새로고침' })
+    );
+    main.prepend(box);
+}
+
 function findMemberById(id) {
     return SiteData.members.find(x => String(x._id) === String(id));
 }
@@ -566,13 +582,22 @@ function writeApiCache(url, data) {
     }
 }
 
+// AbortSignal.timeout이 없는 브라우저(iOS 15 이하 사파리와 그 위의 카카오톡 등)에서도 쓰게 직접 만든다.
+// 없으면 바로 TypeError가 나서 전적 데이터를 통째로 못 불러왔다. api.js도 이걸 쓴다(core.js가 먼저 실린다).
+function timeoutSignal(ms) {
+    if (typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException('요청 시간이 초과되었습니다', 'TimeoutError')), ms);
+    return controller.signal;
+}
+
 async function cachedFetchJson(url, ttlMs) {
     const cached = readApiCache(url, ttlMs);
     if (cached !== undefined) return cached;
     if (_inflightRequests.has(url)) return _inflightRequests.get(url);
 
     const request = (async () => {
-        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(url, { signal: timeoutSignal(10000) });
         if (!res.ok) throw new Error('요청 실패: ' + res.status);
         const data = await res.json();
         writeApiCache(url, data);
@@ -1457,7 +1482,7 @@ function applyNavConfig(data) {
         const heroDescriptions =
             data.heroDescriptions && typeof data.heroDescriptions === 'object' ? data.heroDescriptions : {};
         const heroText = trimEndPunct(heroDescriptions[pageId]);
-        if (Object.hasOwn(heroDescriptions, pageId)) {
+        if (hasOwn(heroDescriptions, pageId)) {
             const subtitle = document.querySelector('.page-section.active > .page-header .page-header-subtitle');
             if (subtitle) setHeroDescription(subtitle, heroText);
         }
@@ -1471,7 +1496,7 @@ function applyNavConfig(data) {
             const desc = slide.querySelector('.page-header-subtitle');
             const link = slide.querySelector('.home-hero-links a');
             if (title && cfg.title) setHomeHeroTitle(title, cfg.title);
-            if (desc && Object.hasOwn(cfg, 'description')) desc.textContent = trimEndPunct(cfg.description);
+            if (desc && hasOwn(cfg, 'description')) desc.textContent = trimEndPunct(cfg.description);
             if (link && cfg.href) link.setAttribute('href', cfg.href);
         });
 
@@ -1522,6 +1547,7 @@ function bootPage(init, opts) {
         watchSubTabDensity();
         // 서브탭 기본값을 초기화 전에 확정한다
         await Promise.all([applyNavVisibility(), siteDataParts.length ? loadSiteData(siteDataParts) : null]);
+        showSiteDataErrors(siteDataParts);
         // 로고는 본문을 막지 않는다. 처음 보는 대학은 배지로 그렸다가 도착하면 바꾼다.
         const logosReady = opts && typeof opts.logos === 'function' ? loadTeamLogos(opts.logos()) : null;
         safeInit('페이지', init);
