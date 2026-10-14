@@ -2,9 +2,9 @@
  * 티어표 > 엔트리: 대학대전 엔트리를 짜 보고, 우리 레이팅으로 승부를 미리 굴려 본다.
  * (core.js → api.js → page-h2h.js → page-analysis.js → 이 파일 → page-tier.js)
  *
- * 승률 중심값: P(A 승) = 1 / (1 + 10^(-(Ra - Rb + 종족상성) / 400)). ststat가 400/ln10 배율로 저장한다.
- * 맞대결·종족전·맵은 원본 전적(2승 0패가 20승 18패보다 강해 보이는 함정) 대신 레이팅이 설명하지 못한
- * '실제 - 기대' 잔차만 표본이 적을수록 0으로 당겨 로짓에 더한다. 시리즈는 entrySeriesSim 참고.
+ * 승률: sigmoid((승률용 실력 차 + 공통상성 + 개인 종족 효과 차 + 맵 종족 효과) * ln(10)/400).
+ * 랭킹은 별도 모델이다. 전적 승률의 잔차를 브라우저에서 다시 더하지 않는다.
+ * 개인 맞대결·개인 맵 전적은 참고용이다. 시리즈는 entrySeriesSim 참고.
  */
 
 // 소속 목록에는 안 올리고 검색으로만 찾는다.
@@ -40,7 +40,7 @@ const EntryState = {
     title: '',
     date: entryToday(),
     dateMonth: '',
-    period: '90', // 옛날 천적 관계보다 지금 폼이 엔트리 짜는 데 쓸모 있다
+    period: '90', // 참고 전적의 표시 기간. 모델 계수는 바꾸지 않는다
     rows: {}, // 선수id -> [날짜, 상대id, 이김, 맵, 형식][] (통산)
     rowsLoaded: {},
     rowLoads: {}, // 선수id -> 진행 중 요청(중복 조회 방지)
@@ -67,11 +67,13 @@ async function entryLoadIndexFromSupabase() {
     const players = {};
     playersData.forEach(row => {
         const pid = String(row.elo_id || '');
-        if (!pid || !row.nickname) return;
+        if (!pid) return;
         const nickname = String(row.nickname || row.elo_name || '');
         const eloName = String(row.elo_name || '');
         players[pid] = {
             n: nickname,
+            // 명단 밖 상대도 모델·전적에는 필요하지만 엔트리 선택 목록에는 올리지 않는다.
+            selectable: Boolean(row.nickname),
             en: eloName && eloName !== nickname ? eloName : '',
             r: raceCode(row.race),
             m: Number(row.total_games || 0),
@@ -79,9 +81,9 @@ async function entryLoadIndexFromSupabase() {
             t: String(row.tier || ''),
             s: String(row.soop_id || ''),
             k: null,
-            rawRating: null,
             theta: null,
-            thetaSE: null,
+            modelRace: null,
+            matchupEffects: {},
         };
     });
 
@@ -91,78 +93,61 @@ async function entryLoadIndexFromSupabase() {
         teamOrder,
         maps: {},
         recentMaps: [],
-        ranking: { asOf: '', tierCounts: {}, tierLevels: {}, raceMatchup: {} },
+        prediction: { asOf: '', tierCounts: {}, tierLevels: {}, raceMatchup: {} },
     };
 }
 
 async function entryLoadRatingMetaInBackground() {
     if (!EntryState.index) return;
     if (EntryState.ratingMetaLoading) return EntryState.ratingMetaLoading;
-    const requests = [
-        [
-            'rankings',
-            () => Api.eloRankings(entryPaging('레이팅')),
-            rows => {
-                const syncedAt = rows.find(row => EntryState.index.players[String(row.elo_id)] && row.as_of)?.as_of;
-                if (syncedAt) EntryState.index.syncedAt = String(syncedAt);
-                rows.forEach(row => {
-                    const player = EntryState.index.players[String(row.elo_id)];
-                    if (!player) return;
-                    if (!player.t && row.tier) player.t = String(row.tier);
-                    player.k = row.tier_rank == null ? null : Number(row.tier_rank);
-                    player.rawRating = row.raw_rating == null ? null : Number(row.raw_rating);
-                });
-            },
-        ],
-        [
-            'meta',
-            () => Api.eloRankingMeta({ wrap: q => withTimeout(q, '랭킹 기준선') }),
-            meta => {
-                EntryState.index.ranking = {
-                    asOf: meta.as_of ? String(meta.as_of) : '',
-                    tierCounts: meta.tier_counts || {},
-                    tierLevels: meta.tier_levels || {},
-                    raceMatchup: meta.race_matchup || {},
-                };
-                if (!EntryState.index.syncedAt && meta.as_of) EntryState.index.syncedAt = String(meta.as_of);
-            },
-        ],
-        [
-            'ratings',
-            () => Api.eloPlayerRatings(entryPaging('전 선수 레이팅')),
-            rows => {
-                rows.forEach(row => {
-                    const player = EntryState.index.players[String(row.elo_id)];
-                    if (!player || row.rating == null) return;
-                    player.theta = Number(row.rating);
-                    player.thetaSE = row.rating_se == null ? null : Number(row.rating_se);
-                });
-            },
-        ],
-    ].filter(([key]) => !EntryState.ratingMetaLoaded.has(key));
-    if (!requests.length) return;
-    // 서로 독립이라 성공한 것만 적용하고 기억한다. 실패한 종류는 재진입 때 다시 받는다.
-    EntryState.ratingMetaLoading = Promise.all(
-        requests.map(async ([key, load, apply]) => {
-            try {
-                apply(await load());
-                EntryState.ratingMetaLoaded.add(key);
-                entryProbsChanged();
-                return true;
-            } catch (error) {
-                console.warn(`엔트리 보조 데이터(${key})를 불러오지 못했습니다:`, error);
-                return false;
-            }
-        })
-    )
-        .then(changed => {
-            if (!changed.some(Boolean)) return;
+    if (EntryState.ratingMetaLoaded.has('model')) return;
+    EntryState.ratingMetaLoading = Api.eloPredictionModel(entryPaging('승률 모델'))
+        .then(model => {
+            entryApplyPredictionModel(model);
+            EntryState.ratingMetaLoaded.add('model');
             if (TierState.view === 'entry') renderEntry();
         })
+        .catch(error => console.warn('엔트리 승률 모델을 불러오지 못했습니다:', error))
         .finally(() => {
             EntryState.ratingMetaLoading = null;
         });
     return EntryState.ratingMetaLoading;
+}
+
+function entryApplyPredictionModel(model) {
+    if (!model.as_of || !Array.isArray(model.ratings) || !model.ratings.length)
+        throw new Error('승률 모델 데이터가 비어 있습니다');
+    const joint = model.model_version === 'joint-map-v1';
+    if (!joint) throw new Error('지원하지 않는 승률 모델입니다');
+    const players = Object.fromEntries(
+        Object.entries(entryPlayers()).map(([id, p]) => [
+            id,
+            { ...p, theta: null, k: null, modelRace: null, matchupEffects: {} },
+        ])
+    );
+    model.ratings.forEach(row => {
+        const player = players[String(row.elo_id)];
+        if (!player || row.rating == null || !Number.isFinite(Number(row.rating))) return;
+        player.theta = Number(row.rating);
+        player.k = row.tier_rank == null ? null : Number(row.tier_rank);
+        player.modelRace = raceCode(row.race);
+        player.matchupEffects = row.matchup_effects || {};
+    });
+    EntryState.index = {
+        ...EntryState.index,
+        players,
+        syncedAt: String(model.as_of),
+        prediction: {
+            asOf: String(model.as_of),
+            modelVersion: model.model_version,
+            halfLifeDays: Number(model.half_life_days) || 90,
+            tierCounts: model.tier_counts || {},
+            tierLevels: model.tier_levels || {},
+            raceMatchup: model.race_matchup || {},
+            mapMatchup: model.map_matchup || {},
+        },
+    };
+    entryProbsChanged();
 }
 
 async function entryEnsureLoaded() {
@@ -220,6 +205,7 @@ function entryTeamList() {
     const count = {};
     const players = entryPlayers();
     Object.values(players).forEach(p => {
+        if (p.selectable === false) return;
         const t = String(p.tm || '').trim();
         if (!t || t === ENTRY_DORMANT) return;
         count[t] = (count[t] || 0) + 1;
@@ -240,7 +226,7 @@ function entryRoster(team) {
     if (!team) return [];
     const players = entryPlayers();
     return Object.entries(players)
-        .filter(([, p]) => String(p.tm || '').trim() === team)
+        .filter(([, p]) => p.selectable !== false && String(p.tm || '').trim() === team)
         .map(([pid, p]) => ({ pid, ...p }))
         .sort(entryCompare);
 }
@@ -249,7 +235,7 @@ function entryRoster(team) {
 // 레이팅 · 승률
 // ---------------------------------------------------------------------------
 function entryTierLevels() {
-    return (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.tierLevels) || {};
+    return (EntryState.index && EntryState.index.prediction && EntryState.index.prediction.tierLevels) || {};
 }
 
 function entryMapDict() {
@@ -296,11 +282,10 @@ function renderEntryMapDatalist() {
         .join('');
 }
 
-// 전 선수 θ → 순위 선수 rawRating → 티어 기준선 → 사다리 한가운데. 없는 정보는 지어내지 않고 평균으로 둔다.
+// 승률 전용 실력 → 승률 모델의 티어 기준선 → 사다리 평균. 랭킹 점수는 사용하지 않는다.
 function entryRating(p) {
     if (!p) return null;
     if (Number.isFinite(p.theta)) return { value: p.theta, exact: true };
-    if (Number.isFinite(p.rawRating)) return { value: p.rawRating, exact: true };
     const levels = entryTierLevels();
     const byTier = levels[String(p.t)];
     if (Number.isFinite(byTier)) return { value: byTier, exact: false };
@@ -316,7 +301,7 @@ function entrySigmoid(x) {
 
 // raceMatchup은 {TZ, ZP, PT}만 있어 반대 방향은 부호를 바꾼다.
 function entryRaceEdge(xRace, yRace) {
-    const table = (EntryState.index && EntryState.index.ranking && EntryState.index.ranking.raceMatchup) || {};
+    const table = (EntryState.index && EntryState.index.prediction && EntryState.index.prediction.raceMatchup) || {};
     const x = raceCode(xRace),
         y = raceCode(yRace);
     if (!x || !y || x === y) return 0;
@@ -333,33 +318,9 @@ function entryModelLogit(aPid, bPid) {
     const ra = entryRating(a),
         rb = entryRating(b);
     if (!ra || !rb) return null;
-    return (ra.value - rb.value + entryRaceEdge(a && a.r, b && b.r)) * ENTRY_ELO_TO_LOGIT;
+    return (ra.value - rb.value + entryRaceEdge(entryModelRace(a), entryModelRace(b))) * ENTRY_ELO_TO_LOGIT;
 }
 
-// 보정은 '결과 - 모델 기대 p̂' 잔차로 잰다(가우스 prior를 둔 로지스틱 오프셋의 한 걸음 추정):
-//     보정(로짓) = Σ w·(결과 - p̂) / (Σ w·p̂(1-p̂) + τ)
-// 원본 승률 차로 재면 상대 강도가 빠지고, 레이팅에 이미 든 경기를 또 더하게 된다.
-// 확률(%p)이 아니라 로짓에서 더해야 자르지 않아도 0~1 안에 머문다.
-const ENTRY_FORM_HALF_LIFE = 90;
-// 예측은 기간 탭과 무관하게 통산 + 반감기다(탭을 누를 때마다 확률이 바뀌지 않게).
-const ENTRY_PREDICTION_PERIOD = 'all';
-// 한 판의 정보량이 p̂(1-p̂)≈0.25라 τ=2.5면 가중 10판에서 보정이 절반 반영된다(종족 14 · 맵 18판).
-const ENTRY_H2H_TAU = 2.5;
-const ENTRY_RACE_TAU = 3.5;
-const ENTRY_MAP_TAU = 4.5;
-// 데이터 이상치 대비 보정별 상한(로짓). 50% 근처에서 약 ±15%p.
-const ENTRY_MAX_ADJ_LOGIT = 0.6;
-// ststat staruniv_ranking.CAT_WEIGHT와 같은 값이어야 보정이 레이팅과 같은 기준으로 센다.
-const ENTRY_CATEGORY_WEIGHT = {
-    solo_event: 1.0,
-    college_event: 1.0,
-    college_war: 0.9,
-    college_mini: 0.8,
-    pro_league: 0.7,
-    team_event: 0.7,
-    sponsored: 0.6,
-};
-const ENTRY_DEFAULT_CATEGORY_WEIGHT = 0.6;
 const ENTRY_ANALYSIS_SMALL_SAMPLE = 5;
 const ENTRY_ANALYSIS_GOOD_SAMPLE = 12;
 
@@ -370,40 +331,30 @@ function entryAdjLabel(v) {
     const pp = v * 100;
     return `${pp >= 0 ? '+' : ''}${pp.toFixed(1)}%p`;
 }
-function entryRowAgeDays(dateText) {
-    const d = new Date(`${dateText}T00:00:00Z`);
-    if (!Number.isFinite(d.getTime())) return 0;
-    const modelDate = String(EntryState.index?.ranking?.asOf || '').slice(0, 10);
-    const today = modelDate
-        ? new Date(`${modelDate}T00:00:00Z`)
-        : new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
-    return Math.max(0, (today.getTime() - d.getTime()) / 86400000);
-}
-function entryRecentWeight(dateText) {
-    return Math.pow(0.5, entryRowAgeDays(dateText) / ENTRY_FORM_HALF_LIFE);
+
+// 스냅샷에 저장된 학습 종족을 사용한다. 명단 수정이 기존 모델의 뜻을 바꾸지 않게 한다.
+function entryModelRace(player) {
+    return raceCode(player?.modelRace ?? player?.r);
 }
 
-// 상대 레이팅이 없는 경기는 기대를 못 세우니 뺀다.
-function entryResidualEdge(pid, predicate, tau) {
-    const rows = entryRowsInPeriod(EntryState.rows[pid] || [], ENTRY_PREDICTION_PERIOD);
-    let num = 0,
-        info = 0,
-        rawW = 0,
-        rawL = 0;
-    rows.forEach(r => {
-        if (predicate && !predicate(r)) return;
-        const logit = entryModelLogit(pid, String(r[1]));
-        if (logit === null) return;
-        const p = entrySigmoid(logit);
-        const w = entryRecentWeight(r[0]) * (ENTRY_CATEGORY_WEIGHT[r[4]] ?? ENTRY_DEFAULT_CATEGORY_WEIGHT);
-        const won = Number(r[2]) === 1;
-        num += w * ((won ? 1 : 0) - p);
-        info += w * p * (1 - p);
-        if (won) rawW += 1;
-        else rawL += 1;
-    });
-    const edge = entryClamp(num / (info + tau), -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
-    return { edge, info, rawW, rawL, rawM: rawW + rawL };
+function entryMatchupEffect(player, opponentRace) {
+    if (EntryState.index?.prediction?.modelVersion !== 'joint-map-v1') return 0;
+    if (!Number.isFinite(player?.theta)) return 0;
+    const value = player.matchupEffects?.[raceCode(opponentRace)];
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function entryMapEdge(aRace, bRace, mapName) {
+    const key = entryNormalizeMapName(mapName);
+    if (!key) return 0;
+    const maps = EntryState.index?.prediction?.mapMatchup || {};
+    const name = Object.keys(maps).find(value => entryNormalizeMapName(value) === key);
+    const table = name ? maps[name] : {};
+    if (!aRace || !bRace || aRace === bRace) return 0;
+    const direct = Number(table[aRace + bRace]);
+    if (Number.isFinite(direct)) return direct;
+    const reverse = Number(table[bRace + aRace]);
+    return Number.isFinite(reverse) ? -reverse : 0;
 }
 
 function entrySampleLabel(n) {
@@ -433,78 +384,40 @@ function entryWinProb(aPid, bPid, mapName) {
 }
 
 function entryComputeWinProb(aPid, bPid, mapName) {
+    if (EntryState.index?.prediction?.modelVersion !== 'joint-map-v1') return null;
     const players = entryPlayers();
     const a = players[aPid],
         b = players[bPid];
-    const ra = entryRating(a);
-    const rb = entryRating(b);
+    const ra = entryRating(a),
+        rb = entryRating(b);
     if (!ra || !rb) return null;
-
     const baseLogit = entryModelLogit(aPid, bPid);
     const base = entrySigmoid(baseLogit);
-    // 화면의 '+x%p'는 각 보정을 기본 승률에 혼자 얹었을 때의 변화량이다.
-    const asPp = adj => entrySigmoid(baseLogit + adj) - base;
-
-    // 지금 상대와의 경기는 맞대결에서만 센다(종족전·맵에 또 넣으면 두 번 들어간다).
-    const h2h = entryResidualEdge(aPid, r => String(r[1]) === String(bPid), ENTRY_H2H_TAU);
-    const h2hLogit = h2h.edge;
-
-    let raceLogit = 0,
-        raceA = null,
-        raceB = null;
-    if (a && b && a.r && b.r) {
-        raceA = entryResidualEdge(
-            aPid,
-            row => {
-                const opp = players[row[1]];
-                return opp && raceCode(opp.r) === raceCode(b.r) && String(row[1]) !== String(bPid);
-            },
-            ENTRY_RACE_TAU
-        );
-        raceB = entryResidualEdge(
-            bPid,
-            row => {
-                const opp = players[row[1]];
-                return opp && raceCode(opp.r) === raceCode(a.r) && String(row[1]) !== String(aPid);
-            },
-            ENTRY_RACE_TAU
-        );
-        raceLogit = entryClamp(raceA.edge - raceB.edge, -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
-    }
-
-    const normalizedMap = entryNormalizeMapName(mapName);
-    let mapLogit = 0,
-        mapA = null,
-        mapB = null;
-    if (normalizedMap) {
-        const onMap = opponent => row =>
-            entryNormalizeMapName(row[3]) === normalizedMap && String(row[1]) !== String(opponent);
-        mapA = entryResidualEdge(aPid, onMap(bPid), ENTRY_MAP_TAU);
-        mapB = entryResidualEdge(bPid, onMap(aPid), ENTRY_MAP_TAU);
-        mapLogit = entryClamp(mapA.edge - mapB.edge, -ENTRY_MAX_ADJ_LOGIT, ENTRY_MAX_ADJ_LOGIT);
-    }
-
-    const p = entrySigmoid(baseLogit + h2hLogit + raceLogit + mapLogit);
-    const h2hAdj = asPp(h2hLogit),
-        raceAdj = asPp(raceLogit),
-        mapAdj = asPp(mapLogit);
-    const factors = [
-        { key: 'h2h', adj: h2hAdj, logit: h2hLogit, n: h2h.rawM, rawW: h2h.rawW, rawL: h2h.rawL, rawM: h2h.rawM },
-        { key: 'race', adj: raceAdj, logit: raceLogit, a: raceA, b: raceB },
-        { key: 'map', adj: mapAdj, logit: mapLogit, a: mapA, b: mapB, map: entryMapName(mapName) },
-    ];
+    const ar = entryModelRace(a),
+        br = entryModelRace(b);
+    // 학습 때와 같이 한쪽이라도 종족 미상이면 개인 종족항을 쓰지 않는다.
+    const known = ['T', 'Z', 'P'].includes(ar) && ['T', 'Z', 'P'].includes(br);
+    const effectA = known ? entryMatchupEffect(a, br) : 0;
+    const effectB = known ? entryMatchupEffect(b, ar) : 0;
+    const raceLogit = (effectA - effectB) * ENTRY_ELO_TO_LOGIT;
+    const raceProbability = entrySigmoid(baseLogit + raceLogit);
+    const mapEdge = entryMapEdge(ar, br, mapName);
+    const mapLogit = mapEdge * ENTRY_ELO_TO_LOGIT;
+    const p = entrySigmoid(baseLogit + raceLogit + mapLogit);
     return {
         p,
         base,
-        n: h2h.rawM,
-        w: h2h.rawW,
-        l: h2h.rawL,
         exact: ra.exact && rb.exact,
-        factors,
-        h2hAdj,
-        raceAdj,
-        mapAdj,
-        raceEdge: entryRaceEdge(a && a.r, b && b.r),
+        raceAdj: raceProbability - base,
+        raceEdge: entryRaceEdge(ar, br),
+        effectA,
+        effectB,
+        mapEdge,
+        mapAdj: p - raceProbability,
+        factors: [
+            { key: 'race', adj: raceProbability - base, logit: raceLogit },
+            { key: 'map', adj: p - raceProbability, logit: mapLogit },
+        ],
     };
 }
 
@@ -625,7 +538,7 @@ function entryRecordText(w, l) {
     return n ? `${w}승 ${l}패 · ${((w / n) * 100).toFixed(1)}%` : '전적 없음';
 }
 
-// 종족전·맵 전적은 보정과 같이 지금 상대와의 경기(exceptPid)를 빼고 센다.
+// 화면의 참고 전적. exceptPid를 주면 그 상대와의 경기만 제외한다.
 function entryRaceRecord(pid, oppRace, period, exceptPid) {
     const targetRace = raceCode(oppRace);
     const rows = entryRowsInPeriod(EntryState.rows[pid] || [], period);
@@ -656,66 +569,53 @@ function entryMapRecord(pid, mapName, period, exceptPid) {
 
 function entryAnalysisStat(label, adj, detail, sampleClass) {
     const cls = adj > 0.0005 ? ' is-a' : adj < -0.0005 ? ' is-b' : '';
+    const value = adj == null ? '참고 전적' : entryAdjLabel(adj);
     return `<div class="entry-analysis-stat${sampleClass ? ` ${sampleClass}` : ''}">
-        <div class="entry-analysis-stat-head"><span>${label}</span><strong class="entry-analysis-adj${cls}">${entryAdjLabel(adj || 0)}</strong></div>
+        <div class="entry-analysis-stat-head"><span>${label}</span><strong class="entry-analysis-adj${cls}">${value}</strong></div>
         <div class="entry-analysis-stat-detail">${detail}</div>
     </div>`;
 }
 
 function entryAnalysisHtml(match, wp) {
     const players = entryPlayers();
-    const a = players[match.a];
-    const b = players[match.b];
+    const a = players[match.a],
+        b = players[match.b];
     if (!a || !b || !wp) return '';
-    const ra = entryRating(a);
-    const rb = entryRating(b);
-    const base = wp.base ?? 0.5;
+    const ra = entryRating(a),
+        rb = entryRating(b);
     const mapName = entryMapName(match.map);
-    const raceA = entryRaceRecord(match.a, b.r, EntryState.period, match.b);
-    const raceB = entryRaceRecord(match.b, a.r, EntryState.period, match.a);
-    const raceN = Math.min(raceA.m, raceB.m);
-    const mapA = mapName ? entryMapRecord(match.a, mapName, EntryState.period, match.b) : { w: 0, l: 0, m: 0 };
-    const mapB = mapName ? entryMapRecord(match.b, mapName, EntryState.period, match.a) : { w: 0, l: 0, m: 0 };
-    const mapN = Math.min(mapA.m, mapB.m);
-    const displayH2h = entryH2hRec(match.a, match.b, EntryState.period) || { w: 0, l: 0 };
-    const h2hN = displayH2h.w + displayH2h.l;
-    const totalAdj = wp.p - base;
-    const strongest = [
-        ['맞대결', wp.h2hAdj || 0],
-        ['종족전', wp.raceAdj || 0],
-        ['맵', wp.mapAdj || 0],
-    ].sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
-    let summary = '레이팅 차이가 예측의 중심입니다';
-    if (strongest && Math.abs(strongest[1]) >= 0.008) {
-        const side = strongest[1] > 0 ? a.n : b.n;
-        summary = `${strongest[0]} 데이터가 ${side} 쪽으로 가장 크게 보정했습니다`;
-    }
-    const raceDetail = `${escapeHTML(a.n)} vs ${entryRaceLabel(b.r)} ${entryRecordText(raceA.w, raceA.l)} · ${escapeHTML(b.n)} vs ${entryRaceLabel(a.r)} ${entryRecordText(raceB.w, raceB.l)} · ${entrySampleLabel(raceN)}`;
+    const ar = entryModelRace(a),
+        br = entryModelRace(b);
+    const raceA = entryRaceRecord(match.a, br, EntryState.period);
+    const raceB = entryRaceRecord(match.b, ar, EntryState.period);
+    const mapA = entryMapRecord(match.a, mapName, EntryState.period);
+    const mapB = entryMapRecord(match.b, mapName, EntryState.period);
+    const h2h = entryH2hRec(match.a, match.b, EntryState.period) || { w: 0, l: 0 };
+    const period = escapeHTML(entryPeriodLabel());
+    const raceDetail = `${period} 참고: ${escapeHTML(a.n)} vs ${entryRaceLabel(br)} ${entryRecordText(raceA.w, raceA.l)} · ${escapeHTML(b.n)} vs ${entryRaceLabel(ar)} ${entryRecordText(raceB.w, raceB.l)}`;
     const mapDetail = mapName
-        ? `${escapeHTML(mapName)} · ${escapeHTML(a.n)} ${entryRecordText(mapA.w, mapA.l)} · ${escapeHTML(b.n)} ${entryRecordText(mapB.w, mapB.l)} · ${entrySampleLabel(mapN)}`
-        : '세트 맵을 선택하면 맵 성적을 반영합니다';
-    const h2hDetail = h2hN
-        ? `${entryPeriodLabel()} ${displayH2h.w}승 ${displayH2h.l}패 · ${entrySampleLabel(h2hN)}`
-        : '맞대결 표본 없음';
+        ? `${period} · ${escapeHTML(mapName)} · ${escapeHTML(a.n)} ${entryRecordText(mapA.w, mapA.l)} · ${escapeHTML(b.n)} ${entryRecordText(mapB.w, mapB.l)}`
+        : '맵 미선택 또는 학습 자료가 없는 맵은 맵 효과를 적용하지 않습니다';
+    const ratingDetail = `${escapeHTML(a.n)} ${ra.value.toFixed(0)} · ${escapeHTML(b.n)} ${rb.value.toFixed(0)}`;
     const raceEdge = Number(wp.raceEdge) || 0;
-    const raceEdgeText =
+    const common =
         Math.abs(raceEdge) >= 0.5
-            ? ` · 종족 상성 ${raceEdge > 0 ? escapeHTML(a.n) : escapeHTML(b.n)} +${Math.abs(raceEdge).toFixed(0)}점`
+            ? ` · 공통 종족 상성 ${escapeHTML(raceEdge > 0 ? a.n : b.n)} +${Math.abs(raceEdge).toFixed(0)}점`
             : '';
-    const ratingDetail = `${escapeHTML(a.n)} ${ra ? ra.value.toFixed(0) : '—'} · ${escapeHTML(b.n)} ${rb ? rb.value.toFixed(0) : '—'}${raceEdgeText} · 최근 90일 가중`;
+    const note = `랭킹과 별도로 선수 실력·종족전 성향·맵별 종족 유불리를 함께 계산합니다. 최근 경기 반감기는 ${EntryState.index.prediction.halfLifeDays || 90}일입니다. 기간 탭은 참고 전적만 바꿉니다. 상대전적·개인 맵 승률을 추가 점수로 더하지 않습니다`;
     return `<div class="entry-analysis-panel">
         <div class="entry-analysis-head">
             <div><span class="entry-analysis-eyebrow">WIN PROBABILITY</span><strong>${escapeHTML(a.n)} ${(wp.p * 100).toFixed(1)}%</strong><span class="entry-analysis-vs">${escapeHTML(b.n)} ${((1 - wp.p) * 100).toFixed(1)}%</span></div>
-            <span class="entry-analysis-total">기본 ${(base * 100).toFixed(1)}% → ${entryAdjLabel(totalAdj)}</span>
+            <span class="entry-analysis-total">기본 ${(wp.base * 100).toFixed(1)}% → ${entryAdjLabel(wp.p - wp.base)}</span>
         </div>
-        <p class="entry-analysis-summary">${summary}</p>
+        <p class="entry-analysis-summary">선수·종족·선택 맵을 반영한 예상입니다${wp.exact ? '' : ' · 기록이 부족해 티어 평균을 사용한 선수가 있습니다'}</p>
         <div class="entry-analysis-grid">
-            ${entryAnalysisStat('기본 레이팅', 0, ratingDetail)}
-            ${entryAnalysisStat('맞대결', wp.h2hAdj || 0, h2hDetail, h2hN && h2hN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
-            ${entryAnalysisStat('종족전', wp.raceAdj || 0, raceDetail, raceN && raceN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
-            ${entryAnalysisStat('선택 맵', wp.mapAdj || 0, mapDetail, mapN && mapN < ENTRY_ANALYSIS_SMALL_SAMPLE ? 'is-low-sample' : '')}
+            ${entryAnalysisStat('승률용 실력', 0, ratingDetail + common)}
+            ${entryAnalysisStat('개인 종족 특성', wp.raceAdj, raceDetail)}
+            ${entryAnalysisStat('맞대결 참고', null, `${period} ${entryRecordText(h2h.w, h2h.l)}`)}
+            ${entryAnalysisStat('맵별 종족 효과', wp.mapAdj, mapDetail)}
         </div>
-        <div class="entry-analysis-foot">보정은 레이팅이 설명하지 못한 '실제 − 기대' 차이만 반영합니다. 승률은 기간 탭과 무관하게 통산 데이터에 90일 반감기를 적용하고, 기간 탭은 위 전적 설명만 바꿉니다. 종족전·맵 전적은 맞대결 경기를 빼고 셉니다</div>
+        <div class="entry-analysis-foot">${note} 기준일 ${escapeHTML(String(EntryState.index?.prediction?.asOf || '').slice(0, 10))}</div>
     </div>`;
 }
 
@@ -1046,7 +946,11 @@ function entrySearch(q) {
     if (!key) return [];
     const players = entryPlayers();
     return Object.entries(players)
-        .filter(([, p]) => [p.n, p.en, p.tm].filter(Boolean).some(v => String(v).toLowerCase().includes(key)))
+        .filter(
+            ([, p]) =>
+                p.selectable !== false &&
+                [p.n, p.en, p.tm].filter(Boolean).some(v => String(v).toLowerCase().includes(key))
+        )
         .map(([pid, p]) => ({ pid, ...p }))
         .sort(entryCompare)
         .slice(0, ENTRY_SEARCH_MAX);

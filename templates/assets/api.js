@@ -286,4 +286,11 @@ const Api = {
     async eloPlayerRatings({ wrap } = {}) {
         return apiList('elo_player_ratings_list', {}, wrap);
     },
+
+    // GET /api/v1/elo/prediction-model - 메타·레이팅·종족별 개인 효과를 같은 활성 스냅샷에서 읽는다.
+    async eloPredictionModel({ wrap } = {}) {
+        const model = (await apiCall('elo_prediction_model', {}, wrap)) || {};
+        const { c = [], r = [] } = model.ratings || {};
+        return { ...model, ratings: r.map(row => Object.fromEntries(c.map((name, i) => [name, row[i]]))) };
+    },
 };

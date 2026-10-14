@@ -236,6 +236,25 @@ paths:
       x-db-function: api_elo_ranking_meta
       responses:
         '200': { description: "없으면 {}", content: { application/json: { schema: { $ref: '#/components/schemas/EloRankingMeta' } } } }
+  /elo/prediction-model:
+    get:
+      summary: 같은 활성 스냅샷의 승률용 실력·종족·맵 효과·모델 메타 (Api.eloPredictionModel)
+      x-db-function: elo_prediction_model
+      responses:
+        '200':
+          description: 없으면 {}; ratings는 Api에서 객체 배열로 펼침
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of: { type: string, format: date }
+                  model_version: { type: string }
+                  half_life_days: { type: integer }
+                  tier_levels: { type: object, additionalProperties: { type: number } }
+                  race_matchup: { type: object, additionalProperties: { type: number } }
+                  map_matchup: { type: object, additionalProperties: { type: object, additionalProperties: { type: number } } }
+                  ratings: { type: array, items: { type: object } }
   /elo/ratings:
     get:
       summary: 순위 밖 선수까지 전 선수 레이팅 (Api.eloPlayerRatings)

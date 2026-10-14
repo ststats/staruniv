@@ -71,6 +71,15 @@ function POSTS() {
 function respond(url) {
   const u = new URL(url);
   const fn = u.pathname.split('/').pop();
+  if (fn === 'elo_prediction_model') return {
+    as_of: '2026-09-20', model_version: 'joint-map-v1', half_life_days: 90,
+    tier_levels: Object.fromEntries(TIERS.map((t, i) => [t, 2000 - i * 60])),
+    tier_counts: {}, race_matchup: { TZ: 12, ZP: 12, PT: 12 }, map_matchup: {'투혼':{TZ:30,ZP:10,PT:-5}},
+    ratings: {
+      c: ['elo_id', 'rating', 'matchup_effects', 'race', 'tier_rank'],
+      r: NAMES.map((_, i) => [1000 + i, 1700 - i * 25, {T:-10,Z:15,P:-5}, RACES[i % 3], i + 1]),
+    },
+  };
   if (fn === 'player_stats') {   // 선수용 함수: 받은 ID마다 한 줄(휴면 포함)
     const ids = (u.searchParams.get('p_ids') || '').split(',').filter(Boolean);
     const cols = 'stat_date,soop_id,nickname,balloons,broadcast_seconds,cumulative_viewers,sponsor_wins,sponsor_losses,updated_at'.split(',');
