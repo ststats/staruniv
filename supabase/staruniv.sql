@@ -191,10 +191,9 @@ create table if not exists public.calendar_events (
   end_date date not null,
   event_time text,
   person text not null default '',
-  description text,
+  title text not null,
   detail text,
   color text,
-  title text,
   subject_type text not null default 'other',
   participants jsonb not null default '[]'::jsonb
 );
@@ -519,7 +518,7 @@ create or replace function public.api_schedule() returns json
 language sql stable security definer set search_path = public as $$
   select json_build_object(
     'events', coalesce((select json_agg(json_build_object('id', id, 'start_date', start_date, 'end_date', end_date,
-        'event_time', event_time, 'person', person, 'title', coalesce(nullif(title, ''), description),
+        'event_time', event_time, 'person', person, 'title', title,
         'detail', detail, 'color', color, 'subject_type', subject_type, 'participants', participants)
         order by source_order) from public.calendar_events), '[]'::json),
     'offAir', coalesce((select json_agg(json_build_object('off_date', off_date, 'soop_id', soop_id)
@@ -529,7 +528,7 @@ $$;
 create or replace function public.api_schedule_on(p_date date) returns json
 language sql stable security definer set search_path = public as $$
   select coalesce(json_agg(json_build_object('start_date', start_date, 'end_date', end_date, 'event_time', event_time,
-      'person', person, 'title', coalesce(nullif(title, ''), description)) order by source_order), '[]'::json)
+      'person', person, 'title', title) order by source_order), '[]'::json)
   from public.calendar_events where start_date <= p_date and end_date >= p_date;
 $$;
 

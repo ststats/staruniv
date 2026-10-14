@@ -302,7 +302,7 @@ components:
         end_date: { type: [string, 'null'], format: date }
         event_time: { type: [string, 'null'] }
         person: { type: [string, 'null'] }
-        title: { type: [string, 'null'], description: "일정명. 예전 일정은 description 칸 값" }
+        title: { type: string, description: "일정명" }
         detail: { type: [string, 'null'] }
         subject_type: { type: string, enum: [other, person, group, competition] }
         participants: { type: array, items: { type: object, properties: { soop_id: { type: string }, name: { type: string } } } }
