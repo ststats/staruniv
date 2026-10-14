@@ -1,0 +1,702 @@
+@layer pages {
+    /* ----- 도구 > 엔트리: 크기·글자·노치는 상대전적 부품(.h2h-*)·.text-action 등을 그대로 쓰고,
+       여기는 배치와 '두 선수가 마주 보는 카드'만 적는다 ----- */
+    /* 결과를 보면서 옆에서 사람을 넣도록 대진표가 넓은 쪽 */
+    .entry-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+        gap: var(--space-block-gap);
+        align-items: start;
+    }
+    .entry-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 2px;
+        margin-left: auto;
+    }
+    .entry-settings {
+        display: grid;
+        grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1fr) 80px;
+        gap: var(--space-inline-gap);
+        margin-bottom: var(--space-block-gap);
+    }
+    /* 날짜 칸을 누르면 달력이 뜬다(page-entry.js renderEntryDatePicker) */
+    .entry-date-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        text-align: left;
+    }
+    .entry-date-trigger svg {
+        flex: none;
+        color: var(--color-text-faint);
+    }
+    .entry-date-popover {
+        position: absolute;
+        z-index: 30;
+        top: calc(100% + 4px);
+        left: 0;
+        width: 252px;
+        padding: var(--space-3);
+        background: var(--color-card);
+        clip-path: var(--notch-8);
+    }
+    .entry-cal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-2);
+    }
+    .entry-cal-title {
+        font-size: var(--fs-body);
+        font-weight: 800;
+        color: var(--color-text-strong);
+    }
+    .entry-cal-nav,
+    .entry-cal-day {
+        display: grid;
+        place-items: center;
+        height: 30px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        clip-path: var(--notch-4);
+    }
+    .entry-cal-nav {
+        width: 30px;
+        color: var(--color-text-sub);
+    }
+    .entry-cal-nav.is-prev svg {
+        transform: rotate(90deg);
+    }
+    .entry-cal-nav.is-next svg {
+        transform: rotate(-90deg);
+    }
+    .entry-cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 2px;
+    }
+    .entry-cal-weekday {
+        padding: 2px 0 var(--space-1);
+        text-align: center;
+        font-size: var(--fs-micro);
+        font-weight: 700;
+        color: var(--color-text-faint);
+    }
+    .entry-cal-day {
+        font-size: var(--fs-meta);
+        font-weight: 600;
+        color: var(--color-text-main);
+    }
+    .entry-cal-day.is-today {
+        font-weight: 800;
+        color: var(--color-text-strong);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+    .entry-cal-nav:hover,
+    .entry-cal-day:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .entry-cal-day.active {
+        background: var(--select-on-light);
+        color: #fff;
+    }
+    .entry-cal-foot {
+        display: flex;
+        margin-top: var(--space-2);
+        padding-top: var(--space-2);
+        border-top: 1px solid var(--color-border);
+    }
+    .entry-auto-tier-picker {
+        margin-bottom: var(--space-block-gap);
+        overflow: hidden;
+        background: var(--color-card);
+        clip-path: var(--notch-8);
+    }
+    /* 네이비 띠. 안의 .text-action이 흰 계열이 되게 면 토큰도 준다 */
+    .entry-auto-tier-head {
+        --panel-muted: var(--navy-on-muted);
+        --panel-text: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-inline-gap);
+        min-height: 38px;
+        padding: 0 var(--space-5);
+        background: var(--navy);
+        background-image: var(--navy-pattern);
+        color: var(--navy-on-text);
+        font-size: var(--fs-meta);
+        font-weight: 800;
+    }
+    .entry-auto-tier-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-label-gap);
+        padding: var(--space-5) var(--space-5) 0;
+    }
+    .entry-auto-tier-chip {
+        min-width: 44px;
+        min-height: 30px;
+        border: 0;
+        padding: 0 var(--space-4);
+        background: var(--color-bg-subtle);
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+        font-weight: 800;
+        clip-path: var(--notch-5);
+    }
+    .entry-auto-tier-chip:hover {
+        background: var(--color-subtle-hover);
+        color: var(--color-text-strong);
+    }
+    .entry-auto-tier-empty {
+        padding-bottom: var(--space-5);
+        font-size: var(--fs-meta);
+        color: var(--color-text-faint);
+    }
+    .entry-auto-apply {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: calc(100% - 24px);
+        min-height: 38px;
+        margin: var(--space-5);
+        border: 0;
+        background: var(--navy);
+        background-image: var(--navy-pattern);
+        color: var(--navy-on-text);
+        clip-path: var(--notch-6);
+        font-size: var(--fs-meta);
+        font-weight: 800;
+    }
+    .entry-auto-apply:hover,
+    .entry-auto-apply:focus-visible {
+        color: #fff;
+        filter: brightness(1.25);
+    }
+    /* 넷째 칸이 첫째 칸과 짝이라 경기 수+날짜와 제목이 같은 폭이 되고 아래 A · B 이름과 세로로 맞는다 */
+    .entry-title-field {
+        grid-column: 3 / -1;
+    }
+    .entry-label-fields {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-inline-gap);
+    }
+    .entry-label-fields > .h2h-slot-inner {
+        min-width: 0;
+    }
+    .entry-label-fields .h2h-slot-label {
+        white-space: nowrap;
+    }
+
+    .entry-sides {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-inline-gap);
+    }
+    .entry-side {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-inline-gap);
+        min-width: 0;
+    }
+    /* 선수 목록은 상대전적 검색 추천 상자를 제자리 목록으로 쓴다(10-tier.css '검색 추천') */
+
+    /* 상대전적 빈 화면(.h2h-empty)의 크기·바탕을 그대로 쓰고, 매치 예상일 때만 안을 세 칸으로 나눈다 */
+    .entry-summary {
+        margin-bottom: var(--space-4);
+    }
+    .entry-summary.is-score {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+        gap: var(--space-compact-gap);
+    }
+    .entry-sum-side {
+        min-width: 0;
+    }
+    .entry-sum-name {
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        color: var(--navy-on-muted);
+    }
+    .entry-sum-num {
+        font-size: 30px;
+        font-weight: 800;
+        line-height: 1.15;
+    }
+    .entry-sum-num.is-a {
+        color: var(--navy-win);
+    }
+    .entry-sum-num.is-b {
+        color: var(--navy-lose);
+    }
+    .entry-sum-mid {
+        min-width: 0;
+    }
+    .entry-sum-rate {
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        color: var(--navy-on-text);
+    }
+    .entry-sum-sub {
+        font-size: var(--fs-badge-sm);
+        line-height: 1.55;
+        color: var(--navy-on-muted);
+    }
+    #entry-period {
+        margin-bottom: var(--space-4);
+    }
+    .entry-matches {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-inline-gap);
+    }
+
+    /* 대진 카드: .h2h-rival과 같은 바탕·노치·여백과 클래스를 쓰고 배치만 마주 보게 한다. */
+    .entry-match {
+        padding: var(--space-4) var(--space-5);
+        background: var(--color-card);
+        clip-path: var(--notch-8);
+    }
+    .entry-match-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-2);
+    }
+    .entry-match-no {
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        color: var(--color-text-sub);
+    }
+    .entry-match-tools {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .entry-match-tool {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--color-text-faint);
+        font-size: var(--fs-meta);
+        line-height: 1;
+    }
+    .entry-match-tool.is-up svg {
+        transform: rotate(180deg);
+    }
+    .entry-match-tool:hover:not(:disabled) {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .entry-match-tool.is-del:hover {
+        color: var(--color-lose);
+    }
+    .entry-match-tool:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+    .entry-match-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: var(--space-inline-gap);
+    }
+    .entry-match-side {
+        display: flex;
+        align-items: center;
+        gap: var(--space-inline-gap);
+        min-width: 0;
+    }
+    .entry-match-side.is-b {
+        justify-content: flex-end;
+    }
+    /* 한 줄에 다 넣으면 좁은 칸에서 이름이 잘리고 티어 뱃지가 줄바꿈되어 두 줄로 나눈다 */
+    .entry-match-who {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .entry-match-badges {
+        display: flex;
+        gap: 3px;
+    }
+    .entry-match-side.is-b .entry-match-who {
+        align-items: flex-end;
+    }
+    /* 가져다 쓴 .h2h-rival-*의 칸 번호(grid-column/row)를 여기선 풀어 준다 */
+    .entry-match :is(.h2h-rival-avatar, .h2h-rival-name, .h2h-rival-rec) {
+        grid-column: auto;
+        grid-row: auto;
+    }
+    .entry-match .h2h-rival-bar {
+        margin-top: var(--space-3);
+    }
+    .entry-match-none {
+        color: var(--color-text-faint);
+    }
+    /* 상대전적 스코어판(.h2h-score-num)의 색 규칙을 카드 크기로 줄인 것 */
+    .entry-match .entry-match-rec {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+    }
+    .entry-rec-nums {
+        display: inline-flex;
+        align-items: baseline;
+        gap: var(--space-inline-gap);
+    }
+    .entry-rec-label {
+        font-size: var(--fs-eyebrow);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--color-text-faint);
+        white-space: nowrap;
+    }
+    .entry-vs-num {
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .entry-vs-num.is-a {
+        color: var(--color-win);
+    }
+    .entry-vs-num.is-b {
+        color: var(--color-lose);
+    }
+    .entry-vs {
+        font-size: var(--fs-eyebrow);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--color-text-faint);
+    }
+    /* 좌우 같은 폭으로 잡아 예상승률을 카드 정중앙에 고정 */
+    .entry-match-footer {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr) 92px;
+        gap: var(--space-label-gap);
+        margin-top: var(--space-3);
+        align-items: center;
+    }
+    .entry-match-sim {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        min-height: 30px;
+        margin: 0;
+        padding: 0 2px;
+        font-size: var(--fs-meta);
+        color: var(--color-text-sub);
+        text-align: center;
+    }
+    .entry-match-probval {
+        min-width: 0;
+        white-space: nowrap;
+    }
+    .entry-map-control {
+        min-width: 0;
+        height: 30px;
+        margin: 0;
+    }
+    .entry-map-trigger,
+    .entry-analysis-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1);
+        width: 100%;
+        min-width: 0;
+        height: 30px;
+        padding: 0 var(--space-3);
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-5);
+        color: var(--color-text-sub);
+        font-size: var(--fs-micro);
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .entry-map-trigger span {
+        min-width: 0;
+    }
+    .entry-map-trigger:hover,
+    .entry-analysis-toggle:hover,
+    .entry-map-control.is-open .entry-map-trigger {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .entry-map-trigger .chevron-rotatable,
+    .entry-analysis-toggle .chevron-rotatable {
+        flex: none;
+    }
+    .entry-map-popover {
+        margin-top: var(--space-2);
+        padding: var(--space-3);
+        background: var(--color-bg-subtle);
+        clip-path: var(--notch-8);
+    }
+    .entry-map-popover-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-inline-gap);
+        margin-bottom: var(--space-2);
+        font-size: var(--fs-micro);
+        color: var(--color-text-sub);
+    }
+    .entry-map-popover-head strong {
+        color: var(--color-text-main);
+        font-size: var(--fs-micro);
+    }
+    .entry-map-options {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-1);
+        max-height: 154px;
+        overflow: auto;
+    }
+    .entry-map-option {
+        min-width: 0;
+        height: 28px;
+        padding: 0 var(--space-2);
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-4);
+        color: var(--color-text-sub);
+        font-size: var(--fs-micro);
+        font-weight: 700;
+    }
+    .entry-map-option:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+    .entry-map-empty {
+        grid-column: 1/-1;
+        padding: var(--space-3);
+        text-align: center;
+        font-size: var(--fs-micro);
+        color: var(--color-text-faint);
+    }
+    .entry-map-popover-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-1);
+        margin-top: var(--space-2);
+    }
+    .entry-map-popover-actions button {
+        height: 26px;
+        padding: 0 var(--space-3);
+        border: 0;
+        background: var(--color-card);
+        clip-path: var(--notch-4);
+        color: var(--color-text-sub);
+        font-size: var(--fs-eyebrow);
+        font-weight: 800;
+    }
+    .entry-map-popover-actions button:hover {
+        background: var(--color-row-hover);
+        color: var(--color-text-strong);
+    }
+
+    .entry-analysis-panel {
+        margin-top: var(--space-3);
+        overflow: hidden;
+        background: var(--color-card);
+        clip-path: var(--notch-8);
+    }
+    .entry-analysis-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: var(--space-3) var(--space-5);
+        background: var(--navy);
+        background-image: var(--navy-pattern);
+        color: var(--navy-on-text);
+    }
+    .entry-analysis-head > div {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--space-label-gap);
+        min-width: 0;
+    }
+    .entry-analysis-head strong {
+        font-size: var(--fs-list-name);
+        font-weight: 900;
+        color: #fff;
+        white-space: nowrap;
+    }
+    .entry-analysis-eyebrow {
+        width: 100%;
+        font-size: var(--fs-eyebrow);
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--navy-on-muted);
+    }
+    .entry-analysis-vs {
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        color: var(--navy-on-muted);
+        white-space: nowrap;
+    }
+    .entry-analysis-total {
+        flex: none;
+        font-size: var(--fs-micro);
+        font-weight: 800;
+        color: var(--navy-on-muted);
+        white-space: nowrap;
+    }
+    .entry-analysis-summary {
+        margin: 0;
+        padding: var(--space-3) var(--space-5) 2px;
+        font-size: var(--fs-meta);
+        line-height: 1.5;
+        font-weight: 700;
+        color: var(--color-text-main);
+    }
+    .entry-analysis-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-label-gap);
+        padding: var(--space-2) var(--space-5) var(--space-3);
+    }
+    .entry-analysis-stat {
+        min-width: 0;
+        padding: var(--space-3) var(--space-3);
+        background: var(--color-bg-subtle);
+        clip-path: var(--notch-10);
+    }
+    .entry-analysis-stat.is-low-sample {
+        opacity: 0.72;
+    }
+    .entry-analysis-stat-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-inline-gap);
+        margin-bottom: 3px;
+        font-size: var(--fs-micro);
+        font-weight: 800;
+        color: var(--color-text-main);
+    }
+    .entry-analysis-adj {
+        color: var(--color-text-sub);
+        white-space: nowrap;
+    }
+    .entry-analysis-adj.is-a {
+        color: var(--color-primary);
+    }
+    .entry-analysis-adj.is-b {
+        color: var(--color-lose);
+    }
+    .entry-analysis-stat-detail {
+        min-width: 0;
+        overflow: hidden;
+        font-size: var(--fs-micro);
+        line-height: 1.45;
+        color: var(--color-text-sub);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    /* 종족전/선택맵은 정보량이 길어서 두 줄까지 보여준다. */
+    .entry-analysis-stat:nth-child(3) .entry-analysis-stat-detail,
+    .entry-analysis-stat:nth-child(4) .entry-analysis-stat-detail {
+        display: -webkit-box;
+        white-space: normal;
+        text-overflow: clip;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+    .entry-analysis-foot {
+        padding: 0 var(--space-5) var(--space-3);
+        font-size: var(--fs-eyebrow);
+        line-height: 1.45;
+        color: var(--color-text-faint);
+    }
+
+    @media (max-width: 991.98px) {
+        .entry-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        /* 휴대폰에서는 고르는 칸이 먼저(사람부터 넣어야 대진표가 생긴다) */
+        .entry-picker {
+            order: -1;
+        }
+    }
+    @media (max-width: 575.98px) {
+        .entry-settings {
+            grid-template-columns: 70px minmax(0, 1fr);
+        }
+        .entry-settings > .h2h-slot-inner {
+            min-width: 0;
+        }
+        .entry-title-field {
+            grid-column: 1 / -1;
+        }
+        /* 좁아도 세 칸은 지킨다. 스코어를 둘째 줄로 내리면 누가 몇 대 몇인지 한눈에 안 읽힌다. */
+        .entry-match {
+            padding: var(--space-4);
+        }
+        .entry-match-row {
+            gap: var(--space-label-gap);
+        }
+        .entry-match-side {
+            gap: var(--space-label-gap);
+        }
+        .entry-vs-num {
+            font-size: 17px;
+        }
+        .entry-rec-nums {
+            gap: var(--space-1);
+        }
+        .entry-rec-label {
+            letter-spacing: 0;
+        }
+        .entry-match-footer {
+            grid-template-columns: 72px minmax(0, 1fr) 72px;
+            gap: var(--space-1);
+        }
+        .entry-map-trigger,
+        .entry-analysis-toggle {
+            padding: 0 var(--space-1);
+            font-size: 9px;
+            gap: 3px;
+        }
+        .entry-match-sim {
+            padding: 0;
+            font-size: 9px;
+        }
+        .entry-map-options {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            max-height: 146px;
+        }
+        .entry-analysis-head {
+            align-items: flex-start;
+        }
+        .entry-analysis-grid {
+            grid-template-columns: 1fr;
+        }
+        .entry-analysis-total {
+            white-space: normal;
+            text-align: right;
+        }
+    }
+}
