@@ -374,10 +374,12 @@
 
   /* 글꼴 */
   .font-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-  .font-chips button, .font-grid button { flex: none; min-height: 36px; padding: 0 12px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
-    font-size: 14px; line-height: 1.1; white-space: nowrap; clip-path: var(--notch-4); cursor: pointer; }
+  .font-chips button, .font-grid button { flex: none; min-height: 38px; padding: 0 12px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
+    font-size: 16px; line-height: 1.1; white-space: nowrap; clip-path: var(--notch-4); cursor: pointer; }
   .font-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .font-grid button { min-height: 32px; padding: 0 6px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+  .font-grid button { padding: 0 6px; overflow: hidden; text-overflow: ellipsis; }
+  /* 늘 보이는 최근 글꼴 줄은 작게 */
+  .font-chips button { min-height: 30px; padding: 0 10px; font-size: 12px; }
   .font-grid .group-label { grid-column: 1 / -1; margin-top: 4px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .1em; color: var(--color-text-sub); }
   .font-chips button.active, .font-grid button.active { background: var(--select-on-light); color: #fff; }
 
