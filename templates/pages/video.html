@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block content %}
+<section id="page-video" class="page-section active">
+    <div class="page-header">
+        <div class="page-header-main" data-label="VIDEO">
+            <h1 class="page-header-title">영상</h1>
+            <p class="page-header-subtitle">캄몬스타즈 팬 채널의 영상과 추천 영상입니다</p>
+        </div>
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" id="tab-video-fantube" role="tab" tabindex="0" aria-selected="true" data-click="switchVideoView" data-args='["fantube"]'>팬튜브</div>
+            <div class="sub-tab" id="tab-video-pick" role="tab" tabindex="0" aria-selected="false" data-click="switchVideoView" data-args='["pick"]'>보자</div>
+        </div>
+    </div>
+    <div class="container">
+    {#- 1. 팬튜브: 등록 채널의 최신 영상. 이번 달 인기 3개 → 쇼츠 선반 → 최신 영상 순. #}
+    <div id="view-video-fantube">
+      {#- 채널이 하나뿐이면 숨긴다. #}
+      <div class="selection-layout">
+        <div class="avatar-selector-scroll scroll-area">
+            <div class="avatar-selector-list" id="video-channel-row"></div>
+        </div>
+        <div class="selection-content">
+
+        <div id="video-top-wrap" hidden>
+            <div class="section-title section-title-spaced" data-en="MONTHLY TOP"><span class="section-title-label">이번 달 인기</span><span class="title-count">최근 30일 · 조회수순</span></div>
+            <div class="video-top-grid" id="video-top-grid"></div>
+        </div>
+
+        <div id="video-shorts-wrap" hidden>
+            {#- 마우스로는 가로로 밀기 어려워 넘김 버튼을 둔다(좁은 화면에서는 숨긴다). #}
+            <div class="section-title section-title-spaced has-shelf-nav" data-en="SHORTS"><span class="section-title-label">쇼츠</span><span class="title-count" id="video-shorts-count"></span>
+                <span class="shelf-nav" id="video-shorts-nav" hidden>
+                    <button type="button" class="shelf-nav-btn" aria-label="이전 쇼츠" data-click="videoShortsScroll" data-args='[-1]'>‹</button>
+                    <button type="button" class="shelf-nav-btn" aria-label="다음 쇼츠" data-click="videoShortsScroll" data-args='[1]'>›</button>
+                </span>
+            </div>
+            <div class="video-shorts-shelf tab-scroll" id="video-shorts-shelf"></div>
+        </div>
+
+        {#- 인기·쇼츠가 늦게 끼어들며 아래로 밀리지 않게(CLS) 다 그릴 때까지 안내 한 줄만 둔다. #}
+        <div class="content-state is-boxed video-empty" id="video-loading" role="status">영상 목록을 불러오는 중</div>
+        <div id="video-latest-wrap" hidden>
+        <div class="section-title section-title-spaced" data-en="LATEST"><span class="section-title-label">최신 영상</span><span class="title-count" id="video-latest-count"></span></div>
+        <div class="video-grid" id="video-latest-grid" aria-live="polite"></div>
+        </div>
+        <div class="news-load-more-wrap video-more-wrap" id="video-more-wrap" hidden>
+            <button type="button" class="news-load-more" data-click="videoShowMore">더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+        </div>
+        </div>{#- /.selection-content #}
+      </div>{#- /.selection-layout #}
+    </div>
+
+    {#- 2. 보자: 어드민이 골라 올린 영상 #}
+    <div id="view-video-pick" class="d-none">
+        {#- 분류마다 제목줄이 생기므로 그리드가 아니라 묶음들을 감싸는 칸이다. #}
+        <div id="video-pick-grid"></div>
+    </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('api.js') }}"></script>
+<script src="{{ asset_url('media-lightbox.js') }}"></script>
+<script src="{{ asset_url('page-video.js') }}"></script>
+{% endblock %}

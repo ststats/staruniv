@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block content %}
+{% from 'partials/macros.html' import match_table_head %}
+<section id="page-records" class="page-section active">
+    <div class="page-header">
+        <div class="page-header-main" data-label="RECORDS">
+            <h1 class="page-header-title">전적</h1>
+            <p class="page-header-subtitle">캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다</p>
+        </div>
+        {% if admin_mode %}
+        <div class="sub-tabs tab-scroll" role="tablist">
+            <div class="sub-tab active" role="tab" tabindex="0" aria-selected="true" aria-controls="view-record-matches">매치</div>
+        </div>
+        <template id="publicSubtabs">{% include 'partials/public-record-tier-tabs.html' %}</template>
+        {% else %}
+        {% include 'partials/public-record-tier-tabs.html' %}
+        {% endif %}
+    </div>
+    {% if admin_mode %}
+    <div class="container">
+        <div id="view-record-matches">
+            <div class="section-title" data-en="MATCHES"><span class="section-title-label">매치 관리</span></div>
+            <div id="adminMatchesRoot"></div>
+        </div>
+    </div>
+    {% else %}
+    <div class="container">
+    {#- 1. 팀 뷰 #}
+    <div id="view-team-stat">
+        <div class="section-title" data-en="SUMMARY"><span class="section-title-label">전체 전적</span></div>
+        <div class="row g-3 mb-block">
+            {%- for fmt in ['대회', '대학', '미니', 'CK'] %}
+            <div class="col-6 col-md-3"><div class="clean-card stat-card-box" role="button" tabindex="0" data-click="openTeamMatchModal" data-args='["{{ fmt }}"]'>
+                <div class="label">{{ fmt }}</div>
+                <div class="donut" id="t-sum-{{ fmt }}-donut"><span class="donut-text" id="t-sum-{{ fmt }}-r">0%</span></div>
+                {#- 바만 두면 "몇 승 몇 패"가 바 안의 작은 숫자로만 남아 큰 숫자를 같이 둔다. #}
+                <div class="wl-block">
+                    <div class="wl-text" id="t-sum-{{ fmt }}-t">0<small>승</small> 0<small>패</small></div>
+                    <div class="wl" id="t-sum-{{ fmt }}-w"></div>
+                </div>
+            </div></div>
+            {%- endfor %}
+        </div>
+
+        {#- 상대 전적 카드는 가로를 다 써야(4열) 해서 두 표를 위아래로 놓는다. #}
+        <div class="mb-block">
+                <div class="section-title record-recent-header" data-en="HEAD TO HEAD">
+                    <span class="record-recent-title section-title-label">상대 전적</span>
+                    <div id="team-opp-filters" class="filter-nav tab-scroll" role="tablist"></div>
+                </div>
+                <div id="team-opp-wrap" aria-live="polite"><div class="content-state is-boxed">상대 전적을 불러오는 중</div></div>
+        </div>
+
+        <div class="mb-block">
+                <div class="section-title record-recent-header" data-en="RECENT">
+                    <span class="record-recent-title section-title-label">최근 전적</span>
+                    <div id="team-recent-filters" class="filter-nav tab-scroll" role="tablist" aria-label="최근 전적 형식"></div>
+                </div>
+                <div class="clean-card p-0 overflow-hidden">
+                    <div class="table-responsive scroll-area">
+                        <table class="table mb-0 text-center stat-table table-fixed">
+{{- match_table_head() }}
+                            <tbody id="team-recent-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="team-recent-pagination"></div>
+        </div>
+    </div>
+
+    {#- 2. 개인 뷰 #}
+    <div id="view-indiv-stat" class="d-none">
+        {#- core.js가 .avatar-selector-scroll을 런타임에 .avatar-bar로 감싼다(avatarBarTools). #}
+        <div class="selection-layout">
+            <div class="avatar-selector-scroll scroll-area">
+                <div class="avatar-selector-list" id="indiv-avatar-list"></div>
+            </div>
+            <div class="selection-content">
+        <div class="section-title record-recent-header" data-en="PLAYER">
+            <span class="record-recent-title section-title-label" id="indiv-content-title">전체 전적</span>
+            <div id="indiv-summary-filters" class="filter-nav tab-scroll" role="tablist"></div>
+        </div>
+
+        <div id="indiv-summary-content">
+            <div id="indiv-summary-grid"></div>
+        </div>
+
+        <div id="statContent" class="d-none">
+            {#- 합계는 대회 + 대학만 센다(미니·CK는 성격이 달라 섞으면 의미가 흐려진다). #}
+            <div class="player-summary">
+                <div class="player-summary-avatar" id="p-avatar">👤</div>
+                <div class="player-summary-id">
+                    <h3 class="player-summary-name" id="p-name">이름</h3>
+                    <div class="player-summary-badges"><span class="tag-badge" id="p-race">종족</span><span class="tag-badge tier-badge" id="p-tier">티어</span></div>
+                    {#- 랭킹 뱃지 자리에 활동기간을 넣는다. #}
+                    <div class="player-summary-position"><span class="tag-badge rank-badge" id="p-period">활동기간</span></div>
+                </div>
+                <div class="player-summary-stats">
+                    <div class="player-summary-total" id="p-total-label">대학 · 대회 총 전적</div>
+                    <div class="player-summary-wl" id="p-total-wl">-</div>
+                    <div class="player-summary-rate" id="p-total-rate">-</div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-block">
+                <div class="col-md-6">
+                    <div class="section-title" data-en="BY FORMAT"><span class="section-title-label">형식별 전적</span></div>
+                    <div class="clean-card p-3">
+                        <div class="donut-wrap">
+                            <div class="donut-box"><div class="donut" id="d-fmt-1"><span class="donut-text" id="dt-fmt-1">0%</span></div><div class="donut-label">대회</div><div class="donut-sub" id="dw-fmt-1">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-fmt-2"><span class="donut-text" id="dt-fmt-2">0%</span></div><div class="donut-label">대학</div><div class="donut-sub" id="dw-fmt-2">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-fmt-3"><span class="donut-text" id="dt-fmt-3">0%</span></div><div class="donut-label">미니</div><div class="donut-sub" id="dw-fmt-3">-</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="section-title" data-en="BY MATCHUP"><span class="section-title-label">종족전 전적</span></div>
+                    <div class="clean-card p-3">
+                        <div class="donut-wrap">
+                            <div class="donut-box"><div class="donut" id="d-race-t"><span class="donut-text" id="dt-race-t">0%</span></div><div class="donut-label donut-label-t">vs T</div><div class="donut-sub" id="dw-race-t">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-race-z"><span class="donut-text" id="dt-race-z">0%</span></div><div class="donut-label donut-label-z">vs Z</div><div class="donut-sub" id="dw-race-z">-</div></div>
+                            <div class="donut-box"><div class="donut" id="d-race-p"><span class="donut-text" id="dt-race-p">0%</span></div><div class="donut-label donut-label-p">vs P</div><div class="donut-sub" id="dw-race-p">-</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title record-recent-header mt-4" data-en="RECENT">
+                <span class="record-recent-title section-title-label">최근 전적</span>
+                <div id="indiv-filters" class="filter-nav tab-scroll" role="tablist">
+                    <div class="filter-item active" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["전체"]'>전체</div>
+                    <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["대회"]'>대회</div>
+                    <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["대학"]'>대학</div>
+                    <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["미니"]'>미니</div>
+                    <div class="filter-item" role="tab" tabindex="0" data-click="setIndivFilter" data-args='["CK"]'>CK</div>
+                </div>
+            </div>
+
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive scroll-area">
+                    <table class="table mb-0 text-center stat-table table-fixed">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center stat-table-sticky-col colw-16-66">상대</th>
+                                <th scope="col" class="text-center colw-16-66 col-oppteam">상대 팀</th>
+                                <th scope="col" class="text-center colw-16-66">형식</th>
+                                <th scope="col" class="text-center colw-16-66">맵</th>
+                                <th scope="col" class="text-center colw-16-66">결과</th>
+                                <th scope="col" class="text-center colw-16-66">날짜</th>
+                            </tr>
+                        </thead>
+                        <tbody id="indiv-recent-list"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="indiv-pagination"></div>
+        </div>
+            </div>{#- /.selection-content #}
+        </div>{#- /.selection-layout #}
+    </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+{% block modals %}
+{% if not admin_mode %}{% include 'partials/match_modals.html' %}{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('api.js') }}"></script>
+{% if not admin_mode %}<script src="{{ asset_url('page-records.js') }}"></script>{% endif %}
+{% endblock %}
