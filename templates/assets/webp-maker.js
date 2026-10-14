@@ -1118,7 +1118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             fit: $('fit').value,
             bg: $('bg').value,
-            radius: $('radiusOn').checked ? +$('radius').value : 0,
+            radius: Math.max(0, +$('radius').value || 0),
             frame: state.frame,
             frameW: state.frame === 'none' ? 0 : +$('frameW').value,
             frameOuterW: state.frame === 'double' ? +$('frameOuterW').value : 0,
