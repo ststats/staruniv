@@ -18,6 +18,8 @@ function value(col, i, table) {
     if (c === 'youtube_url') return i % 4 === 1 ? 'https://www.youtube.com/watch?v=abcdefghij' + (i % 10) : '';
     if (c === 'members') return i % 5 === 2 ? NAMES.slice(0, 9) : [NAMES[i % 12], NAMES[(i + 1) % 12]];
   }
+  if (table === 'calendar_events' && c === 'subject_type') return ['person', 'group', 'competition', 'other'][i % 4];
+  if (table === 'calendar_events' && c === 'participants') return i % 3 ? NAMES.slice(0, i % 6).map((name) => ({ name })) : [];
   if (table === 'calendar_events' && c === 'end_date') return day(i * 2 - 6 - (i % 4 === 0 ? 3 : 0));
   if (table === 'external_tools') {
     if (c === 'url') return `https://tool${i}.example.com/page`;
@@ -87,8 +89,8 @@ function respond(url) {
     api_live: () => T('live_broadcasts', 'soop_id,broad_no,broad_title,current_sum_viewer,broad_start,category_name,broad_cate_no'),
     api_live_ids: () => T('live_broadcasts', 'soop_id'),
     api_stats_dates: () => T('synergy_daily_dates', 'stat_date'),
-    api_schedule: () => ({ events: T('calendar_events', 'id,start_date,end_date,event_time,person,description,detail,color'), offAir: T('calendar_off_air', 'off_date,soop_id') }),
-    api_schedule_on: () => T('calendar_events', 'start_date,end_date,event_time,person,description'),
+    api_schedule: () => ({ events: T('calendar_events', 'id,start_date,end_date,event_time,person,title,detail,color,subject_type,participants'), offAir: T('calendar_off_air', 'off_date,soop_id') }),
+    api_schedule_on: () => T('calendar_events', 'start_date,end_date,event_time,person,title'),
     api_history: () => T('history_entries', 'id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden'),
     api_member_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, total_pages: 2, post: p.post })),
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),

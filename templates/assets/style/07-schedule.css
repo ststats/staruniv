@@ -139,7 +139,6 @@
         margin-top: 0;
     }
     /* 휴방·오늘의 일정·연혁에서 공유하는 사람 칩. '없음'과 같은 글자 크기. */
-    .cal-offair-chip,
     .hist-chip {
         display: inline-flex;
         align-items: center;

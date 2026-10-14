@@ -14,7 +14,6 @@ window.calOffAirExtra = (dateStr, type) => {
               SiteData.members,
               getProfileImgUrl,
               `offair-${type}-${dateStr}`,
-              false,
               5
           )
         : '<span class="cal-offair-none">없음</span>';

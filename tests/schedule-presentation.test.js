@@ -93,10 +93,9 @@ test('단체와 대회는 전체 참가자 수를 인으로 표시한다', () =>
 });
 
 test('빈 시간은 대시를 표시하고 관리자가 적은 미정과 시간은 유지한다', () => {
-    assert.equal(evaluate("calEventTitle({ title: '', desc: '팬미팅', person: '캄몬' })"), '팬미팅');
-    assert.equal(evaluate("calEventTitle({ title: '', desc: '', person: '캄몬', time: '비방연습' })"), '비방연습');
+    assert.equal(evaluate("calEventTitle({ title: '팬미팅', person: '캄몬' })"), '팬미팅');
+    assert.equal(evaluate("calEventTitle({ title: '', person: '캄몬' })"), '캄몬');
     assert.equal(evaluate("calDisplayTime({ time: '' })"), '-');
-    assert.equal(evaluate("calDisplayTime({ time: '비방연습' })"), '-');
     assert.equal(evaluate("calDisplayTime({ time: '미정' })"), '미정');
     assert.equal(evaluate("calDisplayTime({ time: '시간미정' })"), '미정');
     assert.equal(evaluate("calDisplayTime({ time: '19:00' })"), '19:00');
@@ -175,7 +174,7 @@ test('복원한 오늘의 일정과 선택한 날짜 일정은 각각 올바른 
 
 test('휴방·오늘의 일정·연혁 뱃지는 없음 글자 크기로 통일하고 프로필은 작게 표시한다', () => {
     const css = fs.readFileSync(path.join(__dirname, '../templates/assets/style/07-schedule.css'), 'utf8');
-    const chip = css.match(/\.cal-offair-chip,\s*\.hist-chip\s*\{([^}]+)\}/)?.[1];
+    const chip = css.match(/\.hist-chip\s*\{([^}]+)\}/)?.[1];
     const avatars = css.match(/\.hist-chip-ava,\s*\.hist-stack-face\s*\{([^}]+)\}/)?.[1];
     const none = css.match(/\.cal-offair-none\s*\{([^}]+)\}/)?.[1];
     const historyName = css.match(/\.hist-chip-name\s*\{([^}]+)\}/)?.[1];

@@ -165,8 +165,7 @@ const calLoadPublicData = () => {
                 endDate: r.end_date || r.start_date,
                 time: r.event_time || '',
                 person: r.person || '',
-                desc: r.description || '',
-                title: r.title || r.description || (r.event_time === '비방연습' ? '비방연습' : ''),
+                title: r.title || '',
                 detail: r.detail || '',
                 subjectType: r.subject_type || 'other',
                 participants: Array.isArray(r.participants) ? r.participants : [],
@@ -193,9 +192,8 @@ const calLoadPublicData = () => {
     return calLoadState.pending;
 };
 
-// 개인은 자신을 제외하고, 단체와 대회는 등록된 참가자 전원을 센다.
+// 참가자 목록에서 같은 사람(SOOP ID, 없으면 이름)은 한 번만 센다.
 const calParticipants = item => {
-    if (!Array.isArray(item.participants)) return [];
     const seen = new Set();
     return item.participants.filter(p => {
         if (!p || typeof p !== 'object') return false;
@@ -207,8 +205,9 @@ const calParticipants = item => {
         return true;
     });
 };
+const calMembers = () => (typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : []);
 const calMember = (name, soopId) => {
-    const members = typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : [];
+    const members = calMembers();
     const value = String(name || '').trim();
     return (
         (soopId && members.find(m => m['SOOP ID'] === soopId)) ||
@@ -220,6 +219,7 @@ const calName = (name, soopId) => {
     const member = calMember(name, soopId);
     return member ? String(member['이름'] || name).slice(-2) : String(name || '').trim();
 };
+// 주체 옆 인원: 개인은 본인을 뺀 '외 N인', 단체·대회는 참가자 전원 'N인'.
 const calSubjectLabel = item => {
     const participants = calParticipants(item);
     const subject = calName(item.person);
@@ -234,10 +234,10 @@ const calSubjectLabel = item => {
     }
     return `${subject} · ${participants.length}인`;
 };
-const calEventTitle = item => item.title || item.desc || (item.time === '비방연습' ? '비방연습' : item.person);
+const calEventTitle = item => item.title || item.person;
 // 빈 시간도 자리를 유지해 주체·제목의 시작점을 맞춘다.
 const calDisplayTime = item => {
-    const time = item.time === '비방연습' ? '' : String(item.time || '').trim();
+    const time = String(item.time || '').trim();
     return time === '시간미정' ? '미정' : time || '-';
 };
 
@@ -382,16 +382,16 @@ const calSelectDate = dateStr => {
 // 연혁과 같은 뱃지 렌더러를 공유한다. 달력 제목의 멤버 이름만 두 글자로 축약한다.
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
-    const members = typeof SiteData !== 'undefined' && Array.isArray(SiteData.members) ? SiteData.members : [];
     const people = calParticipants(item).map(p => ({
         name: calMember(p.name, p.soop_id)?.['이름'] || String(p.name || p.soop_id || '').trim(),
     }));
+    // 일정 카드는 세 명까지 펼치고, 넷부터 두 명 + '+N명'으로 접는다
     const badges = histChipsHtml(
         people,
-        members,
+        calMembers(),
         typeof getProfileImgUrl === 'function' ? getProfileImgUrl : null,
         'schedule-' + type + '-' + item.id,
-        true
+        3
     );
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">

@@ -68,7 +68,7 @@ async function renderTodaySchedulePreview(box) {
             endDate: r.end_date || r.start_date,
             time: r.event_time || '',
             person: r.person || '',
-            desc: r.description || '',
+            title: r.title || '',
         }));
         const todayEvents = events.filter(
             ev => ev && ev.startDate && today >= ev.startDate && today <= (ev.endDate || ev.startDate)
@@ -81,7 +81,7 @@ async function renderTodaySchedulePreview(box) {
                       .slice(0, 4)
                       .map(
                           ev =>
-                              `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.desc || '-')}</b><span>${escapeHTML(ev.desc || '')}</span></div>`
+                              `<div class="home-preview-row"><span>${escapeHTML(ev.time || '')}</span><b>${escapeHTML(ev.person || ev.title || '-')}</b><span>${escapeHTML(ev.title)}</span></div>`
                       )
                       .join('')
                 : '<div class="home-preview-loading">오늘 등록된 일정이 없습니다</div>') +

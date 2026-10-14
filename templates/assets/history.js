@@ -114,11 +114,16 @@ function histFormatMember(name, note) {
 const HIST_CHIP_VISIBLE = 5;
 const HIST_STACK_FACES = 3;
 
-function histAvatarSrc(entry, members, avatarUrlFn) {
-    const name = typeof entry === 'string' ? entry : (entry && entry.name) || '';
-    const m = (members || []).find(x =>
+// 참가자 → 멤버: SOOP ID가 있으면 그것으로, 없으면 이름으로 찾는다
+function histFindMember(entry, name, members) {
+    return (members || []).find(x =>
         entry?.soop_id ? String(x['SOOP ID']) === String(entry.soop_id) : x['이름'] === name
     );
+}
+
+function histAvatarSrc(entry, members, avatarUrlFn) {
+    const name = typeof entry === 'string' ? entry : (entry && entry.name) || '';
+    const m = histFindMember(entry, name, members);
     return m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
 }
 
@@ -150,9 +155,7 @@ function histToggleMembers(key) {
 function histMemberChipHtml(entry, members, avatarUrlFn) {
     const { name, note } =
         entry && typeof entry === 'object' ? { name: String(entry.name || ''), note: '' } : histParseMember(entry);
-    const m = (members || []).find(x =>
-        entry?.soop_id ? String(x['SOOP ID']) === String(entry.soop_id) : x['이름'] === name
-    );
+    const m = histFindMember(entry, name, members);
     const url = m && avatarUrlFn ? avatarUrlFn(m['SOOP ID']) : '';
     const ava = url
         ? `<img class="hist-chip-ava" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-chip-ava', '👤')}>`
@@ -164,12 +167,11 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
     return `<span class="hist-chip${m ? '' : ' is-unknown'}${offAir ? ' cal-offair-chip' : ''}"${offAir}>${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
 }
 
-// 일정과 연혁은 같은 참가자 뱃지를 사용한다. compact면 세 명까지 펼치고 4명부터 셋째 칸에 접는다.
-function histChipsHtml(entries, members, avatarUrlFn, key, compact = false, visibleLimit = HIST_CHIP_VISIBLE + 1) {
+// 연혁·일정·휴방이 같이 쓰는 사람 칩 줄. visibleLimit명까지는 다 펼치고, 넘으면 마지막 칸을 '+N명'으로 접는다
+// ('+N명' 칸이 이름 칸만큼 자리를 먹어 한 명만 남을 때는 접지 않는다).
+function histChipsHtml(entries, members, avatarUrlFn, key, visibleLimit = HIST_CHIP_VISIBLE + 1) {
     if (!entries.length) return '';
-    const maxVisible = compact ? 3 : visibleLimit;
-    const beforeMore = compact ? 2 : visibleLimit - 1;
-    const shown = entries.length <= maxVisible ? entries : entries.slice(0, beforeMore);
+    const shown = entries.length <= visibleLimit ? entries : entries.slice(0, visibleLimit - 1);
     const rest = entries.slice(shown.length);
     const chip = entry => histMemberChipHtml(entry, members, avatarUrlFn);
     return (

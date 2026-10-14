@@ -78,7 +78,7 @@
         <div class="admin-form-grid">
           ${C().field('시작일', C().input('as_start', start, 'date', 'required'))}
           ${C().field('종료일', C().input('as_end', end, 'date', 'required'))}
-          ${C().field('시간', C().input('as_time', row?.time === '비방연습' ? '' : row?.time || '', 'text', 'placeholder="19:00 또는 미정 (비우면 숨김)"'))}
+          ${C().field('시간', C().input('as_time', row?.time || '', 'text', 'placeholder="19:00 또는 미정 (비우면 숨김)"'))}
           ${C().field('주체', C().input('as_person', row?.person || '', 'text', 'required maxlength="60" placeholder="예: 캄몬, ASL22, 윤환"'))}
         </div>
         ${C().field(
@@ -94,7 +94,7 @@
                 row?.subjectType || 'other'
             )
         )}
-        ${C().field('일정명', C().input('as_title', row?.title || row?.desc || (row?.time === '비방연습' ? '비방연습' : ''), 'text', 'required maxlength="120"'))}
+        ${C().field('일정명', C().input('as_title', row?.title || '', 'text', 'required maxlength="120"'))}
         ${C().field('상세 설명', C().textarea('as_detail', row?.detail || '', 'rows="4"'))}
         <div class="admin-field"><span>참가 멤버</span>${participantRows(row)}</div>
         ${C().field(
@@ -115,15 +115,12 @@
                 if (!C().value('as_person').trim()) throw new Error('주체를 입력하세요');
                 if (!C().value('as_title').trim()) throw new Error('일정명을 입력하세요');
                 const color = document.querySelector('input[name="schedule_color"]:checked')?.value || 'blue';
-                const title = C().value('as_title').trim();
                 const dbRow = {
                     start_date: startDate,
                     end_date: endDate,
                     event_time: C().empty(C().value('as_time')),
                     person: C().value('as_person').trim(),
-                    // 구형 일정 조회 화면에서도 제목이 빠지지 않게 함께 유지한다.
-                    description: title,
-                    title,
+                    title: C().value('as_title').trim(),
                     subject_type: C().value('as_subject_type'),
                     participants: readParticipants(row),
                     detail: C().empty(C().value('as_detail')),
