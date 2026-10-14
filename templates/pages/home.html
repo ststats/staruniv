@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {#- JSON-LD는 실행되는 스크립트가 아니라 데이터라 CSP에 걸리지 않는다. #}
 {% block head_scripts %}
-    <script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "WebSite", "name": "스타대학", "url": canonical_url, "description": description} | tojson }}</script>
+    <script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "WebSite", "name": site_name, "url": canonical_url, "description": description} | tojson }}</script>
 {% endblock %}
 {% block content %}
 {#- .container의 max-width 안에서는 음수 마진으로도 화면 끝에 닿지 않아 히어로를 .container 밖에 둔다. #}
 <section id="page-home" class="page-section active">
+    {#- 검색 결과의 사이트 이름·제목이 "스타대학"으로 잡히도록 페이지 대표 제목은 사이트 이름으로 둔다(보이는 이름은 머리글 로고). #}
+    <h1 class="sr-only">{{ site_name }}</h1>
     {#- 첫 화면 캐러셀. 첫 장 배경은 현역 멤버 얼굴 띠 영상이고, 나머지 장 오른쪽 칸은 page-home.js가 채운다. #}
     <section class="home-carousel" aria-label="스타대학 안내" aria-roledescription="carousel">
         <div class="home-carousel-track" id="home-carousel-track">
@@ -17,7 +19,7 @@
                     </video>
                 </div>
                 <div class="page-header-main" data-label="CALM MONSTARZ">
-                    <h1 class="page-header-title"><span>캄몬</span><i>스타즈</i></h1>
+                    <h2 class="page-header-title"><span>캄몬</span><i>스타즈</i></h2>
                     <p class="page-header-subtitle">캄몬스타즈 멤버들의 현황과 소식을 확인하세요</p>
                 </div>
                 <div class="home-hero-links"><a href="members/">멤버 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
