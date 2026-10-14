@@ -147,7 +147,7 @@ const Api = {
             .map(x => x.split(':'))
             .find(([k]) => k === part)?.[1];
         const url = `data/site_${part}_v2.json${version ? `?v=${encodeURIComponent(version)}` : ''}`;
-        const res = await fetch(url, { cache: version ? 'default' : 'no-cache', signal: AbortSignal.timeout(20000) });
+        const res = await fetch(url, { cache: version ? 'default' : 'no-cache', signal: timeoutSignal(20000) });
         if (!res.ok) throw new Error(`${part}: HTTP ${res.status}`);
         const data = await res.json();
         if (data.schemaVersion !== 2) throw new Error(`${part}: 지원하지 않는 데이터 형식`);
@@ -220,7 +220,7 @@ const Api = {
         const response = await fetch(url, {
             headers: { apikey: cfg.key },
             cache: 'no-store',
-            signal: AbortSignal.timeout(45000),
+            signal: timeoutSignal(45000),
         });
         if (!response.ok) throw new Error('공지를 불러오지 못했습니다');
         return response.json();
