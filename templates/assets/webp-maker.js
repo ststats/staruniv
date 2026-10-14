@@ -145,40 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return set;
     }
 
-    // px 값은 슬라이더 범위를 넘겨 입력할 수 있게 숫자 칸을 붙인다
-    $$('input[type=range][data-unit]').forEach(range => {
-        const num = Object.assign(document.createElement('input'), { type: 'number', min: range.min });
-        const name =
-            range.getAttribute('aria-label') ||
-            (range.labels && range.labels[0] ? range.labels[0].textContent.trim() : '');
-        if (name) num.setAttribute('aria-label', `${name} 값`);
-        range.after(num);
-        if (range.dataset.unit)
-            num.after(
-                Object.assign(document.createElement('span'), { className: 'unit', textContent: range.dataset.unit })
-            );
-        range._num = num;
-        range.addEventListener('input', () => {
-            num.value = range.value;
-        });
-        num.addEventListener('input', e => {
-            if (num.value === '') return;
-            e.stopPropagation();
-            let v = Math.max(+range.min, +num.value);
-            if (range.dataset.unit === 'px') range.max = Math.max(+range.max, v);
-            else v = Math.min(+range.max, v);
-            range.value = v;
-            fireInput(range);
-        });
-        num.addEventListener('blur', () => {
-            num.value = range.value;
-        });
-    });
-    const syncNums = () =>
-        $$('input[type=range][data-unit]').forEach(r => {
-            r._num.value = r.value;
-        });
-
     function stepNumber(input, dir, big) {
         const step = +input.step || 1;
         const decimals = (String(input.step).split('.')[1] || '').length;
@@ -460,14 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function sourceReady() {
         const d = media.duration;
         document.body.classList.toggle('is-still', media.still);
-        $('seek').max = d;
         $('start').value = 0;
-        $('end').value = $('start').max = $('end').max = round2(d);
-        const size = `원본 ${media.width}×${media.height}`;
-        $('srcInfo').textContent = media.still
-            ? `${size} · 사진`
-            : `${size}${media.kind === 'image' ? ` · ${media.frames.length}프레임` : ''} · ${d.toFixed(2)}초`;
-        $('srcBadge').textContent = size;
+        $('end').value = round2(d);
+        $('srcBadge').textContent = `원본 ${media.width}×${media.height}`;
         $('origSize').textContent = `${media.width}×${media.height}`;
         show($('srcBadge'), true);
         show($('drop'), false);
@@ -523,19 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     video.addEventListener('play', () => playUI(true));
     video.addEventListener('pause', () => playUI(false));
-    $('seek').addEventListener('input', e => {
-        media.currentTime = +e.target.value;
-    });
-    $('setStart').addEventListener('click', () => {
-        $('start').value = round2(media.currentTime);
-        updateInfo();
-    });
-    $('setEnd').addEventListener('click', () => {
-        $('end').value = round2(media.currentTime);
-        updateInfo();
-    });
 
-    // ---------- 구간 손잡이: 재생 막대 위에서 시작·끝을 끈다 ----------
+    // ---------- 구간: 장면 띠 위 손잡이로 시작·끝을 끈다 ----------
     function trimUI() {
         const d = media.duration || 1;
         const st = clamp(+$('start').value, 0, d),
@@ -825,7 +775,6 @@ document.addEventListener('DOMContentLoaded', () => {
         show($('timeGroup'), L.timeOn);
         outlineUI();
         setAnchor(L.anchor);
-        syncNums();
         $$('input[type=color]').forEach(i => i._mark());
         syncBound();
         renderFonts();
@@ -1058,7 +1007,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch {}
     }
 
-    // ---------- 드래그한 글자만 색 바꾸기 ----------
+    // ---------- 고른 글자만 색 바꾸기 ----------
     function updateSel() {
         const ta = $('text');
         state.sel = { s: ta.selectionStart, e: ta.selectionEnd };
@@ -1309,7 +1258,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
             } else requestDraw();
         }
-        $('seek').value = media.currentTime;
         $('timeLabel').textContent = `${media.currentTime.toFixed(2)} / ${media.duration.toFixed(2)}초`;
         $('playhead').style.left = `${clamp(media.currentTime / (media.duration || 1), 0, 1) * 100}%`;
         if (state.cropEditing) return drawCropEditor();
