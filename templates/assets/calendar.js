@@ -379,20 +379,16 @@ const calSelectDate = dateStr => {
     calRenderSelectedDateSchedules();
 };
 
-// 연혁과 같은 뱃지 렌더러를 공유한다. 달력 제목의 멤버 이름만 두 글자로 축약한다.
+// 참가자는 휴방과 같은 사람 줄(history.js histPeopleRowHtml)로 그린다. 주체 혼자인 일정은 이름이 겹쳐 뺀다.
 const calEventCardHtml = (item, dateStr, type) => {
     const cardClass = type === 'today' ? 'cal-today-card' : 'cal-selected-card';
     const people = calParticipants(item).map(p => ({
         name: calMember(p.name, p.soop_id)?.['이름'] || String(p.name || p.soop_id || '').trim(),
     }));
-    // 일정 카드는 세 명까지 펼치고, 넷부터 두 명 + '+N명'으로 접는다
-    const badges = histChipsHtml(
-        people,
-        calMembers(),
-        typeof getProfileImgUrl === 'function' ? getProfileImgUrl : null,
-        'schedule-' + type + '-' + item.id,
-        3
-    );
+    const solo = people.length === 1 && calName(people[0].name) === calName(item.person);
+    const badges = solo
+        ? ''
+        : histPeopleRowHtml(people, calMembers(), typeof getProfileImgUrl === 'function' ? getProfileImgUrl : null);
     return `
             <div class="${cardClass}" data-event-id="${escapeHTML(item.id)}">
                 <div class="cal-card-main">
@@ -407,8 +403,8 @@ const calEventCardHtml = (item, dateStr, type) => {
 };
 
 // 멤버 정보를 아는 페이지만 훅을 정의한다
-const calOffAirExtraHtml = (dateStr, type) =>
-    typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr, type) : '';
+const calOffAirExtraHtml = dateStr =>
+    typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr) : '';
 
 const calRenderScheduleList = (containerId, dateStr, type, emptyText) => {
     const container = document.getElementById(containerId);
@@ -426,7 +422,7 @@ const calRenderScheduleList = (containerId, dateStr, type, emptyText) => {
     const eventsHtml = items.length
         ? items.map(item => calEventCardHtml(item, dateStr, type)).join('')
         : `<div class="cal-no-schedule">${emptyText}</div>`;
-    container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr, type);
+    container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr);
 };
 
 const calDayLabel = dateStr => {

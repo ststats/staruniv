@@ -1,23 +1,18 @@
 // 일정 페이지(캘린더 · 연혁 탭). 로드 순서: core.js → api.js → calendar.js → media-lightbox.js → history.js → 이 파일
 
-// calendar.js는 멤버 정보를 모르므로 휴방 멤버 칩은 이 훅이 채운다.
-// 휴방자가 없어도 줄은 남겨 날마다 레이아웃이 같게 한다.
-window.calOffAirExtra = (dateStr, type) => {
+// calendar.js는 멤버 정보를 모르므로 휴방 멤버 줄은 이 훅이 채운다(참가자와 같은 사람 줄).
+// 휴방자가 없어도 줄은 남겨 날마다 레이아웃이 같게 한다. 관리자는 이 줄을 눌러 그날 휴방을 고친다(data-offair-date).
+window.calOffAirExtra = dateStr => {
     const soopIds = calOffAirForDate(dateStr);
-    const chips = soopIds.length
-        ? histChipsHtml(
-              soopIds.map(soopId => ({
-                  name: findMemberBySoopId(soopId)?.['이름'] || soopId,
-                  soop_id: soopId,
-                  offairDate: dateStr,
-              })),
+    const people = soopIds.length
+        ? histPeopleRowHtml(
+              soopIds.map(soopId => ({ name: findMemberBySoopId(soopId)?.['이름'] || soopId, soop_id: soopId })),
               SiteData.members,
-              getProfileImgUrl,
-              `offair-${type}-${dateStr}`,
-              5
+              getProfileImgUrl
           )
         : '<span class="cal-offair-none">없음</span>';
-    return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips">${chips}</div></div>`;
+    const editable = soopIds.length ? ` data-offair-date="${escapeHTML(dateStr)}"` : '';
+    return `<div class="cal-offair-section"><div class="cal-offair-label">휴방</div><div class="cal-offair-chips"${editable}>${people}</div></div>`;
 };
 
 const SCHEDULE_TABS = { calendar: ['tab-calendar', 'view-calendar'], history: ['tab-history', 'view-history'] };

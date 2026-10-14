@@ -161,17 +161,14 @@ function histMemberChipHtml(entry, members, avatarUrlFn) {
         ? `<img class="hist-chip-ava" src="${escapeHTML(url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'hist-chip-ava', '👤')}>`
         : `<span class="hist-chip-ava">👤</span>`;
     const noteHtml = note ? `<span class="hist-chip-role">${escapeHTML(note)}</span>` : '';
-    const offAir = entry?.offairDate
-        ? ` data-offair-date="${escapeHTML(entry.offairDate)}" data-soop-id="${escapeHTML(entry.soop_id)}"`
-        : '';
-    return `<span class="hist-chip${m ? '' : ' is-unknown'}${offAir ? ' cal-offair-chip' : ''}"${offAir}>${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
+    return `<span class="hist-chip${m ? '' : ' is-unknown'}">${ava}<span class="hist-chip-name">${escapeHTML(name)}</span>${noteHtml}</span>`;
 }
 
-// 연혁·일정·휴방이 같이 쓰는 사람 칩 줄. visibleLimit명까지는 다 펼치고, 넘으면 마지막 칸을 '+N명'으로 접는다
+// 연혁 참여자 칩 줄. 여섯 명까지는 다 펼치고, 넘으면 다섯 명 뒤를 '+N명' 칸으로 접는다
 // ('+N명' 칸이 이름 칸만큼 자리를 먹어 한 명만 남을 때는 접지 않는다).
-function histChipsHtml(entries, members, avatarUrlFn, key, visibleLimit = HIST_CHIP_VISIBLE + 1) {
+function histChipsHtml(entries, members, avatarUrlFn, key) {
     if (!entries.length) return '';
-    const shown = entries.length <= visibleLimit ? entries : entries.slice(0, visibleLimit - 1);
+    const shown = entries.length <= HIST_CHIP_VISIBLE + 1 ? entries : entries.slice(0, HIST_CHIP_VISIBLE);
     const rest = entries.slice(shown.length);
     const chip = entry => histMemberChipHtml(entry, members, avatarUrlFn);
     return (
@@ -187,6 +184,42 @@ function histChipsHtml(entries, members, avatarUrlFn, key, visibleLimit = HIST_C
             : '') +
         '</div>'
     );
+}
+
+// 일정·휴방의 사람 줄: 겹친 얼굴(최대 넷) + '가 · 나 외 N명' 한 줄. 셋 이상이면 눌러서 전체 이름을 편다
+// (연혁 칩처럼 한 번 펼치면 접지 않는다).
+const PEOPLE_FACES = 4;
+const PEOPLE_NAMES = 2;
+function histPeopleRowHtml(entries, members, avatarUrlFn) {
+    if (!entries.length) return '';
+    const people = entries.map(entry => {
+        const name = String(entry.name || entry.soop_id || '');
+        return { name, url: histAvatarSrc(entry, members, avatarUrlFn) };
+    });
+    const faces = people
+        .slice(0, PEOPLE_FACES)
+        .map(p =>
+            p.url
+                ? `<img class="people-face" src="${escapeHTML(p.url)}" alt="" loading="lazy"${actOn('error', 'imgSwap', ACT.el, 'people-face', '👤')}>`
+                : '<span class="people-face">👤</span>'
+        )
+        .join('');
+    const extra = people.length - PEOPLE_NAMES;
+    const short =
+        people
+            .slice(0, PEOPLE_NAMES)
+            .map(p => p.name)
+            .join(' · ') + (extra > 0 ? ` 외 ${extra}명` : '');
+    const body = `<span class="people-faces">${faces}</span><span class="people-names">${escapeHTML(short)}</span>`;
+    if (extra <= 0) return `<div class="people-row">${body}</div>`;
+    const all = people.map(p => p.name).join(' · ');
+    return `<button type="button" class="people-row" data-people-all="${escapeHTML(all)}" aria-expanded="false"${act('histShowPeople', ACT.el)}>${body}</button>`;
+}
+
+function histShowPeople(btn) {
+    btn.querySelector('.people-names').textContent = btn.dataset.peopleAll;
+    btn.setAttribute('aria-expanded', 'true');
+    btn.disabled = true;
 }
 
 // 형식 필터. 공개·관리자 페이지가 각자 등록한 histRedraw로 다시 그린다.

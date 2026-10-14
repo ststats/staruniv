@@ -243,7 +243,7 @@
                     if (row) openEvent(row, row.startDate);
                     return;
                 }
-                const off = ev.target.closest('.cal-offair-chip[data-offair-date][data-soop-id]');
+                const off = ev.target.closest('.cal-offair-chips[data-offair-date]');
                 if (off) {
                     ev.preventDefault();
                     ev.stopPropagation();

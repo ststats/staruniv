@@ -117,8 +117,9 @@
         padding: var(--space-5) 0;
         border-top: 1px solid var(--panel-line);
     }
-    /* '휴방'은 바로 위 일정 줄의 시간 칸 자리에 와서 시간 칸과 똑같이 맞춘다 */
+    /* '휴방'은 바로 위 일정 줄의 시간 칸 자리에 와서 시간 칸과 똑같이 맞춘다(같은 글자 크기·굵기의 5ch) */
     .cal-offair-label {
+        width: 5ch;
         display: flex;
         align-items: center;
         flex-shrink: 0;
@@ -135,10 +136,56 @@
         flex: 1;
         min-width: 0;
     }
-    .cal-offair-chips > .hist-chips {
-        margin-top: 0;
+    /* 일정 참가자·휴방 사람 줄(history.js histPeopleRowHtml): 겹친 얼굴 + '가 · 나 외 N명' 한 줄.
+       일정 카드에서는 주체 이름 칸에서 시작한다. ch는 시간 칸과 같은 글자 크기·굵기로 재고, 글자는 안에서 줄인다. */
+    /* 이름이 길어 줄이 바뀌어도 첫 줄이 '휴방'·주체 글자와 같은 높이에 오게 줄 높이를 24px로 맞춘다 */
+    .people-row {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        min-height: 24px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font-size: var(--fs-body);
+        font-weight: 700;
+        text-align: left;
     }
-    /* 휴방·오늘의 일정·연혁에서 공유하는 사람 칩. '없음'과 같은 글자 크기. */
+    button.people-row:not(:disabled) {
+        cursor: pointer;
+    }
+    .cal-today-card > .people-row,
+    .cal-selected-card > .people-row {
+        margin: var(--space-3) 0 0 calc(5ch + var(--space-5));
+    }
+    .people-faces {
+        display: inline-flex;
+        align-items: center;
+        flex: none;
+        height: 24px;
+    }
+    .people-face {
+        width: 22px;
+        height: 22px;
+        object-fit: cover;
+        display: inline-grid;
+        place-items: center;
+        background: var(--color-placeholder-bg);
+        box-shadow: 0 0 0 2px var(--color-card); /* 바탕색 테두리로 겹친 얼굴을 떼어 보인다 */
+        font-size: var(--fs-badge-sm);
+    }
+    .people-face + .people-face {
+        margin-left: -7px;
+    }
+    .people-names {
+        min-width: 0;
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+        font-weight: 500;
+        line-height: 24px;
+    }
+    /* 연혁 참여자 칩. '없음'과 같은 글자 크기. */
     .hist-chip {
         display: inline-flex;
         align-items: center;
