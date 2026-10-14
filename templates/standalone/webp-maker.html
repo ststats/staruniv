@@ -247,6 +247,75 @@
   progress::-moz-progress-bar { background: var(--color-primary); }
   .group { display: flex; flex-direction: column; gap: 8px; }
 
+  /* ===== 설정 탭 · 고르기 버튼 ===== */
+  .seg.tabs { gap: 0; padding: 0; }
+  .seg.tabs button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 52px;
+    background: transparent; color: var(--color-text-faint); clip-path: none; box-shadow: inset 0 -2px 0 var(--color-border); }
+  .seg.tabs button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .seg.tabs button.active { background: transparent; color: var(--select-on-light); box-shadow: inset 0 -3px 0 var(--color-primary); }
+  /* 칸 너비를 똑같이 나눠 옆 칸들과 높이·폭이 맞게 한다 */
+  .seg.full { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-self: stretch; }
+  .seg.full button { min-height: 30px; padding: 0 4px; font-size: 12px; }
+  .line, .stroke-line, .color-chip { position: relative; }
+  .line { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
+  .line .slot, .grid2 .slot, .stroke-line .slot { margin-bottom: 0; }
+  .grid2 .group { gap: 6px; }
+  .fill > .stepper { display: flex; width: 100%; height: 36px; }
+  .grid2 .group, .fill { min-width: 0; }
+  .fill > .stepper input { flex: 1; width: auto; min-width: 0; height: 36px; }
+  .fill > .stepper button { width: 34px; }
+  .stroke-line { display: grid; grid-template-columns: 52px 30px minmax(0, 1fr); align-items: center; gap: 8px; }
+  .stroke-line input[type=color], .line input[type=color] { width: 30px; height: 30px; }
+  .row.wrap { flex-wrap: wrap; row-gap: 6px; }
+  .color-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--color-text-sub); }
+  .text-action.link { color: var(--color-primary); }
+
+  /* 출력 크기: 모양을 보고 고른다 */
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .tiles button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 8px; border: 0; background: var(--color-bg-subtle);
+    color: var(--color-text-main); clip-path: var(--notch-6); cursor: pointer; transition: background-color .15s; }
+  .tiles b { font-size: 12px; }
+  .tiles small { font-size: 10px; color: var(--color-text-sub); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tiles .shape { display: flex; align-items: center; justify-content: center; height: 26px; margin-bottom: 2px; }
+  .tiles .shape::before { content: ""; box-sizing: border-box; border: 2px solid currentColor; opacity: .75; }
+  .tiles .wide::before { width: 32px; height: 18px; }
+  .tiles .sq-s::before { width: 18px; height: 18px; }
+  .tiles .sq::before { width: 25px; height: 25px; }
+  .tiles .free::before { width: 26px; height: 20px; border-style: dashed; }
+  .tiles button.active { background: var(--select-on-light); color: #fff; }
+  .tiles button.active small { color: rgba(255, 255, 255, .72); }
+
+  /* 글꼴: 글꼴 모양 그대로 보여 준다 */
+  .font-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .font-chips button, .font-grid button { flex: none; min-height: 36px; padding: 0 12px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
+    font-size: 16px; line-height: 1.1; white-space: nowrap; clip-path: var(--notch-4); cursor: pointer; }
+  .font-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .font-grid button { padding: 0 6px; overflow: hidden; text-overflow: ellipsis; }
+  .font-grid .group-label { grid-column: 1 / -1; margin-top: 4px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .1em; color: var(--color-text-sub); }
+  .font-chips button.active, .font-grid button.active { background: var(--select-on-light); color: #fff; }
+
+  /* 재생 막대 위의 구간 손잡이 */
+  .timeline { position: relative; display: flex; align-items: center; height: 30px; }
+  .timeline #seek { position: relative; z-index: 1; width: 100%; }
+  #seek::-webkit-slider-runnable-track { background: transparent; }
+  #seek::-moz-range-track { background: transparent; }
+  .trim-track { position: absolute; left: 0; right: 0; height: 4px; background: var(--color-border); }
+  .trim-sel { position: absolute; height: 6px; background: var(--color-primary); }
+  .trim-h { position: absolute; z-index: 2; top: 3px; bottom: 3px; width: 10px; margin-left: -5px; padding: 0; border: 0; background: var(--color-primary);
+    cursor: ew-resize; touch-action: none; }
+  .trim-h::after { content: ""; position: absolute; left: 4px; top: 7px; bottom: 7px; width: 2px; background: #fff; }
+  @media (pointer: coarse) {
+    .timeline { height: 40px; }
+    .trim-h { width: 18px; margin-left: -9px; }
+    .trim-h::after { left: 8px; }
+  }
+
+  /* 만들기 막대: 무엇을 만드는지 요약과 함께 */
+  .convert-bar { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--navy); background-image: var(--navy-pattern); clip-path: var(--notch-8); }
+  .convert-sum { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: var(--navy-on-muted); font-variant-numeric: tabular-nums; }
+  .convert-bar .primary { width: auto; flex: none; padding: 0 18px; background: var(--color-primary); background-image: none; color: #fff; }
+
   /* ===== 좁은 화면 ===== */
   /* 터치 화면에선 누른 뒤에도 hover 색이 남아 고른 것처럼 보여서 마우스 기기에서만 쓴다 */
   @media (hover: hover) {
@@ -298,7 +367,13 @@
       <div class="canvasWrap checker"><canvas id="preview"></canvas></div>
       <div class="controls anim-only">
         <button id="play" aria-label="재생">▶</button>
-        <input type="range" id="seek" class="grow" min="0" max="1" step="0.01" value="0">
+        <div class="timeline grow">
+          <span class="trim-track"></span>
+          <span class="trim-sel" id="trimSel"></span>
+          <input type="range" id="seek" min="0" max="1" step="0.01" value="0" aria-label="재생 위치">
+          <button class="trim-h" id="trimStart" aria-label="구간 시작 (끌어서 옮기기)"></button>
+          <button class="trim-h" id="trimEnd" aria-label="구간 끝 (끌어서 옮기기)"></button>
+        </div>
         <span class="time" id="timeLabel"></span>
       </div>
       <div class="viewer-foot">
@@ -318,7 +393,10 @@
     </div>
 
     <div id="convertCard">
-      <button class="primary" id="convert" disabled><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5M20 5v14"/></svg>WebP로 변환</button>
+      <div class="convert-bar">
+        <span class="convert-sum" id="convertSum"></span>
+        <button class="primary" id="convert" disabled><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5M20 5v14"/></svg>WebP 만들기</button>
+      </div>
       <div id="progWrap" class="group hidden">
         <progress id="prog" max="1" value="0"></progress>
         <div class="row between">
@@ -346,182 +424,159 @@
   <aside>
     <div class="section-title" data-en="Settings"><span class="section-title-label">설정</span></div>
     <div class="seg tabs" id="tabs" role="group" aria-label="설정 화면">
-      <button data-v="output" class="active">출력</button>
-      <button data-v="text">텍스트</button>
-      <button data-v="frame">테두리</button>
+      <button data-v="size" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16"/></svg>크기</button>
+      <button data-v="text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>텍스트</button>
+      <button data-v="frame"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><rect x="7" y="7" width="10" height="10" rx="2"/></svg>테두리</button>
+      <button data-v="save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>저장</button>
     </div>
 
-    <div class="panel is-open" data-panel="output">
-      <div class="panel-head"><span>출력 크기</span><span class="en">SIZE</span></div>
+    <div class="panel is-open" data-panel="size">
       <div class="panel-body">
-        <div class="field">
-          <label class="slot" for="sizeMode">크기</label>
-          <select id="sizeMode">
-            <option value="orig" selected>원본 크기</option>
-            <option value="200">200 × 200</option>
-            <option value="custom">직접 입력</option>
-          </select>
+        <select id="sizeMode" class="hidden" aria-hidden="true" tabindex="-1">
+          <option value="orig" selected>원본 크기</option>
+          <option value="200">200 × 200</option>
+          <option value="400">400 × 400</option>
+          <option value="custom">직접 입력</option>
+        </select>
+        <div class="tiles" data-for="sizeMode" role="group" aria-label="출력 크기">
+          <button data-v="orig"><i class="shape wide"></i><b>원본</b><small id="origSize">그대로</small></button>
+          <button data-v="200"><i class="shape sq-s"></i><b>이모티콘</b><small>200×200</small></button>
+          <button data-v="400"><i class="shape sq"></i><b>정사각</b><small>400×400</small></button>
+          <button data-v="custom"><i class="shape free"></i><b>직접</b><small>가로×세로</small></button>
         </div>
         <div id="customSize" class="group hidden">
-          <label class="slot" for="cw">가로 × 세로 (px)</label>
+          <span class="slot">가로 × 세로 (px)</span>
           <div class="row">
-            <input type="number" id="cw" min="1" max="4096" value="200"> <span class="times">×</span>
-            <input type="number" id="ch" min="1" max="4096" value="200">
+            <input type="number" id="cw" min="1" max="4096" value="200" aria-label="가로"> <span class="times">×</span>
+            <input type="number" id="ch" min="1" max="4096" value="200" aria-label="세로">
           </div>
           <label class="check"><input type="checkbox" id="lockAR"> 원본 비율 유지</label>
         </div>
-        <div id="fitRow" class="group hidden">
-          <label class="slot" for="fit">맞춤 · 여백 색</label>
-          <div class="row">
-            <select id="fit" class="grow">
-              <option value="cover">채우기 (넘치는 부분 잘라냄)</option>
-              <option value="contain">맞추기 (여백 추가)</option>
-              <option value="stretch">늘리기</option>
-            </select>
-            <input type="color" id="bg" value="#000000" title="여백 색">
+        <div id="fitRow" class="line hidden">
+          <span class="slot">맞춤</span>
+          <select id="fit" class="hidden" aria-hidden="true" tabindex="-1">
+            <option value="cover">채우기</option>
+            <option value="contain">맞추기</option>
+            <option value="stretch">늘리기</option>
+          </select>
+          <div class="seg full" data-for="fit" role="group" aria-label="맞춤">
+            <button data-v="cover" title="넘치는 부분을 잘라내요">채우기</button>
+            <button data-v="contain" title="남는 곳을 여백 색으로 채워요">여백 넣기</button>
+            <button data-v="stretch">늘리기</button>
           </div>
+          <input type="color" id="bg" value="#000000" title="여백 색" aria-label="여백 색">
         </div>
         <div class="info" id="sizeInfo"></div>
       </div>
     </div>
 
-    <div class="panel is-open" data-panel="output">
-      <div class="panel-head"><span>구간 · 품질</span><span class="en">RANGE · QUALITY</span></div>
-      <div class="panel-body">
-        <div class="fields">
-          <div class="field anim-only">
-            <label class="slot" for="start">시작 (초)</label>
-            <div class="row"><input type="number" id="start" min="0" step="0.1" value="0"><button class="chip" id="setStart">현재 위치</button></div>
-          </div>
-          <div class="field anim-only">
-            <label class="slot" for="end">끝 (초)</label>
-            <div class="row"><input type="number" id="end" min="0" step="0.1" value="0"><button class="chip" id="setEnd">현재 위치</button></div>
-          </div>
-          <div class="field anim-only">
-            <label class="slot" for="fps">FPS</label>
-            <select id="fps">
-              <option>5</option><option>10</option><option>15</option>
-              <option>20</option><option>24</option><option selected>30</option>
-            </select>
-          </div>
-          <div class="field anim-only">
-            <label class="slot" for="loop">반복</label>
-            <select id="loop">
-              <option value="0" selected>무한 반복</option>
-              <option value="1">1번 재생</option>
-              <option value="2">2번</option>
-              <option value="3">3번</option>
-            </select>
-          </div>
-          <div class="field wide" id="qualityRow">
-            <label class="slot" for="quality">품질</label>
-            <div class="row"><input type="range" id="quality" class="grow" min="10" max="99" value="95" data-unit=""></div>
-          </div>
-        </div>
-        <label class="check"><input type="checkbox" id="lossless"> 무손실 (화질 손실 없음)</label>
-        <div class="info" id="qualityHint"></div>
-        <div class="info" id="frameInfo"></div>
-      </div>
-    </div>
-
     <div class="panel" id="textCard" data-panel="text">
-      <div class="panel-head"><span>텍스트</span><span class="en">TEXT LAYERS</span></div>
       <div class="panel-body">
         <div id="layerTabs"></div>
-        <textarea id="text" placeholder="여기에 텍스트 입력 (줄바꿈 가능)"></textarea>
-        <div class="fields">
-          <div class="field">
-            <label class="slot" for="font">글꼴</label>
-            <select id="font">
-              <optgroup label="콘·이모티콘 인기">
-                <option value="'Cafe24Ssurround', sans-serif" selected>카페24 써라운드</option>
-                <option value="'Maplestory', sans-serif">메이플스토리</option>
-                <option value="'TmonMonsori', sans-serif">티몬 몬소리</option>
-                <option value="'SBAggro', sans-serif">어그로체</option>
-                <option value="'ONE-Mobile-POP', sans-serif">원스토어 모바일 POP</option>
-                <option value="'Jua', sans-serif">배민 주아</option>
-                <option value="'Do Hyeon', sans-serif">배민 도현</option>
-                <option value="'Bagel Fat One', sans-serif">베이글 팻 원 (통통)</option>
-                <option value="'GangwonEduPower', sans-serif">강원교육튼튼</option>
-              </optgroup>
-              <optgroup label="귀여운 손글씨">
-                <option value="'Gaegu', sans-serif">개구</option>
-                <option value="'Dongle', sans-serif">동글</option>
-                <option value="'Gamja Flower', sans-serif">감자꽃</option>
-                <option value="'Hi Melody', sans-serif">하이멜로디</option>
-                <option value="'Cute Font', sans-serif">귀여운체</option>
-                <option value="'Yeon Sung', sans-serif">연성</option>
-                <option value="'Nanum Pen Script', sans-serif">나눔펜</option>
-              </optgroup>
-              <optgroup label="깔끔·임팩트">
-                <option value="'GmarketSans', sans-serif">G마켓 산스</option>
-                <option value="'NexonLv2Gothic', sans-serif">넥슨 Lv2 고딕</option>
-                <option value="'Black Han Sans', sans-serif">검은고딕</option>
-                <option value="'Noto Sans KR', 'Malgun Gothic', sans-serif">노토 산스</option>
-                <option value="'DungGeunMo', monospace">둥근모꼴 (픽셀)</option>
-              </optgroup>
-            </select>
+        <textarea id="text" placeholder="여기에 텍스트 입력 (줄바꿈 가능)" aria-label="텍스트 내용"></textarea>
+
+        <div class="group">
+          <div class="row between">
+            <span class="slot">글꼴</span>
+            <button class="text-action link" id="fontAll" aria-expanded="false"></button>
           </div>
-          <div class="field">
-            <label class="slot" for="weight">굵기</label>
-            <select id="weight">
+          <select id="font" class="hidden" aria-hidden="true" tabindex="-1">
+            <optgroup label="콘·이모티콘 인기">
+              <option value="'Cafe24Ssurround', sans-serif" selected>카페24 써라운드</option>
+              <option value="'Maplestory', sans-serif">메이플스토리</option>
+              <option value="'TmonMonsori', sans-serif">티몬 몬소리</option>
+              <option value="'SBAggro', sans-serif">어그로체</option>
+              <option value="'ONE-Mobile-POP', sans-serif">원스토어 모바일 POP</option>
+              <option value="'Jua', sans-serif">배민 주아</option>
+              <option value="'Do Hyeon', sans-serif">배민 도현</option>
+              <option value="'Bagel Fat One', sans-serif">베이글 팻 원</option>
+              <option value="'GangwonEduPower', sans-serif">강원교육튼튼</option>
+            </optgroup>
+            <optgroup label="귀여운 손글씨">
+              <option value="'Gaegu', sans-serif">개구</option>
+              <option value="'Dongle', sans-serif">동글</option>
+              <option value="'Gamja Flower', sans-serif">감자꽃</option>
+              <option value="'Hi Melody', sans-serif">하이멜로디</option>
+              <option value="'Cute Font', sans-serif">귀여운체</option>
+              <option value="'Yeon Sung', sans-serif">연성</option>
+              <option value="'Nanum Pen Script', sans-serif">나눔펜</option>
+            </optgroup>
+            <optgroup label="깔끔·임팩트">
+              <option value="'GmarketSans', sans-serif">G마켓 산스</option>
+              <option value="'NexonLv2Gothic', sans-serif">넥슨 Lv2 고딕</option>
+              <option value="'Black Han Sans', sans-serif">검은고딕</option>
+              <option value="'Noto Sans KR', 'Malgun Gothic', sans-serif">노토 산스</option>
+              <option value="'DungGeunMo', monospace">둥근모꼴 (픽셀)</option>
+            </optgroup>
+          </select>
+          <div class="font-chips" id="fontChips" role="group" aria-label="최근 쓴 글꼴"></div>
+          <div class="font-grid hidden" id="fontGrid"></div>
+        </div>
+
+        <div class="grid2">
+          <div class="group">
+            <label class="slot" for="fsize">글자 크기 (px)</label>
+            <div class="fill"><input type="number" id="fsize" min="1" value="30"></div>
+          </div>
+          <div class="group">
+            <span class="slot">위치</span>
+            <div class="seg full" id="anchorMode" role="group" aria-label="위치">
+              <button data-v="top">위</button>
+              <button data-v="middle">가운데</button>
+              <button data-v="bottom">아래</button>
+            </div>
+          </div>
+          <div class="group">
+            <span class="slot">굵기</span>
+            <select id="weight" class="hidden" aria-hidden="true" tabindex="-1">
               <option value="400" selected>보통</option>
               <option value="700">굵게</option>
               <option value="900">아주 굵게</option>
             </select>
-          </div>
-          <div class="field wide">
-            <label class="slot" for="fsize">크기</label>
-            <div class="row"><input type="range" id="fsize" class="grow" min="1" max="200" value="30" data-unit="px"></div>
-          </div>
-          <div class="field">
-            <label class="slot" for="color">글자색</label>
-            <div class="row"><input type="color" id="color" value="#ffffff"></div>
-          </div>
-          <div class="field">
-            <label class="slot" for="selColor">드래그한 글자색</label>
-            <div class="row">
-              <input type="color" id="selColor" value="#ff4b4b" title="텍스트에서 드래그한 부분에 적용">
-              <button class="chip" id="selApply">적용</button>
-              <button class="chip" id="selClear">원래대로</button>
+            <div class="seg full" data-for="weight" role="group" aria-label="굵기">
+              <button data-v="400">보통</button>
+              <button data-v="700">굵게</button>
+              <button data-v="900">아주</button>
             </div>
           </div>
+          <div class="group">
+            <label class="slot" for="margin">가장자리 여백 (px)</label>
+            <div class="fill"><input type="number" id="margin" min="0" value="8"></div>
+          </div>
         </div>
-        <span class="info" id="selInfo"></span>
-        <div class="field">
+
+        <div class="group">
+          <span class="slot">색</span>
+          <div class="row wrap">
+            <label class="color-chip"><input type="color" id="color" value="#ffffff"> 글자</label>
+            <span class="color-chip">
+              <input type="color" id="selColor" value="#ff4b4b" title="텍스트에서 드래그한 부분에 적용" aria-label="드래그한 글자 색">
+              <button class="chip" id="selApply">드래그한 글자에 적용</button>
+              <button class="chip" id="selClear">원래대로</button>
+            </span>
+          </div>
+          <span class="info" id="selInfo"></span>
+        </div>
+
+        <div class="group">
           <span class="slot">외곽선</span>
-          <div class="seg" id="outlineMode" role="group" aria-label="외곽선">
+          <div class="seg full" id="outlineMode" role="group" aria-label="외곽선">
             <button data-v="none">없음</button>
             <button data-v="single">외곽선</button>
             <button data-v="double">이중 외곽선</button>
           </div>
-        </div>
-        <div class="field" id="strokeRow">
-          <label class="slot" id="strokeLabel" for="strokeColor"></label>
-          <div class="row">
+          <div class="stroke-line" id="strokeRow">
+            <label class="slot" id="strokeLabel" for="strokeColor"></label>
             <input type="color" id="strokeColor" value="#000000">
-            <input type="range" id="strokeW" class="grow" min="1" max="30" value="3" data-unit="px" aria-label="외곽선 두께">
+            <div class="fill"><input type="number" id="strokeW" min="1" value="3" aria-label="외곽선 두께 (px)"></div>
           </div>
-        </div>
-        <div class="field" id="outerRow">
-          <label class="slot" for="outerColor">바깥 외곽선</label>
-          <div class="row">
+          <div class="stroke-line" id="outerRow">
+            <label class="slot" for="outerColor">바깥</label>
             <input type="color" id="outerColor" value="#ffffff">
-            <input type="range" id="outerW" class="grow" min="1" max="30" value="3" data-unit="px">
+            <div class="fill"><input type="number" id="outerW" min="1" value="3" aria-label="바깥 외곽선 두께 (px)"></div>
           </div>
         </div>
-        <div class="field">
-          <span class="slot">위치</span>
-          <div class="seg" id="anchorMode" role="group" aria-label="위치">
-            <button data-v="top">위</button>
-            <button data-v="middle">가운데</button>
-            <button data-v="bottom">아래</button>
-          </div>
-        </div>
-        <div class="field">
-          <label class="slot" for="margin">정렬 여백</label>
-          <div class="row"><input type="range" id="margin" class="grow" min="0" max="60" value="8" data-unit="px"></div>
-        </div>
+
         <label class="check anim-only"><input type="checkbox" id="timeOn"> 특정 시간에만 보이기</label>
         <div id="timeGroup" class="fields anim-only hidden">
           <div class="field">
@@ -537,28 +592,24 @@
     </div>
 
     <div class="panel" data-panel="frame">
-      <div class="panel-head"><span>테두리</span><span class="en">FRAME</span></div>
       <div class="panel-body">
-        <div class="field">
-          <span class="slot">모양</span>
-          <div class="seg" id="frameMode" role="group" aria-label="모양">
-            <button data-v="none" class="active">없음</button>
-            <button data-v="single">테두리</button>
-            <button data-v="double">이중 테두리</button>
-          </div>
+        <div class="seg full" id="frameMode" role="group" aria-label="테두리 모양">
+          <button data-v="none" class="active">없음</button>
+          <button data-v="single">테두리</button>
+          <button data-v="double">이중 테두리</button>
         </div>
         <div class="field hidden" id="frameRow">
-          <label class="slot" id="frameLabel"></label>
+          <label class="slot" id="frameLabel" for="frameColor"></label>
           <div class="row">
             <input type="color" id="frameColor" value="#ffffff">
-            <input type="range" id="frameW" class="grow" min="1" max="60" value="2" data-unit="px">
+            <input type="range" id="frameW" class="grow" min="1" max="60" value="2" data-unit="px" aria-label="테두리 두께">
           </div>
         </div>
         <div class="field hidden" id="frameOuterRow">
           <label class="slot" for="frameOuterColor">바깥 테두리</label>
           <div class="row">
             <input type="color" id="frameOuterColor" value="#000000">
-            <input type="range" id="frameOuterW" class="grow" min="1" max="60" value="2" data-unit="px">
+            <input type="range" id="frameOuterW" class="grow" min="1" max="60" value="2" data-unit="px" aria-label="바깥 테두리 두께">
           </div>
         </div>
         <div class="field">
@@ -568,7 +619,50 @@
             <input type="range" id="radius" class="grow" min="1" max="100" value="10" data-unit="px" aria-label="모서리 둥글기">
           </div>
         </div>
-        <div class="info">둥근 모서리 바깥은 투명하게 처리돼요</div>
+        <div class="info">둥근 모서리 바깥은 투명하게 저장돼요</div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="save">
+      <div class="panel-body">
+        <div class="field" id="qualityRow">
+          <label class="slot" for="quality">품질</label>
+          <div class="row"><input type="range" id="quality" class="grow" min="10" max="99" value="95" data-unit=""></div>
+        </div>
+        <label class="check"><input type="checkbox" id="lossless"> 무손실 (화질 손실 없음)</label>
+        <div class="info" id="qualityHint"></div>
+        <div class="line anim-only">
+          <span class="slot">FPS</span>
+          <select id="fps" class="hidden" aria-hidden="true" tabindex="-1">
+            <option>10</option><option>15</option><option>24</option><option selected>30</option><option>60</option>
+          </select>
+          <div class="seg full" data-for="fps" role="group" aria-label="FPS">
+            <button data-v="10">10</button><button data-v="15">15</button><button data-v="24">24</button><button data-v="30">30</button><button data-v="60">60</button>
+          </div>
+        </div>
+        <div class="line anim-only">
+          <span class="slot">반복</span>
+          <select id="loop" class="hidden" aria-hidden="true" tabindex="-1">
+            <option value="0" selected>무한 반복</option>
+            <option value="1">1번 재생</option>
+            <option value="2">2번</option>
+            <option value="3">3번</option>
+          </select>
+          <div class="seg full" data-for="loop" role="group" aria-label="반복">
+            <button data-v="0">무한</button><button data-v="1">1번</button><button data-v="2">2번</button><button data-v="3">3번</button>
+          </div>
+        </div>
+        <div class="fields anim-only">
+          <div class="field">
+            <label class="slot" for="start">시작 (초)</label>
+            <div class="row"><input type="number" id="start" min="0" step="0.1" value="0"><button class="chip" id="setStart">현재 위치</button></div>
+          </div>
+          <div class="field">
+            <label class="slot" for="end">끝 (초)</label>
+            <div class="row"><input type="number" id="end" min="0" step="0.1" value="0"><button class="chip" id="setEnd">현재 위치</button></div>
+          </div>
+        </div>
+        <div class="info" id="frameInfo"></div>
       </div>
     </div>
   </aside>

@@ -265,7 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             pop.append(custom);
         }
-        input.closest('.row').append(pop);
+        // 색 칸이 든 줄 아래에 팝업을 띄운다(줄은 position: relative)
+        input.closest('.row, .line, .stroke-line, .color-chip').append(pop);
         input.addEventListener('click', e => {
             e.preventDefault();
             const open = !pop.classList.contains('is-open');
@@ -283,6 +284,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     segmented('tabs', v => $$('[data-panel]').forEach(p => p.classList.toggle('is-open', p.dataset.panel === v)));
+
+    // 숨긴 <select>를 버튼 묶음으로 고른다. 값과 이벤트는 select 그대로라 나머지 코드는 select만 본다.
+    const boundMarks = [];
+    $$('[data-for]').forEach(group => {
+        const sel = $(group.dataset.for);
+        const buttons = [...group.querySelectorAll('button[data-v]')];
+        const mark = () =>
+            buttons.forEach(b => {
+                const on = b.dataset.v === sel.value;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', String(on));
+            });
+        buttons.forEach(b =>
+            b.addEventListener('click', () => {
+                if (sel.value === b.dataset.v) return;
+                sel.value = b.dataset.v;
+                fireInput(sel);
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+            })
+        );
+        ['input', 'change'].forEach(t => sel.addEventListener(t, mark));
+        boundMarks.push(mark);
+        mark();
+    });
+    const syncBound = () => boundMarks.forEach(mark => mark());
 
     // ---------- 파일 불러오기 ----------
     $('drop').addEventListener('click', () => $('file').click());
@@ -427,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `${size} · 사진`
             : `${size}${media.kind === 'image' ? ` · ${media.frames.length}프레임` : ''} · ${d.toFixed(2)}초`;
         $('srcBadge').textContent = size;
+        $('origSize').textContent = `${media.width}×${media.height}`;
         show($('srcBadge'), true);
         show($('drop'), false);
         show($('editor'), true);
@@ -490,6 +517,52 @@ document.addEventListener('DOMContentLoaded', () => {
         updateInfo();
     });
 
+    // ---------- 구간 손잡이: 재생 막대 위에서 시작·끝을 끈다 ----------
+    function trimUI() {
+        const d = media.duration || 1;
+        const s = clamp(+$('start').value / d, 0, 1) * 100;
+        const e = clamp(+$('end').value / d, 0, 1) * 100;
+        $('trimSel').style.left = `${s}%`;
+        $('trimSel').style.width = `${Math.max(0, e - s)}%`;
+        $('trimStart').style.left = `${s}%`;
+        $('trimEnd').style.left = `${e}%`;
+    }
+    [
+        ['trimStart', 'start'],
+        ['trimEnd', 'end'],
+    ].forEach(([handle, field]) => {
+        const el = $(handle);
+        // 시작과 끝이 겹치지 않게 0.1초는 띄운다
+        const set = t => {
+            const d = media.duration;
+            t = field === 'start' ? Math.min(t, +$('end').value - 0.1) : Math.max(t, +$('start').value + 0.1);
+            $(field).value = round2(clamp(t, 0, d));
+            media.currentTime = +$(field).value;
+            fireInput($(field));
+        };
+        const move = e => {
+            const r = el.parentElement.getBoundingClientRect();
+            set(((e.clientX - r.left) / r.width) * media.duration);
+        };
+        el.addEventListener('pointerdown', e => {
+            if (!state.loaded || state.converting) return;
+            e.preventDefault();
+            media.pause();
+            el.setPointerCapture(e.pointerId);
+            el.addEventListener('pointermove', move);
+        });
+        ['pointerup', 'pointercancel'].forEach(t =>
+            el.addEventListener(t, () => el.removeEventListener('pointermove', move))
+        );
+        // 키보드: 좌우 화살표로 0.1초씩
+        el.addEventListener('keydown', e => {
+            const dir = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+            if (!dir || !state.loaded) return;
+            e.preventDefault();
+            set(+$(field).value + dir * 0.1);
+        });
+    });
+
     // ---------- 출력 설정 ----------
     function outSize() {
         const mode = $('sizeMode').value;
@@ -544,7 +617,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!state.loaded) return;
         const { w, h } = outSize();
         $('sizeInfo').textContent = `출력: ${w} × ${h} px`;
+        trimUI();
         if (media.still) {
+            $('convertSum').textContent = `${w}×${h} · 사진 한 장`;
             $('frameInfo').innerHTML =
                 '사진 한 장이라 움직이지 않는 WebP로 저장해요' +
                 (state.firstOnly
@@ -554,6 +629,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const dur = +$('end').value - +$('start').value;
         const n = Math.max(1, Math.floor(dur * +$('fps').value));
+        $('convertSum').textContent =
+            dur > 0 ? `${w}×${h} · ${dur.toFixed(1)}초 · ${$('fps').value}fps · 약 ${n}프레임` : `${w}×${h}`;
         $('frameInfo').innerHTML =
             dur <= 0
                 ? '<span class="err">끝 시간이 시작 시간보다 커야 해요</span>'
@@ -631,6 +708,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setAnchor(L.anchor);
         syncNums();
         $$('input[type=color]').forEach(i => i._mark());
+        syncBound();
+        renderFonts();
         updateSel();
         renderLayerTabs();
         ensureFont();
@@ -673,6 +752,62 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     );
 
+    // ---------- 글꼴 고르기 ----------
+    // 최근 쓴 글꼴 몇 개는 바로 보이고, 전체는 펼쳐서 글꼴 모양 그대로 고른다
+    const fontOptions = [...$('font').options];
+    const RECENT_KEY = 'webp-recent-fonts';
+    let recentFonts = [];
+    try {
+        recentFonts = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]').filter(v =>
+            fontOptions.some(o => o.value === v)
+        );
+    } catch {}
+    const fontButton = o => {
+        const b = Object.assign(document.createElement('button'), { type: 'button', textContent: o.textContent });
+        b.style.fontFamily = o.value;
+        b.dataset.v = o.value;
+        b.addEventListener('click', () => pickFont(o.value));
+        return b;
+    };
+    function pickFont(v) {
+        recentFonts = [v, ...recentFonts.filter(f => f !== v)].slice(0, 8);
+        try {
+            localStorage.setItem(RECENT_KEY, JSON.stringify(recentFonts));
+        } catch {}
+        if ($('font').value !== v) {
+            $('font').value = v;
+            fireInput($('font'));
+        }
+        renderFonts();
+    }
+    function renderFonts() {
+        const v = $('font').value;
+        const order = [v, ...recentFonts, ...fontOptions.map(o => o.value)];
+        const chips = [...new Set(order)].slice(0, 5).map(f => fontOptions.find(o => o.value === f));
+        $('fontChips').replaceChildren(...chips.map(fontButton));
+        $$('#fontChips button, #fontGrid button').forEach(b => {
+            b.classList.toggle('active', b.dataset.v === v);
+            b.setAttribute('aria-pressed', String(b.dataset.v === v));
+        });
+    }
+    $('fontGrid').append(
+        ...[...$('font').querySelectorAll('optgroup')].flatMap(g => [
+            Object.assign(document.createElement('span'), { className: 'group-label', textContent: g.label }),
+            ...[...g.querySelectorAll('option')].map(fontButton),
+        ])
+    );
+    const fontAllUI = () => {
+        const open = !$('fontGrid').classList.contains('hidden');
+        $('fontAll').textContent = open ? '접기' : `전체 ${fontOptions.length}개 보기`;
+        $('fontAll').setAttribute('aria-expanded', String(open));
+    };
+    $('fontAll').addEventListener('click', () => {
+        $('fontGrid').classList.toggle('hidden');
+        fontAllUI();
+        renderFonts();
+    });
+    fontAllUI();
+
     const setAnchor = segmented('anchorMode', v => {
         layer().anchor = v;
     });
@@ -685,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setOutline(m);
         show($('strokeRow'), m !== 'none');
         show($('outerRow'), m === 'double');
-        $('strokeLabel').textContent = m === 'double' ? '안쪽 외곽선' : '외곽선 색';
+        $('strokeLabel').textContent = m === 'double' ? '안쪽' : '색 · 두께';
     }
 
     $('timeOn').addEventListener('change', () => {
