@@ -390,7 +390,8 @@
   .tiles button.active small { color: rgba(255, 255, 255, .72); }
 
   /* 글꼴 */
-  .font-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  /* 한 줄에 들어가는 만큼만 보인다: 넘치는 글꼴은 다음 줄로 넘어가 가려진다(스크롤 없음) */
+  .font-chips { display: flex; flex-wrap: wrap; gap: 6px; height: 30px; overflow: hidden; }
   .font-chips button, .font-grid button { flex: none; min-height: 38px; padding: 0 12px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
     font-size: 16px; line-height: 1.1; white-space: nowrap; clip-path: var(--notch-4); cursor: pointer; }
   .font-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
