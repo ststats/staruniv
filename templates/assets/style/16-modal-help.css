@@ -1,0 +1,546 @@
+/* =============================================================================
+   16. 모달 · 도움말 · 사진/영상 팝업
+   ============================================================================= */
+@layer components {
+    /* ----- 모달 틀(core.js가 .is-open을 붙여 연다. 이름은 Bootstrap 모달과 같다) ----- */
+    .modal {
+        --modal-margin: 0.5rem;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1055;
+        display: none;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        outline: 0;
+    }
+    .modal-dialog {
+        position: relative;
+        width: auto;
+        margin: var(--modal-margin);
+        pointer-events: none;
+    }
+    .modal.fade .modal-dialog {
+        transition: transform 0.3s ease-out;
+        transform: translate(0, -50px);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .modal.fade .modal-dialog {
+            transition: none;
+        }
+    }
+    .modal.is-open .modal-dialog {
+        transform: none;
+    }
+    .modal-dialog-scrollable {
+        height: calc(100% - var(--modal-margin) * 2);
+    }
+    .modal-dialog-scrollable .modal-content {
+        max-height: 100%;
+    }
+    .modal-dialog-scrollable .modal-body {
+        overflow-y: auto;
+    }
+    .modal-dialog-centered {
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - var(--modal-margin) * 2);
+    }
+    .modal-dialog.modal-w-550 {
+        max-width: 550px;
+    }
+    .modal-content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        overflow: hidden;
+        pointer-events: auto;
+        background-color: var(--color-card);
+        background-clip: padding-box;
+        outline: 0;
+        clip-path: var(--notch-12);
+    }
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1050;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+    }
+    .modal-backdrop.fade {
+        opacity: 0;
+    }
+    .modal-backdrop.is-open {
+        opacity: 0.5;
+    }
+    .modal-header {
+        position: relative;
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        padding: var(--space-5) 56px;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-card);
+    }
+    .modal-title {
+        margin: 0;
+        line-height: 27px;
+        overflow-wrap: anywhere;
+        font-size: var(--fs-heading);
+        font-weight: 800;
+        text-align: center;
+        width: 100%;
+        color: var(--color-text-strong);
+    }
+    .modal-body {
+        position: relative;
+        flex: 1 1 auto;
+        padding: 1rem;
+        background: var(--color-card);
+    }
+    @media (min-width: 576px) {
+        .modal {
+            --modal-margin: 1.75rem;
+        }
+        .modal-dialog {
+            margin-right: auto;
+            margin-left: auto;
+        }
+    }
+
+    /* 닫기 X: 기본은 모달 머리 오른쪽 가운데, 프로필 모달은 오른쪽 위 */
+    .btn-close {
+        box-sizing: border-box;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 0;
+        background: transparent
+            url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e")
+            center / 12px auto no-repeat;
+        opacity: 0.5;
+    }
+    .btn-close:hover {
+        opacity: 0.75;
+    }
+    .btn-close:focus {
+        outline: 0;
+        opacity: 1;
+    }
+    .btn-close-white,
+    html[data-theme='dark'] .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+    .modal-header .btn-close {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* 좁은 화면에서는 모달을 세로 가운데에 놓는다(.modal-dialog-centered 방식이라 스크롤 모달과 같이 써도 된다). */
+    @media (max-width: 767.98px) {
+        .modal-dialog {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+        }
+    }
+
+    /* ----- 멤버 프로필 모달 ----- */
+    .profile-dialog {
+        max-width: 440px;
+    }
+    .profile-modal-hero {
+        position: relative;
+        padding: var(--space-8) var(--space-9) var(--space-9);
+        background: var(--navy);
+        background-image: var(--navy-pattern);
+        color: var(--navy-on-text);
+    }
+    .profile-modal-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+    }
+    /* 터치 화면에서는 프로필 모달 닫기만 44px(누를 자리 권장 크기) */
+    @media (pointer: coarse) {
+        .profile-modal-close {
+            width: 44px;
+            height: 44px;
+        }
+    }
+    .profile-modal-identity {
+        display: flex;
+        align-items: center;
+        gap: var(--space-7);
+    }
+    /* 높이를 오른쪽 글자 덩어리(약 64px)에 맞춘다. 여기까지는 키워도 모달이 길어지지 않는다. */
+    .profile-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 64px;
+        height: 64px;
+        overflow: hidden;
+        background: var(--color-bg-subtle);
+        font-size: var(--fs-hero);
+    }
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .profile-modal-identity-text {
+        min-width: 0;
+        padding-right: 34px;
+    }
+    .profile-modal-name {
+        margin: 0 0 var(--space-5);
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        overflow-wrap: anywhere;
+    }
+    .profile-dialog .profile-modal-body {
+        padding: var(--space-8) var(--space-9) var(--space-9);
+    }
+    .profile-modal-facts {
+        display: grid;
+        grid-template-columns: 0.8fr 1.4fr 0.8fr;
+        gap: var(--space-compact-gap);
+        margin: 0;
+        padding-bottom: var(--space-7);
+        border-bottom: 1px solid var(--color-border);
+    }
+    .profile-modal-facts > div {
+        min-width: 0;
+    }
+    .profile-modal-facts dt,
+    .profile-modal-label {
+        margin-bottom: var(--space-1);
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+        font-weight: 500;
+    }
+    .profile-modal-facts dd {
+        margin: 0;
+        font-size: var(--fs-body);
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+    /* 위 기본 정보(dd)와 같은 3칸으로 나눠 입단일이 생년월일과 같은 자리에서 시작한다. */
+    .profile-modal-period {
+        display: grid;
+        grid-template-columns: 0.8fr 1.4fr 0.8fr;
+        gap: var(--space-compact-gap);
+        padding: var(--space-6) 0 var(--space-8);
+        font-size: var(--fs-body);
+        font-weight: 700;
+    }
+    .profile-modal-period > div {
+        min-width: 0;
+    }
+    .profile-modal-period-main {
+        grid-column: 2 / -1;
+    }
+    /* 라벨 줄보다 작게 유지해 옆 칸 날짜 정렬을 밀지 않는다. */
+    .profile-modal-period-label {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    .profile-modal-days {
+        --badge-h: 16px;
+        --badge-fs: var(--fs-micro);
+        background: var(--navy);
+        color: var(--navy-on-text);
+    }
+    .profile-modal-status {
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+        margin-bottom: var(--space-3);
+    }
+    .profile-modal-status:empty {
+        display: none;
+    }
+    .profile-modal-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-inline-gap);
+    }
+    .profile-modal-metric {
+        padding: var(--space-6);
+        background: var(--color-bg-subtle);
+        clip-path: var(--notch-10);
+    }
+    .profile-modal-value {
+        font-size: var(--fs-body);
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+    .profile-modal-shortcuts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-inline-gap);
+        margin-top: var(--space-3);
+    }
+    /* 바로가기는 위 지표 상자와 같은 짜임이어야 라벨 시작점이 같은 세로줄에 선다. */
+    .profile-modal-link {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-inline-gap);
+        min-height: 46px;
+        padding: var(--space-5) var(--space-6);
+        background: var(--color-bg-subtle);
+        color: var(--color-text-main);
+        clip-path: var(--notch-7);
+        font-size: var(--fs-body);
+        font-weight: 700;
+    }
+    .profile-modal-link-label {
+        min-width: 0;
+    }
+    .profile-modal-link:hover {
+        color: var(--color-text-strong);
+        background: var(--color-subtle-hover);
+    }
+    /* 방송국·유튜브는 사이트 밖으로 나가는 링크라 안쪽 바로가기와 줄을 나눈다 */
+    .profile-modal-station {
+        background: var(--navy);
+        background-image: var(--navy-pattern);
+        color: var(--navy-on-text);
+    }
+    /* 브랜드 색을 두고 호버 때 한 단계만 바뀐다 */
+    .profile-modal-station:hover {
+        background: var(--navy-hover);
+        background-image: var(--navy-pattern);
+        color: var(--navy-on-text);
+    }
+    .profile-modal-youtube {
+        background: var(--color-youtube);
+        color: #fff;
+    }
+    .profile-modal-youtube:hover {
+        background: var(--color-youtube-hover);
+        color: #fff;
+    }
+    @media (max-width: 389.98px) {
+        .profile-modal-hero {
+            padding: var(--space-7) var(--space-7) var(--space-8);
+        }
+        .profile-dialog .profile-modal-body {
+            padding: var(--space-8) var(--space-7);
+        }
+        .profile-modal-identity {
+            gap: var(--space-card-gap);
+        }
+        .profile-avatar {
+            width: 58px;
+            height: 58px;
+        }
+        .profile-modal-metric {
+            padding: var(--space-5);
+        }
+    }
+
+    /* ----- 물음표 도움말. 좁은 화면에서 화면 밖으로 나가지 않게 폭을 제한한다 ----- */
+    .help-pop {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        flex: none;
+    }
+    .help-btn {
+        display: grid;
+        place-items: center;
+        width: 17px;
+        height: 17px;
+        padding: 0;
+        margin-left: var(--space-1);
+        border: 0;
+        clip-path: var(--notch-4);
+        background: transparent;
+        color: var(--color-text-faint);
+    }
+    .help-btn:hover,
+    .help-btn[aria-expanded='true'] {
+        color: var(--color-text-strong);
+    }
+    /* 사이트의 다른 아이콘(.i-arrow)과 같은 마스크 방식으로 ⓘ를 만든다. */
+    .i-info {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        font-size: 0;
+        background-color: currentColor;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='5.1' fill='none' stroke='%23000' stroke-width='1.3'/%3E%3Ccircle cx='6' cy='3.5' r='0.8' fill='%23000'/%3E%3Cpath d='M6 5.4v3.4' stroke='%23000' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='5.1' fill='none' stroke='%23000' stroke-width='1.3'/%3E%3Ccircle cx='6' cy='3.5' r='0.8' fill='%23000'/%3E%3Cpath d='M6 5.4v3.4' stroke='%23000' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+    }
+
+    /* 상자는 카드의 clip-path에 잘리지 않게 <body>에 띄운다. 위치는 core.js가 잡는다. */
+    .help-body {
+        position: fixed;
+        z-index: 1200;
+        width: max-content;
+        max-width: min(320px, calc(100vw - 16px));
+        padding: 0;
+        overflow: hidden;
+        clip-path: var(--notch-8);
+        background: var(--color-card);
+        color: var(--color-text-main);
+        text-align: left;
+    }
+    .help-head {
+        padding: var(--space-2) var(--space-5) var(--space-2);
+        background: var(--navy);
+        color: var(--navy-on-text);
+        font-size: var(--fs-eyebrow);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+    .help-lead {
+        margin: 0;
+        padding: var(--space-4) var(--space-5) 0;
+        font-size: var(--fs-meta);
+        font-weight: 600;
+        line-height: 1.55;
+        color: var(--color-text-main);
+    }
+    .help-rows {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: var(--space-1) var(--space-4);
+        margin: 0;
+        padding: var(--space-3) var(--space-5) 0;
+        font-size: var(--fs-meta);
+        line-height: 1.5;
+    }
+    .help-rows dt {
+        color: var(--color-text-faint);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .help-rows dd {
+        margin: 0;
+        color: var(--color-text-main);
+        font-weight: 600;
+    }
+    .help-note {
+        margin: var(--space-3) 0 0;
+        padding: var(--space-3) var(--space-5) var(--space-4);
+        border-top: 1px solid var(--color-border);
+        font-size: var(--fs-badge-sm);
+        font-weight: 500;
+        line-height: 1.55;
+        color: var(--color-text-faint);
+    }
+    .help-lead:last-child,
+    .help-rows:last-child {
+        padding-bottom: var(--space-4);
+    }
+    .player-summary .help-btn {
+        color: var(--navy-on-muted);
+    }
+    .player-summary .help-btn:hover,
+    .player-summary .help-btn[aria-expanded='true'] {
+        color: #fff;
+    }
+
+    /* ----- 사진 크게 보기 · 유튜브 재생 팝업(media-lightbox.js) ----- */
+    body.media-lightbox-open {
+        overflow: hidden;
+    }
+    .media-lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: grid;
+        place-items: center;
+        padding: var(--space-9);
+        background: rgba(5, 8, 14, 0.82);
+    }
+    .media-lightbox-inner {
+        width: min(960px, 100%);
+        background: var(--color-video-bg);
+        clip-path: var(--notch-12);
+    }
+    /* 쇼츠: 세로 9:16. 화면 높이에 맞춰 폭을 정한다 */
+    .media-lightbox.is-vertical .media-lightbox-inner {
+        width: min(420px, 100%, calc((100vh - 100px) * 9 / 16));
+    }
+    .media-lightbox-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-compact-gap);
+        padding: var(--space-4) var(--space-5) var(--space-4) var(--space-7);
+        font-size: var(--fs-body);
+        font-weight: 700;
+        color: #fff;
+    }
+    .media-lightbox-caption {
+        flex: 1;
+        min-width: 0;
+    }
+    .media-lightbox-yt {
+        flex: none;
+        font-size: var(--fs-small);
+        font-weight: 600;
+        color: #a9b4c6;
+    }
+    .media-lightbox-yt:hover {
+        color: #fff;
+    }
+    .media-lightbox-close {
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        clip-path: var(--notch-5);
+    }
+    .media-lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .media-lightbox-video {
+        aspect-ratio: 16 / 9;
+    }
+    .media-lightbox.is-vertical .media-lightbox-video {
+        aspect-ratio: 9 / 16;
+    }
+    .media-lightbox-video iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+    .media-lightbox-img {
+        display: block;
+        width: 100%;
+        max-height: calc(100vh - 120px);
+        object-fit: contain;
+        background: #000;
+    }
+    @media (max-width: 767.98px) {
+        .media-lightbox {
+            padding: var(--space-5);
+        }
+        .media-lightbox-yt {
+            display: none;
+        }
+    }
+}

@@ -1,0 +1,84 @@
+/* =============================================================================
+   19. 한 가지 일만 하는 클래스
+   ============================================================================= */
+/* HTML·JS가 바로 붙여 쓰는 클래스(이름은 Bootstrap 유틸과 같다). utilities 계층이 맨 뒤라 !important 없이 이긴다.
+   관리자 전용은 admin.css 끝의 utilities 블록. */
+@layer utilities {
+    [hidden] {
+        display: none;
+    }
+    .d-none {
+        display: none;
+    }
+    .d-flex {
+        display: flex;
+    }
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+    .justify-content-center {
+        justify-content: center;
+    }
+    .align-items-center {
+        align-items: center;
+    }
+    .overflow-hidden {
+        overflow: hidden;
+    }
+    .grid-span-all {
+        grid-column: 1 / -1;
+    }
+    .mt-4 {
+        margin-top: 1.5rem;
+    }
+    .mb-0 {
+        margin-bottom: 0;
+    }
+    .mb-block {
+        margin-bottom: var(--space-block-gap);
+    }
+    .p-0 {
+        padding: 0;
+    }
+    .p-3 {
+        padding: 1rem;
+    }
+    .py-2 {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    .py-3 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    .py-4 {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .gap-2 {
+        gap: 0.5rem;
+    }
+    .fw-bold {
+        font-weight: 700;
+    }
+    .fs-body {
+        font-size: var(--fs-body);
+    }
+    .text-center {
+        text-align: center;
+    }
+    .text-nowrap {
+        white-space: nowrap;
+    }
+    .text-muted {
+        color: var(--color-text-muted);
+    }
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
