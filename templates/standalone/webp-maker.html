@@ -143,6 +143,16 @@
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; margin-top: -6px; border: 0; background: var(--select-on-light); clip-path: var(--notch-2); }
   input[type=range]::-moz-range-thumb { width: 12px; height: 16px; border: 0; border-radius: 0; background: var(--select-on-light); }
   input[type=range]:hover::-webkit-slider-thumb { filter: brightness(1.25); }
+  /* 설정 바는 손잡이를 잡아야만 움직인다. 트랙을 잘못 눌러 값이 튀지 않고, 터치로 쓸어도 페이지가 스크롤된다.
+     정확한 값은 옆 숫자 칸으로 넣는다. 재생 위치(#seek)는 누른 곳으로 바로 가야 해서 그대로 둔다. */
+  input[type=range]:not(#seek) { pointer-events: none; }
+  input[type=range]:not(#seek)::-webkit-slider-thumb { pointer-events: auto; cursor: grab; }
+  input[type=range]:not(#seek)::-moz-range-thumb { pointer-events: auto; cursor: grab; }
+  @media (pointer: coarse) {
+    input[type=range] { height: 28px; }
+    input[type=range]::-webkit-slider-thumb { width: 20px; height: 26px; margin-top: -11px; }
+    input[type=range]::-moz-range-thumb { width: 20px; height: 26px; }
+  }
 
   .check { display: inline-flex; align-items: center; gap: 7px; min-height: 22px; font-size: 12px; font-weight: 600; color: var(--color-text-sub); cursor: pointer; }
   .check input { -webkit-appearance: none; appearance: none; flex: none; width: 15px; height: 15px; margin: 0; background: var(--color-border);
