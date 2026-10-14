@@ -82,8 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         // 지금 시각의 그림(drawImage에 그대로 넘긴다)
         get image() {
-            if (this.kind === 'video') return video;
-            const t = this.currentTime;
+            return this.kind === 'video' ? video : this.frameAt(this.currentTime);
+        },
+        // 이미지: t초에 보이는 프레임
+        frameAt(t) {
             let lo = 0,
                 hi = this.frames.length - 1;
             while (lo < hi) {
@@ -212,7 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
             ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
             return b;
         };
-        wrap.append(button('−', -1), input, button('+', 1));
+        wrap.append(button('−', -1), input);
+        if (input.dataset.unit)
+            wrap.append(
+                Object.assign(document.createElement('span'), { className: 'unit', textContent: input.dataset.unit })
+            );
+        wrap.append(button('+', 1));
         // 칸에 포커스가 있을 때만 휠로 조절 (페이지 스크롤 중 실수로 바뀌지 않게)
         input.addEventListener(
             'wheel',
@@ -266,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pop.append(custom);
         }
         // 색 칸이 든 줄 아래에 팝업을 띄운다(줄은 position: relative)
-        input.closest('.row, .line, .stroke-line, .color-chip').append(pop);
+        input.closest('.row, .line, .line3, .stroke-line, .grid2').append(pop);
         input.addEventListener('click', e => {
             e.preventDefault();
             const open = !pop.classList.contains('is-open');
@@ -357,6 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         media.release();
         showError('');
         state.loaded = false;
+        document.body.classList.remove('is-loaded');
         stopPreview();
         if (state.resultURL) URL.revokeObjectURL(state.resultURL);
         state.resultURL = null;
@@ -457,6 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
         show($('srcBadge'), true);
         show($('drop'), false);
         show($('editor'), true);
+        document.body.classList.add('is-loaded');
         $('convert').disabled = false;
         state.loaded = true;
         state.crop = null;
@@ -465,6 +474,8 @@ document.addEventListener('DOMContentLoaded', () => {
         playUI(false);
         cropUI();
         requestDraw();
+        renderLayerTabs();
+        if (!media.still) drawThumbs(state.sourceController.signal);
     }
 
     video.addEventListener('loadedmetadata', async () => {
@@ -520,13 +531,103 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------- 구간 손잡이: 재생 막대 위에서 시작·끝을 끈다 ----------
     function trimUI() {
         const d = media.duration || 1;
-        const s = clamp(+$('start').value / d, 0, 1) * 100;
-        const e = clamp(+$('end').value / d, 0, 1) * 100;
+        const st = clamp(+$('start').value, 0, d),
+            en = clamp(+$('end').value, 0, d);
+        const s = (st / d) * 100,
+            e = (en / d) * 100;
+        $('dimL').style.width = `${s}%`;
+        $('dimR').style.width = `${100 - e}%`;
         $('trimSel').style.left = `${s}%`;
         $('trimSel').style.width = `${Math.max(0, e - s)}%`;
         $('trimStart').style.left = `${s}%`;
         $('trimEnd').style.left = `${e}%`;
+        $('rangeLabel').textContent =
+            `구간 ${st.toFixed(1)} – ${en.toFixed(1)}초 · ${Math.max(0, en - st).toFixed(1)}초`;
+        renderLayerRows();
     }
+    // 띠의 빈 곳을 누르거나 끌면 그 장면으로 간다
+    const strip = $('strip');
+    const scrub = e => {
+        const r = strip.getBoundingClientRect();
+        media.currentTime = clamp((e.clientX - r.left) / r.width, 0, 1) * media.duration;
+        requestDraw();
+    };
+    strip.addEventListener('pointerdown', e => {
+        if (!state.loaded || state.converting || e.target.closest('.trim-h')) return;
+        media.pause();
+        strip.setPointerCapture(e.pointerId);
+        scrub(e);
+        strip.addEventListener('pointermove', scrub);
+    });
+    ['pointerup', 'pointercancel'].forEach(t =>
+        strip.addEventListener(t, () => strip.removeEventListener('pointermove', scrub))
+    );
+
+    // 장면 띠: 구간 전체에서 고르게 10장을 뽑아 그린다. 영상은 미리보기를 건드리지 않게 따로 연 <video>로 찾는다.
+    const THUMBS = 10;
+    function waitEvent(el, type, ms) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('timeout')), ms);
+            el.addEventListener(
+                type,
+                () => {
+                    clearTimeout(timer);
+                    resolve();
+                },
+                { once: true }
+            );
+        });
+    }
+    async function drawThumbs(signal) {
+        const c = $('thumbs');
+        const dpr = window.devicePixelRatio || 1;
+        c.width = Math.round((c.clientWidth || 600) * dpr);
+        c.height = Math.round((c.clientHeight || 56) * dpr);
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        const cw = c.width / THUMBS;
+        const cell = (img, iw, ih, i) => {
+            const s = Math.max(cw / iw, c.height / ih);
+            const sw = cw / s,
+                sh = c.height / s;
+            ctx.drawImage(
+                img,
+                (iw - sw) / 2,
+                (ih - sh) / 2,
+                sw,
+                sh,
+                Math.round(i * cw),
+                0,
+                Math.ceil(cw) - 1,
+                c.height
+            );
+        };
+        const times = Array.from({ length: THUMBS }, (_, i) => ((i + 0.5) / THUMBS) * media.duration);
+        if (media.kind === 'image') {
+            times.forEach((t, i) => {
+                const img = media.frameAt(t);
+                cell(img, img.width, img.height, i);
+            });
+            return;
+        }
+        const v = Object.assign(document.createElement('video'), { muted: true, preload: 'auto', src: state.srcURL });
+        try {
+            await waitEvent(v, 'loadeddata', 8000);
+            for (let i = 0; i < THUMBS; i++) {
+                if (signal.aborted) return;
+                v.currentTime = times[i];
+                await waitEvent(v, 'seeked', 4000);
+                if (signal.aborted) return;
+                cell(v, v.videoWidth, v.videoHeight, i);
+            }
+        } catch {
+            // 장면 띠는 꾸밈이라 실패해도 편집은 그대로 된다
+        } finally {
+            v.removeAttribute('src');
+            v.load();
+        }
+    }
+
     [
         ['trimStart', 'start'],
         ['trimEnd', 'end'],
@@ -619,7 +720,8 @@ document.addEventListener('DOMContentLoaded', () => {
         $('sizeInfo').textContent = `출력: ${w} × ${h} px`;
         trimUI();
         if (media.still) {
-            $('convertSum').textContent = `${w}×${h} · 사진 한 장`;
+            $('sumMain').textContent = '사진 한 장';
+            $('sumSub').textContent = `${w}×${h} · ${$('lossless').checked ? '무손실' : `품질 ${$('quality').value}`}`;
             $('frameInfo').innerHTML =
                 '사진 한 장이라 움직이지 않는 WebP로 저장해요' +
                 (state.firstOnly
@@ -629,8 +731,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const dur = +$('end').value - +$('start').value;
         const n = Math.max(1, Math.floor(dur * +$('fps').value));
-        $('convertSum').textContent =
-            dur > 0 ? `${w}×${h} · ${dur.toFixed(1)}초 · ${$('fps').value}fps · 약 ${n}프레임` : `${w}×${h}`;
+        $('sumMain').textContent = dur > 0 ? `${dur.toFixed(1)}초 · 약 ${n}프레임` : '구간을 골라 주세요';
+        $('sumSub').textContent =
+            `${w}×${h} · ${$('lossless').checked ? '무손실' : `품질 ${$('quality').value}`} · ${$('fps').value}fps`;
         $('frameInfo').innerHTML =
             dur <= 0
                 ? '<span class="err">끝 시간이 시작 시간보다 커야 해요</span>'
@@ -697,7 +800,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if ($('text').value !== L.text) L.colors = remapColors(L.text, $('text').value, L.colors);
         for (const f of FIELDS) L[f] = readField(f);
         L.timeOn = $('timeOn').checked;
-        renderLayerTabs();
+        // 다시 만들지 않고 내용만 고친다. 입력 칸이 blur될 때(change) 다시 만들면 막 누른 버튼의 클릭이 사라진다.
+        updateLayerCards();
+        renderLayerRows();
+        timeUI();
     }
     function loadLayer() {
         const L = layer();
@@ -714,36 +820,129 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLayerTabs();
         ensureFont();
     }
+    const layerName = (L, i) => L.text.trim().split('\n')[0].slice(0, 12) || `텍스트 ${i + 1}`;
+    const layerTime = L => (L.timeOn ? `${round2(L.tFrom)} – ${round2(L.tTo)}초` : '항상 보임');
+    const svgIcon = d => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+    // 각 텍스트의 글꼴·색·외곽선을 '가' 한 글자로 보여 준다
+    function glyphStyle(el, L) {
+        el.style.fontFamily = L.font;
+        el.style.fontWeight = L.weight;
+        el.style.color = L.color;
+        el.style.webkitTextStroke = L.outline === 'none' ? '' : `${Math.min(4, L.strokeW)}px ${L.strokeColor}`;
+    }
     function renderLayerTabs() {
         const box = $('layerTabs');
         box.replaceChildren();
-        const button = (text, cls, onClick) => {
-            const b = Object.assign(document.createElement('button'), { textContent: text, className: cls });
-            b.addEventListener('click', onClick);
-            box.append(b);
-            return b;
-        };
         layers.forEach((L, i) => {
-            const name = L.text.trim().split('\n')[0].slice(0, 10) || `텍스트 ${i + 1}`;
-            const b = button((L.timeOn ? '⏱ ' : '') + name, i === cur ? 'active' : '', () => {
+            const b = Object.assign(document.createElement('button'), {
+                type: 'button',
+                className: 'layer-card' + (i === cur ? ' active' : ''),
+            });
+            const glyph = Object.assign(document.createElement('span'), { className: 'glyph', textContent: '가' });
+            const meta = Object.assign(document.createElement('span'), { className: 'meta' });
+            meta.append(document.createElement('b'), document.createElement('small'));
+            b.append(glyph, meta);
+            b.addEventListener('click', () => {
                 cur = i;
                 loadLayer();
             });
-            b.title = L.timeOn ? `${L.tFrom}초 ~ ${L.tTo}초에만 보임` : '항상 보임';
+            box.append(b);
         });
-        button('+ 텍스트 추가', 'add', () => {
+        const iconButton = (label, cls, d, onClick) => {
+            const b = Object.assign(document.createElement('button'), { type: 'button', className: `icon-btn ${cls}` });
+            b.setAttribute('aria-label', label);
+            b.title = label;
+            b.innerHTML = svgIcon(d);
+            b.addEventListener('click', onClick);
+            box.append(b);
+        };
+        iconButton('텍스트 추가', 'add', 'M12 5v14M5 12h14', () => {
             layers.push(newLayer({ ...layer(), text: '', colors: [], anchor: 'middle', timeOn: false }));
             cur = layers.length - 1;
             loadLayer();
             $('text').focus();
         });
         if (layers.length > 1)
-            button('삭제', 'del', () => {
+            iconButton('이 텍스트 삭제', 'del', 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3', () => {
                 layers.splice(cur, 1);
                 cur = Math.max(0, cur - 1);
                 loadLayer();
             });
+        updateLayerCards();
+        renderLayerRows();
+        timeUI();
     }
+    function updateLayerCards() {
+        $$('#layerTabs .layer-card').forEach((b, i) => {
+            const L = layers[i];
+            if (!L) return;
+            b.classList.toggle('active', i === cur);
+            b.setAttribute('aria-pressed', String(i === cur));
+            glyphStyle(b.querySelector('.glyph'), L);
+            b.querySelector('b').textContent = layerName(L, i);
+            b.querySelector('small').textContent = media.still ? '' : layerTime(L);
+        });
+    }
+    // 구간 카드 아래: 텍스트마다 보이는 시간을 막대로
+    function renderLayerRows() {
+        const box = $('layerRows');
+        if (!state.loaded || media.still) return box.replaceChildren();
+        // 텍스트 수가 바뀔 때만 줄을 새로 만들고, 나머지는 내용만 고친다
+        if (box.children.length !== layers.length)
+            box.replaceChildren(
+                ...layers.map((_, i) => {
+                    const row = Object.assign(document.createElement('button'), {
+                        type: 'button',
+                        className: 'layer-row',
+                    });
+                    const track = Object.assign(document.createElement('span'), { className: 'track' });
+                    track.append(Object.assign(document.createElement('span'), { className: 'bar' }));
+                    row.append(
+                        Object.assign(document.createElement('span'), { textContent: `텍스트 ${i + 1}` }),
+                        track
+                    );
+                    row.addEventListener('click', () => {
+                        cur = i;
+                        loadLayer();
+                        $$('#tabs button[data-v=text]').forEach(b => b.click());
+                    });
+                    return row;
+                })
+            );
+        const d = media.duration || 1;
+        [...box.children].forEach((row, i) => {
+            const L = layers[i];
+            const bar = row.querySelector('.bar');
+            row.classList.toggle('active', i === cur);
+            bar.className = 'bar' + (L.timeOn ? '' : ' always');
+            bar.textContent = L.timeOn ? layerName(L, i) : `${layerName(L, i)} · 항상 보임`;
+            const s = L.timeOn ? clamp(L.tFrom / d, 0, 1) : 0,
+                e = L.timeOn ? clamp(L.tTo / d, 0, 1) : 1;
+            Object.assign(
+                bar.style,
+                L.timeOn
+                    ? {
+                          left: `${s * 100}%`,
+                          width: `${Math.max(0, e - s) * 100}%`,
+                          background: L.color,
+                          color: L.outline === 'none' ? '#000' : L.strokeColor,
+                          border: `1.5px solid ${L.outline === 'none' ? 'rgba(0,0,0,.25)' : L.strokeColor}`,
+                      }
+                    : { left: '', width: '', background: '', color: '', border: '' }
+            );
+        });
+    }
+    // '보일 시간' 카드: 숨긴 체크박스(#timeOn)를 켜고 끈다
+    function timeUI() {
+        const on = $('timeOn').checked;
+        $('timeToggle').setAttribute('aria-pressed', String(on));
+        $('timeSummary').textContent = on ? `${round2(+$('tFrom').value)} – ${round2(+$('tTo').value)}초` : '항상';
+    }
+    $('timeToggle').addEventListener('click', () => {
+        $('timeOn').checked = !$('timeOn').checked;
+        $('timeOn').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    $('cropFromSize').addEventListener('click', () => $('cropToggle').click());
     ['input', 'change'].forEach(t =>
         $('textCard').addEventListener(t, e => {
             if (e.target.closest('#layerTabs') || e.target.id === 'selColor') return;
@@ -883,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.frame = v;
         show($('frameRow'), v !== 'none');
         show($('frameOuterRow'), v === 'double');
-        $('frameLabel').textContent = v === 'double' ? '안쪽 테두리' : '테두리 색';
+        $('frameLabel').textContent = v === 'double' ? '안쪽' : '색 · 두께';
     });
 
     // ---------- 그리기 ----------
@@ -1083,7 +1282,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else requestDraw();
         }
         $('seek').value = media.currentTime;
-        $('timeLabel').textContent = `${media.currentTime.toFixed(2)} / ${media.duration.toFixed(2)}`;
+        $('timeLabel').textContent = `${media.currentTime.toFixed(2)} / ${media.duration.toFixed(2)}초`;
+        $('playhead').style.left = `${clamp(media.currentTime / (media.duration || 1), 0, 1) * 100}%`;
         if (state.cropEditing) return drawCropEditor();
 
         const { w, h } = outSize();
@@ -1228,7 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('cropToggle').classList.toggle('active', state.cropEditing);
         $('previewHint').textContent = state.cropEditing
             ? '자르기: 박스를 드래그해서 옮기고, 모서리로 크기 조절. 바깥에서 드래그하면 새로 그려요'
-            : '미리보기에서 텍스트를 드래그해서 위치를 옮길 수 있어요';
+            : '텍스트를 끌어서 옮겨요';
         updateInfo();
     }
     $('cropToggle').addEventListener('click', () => {
