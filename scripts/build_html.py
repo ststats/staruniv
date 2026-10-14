@@ -24,7 +24,7 @@ SUPABASE_ORIGIN = f'https://{_supabase.netloc}' if _supabase.scheme == 'https' a
 # ----- 페이지 구성 -----
 # (id, 메뉴 이름, 페이지 제목(None이면 사이트 이름만), 검색/링크 미리보기 설명)
 PAGES = [
-    ('home', '홈', None, '캄몬스타즈 멤버들의 방송·공지·일정·전적을 한곳에서 보는 스타대학입니다'),
+    ('home', '홈', None, '스타대학은 캄몬스타즈 멤버들의 방송·공지·일정·전적을 한곳에서 보는 곳입니다'),
     ('schedule', '일정', '일정', '캄몬스타즈의 다가올 일정과 지나간 일정입니다'),
     ('members', '멤버', '멤버', '캄몬스타즈 멤버들의 현황과 소식입니다'),
     ('records', '전적', '전적', '캄몬스타즈 소속으로 참가한 대회 · 대학 · 미니 · CK 전적입니다'),
@@ -55,6 +55,7 @@ def page_context(page_id, title, description):
         'supabase_origin': SUPABASE_ORIGIN,
         # 하위 폴더 페이지는 <base href="../">로 모든 상대 경로를 사이트 루트 기준으로 맞춘다
         'root': '' if page_id == 'home' else '../',
+        'site_name': SITE_NAME,
         'full_title': f'{title} | {SITE_NAME}' if title else SITE_NAME,
         'description': description,
         'canonical_url': f'{SITE_URL}/{page_url_path(page_id)}',
