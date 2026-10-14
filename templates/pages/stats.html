@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+{#- 방송통계: ststat 방송 기록에서 우리 멤버만 뽑아 이번 달 활동 순위를 보인다. #}
+<section id="page-stats" class="page-section active">
+    <div class="page-header">
+        <div class="page-header-main" data-label="BROADCAST ANALYTICS">
+            <h1 class="page-header-title">방송통계</h1>
+            <p class="page-header-subtitle" id="synergy-subtitle">캄몬스타즈 멤버들의 이번 달 방송 통계입니다</p>
+            <div class="page-header-stats">
+                <div class="head-stat">
+                    <div class="head-stat-label">UPDATED</div>
+                    <div class="head-stat-value head-stat-time" id="synergy-updated">-</div>
+                </div>
+            </div>
+        </div>
+        {#- 지표 탭 id(tab-stats-<view>)로 어드민에서 숨기기·기본 탭을 정한다(site_config nav의 subtabs.stats). #}
+        {%- set stats_tabs = [('balloons', 'balloons', '별풍선'), ('broadcast_seconds', 'hours', '방송시간'),
+                              ('cumulative_viewers', 'viewers', '누적시청자'), ('viewership_seconds', 'viewership', '뷰어십'),
+                              ('sponsor', 'sponsor', '스폰판수'), ('sponsor_rate', 'winrate', '스폰승률')] %}
+        <div class="sub-tabs tab-scroll" id="synergy-metric-filter" role="tablist">
+            {%- for key, view, label in stats_tabs %}
+            {%- set is_first = loop.first %}
+            <div class="sub-tab{{ ' active' if is_first else '' }}" id="tab-stats-{{ view }}" data-metric="{{ key }}" role="tab" tabindex="0" aria-selected="{{ 'true' if is_first else 'false' }}" data-click="setSynergyMetric" data-args='["{{ key }}"]'>{{ label }}</div>
+            {%- endfor %}
+        </div>
+    </div>
+    <div class="container">
+    {#- 방송통계가 있는 달(synergy_daily_dates) 사이를 오간다. 지난 달은 마지막 날짜의 누적이 그달 최종 기록이다. #}
+    {#- 고른 지표에 따라 page-stats.js가 바꾼다. #}
+    <div class="section-title" data-en="SUMMARY"><span class="section-title-label" id="synergy-summary-title" role="heading" aria-level="2">{{ stats_tabs[0][1] }} 요약</span><span id="synergy-summary-help"></span>
+        <div class="cal-nav-group" id="synergy-month-nav" hidden>
+            <button type="button" class="cal-nav-btn" id="synergy-month-prev" data-click="stepSynergyMonth" data-args='[-1]' aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <div class="cal-nav-badge" id="synergy-month-title" aria-live="polite"></div>
+            <button type="button" class="cal-nav-btn" id="synergy-month-next" data-click="stepSynergyMonth" data-args='[1]' aria-label="다음 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+    </div>
+    {#- TOP 칸: 고른 지표의 1위(남녀 합산). 사진은 어드민 '대표 사진'(1280×720 MP4), 없으면 SOOP 프로필 사진.
+        표는 남녀를 나눠 보지만 크루 전체 규모는 하나로 읽도록 타일은 합친 값이다. #}
+    <div id="synergy-summary" class="synergy-summary mb-block">
+        <div class="clean-card head-plate synergy-top">
+            <div class="synergy-top-photo" id="synergy-top-photo"></div>
+            <div class="synergy-top-body">
+                <div class="head-plate-label">TOP · <span id="synergy-top-metric">별풍선</span></div>
+                <div class="synergy-top-name" id="synergy-sum-top">-</div>
+                <div class="synergy-top-value" id="synergy-sum-top-value">-</div>
+            </div>
+        </div>
+        <div class="synergy-tiles">
+            {#- 375px·330px보다 좁으면 줄여서 값과 한 줄에 들어가게 한다. #}
+            {#- 이름표는 고른 달·지표에 따라 page-stats.js가 바꾼다(data-tile). #}
+            {%- for tile_id, tile_label, tile_ko, tile_ko_short, tile_key in [('synergy-sum-total', 'TOTAL', '이번 달 합계', '합계', 'total'), ('synergy-sum-avg', 'AVERAGE', '이번 달 평균', '평균', 'avg'), ('synergy-sum-count', 'MEMBERS', '집계 인원', '인원', '')] %}
+            <div class="clean-card head-plate synergy-tile"{% if tile_key %} data-tile="{{ tile_key }}"{% endif %}>
+                <div class="synergy-tile-label">{{ tile_label }}<span class="synergy-tile-ko"><i>·</i><span class="synergy-tile-ko-long">{{ tile_ko }}</span><span class="synergy-tile-ko-short">{{ tile_ko_short }}</span></span></div>
+                <div class="head-plate-value" id="{{ tile_id }}">-</div>
+            </div>
+            {%- endfor %}
+        </div>
+    </div>
+    <div class="row gap-block mb-block">
+        {%- for gender_key, gender_label in [('male', '남자 멤버'), ('female', '여자 멤버')] %}
+        <div class="col-md-6">
+            <div class="section-title" data-en="{{ gender_key|upper }}"><span class="section-title-label" role="heading" aria-level="2">{{ gender_label }}</span></div>
+            <div class="clean-card p-0 overflow-hidden">
+                <div class="table-responsive scroll-area">
+                    <table class="table mb-0 text-center stat-table table-fixed">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center colw-20 text-nowrap">순위</th>
+                                <th scope="col" class="text-center colw-40 text-nowrap">멤버</th>
+                                <th scope="col" class="text-center synergy-metric-label colw-40 text-nowrap">별풍선</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synergy-tbody-{{ gender_key }}">
+                            <tr><td colspan="3" class="text-center text-muted py-4">불러오는 중</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {%- endfor %}
+    </div>
+
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('api.js') }}"></script>
+<script src="{{ asset_url('page-stats.js') }}"></script>
+{% endblock %}
