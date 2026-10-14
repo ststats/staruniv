@@ -612,10 +612,10 @@ function entryAnalysisHtml(match, wp) {
         <div class="entry-analysis-grid">
             ${entryAnalysisStat('승률용 실력', 0, ratingDetail + common)}
             ${entryAnalysisStat('개인 종족 특성', wp.raceAdj, raceDetail)}
-            ${entryAnalysisStat('맞대결 참고', null, `${period} ${entryRecordText(h2h.w, h2h.l)}`)}
+            ${entryAnalysisStat('맞대결 참고', null, `${period} ${h2h.w + h2h.l ? entryRecordText(h2h.w, h2h.l) : '없음'}`)}
             ${entryAnalysisStat('맵별 종족 효과', wp.mapAdj, mapDetail)}
         </div>
-        <div class="entry-analysis-foot">${note} 기준일 ${escapeHTML(String(EntryState.index?.prediction?.asOf || '').slice(0, 10))}</div>
+        <div class="entry-analysis-foot">${note} · 기준일 ${escapeHTML(String(EntryState.index?.prediction?.asOf || '').slice(0, 10))}</div>
     </div>`;
 }
 

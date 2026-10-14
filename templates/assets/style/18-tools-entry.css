@@ -606,24 +606,14 @@
     .entry-analysis-adj.is-b {
         color: var(--color-lose);
     }
+    /* 설명은 자르지 않고 칸 안에서 줄을 바꾼다(한글은 낱말 단위) */
     .entry-analysis-stat-detail {
         min-width: 0;
-        overflow: hidden;
         font-size: var(--fs-micro);
         line-height: 1.45;
         color: var(--color-text-sub);
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-    /* 종족전/선택맵은 정보량이 길어서 두 줄까지 보여준다. */
-    .entry-analysis-stat:nth-child(3) .entry-analysis-stat-detail,
-    .entry-analysis-stat:nth-child(4) .entry-analysis-stat-detail {
-        display: -webkit-box;
-        white-space: normal;
-        text-overflow: clip;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
     }
     .entry-analysis-foot {
         padding: 0 var(--space-5) var(--space-3);
