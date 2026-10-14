@@ -134,6 +134,26 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                 await page.mouse.move(0, 0);
                 await page.locator('.tier-peek').waitFor({ state: 'hidden' });
             }
+            if (url === 'tier/?view=entry') {
+                await page.waitForFunction(() => EntryState.index?.prediction?.modelVersion === 'joint-map-v1');
+                const before = await page.evaluate(() => {
+                    EntryState.matches = [{ a: '1000', b: '1001', map: '' }];
+                    EntryState.analysisOpen[0] = true;
+                    renderEntry();
+                    return {
+                        probability: entryWinProb('1000', '1001', '').p,
+                        rank: EntryState.index.players['1000'].k,
+                    };
+                });
+                await page.evaluate(() => entrySetMatchMap(0, '투혼', true));
+                assert.match(await page.locator('.entry-analysis-panel').textContent(), /랭킹과 별도로/);
+                const after = await page.evaluate(() => ({
+                    probability: entryWinProb('1000', '1001', '투혼').p,
+                    rank: EntryState.index.players['1000'].k,
+                }));
+                assert.ok(after.probability > before.probability, '선택 맵의 종족 효과가 승률을 바꾼다');
+                assert.equal(after.rank, before.rank, '맵을 선택해도 랭킹은 그대로다');
+            }
             if (url === 'schedule/') {
                 assert.equal(await page.locator('#todayList, #todayDateLabel').count(), 2);
                 await page.evaluate(() => {
