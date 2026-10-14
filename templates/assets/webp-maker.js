@@ -682,6 +682,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return { w: fix(w), h: fix(h) };
     }
     // 원본 크기 모드에선 출력이 자르기 영역을 따라가므로 고정할 비율이 없음
+    // 자르기 비율: 출력 크기에 맞춤 / 자유 / 정해진 비율(1:1, 16:9 …)
+    function cropRatio() {
+        const v = $('cropRatio').value;
+        if (v === 'free') return null;
+        return v === 'out' ? outRatio() : +v;
+    }
     function outRatio() {
         if ($('sizeMode').value === 'orig') return null;
         const { w, h } = outSize();
@@ -1403,7 +1409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { x: clamp(c.x + (c.w - w) / 2, 0, vw - w), y: clamp(c.y + (c.h - h) / 2, 0, vh - h), w, h };
     }
     function refitCrop() {
-        const R = $('cropLock').checked && state.crop && outRatio();
+        const R = state.crop && cropRatio();
         if (R) {
             state.crop = fitRatio(state.crop, R);
             cropUI();
@@ -1421,9 +1427,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ])
                 if (document.activeElement !== $(id)) $(id).value = Math.round(v);
         $('cropReset').disabled = !c;
-        $('cropLock').disabled = $('sizeMode').value === 'orig';
-        // 원본 크기일 때는 맞출 비율이 없으므로, 자르는 중이면서 출력 크기를 정해 둔 때만 보인다
-        show($('cropLockWrap'), state.cropEditing && $('sizeMode').value !== 'orig');
+        // 원본 크기일 때는 '출력 크기'에 맞출 비율이 없으므로 그 버튼을 숨기고 자유로 둔다
+        const orig = $('sizeMode').value === 'orig';
+        show($('cropRatioOut'), !orig);
+        if (orig && $('cropRatio').value === 'out') {
+            $('cropRatio').value = 'free';
+            syncBound();
+        }
+        show($('cropLockWrap'), state.cropEditing);
         $('cropToggle').textContent = state.cropEditing ? '자르기 완료' : '자르기';
         $('cropToggle').classList.toggle('active', state.cropEditing);
         $('previewHint').textContent = state.cropEditing
@@ -1436,7 +1447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.cropEditing = !state.cropEditing;
         if (state.cropEditing && !state.crop) {
             const full = { x: 0, y: 0, w: media.width, h: media.height };
-            const R = $('cropLock').checked && outRatio();
+            const R = cropRatio();
             state.crop = R ? fitRatio(full, R) : full;
         }
         cropUI();
@@ -1446,14 +1457,30 @@ document.addEventListener('DOMContentLoaded', () => {
         state.cropEditing = false;
         cropUI();
     });
-    $('cropLock').addEventListener('change', refitCrop);
+    // 비율을 바꾸면 지금 박스 가운데를 기준으로 그 비율의 가장 큰 박스로 다시 잡는다(바꿀수록 작아지지 않게)
+    $('cropRatio').addEventListener('change', () => {
+        const R = cropRatio();
+        if (!state.crop || !R) return cropUI();
+        const W = media.width,
+            H = media.height;
+        let w = W,
+            h = W / R;
+        if (h > H) {
+            h = H;
+            w = H * R;
+        }
+        const cx = state.crop.x + state.crop.w / 2,
+            cy = state.crop.y + state.crop.h / 2;
+        state.crop = { x: clamp(cx - w / 2, 0, W - w), y: clamp(cy - h / 2, 0, H - h), w, h };
+        cropUI();
+    });
 
     function setCrop(x, y, w, h, keep) {
         const vw = media.width,
             vh = media.height;
         w = clamp(w, 8, vw);
         h = clamp(h, 8, vh);
-        const R = $('cropLock').checked && outRatio();
+        const R = cropRatio();
         if (R) {
             if (keep === 'h') w = h * R;
             else h = w / R;
@@ -1557,7 +1584,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { fx, fy } = cropDrag;
         let w = Math.max(8, Math.abs(p.x - fx)),
             h = Math.max(8, Math.abs(p.y - fy));
-        const R = $('cropLock').checked && outRatio();
+        const R = cropRatio();
         if (R) {
             if (w / h > R) w = h * R;
             else h = w / R;

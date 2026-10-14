@@ -219,7 +219,8 @@
   #play { flex: none; width: 30px; height: 26px; padding: 0; border: 0; background: var(--select-on-light); color: #fff; font-size: 11px; clip-path: var(--notch-4); cursor: pointer; }
   .time { min-width: 86px; text-align: right; font-size: var(--fs-meta); font-weight: 700; color: var(--color-text-sub); font-variant-numeric: tabular-nums; }
   .viewer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 12px 10px; }
-  .crop-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 0 12px 10px; }
+  .crop-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 12px; }
+  .crop-opt .slot { margin: 0; }
   .cropNums { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 4px 12px; padding: 0 12px 14px; }
   .cropNums .field .slot { margin-bottom: 4px; }
 
@@ -260,8 +261,7 @@
   #play { flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: var(--select-on-light); color: #fff; font-size: 14px; clip-path: var(--notch-6); cursor: pointer; }
   .tl-time { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .tl-now { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .tl-range { margin-left: auto; flex: none; padding: 6px 10px; background: var(--color-primary-tint); color: var(--color-primary); font-size: 12px;
-    font-weight: 700; font-variant-numeric: tabular-nums; clip-path: var(--notch-4); }
+  .tl-range { margin-left: auto; flex: none; color: var(--color-text-sub); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
   /* 양 끝 손잡이가 띠 바깥에 붙으므로 그 폭만큼 안쪽으로 */
   .strip { position: relative; height: 56px; margin: 4px 16px; background: var(--color-bg-subtle); cursor: pointer; touch-action: none; user-select: none; }
   #thumbs { display: block; width: 100%; height: 100%; }
@@ -274,7 +274,6 @@
   #trimStart { margin-left: -16px; border-radius: 4px 0 0 4px; }
   #trimEnd { border-radius: 0 4px 4px 0; }
   .trim-h::after { content: ""; position: absolute; left: 7px; top: 19px; bottom: 19px; width: 2px; background: #fff; }
-  .trim-h:focus-visible { outline: 2px solid var(--color-text-main); outline-offset: 1px; }
   .layer-rows { display: flex; flex-direction: column; gap: 6px; }
   .layer-row { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
   .layer-row > span { flex: none; width: 64px; font-size: var(--fs-meta); font-weight: 600; color: var(--color-text-sub); }
@@ -329,13 +328,14 @@
   .card-btn input[type=color]::-moz-color-swatch { border-radius: 50%; }
   .card-btn svg { flex: none; width: 20px; height: 20px; fill: none; stroke: var(--color-primary); stroke-width: 2; stroke-linecap: round; }
   .card-btn em { font-style: normal; color: var(--color-primary); }
-  .card-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--color-primary); }
 
   /* 텍스트 카드: 각 텍스트의 모양을 '가'로 보여 준다 */
   .layer-cards { display: flex; gap: 6px; }
-  .layer-card { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 10px; border: 2px solid transparent;
+  .layer-card { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 10px; border: 0;
     background: var(--color-bg-subtle); color: var(--color-text-main); text-align: left; clip-path: var(--notch-6); cursor: pointer; }
-  .layer-card.active { border-color: var(--select-on-light); background: var(--color-card); }
+  /* 고른 카드는 면 색으로만 표시한다(테두리는 노치에 잘린다) */
+  .layer-card.active { background: var(--select-on-light); color: #fff; }
+  .layer-card.active .meta small { color: rgba(255, 255, 255, .72); }
   .layer-card .glyph { flex: none; font-size: 20px; line-height: 1; paint-order: stroke fill; }
   .layer-card .meta { display: flex; flex-direction: column; min-width: 0; }
   .layer-card .meta b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -374,15 +374,15 @@
 
   /* 글꼴 */
   .font-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-  .font-chips button, .font-grid button { flex: none; min-height: 38px; padding: 0 12px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
-    font-size: 16px; line-height: 1.1; white-space: nowrap; clip-path: var(--notch-4); cursor: pointer; }
+  .font-chips button, .font-grid button { flex: none; min-height: 36px; padding: 0 12px; border: 0; background: var(--color-bg-subtle); color: var(--color-text-main);
+    font-size: 14px; line-height: 1.1; white-space: nowrap; clip-path: var(--notch-4); cursor: pointer; }
   .font-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .font-grid button { padding: 0 6px; overflow: hidden; text-overflow: ellipsis; }
+  .font-grid button { min-height: 32px; padding: 0 6px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
   .font-grid .group-label { grid-column: 1 / -1; margin-top: 4px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .1em; color: var(--color-text-sub); }
   .font-chips button.active, .font-grid button.active { background: var(--select-on-light); color: #fff; }
 
   /* 저장 */
-  .sum-box { padding: 10px 12px; background: var(--color-primary-tint); color: var(--select-on-light); font-size: 12px; clip-path: var(--notch-4); }
+  .sum-box { font-size: var(--fs-meta); line-height: 1.6; color: var(--color-text-muted); }
   .sum-box:empty { display: none; }
   #convertCard { display: flex; flex-direction: column; gap: 8px; margin: 0; }
   body:not(.is-loaded) #convertCard { display: none; }
@@ -447,8 +447,23 @@
       <div class="viewer">
         <div class="canvasWrap checker"><canvas id="preview"></canvas><span class="hint-chip" id="previewHint"></span></div>
         <div class="crop-opt hidden" id="cropLockWrap">
-          <label class="check"><input type="checkbox" id="cropLock" checked> 출력 크기 비율로 자르기</label>
-          <span class="info">출력 크기(예: 200×200)와 같은 모양으로만 잘려서, 결과가 찌그러지거나 여백이 생기지 않아요</span>
+          <span class="slot">자르기 비율</span>
+          <select id="cropRatio" class="hidden" aria-hidden="true" tabindex="-1">
+            <option value="out" selected>출력 크기</option>
+            <option value="free">자유</option>
+            <option value="1">1:1</option>
+            <option value="1.777778">16:9</option>
+            <option value="1.333333">4:3</option>
+            <option value="0.5625">9:16</option>
+          </select>
+          <div class="seg" data-for="cropRatio" role="group" aria-label="자르기 비율">
+            <button data-v="out" id="cropRatioOut" title="출력 크기(예: 200×200)와 같은 모양으로 잘라 찌그러지거나 여백이 생기지 않아요">출력 크기</button>
+            <button data-v="free">자유</button>
+            <button data-v="1">1:1</button>
+            <button data-v="1.777778">16:9</button>
+            <button data-v="1.333333">4:3</button>
+            <button data-v="0.5625">9:16</button>
+          </div>
         </div>
         <div class="cropNums hidden" id="cropNums">
           <div class="field"><label class="slot" for="cropW">가로</label><input type="number" id="cropW" min="8"></div>
