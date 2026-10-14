@@ -1,5 +1,6 @@
 /**
- * 도구 > 움짤생성기(webp-maker.html): 영상에 텍스트·테두리를 얹어 움직이는 WebP로 만든다. 처리는 브라우저 안에서만 한다.
+ * 도구 > 움짤생성기(webp-maker.html): 영상·움짤·사진에 텍스트·테두리를 얹어 WebP로 만든다. 처리는 브라우저 안에서만 한다.
+ * 사진(한 장짜리)은 정지 WebP로, 영상·움짤은 움직이는 WebP로 저장한다.
  * 사이트 도구 페이지가 iframe으로 띄우고, 높이·테마는 page-tools.js가 맞춰 준다.
  */
 
@@ -40,11 +41,87 @@ document.addEventListener('DOMContentLoaded', () => {
         active: true,
         fileName: 'output',
         srcURL: null,
+        firstOnly: false, // 움짤을 첫 장만 읽었는지(ImageDecoder가 없는 브라우저)
         resultURL: null,
         frame: 'none',
         crop: null,
         cropEditing: false,
         sel: { s: 0, e: 0 },
+    };
+
+    // ---------- 원본 ----------
+    // 영상은 <video>에 맡기고, 움짤·사진은 프레임을 미리 풀어 두고 재생 시각을 직접 센다.
+    const media = {
+        kind: 'video',
+        frames: [], // 이미지: { image, end } (end: 그 프레임이 끝나는 시각, 초)
+        still: false,
+        t: 0,
+        playing: null, // 이미지 재생 중이면 { t: 재생을 시작한 시각, at: 그때 performance.now() }
+        get width() {
+            return this.kind === 'video' ? video.videoWidth : this.frames[0].image.width;
+        },
+        get height() {
+            return this.kind === 'video' ? video.videoHeight : this.frames[0].image.height;
+        },
+        get duration() {
+            return this.kind === 'video' ? video.duration : this.frames.at(-1).end;
+        },
+        get paused() {
+            return this.kind === 'video' ? video.paused : !this.playing;
+        },
+        get currentTime() {
+            if (this.kind === 'video') return video.currentTime;
+            return this.playing ? this.playing.t + (performance.now() - this.playing.at) / 1000 : this.t;
+        },
+        set currentTime(t) {
+            if (this.kind === 'video') video.currentTime = t;
+            else {
+                this.t = clamp(t, 0, this.duration);
+                if (this.playing) this.playing = { t: this.t, at: performance.now() };
+            }
+        },
+        // 지금 시각의 그림(drawImage에 그대로 넘긴다)
+        get image() {
+            if (this.kind === 'video') return video;
+            const t = this.currentTime;
+            let lo = 0,
+                hi = this.frames.length - 1;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (this.frames[mid].end > t) hi = mid;
+                else lo = mid + 1;
+            }
+            return this.frames[lo].image;
+        },
+        play() {
+            if (this.kind === 'video') return void video.play();
+            if (this.playing || this.still) return;
+            this.playing = { t: this.t, at: performance.now() };
+            playUI(true);
+            requestDraw();
+        },
+        pause() {
+            if (this.kind === 'video') return video.pause();
+            if (!this.playing) return;
+            this.t = this.currentTime;
+            this.playing = null;
+            playUI(false);
+        },
+        seek(t, signal) {
+            if (this.kind === 'video') return seekTo(t, signal);
+            this.currentTime = t;
+            return Promise.resolve();
+        },
+        release() {
+            this.pause();
+            this.frames.forEach(f => f.image.close());
+            this.frames = [];
+            this.still = false;
+            this.t = 0;
+        },
+    };
+    const playUI = on => {
+        $('play').textContent = on ? '❚❚' : '▶';
     };
 
     // ---------- 공통 입력 UI ----------
@@ -207,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     segmented('tabs', v => $$('[data-panel]').forEach(p => p.classList.toggle('is-open', p.dataset.panel === v)));
 
-    // ---------- 영상 불러오기 ----------
+    // ---------- 파일 불러오기 ----------
     $('drop').addEventListener('click', () => $('file').click());
     $('newFile').addEventListener('click', () => $('file').click());
     $('file').addEventListener('change', e => {
@@ -228,16 +305,30 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     document.addEventListener('drop', e => {
         const f = [...(e.dataTransfer?.files || [])].find(
-            f => f.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|m4v|ogv)$/i.test(f.name)
+            f => f.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|m4v|ogv)$/i.test(f.name) || isImageFile(f)
         );
         if (f) loadFile(f);
     });
+
+    const IMAGE_TYPES = {
+        gif: 'image/gif',
+        webp: 'image/webp',
+        png: 'image/png',
+        apng: 'image/apng',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        avif: 'image/avif',
+        bmp: 'image/bmp',
+    };
+    const imageType = f => f.type || IMAGE_TYPES[(f.name.match(/\.(\w+)$/)?.[1] || '').toLowerCase()] || '';
+    const isImageFile = f => imageType(f).startsWith('image/');
 
     function loadFile(file) {
         state.sourceController?.abort(new DOMException('파일이 바뀌었어요', 'AbortError'));
         cancelConversion();
         state.sourceController = new AbortController();
-        video.pause();
+        media.pause();
+        media.release();
         showError('');
         state.loaded = false;
         stopPreview();
@@ -247,9 +338,106 @@ document.addEventListener('DOMContentLoaded', () => {
         $('download').removeAttribute('href');
         show($('result'), false);
         if (state.srcURL) URL.revokeObjectURL(state.srcURL);
-        state.srcURL = URL.createObjectURL(file);
+        state.srcURL = null;
         state.fileName = file.name.replace(/\.[^.]+$/, '') || 'output';
-        video.src = state.srcURL;
+        if (isImageFile(file)) {
+            media.kind = 'image';
+            video.removeAttribute('src');
+            video.load();
+            loadImage(file, state.sourceController.signal);
+        } else {
+            media.kind = 'video';
+            state.srcURL = URL.createObjectURL(file);
+            video.src = state.srcURL;
+        }
+    }
+
+    // 큰 움짤을 통째로 풀면 메모리가 모자라므로 프레임 전체 픽셀에 상한을 둔다(RGBA 기준 약 1GB)
+    const MAX_FRAME_BYTES = 1024 ** 3;
+
+    // 움직이는 이미지는 ImageDecoder(WebCodecs)로 프레임을 모두 푼다. 한 장짜리이거나 ImageDecoder가 없으면
+    // createImageBitmap으로 첫 장만 쓴다(사진의 EXIF 회전도 이쪽이 맞춰 준다).
+    async function decodeImage(file, signal) {
+        const type = imageType(file);
+        const first = async () => [{ image: await createImageBitmap(file), end: 0 }];
+        const canAnimate = /gif|webp|png|avif/.test(type);
+        if (!canAnimate) return { frames: await first() };
+        if (!('ImageDecoder' in window) || !(await ImageDecoder.isTypeSupported(type).catch(() => false)))
+            return { frames: await first(), firstOnly: true };
+        const decoder = new ImageDecoder({ data: await file.arrayBuffer(), type });
+        const frames = [];
+        try {
+            await decoder.tracks.ready;
+            await decoder.completed;
+            const track = decoder.tracks.selectedTrack;
+            if (!track?.animated || track.frameCount < 2) return { frames: await first() };
+            let end = 0;
+            for (let i = 0; i < track.frameCount; i++) {
+                signal.throwIfAborted();
+                const { image } = await decoder.decode({ frameIndex: i });
+                try {
+                    if (i === 0 && track.frameCount * image.displayWidth * image.displayHeight * 4 > MAX_FRAME_BYTES)
+                        throw new Error(
+                            `움짤이 너무 커서 불러올 수 없어요(${image.displayWidth}×${image.displayHeight} · ${track.frameCount}프레임). 크기나 프레임 수를 줄여 주세요`
+                        );
+                    // 브라우저처럼 지연이 10ms 이하인 프레임은 100ms로 본다(GIF에 흔하다)
+                    const ms = (image.duration ?? 0) / 1000;
+                    end += (ms > 10 ? ms : 100) / 1000;
+                    frames.push({ image: await createImageBitmap(image), end });
+                } finally {
+                    image.close();
+                }
+            }
+            return { frames };
+        } catch (error) {
+            frames.forEach(f => f.image.close());
+            throw error;
+        } finally {
+            decoder.close();
+        }
+    }
+
+    async function loadImage(file, signal) {
+        try {
+            const { frames, firstOnly } = await decodeImage(file, signal);
+            if (signal.aborted) return frames.forEach(f => f.image.close());
+            media.frames = frames;
+            media.still = frames.length === 1;
+            state.firstOnly = !!firstOnly;
+            sourceReady();
+        } catch (error) {
+            if (!signal.aborted)
+                showError(
+                    error.name === 'EncodingError' || error.name === 'InvalidStateError'
+                        ? '이미지를 불러올 수 없어요. 브라우저가 지원하는 형식(GIF, WebP, PNG, JPG 등)인지 확인해주세요'
+                        : error.message || String(error)
+                );
+        }
+    }
+
+    // 영상·이미지 공통: 길이·크기를 알게 된 뒤 편집 화면을 연다
+    function sourceReady() {
+        const d = media.duration;
+        document.body.classList.toggle('is-still', media.still);
+        $('seek').max = d;
+        $('start').value = 0;
+        $('end').value = $('start').max = $('end').max = round2(d);
+        const size = `원본 ${media.width}×${media.height}`;
+        $('srcInfo').textContent = media.still
+            ? `${size} · 사진`
+            : `${size}${media.kind === 'image' ? ` · ${media.frames.length}프레임` : ''} · ${d.toFixed(2)}초`;
+        $('srcBadge').textContent = size;
+        show($('srcBadge'), true);
+        show($('drop'), false);
+        show($('editor'), true);
+        $('convert').disabled = false;
+        state.loaded = true;
+        state.crop = null;
+        state.cropEditing = false;
+        media.currentTime = 0;
+        playUI(false);
+        cropUI();
+        requestDraw();
     }
 
     video.addEventListener('loadedmetadata', async () => {
@@ -267,52 +455,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
             }
             signal?.throwIfAborted();
-            const d = video.duration;
-            $('seek').max = d;
-            $('start').value = 0;
-            $('end').value = $('start').max = $('end').max = round2(d);
-            $('srcInfo').textContent = `원본 ${video.videoWidth}×${video.videoHeight} · ${d.toFixed(2)}초`;
-            $('srcBadge').textContent = `원본 ${video.videoWidth}×${video.videoHeight}`;
-            show($('srcBadge'), true);
-            show($('drop'), false);
-            show($('editor'), true);
-            $('convert').disabled = false;
-            state.loaded = true;
-            state.crop = null;
-            state.cropEditing = false;
-            video.currentTime = 0;
-            cropUI();
-            requestDraw();
+            state.firstOnly = false;
+            sourceReady();
         } catch (error) {
             if (!signal?.aborted) showError(error.message || String(error));
         }
     });
-    video.addEventListener('error', () =>
-        showError('영상을 불러올 수 없어요. 브라우저가 지원하는 형식(MP4/H.264, WebM 등)인지 확인해주세요')
+    video.addEventListener(
+        'error',
+        () =>
+            // 이미지로 바꾸며 src를 비울 때도 error가 날 수 있어 영상일 때만 알린다
+            media.kind === 'video' &&
+            showError('영상을 불러올 수 없어요. 브라우저가 지원하는 형식(MP4/H.264, WebM 등)인지 확인해주세요')
     );
 
     $('play').addEventListener('click', () => {
-        if (!video.paused) return video.pause();
+        if (!media.paused) return media.pause();
         const s = +$('start').value,
             e = +$('end').value;
-        if (video.currentTime < s || video.currentTime >= e) video.currentTime = s;
-        video.play();
+        if (media.currentTime < s || media.currentTime >= e) media.currentTime = s;
+        media.play();
     });
-    video.addEventListener('play', () => {
-        $('play').textContent = '❚❚';
-    });
-    video.addEventListener('pause', () => {
-        $('play').textContent = '▶';
-    });
+    video.addEventListener('play', () => playUI(true));
+    video.addEventListener('pause', () => playUI(false));
     $('seek').addEventListener('input', e => {
-        video.currentTime = +e.target.value;
+        media.currentTime = +e.target.value;
     });
     $('setStart').addEventListener('click', () => {
-        $('start').value = round2(video.currentTime);
+        $('start').value = round2(media.currentTime);
         updateInfo();
     });
     $('setEnd').addEventListener('click', () => {
-        $('end').value = round2(video.currentTime);
+        $('end').value = round2(media.currentTime);
         updateInfo();
     });
 
@@ -321,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mode = $('sizeMode').value;
         let w, h;
         if (mode === 'orig') {
-            const c = state.crop || { w: video.videoWidth, h: video.videoHeight };
+            const c = state.crop || { w: media.width, h: media.height };
             w = c.w;
             h = c.h;
         } else if (mode === 'custom') {
@@ -342,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function keepAspect(changed) {
         if ($('lockAR').checked && state.loaded) {
-            const c = state.crop || { w: video.videoWidth, h: video.videoHeight };
+            const c = state.crop || { w: media.width, h: media.height };
             if (changed === 'cw') $('ch').value = Math.round((+$('cw').value * c.h) / c.w);
             else $('cw').value = Math.round((+$('ch').value * c.w) / c.h);
         }
@@ -370,6 +544,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!state.loaded) return;
         const { w, h } = outSize();
         $('sizeInfo').textContent = `출력: ${w} × ${h} px`;
+        if (media.still) {
+            $('frameInfo').innerHTML =
+                '사진 한 장이라 움직이지 않는 WebP로 저장해요' +
+                (state.firstOnly
+                    ? ' <span class="warn">— 이 브라우저는 움짤의 첫 장면만 읽어요. 움직임까지 쓰려면 크롬이나 엣지를 써 주세요</span>'
+                    : '');
+            return;
+        }
         const dur = +$('end').value - +$('start').value;
         const n = Math.max(1, Math.floor(dur * +$('fps').value));
         $('frameInfo').innerHTML =
@@ -508,18 +690,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('timeOn').addEventListener('change', () => {
         if ($('timeOn').checked && +$('tTo').value <= +$('tFrom').value) {
-            const now = video.currentTime || 0;
+            const now = media.currentTime || 0;
             $('tFrom').value = round2(now);
-            $('tTo').value = round2(Math.min(video.duration || now + 1, now + 1));
+            $('tTo').value = round2(Math.min(media.duration || now + 1, now + 1));
         }
         show($('timeGroup'), $('timeOn').checked);
     });
     $('setFrom').addEventListener('click', () => {
-        $('tFrom').value = round2(video.currentTime);
+        $('tFrom').value = round2(media.currentTime);
         saveLayer();
     });
     $('setTo').addEventListener('click', () => {
-        $('tTo').value = round2(video.currentTime);
+        $('tTo').value = round2(media.currentTime);
         saveLayer();
     });
 
@@ -585,7 +767,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function drawText(ctx, w, h, L, t, o) {
         L._visible = false;
-        if (!L.text.trim() || (L.timeOn && (t < L.tFrom || t > L.tTo))) return;
+        // 사진에는 시간이 없어 '특정 시간에만 보이기'를 따지지 않는다
+        if (!L.text.trim() || (L.timeOn && !media.still && (t < L.tFrom || t > L.tTo))) return;
         const lines = L.text.split('\n');
         const n = lines.length;
         const size = Math.max(1, L.fsize);
@@ -681,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // clip=false: 모서리 바깥까지 채운 그림(투명 없음). 압축용 색을 얻을 때만 쓴다.
     function drawFrame(ctx, w, h, t, o = readOpts(), clip = true) {
-        const c = state.crop || { x: 0, y: 0, w: video.videoWidth, h: video.videoHeight };
+        const c = state.crop || { x: 0, y: 0, w: media.width, h: media.height };
         let sx = c.x,
             sy = c.y,
             sw = c.w,
@@ -713,7 +896,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clip) ctx.clip(shape);
         ctx.fillStyle = o.bg;
         ctx.fillRect(0, 0, w, h);
-        drawScaled(ctx, video, sx, sy, sw, sh, dx, dy, dw, dh);
+        drawScaled(ctx, media.image, sx, sy, sw, sh, dx, dy, dw, dh);
         if (o.frame !== 'none') {
             // 클립 안쪽 절반만 보이므로 두께를 두 배로 그림 → 출력 크기는 그대로
             ctx.lineJoin = 'round';
@@ -740,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const requestDraw = () => {
         if (!state.loaded || state.converting || !state.active || document.hidden) return;
-        if (video.paused && videoFrameRequest !== null) {
+        if (media.paused && videoFrameRequest !== null) {
             video.cancelVideoFrameCallback(videoFrameRequest);
             videoFrameRequest = null;
         }
@@ -754,9 +937,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function loop() {
         previewRequest = null;
         if (!state.loaded || state.converting || !state.active || document.hidden) return;
-        if (!video.paused) {
-            if (video.currentTime >= +$('end').value) video.currentTime = +$('start').value;
-            if (video.requestVideoFrameCallback) {
+        if (!media.paused) {
+            if (media.currentTime >= +$('end').value) media.currentTime = +$('start').value;
+            if (media.kind === 'video' && video.requestVideoFrameCallback) {
                 if (videoFrameRequest === null)
                     videoFrameRequest = video.requestVideoFrameCallback(() => {
                         videoFrameRequest = null;
@@ -764,8 +947,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
             } else requestDraw();
         }
-        $('seek').value = video.currentTime;
-        $('timeLabel').textContent = `${video.currentTime.toFixed(2)} / ${video.duration.toFixed(2)}`;
+        $('seek').value = media.currentTime;
+        $('timeLabel').textContent = `${media.currentTime.toFixed(2)} / ${media.duration.toFixed(2)}`;
         if (state.cropEditing) return drawCropEditor();
 
         const { w, h } = outSize();
@@ -773,7 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pv.width = w;
             pv.height = h;
         }
-        drawFrame(pctx, w, h, video.currentTime);
+        drawFrame(pctx, w, h, media.currentTime);
         const b = layer()._box;
         if (layers.length > 1 && layer()._visible) {
             const dash = Math.max(3, w / 80);
@@ -788,7 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateActivity() {
         if (!state.active || document.hidden) {
-            video.pause();
+            media.pause();
             cancelConversion();
             stopPreview();
         } else requestDraw();
@@ -805,11 +988,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateActivity();
     });
     window.addEventListener('pagehide', event => {
-        video.pause();
+        media.pause();
         cancelConversion();
         stopPreview();
         if (!event.persisted) {
             state.sourceController?.abort();
+            media.release();
             if (state.srcURL) URL.revokeObjectURL(state.srcURL);
             if (state.resultURL) URL.revokeObjectURL(state.resultURL);
         }
@@ -861,14 +1045,14 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     );
 
-    // ---------- 자르기 (state.crop은 원본 영상 픽셀 기준) ----------
-    const cropScale = () => Math.min(1, 800 / Math.max(video.videoWidth, video.videoHeight));
+    // ---------- 자르기 (state.crop은 원본 픽셀 기준) ----------
+    const cropScale = () => Math.min(1, 800 / Math.max(media.width, media.height));
     const handleSize = () => (14 * pv.width) / (pv.getBoundingClientRect().width || pv.width);
 
     // 중심을 유지한 채 비율 R로 맞추고 원본 안에 들어가게 함
     function fitRatio(c, R) {
-        const vw = video.videoWidth,
-            vh = video.videoHeight;
+        const vw = media.width,
+            vh = media.height;
         let w = c.w,
             h = c.h;
         if (w / h > R) w = h * R;
@@ -916,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!state.loaded) return;
         state.cropEditing = !state.cropEditing;
         if (state.cropEditing && !state.crop) {
-            const full = { x: 0, y: 0, w: video.videoWidth, h: video.videoHeight };
+            const full = { x: 0, y: 0, w: media.width, h: media.height };
             const R = $('cropLock').checked && outRatio();
             state.crop = R ? fitRatio(full, R) : full;
         }
@@ -930,8 +1114,8 @@ document.addEventListener('DOMContentLoaded', () => {
     $('cropLock').addEventListener('change', refitCrop);
 
     function setCrop(x, y, w, h, keep) {
-        const vw = video.videoWidth,
-            vh = video.videoHeight;
+        const vw = media.width,
+            vh = media.height;
         w = clamp(w, 8, vw);
         h = clamp(h, 8, vh);
         const R = $('cropLock').checked && outRatio();
@@ -966,14 +1150,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function drawCropEditor() {
         const s = cropScale();
-        const W = Math.round(video.videoWidth * s),
-            H = Math.round(video.videoHeight * s);
+        const W = Math.round(media.width * s),
+            H = Math.round(media.height * s);
         if (pv.width !== W || pv.height !== H) {
             pv.width = W;
             pv.height = H;
         }
         pctx.imageSmoothingQuality = 'high';
-        pctx.drawImage(video, 0, 0, W, H);
+        pctx.drawImage(media.image, 0, 0, W, H);
         const { x, y, w, h } = Object.fromEntries(Object.entries(state.crop).map(([k, v]) => [k, v * s]));
         pctx.save();
         pctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -1008,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function cropPoint(e) {
         const s = cropScale(),
             p = canvasPoint(e);
-        return { x: clamp(p.x / s, 0, video.videoWidth), y: clamp(p.y / s, 0, video.videoHeight) };
+        return { x: clamp(p.x / s, 0, media.width), y: clamp(p.y / s, 0, media.height) };
     }
     function cropPointerDown(e) {
         const p = cropPoint(e),
@@ -1097,9 +1281,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function convert() {
         if (!state.loaded || state.converting || !state.active || document.hidden) return;
-        const start = Math.max(0, +$('start').value);
-        const end = Math.min(video.duration, +$('end').value);
-        if (!(end > start)) return showError('끝 시간이 시작 시간보다 커야 해요');
+        const still = media.still;
+        const start = still ? 0 : Math.max(0, +$('start').value);
+        const end = still ? 0 : Math.min(media.duration, +$('end').value);
+        if (!still && !(end > start)) return showError('끝 시간이 시작 시간보다 커야 해요');
         showError('');
         state.converting = true;
         const controller = new AbortController();
@@ -1111,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.cropEditing = false;
             cropUI();
         }
-        video.pause();
+        media.pause();
         $('convert').disabled = true;
         show($('progWrap'), true);
 
@@ -1122,7 +1307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const fps = +$('fps').value;
             // 브라우저는 품질 1.0을 무손실(VP8L)로 인코딩함
             const q = $('lossless').checked ? 1 : +$('quality').value / 100;
-            const n = Math.max(1, Math.floor((end - start) * fps));
+            const n = still ? 1 : Math.max(1, Math.floor((end - start) * fps));
             const opts = readOpts();
             const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
             const ctx = canvas.getContext('2d');
@@ -1166,8 +1351,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const pending = [];
             for (let i = 0; i < n; i++) {
                 signal.throwIfAborted();
-                const t = Math.min(start + i / fps, video.duration - 0.001);
-                await seekTo(t, signal);
+                const t = still ? 0 : Math.min(start + i / fps, media.duration - 0.001);
+                await media.seek(t, signal);
                 signal.throwIfAborted();
                 drawFrame(ctx, w, h, t, opts);
                 if (colorCtx) drawFrame(colorCtx, w, h, t, opts, false);
@@ -1183,13 +1368,14 @@ document.addEventListener('DOMContentLoaded', () => {
             signal.throwIfAborted();
 
             $('progLabel').textContent = '파일 만드는 중';
-            const blob = new Blob([buildAnimatedWebP(frames, w, h, +$('loop').value)], { type: 'image/webp' });
+            const bytes = still ? buildStillWebP(frames[0], w, h) : buildAnimatedWebP(frames, w, h, +$('loop').value);
+            const blob = new Blob([bytes], { type: 'image/webp' });
             if (state.resultURL) URL.revokeObjectURL(state.resultURL);
             state.resultURL = URL.createObjectURL(blob);
             $('resultImg').src = $('download').href = state.resultURL;
             $('download').download = `${state.fileName}_${w}x${h}.webp`;
             $('resultInfo').textContent =
-                `${w}×${h} · ${n}프레임 · ${fps}fps · ${q === 1 ? '무손실' : '품질 ' + Math.round(q * 100)} · ${formatBytes(blob.size)}`;
+                `${w}×${h} · ${still ? '사진' : `${n}프레임 · ${fps}fps`} · ${q === 1 ? '무손실' : '품질 ' + Math.round(q * 100)} · ${formatBytes(blob.size)}`;
             show($('result'), true);
             $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (err) {
@@ -1282,6 +1468,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 out.set(c, o);
                 o += padded(c);
             }
+        }
+        return out;
+    }
+
+    // 정지 WebP: RIFF/WEBP → VP8X(알파 플래그) → 이미지 청크. 알파와 색을 따로 인코딩한 프레임도 담을 수 있다.
+    function buildStillWebP(frame, w, h) {
+        const padded = c => c.length + (c.length & 1);
+        const total = 12 + 18 + frame.chunks.reduce((a, c) => a + padded(c), 0);
+        const out = new Uint8Array(total);
+        const dv = new DataView(out.buffer);
+        out.set(
+            [...'RIFF'].map(ch => ch.charCodeAt(0)),
+            0
+        );
+        dv.setUint32(4, total - 8, true);
+        out.set(
+            [...'WEBPVP8X'].map(ch => ch.charCodeAt(0)),
+            8
+        );
+        dv.setUint32(16, 10, true);
+        out[20] = frame.alpha ? 0x10 : 0;
+        for (const [o, v] of [
+            [24, w - 1],
+            [27, h - 1],
+        ]) {
+            out[o] = v & 255;
+            out[o + 1] = (v >> 8) & 255;
+            out[o + 2] = (v >> 16) & 255;
+        }
+        let o = 30;
+        for (const c of frame.chunks) {
+            out.set(c, o);
+            o += padded(c);
         }
         return out;
     }

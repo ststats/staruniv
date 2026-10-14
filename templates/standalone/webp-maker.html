@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>움짤생성기</title>
-<meta name="description" content="영상에 글자와 테두리를 얹어 움직이는 WebP(움짤)로 만듭니다. 영상은 서버로 보내지 않고 브라우저 안에서만 처리합니다">
-<!-- 사이트 도구 페이지가 iframe으로 띄우는 단독 페이지다(동작은 webp-maker.js). 영상은 브라우저 안에서만 처리한다.
+<meta name="description" content="영상·움짤·사진에 글자와 테두리를 얹어 WebP로 만듭니다. 파일은 서버로 보내지 않고 브라우저 안에서만 처리합니다">
+<!-- 사이트 도구 페이지가 iframe으로 띄우는 단독 페이지다(동작은 webp-maker.js). 원본 파일은 브라우저 안에서만 처리한다.
           Google Fonts·눈누 글꼴은 영상 위 텍스트용이다(vercel.json CSP가 두 주소를 허용한다). -->
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,6 +66,8 @@
     font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-size: var(--fs-body); }
   :focus-visible { outline: none; }
   .hidden { display: none !important; }
+  /* 사진(한 장짜리)은 재생·구간·시간 설정이 없다 */
+  .is-still .anim-only { display: none !important; }
   [data-panel]:not(.is-open) { display: none; }
   input, select, textarea, button { font: inherit; color: var(--color-text-main); }
   .stage::-webkit-scrollbar { width: 10px; }
@@ -270,21 +272,21 @@
       <span class="title-actions">
         <button class="text-action" id="cropToggle"></button>
         <button class="text-action" id="cropReset" disabled>자르기 해제</button>
-        <button class="text-action" id="newFile"><span>다른 영상</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15m0 5v-5h5"/></svg></button>
+        <button class="text-action" id="newFile"><span>다른 파일</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15m0 5v-5h5"/></svg></button>
       </span>
     </div>
 
     <div id="drop">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14"/><path d="M3 9h18M7 5v4M12 5v4M17 5v4"/><path d="M10.5 12.5v4l3.5-2z" fill="currentColor"/></svg>
-      <div class="drop-title">아직 영상이 없습니다</div>
-      <div class="drop-sub">영상 파일을 끌어다 놓거나 눌러서 고르세요 · MP4, WebM, MOV 등</div>
-      <span class="drop-btn"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V7m-5 5 5-5 5 5M5 4h14"/></svg>영상 고르기</span>
+      <div class="drop-title">아직 파일이 없습니다</div>
+      <div class="drop-sub">영상·움짤·사진을 끌어다 놓거나 눌러서 고르세요 · MP4, WebM, GIF, WebP, PNG, JPG 등</div>
+      <span class="drop-btn"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V7m-5 5 5-5 5 5M5 4h14"/></svg>파일 고르기</span>
     </div>
-    <input type="file" id="file" accept="video/*" class="hidden">
+    <input type="file" id="file" accept="video/*,image/*" class="hidden">
 
     <div id="editor" class="viewer hidden">
       <div class="canvasWrap checker"><canvas id="preview"></canvas></div>
-      <div class="controls">
+      <div class="controls anim-only">
         <button id="play" aria-label="재생">▶</button>
         <input type="range" id="seek" class="grow" min="0" max="1" step="0.01" value="0">
         <span class="time" id="timeLabel"></span>
@@ -377,22 +379,22 @@
       <div class="panel-head"><span>구간 · 품질</span><span class="en">RANGE · QUALITY</span></div>
       <div class="panel-body">
         <div class="fields">
-          <div class="field">
+          <div class="field anim-only">
             <label class="slot" for="start">시작 (초)</label>
             <div class="row"><input type="number" id="start" min="0" step="0.1" value="0"><button class="chip" id="setStart">현재 위치</button></div>
           </div>
-          <div class="field">
+          <div class="field anim-only">
             <label class="slot" for="end">끝 (초)</label>
             <div class="row"><input type="number" id="end" min="0" step="0.1" value="0"><button class="chip" id="setEnd">현재 위치</button></div>
           </div>
-          <div class="field">
+          <div class="field anim-only">
             <label class="slot" for="fps">FPS</label>
             <select id="fps">
               <option>5</option><option>10</option><option>15</option>
               <option>20</option><option>24</option><option selected>30</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field anim-only">
             <label class="slot" for="loop">반복</label>
             <select id="loop">
               <option value="0" selected>무한 반복</option>
@@ -510,8 +512,8 @@
           <label class="slot" for="margin">정렬 여백</label>
           <div class="row"><input type="range" id="margin" class="grow" min="0" max="60" value="8" data-unit="px"></div>
         </div>
-        <label class="check"><input type="checkbox" id="timeOn"> 특정 시간에만 보이기</label>
-        <div id="timeGroup" class="fields hidden">
+        <label class="check anim-only"><input type="checkbox" id="timeOn"> 특정 시간에만 보이기</label>
+        <div id="timeGroup" class="fields anim-only hidden">
           <div class="field">
             <label class="slot" for="tFrom">나타남 (초)</label>
             <div class="row"><input type="number" id="tFrom" min="0" step="0.1" value="0"><button class="chip" id="setFrom">현재 위치</button></div>
