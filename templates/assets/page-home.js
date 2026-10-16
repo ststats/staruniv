@@ -420,13 +420,131 @@ async function renderLatestNotices() {
     container.setAttribute('aria-busy', 'false');
 }
 
+// ----- 기념일(생일·입단) -----
+// 활동 멤버의 생일과 입단 100일 단위·주년. 오늘부터 7일 안의 것은 카드로, 오늘 것은 맨 앞 슬라이드로 띄운다.
+// 입단 일수는 프로필과 같이 입단일을 1일째로 센다. 날짜는 보는 사람의 달력 날짜다(사이트는 한국 시간 기준).
+const ANNIV_DAYS = 7;
+const ANNIV_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function annivDate(text) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(text || ''));
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+// 그해의 같은 달·일. 2월 29일은 평년에 2월 28일로 친다.
+function sameDayIn(date, year) {
+    const d = new Date(year, date.getMonth(), date.getDate());
+    return d.getMonth() === date.getMonth() ? d : new Date(year, date.getMonth() + 1, 0);
+}
+
+function memberAnniversaries(today) {
+    const out = [];
+    activeMembersWithSoopId().forEach(m => {
+        const birth = annivDate(m['생년월일']);
+        const join = annivDate(m['입단일']);
+        for (let i = 0; i < ANNIV_DAYS; i++) {
+            const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+            const at = { m, d, i };
+            if (birth && sameDayIn(birth, d.getFullYear()).getTime() === d.getTime())
+                out.push({ ...at, kind: '생일', text: `${d.getMonth() + 1}월 ${d.getDate()}일` });
+            if (!join || d <= join) continue;
+            const years = d.getFullYear() - join.getFullYear();
+            const days = Math.round((d - join) / 86400000) + 1;
+            // 주년과 100일 단위가 같은 날이면 주년만
+            if (sameDayIn(join, d.getFullYear()).getTime() === d.getTime())
+                out.push({ ...at, kind: '입단', text: `${years}주년` });
+            else if (days % 100 === 0) out.push({ ...at, kind: '입단', text: `${formatNum(days)}일` });
+        }
+    });
+    return out.sort((a, b) => a.i - b.i || (a.kind === '생일' ? -1 : 1) - (b.kind === '생일' ? -1 : 1));
+}
+
+const annivProfileHref = m => `members/?profile=${encodeURIComponent(m['이름'])}`;
+const annivDay = d =>
+    `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${ANNIV_WEEKDAYS[d.getDay()]}`;
+
+function annivCardHtml(e) {
+    const m = e.m;
+    return `
+        <a class="home-anniv-card${liveRaceEdgeClass(m)}${e.i ? '' : ' is-today'}" href="${annivProfileHref(m)}">
+            ${avatarHtml(m['SOOP ID'], 'home-anniv-avatar')}
+            <span class="home-anniv-who">
+                <span class="home-anniv-name">${m['종족'] ? raceBadgeHtml(m['종족']) : ''}${escapeHTML(m['이름'])}</span>
+                <span class="home-anniv-what"><span class="home-anniv-kind">${e.kind}</span>${escapeHTML(e.text)}</span>
+            </span>
+            <span class="home-anniv-dday"><strong>${e.i ? `D-${e.i}` : '오늘'}</strong><small>${annivDay(e.d)}</small></span>
+        </a>`;
+}
+
+// 오늘 기념일이 있으면 맨 앞에 한 장을 끼운다. 다른 장을 보고 있었으면 그 장에 머문다.
+function addAnnivSlide(todays) {
+    const track = document.getElementById('home-carousel-track');
+    if (!track || !todays.length) return;
+    const names = [...new Set(todays.map(e => e.m['이름']))];
+    const birthdays = todays.every(e => e.kind === '생일');
+    const one = todays.length === 1 ? todays[0] : null;
+    const title = birthdays
+        ? `<i>${escapeHTML(names.join('·'))}</i> 생일`
+        : one
+          ? `<i>${escapeHTML(one.m['이름'])}</i> 입단 ${escapeHTML(one.text)}`
+          : '오늘의 <i>기념일</i>';
+    const subtitle = birthdays
+        ? `오늘은 ${names.join('·')}의 생일이에요`
+        : one
+          ? `오늘은 ${one.m['이름']}의 입단 ${one.text}이에요`
+          : todays.map(e => `${e.m['이름']} ${e.kind === '생일' ? '생일' : `입단 ${e.text}`}`).join(' · ');
+    const people = [...new Map(todays.map(e => [e.m['이름'], e.m])).values()];
+    const slide = document.createElement('article');
+    slide.className = 'home-carousel-slide page-header is-anniv';
+    slide.innerHTML = `
+        <div class="home-anniv-confetti" aria-hidden="true">${'<i></i>'.repeat(18)}</div>
+        <div class="page-header-main" data-label="${birthdays ? 'HAPPY BIRTHDAY' : 'ANNIVERSARY'}">
+            <h2 class="page-header-title">${title}</h2>
+            <p class="page-header-subtitle">${escapeHTML(subtitle)}</p>
+        </div>
+        <div class="home-hero-links"><a href="${annivProfileHref(people[0])}">프로필 보기 <span class="i-arrow" aria-hidden="true"></span></a></div>
+        <div class="home-anniv-photos" aria-hidden="true">${people
+            .slice(0, 3)
+            .map(m => avatarHtml(m['SOOP ID'], 'home-anniv-photo'))
+            .join('')}</div>`;
+    // 색종이 자리·떨어지는 때를 조각마다 다르게
+    slide.querySelectorAll('.home-anniv-confetti i').forEach((c, i) => {
+        c.style.left = `${(i * 37) % 100}%`;
+        c.style.animationDelay = `${-i * 0.37}s`;
+    });
+    track.prepend(slide);
+    const dots = document.getElementById('home-carousel-dots');
+    dots.innerHTML = [...track.children]
+        .map(
+            (_, i) =>
+                `<button type="button" aria-label="${i + 1}번 안내"${act('goHomeCarousel', i)}${i ? '' : ' class="active"'}></button>`
+        )
+        .join('');
+    if (homeCarouselIndex) homeCarouselIndex += 1;
+    goHomeCarousel(homeCarouselIndex);
+    if (homeCarouselTimer) startHomeCarouselAuto();
+}
+
+function renderAnniversaries() {
+    const events = memberAnniversaries(annivDate(todayStr()));
+    const box = document.getElementById('home-anniv');
+    box.hidden = !events.length;
+    document.getElementById('home-anniv-count').textContent = events.length ? `${events.length}개` : '';
+    document.getElementById('home-anniv-grid').innerHTML = events.map(annivCardHtml).join('');
+    addAnnivSlide(events.filter(e => !e.i));
+}
+
 // 넘기기·첫 장 영상은 데이터가 필요 없어 명단을 기다리지 않는다(기다리면 첫 화면이 1~2초 멈춘다).
 safeInit('홈 캐러셀', initHomeCarousel);
 bootPage(
     () => {
         safeInit('홈 미리보기', renderHomePreviewPanes);
+        safeInit('기념일', renderAnniversaries);
         safeInit('방송중 카드', renderLiveBroadcasts);
         safeInit('최근 공지', renderLatestNotices);
     },
-    { prefetch: () => fetchLiveBroadcasts().catch(() => {}) }
+    {
+        siteData: ['members', 'profiles'], // profiles: 기념일의 생년월일
+        prefetch: () => fetchLiveBroadcasts().catch(() => {}),
+    }
 ); // 명단을 기다리지 않고 받아 둔다

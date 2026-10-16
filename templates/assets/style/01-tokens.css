@@ -53,6 +53,9 @@
     /* 면(패널) 토큰: 네이비 면 안에서는 흰 계열로 바뀐다 */
     --panel-bg: #ffffff;
     --panel-control: #edf2fb;
+    /* 홈 기념일: 오늘 */
+    --anniv-today: #d6336c;
+    --anniv-today-bg: #fde8ef;
     --panel-text: var(--color-text-main);
     --panel-muted: #56627a;
     --panel-line: #e1e7f0;
@@ -191,6 +194,8 @@ html[data-theme='dark'] {
 
     --panel-bg: #0b0e14;
     --panel-control: #1a202c;
+    --anniv-today: #ff8fb3;
+    --anniv-today-bg: #3a1624;
     --panel-muted: #a0a8b5;
     --panel-line: #242b38;
     --nav-bg: rgba(7, 9, 13, 0.88);

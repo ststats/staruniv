@@ -137,6 +137,72 @@
         background-clip: padding-box;
     }
 
+    /* 기념일 장(page-home.js addAnnivSlide): 오른쪽에 주인공 사진, 뒤로 천천히 떨어지는 색종이 */
+    .home-carousel-slide.is-anniv {
+        position: relative;
+        overflow: hidden;
+    }
+    .home-carousel-slide.is-anniv > :not(.home-anniv-confetti, .home-anniv-photos) {
+        position: relative;
+    }
+    .home-anniv-photos {
+        position: absolute;
+        top: 50%;
+        right: max(32px, calc((100vw - 1280px) / 2 + 40px));
+        display: flex;
+        transform: translateY(-50%);
+    }
+    .home-anniv-photo {
+        width: 148px;
+        height: 148px;
+        object-fit: cover;
+        clip-path: var(--notch-12);
+        background: var(--panel-control);
+    }
+    .home-anniv-photo + .home-anniv-photo {
+        margin-left: calc(-1 * var(--space-8));
+    }
+    .home-anniv-confetti {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+    .home-anniv-confetti i {
+        position: absolute;
+        top: -8%;
+        width: 6px;
+        height: 14px;
+        opacity: 0.5;
+        background: var(--panel-accent);
+    }
+    .home-anniv-confetti i:nth-child(3n + 1) {
+        background: #ff8fb3;
+    }
+    .home-anniv-confetti i:nth-child(3n + 2) {
+        background: #ffd166;
+    }
+    .home-anniv-confetti i:nth-child(4n) {
+        background: #9be7c4;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        .home-anniv-confetti i {
+            animation: home-anniv-fall 6s linear infinite;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-anniv-confetti {
+            display: none;
+        }
+    }
+    @keyframes home-anniv-fall {
+        from {
+            transform: translateY(0) rotate(0);
+        }
+        to {
+            transform: translateY(420px) rotate(260deg);
+        }
+    }
+
     /* 오른쪽 미리보기 칸(page-home.js renderHomePreviewPanes) */
     .home-carousel-preview {
         /* 최대 네 일정만 보여 히어로 높이를 유지한다. */
@@ -224,6 +290,88 @@
     }
 
     /* ----- 홈 방송 중 구역(카드 공통 모양은 04-components.css) ----- */
+    /* ----- 기념일 카드: 오늘부터 7일, 오늘 것은 분홍으로 ----- */
+    .home-anniv {
+        margin-bottom: var(--space-section-gap);
+    }
+    .home-anniv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+        gap: var(--space-compact-gap);
+    }
+    .home-anniv-card {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        gap: var(--space-4);
+        align-items: center;
+        padding: var(--space-4);
+        background: var(--color-card);
+        clip-path: var(--notch-12);
+        color: var(--color-text-main);
+    }
+    .home-anniv-card:hover {
+        background: var(--color-row-hover);
+    }
+    .home-anniv-card.is-today {
+        background: var(--anniv-today-bg);
+    }
+    .home-anniv-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .home-anniv-who {
+        display: grid;
+        gap: var(--space-1);
+        min-width: 0;
+    }
+    .home-anniv-name {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        overflow: hidden;
+        font-weight: 700;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    .home-anniv-what {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--color-text-main);
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+    .home-anniv-kind {
+        padding: 0 var(--space-2);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-sub);
+        font-size: var(--fs-badge-sm);
+        font-weight: 700;
+    }
+    .home-anniv-card.is-today .home-anniv-kind {
+        border-color: transparent;
+        background: var(--anniv-today);
+        color: #fff;
+    }
+    .home-anniv-dday {
+        display: grid;
+        justify-items: end;
+    }
+    .home-anniv-dday strong {
+        font-size: var(--fs-body);
+        font-weight: 800;
+    }
+    .home-anniv-card.is-today .home-anniv-dday strong {
+        color: var(--anniv-today);
+    }
+    .home-anniv-dday small {
+        color: var(--color-text-faint);
+        font-size: var(--fs-small);
+    }
+
     .live-broadcast-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -338,7 +486,8 @@
         .live-broadcast-grid {
             grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
         }
-        .home-carousel-slide > .home-carousel-preview {
+        .home-carousel-slide > .home-carousel-preview,
+        .home-anniv-photos {
             display: none;
         } /* 위 data-preview별 display:grid보다 세게 */
     }

@@ -946,6 +946,13 @@ bootPage(
                 const view = rawView === 'news' ? 'news' : 'status';
                 const member = params.get('member');
                 switchMemberView(view, true, member);
+                // 홈 기념일에서 온 주소(?profile=이름)는 그 멤버 프로필을 연다
+                const profile = params.get('profile');
+                const pm =
+                    profile &&
+                    (SiteData.members.find(x => x['이름'] === profile && isActiveMember(x)) ||
+                        findMemberByName(profile));
+                if (pm) openMemberProfile(pm._id);
                 if (view === 'news' && member) selectNewsPlayer(member);
                 // 뒤로가기로 "전체 공지" 주소에 돌아오면 화면도 되돌린다
                 else if (view === 'news' && NewsState.player && NewsState.sidebarRendered) showNewsAll(true);
