@@ -255,8 +255,6 @@ function histPickType(type) {
     if (typeof window.histRedraw === 'function') window.histRedraw();
 }
 
-const HIST_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-
 const HIST_LOAD_FAILED_HTML =
     '<div class="content-state is-boxed">연혁을 불러오지 못했습니다. 잠시 후 다시 시도해주세요</div>';
 
@@ -290,7 +288,7 @@ function histItemHtml(item, opts) {
     const type = HISTORY_TYPES[item.type] ? item.type : 'event';
     const d = new Date(item.date + 'T00:00:00');
     const dateText = `${item.date.slice(5, 7)}.${item.date.slice(8, 10)}`;
-    const weekday = isNaN(d) ? '' : HIST_WEEKDAYS[d.getDay()];
+    const weekday = isNaN(d) ? '' : WEEKDAYS[d.getDay()];
     const thumb = histThumbUrl(item);
     const yt = histYoutubeId(item.youtube);
     const key = escapeHTML(item.id);

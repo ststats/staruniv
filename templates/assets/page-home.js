@@ -422,9 +422,8 @@ async function renderLatestNotices() {
 
 // ----- 기념일(생일·입단) -----
 // 활동 멤버의 생일과 입단 100일 단위·주년. 오늘부터 7일 안의 것은 카드로, 오늘 것은 맨 앞 슬라이드로 띄운다.
-// 입단 일수는 프로필과 같이 입단일을 1일째로 센다. 날짜는 보는 사람의 달력 날짜다(사이트는 한국 시간 기준).
+// 입단 일수는 프로필과 같은 daysBetween(입단일이 1일째). 날짜는 보는 사람의 달력 날짜다.
 const ANNIV_DAYS = 7;
-const ANNIV_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function annivDate(text) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(text || ''));
@@ -449,7 +448,7 @@ function memberAnniversaries(today) {
                 out.push({ ...at, kind: '생일', text: `${d.getMonth() + 1}월 ${d.getDate()}일` });
             if (!join || d <= join) continue;
             const years = d.getFullYear() - join.getFullYear();
-            const days = Math.round((d - join) / 86400000) + 1;
+            const days = daysBetween(m['입단일'], todayStr(d));
             // 주년과 100일 단위가 같은 날이면 주년만
             if (sameDayIn(join, d.getFullYear()).getTime() === d.getTime())
                 out.push({ ...at, kind: '입단', text: `${years}주년` });
@@ -461,7 +460,7 @@ function memberAnniversaries(today) {
 
 const annivProfileHref = m => `members/?profile=${encodeURIComponent(m['이름'])}`;
 const annivDay = d =>
-    `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${ANNIV_WEEKDAYS[d.getDay()]}`;
+    `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${WEEKDAYS[d.getDay()]}`;
 
 function annivCardHtml(e) {
     const m = e.m;

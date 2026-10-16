@@ -847,9 +847,10 @@ function activeMembersWithSoopId() {
     return SiteData.members.filter(m => isActiveMember(m) && isValidSoopId(m['SOOP ID']));
 }
 
-// 로컬 기준. toISOString()은 UTC라 한국 시간 0~9시에 어제가 된다.
-function todayStr() {
-    const d = new Date();
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+// 날짜(기본 오늘)를 YYYY-MM-DD로. 로컬 기준이다. toISOString()은 UTC라 한국 시간 0~9시에 어제가 된다.
+function todayStr(d = new Date()) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

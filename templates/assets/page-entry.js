@@ -1243,7 +1243,7 @@ function renderEntryDatePicker() {
             <span class="entry-cal-title">${y}년 ${m}월</span>
             <button type="button" class="entry-cal-nav is-next" aria-label="다음 달"${act('entryShiftDateMonth', 1)}>${chevronDownSvg(11)}</button>
         </div>
-        <div class="entry-cal-grid">${['일', '월', '화', '수', '목', '금', '토'].map(w => `<span class="entry-cal-weekday">${w}</span>`).join('')}${cells}</div>
+        <div class="entry-cal-grid">${WEEKDAYS.map(w => `<span class="entry-cal-weekday">${w}</span>`).join('')}${cells}</div>
         <div class="entry-cal-foot">
             <button type="button" class="text-action"${act('entryPickDate', today)}>오늘</button>
         </div>`;
