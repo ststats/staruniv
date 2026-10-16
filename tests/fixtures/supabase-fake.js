@@ -102,6 +102,15 @@ function respond(url) {
     api_schedule_on: () => T('calendar_events', 'start_date,end_date,event_time,person,title'),
     api_history: () => T('history_entries', 'id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden'),
     api_member_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, total_pages: 2, post: p.post })),
+    api_member_vods: q => {
+      const id = q.get('p_soop_id');
+      return Array.from({ length: 30 }, (_, n) => ({ soop_id: 'user' + (n % 12), title_no: 90000 - n,
+        title: n % 4 ? `다시보기 ${n}` : `아주 긴 다시보기 제목이 여기 들어가서 두 줄을 넘어가는 경우 ${n}`,
+        reg_date: new Date(BASE - n * 7200000).toISOString().replace('T', ' ').slice(0, 19),
+        thumb: n % 5 ? 'https://videoimg.sooplive.co.kr/x/' + n + '.jpg' : null,
+        duration_sec: n % 3 ? 3600 + n * 61 : 754, views: n % 2 ? 1234 + n : null }))
+        .filter(r => !id || r.soop_id === id).slice(0, 20);
+    },
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),
     api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at'),
     api_videos: q => {

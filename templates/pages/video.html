@@ -4,11 +4,12 @@
     <div class="page-header">
         <div class="page-header-main" data-label="VIDEO">
             <h1 class="page-header-title">영상</h1>
-            <p class="page-header-subtitle">캄몬스타즈 팬 채널의 영상과 추천 영상입니다</p>
+            <p class="page-header-subtitle">캄몬스타즈 팬 채널의 영상과 추천 영상, 멤버 다시보기입니다</p>
         </div>
         <div class="sub-tabs tab-scroll" role="tablist">
             <div class="sub-tab active" id="tab-video-fantube" role="tab" tabindex="0" aria-selected="true" data-click="switchVideoView" data-args='["fantube"]'>팬튜브</div>
             <div class="sub-tab" id="tab-video-pick" role="tab" tabindex="0" aria-selected="false" data-click="switchVideoView" data-args='["pick"]'>보자</div>
+            <div class="sub-tab" id="tab-video-replay" role="tab" tabindex="0" aria-selected="false" data-click="switchVideoView" data-args='["replay"]'>다시보기</div>
         </div>
     </div>
     <div class="container">
@@ -54,6 +55,22 @@
     <div id="view-video-pick" class="d-none">
         {#- 분류마다 제목줄이 생기므로 그리드가 아니라 묶음들을 감싸는 칸이다. #}
         <div id="video-pick-grid"></div>
+    </div>
+
+    {#- 3. 다시보기: 활동 멤버의 숲 다시보기 최근 20개(ststat이 모은다). 더 오래된 것은 방송국에서 본다. #}
+    <div id="view-video-replay" class="d-none">
+      <div class="selection-layout">
+        <div class="avatar-selector-scroll scroll-area">
+            <div class="avatar-selector-list" id="replay-member-row"></div>
+        </div>
+        <div class="selection-content">
+            <div class="section-title" data-en="REPLAY"><span class="section-title-label" id="replay-title">전체 다시보기</span><span class="title-count" id="replay-count"></span></div>
+            <div class="video-grid" id="replay-grid" aria-live="polite"></div>
+            <div class="news-load-more-wrap video-more-wrap" id="replay-station-wrap" hidden>
+                <a class="news-load-more" id="replay-station-link" href="#" target="_blank" rel="noopener">방송국에서 더 보기 <span class="i-arrow" aria-hidden="true"></span></a>
+            </div>
+        </div>
+      </div>
     </div>
     </div>
 </section>
