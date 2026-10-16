@@ -102,13 +102,14 @@ function respond(url) {
     api_schedule_on: () => T('calendar_events', 'start_date,end_date,event_time,person,title'),
     api_history: () => T('history_entries', 'id,entry_kind,event_date,event_type,title,description,members,youtube_url,image_path,sort_order,hidden'),
     api_member_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, total_pages: 2, post: p.post })),
-    api_member_vods: q => {
-      const id = q.get('p_soop_id');
-      return Array.from({ length: 30 }, (_, n) => ({ soop_id: 'user' + (n % 12), title_no: 90000 - n,
-        title: n % 4 ? `다시보기 ${n}` : `아주 긴 다시보기 제목이 여기 들어가서 두 줄을 넘어가는 경우 ${n}`,
-        reg_date: new Date(BASE - n * 7200000).toISOString().replace('T', ' ').slice(0, 19),
-        thumb: n % 5 ? 'https://videoimg.sooplive.co.kr/x/' + n + '.jpg' : null,
-        duration_sec: n % 3 ? 3600 + n * 61 : 754, views: n % 2 ? 1234 + n : null }))
+    api_member_videos: q => {
+      const id = q.get('p_soop_id'), yt = q.get('p_kind') === 'youtube';
+      return Array.from({ length: 30 }, (_, n) => ({ soop_id: 'user' + (n % 12),
+        video_id: yt ? ('vid' + String(n).padStart(8, '0')) : String(90000 - n),
+        title: n % 4 ? `${yt ? '영상' : '다시보기'} ${n}` : `아주 긴 제목이 여기 들어가서 두 줄을 넘어가는 경우 ${n}`,
+        published: new Date(BASE - n * 7200000).toISOString(),
+        thumb: yt ? 'https://i.ytimg.com/vi/x/hqdefault.jpg' : n % 5 ? 'https://videoimg.sooplive.co.kr/x/' + n + '.jpg' : null,
+        duration_sec: yt ? null : n % 3 ? 3600 + n * 61 : 754, views: n % 2 ? 1234 + n : null, short: yt && n % 3 === 0 }))
         .filter(r => !id || r.soop_id === id).slice(0, 20);
     },
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),
@@ -182,7 +183,7 @@ function siteData() {
     '이름': n, 'SOOP ID': 'user' + i, 'ELO ID': String(1000 + i), '생년월일': `199${i % 10}-0${(i % 9) + 1}-1${i % 9}`,
     '성별': i % 2 ? '여자' : '남자', '종족': RACES[i % 3], '티어': TIERS[(i + 3) % 15], '입단 티어': TIERS[(i + 5) % 15],
     '직책': ['감독', '코치'][i] || '선수', '입단일': day(300 - i * 10), '퇴단일': i === 11 ? day(5) : '', 'MBTI': 'INTJ',
-    'YouTube': '', '대표 사진': '',
+    'YouTube': i % 2 ? '@member' + i : '', '대표 사진': '',
   }));
   const matches = [], rounds = [];
   for (let m = 0; m < 10; m++) {

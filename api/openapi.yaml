@@ -140,12 +140,13 @@ paths:
         '400': { description: "잘못된 페이지 요청" }
         '404': { description: "활동 멤버가 아님" }
         '503': { description: "일시 수집 실패" }
-  /vods:
+  /member-videos:
     get:
-      summary: 활동 멤버의 숲 다시보기 최신 20개 (Api.memberVods)
-      x-db-function: api_member_vods
-      description: ststat이 파이프라인마다 멤버별 최근 20개를 모은다. 퇴단 멤버는 빠진다. 정렬은 등록 시각(KST 문자열) 내림차순.
+      summary: 활동 멤버의 숲 다시보기·유튜브 최신 20개 (Api.memberVideos)
+      x-db-function: api_member_videos
+      description: ststat이 파이프라인마다 멤버별 최근 20개(유튜브는 쇼츠 포함)를 모은다. 퇴단 멤버는 빠진다. 정렬은 게시 시각 내림차순.
       parameters:
+        - { name: p_kind, in: query, required: true, schema: { type: string, enum: [soop, youtube] }, description: "soop 다시보기 | youtube" }
         - { name: p_soop_id, in: query, required: false, description: "멤버 SOOP ID. 생략하면 전체", schema: { type: string } }
       responses:
         '200':
@@ -159,12 +160,13 @@ paths:
                   type: object
                   properties:
                     soop_id: { type: string }
-                    title_no: { type: integer }
+                    video_id: { type: string, description: "soop은 다시보기 번호, youtube는 영상 ID" }
                     title: { type: string }
-                    reg_date: { type: string, description: "YYYY-MM-DD HH:MM:SS (KST)" }
+                    published: { type: string, format: date-time, nullable: true }
                     thumb: { type: string, nullable: true }
                     duration_sec: { type: integer, nullable: true }
                     views: { type: integer, nullable: true }
+                    short: { type: boolean }
   /tier/members:
     get:
       summary: 티어표 명단 (Api.tierMembers)

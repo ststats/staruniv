@@ -873,14 +873,32 @@ function memberPeriodBadgeHtml(m) {
     return `<span class="rank-badge-text" title="활동기간 ${escapeHTML(range)}">${escapeHTML(text)}</span>`;
 }
 
+// 실제 youtube.com / youtu.be 주소일 때만 주소를 준다. "@핸들"은 채널 주소로 바꾼다.
+function memberYoutubeUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^@[\w.\-]+$/.test(raw)) return 'https://www.youtube.com/' + raw;
+    try {
+        const url = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+        const host = url.hostname.toLowerCase().replace(/^(www|m)\./, '');
+        if (host !== 'youtube.com' && host !== 'youtu.be') return '';
+        url.protocol = 'https:';
+        return url.href;
+    } catch (e) {
+        return '';
+    }
+}
+
 // 많은 멤버를 훑을 때는 종족·티어가 중요해서 프로필 사진은 넣지 않는다
+// onclickFn은 함수 이름이나 [함수 이름, 이름 앞에 넘길 값…]
 function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member) {
     const m = member || {};
+    const [fn, ...lead] = [].concat(onclickFn);
     const race = m['종족'] || '';
     const letter = raceShortLabel(race);
     const edgeClass = ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
     const tierText = tierLabel(m['티어']).replace('티어', '');
-    return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0"${act(onclickFn, name)}>
+    return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0"${act(fn, ...lead, name)}>
                             ${race ? raceBadgeHtml(race) : ''}
                             <span class="avatar-select-name">${escapeHTML(name)}</span>
                             <span class="avatar-select-live" data-soop-id="${escapeHTML(soopId || '')}" hidden></span>

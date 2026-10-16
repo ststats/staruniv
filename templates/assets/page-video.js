@@ -1,7 +1,7 @@
 /**
- * 영상 페이지: 팬튜브(등록 채널 최신 영상) + 보자(어드민 추천) + 다시보기(멤버 숲 다시보기).
+ * 영상 페이지: 팬튜브(등록 채널 최신 영상) + 보자(어드민 추천) + 멤버 다시보기(숲)·유튜브.
  * 로드 순서: core.js → api.js → media-lightbox.js → 이 파일
- * URL: /video/ (팬튜브), /video/?view=pick (보자), /video/?view=replay&m=<멤버 이름> (다시보기), 채널 필터 ?ch=<채널 번호>
+ * URL: /video/ (팬튜브), /video/?view=pick (보자), /video/?view=replay|youtube&m=<멤버 이름> (멤버 영상), 채널 필터 ?ch=<채널 번호>
  * 영상은 ststat(GitHub Actions)가 Supabase에 갱신하고, 감춘 영상은 api_videos가 빼고 준다.
  * '보자'의 숲 VOD는 id 'soop:<번호>', kind 'soop'이며 숲 임베드 플레이어로 연다.
  */
@@ -10,6 +10,7 @@ const VIDEO_TABS = {
     fantube: ['tab-video-fantube', 'view-video-fantube'],
     pick: ['tab-video-pick', 'view-video-pick'],
     replay: ['tab-video-replay', 'view-video-replay'],
+    youtube: ['tab-video-youtube', 'view-video-youtube'],
 };
 const VIDEO_PAGE_SIZE = 20;
 
@@ -132,7 +133,7 @@ function videoCardHtml(v, opts) {
                     ${opts.pick && v.note ? `<p class="video-card-note">${escapeHTML(v.note)}</p>` : ''}
                 </div>
             </div>
-            ${!opts.replay && typeof window.videoCardAdminExtra === 'function' ? window.videoCardAdminExtra(v, opts) : ''}
+            ${!opts.member && typeof window.videoCardAdminExtra === 'function' ? window.videoCardAdminExtra(v, opts) : ''}
         </article>`;
 }
 
@@ -202,7 +203,11 @@ function videoEmptyHtml(text) {
 }
 
 function videoPlay(id) {
-    const v = VideoState.byId.get(String(id)) || ReplayState.byId.get(String(id));
+    const v =
+        VideoState.byId.get(String(id)) ||
+        Object.values(MEMBER_VIDEOS)
+            .map(t => t.byId.get(String(id)))
+            .find(Boolean);
     if (!v) return;
     const ch = v.channel ? videoChannelName(videoChannel(v.channel)) : v.author || '';
     const caption = ch ? `${ch} · ${v.title}` : v.title;
@@ -325,116 +330,135 @@ function renderPicks() {
         .join('');
 }
 
-// ----- 다시보기 -----
-// 멤버마다 최근 20개만 모은다(ststat). 더 지난 것은 방송국 다시보기 화면으로 보낸다.
-const ReplayState = { member: '', rows: [], byId: new Map(), loading: false, failed: false, started: false, seq: 0 };
+// ----- 멤버 영상(다시보기·유튜브) -----
+// 멤버마다 최근 20개만 모은다(ststat). 더 지난 것은 방송국·채널로 보낸다. 탭을 처음 열 때 명단과 목록을 받는다.
+const MEMBER_VIDEOS = {
+    replay: {
+        kind: 'soop',
+        label: '다시보기',
+        parts: ['members'],
+        members: () => activeMembersWithSoopId(),
+        moreUrl: m => `https://www.sooplive.co.kr/station/${encodeURIComponent(m['SOOP ID'])}/vod/review`,
+    },
+    youtube: {
+        kind: 'youtube',
+        label: '유튜브',
+        // 유튜브 주소는 프로필 쪽에 있다
+        parts: ['members', 'profiles'],
+        members: () => activeMembersWithSoopId().filter(m => memberYoutubeUrl(m['YouTube'])),
+        moreUrl: m => memberYoutubeUrl(m['YouTube']),
+    },
+};
+Object.values(MEMBER_VIDEOS).forEach(t =>
+    Object.assign(t, { member: '', rows: [], byId: new Map(), loading: false, failed: false, started: false, seq: 0 })
+);
 
-function replayMember() {
-    return activeMembersWithSoopId().find(m => m['이름'] === ReplayState.member) || null;
+const memberVideoDataFailed = t => t.parts.some(part => SiteDataLoad.errors.has(part));
+
+function memberVideoTarget(tab) {
+    return MEMBER_VIDEOS[tab].members().find(m => m['이름'] === MEMBER_VIDEOS[tab].member) || null;
 }
 
-function replayRow(r) {
+function memberVideoRow(tab, r) {
     const id = String(r.soop_id || '').toLowerCase();
     const m = activeMembersWithSoopId().find(x => String(x['SOOP ID']).toLowerCase() === id);
+    const soop = MEMBER_VIDEOS[tab].kind === 'soop';
     return {
-        id: `soop:${r.title_no}`,
-        kind: 'soop',
+        id: soop ? `soop:${r.video_id}` : String(r.video_id),
+        kind: soop ? 'soop' : 'youtube',
         title: r.title || '',
         thumb: r.thumb,
         views: Number(r.views) || 0,
-        duration: Number(r.duration_sec) || 0,
-        // SOOP 시각은 한국 시간이다
-        published: r.reg_date ? `${String(r.reg_date).replace(' ', 'T')}+09:00` : '',
+        duration: soop ? Number(r.duration_sec) || 0 : 0,
+        short: !!r.short,
+        published: r.published || '',
         author: m ? m['이름'] : r.soop_id,
         soopId: r.soop_id,
     };
 }
 
-function renderReplayMembers() {
-    const members = activeMembersWithSoopId();
+function renderMemberVideoBar(tab) {
+    const members = MEMBER_VIDEOS[tab].members();
     renderAvatarBar(
-        'replay-member-row',
-        avatarSelectAllItemHtml('replay-m-all', act('selectReplayMember', ''), `${members.length}`),
-        members.map(m => avatarSelectItemHtml('replay-m-', m['이름'], m['SOOP ID'], 'selectReplayMember', m)).join('')
+        `${tab}-member-row`,
+        avatarSelectAllItemHtml(`${tab}-m-all`, act('selectMemberVideos', tab, ''), `${members.length}`),
+        members
+            .map(m => avatarSelectItemHtml(`${tab}-m-`, m['이름'], m['SOOP ID'], ['selectMemberVideos', tab], m))
+            .join('')
     );
-    const m = replayMember();
-    setActiveAvatarItem('replay-member-row', document.getElementById(m ? `replay-m-${m['이름']}` : 'replay-m-all'));
+    const m = memberVideoTarget(tab);
+    setActiveAvatarItem(`${tab}-member-row`, document.getElementById(m ? `${tab}-m-${m['이름']}` : `${tab}-m-all`));
 }
 
-function renderReplay() {
-    const m = replayMember();
-    const rows = ReplayState.rows;
-    document.getElementById('replay-title').textContent = m ? `${m['이름']}의 다시보기` : '전체 다시보기';
-    document.getElementById('replay-count').textContent = rows.length ? `${rows.length}개` : '';
-    document.getElementById('replay-grid').innerHTML = rows.length
-        ? rows.map(v => videoCardHtml(v, { replay: true })).join('')
+function renderMemberVideos(tab) {
+    const t = MEMBER_VIDEOS[tab];
+    const m = memberVideoTarget(tab);
+    document.getElementById(`${tab}-title`).textContent = m ? `${m['이름']}의 ${t.label}` : `전체 ${t.label}`;
+    document.getElementById(`${tab}-count`).textContent = t.rows.length ? `${t.rows.length}개` : '';
+    document.getElementById(`${tab}-grid`).innerHTML = t.rows.length
+        ? t.rows.map(v => videoCardHtml(v, { member: true })).join('')
         : videoEmptyHtml(
-              ReplayState.loading
+              t.loading
                   ? '불러오는 중'
-                  : ReplayState.failed
+                  : t.failed
                     ? VIDEO_LOAD_FAILED
-                    : SiteDataLoad.errors.has('members')
-                      ? '멤버 정보를 불러오지 못해 다시보기를 확인할 수 없습니다'
-                      : '아직 불러온 다시보기가 없습니다'
+                    : memberVideoDataFailed(t)
+                      ? `멤버 정보를 불러오지 못해 ${t.label}를 확인할 수 없습니다`
+                      : `아직 불러온 ${t.label}가 없습니다`
           );
-    const wrap = document.getElementById('replay-station-wrap');
-    wrap.hidden = !m || ReplayState.loading;
-    if (m)
-        document.getElementById('replay-station-link').href =
-            `https://www.sooplive.co.kr/station/${encodeURIComponent(m['SOOP ID'])}/vod/review`;
+    document.getElementById(`${tab}-more-wrap`).hidden = !m || t.loading;
+    if (m) document.getElementById(`${tab}-more-link`).href = t.moreUrl(m);
 }
 
-async function loadReplay() {
-    const seq = ++ReplayState.seq;
-    ReplayState.loading = true;
-    ReplayState.failed = false;
-    ReplayState.rows = [];
-    renderReplay();
+async function loadMemberVideos(tab) {
+    const t = MEMBER_VIDEOS[tab];
+    const seq = ++t.seq;
+    Object.assign(t, { loading: true, failed: false, rows: [] });
+    renderMemberVideos(tab);
     try {
-        await loadSiteData(['members']);
-        if (seq !== ReplayState.seq) return;
-        if (ReplayState.member && !replayMember()) {
-            ReplayState.member = '';
+        await loadSiteData(t.parts);
+        if (seq !== t.seq) return;
+        if (t.member && !memberVideoTarget(tab)) {
+            t.member = '';
             updateVideoUrl();
         }
-        renderReplayMembers();
-        const m = replayMember();
-        const rows = SiteDataLoad.errors.has('members') ? [] : await Api.memberVods(m ? m['SOOP ID'] : null);
-        if (seq !== ReplayState.seq) return;
-        ReplayState.rows = rows.map(replayRow);
-        ReplayState.byId = new Map(ReplayState.rows.map(v => [v.id, v]));
+        renderMemberVideoBar(tab);
+        const m = memberVideoTarget(tab);
+        const rows = memberVideoDataFailed(t) ? [] : await Api.memberVideos(t.kind, m ? m['SOOP ID'] : null);
+        if (seq !== t.seq) return;
+        t.rows = rows.map(r => memberVideoRow(tab, r));
+        t.byId = new Map(t.rows.map(v => [v.id, v]));
     } catch (error) {
-        if (seq !== ReplayState.seq) return;
-        ReplayState.failed = true;
-        console.error('다시보기를 불러오지 못했습니다:', error);
+        if (seq !== t.seq) return;
+        t.failed = true;
+        console.error(`${t.label}를 불러오지 못했습니다:`, error);
     } finally {
-        if (seq === ReplayState.seq) {
-            ReplayState.loading = false;
-            renderReplay();
+        if (seq === t.seq) {
+            t.loading = false;
+            renderMemberVideos(tab);
         }
     }
 }
 
-// 탭을 처음 열 때만 멤버 명단과 목록을 받는다
-function ensureReplay() {
-    if (ReplayState.started) return;
-    ReplayState.started = true;
-    loadReplay();
+function ensureMemberVideos(tab) {
+    if (MEMBER_VIDEOS[tab].started) return;
+    MEMBER_VIDEOS[tab].started = true;
+    loadMemberVideos(tab);
 }
 
-function selectReplayMember(name) {
-    ReplayState.member = name || '';
+function selectMemberVideos(tab, name) {
+    MEMBER_VIDEOS[tab].member = name || '';
     updateVideoUrl();
-    return loadReplay();
+    return loadMemberVideos(tab);
 }
 
 // ----- 탭 · 주소 -----
 function videoViewOf(raw) {
-    return raw === 'pick' || raw === 'replay' ? raw : 'fantube';
+    return VIDEO_TABS[raw] ? raw : 'fantube';
 }
 
 function currentVideoView() {
-    return isTabActive(VIDEO_TABS.pick[0]) ? 'pick' : isTabActive(VIDEO_TABS.replay[0]) ? 'replay' : 'fantube';
+    return Object.keys(VIDEO_TABS).find(view => isTabActive(VIDEO_TABS[view][0])) || 'fantube';
 }
 
 function updateVideoUrl() {
@@ -443,13 +467,13 @@ function updateVideoUrl() {
     PageState.update({
         view: view === 'fantube' ? '' : view,
         ch: view === 'fantube' && idx >= 0 ? String(idx + 1) : '',
-        m: view === 'replay' ? ReplayState.member : '',
+        m: MEMBER_VIDEOS[view] ? MEMBER_VIDEOS[view].member : '',
     });
 }
 
 function showVideoView(view) {
     activateTabView(VIDEO_TABS, view);
-    if (view === 'replay') ensureReplay();
+    if (MEMBER_VIDEOS[view]) ensureMemberVideos(view);
 }
 
 function switchVideoView(view) {
@@ -549,10 +573,11 @@ async function loadVideoData(client = VideoState.client, more = false) {
 
 bootPage(
     async () => {
-        // 다시보기로 바로 들어오면 팬튜브를 기다리지 않는다
-        if (currentVideoView() === 'replay') {
-            ReplayState.member = new URLSearchParams(location.search).get('m') || '';
-            ensureReplay();
+        // 멤버 영상 탭으로 바로 들어오면 팬튜브를 기다리지 않는다
+        const first = currentVideoView();
+        if (MEMBER_VIDEOS[first]) {
+            MEMBER_VIDEOS[first].member = new URLSearchParams(location.search).get('m') || '';
+            ensureMemberVideos(first);
         }
         await loadVideoData();
         bindShortsNav();
@@ -561,10 +586,11 @@ bootPage(
                 const idx = parseInt(params.get('ch'), 10);
                 const channel = VideoState.channelKeys[idx - 1] || '';
                 const view = videoViewOf(params.get('view') || runtimeDefaultSubtab('video', 'fantube'));
+                const t = MEMBER_VIDEOS[view];
                 const member = params.get('m') || '';
-                if (ReplayState.member !== member) {
-                    ReplayState.member = member;
-                    if (ReplayState.started) loadReplay();
+                if (t && t.member !== member) {
+                    t.member = member;
+                    if (t.started) loadMemberVideos(view);
                 }
                 showVideoView(view);
                 if (VideoState.channel !== channel) {

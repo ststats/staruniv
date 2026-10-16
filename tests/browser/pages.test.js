@@ -26,6 +26,8 @@ const PAGES = [
     'video/?view=pick',
     'video/?view=replay',
     'video/?view=replay&m=' + encodeURIComponent('나래'),
+    'video/?view=youtube',
+    'video/?view=youtube&m=' + encodeURIComponent('나래'),
     'tier/',
     'tier/?view=h2h&p1=1000&p2=1003',
     'tier/?view=analysis&p=1000',

@@ -183,22 +183,6 @@ function toggleFormerMembersSection() {
     if (label) label.textContent = nowOpen ? '접기' : '보기';
 }
 
-// 실제 youtube.com / youtu.be 주소일 때만 버튼을 띄운다. "@핸들"은 채널 주소로 바꾼다.
-function memberYoutubeUrl(value) {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    if (/^@[\w.\-]+$/.test(raw)) return 'https://www.youtube.com/' + raw;
-    try {
-        const url = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
-        const host = url.hostname.toLowerCase().replace(/^(www|m)\./, '');
-        if (host !== 'youtube.com' && host !== 'youtu.be') return '';
-        url.protocol = 'https:';
-        return url.href;
-    } catch (e) {
-        return '';
-    }
-}
-
 let _profileMember = null; // 방송 활동 데이터가 늦게 오면 다시 채우기용
 
 function openMemberProfile(id) {
