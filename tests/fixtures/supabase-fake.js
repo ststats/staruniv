@@ -110,7 +110,7 @@ function respond(url) {
         published: new Date(BASE - n * 7200000).toISOString(),
         thumb: yt ? 'https://i.ytimg.com/vi/x/hqdefault.jpg' : n % 5 ? 'https://videoimg.sooplive.co.kr/x/' + n + '.jpg' : null,
         duration_sec: yt ? null : n % 3 ? 3600 + n * 61 : 754, views: n % 2 ? 1234 + n : null, short: yt && n % 3 === 0 }))
-        .filter(r => !id || r.soop_id === id).slice(0, 20);
+        .filter(r => (!id || r.soop_id === id) && (!q.get('p_before') || r.published < q.get('p_before'))).slice(0, 20);
     },
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),
     api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at'),

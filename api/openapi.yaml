@@ -144,10 +144,12 @@ paths:
     get:
       summary: 활동 멤버의 숲 다시보기·유튜브 최신 20개 (Api.memberVideos)
       x-db-function: api_member_videos
-      description: ststat이 파이프라인마다 멤버별 최근 20개(유튜브는 쇼츠 포함)를 모은다. 퇴단 멤버는 빠진다. 정렬은 게시 시각 내림차순.
+      description: ststat이 파이프라인마다 멤버별 최근 20개(유튜브는 쇼츠 포함)를 모은다. 퇴단 멤버는 빠진다. 정렬은 게시 시각·영상 ID 내림차순이며 한 번에 20개씩 이어 받는다.
       parameters:
         - { name: p_kind, in: query, required: true, schema: { type: string, enum: [soop, youtube] }, description: "soop 다시보기 | youtube" }
         - { name: p_soop_id, in: query, required: false, description: "멤버 SOOP ID. 생략하면 전체", schema: { type: string } }
+        - { name: p_before, in: query, required: false, schema: { type: string, format: date-time, nullable: true }, description: "직전 쪽 마지막 영상의 published. 생략하면 첫 쪽" }
+        - { name: p_before_id, in: query, required: false, schema: { type: string }, description: "직전 쪽 마지막 영상의 video_id" }
       responses:
         '200':
           description: ok
@@ -162,7 +164,7 @@ paths:
                     soop_id: { type: string }
                     video_id: { type: string, description: "soop은 다시보기 번호, youtube는 영상 ID" }
                     title: { type: string }
-                    published: { type: string, format: date-time, nullable: true }
+                    published: { type: string, format: date-time }
                     thumb: { type: string, nullable: true }
                     duration_sec: { type: integer, nullable: true }
                     views: { type: integer, nullable: true }

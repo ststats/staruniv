@@ -68,6 +68,10 @@
         <div class="selection-content">
             <div class="section-title" data-en="{{ en }}"><span class="section-title-label" id="{{ key }}-title"></span><span class="title-count" id="{{ key }}-count"></span></div>
             <div class="video-grid" id="{{ key }}-grid" aria-live="polite"></div>
+            {#- 전체는 모아 둔 것을 더 보기로 잇고, 한 멤버는 모아 둔 20개 뒤를 방송국·채널에서 본다. #}
+            <div class="news-load-more-wrap video-more-wrap" id="{{ key }}-next-wrap" hidden>
+                <button type="button" class="news-load-more" data-click="memberVideosShowMore" data-args='["{{ key }}"]'>더 보기 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+            </div>
             <div class="news-load-more-wrap video-more-wrap" id="{{ key }}-more-wrap" hidden>
                 <a class="news-load-more" id="{{ key }}-more-link" href="#" target="_blank" rel="noopener">{{ more }} <span class="i-arrow" aria-hidden="true"></span></a>
             </div>
