@@ -351,7 +351,6 @@ function renderPicks() {
 
 // ----- 멤버 영상(다시보기·유튜브) -----
 // 멤버마다 최근 20개만 모은다(ststat). 더 지난 것은 방송국·채널로 보낸다. 탭을 처음 열 때 명단과 목록을 받는다.
-const MEMBER_VIDEO_PAGE = 20;
 const MEMBER_VIDEOS = {
     replay: {
         kind: 'soop',
@@ -375,6 +374,7 @@ Object.values(MEMBER_VIDEOS).forEach(t =>
         rows: [],
         byId: new Map(),
         next: null,
+        total: 0,
         loading: false,
         failed: false,
         started: false,
@@ -424,8 +424,7 @@ function renderMemberVideos(tab) {
     const t = MEMBER_VIDEOS[tab];
     const m = memberVideoTarget(tab);
     document.getElementById(`${tab}-title`).textContent = m ? `${m['이름']}의 ${t.label}` : `전체 ${t.label}`;
-    // 전체는 더 받을 수 있어 개수를 적지 않는다
-    document.getElementById(`${tab}-count`).textContent = m && t.rows.length ? `${t.rows.length}개` : '';
+    document.getElementById(`${tab}-count`).textContent = t.total ? `${t.total}개` : '';
     document.getElementById(`${tab}-grid`).innerHTML = t.rows.length
         ? t.rows.map(v => videoCardHtml(v, { member: true })).join('')
         : videoEmptyHtml(
@@ -448,7 +447,7 @@ async function loadMemberVideos(tab, more = false) {
     const t = MEMBER_VIDEOS[tab];
     const seq = ++t.seq;
     const cursor = more ? t.next : null;
-    if (!more) Object.assign(t, { rows: [], next: null });
+    if (!more) Object.assign(t, { rows: [], next: null, total: 0 });
     Object.assign(t, { loading: true, failed: false });
     renderMemberVideos(tab);
     try {
@@ -460,13 +459,15 @@ async function loadMemberVideos(tab, more = false) {
         }
         if (!more) renderMemberVideoBar(tab);
         const m = memberVideoTarget(tab);
-        const rows = memberVideoDataFailed(t) ? [] : await Api.memberVideos(t.kind, m ? m['SOOP ID'] : null, cursor);
+        const res = memberVideoDataFailed(t)
+            ? { videos: [], total: 0 }
+            : await Api.memberVideos(t.kind, m ? m['SOOP ID'] : null, cursor);
         if (seq !== t.seq) return;
-        t.rows = [...t.rows, ...rows.map(r => memberVideoRow(tab, r))];
+        t.rows = [...t.rows, ...res.videos.map(r => memberVideoRow(tab, r))];
         t.byId = new Map(t.rows.map(v => [v.id, v]));
-        // 한 멤버는 20개가 모아 둔 전부다. 전체는 한 쪽이 꽉 찼으면 더 있을 수 있다.
-        const last = rows[rows.length - 1];
-        t.next = !m && rows.length === MEMBER_VIDEO_PAGE ? { published: last.published, id: last.video_id } : null;
+        t.total = Number(res.total) || 0;
+        const last = res.videos[res.videos.length - 1];
+        t.next = t.rows.length < t.total && last ? { published: last.published, id: last.video_id } : null;
     } catch (error) {
         if (seq !== t.seq) return;
         t.failed = true;

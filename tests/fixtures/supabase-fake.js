@@ -104,13 +104,14 @@ function respond(url) {
     api_member_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, total_pages: 2, post: p.post })),
     api_member_videos: q => {
       const id = q.get('p_soop_id'), yt = q.get('p_kind') === 'youtube';
-      return Array.from({ length: 30 }, (_, n) => ({ soop_id: 'user' + (n % 12),
+      const rows = Array.from({ length: 30 }, (_, n) => ({ soop_id: 'user' + (n % 12),
         video_id: yt ? ('vid' + String(n).padStart(8, '0')) : String(90000 - n),
         title: n % 4 ? `${yt ? '영상' : '다시보기'} ${n}` : `아주 긴 제목이 여기 들어가서 두 줄을 넘어가는 경우 ${n}`,
         published: new Date(BASE - n * 7200000).toISOString(),
         thumb: yt ? 'https://i.ytimg.com/vi/x/hqdefault.jpg' : n % 5 ? 'https://videoimg.sooplive.co.kr/x/' + n + '.jpg' : null,
         duration_sec: yt ? null : n % 3 ? 3600 + n * 61 : 754, views: n % 2 ? 1234 + n : null, short: yt && n % 3 === 0 }))
-        .filter(r => (!id || r.soop_id === id) && (!q.get('p_before') || r.published < q.get('p_before'))).slice(0, 20);
+        .filter(r => !id || r.soop_id === id);
+      return { total: rows.length, videos: rows.filter(r => !q.get('p_before') || r.published < q.get('p_before')).slice(0, 20) };
     },
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),
     api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at'),

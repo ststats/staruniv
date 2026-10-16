@@ -142,7 +142,7 @@ paths:
         '503': { description: "일시 수집 실패" }
   /member-videos:
     get:
-      summary: 활동 멤버의 숲 다시보기·유튜브 최신 20개 (Api.memberVideos)
+      summary: 활동 멤버의 숲 다시보기·유튜브 20개씩과 전체 개수 (Api.memberVideos)
       x-db-function: api_member_videos
       description: ststat이 파이프라인마다 멤버별 최근 20개(유튜브는 쇼츠 포함)를 모은다. 퇴단 멤버는 빠진다. 정렬은 게시 시각·영상 ID 내림차순이며 한 번에 20개씩 이어 받는다.
       parameters:
@@ -156,19 +156,23 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                maxItems: 20
-                items:
-                  type: object
-                  properties:
-                    soop_id: { type: string }
-                    video_id: { type: string, description: "soop은 다시보기 번호, youtube는 영상 ID" }
-                    title: { type: string }
-                    published: { type: string, format: date-time }
-                    thumb: { type: string, nullable: true }
-                    duration_sec: { type: integer, nullable: true }
-                    views: { type: integer, nullable: true }
-                    short: { type: boolean }
+                type: object
+                properties:
+                  total: { type: integer, description: "조건에 맞는 영상 전체 개수" }
+                  videos:
+                    type: array
+                    maxItems: 20
+                    items:
+                      type: object
+                      properties:
+                        soop_id: { type: string }
+                        video_id: { type: string, description: "soop은 다시보기 번호, youtube는 영상 ID" }
+                        title: { type: string }
+                        published: { type: string, format: date-time }
+                        thumb: { type: string, nullable: true }
+                        duration_sec: { type: integer, nullable: true }
+                        views: { type: integer, nullable: true }
+                        short: { type: boolean }
   /tier/members:
     get:
       summary: 티어표 명단 (Api.tierMembers)

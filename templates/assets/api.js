@@ -246,7 +246,7 @@ const Api = {
         return apiRows((client || apiClient()).rpc('api_videos', { ...params, p_admin: !!client }));
     },
 
-    // GET /api/v1/member-videos - 활동 멤버의 숲 다시보기(kind soop)·유튜브 최신 20개(SOOP ID를 비우면 전체).
+    // GET /api/v1/member-videos - 활동 멤버의 숲 다시보기(kind soop)·유튜브 20개씩과 전체 개수(SOOP ID를 비우면 전체).
     // after: 직전 쪽 마지막 영상 { published, id }
     async memberVideos(kind, soopId = null, after = null) {
         return apiCall('api_member_videos', {
