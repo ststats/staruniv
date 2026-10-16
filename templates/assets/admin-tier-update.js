@@ -7,6 +7,8 @@
     const RACES = ['테란', '저그', '프로토스', '랜덤'];
     const NO_TEAM = new Set(['FA', '휴면']);
     const STATUS = { queued: '대기', running: '분석 중', done: '확인 대기', failed: '실패', applied: '반영됨' };
+    // 펨코 '스타크루 현황판ㅣFA 인원' 글. 같은 글을 계속 고쳐 올린다
+    const FA_POST = '9060359921';
     const U = {
         jobs: [],
         jobId: null,
@@ -390,8 +392,8 @@
 
     function requestHtml() {
         const admin = `${location.origin}${location.pathname}?view=update`;
-        // 북마클릿: 펨코 글에서 티어표 이미지 주소와 FA 명단 줄만 뽑아 이 화면을 연다
-        const code = `(()=>{const a=document.querySelector('.xe_content,article')||document.body;let b=null,h=0;a.querySelectorAll('img').forEach(i=>{const s=i.getAttribute('data-original')||i.currentSrc||i.src||'';const v=i.naturalHeight||i.offsetHeight||0;if(/image\\.fmkorea\\.com/.test(s)&&v>=h){h=v;b=new URL(s,location.href).href.replace(/^http:/,'https:');}});const f=a.innerText.split('\\n').filter(l=>/[｜|]/.test(l)||/^\\s*[TZP]\\s/.test(l)||/FA 인원/.test(l)).join('\\n');if(!b){alert('티어표 이미지를 찾지 못했습니다');return;}open('${admin}#tier-update?img='+encodeURIComponent(b)+'&fa='+encodeURIComponent(f));})()`;
+        // 북마클릿: 펨코 현황판 글이 아니면 그 글로 이동하고, 그 글에서 누르면 티어표 이미지 주소와 FA 명단 줄만 뽑아 이 화면을 연다
+        const code = `(()=>{if(!/(^|\\.)fmkorea\\.com$/.test(location.hostname)||!/\\b${FA_POST}\\b/.test(location.href)){location.href='https://www.fmkorea.com/${FA_POST}';return;}const a=document.querySelector('.xe_content,article')||document.body;let b=null,h=0;a.querySelectorAll('img').forEach(i=>{const s=i.getAttribute('data-original')||i.currentSrc||i.src||'';const v=i.naturalHeight||i.offsetHeight||0;if(/image\\.fmkorea\\.com/.test(s)&&v>=h){h=v;b=new URL(s,location.href).href.replace(/^http:/,'https:');}});const f=a.innerText.split('\\n').filter(l=>/[｜|]/.test(l)||/^\\s*[TZP]\\s/.test(l)||/FA 인원/.test(l)).join('\\n');if(!b){alert('티어표 이미지를 찾지 못했습니다');return;}open('${admin}#tier-update?img='+encodeURIComponent(b)+'&fa='+encodeURIComponent(f));})()`;
         // 폰 북마크 주소칸은 공백·한글을 받지 않아 통째로 URL 인코딩한다
         const bm = 'javascript:' + encodeURIComponent(code);
         return `<section class="admin-tu-box">
@@ -399,7 +401,7 @@
         <label class="admin-field"><span>티어표 이미지 주소</span><input class="admin-input" id="tuImg" value="${esc(U.form.img)}" placeholder="https://image.fmkorea.com/files/attach/"></label>
         <label class="admin-field"><span>FA 명단</span><textarea class="admin-input admin-textarea" id="tuFa" rows="3" placeholder="갓티어｜ T 이재호 유영진  Z 이제동  P 송병구">${esc(U.form.fa)}</textarea></label>
         <div class="admin-tu-actions"><button class="admin-btn primary" id="tuRequest"${U.busy ? ' disabled' : ''}>분석 요청</button>
-        <a class="admin-btn" href="${esc(bm)}" id="tuBookmarklet" title="북마크바로 끌어다 놓기">펨코 글에서 가져오기</a>
+        <a class="admin-btn" href="${esc(bm)}" id="tuBookmarklet" title="북마크바로 끌어다 놓기">펨코 현황판에서 가져오기</a>
         <button type="button" class="admin-btn" id="tuBmCopy">북마크 코드 복사</button></div>
 
       </div>
