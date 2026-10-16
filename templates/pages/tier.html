@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block content %}
+<section id="page-tier" class="page-section active">
+    <div class="page-header">
+        <div class="page-header-main" data-label="STARCRAFT TIERS">
+            <h1 class="page-header-title">티어표</h1>
+            {#- 티어는 우리가 매기지 않는다: 펨코 티어표를 scripts/tier_table.py로 반영하고, 전적은 EloBoard 기록이다. -#}
+            <p class="page-header-subtitle" id="tier-subtitle">스타대학 티어표입니다. 출처 :
+                <a href="https://www.fmkorea.com/3844139388" target="_blank" rel="noopener">스타CK 밸런스 티어표</a>, <a href="https://eloboard.com/" target="_blank" rel="noopener">EloBoard</a></p>
+        </div>
+        {% if admin_mode %}
+        <div class="sub-tabs tab-scroll" role="tablist">
+            {% for key, label in [('members', '선수 관리'), ('teams', '팀 관리'), ('ranking', '티어 랭킹'), ('update', '티어표 갱신')] %}
+            <div class="sub-tab{% if loop.first %} active{% endif %}" id="tab-admin-tier-{{ key }}" role="tab" tabindex="0" aria-selected="{{ 'true' if loop.first else 'false' }}" data-click="switchAdminTierView" data-args='["{{ key }}"]'>{{ label }}</div>
+            {% endfor %}
+        </div>
+        <template id="publicSubtabs">{% include 'partials/public-record-tier-tabs.html' %}</template>
+        {% else %}
+        {% include 'partials/public-record-tier-tabs.html' %}
+        {% endif %}
+    </div>
+    {% if admin_mode %}
+    <div class="container">
+        <div id="view-admin-tier-members">
+            <div class="section-title" data-en="PLAYERS"><span class="section-title-label">선수 관리</span></div>
+            <div id="adminTierMembersBody" class="mb-block"></div>
+            <div class="section-title record-recent-header" data-en="NEW PLAYERS"><span class="section-title-label record-recent-title">신규 인원</span><div class="filter-nav" id="candFilters" role="group" aria-label="신규 인원 상태"></div></div>
+            <div id="candBody"></div>
+        </div>
+        <div id="view-admin-tier-teams" class="d-none">
+            <div class="section-title" data-en="TEAMS"><span class="section-title-label">팀 관리</span></div>
+            <div id="tmRoot"><div class="content-state is-boxed">불러오는 중</div></div>
+        </div>
+        <div id="view-admin-tier-ranking" class="d-none">
+            <div class="section-title" data-en="RANKING"><span class="section-title-label">티어 랭킹 <button type="button" class="help-btn" id="rankHelp" aria-label="랭킹 계산 방식" aria-expanded="false" aria-controls="rankExplain"><i class="i-info" aria-hidden="true"></i></button></span></div>
+            <div id="rankExplain" class="admin-rank-explain" hidden></div>
+            <div id="rankBody"></div>
+        </div>
+        <div id="view-admin-tier-update" class="d-none">
+            <div class="section-title" data-en="UPDATE"><span class="section-title-label">티어표 갱신</span></div>
+            <div id="tuRoot"></div>
+        </div>
+    </div>
+    {% else %}
+    <div class="container">
+
+    {#- 소분류: 티어표 / 상대전적 / 분석 / 엔트리. -#}
+    <div id="view-tier-list">
+        {#- '전체 N명'·'방송중 N명'은 같은 축의 두 선택지라 세그먼트 컨트롤 하나로 묶는다.
+            PC는 가로 한 줄(고른 칩은 core.js centerBarItem이 가운데로), 920px 아래는 펼치는 한 줄. -#}
+        <div class="selection-layout">
+            <nav class="tier-bar" id="tier-bar" aria-label="티어 바로가기">
+                {#- PC에서는 숨긴다. #}
+                <div class="tier-bar-heading"></div>
+                <div class="tier-bar-tools">
+                    <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
+                </div>
+                <div class="tier-bar-list scroll-area" id="tier-bar-list"></div>
+            </nav>
+
+            <div class="selection-content">
+                <div id="tier-root">
+                    <div class="content-state is-boxed">불러오는 중</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#- 상대전적: 두 선수를 고르면 그때 Supabase 공개 Elo 조회 모델에서 읽는다. #}
+    <div id="view-tier-h2h" class="d-none">
+        <div class="section-title" data-en="HEAD TO HEAD">
+            <span class="section-title-label">상대전적</span>
+            <span class="h2h-updated" id="h2h-updated"></span>
+        </div>
+        <div class="h2h-topbar">
+            <div class="filter-nav h2h-period tab-scroll" id="h2h-period" role="group" aria-label="기간 선택"></div>
+        </div>
+        <div class="h2h-pick" id="h2h-pick">
+            <div class="h2h-slot" id="h2h-slot-0"></div>
+            <div class="h2h-vs" aria-hidden="true">VS</div>
+            <div class="h2h-slot" id="h2h-slot-1"></div>
+        </div>
+        <div id="h2h-result"><div class="h2h-empty">불러오는 중</div></div>
+    </div>
+
+    <div id="view-tier-analysis" class="d-none">
+        <div class="section-title" data-en="ANALYSIS">
+            <span class="section-title-label">분석</span>
+            <span class="h2h-updated" id="analysis-updated"></span>
+        </div>
+        <div id="analysis-period"></div>
+        <div class="h2h-slot-inner is-empty" id="analysis-search">
+            <label class="h2h-slot-label" for="analysis-search-input">선수 검색</label>
+            <input type="search" class="h2h-input" id="analysis-search-input" autocomplete="off"
+                   placeholder="이름 또는 대학으로 검색" data-input="analysisOnQuery" data-args='[{"$":"value"}]'>
+        </div>
+        <div id="analysis-body"><div class="h2h-empty">불러오는 중</div></div>
+    </div>
+
+    {#- 엔트리: 상대전적·분석과 같은 선수 데이터를 이 탭을 처음 열 때 한 번 받는다.
+        검색창·소속 고르기는 고정으로 두고 아래 목록만 갈아 끼운다(입력칸을 다시 그리면 한글 조합이 끊긴다). #}
+    <div id="view-tier-entry" class="d-none">
+        <div class="entry-layout">
+            <div class="entry-board">
+                <div class="section-title has-actions" data-en="ENTRY">
+                    <span class="section-title-label">대진표</span>
+                    <span class="title-count" id="entry-count">0경기</span>
+                    <span class="entry-actions">
+                        <button type="button" class="text-action" data-click="entrySwapTeams">진영 교체</button>
+                        <button type="button" class="text-action" data-click="entryReset">비우기</button>
+                        <button type="button" class="text-action" data-click="entrySavePoster">포스터 저장 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
+                    </span>
+                </div>
+                <div class="entry-settings">
+                    <div class="h2h-slot-inner">
+                        <label class="h2h-slot-label" for="entry-target">경기 수</label>
+                        <input type="number" class="h2h-input" id="entry-target" min="1" max="31" step="2" value="9" data-change="entrySetTarget" data-args='[{"$":"value"}]'>
+                    </div>
+                    <div class="h2h-slot-inner entry-date-field">
+                        <label class="h2h-slot-label" for="entry-date">날짜</label>
+                        <button type="button" class="h2h-input entry-date-trigger" id="entry-date" aria-haspopup="dialog" aria-expanded="false" aria-controls="entry-date-popover" data-click="entryToggleDatePicker"><span id="entry-date-text"></span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+                        <div class="entry-date-popover d-none" id="entry-date-popover" role="dialog" aria-label="날짜 고르기"></div>
+                    </div>
+                    <div class="h2h-slot-inner entry-title-field">
+                        <label class="h2h-slot-label" for="entry-title">포스터 제목</label>
+                        <input type="text" class="h2h-input" id="entry-title" maxlength="40" placeholder="예: 결승전" data-input="entrySetTitle" data-args='[{"$":"value"}]'>
+                    </div>
+                    <div class="entry-label-fields">
+                        <div class="h2h-slot-inner">
+                            <label class="h2h-slot-label" for="entry-label-a">A 이름</label>
+                            <input type="text" class="h2h-input" id="entry-label-a" maxlength="14" placeholder="소속 이름으로 자동" data-input="entrySetLabel" data-args='[0,{"$":"value"}]'>
+                        </div>
+                        <div class="h2h-slot-inner">
+                            <label class="h2h-slot-label" for="entry-label-b">B 이름</label>
+                            <input type="text" class="h2h-input" id="entry-label-b" maxlength="14" placeholder="소속 이름으로 자동" data-input="entrySetLabel" data-args='[1,{"$":"value"}]'>
+                        </div>
+                    </div>
+                </div>
+                <div id="entry-summary"></div>
+                <div id="entry-period"></div>
+                <div id="entry-result"></div>
+            </div>
+
+            <div class="entry-picker">
+                <div class="section-title has-actions" data-en="PLAYERS">
+                    <span class="section-title-label">선수 고르기</span>
+                    <span class="entry-actions">
+                        <button type="button" class="text-action" id="entry-auto-btn" data-click="entryToggleAutoTierPicker" aria-expanded="false" aria-controls="entry-auto-tier-picker">자동매칭</button>
+                    </span>
+                </div>
+                <div class="entry-auto-tier-picker d-none" id="entry-auto-tier-picker">
+                    <div class="entry-auto-tier-head">
+                        <span>자동매칭 티어 선택</span>
+                        <button type="button" class="text-action" data-click="entrySelectAllAutoTiers">전체</button>
+                    </div>
+                    <div class="entry-auto-tier-list" id="entry-auto-tier-list"></div>
+                    <button type="button" class="btn-solid btn-solid-primary entry-auto-apply" data-click="entryAutoFillSelectedTiers">선택 티어로 자동매칭</button>
+                </div>
+                <div class="entry-sides">
+                    {%- for side, key, name in [(0, 'a', 'A'), (1, 'b', 'B')] %}
+                    <div class="entry-side">
+                        <div class="h2h-slot-inner">
+                            <label class="h2h-slot-label" for="entry-team-{{ key }}">{{ name }} 소속</label>
+                            <select class="h2h-input" id="entry-team-{{ key }}" data-change="entryPickTeam" data-args='[{{ side }},{"$":"value"}]'></select>
+                        </div>
+                        <div class="h2h-slot-inner">
+                            <label class="h2h-slot-label" for="entry-q-{{ key }}">{{ name }} 선수 검색</label>
+                            <input type="search" class="h2h-input" id="entry-q-{{ key }}" autocomplete="off"
+                                   placeholder="이름·대학 검색" data-input="entrySetQuery" data-args='[{{ side }},{"$":"value"}]'>
+                        </div>
+                        <div class="h2h-suggest entry-list" id="entry-body-{{ key }}"></div>
+                    </div>
+                    {%- endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset_url('core.js') }}"></script>
+<script src="{{ asset_url('api.js') }}"></script>
+{% if not admin_mode %}<script src="{{ asset_url('page-tier.js') }}"
+        data-h2h="{{ asset_url('page-h2h.js') }}"
+        data-analysis="{{ asset_url('page-analysis.js') }}"
+        data-entry="{{ asset_url('page-entry.js') }}"></script>{% endif %}
+{% endblock %}
