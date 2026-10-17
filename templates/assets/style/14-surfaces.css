@@ -1,0 +1,104 @@
+/* =============================================================================
+   14. 네이비 / 검정 면 (페이지 머리 · 표 머리글 · 요약 박스)
+   ============================================================================= */
+@layer surfaces {
+    /* 네이비(다크는 검정) 면 안에서는 --panel-* · --color-* 토큰을 흰 계열로 바꿔 안쪽 부품이 따로 다크 규칙 없이 따라온다.
+       선택 표시는 바탕의 반대색: 네이비 면 위는 흰 바탕 + 네이비 글씨, 흰 면 위는 --select-on-light 바탕 + 흰 글씨. */
+    /* 네이비 면 위 선택 표시 */
+    .avatar-select-item.active,
+    .tier-bar-item.active,
+    .tier-scope-btn.active {
+        background: #fff;
+        color: var(--navy);
+    }
+    .avatar-select-item.active,
+    .tier-bar-item.active {
+        border-left-color: #fff;
+    }
+    .avatar-select-item.active .avatar-select-name,
+    .avatar-select-item.active .avatar-select-tier,
+    .tier-bar-item.active .tier-bar-count,
+    .tier-scope-btn.active .tier-scope-num {
+        color: var(--navy);
+    }
+
+    /* 흰 면 위 선택 표시. surfaces 계층이 뒤라 각 부품의 호버 규칙에도 이긴다 */
+    .theme-toggle button.active,
+    .filter-item.active,
+    .match-page.active,
+    .entry-auto-tier-chip.active,
+    .entry-map-option.is-picked,
+    .entry-list .h2h-suggest-item.is-picked,
+    .mv-chip.active,
+    .mv-order-focus[aria-pressed='true'] {
+        background: var(--select-on-light);
+        color: #fff;
+    }
+
+    /* 인원 수는 켜져 있어도 제 색(방송중 빨강, 전체 파랑)을 지킨다. 켜진 쪽은 바탕이 흰색이라 --color-primary를 쓴다. */
+    .tier-scope-btn.tier-scope-live .tier-scope-num {
+        color: var(--color-live);
+    }
+    .tier-scope-btn.tier-scope-all.active .tier-scope-num {
+        color: var(--color-primary);
+    }
+
+    /* 네이비 면 공통: 면·글자 토큰을 흰 계열로 */
+    .page-header,
+    .home-carousel,
+    .stat-card-box,
+    .head-plate,
+    .player-summary,
+    #statContent .clean-card:has(.donut-wrap),
+    .analysis-panel,
+    .mv-console,
+    .avatar-bar,
+    .tier-bar,
+    .cal-today-card-wrapper > .cal-day-card,
+    .cal-month-bar {
+        --panel-bg: var(--navy);
+        --panel-text: #fff;
+        --panel-muted: var(--navy-on-muted);
+        --panel-accent: var(--navy-accent);
+        --panel-control: rgba(255, 255, 255, 0.12);
+        --color-row-hover: rgba(255, 255, 255, 0.2);
+        --color-subtle-hover: rgba(255, 255, 255, 0.2);
+        --color-text-strong: #fff;
+        --color-text-main: #fff;
+        --color-text-sub: var(--navy-on-muted);
+        color: #fff;
+        background-color: var(--navy);
+    }
+
+    .page-header,
+    .home-carousel {
+        --panel-line: rgba(255, 255, 255, 0.18);
+        --color-card: rgba(255, 255, 255, 0.08);
+        --color-primary-tint: rgba(255, 255, 255, 0.18);
+        background-image: var(--hero-glow), var(--navy-pattern);
+    }
+
+    /* 네이비 박스 면. surfaces 계층이 뒤라 .clean-card 호버에도 바탕이 그대로다. */
+    .stat-card-box,
+    .head-plate,
+    .player-summary,
+    #statContent .clean-card:has(.donut-wrap),
+    .analysis-panel,
+    .mv-console,
+    .avatar-bar,
+    .tier-bar,
+    .cal-today-card-wrapper > .cal-day-card,
+    .cal-month-bar {
+        --panel-line: rgba(255, 255, 255, 0.16);
+        --color-card: var(--navy);
+        --color-text-muted: var(--navy-on-muted);
+        --color-border: rgba(255, 255, 255, 0.14);
+        --color-bg-subtle: rgba(255, 255, 255, 0.12);
+        --color-donut-track: rgba(255, 255, 255, 0.16);
+        background-image: var(--navy-pattern);
+    }
+    /* 선수 머리 카드만 글자를 한 톤 부드럽게 */
+    .player-summary {
+        color: var(--navy-on-text);
+    }
+}
