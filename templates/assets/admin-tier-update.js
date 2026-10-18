@@ -97,7 +97,8 @@
             if (c.diff?.race) d.race[i] = String(c.diff.race[1] ?? c.diff.race[0] ?? '');
         });
         (r.review || []).forEach((x, i) => {
-            if (x.type === '새 대학') d.teams[i] = { name: x.team };
+            // from: 이름이 바뀐 기존 대학(비우면 새 대학). 없어진 대학 출신이 대부분이면 그 대학으로 시작한다.
+            if (x.type === '새 대학') d.teams[i] = { name: x.team, from: x.renamed_from || '' };
             else if (x.type === '신규 또는 인식 실패')
                 d.cards[i] = {
                     mode: 'skip',
@@ -219,8 +220,15 @@
                 throw new Error('같은 선수가 여러 카드에 선택되어 있습니다. 한 카드만 선택해 주세요');
             confirmedIds.add(card.id);
         }
+        const renames = [];
+        (r.review || []).forEach((x, i) => {
+            const from = x.type === '새 대학' && U.decide.teams[i].from;
+            if (!from) return;
+            if (renames.some(n => n.from === from)) throw new Error(`${from}을(를) 두 대학의 옛 이름으로 골랐습니다`);
+            renames.push({ from, to: teamName(x.team) });
+        });
         const ups = Object.values(updates).filter(u => Object.keys(u).length > 1);
-        return { updates: ups, inserts, confirmed };
+        return { updates: ups, inserts, confirmed, renames };
     }
 
     async function apply() {
@@ -232,12 +240,12 @@
             C().toast(e.message, 'error');
             return;
         }
-        if (!p.updates.length && !p.inserts.length && !confirm('바꿀 선수가 없습니다. 확인만 한 것으로 표시할까요'))
-            return;
+        const changed = p.updates.length || p.inserts.length || p.renames.length;
+        if (!changed && !confirm('바꿀 선수가 없습니다. 확인만 한 것으로 표시할까요')) return;
         if (
-            (p.updates.length || p.inserts.length) &&
+            changed &&
             !confirm(
-                `선수 ${p.updates.length}명 수정, 새 선수 ${p.inserts.length}명 추가\n승급일·수정일은 ${U.date}로 적습니다(방송통계 기록도 이날부터 새 값). 반영할까요`
+                `선수 ${p.updates.length}명 수정, 새 선수 ${p.inserts.length}명 추가${p.renames.map(n => `\n대학 이름 변경 ${n.from} → ${n.to}(로고·대학 정보 이어받음)`).join('')}\n승급일·수정일은 ${U.date}로 적습니다(방송통계 기록도 이날부터 새 값). 반영할까요`
             )
         )
             return;
@@ -250,6 +258,7 @@
                 inserts: p.inserts,
                 confirmed: p.confirmed,
                 date: U.date || null,
+                renames: p.renames,
             });
             if (error) throw error;
             C().toast(`반영했습니다: 수정 ${data.updated}명 · 추가 ${data.inserted}명`);
@@ -501,9 +510,14 @@
         );
         return LOG_ORDER.filter(k => g[k]).map(k => [k, g[k]]);
     }
+    // 대학 이름 변경은 선수 기록이 아니라 따로 받아 내역 맨 앞에 둔다
+    function appliedGroups(a) {
+        const renames = (a.renames || []).map(n => `${n.from} → ${n.to}`);
+        return [...(renames.length ? [['대학 이름 변경', renames]] : []), ...logGroups(a.log || [])];
+    }
     function appliedText(j) {
         const a = j.applied || {};
-        const lines = logGroups(a.log || []).map(([k, items]) => `[${k}] ${items.join(', ')}`);
+        const lines = appliedGroups(a).map(([k, items]) => `[${k}] ${items.join(', ')}`);
         return `티어표 갱신 ${a.date || ''}\n${lines.join('\n') || '바뀐 선수 없음'}`;
     }
     function appliedHtml(j) {
@@ -512,9 +526,9 @@
         const head = `<div class="admin-section-head"><b>작업 #${j.id} 반영 내역</b><small>${esc(fmtTime(j.applied_at))} 반영 · 승급일 ${esc(a.date || '-')} · 확인된 카드 ${(a.confirmed || []).length}장은 다음 분석 때 학습</small></div>`;
         if (!log)
             return `<section class="admin-tu-box">${head}<div class="content-state is-boxed">수정 ${(a.updates || []).length}명 · 추가 ${(a.inserts || []).length}명<br>이 작업은 자세한 기록 전에 반영되어 선수별 내역이 없습니다</div></section>`;
-        if (!log.length)
+        const groups = appliedGroups(a);
+        if (!groups.length)
             return `<section class="admin-tu-box">${head}<div class="content-state is-boxed">바뀐 선수가 없습니다</div></section>`;
-        const groups = logGroups(log);
         return `<section class="admin-tu-box">${head}
       <div class="admin-tu-log">${groups.map(([k, items]) => `<div class="admin-tu-log-row"><b>${esc(k)} ${items.length}</b><span>${items.map(esc).join('<br>')}</span></div>`).join('')}</div>
       <div class="admin-tu-apply"><button class="admin-btn" id="tuCopyLog">공지용 글 복사</button></div>
@@ -526,9 +540,12 @@
             return `<div class="admin-tu-review"><div><b>중복 인식</b> · ${esc(x.nickname)}<br><small>여러 카드를 같은 선수로 인식하여 이 선수의 변경과 학습을 보류했습니다. 카드를 확인하고 선수 관리에서 수정하거나 올바른 이미지로 다시 분석해 주세요</small>${x.cards.map(item => `<div>${cardThumb(item.ref)}${esc(teamName(item.team))} · ${esc(tierText(item.card.tier))} · ${esc(item.card.race)}</div>`).join('')}</div></div>`;
         const d = U.decide;
         if (x.type === '새 대학') {
+            // 이름이 바뀐 대학은 이번 표에서 없어진 대학 중 하나다
+            const gone = (U.job.result?.review || []).filter(y => y.type === '표에서 없어진 대학').map(y => y.team);
             return `<div class="admin-tu-review"><b>새 대학</b><div>표 머리 글씨: ${esc((x.title_ocr || []).join(' / ') || '못 읽음')} · 카드 ${x.cards}장
         ${x.prev_affiliation?.length ? `<br><small>선수들 원래 소속: ${x.prev_affiliation.map(([t, n]) => `${esc(t)} ${n}명`).join(', ')}</small>` : ''}
         ${x.renamed_from ? `<br><small class="admin-tu-err">${esc(x.renamed_from)}이(가) 표에서 없어졌습니다. 이름이 바뀐 것일 수 있습니다</small>` : ''}</div>
+        ${gone.length ? `<label class="admin-field"><span>처리</span><select class="admin-input" data-tu-team-from="${i}">${[['', '새 대학'], ...gone.map(t => [t, `기존 ${t} 이름 변경`])].map(([k, l]) => `<option value="${esc(k)}"${d.teams[i].from === k ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>` : ''}
         <label class="admin-field"><span>대학 이름</span><input class="admin-input" data-tu-team="${i}" value="${esc(d.teams[i].name)}"></label></div>`;
         }
         if (x.type === '신규 또는 인식 실패') {
@@ -651,6 +668,9 @@
             U.decide.teams[n.dataset.tuTeam].name = n.value;
         });
         on('[data-tu-team]', 'onchange', () => render());
+        on('[data-tu-team-from]', 'onchange', n => {
+            U.decide.teams[n.dataset.tuTeamFrom].from = n.value;
+        });
         on('[data-tu-card-mode]', 'onchange', n => {
             U.decide.cards[n.dataset.tuCardMode].mode = n.value;
             render();

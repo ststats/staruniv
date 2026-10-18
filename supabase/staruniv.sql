@@ -1090,8 +1090,11 @@ grant execute on function public.admin_tier_job_dispatch_status(bigint) to authe
 --   p_inserts   [{nickname, tier, race, affiliation, soop_id?, elo_id?}]
 --   p_confirmed [{ref:[구역,카드], id} 또는 {ref, insert:새 선수 순번(0부터)}]  학습용
 --   p_date      승급일(보통 티어표 글 날짜)
+-- p_renames: [{from, to}] 새 대학 검토에서 '기존 대학 이름 변경'을 고른 것. 대학 관리 행·로고를 새 이름으로 옮긴다.
+drop function if exists public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date);
 create or replace function public.admin_apply_tier_update(
-  p_job_id bigint, p_updates jsonb, p_inserts jsonb, p_confirmed jsonb, p_date date default null)
+  p_job_id bigint, p_updates jsonb, p_inserts jsonb, p_confirmed jsonb, p_date date default null,
+  p_renames jsonb default '[]'::jsonb)
 returns jsonb
 language plpgsql
 security definer
@@ -1136,6 +1139,14 @@ begin
   ) then
     raise exception '같은 선수의 변경안이 중복되어 있습니다.';
   end if;
+
+  for u in select * from jsonb_array_elements(coalesce(p_renames, '[]'::jsonb)) loop
+    if exists (select 1 from public.teams where team_name = btrim(u->>'to')) then
+      raise exception '%은(는) 이미 대학 관리에 있어 이름을 옮길 수 없습니다.', btrim(u->>'to');
+    end if;
+    update public.teams set team_name = btrim(u->>'to') where team_name = u->>'from';
+    update public.university_logos set name = btrim(u->>'to'), updated_at = now() where name = u->>'from';
+  end loop;
 
   for u in select * from jsonb_array_elements(coalesce(p_updates, '[]'::jsonb)) loop
     select * into r from public.tier_members where id = (u->>'id')::bigint for update;
@@ -1216,15 +1227,16 @@ begin
 
   update public.tier_update_jobs set status = 'applied', applied_at = now(),
     applied = jsonb_build_object('date', d, 'updates', coalesce(p_updates, '[]'::jsonb),
-                                 'inserts', coalesce(p_inserts, '[]'::jsonb), 'confirmed', conf, 'log', log)
+                                 'inserts', coalesce(p_inserts, '[]'::jsonb), 'confirmed', conf, 'log', log,
+                                 'renames', coalesce(p_renames, '[]'::jsonb))
   where id = p_job_id;
   perform public.admin_write_audit('tier_table_update', 'tier_members', p_job_id::text,
     jsonb_build_object('updated', n_upd, 'inserted', coalesce(array_length(ins_ids, 1), 0)));
   return jsonb_build_object('updated', n_upd, 'inserted', coalesce(array_length(ins_ids, 1), 0));
 end;
 $$;
-revoke all on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date) from public, anon;
-grant execute on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date) to authenticated;
+revoke all on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date, jsonb) from public, anon;
+grant execute on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date, jsonb) to authenticated;
 
 
 -- ############################################################################
@@ -1653,4 +1665,4 @@ language sql set search_path = public as $$
 $$;
 revoke all on function public.stamp_schema(text, text) from public, anon, authenticated;
 
-select public.stamp_schema('staruniv', 'e32b20a0a625');
+select public.stamp_schema('staruniv', 'a1cb9a979875');

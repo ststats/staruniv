@@ -321,13 +321,14 @@
             // GET /api/v1/admin/tier-jobs/{id}/dispatch
             dispatchStatus: id => db().rpc('admin_tier_job_dispatch_status', { p_job_id: id }),
             // POST /api/v1/admin/tier-jobs/{id}/apply
-            apply: ({ jobId, updates, inserts, confirmed, date }) =>
+            apply: ({ jobId, updates, inserts, confirmed, date, renames }) =>
                 db().rpc('admin_apply_tier_update', {
                     p_job_id: jobId,
                     p_updates: updates,
                     p_inserts: inserts,
                     p_confirmed: confirmed,
                     p_date: date,
+                    p_renames: renames,
                 }),
         },
 
