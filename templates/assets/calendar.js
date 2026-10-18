@@ -398,9 +398,9 @@ const calEventCardHtml = (item, dateStr, type) => {
         `;
 };
 
-// 멤버 정보를 아는 페이지만 훅을 정의한다
-const calOffAirExtraHtml = dateStr =>
-    typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr) : '';
+// 멤버 정보를 아는 페이지만 훅을 정의한다. type('today'·'selected')으로 관리자가 '휴방 관리' 버튼 붙일 칸을 고른다.
+const calOffAirExtraHtml = (dateStr, type) =>
+    typeof window.calOffAirExtra === 'function' ? window.calOffAirExtra(dateStr, type) : '';
 
 const calRenderScheduleList = (containerId, dateStr, type, emptyText) => {
     const container = document.getElementById(containerId);
@@ -418,7 +418,7 @@ const calRenderScheduleList = (containerId, dateStr, type, emptyText) => {
     const eventsHtml = items.length
         ? items.map(item => calEventCardHtml(item, dateStr, type)).join('')
         : `<div class="cal-no-schedule">${emptyText}</div>`;
-    container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr);
+    container.innerHTML = eventsHtml + calOffAirExtraHtml(dateStr, type);
 };
 
 const calSetDayLabel = (id, dateStr) => {

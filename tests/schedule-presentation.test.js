@@ -61,6 +61,16 @@ function evaluate(expression) {
     return vm.runInContext(expression, sandbox);
 }
 
+test('휴방 훅은 어느 칸(오늘·선택한 날)인지 받는다(관리자 휴방 관리 버튼이 선택한 날에 붙는다)', () => {
+    const saved = sandbox.window.calOffAirExtra;
+    sandbox.window.calOffAirExtra = (date, type) => `${date}|${type}`;
+    try {
+        assert.equal(evaluate("calOffAirExtraHtml('2026-10-14', 'selected')"), '2026-10-14|selected');
+    } finally {
+        sandbox.window.calOffAirExtra = saved;
+    }
+});
+
 test('개인 주체는 본인을 제외한 인원만 세고 이름을 두 글자로 표시한다', () => {
     assert.equal(
         evaluate(
