@@ -86,6 +86,8 @@ create table if not exists public.matches (
   personal_amount text,
   challenge_mission text
 );
+-- 비고(어드민 매치 수정 → 비고). 대회 이름·CK 이름 같은 메모로 어드민에서만 본다(사이트 전적 데이터로 내보내지 않는다).
+alter table public.matches add column if not exists note text;
 create index if not exists matches_date_idx on public.matches (match_date desc);
 create index if not exists matches_opponent_idx on public.matches (opponent_team);
 
@@ -359,7 +361,7 @@ begin
 
   insert into public.matches (
     match_no, source_order, match_date, opponent_team, match_format, method,
-    final_result, set_result, score_diff, funding, support_amount, personal_amount, challenge_mission
+    final_result, set_result, score_diff, funding, support_amount, personal_amount, challenge_mission, note
   ) values (
     v_match_no,
     v_source_order,
@@ -373,7 +375,8 @@ begin
     nullif(p_match->>'funding',''),
     nullif(p_match->>'support_amount',''),
     nullif(p_match->>'personal_amount',''),
-    nullif(p_match->>'challenge_mission','')
+    nullif(p_match->>'challenge_mission',''),
+    nullif(p_match->>'note','')
   )
   on conflict (match_no) do update set
     source_order = excluded.source_order,
@@ -387,7 +390,8 @@ begin
     funding = excluded.funding,
     support_amount = excluded.support_amount,
     personal_amount = excluded.personal_amount,
-    challenge_mission = excluded.challenge_mission;
+    challenge_mission = excluded.challenge_mission,
+    note = excluded.note;
 
   delete from public.rounds where match_no = v_match_no;
   select coalesce(max(source_order), 0) into v_round_source from public.rounds;
@@ -1649,4 +1653,4 @@ language sql set search_path = public as $$
 $$;
 revoke all on function public.stamp_schema(text, text) from public, anon, authenticated;
 
-select public.stamp_schema('staruniv', 'b30ffb2d3673');
+select public.stamp_schema('staruniv', 'e32b20a0a625');

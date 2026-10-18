@@ -502,7 +502,7 @@ function renderIndivSummaryTable() {
             return `
         <button type="button" class="h2h-rival"${act('selectPlayer', name)}>
             ${avatarHtml(m['SOOP ID'], 'h2h-rival-avatar')}
-            <span class="h2h-rival-name">${escapeHTML(name)}</span>
+            <span class="h2h-rival-name">${raceNameHtml(m['종족'], name, true)}</span>
             <span class="h2h-rival-rec">${rec}</span>
             ${total ? `<span class="h2h-rival-bar"><span style="width:${((stat.wins / total) * 100).toFixed(1)}%"></span></span>` : '<span class="h2h-rival-bar is-empty"></span>'}
         </button>`;

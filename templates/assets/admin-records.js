@@ -108,6 +108,7 @@
         ${C().field('결과', C().input('ar_result', match.final_result || ''))}
         ${C().field('세트 스코어', C().input('ar_set', match.set_result || ''), '세트 결과로 자동 계산')}
       </div>
+      ${C().field('비고', C().textarea('ar_note', match.note || '', 'rows="2" placeholder="대회 이름·CK 이름 등"'))}
       <div class="admin-section-head"><b>세트</b><button type="button" class="admin-btn" id="ar_add_round">+ 세트 추가</button></div>
       <div class="admin-round-list" id="ar_rounds">${rounds.map(roundRow).join('')}</div>${memberDatalist()}
       ${datalist('ar_formats', S.options?.formats || [])}
@@ -175,6 +176,7 @@
                     method: C().empty(C().value('ar_method')),
                     final_result: C().empty(C().value('ar_result')),
                     set_result: C().empty(C().value('ar_set')),
+                    note: C().empty(C().value('ar_note')),
                 };
                 if (!p_match.match_date || !p_match.opponent_team) throw new Error('날짜와 상대 대학은 필수입니다');
                 const p_rounds = collectRounds();
