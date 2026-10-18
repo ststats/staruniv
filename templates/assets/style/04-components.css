@@ -36,6 +36,14 @@
         max-width: 100%;
         vertical-align: top;
     }
+    /* 뱃지가 뒤면 이름이 먼저다: 한 줄에 둘 다 안 들어가면 뱃지가 둘째 줄로 넘어가 가려진다.
+       높이는 글자 줄과 뱃지(1.6em × 0.75) 중 큰 쪽으로, 뱃지가 들어갈 때와 같다. */
+    .race-name.is-after {
+        flex-wrap: wrap;
+        align-content: flex-start;
+        height: max(1lh, 1.2em);
+        overflow: hidden;
+    }
     .tag-badge.race-inline {
         --badge-h: 1.6em;
         --badge-pad: 0.4em;

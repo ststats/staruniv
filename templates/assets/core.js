@@ -808,11 +808,13 @@ function raceBadgeHtml(race, extraClass = '') {
     return `<span class="tag-badge${raceBadgeClass(race)}${extraClass}">${escapeHTML(raceShortLabel(race))}</span>`;
 }
 
-// 표·카드의 선수 이름 + 종족 뱃지. 종족을 모르면 이름만. badgeAfter면 뱃지를 이름 뒤에 둔다.
+// 표·카드의 선수 이름 + 종족 뱃지. 종족을 모르면 이름만. badgeAfter면 뱃지를 이름 뒤에 두고, 이름이 잘릴 자리면 뱃지를 뺀다.
 function raceNameHtml(race, name, badgeAfter = false) {
     const badge = race ? raceBadgeHtml(race, ' race-inline') : '';
     const text = `<span class="race-name-text">${escapeHTML(name)}</span>`;
-    return `<span class="race-name">${badgeAfter ? text + badge : badge + text}</span>`;
+    return badgeAfter
+        ? `<span class="race-name is-after">${text + badge}</span>`
+        : `<span class="race-name">${badge + text}</span>`;
 }
 
 // '스페이드티어'는 좁은 칸에서 줄바꿈되어 이름만 적는다
