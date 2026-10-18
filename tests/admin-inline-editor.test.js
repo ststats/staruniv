@@ -68,6 +68,23 @@ test('전적은 한 번에 저장하는 함수(RPC)로 저장하고, 저장 전�
     assert.match(sql, /delete from public\.rounds where match_no = v_match_no/);
 });
 
+test('세트 스코어는 라운드 수가 아니라 세트명으로 묶은 세트 수이고, 번외는 빼고 센다', () => {
+    const src = read('templates/assets/admin-records.js');
+    const pick = name => {
+        const start = src.indexOf(`function ${name}(`);
+        return src.slice(start, src.indexOf('\n    }\n', start) + 6);
+    };
+    const validateScore = new Function(`${pick('resultKind')}${pick('validateScore')}return validateScore;`)();
+    const rounds = (set, results) => [...results].map(x => ({ set_name: set, result: x === 'W' ? '승' : '패' }));
+    // 9판 5선승 한 세트를 3:5로 지면 세트 스코어는 0:1
+    assert.equal(validateScore({}, rounds('단일', 'WWWLLLLL')).score, '0:1');
+    assert.equal(validateScore({}, rounds('', 'WWWLLLLL')).score, '0:1');
+    // 5/3, 5/3, 에결(끝장전)
+    const bo = [...rounds('1SET', 'WWLW'), ...rounds('2SET', 'LLL'), ...rounds('끝장전', 'W')];
+    assert.deepEqual((({ score, final }) => ({ score, final }))(validateScore({}, bo)), { score: '2:1', final: '승' });
+    assert.equal(validateScore({}, [...rounds('단일', 'WWWL'), ...rounds('번외', 'L')]).score, '1:0');
+});
+
 test('티어표 편집은 ELO ID 중복을 막고, 일괄 수정은 관리자만 부를 수 있는 함수다', () => {
     const tier = read('templates/assets/admin-tier.js');
     assert.match(tier, /function duplicateElo/);

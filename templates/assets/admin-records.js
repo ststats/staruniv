@@ -25,15 +25,25 @@
         if (['패', '패배', 'loss', 'lose', 'l'].includes(s)) return 'loss';
         return '';
     }
+    // 세트 스코어는 라운드 수가 아니라 세트(세트명이 같은 라운드 묶음, 비우면 '단일') 수다.
+    // 세트마다 라운드를 더 많이 이긴 쪽이 그 세트를 가져가고, '번외'는 스코어에 넣지 않는다.
     function validateScore(match, rounds) {
-        let w = 0,
-            l = 0;
+        const sets = new Map();
         rounds.forEach(r => {
             const k = resultKind(r.result);
-            if (k === 'win') w++;
-            if (k === 'loss') l++;
+            const name = String(r.set_name || '').trim() || '단일';
+            if (!k || name === '번외') return;
+            const s = sets.get(name) || { win: 0, loss: 0 };
+            s[k]++;
+            sets.set(name, s);
         });
-        if (!w && !l) return null;
+        if (!sets.size) return null;
+        let w = 0,
+            l = 0;
+        sets.forEach(s => {
+            if (s.win > s.loss) w++;
+            if (s.loss > s.win) l++;
+        });
         const score = `${w}:${l}`,
             final = w > l ? '승' : w < l ? '패' : '무';
         const mismatches = [];
@@ -67,7 +77,7 @@
             rounds: unique(rounds, 'round_name'),
         };
     }
-    // 서랍(540px)에 12칸 표는 너무 좁아서 세트 하나를 카드 하나로 세운다.
+    // 서랍(540px)에 12칸 표는 너무 좁아서 라운드 하나를 카드 하나로 세운다.
     function roundRow(r = {}, idx = 0) {
         const f = (label, k, attrs = '', cls = '') =>
             `<label class="admin-round-field${cls}"><span>${label}</span><input class="admin-input" data-k="${k}" value="${esc(r[k] || '')}"${attrs}></label>`;
@@ -83,7 +93,7 @@
         };
         return `<div class="admin-round-row admin-round-card" data-round-index="${idx}">
       <div class="admin-round-head">
-        <b><span class="admin-round-no">${idx + 1}</span>세트</b>
+        <b><span class="admin-round-no">${idx + 1}</span>라운드</b>
         <select class="admin-input admin-round-result" data-k="result" aria-label="결과"><option value="">결과</option><option${r.result === '승' ? ' selected' : ''}>승</option><option${r.result === '패' ? ' selected' : ''}>패</option></select>
         <button type="button" class="admin-btn danger admin-round-delete">삭제</button>
       </div>
@@ -95,7 +105,7 @@
       </div>
     </div>`;
     }
-    // 결과·세트 스코어는 세트 결과가 있으면 자동 계산한다(세트가 없는 기록만 직접 적는다).
+    // 결과·세트 스코어는 라운드 결과가 있으면 자동 계산한다(라운드가 없는 기록만 직접 적는다).
     function editorHtml(match = {}, rounds = [], nextNo = null) {
         const isNew = match.match_no == null;
         return `
@@ -106,10 +116,10 @@
         ${C().field('형식', C().input('ar_format', match.match_format || '', 'text', 'list="ar_formats"'))}
         ${C().field('진행 방식', C().input('ar_method', match.method || ''))}
         ${C().field('결과', C().input('ar_result', match.final_result || ''))}
-        ${C().field('세트 스코어', C().input('ar_set', match.set_result || ''), '세트 결과로 자동 계산')}
+        ${C().field('세트 스코어', C().input('ar_set', match.set_result || ''), '라운드 결과를 세트명별로 묶어 자동 계산')}
       </div>
       ${C().field('비고', C().textarea('ar_note', match.note || '', 'rows="2" placeholder="대회 이름·CK 이름 등"'))}
-      <div class="admin-section-head"><b>세트</b><button type="button" class="admin-btn" id="ar_add_round">+ 세트 추가</button></div>
+      <div class="admin-section-head"><b>라운드</b><button type="button" class="admin-btn" id="ar_add_round">+ 라운드 추가</button></div>
       <div class="admin-round-list" id="ar_rounds">${rounds.map(roundRow).join('')}</div>${memberDatalist()}
       ${datalist('ar_formats', S.options?.formats || [])}
       ${datalist('ar_set_names', S.options?.sets || [])}
@@ -183,7 +193,7 @@
                 const check = validateScore(p_match, p_rounds);
                 if (
                     check?.mismatches.length &&
-                    !confirm(`세트 결과와 매치 결과가 다릅니다.\n${check.mismatches.join('\n')}\n그래도 저장할까요?`)
+                    !confirm(`라운드 결과와 매치 결과가 다릅니다.\n${check.mismatches.join('\n')}\n그래도 저장할까요?`)
                 )
                     throw new Error('결과 불일치로 저장을 취소했습니다');
                 const { data, error } = await AdminApi.matches.save(p_match, p_rounds);
@@ -209,7 +219,7 @@
             C().markDirty(true);
         });
         tbody.addEventListener('change', ev => {
-            if (ev.target.matches('[data-k="result"]')) refreshRounds();
+            if (ev.target.matches('[data-k="result"], [data-k="set_name"]')) refreshRounds();
         });
         refreshRounds();
     }
@@ -285,7 +295,7 @@
     // 실패를 알리지 않으면 버튼이 멈춘 것처럼 보인다
     const report = p => p.catch(e => C().toast(C().errorText(e), 'error'));
     function render() {
-        // 새로 그리면 펼친 세트 줄도 사라지므로 펼침 기록도 비운다
+        // 새로 그리면 펼친 라운드 줄도 사라지므로 펼침 기록도 비운다
         S.expanded.clear();
         const root = document.getElementById('adminMatchesRoot');
         root.innerHTML = `
