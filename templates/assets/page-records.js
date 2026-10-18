@@ -38,6 +38,9 @@ function recordViewFromParams(params) {
 }
 
 const FORMAT_KEYS = ['대회', '대학', '미니', 'CK'];
+// 필터 칸에서 여러 형식을 묶어 보는 것('전체'는 형식을 가리지 않는다)
+const FORMAT_GROUPS = { '대회+대학': ['대회', '대학'] };
+const formatIncludes = (filter, format) => filter === '전체' || (FORMAT_GROUPS[filter] || [filter]).includes(format);
 
 function updateStatsHash() {
     const params = {};
@@ -182,7 +185,7 @@ function renderTeamMatchesList(containerId, filters, limit, paginationId) {
     const format = filters.format || '전체';
     const opponent = filters.opponent || null;
 
-    let filtered = format === '전체' ? SiteData.matches : SiteData.matches.filter(m => m['형식'] === format);
+    let filtered = SiteData.matches.filter(m => formatIncludes(format, m['형식']));
     if (opponent) filtered = filtered.filter(m => m['상대팀'] === opponent);
 
     const page = paginationId ? RecordsState.teamPage || 1 : 1;
@@ -345,16 +348,9 @@ function selectPlayer(name) {
     updateStatsHash();
 }
 
-function syncIndivFilterUI() {
-    staticAll('#indiv-filters .filter-item').forEach(el => {
-        el.classList.toggle('active', el.textContent.trim() === RecordsState.indivFilter);
-    });
-}
-
 function setIndivFilter(format) {
     RecordsState.indivFilter = format;
     RecordsState.indivPage = 1;
-    syncIndivFilterUI();
     renderIndivMatchesList('indiv-recent-list', format, 10);
 }
 
@@ -365,17 +361,20 @@ function setIndivPage(page) {
 
 // 좁은 화면: '상대 팀' 칸을 숨기고 상대 선수 이름 밑 작은 줄로 보여준다.
 function renderIndivMatchesList(containerId, format, limit) {
-    let filtered = SiteData.rounds.filter(m => m['우리 선수'] === RecordsState.player);
-    if (format !== '전체') filtered = filtered.filter(m => m['형식'] === format);
+    const filtered = SiteData.rounds.filter(
+        m => m['우리 선수'] === RecordsState.player && formatIncludes(format, m['형식'])
+    );
     const page = RecordsState.indivPage || 1;
     const sliced = limit ? filtered.slice((page - 1) * limit, page * limit) : filtered;
-    if (containerId === 'indiv-recent-list')
+    if (containerId === 'indiv-recent-list') {
+        document.getElementById('indiv-filters').innerHTML = summaryFilterHtml(format, 'setIndivFilter');
         document.getElementById('indiv-pagination').innerHTML = matchPaginationHtml(
             filtered.length,
             page,
             limit || 10,
             'setIndivPage'
         );
+    }
 
     document.getElementById(containerId).innerHTML = sliced.length
         ? sliced
@@ -401,7 +400,7 @@ function renderIndivMatchesList(containerId, format, limit) {
 }
 
 // 상대(멤버) × 형식 4개를 표로 그리면 칸의 절반이 비므로 형식 하나만 칩으로 골라 보여준다.
-const SUMMARY_FORMATS = ['전체', ...FORMAT_KEYS];
+const SUMMARY_FORMATS = ['전체', ...Object.keys(FORMAT_GROUPS), ...FORMAT_KEYS];
 
 function summaryFilterHtml(current, handler) {
     return SUMMARY_FORMATS.map(
@@ -411,10 +410,9 @@ function summaryFilterHtml(current, handler) {
     ).join('');
 }
 
-// '전체'면 네 형식을 다 더한다.
+// '전체'면 네 형식, 묶음(대회+대학)이면 그 형식들을 다 더한다.
 function statFor(getCounts, format) {
-    if (format !== '전체') return getCounts(format);
-    return FORMAT_KEYS.reduce(
+    return (format === '전체' ? FORMAT_KEYS : FORMAT_GROUPS[format] || [format]).reduce(
         (acc, f) => {
             const st = getCounts(f);
             return { wins: acc.wins + st.wins, losses: acc.losses + st.losses };
