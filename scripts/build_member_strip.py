@@ -77,10 +77,14 @@ def signature(members: list[dict]) -> str:
     for path in (Path(__file__), MODEL):
         h.update(path.read_bytes())
     for m in members:
+        # 실제로 띠에 쓰는 원본만 넣는다(띠 전용 영상이 있으면 대표 사진·영상을 바꿔도 다시 만들지 않는다).
         kind, src = media_source(m)
-        h.update(f"{m['soop_id']}|{m['photo']}|".encode())
-        if kind == "file" and Path(src).is_file():
-            h.update(Path(src).read_bytes())
+        if kind == "file":
+            h.update(f"{m['soop_id']}|{Path(src).relative_to(ROOT).as_posix()}|".encode())
+            if Path(src).is_file():
+                h.update(Path(src).read_bytes())
+        else:
+            h.update(f"{m['soop_id']}|{src}|".encode())
     return h.hexdigest()
 
 
