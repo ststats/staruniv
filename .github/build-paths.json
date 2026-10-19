@@ -2,6 +2,7 @@
   "templates/**",
   "scripts/build_html.py",
   "scripts/build_member_strip.py",
+  "scripts/assets/**",
   "scripts/export_supabase.py",
   "scripts/match_link.py",
   "scripts/write_site_data.py",
