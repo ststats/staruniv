@@ -515,7 +515,7 @@ function renderIndivSummaryTable() {
         .join('')}</div>${
         former.length
             ? `<div class="news-load-more-wrap">
-            <button type="button" class="news-load-more" aria-expanded="${open}"${act('toggleSummaryFormer', ACT.el)}>이전 멤버 ${former.length}명 ${chevronDownSvg(9, ` id="indiv-summary-former-chevron" class="chevron-rotatable${open ? ' is-open' : ''}"`)}</button>
+            <button type="button" class="news-load-more" aria-expanded="${open}"${act('toggleSummaryFormer', ACT.el)}>이전 멤버 ${chevronDownSvg(9, ` id="indiv-summary-former-chevron" class="chevron-rotatable${open ? ' is-open' : ''}"`)}</button>
         </div>
         <div id="indiv-summary-former" class="h2h-rivals indiv-summary-former${open ? '' : ' d-none'}">${former.map(m => indivSummaryCardHtml(m, format)).join('')}</div>`
             : ''
