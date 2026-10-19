@@ -27,7 +27,7 @@
     <div class="container">
     {#- 방송통계가 있는 달(synergy_daily_dates) 사이를 오간다. 지난 달은 마지막 날짜의 누적이 그달 최종 기록이다. #}
     {#- 고른 지표에 따라 page-stats.js가 바꾼다. #}
-    <div class="section-title" data-en="SUMMARY"><span class="section-title-label" id="synergy-summary-title" role="heading" aria-level="2">{{ stats_tabs[0][2] }} 요약</span><span id="synergy-summary-help"></span>
+    <div class="section-title" data-en="SUMMARY"><span class="section-title-label" role="heading" aria-level="2"><span class="synergy-metric-label">{{ stats_tabs[0][2] }}</span> 요약</span><span id="synergy-summary-help"></span>
         <div class="cal-nav-group" id="synergy-month-nav" hidden>
             <button type="button" class="cal-nav-btn" id="synergy-month-prev" data-click="stepSynergyMonth" data-args='[-1]' aria-label="이전 달"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
             <div class="cal-nav-badge" id="synergy-month-title" aria-live="polite"></div>
@@ -40,7 +40,7 @@
         <div class="clean-card head-plate synergy-top">
             <div class="synergy-top-photo" id="synergy-top-photo"></div>
             <div class="synergy-top-body">
-                <div class="head-plate-label">TOP · <span id="synergy-top-metric">별풍선</span></div>
+                <div class="head-plate-label">TOP · <span class="synergy-metric-label">{{ stats_tabs[0][2] }}</span></div>
                 <div class="synergy-top-name" id="synergy-sum-top">-</div>
                 <div class="synergy-top-value" id="synergy-sum-top-value">-</div>
             </div>

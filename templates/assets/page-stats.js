@@ -360,8 +360,6 @@ function renderSynergySummary(rows) {
         const el = document.getElementById(id);
         if (el) el.innerText = text;
     };
-    setText('synergy-top-metric', config.label || '');
-    setText('synergy-summary-title', `${config.label || '전체'} 요약`);
     // 지표가 바뀔 때만 다시 그린다(열어 둔 설명이 데이터 갱신에 닫히지 않게)
     const helpBox = document.getElementById('synergy-summary-help');
     if (helpBox && helpBox.dataset.metric !== SynergyState.metric) {
