@@ -483,7 +483,7 @@ function setIndivSummaryFormat(format) {
 }
 
 // 명단이라 기록 없는 멤버도 '기록 없음'으로 남기고 로스터 순서를 따른다(상대 전적은 붙어 본 팀만).
-// 이전 멤버는 전적이 있는 사람만 접어 두고, 형식을 바꿔 다시 그려도 펼친 상태를 지킨다.
+// 이전 멤버는 접어 두고(옆 선수 목록과 같다), 형식을 바꿔 다시 그려도 펼친 상태를 지킨다.
 function indivSummaryCardHtml(m, format) {
     const pStat = findPlayerStats(m['이름']);
     const name = m['이름'];
@@ -507,11 +507,7 @@ function renderIndivSummaryTable() {
     const format = RecordsState.summaryFormat || '전체';
     document.getElementById('indiv-summary-filters').innerHTML = summaryFilterHtml(format, 'setIndivSummaryFormat');
 
-    const former = SiteData.members.filter(m => {
-        if (isActiveMember(m)) return false;
-        const { wins, losses } = statFor(f => recordStat(findPlayerStats(m['이름'])[`${f} 전적`]), '전체');
-        return wins + losses > 0;
-    });
+    const former = SiteData.members.filter(m => !isActiveMember(m));
     const open = !!RecordsState.summaryFormerOpen;
     grid.innerHTML = `<div class="h2h-rivals">${SiteData.members
         .filter(isActiveMember)
