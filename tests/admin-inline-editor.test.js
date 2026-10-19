@@ -47,7 +47,9 @@ test('일정 색은 정해진 팔레트 키로 저장하고, 공개 달력이 �
     assert.match(admin, /field\('주체', C\(\)\.input\('as_person'/);
     assert.match(admin, /field\('일정명', C\(\)\.input\('as_title'/);
     assert.match(admin, /subject_type: C\(\)\.value\('as_subject_type'\)/);
-    assert.match(admin, /participants: readParticipants\(row\)/);
+    // 참가자·휴방은 목록 순서가 아니라 고른 순서로 저장한다
+    assert.match(admin, /participants: readParticipants\(row, picks\.picked\(\)\)/);
+    assert.match(admin, /const after = new Set\(picks\.picked\(\)\)/);
     assert.match(admin, /\.filter\(activeScheduleMember\)/);
     assert.match(admin, /activeScheduleMember = m => m\.soop_id && !String\(m\.left_date/);
     // 퇴단 멤버의 기존 참가 기록은 저장할 때 보존한다.

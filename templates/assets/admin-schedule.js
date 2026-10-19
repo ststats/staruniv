@@ -27,6 +27,22 @@
     }
 
     const activeScheduleMember = m => m.soop_id && !String(m.left_date || '').trim();
+    // 체크박스 묶음에서 고른 순서를 기억한다(목록 순서가 아니라 고른 순서로 저장한다). initial은 이미 저장된 순서.
+    function trackPickOrder(list, initial = []) {
+        const checked = () => [...list.querySelectorAll('input:checked')].map(el => el.value);
+        let order = [];
+        const reset = (saved = []) => {
+            const now = checked();
+            order = [...saved.filter(id => now.includes(id)), ...now.filter(id => !saved.includes(id))];
+        };
+        reset(initial);
+        list.addEventListener('change', ev => {
+            if (!ev.target.matches('input[type="checkbox"]')) return;
+            order = order.filter(id => id !== ev.target.value);
+            if (ev.target.checked) order.push(ev.target.value);
+        });
+        return { picked: () => order.filter(id => checked().includes(id)), reset };
+    }
     function participantRows(row) {
         const selected = Array.isArray(row?.participants) ? row.participants : [];
         const known = C().state.members || [];
@@ -39,10 +55,9 @@
             .join('')}</div>`;
     }
 
-    function readParticipants(row) {
+    function readParticipants(row, selected) {
         const members = C().state.members || [];
         const previous = Array.isArray(row?.participants) ? row.participants : [];
-        const selected = [...document.querySelectorAll('#as_members input:checked')].map(el => el.value);
         const participants = selected.map(id => {
             const member = members.find(m => m.soop_id === id && activeScheduleMember(m));
             if (!member) throw new Error('현재 소속 멤버만 참가자로 선택할 수 있습니다');
@@ -119,7 +134,7 @@
                     person: C().value('as_person').trim(),
                     title: C().value('as_title').trim(),
                     subject_type: C().value('as_subject_type'),
-                    participants: readParticipants(row),
+                    participants: readParticipants(row, picks.picked()),
                     detail: C().empty(C().value('as_detail')),
                     color,
                 };
@@ -144,6 +159,10 @@
                 : null,
             deleteConfirm: '이 일정을 삭제할까요?',
         });
+        const picks = trackPickOrder(
+            document.getElementById('as_members'),
+            (row?.participants || []).map(p => p.soop_id).filter(Boolean)
+        );
     }
 
     // 그날 이미 휴방으로 등록된 사람은 퇴단했어도 선택지에 남겨 둔다.
@@ -175,7 +194,7 @@
                 const offDate = C().value('ao_date');
                 if (!offDate) throw new Error('날짜를 선택하세요');
                 const before = new Set(calOffAirForDate(offDate));
-                const after = new Set([...document.querySelectorAll('#ao_members input:checked')].map(x => x.value));
+                const after = new Set(picks.picked());
                 const add = [...after].filter(id => !before.has(id));
                 const remove = [...before].filter(id => !after.has(id));
                 if (!add.length && !remove.length) throw new Error('바뀐 내용이 없습니다');
@@ -195,6 +214,7 @@
             },
         });
         const list = document.getElementById('ao_members');
+        const picks = trackPickOrder(list, calOffAirForDate(shownDate));
         const count = () => {
             const el = document.getElementById('ao_count');
             if (el) el.textContent = `${list.querySelectorAll('input:checked').length}명`;
@@ -206,6 +226,7 @@
             if (!d || d === shownDate) return;
             shownDate = d;
             list.innerHTML = offAirChecklist(d);
+            picks.reset(calOffAirForDate(d));
             count();
         });
     }
