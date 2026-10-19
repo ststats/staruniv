@@ -94,6 +94,10 @@
     .team-row-clickable:hover > :not(.h2h-rival-bar) {
         background-color: var(--color-row-hover);
     }
+    /* 개인 전체 전적: 펼친 이전 멤버 카드를 '이전 멤버' 버튼과 띄운다(버튼 위 간격과 같게) */
+    .indiv-summary-former {
+        padding-top: var(--space-3);
+    }
     /* 글자와 이미지가 섞여 있어 하나의 flex 줄로 묶고 간격을 gap 하나로 맞춘다. */
     .modal-title-vs {
         display: inline-flex;

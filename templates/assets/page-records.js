@@ -483,31 +483,52 @@ function setIndivSummaryFormat(format) {
 }
 
 // 명단이라 기록 없는 멤버도 '기록 없음'으로 남기고 로스터 순서를 따른다(상대 전적은 붙어 본 팀만).
-function renderIndivSummaryTable() {
-    const grid = document.getElementById('indiv-summary-grid');
-    if (!grid) return;
-    const format = RecordsState.summaryFormat || '전체';
-    document.getElementById('indiv-summary-filters').innerHTML = summaryFilterHtml(format, 'setIndivSummaryFormat');
-
-    grid.innerHTML = `<div class="h2h-rivals">${SiteData.members
-        .filter(isActiveMember)
-        .map(m => {
-            const pStat = findPlayerStats(m['이름']);
-            const name = m['이름'];
-            const stat = statFor(f => recordStat(pStat[`${f} 전적`]), format);
-            const total = stat.wins + stat.losses;
-            const rec = total
-                ? `${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span>`
-                : '<span class="wl-empty">기록 없음</span>';
-            return `
+// 이전 멤버는 전적이 있는 사람만 접어 두고, 형식을 바꿔 다시 그려도 펼친 상태를 지킨다.
+function indivSummaryCardHtml(m, format) {
+    const pStat = findPlayerStats(m['이름']);
+    const name = m['이름'];
+    const stat = statFor(f => recordStat(pStat[`${f} 전적`]), format);
+    const total = stat.wins + stat.losses;
+    const rec = total
+        ? `${winLoseText(stat.wins, stat.losses)}<span class="h2h-rate-sub"> · ${getRateText(stat.wins, stat.losses)}</span>`
+        : '<span class="wl-empty">기록 없음</span>';
+    return `
         <button type="button" class="h2h-rival"${act('selectPlayer', name)}>
             ${avatarHtml(m['SOOP ID'], 'h2h-rival-avatar')}
             <span class="h2h-rival-name">${raceNameHtml(m['종족'], name, true)}</span>
             <span class="h2h-rival-rec">${rec}</span>
             ${total ? `<span class="h2h-rival-bar"><span style="width:${((stat.wins / total) * 100).toFixed(1)}%"></span></span>` : '<span class="h2h-rival-bar is-empty"></span>'}
         </button>`;
-        })
-        .join('')}</div>`;
+}
+
+function renderIndivSummaryTable() {
+    const grid = document.getElementById('indiv-summary-grid');
+    if (!grid) return;
+    const format = RecordsState.summaryFormat || '전체';
+    document.getElementById('indiv-summary-filters').innerHTML = summaryFilterHtml(format, 'setIndivSummaryFormat');
+
+    const former = SiteData.members.filter(m => {
+        if (isActiveMember(m)) return false;
+        const { wins, losses } = statFor(f => recordStat(findPlayerStats(m['이름'])[`${f} 전적`]), '전체');
+        return wins + losses > 0;
+    });
+    const open = !!RecordsState.summaryFormerOpen;
+    grid.innerHTML = `<div class="h2h-rivals">${SiteData.members
+        .filter(isActiveMember)
+        .map(m => indivSummaryCardHtml(m, format))
+        .join('')}</div>${
+        former.length
+            ? `<div class="news-load-more-wrap">
+            <button type="button" class="news-load-more" aria-expanded="${open}"${act('toggleSummaryFormer', ACT.el)}>이전 멤버 ${former.length}명 ${chevronDownSvg(9, ` id="indiv-summary-former-chevron" class="chevron-rotatable${open ? ' is-open' : ''}"`)}</button>
+        </div>
+        <div id="indiv-summary-former" class="h2h-rivals indiv-summary-former${open ? '' : ' d-none'}">${former.map(m => indivSummaryCardHtml(m, format)).join('')}</div>`
+            : ''
+    }`;
+}
+
+function toggleSummaryFormer(btn) {
+    RecordsState.summaryFormerOpen = toggleCollapsible('indiv-summary-former', 'indiv-summary-former-chevron');
+    btn.setAttribute('aria-expanded', String(RecordsState.summaryFormerOpen));
 }
 
 bootPage(
