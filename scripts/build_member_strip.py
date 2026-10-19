@@ -27,6 +27,8 @@ from PIL import Image, ImageDraw, ImageSequence
 ROOT = Path(__file__).resolve().parent.parent
 REPO_MEDIA = ROOT / "templates" / "static"
 MODEL = ROOT / "scripts" / "assets" / "face_detection_yunet_2023mar.onnx"
+# 띠 칸에 맞게 따로 편집한 영상(<soop_id>.mp4 등). 있으면 대표 사진·영상 대신 띠에만 쓴다(배포되지 않음).
+STRIP_ONLY = ROOT / "scripts" / "assets" / "member-strip"
 OUT_DIR = ROOT / "docs" / "media" / "home"
 NAME = "members-strip"
 FILES = (f"{NAME}.webm", f"{NAME}.mp4", f"{NAME}.jpg", f"{NAME}.json")
@@ -56,7 +58,10 @@ def current_members(dsn: str) -> list[dict]:
 
 
 def media_source(member: dict) -> tuple[str, str]:
-    """('file', 경로) 또는 ('url', 주소). 대표 사진이 없으면 SOOP 프로필 사진."""
+    """('file', 경로) 또는 ('url', 주소). 띠 전용 영상 → 대표 사진·영상 → SOOP 프로필 사진 순."""
+    own = next(STRIP_ONLY.glob(f"{member['soop_id']}.*"), None)
+    if own:
+        return "file", str(own)
     photo = member["photo"].split("?")[0]
     if re.fullmatch(r"media/members/[a-z0-9_-]+\.[a-z0-9]+", photo):
         return "file", str(REPO_MEDIA / photo)
