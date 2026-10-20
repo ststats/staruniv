@@ -299,12 +299,6 @@ function recapTime(sec) {
     return h ? `${h}시간 ${total % 60}분` : `${total}분`;
 }
 
-function recapBigTime(sec) {
-    const total = Math.round(sec / 60);
-    const h = Math.floor(total / 60);
-    return h ? `${h}<small>시간</small> ${total % 60}<small>분</small>` : `${total}<small>분</small>`;
-}
-
 // 통계는 한국 시간 하루 단위라 시작 시각에 9시간을 더해 날짜를 읽는다
 function recapDay(start, i) {
     const d = new Date(start + 9 * 3600e3 + i * 864e5);
@@ -316,6 +310,11 @@ function recapAvatar(row, cls) {
     if (soopId) return avatarHtml(soopId, cls);
     const ch = row.nick.replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 1) || '?';
     return `<span class="${cls} recap-letter">${escapeHTML(ch)}</span>`;
+}
+
+// 멤버는 우리 DB 이름, 아니면 방송 닉네임
+function recapName(row) {
+    return row.member ? row.member['이름'] : row.nick;
 }
 
 // 멤버면 이름 옆에 종족 뱃지
@@ -388,20 +387,21 @@ function recapRender() {
     </div>`;
 
     const cards = `<div class="recap-cards">
-        <div class="clean-card recap-card recap-best">
-            <div class="recap-card-label">가장 많이 본 방송</div>
-            <div class="recap-best-body">${recapAvatar(top, 'recap-best-av')}
-                <div class="recap-best-info">
-                    <div class="recap-best-name">${escapeHTML(top.nick)}</div>
-                    <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
-                    <div class="recap-sub">${len}일 중 ${top.days.filter(Boolean).length}일 시청</div>
-                </div>
-                <div class="recap-best-stat">
-                    <div class="recap-big">${recapBigTime(top.total)}</div>
-                    <div class="recap-sub">전체 시청의 <b>${Math.round((top.total / total) * 100)}%</b></div>
+        <div class="clean-card head-plate top-card recap-best">
+            <div class="top-card-photo"></div>
+            <div class="top-card-body">
+                <div class="head-plate-label">가장 많이 본 방송</div>
+                <div class="recap-best-row">
+                    <div class="recap-best-who">
+                        <div class="top-card-name">${escapeHTML(recapName(top))}</div>
+                        <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
+                    </div>
+                    <div class="recap-best-stat">
+                        <div class="top-card-value">${recapTime(top.total)}</div>
+                        <div class="recap-best-share">전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일</div>
+                    </div>
                 </div>
             </div>
-            <div class="recap-bar recap-best-bar"><i style="width:${((top.total / total) * 100).toFixed(1)}%"></i></div>
         </div>
         <div class="clean-card recap-card recap-share">
             <div class="recap-card-label">캄몬 지분</div>
@@ -419,7 +419,7 @@ function recapRender() {
             (r, i) => `<li class="recap-row${r.member ? ' is-kammon' : ''}">
             <span class="recap-rank">${i + 1}</span>${recapAvatar(r, 'recap-av')}
             <div class="recap-row-main">
-                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(r.nick)}</span>${recapKammonBadge(r, false)}${recapRaceBadge(r)}</div>
+                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(recapName(r))}</span>${recapKammonBadge(r, false)}${recapRaceBadge(r)}</div>
                 <div class="recap-bar"><i style="width:${Math.max(1.5, (r.total / top.total) * 100).toFixed(1)}%"></i></div>
             </div>
             <span class="recap-time">${recapTime(r.total)}<em>${pct(r.total)}</em></span>
@@ -459,10 +459,12 @@ function recapRender() {
         <div>${members}</div>
     </div>
     <p class="recap-note">이 기록은 이 브라우저에만 있습니다 · <button type="button" class="text-action"${act('recapClear')}>지우기</button></p>`;
+    renderTopCardPhoto(box.querySelector('.recap-best .top-card-photo'), top.member, top.id);
 }
 
-// 공유용 세로 이미지(1080px 폭). 사진은 CORS가 막히면 이니셜 원으로 그린다(엔트리 포스터와 같은 부품).
-const RECAP_IMAGE_TOP = 5;
+// 공유용 세로 이미지(1080px 폭): 사이트처럼 연한 바탕에 네이비 머리(사선 무늬)와 모서리를 깎은 흰 카드.
+// 사진은 CORS가 막히면 이니셜 원으로 그린다(엔트리 포스터와 같은 부품).
+const RECAP_IMAGE_TOP = 10;
 async function recapSaveImage() {
     const sum = RecapState.data && recapSummary(RecapState.data);
     if (!sum) return;
@@ -472,152 +474,172 @@ async function recapSaveImage() {
     const imgs = await Promise.all(list.map(r => posterLoadImage(soopId(r) ? getProfileImgUrl(soopId(r)) : null)));
     const pal = posterPalette();
     const font = (weight, size) => `${weight} ${size}px Pretendard, sans-serif`;
+    const card = (x, y, w, h, fill) => {
+        posterNotchPath(ctx, x, y, w, h, 18);
+        ctx.fillStyle = fill;
+        ctx.fill();
+    };
 
     const W = 1080,
-        PAD = 72,
-        HEAD = 330,
-        CARD = 340,
-        ROW = 116;
-    const LIST_TOP = HEAD + CARD + 40;
-    const H = LIST_TOP + 70 + list.length * ROW + 120;
+        PAD = 48,
+        GAP = 20,
+        HEAD = 290,
+        CARD = 300,
+        ROW = 92;
+    const cardY = PAD + HEAD + GAP;
+    const listY = cardY + CARD + GAP;
+    const listH = 96 + list.length * ROW + 24;
+    const H = listY + listH + PAD;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
     cv.width = W * scale;
     cv.height = H * scale;
     const ctx = cv.getContext('2d');
     ctx.scale(scale, scale);
-    ctx.fillStyle = pal.bg;
+    ctx.fillStyle = pal.foot;
     ctx.fillRect(0, 0, W, H);
 
     // 네이비 머리: 기간과 총 시청·하루 평균·본 방송
-    ctx.fillStyle = pal.navy;
-    ctx.fillRect(0, 0, W, HEAD);
+    const innerW = W - PAD * 2;
+    card(PAD, PAD, innerW, HEAD, pal.navy);
+    posterNotchPath(ctx, PAD, PAD, innerW, HEAD, 18);
+    posterNavyPattern(ctx, PAD, PAD, innerW, HEAD);
+    const hx = PAD + 44;
     ctx.textAlign = 'left';
     ctx.fillStyle = pal.navyMuted;
-    ctx.font = font(800, 24);
-    ctx.fillText('SOOP RECAP', PAD, 92);
+    ctx.font = font(800, 20);
+    ctx.fillText('SOOP RECAP', hx, PAD + 62);
     ctx.fillStyle = '#fff';
-    ctx.font = font(800, 60);
-    ctx.fillText(`${first.m}월 ${first.d}일 – ${last.m}월 ${last.d}일`, PAD, 170);
+    ctx.font = font(800, 54);
+    ctx.fillText(`${first.m}월 ${first.d}일 – ${last.m}월 ${last.d}일`, hx, PAD + 128);
     const stats = [
         ['총 시청', recapTime(total)],
         ['하루 평균', recapTime(total / len)],
         ['본 방송', `${rows.length}명`],
     ];
-    const boxW = (W - PAD * 2 - 32) / 3;
+    const boxW = (innerW - 88 - 24) / 3;
     stats.forEach(([label, value], i) => {
-        const x = PAD + i * (boxW + 16);
+        const x = hx + i * (boxW + 12);
+        posterNotchPath(ctx, x, PAD + 166, boxW, 86, 8);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.fillRect(x, 210, boxW, 84);
+        ctx.fill();
         ctx.fillStyle = pal.navyMuted;
-        ctx.font = font(700, 20);
-        ctx.fillText(label, x + 22, 242);
+        ctx.font = font(700, 19);
+        ctx.fillText(label, x + 20, PAD + 198);
         ctx.fillStyle = '#fff';
-        ctx.font = font(800, 30);
-        ctx.fillText(value, x + 22, 280);
+        ctx.font = font(800, 28);
+        ctx.fillText(value, x + 20, PAD + 236);
     });
 
-    // 가장 많이 본 방송 · 캄몬 지분
-    const cy = HEAD + 44;
+    // 가장 많이 본 방송(왼쪽 넓게) · 캄몬 지분(오른쪽)
+    const bestW = Math.round((innerW - GAP) * 0.64);
+    const shareW = innerW - GAP - bestW;
+    card(PAD, cardY, bestW, CARD, pal.bg);
+    card(PAD + bestW + GAP, cardY, shareW, CARD, pal.bg);
+    const bx = PAD + 32;
     ctx.fillStyle = pal.sub;
-    ctx.font = font(700, 22);
-    ctx.fillText('가장 많이 본 방송', PAD, cy + 10);
-    posterDrawAvatar(ctx, imgs[0], recapLetterName(top), PAD, cy + 40, 170);
-    const tx = PAD + 200;
+    ctx.font = font(700, 20);
+    ctx.fillText('가장 많이 본 방송', bx, cardY + 48);
+    posterDrawAvatar(ctx, imgs[0], recapLetterName(top), bx, cardY + 82, 132);
+    const tx = bx + 160;
     ctx.fillStyle = pal.text;
-    ctx.font = font(800, 40);
-    ctx.fillText(recapFit(ctx, top.nick, 360), tx, cy + 90);
-    let bx = tx;
+    ctx.font = font(800, 38);
+    ctx.fillText(recapFit(ctx, recapName(top), bestW - (tx - PAD) - 28), tx, cardY + 122);
     if (top.member) {
         const former = !isActiveMember(top.member);
-        bx +=
-            posterDrawBadge(
-                ctx,
-                former ? '이전 멤버' : '캄몬스타즈',
-                bx,
-                cy + 108,
-                32,
-                former ? pal.sub : pal.kammon,
-                '#fff'
-            ) + 8;
-        posterDrawRaceBadge(ctx, raceCode(top.member['종족']), bx, cy + 108, 32);
+        const w = posterDrawBadge(
+            ctx,
+            former ? '이전 멤버' : '캄몬스타즈',
+            tx,
+            cardY + 140,
+            30,
+            former ? pal.sub : pal.kammon,
+            '#fff'
+        );
+        posterDrawRaceBadge(ctx, raceCode(top.member['종족']), tx + w + 6, cardY + 140, 30);
     }
-    ctx.fillStyle = pal.kammon;
-    ctx.font = font(800, 52);
-    ctx.fillText(recapTime(top.total), tx, cy + 200);
+    ctx.fillStyle = pal.text;
+    ctx.font = font(800, 40);
+    ctx.fillText(recapTime(top.total), tx, cardY + 222);
     ctx.fillStyle = pal.sub;
-    ctx.font = font(600, 22);
+    ctx.font = font(600, 20);
     ctx.fillText(
-        `전체의 ${Math.round((top.total / total) * 100)}% · ${top.days.filter(Boolean).length}/${len}일`,
+        `전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일`,
         tx,
-        cy + 238
+        cardY + 256
     );
 
-    const dx = W - PAD - 110;
-    const dy = cy + 140;
-    ctx.lineWidth = 26;
+    const sx = PAD + bestW + GAP;
+    ctx.fillStyle = pal.sub;
+    ctx.font = font(700, 20);
+    ctx.fillText('캄몬 지분', sx + 32, cardY + 48);
+    const dx = sx + shareW / 2;
+    const dy = cardY + 160;
+    ctx.lineWidth = 22;
     ctx.strokeStyle = pal.stripe;
     ctx.beginPath();
-    ctx.arc(dx, dy, 96, 0, Math.PI * 2);
+    ctx.arc(dx, dy, 72, 0, Math.PI * 2);
     ctx.stroke();
     ctx.strokeStyle = pal.kammon;
     ctx.beginPath();
-    ctx.arc(dx, dy, 96, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * share) / 100);
+    ctx.arc(dx, dy, 72, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * share) / 100);
     ctx.stroke();
     ctx.textAlign = 'center';
     ctx.fillStyle = pal.text;
-    ctx.font = font(800, 48);
-    ctx.fillText(`${Math.round(share)}%`, dx, dy + 8);
+    ctx.font = font(800, 40);
+    ctx.fillText(`${Math.round(share)}%`, dx, dy + 14);
     ctx.fillStyle = pal.sub;
-    ctx.font = font(700, 20);
-    ctx.fillText('캄몬 지분', dx, dy + 40);
-    ctx.font = font(600, 20);
-    ctx.fillText(kammon.length ? `멤버 ${kammon.length}명 · ${recapTime(kammonTotal)}` : '본 멤버 없음', dx, dy + 140);
+    ctx.font = font(600, 19);
+    ctx.fillText(
+        kammon.length ? `멤버 ${kammon.length}명 · ${recapTime(kammonTotal)}` : '본 멤버 없음',
+        dx,
+        cardY + 274
+    );
 
-    // 시청 순위 TOP 5
+    // 시청 순위 TOP 10
+    card(PAD, listY, innerW, listH, pal.bg);
     ctx.textAlign = 'left';
-    ctx.fillStyle = pal.line;
-    ctx.fillRect(PAD, LIST_TOP - 20, W - PAD * 2, 2);
     ctx.fillStyle = pal.text;
-    ctx.font = font(800, 30);
-    ctx.fillText(`시청 순위 TOP ${list.length}`, PAD, LIST_TOP + 30);
+    ctx.font = font(800, 28);
+    ctx.fillText(`시청 순위 TOP ${list.length}`, bx, listY + 58);
     list.forEach((r, i) => {
-        const y = LIST_TOP + 70 + i * ROW;
+        const y = listY + 96 + i * ROW;
+        if (i) {
+            ctx.fillStyle = pal.line;
+            ctx.fillRect(bx, y - 1, innerW - 64, 1);
+        }
         ctx.textAlign = 'center';
         ctx.fillStyle = i < 3 ? pal.kammon : pal.faint;
-        ctx.font = font(800, 30);
-        ctx.fillText(String(i + 1), PAD + 16, y + 52);
-        posterDrawAvatar(ctx, imgs[i], recapLetterName(r), PAD + 52, y + 8, 76);
+        ctx.font = font(800, 26);
+        ctx.fillText(String(i + 1), bx + 14, y + 54);
+        posterDrawAvatar(ctx, imgs[i], recapLetterName(r), bx + 44, y + 14, 64);
         ctx.textAlign = 'left';
-        const nx = PAD + 150;
+        const nx = bx + 128;
         ctx.fillStyle = pal.text;
-        ctx.font = font(700, 28);
-        const nick = recapFit(ctx, r.nick, 420);
-        ctx.fillText(nick, nx, y + 40);
-        if (r.member)
-            posterDrawRaceBadge(ctx, raceCode(r.member['종족']), nx + ctx.measureText(nick).width + 12, y + 16, 28);
-        const barW = W - PAD - nx - 200;
+        ctx.font = font(700, 26);
+        const name = recapFit(ctx, recapName(r), 420);
+        ctx.fillText(name, nx, y + 42);
+        let cx = nx + ctx.measureText(name).width + 10;
+        if (r.member) {
+            const former = !isActiveMember(r.member);
+            cx +=
+                posterDrawBadge(ctx, former ? '이전' : '캄몬', cx, y + 20, 26, former ? pal.sub : pal.kammon, '#fff') +
+                6;
+            posterDrawRaceBadge(ctx, raceCode(r.member['종족']), cx, y + 20, 26);
+        }
+        const barW = innerW - (nx - PAD) - 210;
         ctx.fillStyle = pal.stripe;
-        ctx.fillRect(nx, y + 62, barW, 10);
+        ctx.fillRect(nx, y + 60, barW, 8);
         ctx.fillStyle = r.member ? pal.kammon : pal.empty;
-        ctx.fillRect(nx, y + 62, Math.max(6, (barW * r.total) / top.total), 10);
+        ctx.fillRect(nx, y + 60, Math.max(4, (barW * r.total) / top.total), 8);
         ctx.textAlign = 'right';
         ctx.fillStyle = pal.text;
-        ctx.font = font(800, 28);
-        ctx.fillText(recapTime(r.total), W - PAD, y + 44);
+        ctx.font = font(800, 26);
+        ctx.fillText(recapTime(r.total), W - PAD - 32, y + 44);
         ctx.fillStyle = pal.faint;
-        ctx.font = font(600, 20);
-        ctx.fillText(`${((r.total / total) * 100).toFixed(1)}%`, W - PAD, y + 74);
+        ctx.font = font(600, 19);
+        ctx.fillText(`${((r.total / total) * 100).toFixed(1)}%`, W - PAD - 32, y + 72);
     });
-
-    ctx.fillStyle = pal.foot;
-    ctx.fillRect(0, H - 90, W, 90);
-    ctx.textAlign = 'left';
-    ctx.fillStyle = pal.sub;
-    ctx.font = font(700, 22);
-    ctx.fillText('스타대학 · 숲리캡', PAD, H - 38);
-    ctx.textAlign = 'right';
-    ctx.fillText(new URL('.', document.baseURI).host, W - PAD, H - 38);
 
     let blob = null;
     try {

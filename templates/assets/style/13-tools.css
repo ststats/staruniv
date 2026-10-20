@@ -519,61 +519,30 @@
         font-weight: 700;
         letter-spacing: 0.06em;
     }
-    /* 1위 카드: 사진 옆에 이름(작게) → 시간(크게) → 비율. 아래 막대는 전체 시청 중 비율 */
-    .recap-best-body {
+    /* 1위 카드: 방송통계 TOP 카드(04-components .top-card)에 이름·뱃지는 왼쪽, 시청 시간·비율은 오른쪽 */
+    .recap-best-row {
         display: flex;
-        flex: 1;
-        align-items: center;
-        gap: var(--space-7);
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: var(--space-6);
+    }
+    .recap-best-who {
         min-width: 0;
-    }
-    .recap-best-av {
-        flex: none;
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        object-fit: cover;
-        font-size: var(--fs-hero);
-    }
-    .recap-best-info {
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        gap: var(--space-2);
-        min-width: 0;
-    }
-    .recap-best-name {
-        overflow: hidden;
-        color: var(--color-text-main);
-        font-size: var(--fs-heading);
-        font-weight: 800;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
     .recap-badges {
         display: flex;
         align-items: center;
         gap: var(--space-1);
+        margin-top: var(--space-3);
     }
     .recap-best-stat {
         flex: none;
         text-align: right;
     }
-    .recap-big {
-        color: var(--color-text-main);
-        font-size: var(--fs-hero);
-        font-weight: 800;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-    }
-    .recap-big small {
-        margin-left: 2px;
-        color: var(--color-text-sub);
-        font-size: var(--fs-card-title);
-        font-weight: 700;
-    }
-    .recap-bar.recap-best-bar i {
-        background: var(--kammon);
+    .recap-best-share {
+        margin-top: var(--space-1);
+        color: var(--panel-muted);
+        font-size: var(--fs-small);
     }
     .recap-sub {
         overflow: hidden;
@@ -738,7 +707,7 @@
         grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
         gap: var(--space-6) var(--space-3);
     }
-    /* 이전 멤버: 선으로 나누고 사진을 작게·흑백으로 */
+    /* 이전 멤버: 선으로 나누고 칸은 위와 같게(줄이 맞게), 사진만 흑백으로 */
     .recap-members-label {
         margin: var(--space-8) 0 var(--space-6);
         padding-top: var(--space-6);
@@ -755,13 +724,8 @@
     .recap-members-label span {
         color: var(--color-text-faint);
     }
-    .recap-member-grid.is-former {
-        grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-    }
     .recap-member-grid.is-former .recap-member-av {
-        width: 40px;
-        height: 40px;
-        opacity: 0.6;
+        opacity: 0.55;
         filter: grayscale(1);
     }
     .recap-member-grid.is-former .recap-member-name {
@@ -883,10 +847,6 @@
         .recap-row {
             gap: var(--space-4);
             padding: var(--space-4) var(--space-5);
-        }
-        .recap-best-av {
-            width: 64px;
-            height: 64px;
         }
         .recap-steps {
             padding-left: var(--space-10);
