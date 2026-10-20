@@ -185,18 +185,11 @@ const RECAP_STORE = 'recap:last';
 const RECAP_TOP = 10;
 const RecapState = { data: null, showAll: false };
 
-// 통계 페이지가 차트를 그리는 함수(setGraphPart1)를 바꿔 끼우고 데이터를 다시 불러, 받은 데이터를 이 페이지로 넘긴다.
-// 통계에는 닉네임만 있어 SOOP 검색(같은 SOOP 페이지라 불러진다)으로 닉네임이 같은 방송의 아이디를 찾아 함께 넘긴다(사진·멤버 확인용).
-// 마지막 식이 값을 돌려주면 javascript: 주소가 그 값으로 화면을 바꾸므로 void로 막는다.
+// SOOP 통계 페이지 주소창에 붙여 넣는 한 줄: 사이트의 recap.js(templates/static)를 싣는다. 하는 일은 그 파일에 있다.
+// append는 값을 돌려주지 않아 javascript: 주소가 화면을 바꾸지 않는다.
 function recapSnippet() {
-    const target = new URL('tools/?view=recap#recap=', document.baseURI).href;
-    return (
-        'setGraphPart1=async(e,t,l)=>{let b=await Promise.all(l.data_stack.map(async x=>{let i="";try{i=(await(await fetch(' +
-        '"https://sch.sooplive.co.kr/api.php?m=bjSearch&v=3.0&szOrder=score&nListCnt=5&szKeyword="+encodeURIComponent(x.bj_nick),' +
-        '{credentials:"include"})).json()).DATA.find(d=>d.user_nick==x.bj_nick).user_id}catch(_){}return[x.bj_nick,x.data,i]}));' +
-        `location.href=${JSON.stringify(target)}+encodeURIComponent(JSON.stringify({v:1,s:l.date.starttime,b}))};` +
-        'void callWatchAjax(szMethod,szModule)'
-    );
+    const src = new URL('recap.js', document.baseURI).href;
+    return `document.head.append(Object.assign(document.createElement("script"),{src:${JSON.stringify(src)}}))`;
 }
 
 async function recapCopySnippet() {
@@ -325,14 +318,9 @@ function recapAvatar(row, cls) {
     return `<span class="${cls} recap-letter">${escapeHTML(ch)}</span>`;
 }
 
-function recapTags(row, withLabel) {
-    const m = row.member;
-    if (!m) return '';
-    const former = !isActiveMember(m);
-    const label = withLabel
-        ? `<span class="tag-badge recap-tag${former ? ' is-former' : ''}">${former ? '이전 멤버' : '캄몬스타즈'}</span>`
-        : '';
-    return label + (m['종족'] ? raceBadgeHtml(m['종족']) : '');
+// 멤버면 이름 옆에 종족 뱃지
+function recapRaceBadge(row) {
+    return row.member && row.member['종족'] ? raceBadgeHtml(row.member['종족']) : '';
 }
 
 // 화면과 저장 이미지가 같이 쓰는 숫자. 본 방송이 없으면 null
@@ -396,12 +384,12 @@ function recapRender() {
             <div class="recap-card-label">가장 많이 본 방송</div>
             <div class="recap-best-body">${recapAvatar(top, 'recap-best-av')}
                 <div class="recap-best-info">
-                    <div class="recap-best-name">${escapeHTML(top.nick)}</div>
-                    <div class="recap-tags">${recapTags(top, true)}</div>
+                    <div class="recap-best-name"><span>${escapeHTML(top.nick)}</span>${recapRaceBadge(top)}</div>
                     <div class="recap-big">${recapBigTime(top.total)}</div>
-                    <div class="recap-sub">전체의 <b>${Math.round((top.total / total) * 100)}%</b> · ${top.days.filter(Boolean).length}/${len}일</div>
+                    <div class="recap-sub">전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일</div>
                 </div>
             </div>
+            <div class="recap-bar recap-best-bar"><i style="width:${((top.total / total) * 100).toFixed(1)}%"></i></div>
         </div>
         <div class="clean-card recap-card recap-share">
             <div class="recap-card-label">캄몬 지분</div>
@@ -419,7 +407,7 @@ function recapRender() {
             (r, i) => `<li class="recap-row${r.member ? ' is-kammon' : ''}">
             <span class="recap-rank">${i + 1}</span>${recapAvatar(r, 'recap-av')}
             <div class="recap-row-main">
-                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(r.nick)}</span>${recapTags(r, false)}</div>
+                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(r.nick)}</span>${recapRaceBadge(r)}</div>
                 <div class="recap-bar"><i style="width:${Math.max(1.5, (r.total / top.total) * 100).toFixed(1)}%"></i></div>
             </div>
             <span class="recap-time">${recapTime(r.total)}<em>${pct(r.total)}</em></span>

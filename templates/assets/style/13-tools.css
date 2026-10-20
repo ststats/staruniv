@@ -503,7 +503,7 @@
 
     .recap-cards {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 2fr 1fr;
         gap: var(--space-card-gap);
         margin-bottom: var(--space-section-gap);
     }
@@ -519,53 +519,54 @@
         font-weight: 700;
         letter-spacing: 0.06em;
     }
-    /* 1위 카드는 캄몬 지분 카드처럼 가운데 정렬로 위에서 아래로 쌓는다 */
+    /* 1위 카드: 사진 옆에 이름(작게) → 시간(크게) → 비율. 아래 막대는 전체 시청 중 비율 */
     .recap-best-body {
         display: flex;
         flex: 1;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: var(--space-4);
+        gap: var(--space-7);
         min-width: 0;
-        text-align: center;
     }
     .recap-best-av {
         flex: none;
-        width: 96px;
-        height: 96px;
+        width: 72px;
+        height: 72px;
         border-radius: 50%;
         object-fit: cover;
-        font-size: 36px;
+        font-size: var(--fs-hero);
     }
     .recap-best-info {
-        max-width: 100%;
         min-width: 0;
     }
     .recap-best-name {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--color-text-sub);
+        font-size: var(--fs-card-title);
+        font-weight: 700;
+    }
+    .recap-best-name span {
         overflow: hidden;
-        color: var(--color-text-main);
-        font-size: 20px;
-        font-weight: 800;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .recap-tags {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-1);
-        margin: var(--space-2) 0 var(--space-3);
-    }
     .recap-big {
-        color: var(--kammon);
+        margin: 2px 0 var(--space-1);
+        color: var(--color-text-main);
         font-size: var(--fs-hero);
         font-weight: 800;
+        line-height: 1.15;
         letter-spacing: -0.02em;
     }
     .recap-big small {
         margin-left: 2px;
-        font-size: 15px;
+        color: var(--color-text-sub);
+        font-size: var(--fs-card-title);
+        font-weight: 700;
+    }
+    .recap-bar.recap-best-bar i {
+        background: var(--kammon);
     }
     .recap-sub {
         overflow: hidden;
@@ -624,12 +625,6 @@
 
     .recap-cols {
         align-items: start;
-    }
-    .recap-tag {
-        background: var(--kammon);
-    }
-    .recap-tag.is-former {
-        background: var(--color-draw);
     }
     .recap-letter {
         display: inline-flex;
@@ -841,19 +836,16 @@
             min-width: 0;
             padding: var(--space-7);
         }
-        .recap-big {
-            font-size: 22px;
+        .recap-cards {
+            grid-template-columns: 1fr;
         }
         .recap-row {
             gap: var(--space-4);
             padding: var(--space-4) var(--space-5);
         }
         .recap-best-av {
-            width: 72px;
-            height: 72px;
-        }
-        .recap-best-name {
-            font-size: var(--fs-heading);
+            width: 64px;
+            height: 64px;
         }
         .recap-steps {
             padding-left: var(--space-10);
