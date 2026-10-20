@@ -503,7 +503,7 @@
 
     .recap-cards {
         display: grid;
-        grid-template-columns: 2fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--space-card-gap);
         margin-bottom: var(--space-section-gap);
     }
@@ -519,11 +519,16 @@
         font-weight: 700;
         letter-spacing: 0.06em;
     }
+    /* 1위 카드는 캄몬 지분 카드처럼 가운데 정렬로 위에서 아래로 쌓는다 */
     .recap-best-body {
         display: flex;
+        flex: 1;
+        flex-direction: column;
         align-items: center;
-        gap: var(--space-8);
+        justify-content: center;
+        gap: var(--space-4);
         min-width: 0;
+        text-align: center;
     }
     .recap-best-av {
         flex: none;
@@ -534,6 +539,7 @@
         font-size: 36px;
     }
     .recap-best-info {
+        max-width: 100%;
         min-width: 0;
     }
     .recap-best-name {
@@ -547,8 +553,9 @@
     .recap-tags {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: var(--space-1);
-        margin: var(--space-2) 0 var(--space-4);
+        margin: var(--space-2) 0 var(--space-3);
     }
     .recap-big {
         color: var(--kammon);
@@ -574,7 +581,7 @@
         position: relative;
         width: 120px;
         height: 120px;
-        margin: 0 auto;
+        margin: auto; /* 카드 안 가운데(위아래도) */
     }
     .recap-donut svg {
         width: 100%;
@@ -841,15 +848,12 @@
             gap: var(--space-4);
             padding: var(--space-4) var(--space-5);
         }
-        .recap-cards {
-            grid-template-columns: 1fr;
-        }
         .recap-best-av {
             width: 72px;
             height: 72px;
         }
-        .recap-best-body {
-            gap: var(--space-6);
+        .recap-best-name {
+            font-size: var(--fs-heading);
         }
         .recap-steps {
             padding-left: var(--space-10);
