@@ -577,6 +577,25 @@
     .recap-bar.recap-best-bar i {
         background: var(--kammon);
     }
+    /* 넓은 PC는 카드가 커서 사진·글자·뱃지를 한 단계 키운다(좁으면 이름이 잘려 기본 크기로) */
+    @media (min-width: 1200px) {
+        .recap-best-av {
+            width: 96px;
+            height: 96px;
+        }
+        .recap-best-name,
+        .recap-best-time {
+            font-size: var(--fs-hero);
+        }
+        .recap-best .tag-badge {
+            --badge-h: 24px;
+            --badge-fs: var(--fs-small);
+        }
+        .recap-best-share {
+            font-size: var(--fs-small);
+            line-height: 24px; /* 키운 .tag-badge 높이와 같게 */
+        }
+    }
     .recap-sub {
         overflow: hidden;
         color: var(--color-text-sub);

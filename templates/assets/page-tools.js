@@ -438,7 +438,7 @@ function recapRender() {
     const current = kammon.filter(r => isActiveMember(r.member));
     const former = kammon.filter(r => !isActiveMember(r.member));
     const members = kammon.length
-        ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span><span class="title-count">${kammon.length}명</span></div>
+        ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span></div>
         <div class="clean-card recap-members">${current.length ? memberGrid(current, false) : ''}${
             former.length ? `<hr class="recap-members-line">${memberGrid(former, true)}` : ''
         }</div>`
@@ -667,7 +667,7 @@ async function recapSaveImage() {
         ctx.textAlign = 'left';
         ctx.fillStyle = pal.text;
         ctx.font = font(800, 28);
-        ctx.fillText(`내가 본 캄몬 멤버 ${kammon.length}명`, mx, listY + 58);
+        ctx.fillText('내가 본 캄몬 멤버', mx, listY + 58);
         const drawGrid = (group, top0, dim) => {
             group.forEach((r, i) => {
                 const cx = mx + (i % perRow) * CELL_W + CELL_W / 2;
