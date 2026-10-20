@@ -457,7 +457,7 @@
     }
 
     /* ----- 화면 폭별 ----- */
-    /* ----- 숲리캡: 네이비 머리(14-surfaces.css) + 카드 세 장 + 순위·멤버 두 칸. 사진은 사이트처럼 동그라미 ----- */
+    /* ----- 숲리캡: 네이비 머리(14-surfaces.css) + 카드 두 장 + 순위·멤버 두 칸. 사진은 사이트처럼 동그라미 ----- */
     .recap-hero {
         display: flex;
         flex-wrap: wrap;
@@ -510,7 +510,7 @@
 
     .recap-cards {
         display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr;
         gap: var(--space-card-gap);
         margin-bottom: var(--space-section-gap);
     }
@@ -849,10 +849,7 @@
             padding: var(--space-4) var(--space-5);
         }
         .recap-cards {
-            grid-template-columns: 1fr 1fr;
-        }
-        .recap-best {
-            grid-column: 1 / -1;
+            grid-template-columns: 1fr;
         }
         .recap-best-av {
             width: 72px;

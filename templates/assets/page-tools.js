@@ -343,8 +343,6 @@ function recapRender() {
         box.innerHTML = '<div class="content-state is-boxed">이 기간에는 시청 기록이 없습니다</div>';
         return;
     }
-    const daily = Array.from({ length: len }, (_, i) => all.reduce((a, r) => a + (r.days[i] || 0), 0));
-    const watchedDays = daily.filter(Boolean).length;
     const first = recapDay(data.start, 0);
     const last = recapDay(data.start, len - 1);
     const top = rows[0];
@@ -361,9 +359,9 @@ function recapRender() {
             <div class="recap-hero-sub">${len}일 동안 이렇게 봤어요</div>
         </div>
         <div class="recap-hero-stats">
+            <div><span>총 시청</span><b>${recapTime(total)}</b></div>
+            <div><span>하루 평균</span><b>${recapTime(total / len)}</b></div>
             <div><span>본 방송</span><b>${rows.length}명</b></div>
-            <div><span>캄몬 멤버</span><b>${kammon.length}명</b></div>
-            <div><span>시청한 날</span><b>${watchedDays}일</b></div>
         </div>
     </div>`;
 
@@ -386,11 +384,6 @@ function recapRender() {
                 <div class="recap-donut-text"><b>${Math.round(share)}<small>%</small></b><span>캄몬스타즈</span></div>
             </div>
             <div class="recap-sub">${kammon.length ? `멤버 ${kammon.length}명 · ${recapTime(kammonTotal)}` : '본 멤버 방송이 없습니다'}</div>
-        </div>
-        <div class="clean-card recap-card recap-total">
-            <div class="recap-card-label">전체 시청 시간</div>
-            <div class="recap-big">${recapBigTime(total)}</div>
-            <div class="recap-sub">하루 평균 <b>${recapTime(total / len)}</b></div>
         </div>
     </div>`;
 
