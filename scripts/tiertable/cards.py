@@ -182,15 +182,21 @@ def _diff_integral(im, top, bottom, bg):
     return box, H, W
 
 
-def _cluster(values, tol):
-    """가까운 값끼리 묶어 묶음마다 중앙값을 돌려준다."""
+def _lines(values, tol):
+    """줄·칸 선. 사진끼리는 겹칠 수 없으니 사진 한 변보다 가까운 묶음은 사진이 더 많은 쪽만 남긴다.
+    배경이 검은 구역은 사진 속 어두운 머리·옷이 배경처럼 보여 사진 안쪽으로 밀린 자리도 잡힌다."""
     groups = []
     for v in sorted(values):
         if groups and v - groups[-1][-1] <= tol:
             groups[-1].append(v)
         else:
             groups.append([v])
-    return [sorted(g)[len(g) // 2] for g in groups]
+    kept = []
+    for g in sorted(groups, key=len, reverse=True):
+        mid = sorted(g)[len(g) // 2]
+        if all(abs(mid - k) >= PHOTO for k in kept):
+            kept.append(mid)
+    return sorted(kept)
 
 
 def _extend(lines, lo, hi):
@@ -245,8 +251,8 @@ def find_photos(im: Image.Image, top: int, bottom: int, bg):
         clean.append(refine_edge(px, bg, int(cx) + 6, int(cy) + HEADER + top, PHOTO))
     if not clean:
         return []
-    col_x = _extend(_cluster([p[0] for p in clean], 10), 6, W - PHOTO - 90)
-    row_y = _extend(_cluster([p[1] for p in clean], 10), top + HEADER, bottom - PHOTO - 2)
+    col_x = _extend(_lines([p[0] for p in clean], 10), 6, W - PHOTO - 90)
+    row_y = _extend(_lines([p[1] for p in clean], 10), top + HEADER, bottom - PHOTO - 2)
     out = []
     for r, y in enumerate(row_y):
         for c, x in enumerate(col_x):
