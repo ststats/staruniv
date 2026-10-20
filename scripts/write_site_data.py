@@ -23,6 +23,7 @@ SITE_MATCH_FIELDS = [
     "방식",
     "최종 결과",
     "세트 결과",
+    "비고",
     "_match_key",
 ]
 SITE_ROUND_FIELDS = [

@@ -48,6 +48,7 @@ def build_db(matches, rounds):
                 "방식": empty(r["method"]),
                 "최종 결과": empty(r["final_result"]),
                 "세트 결과": empty(r["set_result"]),
+                "비고": empty(r["note"]),
             }
             for r in matches
         ],
