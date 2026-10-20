@@ -390,13 +390,11 @@ function recapRender() {
         <div class="clean-card recap-card recap-best">
             <div class="recap-card-label">가장 많이 본 방송</div>
             <div class="recap-best-body">${recapAvatar(top, 'recap-best-av')}
-                <div class="recap-best-who">
+                <div class="recap-best-info">
                     <div class="recap-best-name">${escapeHTML(recapName(top))}</div>
-                    <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
-                </div>
-                <div class="recap-best-stat">
                     <div class="recap-best-time">${recapTime(top.total)}</div>
-                    <div class="recap-sub">전체 시청의 <b>${Math.round((top.total / total) * 100)}%</b><span class="recap-best-days"> · ${len}일 중 ${top.days.filter(Boolean).length}일</span></div>
+                    <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
+                    <div class="recap-best-share">전체 시청의 ${Math.round((top.total / total) * 100)}%<span class="recap-best-days"> · ${len}일 중 ${top.days.filter(Boolean).length}일</span></div>
                 </div>
             </div>
             <div class="recap-bar recap-best-bar"><i style="width:${((top.total / total) * 100).toFixed(1)}%"></i></div>
@@ -442,9 +440,7 @@ function recapRender() {
     const members = kammon.length
         ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span><span class="title-count">${kammon.length}명</span></div>
         <div class="clean-card recap-members">${current.length ? memberGrid(current, false) : ''}${
-            former.length
-                ? `<div class="recap-members-label">이전 멤버 <span>${former.length}명</span></div>${memberGrid(former, true)}`
-                : ''
+            former.length ? `<hr class="recap-members-line">${memberGrid(former, true)}` : ''
         }</div>`
         : '';
 

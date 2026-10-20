@@ -503,7 +503,7 @@
 
     .recap-cards {
         display: grid;
-        grid-template-columns: 2fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--space-card-gap);
         margin-bottom: var(--space-section-gap);
     }
@@ -519,7 +519,7 @@
         font-weight: 700;
         letter-spacing: 0.06em;
     }
-    /* 1위 카드: [사진 | 이름·뱃지 | 시간·비율(오른쪽 정렬)]을 한 줄에 세로 가운데로 맞추고, 아래 막대는 전체 시청 중 비율 */
+    /* 1위 카드: 사진 옆 두 줄 × 두 칸. 윗줄 이름 | 시간(같은 크기), 아랫줄 뱃지 | 비율(뱃지 높이에 맞춤). 오른쪽 칸은 오른쪽 정렬 */
     .recap-best-body {
         display: flex;
         flex: 1;
@@ -535,37 +535,41 @@
         object-fit: cover;
         font-size: var(--fs-hero);
     }
-    .recap-best-who {
+    .recap-best-info {
+        display: grid;
         flex: 1;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--space-3) var(--space-5);
         min-width: 0;
     }
-    .recap-best-name {
-        overflow: hidden;
+    .recap-best-name,
+    .recap-best-time {
         color: var(--color-text-main);
         font-size: 20px;
         font-weight: 800;
-        text-overflow: ellipsis;
+        line-height: 1.2;
         white-space: nowrap;
+    }
+    .recap-best-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .recap-best-time,
+    .recap-best-share {
+        justify-self: end;
     }
     .recap-badges {
         display: flex;
         align-items: center;
         gap: var(--space-1);
-        margin-top: var(--space-3);
     }
-    .recap-best-stat {
-        display: flex;
-        flex: none;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: var(--space-2);
-    }
-    .recap-best-time {
-        color: var(--color-text-main);
-        font-size: 24px;
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: -0.02em;
+    .recap-best-share {
+        color: var(--color-text-sub);
+        font-size: var(--fs-badge);
+        font-weight: 700;
+        line-height: 20px; /* .tag-badge 높이와 같게 */
+        white-space: nowrap;
     }
     .recap-bar.recap-best-bar {
         margin-top: var(--space-2);
@@ -736,22 +740,14 @@
         grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
         gap: var(--space-6) var(--space-3);
     }
-    /* 이전 멤버: 선으로 나누고 칸은 위와 같게(줄이 맞게), 사진만 흑백으로 */
-    .recap-members-label {
-        margin: var(--space-8) 0 var(--space-6);
-        padding-top: var(--space-6);
+    /* 이전 멤버: 선으로만 나누고 칸은 위와 같게(줄이 맞게), 사진만 흑백으로 */
+    .recap-members-line {
+        margin: var(--space-8) 0;
+        border: none;
         border-top: 1px solid var(--color-border);
-        color: var(--color-text-sub);
-        font-size: var(--fs-small);
-        font-weight: 700;
     }
-    .recap-members-label:first-child {
-        margin-top: 0;
-        padding-top: 0;
-        border-top: none;
-    }
-    .recap-members-label span {
-        color: var(--color-text-faint);
+    .recap-members-line:first-child {
+        display: none;
     }
     .recap-member-grid.is-former .recap-member-av {
         opacity: 0.55;
@@ -884,7 +880,7 @@
             font-size: var(--fs-heading);
         }
         .recap-best-time {
-            font-size: 20px;
+            font-size: var(--fs-heading);
         }
         /* 폰은 이름·뱃지 자리가 좁아 출석 일수는 뺀다 */
         .recap-best-days {
