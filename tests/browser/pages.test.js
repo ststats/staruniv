@@ -35,7 +35,7 @@ const PAGES = [
     'tools/',
     'tools/?view=recap',
     // 숲리캡: SOOP 통계 페이지 코드가 넘겨 주는 모양 그대로
-    'tools/?view=recap#recap=%7B%22v%22%3A1%2C%22s%22%3A1791817200000%2C%22b%22%3A%5B%5B%22Calm_%EB%82%98%EB%9E%98%22%2C%5B5400%2C0%2C1200%2C0%2C0%2C600%2C3000%5D%5D%2C%5B%22%EB%8B%A4%EC%98%A8%E2%99%A5%22%2C%5B0%2C900%2C0%2C0%2C0%2C0%2C0%5D%5D%2C%5B%22%EB%8B%A4%EB%A5%B8%EB%B0%A9%EC%86%A1%22%2C%5B0%2C0%2C0%2C300%2C0%2C0%2C0%5D%5D%2C%5B%22%EA%B8%B0%ED%83%80%22%2C%5B0%2C0%2C10%2C0%2C0%2C0%2C0%5D%5D%5D%7D',
+    'tools/?view=recap#recap=%7B%22v%22%3A1%2C%22s%22%3A1791817200000%2C%22b%22%3A%5B%5B%22Calm_%EB%82%98%EB%9E%98%22%2C%5B5400%2C0%2C1200%2C0%2C0%2C600%2C3000%5D%2C%22%22%5D%2C%5B%22%EB%8B%A4%EC%98%A8%E2%99%A5%22%2C%5B0%2C900%2C0%2C0%2C0%2C0%2C0%5D%2C%22%22%5D%2C%5B%22%EB%8B%A4%EB%A5%B8%EB%B0%A9%EC%86%A1%22%2C%5B0%2C0%2C0%2C300%2C0%2C0%2C0%5D%2C%22abc123%22%5D%2C%5B%22%EA%B8%B0%ED%83%80%22%2C%5B0%2C0%2C10%2C0%2C0%2C0%2C0%5D%2C%22%22%5D%5D%7D',
 ];
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
@@ -127,6 +127,8 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
                 assert.equal(await page.evaluate(() => location.hash), '');
                 assert.equal(await page.locator('.recap-row').count(), 3);
                 assert.match(await page.locator('.recap-members').textContent(), /나래/);
+                // 멤버가 아니어도 SOOP 검색으로 찾은 아이디가 있으면 프로필 사진을 쓴다
+                assert.equal(await page.locator('.recap-row img[src*="abc123"]').count(), 1);
                 assert.match(await page.locator('.recap-member').first().textContent(), /나래/);
             }
             if (url === 'tier/') {

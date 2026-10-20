@@ -183,16 +183,19 @@ if (typeof MutationObserver === 'function') {
 // 데이터는 이 브라우저에서만 그리고, 다시 열어 볼 수 있게 마지막 한 번만 localStorage에 둔다.
 const RECAP_STORE = 'recap:last';
 const RECAP_TOP = 10;
-// tierPlayers: 멤버가 아닌 방송도 사진을 찾으려고 티어표 명단(닉네임 → SOOP ID)을 처음 그릴 때 한 번 받는다
-const RecapState = { data: null, showAll: false, tierPlayers: null };
+const RecapState = { data: null, showAll: false };
 
 // 통계 페이지가 차트를 그리는 함수(setGraphPart1)를 바꿔 끼우고 데이터를 다시 불러, 받은 데이터를 이 페이지로 넘긴다.
+// 통계에는 닉네임만 있어 SOOP 검색(같은 SOOP 페이지라 불러진다)으로 닉네임이 같은 방송의 아이디를 찾아 함께 넘긴다(사진·멤버 확인용).
 // 마지막 식이 값을 돌려주면 javascript: 주소가 그 값으로 화면을 바꾸므로 void로 막는다.
 function recapSnippet() {
     const target = new URL('tools/?view=recap#recap=', document.baseURI).href;
     return (
-        `setGraphPart1=(e,t,l)=>location.href=${JSON.stringify(target)}+encodeURIComponent(JSON.stringify(` +
-        '{v:1,s:l.date.starttime,b:l.data_stack.map(x=>[x.bj_nick,x.data])}));void callWatchAjax(szMethod,szModule)'
+        'setGraphPart1=async(e,t,l)=>{let b=await Promise.all(l.data_stack.map(async x=>{let i="";try{i=(await(await fetch(' +
+        '"https://sch.sooplive.co.kr/api.php?m=bjSearch&v=3.0&szOrder=score&nListCnt=5&szKeyword="+encodeURIComponent(x.bj_nick),' +
+        '{credentials:"include"})).json()).DATA.find(d=>d.user_nick==x.bj_nick).user_id}catch(_){}return[x.bj_nick,x.data,i]}));' +
+        `location.href=${JSON.stringify(target)}+encodeURIComponent(JSON.stringify({v:1,s:l.date.starttime,b}))};` +
+        'void callWatchAjax(szMethod,szModule)'
     );
 }
 
@@ -222,9 +225,10 @@ function recapParse(text) {
     const rows = raw.b
         .slice(0, 300)
         .filter(r => Array.isArray(r) && typeof r[0] === 'string' && Array.isArray(r[1]))
-        .map(([nick, days]) => ({
+        .map(([nick, days, id]) => ({
             nick: nick.slice(0, 40),
             days: days.slice(0, 62).map(v => Math.max(0, Number(v) || 0)),
+            id: typeof id === 'string' && /^[0-9a-z_]{2,30}$/i.test(id) ? id.toLowerCase() : '',
         }));
     return rows.length ? { start: raw.s, rows } : null;
 }
@@ -275,8 +279,13 @@ function recapToggleAll() {
     recapRender();
 }
 
-// 방송 닉네임에 멤버 이름이 들어 있으면 그 멤버로 본다(긴 이름 우선, 같은 이름이면 활동 중인 기록).
-function recapMember(nick) {
+// SOOP 아이디가 같으면 그 멤버(재입단은 활동 중인 기록). 아이디가 없으면(검색 실패·예전 코드)
+// 방송 닉네임에 멤버 이름이 들어 있는지로 본다(긴 이름 우선, 같은 이름이면 활동 중인 기록).
+function recapMember(nick, id) {
+    if (id) {
+        const same = SiteData.members.filter(m => String(m['SOOP ID'] || '').toLowerCase() === id);
+        return same.find(isActiveMember) || same[0] || null;
+    }
     const key = nick.replace(/[^0-9A-Za-z가-힣]/g, '');
     let best = null;
     for (const m of SiteData.members) {
@@ -309,20 +318,8 @@ function recapDay(start, i) {
     return { m: d.getUTCMonth() + 1, d: d.getUTCDate() };
 }
 
-// 티어표 선수는 이름이 같거나, 세 글자 이상 이름이 방송 닉네임에 들어 있을 때만 같은 사람으로 본다(짧은 이름은 잘못 붙기 쉽다)
-function recapTierId(nick) {
-    const key = nick.replace(/[^0-9A-Za-z가-힣]/g, '');
-    let best = null;
-    for (const p of RecapState.tierPlayers || []) {
-        const name = String(p.nickname || '').replace(/\s/g, '');
-        if (!p.soop_id || !name || !(key === name || (name.length >= 3 && key.includes(name)))) continue;
-        if (!best || name.length > best.name.length) best = { name, id: p.soop_id };
-    }
-    return best ? best.id : '';
-}
-
 function recapAvatar(row, cls) {
-    const soopId = row.member ? row.member['SOOP ID'] : recapTierId(row.nick);
+    const soopId = row.member ? row.member['SOOP ID'] : row.id;
     if (soopId) return avatarHtml(soopId, cls);
     const ch = row.nick.replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 1) || '?';
     return `<span class="${cls} recap-letter">${escapeHTML(ch)}</span>`;
@@ -343,7 +340,7 @@ function recapSummary(data) {
     const all = data.rows.map(r => ({ ...r, total: r.days.reduce((a, b) => a + b, 0) }));
     const rows = all
         .filter(r => r.nick !== '기타' && r.total > 0)
-        .map(r => ({ ...r, member: recapMember(r.nick) }))
+        .map(r => ({ ...r, member: recapMember(r.nick, r.id) }))
         .sort((a, b) => b.total - a.total);
     const total = all.reduce((a, r) => a + r.total, 0);
     if (!rows.length || !total) return null;
@@ -370,15 +367,6 @@ function recapRender() {
     if (!data) {
         box.innerHTML = '';
         return;
-    }
-    if (!RecapState.tierPlayers) {
-        RecapState.tierPlayers = [];
-        Api.tierMembers()
-            .then(rows => {
-                RecapState.tierPlayers = Array.isArray(rows) ? rows : [];
-                recapRender();
-            })
-            .catch(e => console.warn('티어표 명단을 받지 못해 멤버 사진만 씁니다', e));
     }
     const sum = recapSummary(data);
     if (!sum) {
@@ -471,7 +459,7 @@ async function recapSaveImage() {
     if (!sum) return;
     const { rows, total, len, first, last, top, kammon, kammonTotal, share } = sum;
     const list = rows.slice(0, RECAP_IMAGE_TOP);
-    const soopId = r => (r.member ? r.member['SOOP ID'] : recapTierId(r.nick));
+    const soopId = r => (r.member ? r.member['SOOP ID'] : r.id);
     const imgs = await Promise.all(list.map(r => posterLoadImage(soopId(r) ? getProfileImgUrl(soopId(r)) : null)));
     const pal = posterPalette();
     const font = (weight, size) => `${weight} ${size}px Pretendard, sans-serif`;
