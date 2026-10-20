@@ -338,6 +338,31 @@ function recapTags(row, withLabel) {
     return label + (m['종족'] ? raceBadgeHtml(m['종족']) : '');
 }
 
+// 화면과 저장 이미지가 같이 쓰는 숫자. 본 방송이 없으면 null
+function recapSummary(data) {
+    const all = data.rows.map(r => ({ ...r, total: r.days.reduce((a, b) => a + b, 0) }));
+    const rows = all
+        .filter(r => r.nick !== '기타' && r.total > 0)
+        .map(r => ({ ...r, member: recapMember(r.nick) }))
+        .sort((a, b) => b.total - a.total);
+    const total = all.reduce((a, r) => a + r.total, 0);
+    if (!rows.length || !total) return null;
+    const len = Math.max(...all.map(r => r.days.length));
+    const kammon = rows.filter(r => r.member);
+    const kammonTotal = kammon.reduce((a, r) => a + r.total, 0);
+    return {
+        rows,
+        total,
+        len,
+        first: recapDay(data.start, 0),
+        last: recapDay(data.start, len - 1),
+        top: rows[0],
+        kammon,
+        kammonTotal,
+        share: (kammonTotal / total) * 100,
+    };
+}
+
 function recapRender() {
     const box = document.getElementById('recap-result');
     if (!box) return;
@@ -355,29 +380,19 @@ function recapRender() {
             })
             .catch(e => console.warn('티어표 명단을 받지 못해 멤버 사진만 씁니다', e));
     }
-    const all = data.rows.map(r => ({ ...r, total: r.days.reduce((a, b) => a + b, 0) }));
-    const rows = all
-        .filter(r => r.nick !== '기타' && r.total > 0)
-        .map(r => ({ ...r, member: recapMember(r.nick) }))
-        .sort((a, b) => b.total - a.total);
-    const total = all.reduce((a, r) => a + r.total, 0);
-    const len = Math.max(...all.map(r => r.days.length));
-    if (!rows.length || !total) {
+    const sum = recapSummary(data);
+    if (!sum) {
         box.innerHTML = '<div class="content-state is-boxed">이 기간에는 시청 기록이 없습니다</div>';
         return;
     }
-    const first = recapDay(data.start, 0);
-    const last = recapDay(data.start, len - 1);
-    const top = rows[0];
-    const kammon = rows.filter(r => r.member);
-    const kammonTotal = kammon.reduce((a, r) => a + r.total, 0);
-    const share = (kammonTotal / total) * 100;
+    const { rows, total, len, first, last, top, kammon, kammonTotal, share } = sum;
     const pct = sec => `${((sec / total) * 100).toFixed(1)}%`;
     const circle = 2 * Math.PI * 52;
 
-    const hero = `<div class="recap-hero">
+    const hero = `<div class="section-title has-actions" data-en="SOOP RECAP"><span class="section-title-label">나의 숲리캡</span>
+        <button type="button" class="text-action"${act('recapSaveImage')}>이미지 저장 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button></div>
+    <div class="recap-hero">
         <div class="recap-hero-main">
-            <div class="recap-eyebrow">SOOP RECAP</div>
             <div class="recap-period">${first.m}월 ${first.d}일 – ${last.m}월 ${last.d}일</div>
             <div class="recap-hero-sub">${len}일 동안 이렇게 봤어요</div>
         </div>
@@ -447,6 +462,197 @@ function recapRender() {
         <div>${members}</div>
     </div>
     <p class="recap-note">이 기록은 이 브라우저에만 있습니다 · <button type="button" class="text-action"${act('recapClear')}>지우기</button></p>`;
+}
+
+// 공유용 세로 이미지(1080px 폭). 사진은 CORS가 막히면 이니셜 원으로 그린다(엔트리 포스터와 같은 부품).
+const RECAP_IMAGE_TOP = 5;
+async function recapSaveImage() {
+    const sum = RecapState.data && recapSummary(RecapState.data);
+    if (!sum) return;
+    const { rows, total, len, first, last, top, kammon, kammonTotal, share } = sum;
+    const list = rows.slice(0, RECAP_IMAGE_TOP);
+    const soopId = r => (r.member ? r.member['SOOP ID'] : recapTierId(r.nick));
+    const imgs = await Promise.all(list.map(r => posterLoadImage(soopId(r) ? getProfileImgUrl(soopId(r)) : null)));
+    const pal = posterPalette();
+    const font = (weight, size) => `${weight} ${size}px Pretendard, sans-serif`;
+
+    const W = 1080,
+        PAD = 72,
+        HEAD = 330,
+        CARD = 340,
+        ROW = 116;
+    const LIST_TOP = HEAD + CARD + 40;
+    const H = LIST_TOP + 70 + list.length * ROW + 120;
+    const scale = Math.min(2, window.devicePixelRatio || 1);
+    const cv = document.createElement('canvas');
+    cv.width = W * scale;
+    cv.height = H * scale;
+    const ctx = cv.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 네이비 머리: 기간과 총 시청·하루 평균·본 방송
+    ctx.fillStyle = pal.navy;
+    ctx.fillRect(0, 0, W, HEAD);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = pal.navyMuted;
+    ctx.font = font(800, 24);
+    ctx.fillText('SOOP RECAP', PAD, 92);
+    ctx.fillStyle = '#fff';
+    ctx.font = font(800, 60);
+    ctx.fillText(`${first.m}월 ${first.d}일 – ${last.m}월 ${last.d}일`, PAD, 170);
+    const stats = [
+        ['총 시청', recapTime(total)],
+        ['하루 평균', recapTime(total / len)],
+        ['본 방송', `${rows.length}명`],
+    ];
+    const boxW = (W - PAD * 2 - 32) / 3;
+    stats.forEach(([label, value], i) => {
+        const x = PAD + i * (boxW + 16);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.fillRect(x, 210, boxW, 84);
+        ctx.fillStyle = pal.navyMuted;
+        ctx.font = font(700, 20);
+        ctx.fillText(label, x + 22, 242);
+        ctx.fillStyle = '#fff';
+        ctx.font = font(800, 30);
+        ctx.fillText(value, x + 22, 280);
+    });
+
+    // 가장 많이 본 방송 · 캄몬 지분
+    const cy = HEAD + 44;
+    ctx.fillStyle = pal.sub;
+    ctx.font = font(700, 22);
+    ctx.fillText('가장 많이 본 방송', PAD, cy + 10);
+    posterDrawAvatar(ctx, imgs[0], recapLetterName(top), PAD, cy + 40, 170);
+    const tx = PAD + 200;
+    ctx.fillStyle = pal.text;
+    ctx.font = font(800, 40);
+    ctx.fillText(recapFit(ctx, top.nick, 360), tx, cy + 90);
+    let bx = tx;
+    if (top.member) {
+        const former = !isActiveMember(top.member);
+        bx +=
+            posterDrawBadge(
+                ctx,
+                former ? '이전 멤버' : '캄몬스타즈',
+                bx,
+                cy + 108,
+                32,
+                former ? pal.sub : pal.kammon,
+                '#fff'
+            ) + 8;
+        posterDrawRaceBadge(ctx, raceCode(top.member['종족']), bx, cy + 108, 32);
+    }
+    ctx.fillStyle = pal.kammon;
+    ctx.font = font(800, 52);
+    ctx.fillText(recapTime(top.total), tx, cy + 200);
+    ctx.fillStyle = pal.sub;
+    ctx.font = font(600, 22);
+    ctx.fillText(
+        `전체의 ${Math.round((top.total / total) * 100)}% · ${top.days.filter(Boolean).length}/${len}일`,
+        tx,
+        cy + 238
+    );
+
+    const dx = W - PAD - 110;
+    const dy = cy + 140;
+    ctx.lineWidth = 26;
+    ctx.strokeStyle = pal.stripe;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 96, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = pal.kammon;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 96, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * share) / 100);
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = pal.text;
+    ctx.font = font(800, 48);
+    ctx.fillText(`${Math.round(share)}%`, dx, dy + 8);
+    ctx.fillStyle = pal.sub;
+    ctx.font = font(700, 20);
+    ctx.fillText('캄몬 지분', dx, dy + 40);
+    ctx.font = font(600, 20);
+    ctx.fillText(kammon.length ? `멤버 ${kammon.length}명 · ${recapTime(kammonTotal)}` : '본 멤버 없음', dx, dy + 140);
+
+    // 시청 순위 TOP 5
+    ctx.textAlign = 'left';
+    ctx.fillStyle = pal.line;
+    ctx.fillRect(PAD, LIST_TOP - 20, W - PAD * 2, 2);
+    ctx.fillStyle = pal.text;
+    ctx.font = font(800, 30);
+    ctx.fillText(`시청 순위 TOP ${list.length}`, PAD, LIST_TOP + 30);
+    list.forEach((r, i) => {
+        const y = LIST_TOP + 70 + i * ROW;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = i < 3 ? pal.kammon : pal.faint;
+        ctx.font = font(800, 30);
+        ctx.fillText(String(i + 1), PAD + 16, y + 52);
+        posterDrawAvatar(ctx, imgs[i], recapLetterName(r), PAD + 52, y + 8, 76);
+        ctx.textAlign = 'left';
+        const nx = PAD + 150;
+        ctx.fillStyle = pal.text;
+        ctx.font = font(700, 28);
+        const nick = recapFit(ctx, r.nick, 420);
+        ctx.fillText(nick, nx, y + 40);
+        if (r.member)
+            posterDrawRaceBadge(ctx, raceCode(r.member['종족']), nx + ctx.measureText(nick).width + 12, y + 16, 28);
+        const barW = W - PAD - nx - 200;
+        ctx.fillStyle = pal.stripe;
+        ctx.fillRect(nx, y + 62, barW, 10);
+        ctx.fillStyle = r.member ? pal.kammon : pal.empty;
+        ctx.fillRect(nx, y + 62, Math.max(6, (barW * r.total) / top.total), 10);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = pal.text;
+        ctx.font = font(800, 28);
+        ctx.fillText(recapTime(r.total), W - PAD, y + 44);
+        ctx.fillStyle = pal.faint;
+        ctx.font = font(600, 20);
+        ctx.fillText(`${((r.total / total) * 100).toFixed(1)}%`, W - PAD, y + 74);
+    });
+
+    ctx.fillStyle = pal.foot;
+    ctx.fillRect(0, H - 90, W, 90);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = pal.sub;
+    ctx.font = font(700, 22);
+    ctx.fillText('스타대학 · 숲리캡', PAD, H - 38);
+    ctx.textAlign = 'right';
+    ctx.fillText(new URL('.', document.baseURI).host, W - PAD, H - 38);
+
+    let blob = null;
+    try {
+        blob = await new Promise(resolve => cv.toBlob(resolve, 'image/png'));
+    } catch (e) {
+        blob = null;
+    }
+    if (!blob) {
+        alert('이미지를 만들지 못했습니다. 프로필 사진을 불러올 수 없는 환경일 수 있습니다');
+        return;
+    }
+    // 문서에 붙여서 눌러야 브라우저가 파일 이름(download)을 따른다
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `숲리캡_${first.m}${String(first.d).padStart(2, '0')}-${last.m}${String(last.d).padStart(2, '0')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// 이니셜 원에 쓸 이름: 멤버면 멤버 이름, 아니면 방송 닉네임
+function recapLetterName(row) {
+    return row.member ? row.member['이름'] : row.nick.replace(/[^0-9A-Za-z가-힣]/g, '');
+}
+
+// 폭을 넘는 글은 뒤를 줄인다
+function recapFit(ctx, text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    let t = text;
+    while (t.length > 1 && ctx.measureText(`${t}…`).width > maxW) t = t.slice(0, -1);
+    return `${t}…`;
 }
 
 function switchToolsView(viewType, skipHashUpdate) {

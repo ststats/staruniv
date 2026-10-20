@@ -468,14 +468,7 @@
         padding: var(--space-9) var(--space-8);
         clip-path: var(--notch-12);
     }
-    .recap-eyebrow {
-        color: var(--panel-muted);
-        font-size: var(--fs-meta);
-        font-weight: 800;
-        letter-spacing: 0.12em;
-    }
     .recap-period {
-        margin-top: var(--space-2);
         font-size: var(--fs-hero);
         font-weight: 800;
         letter-spacing: -0.02em;

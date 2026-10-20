@@ -1781,3 +1781,129 @@ function matchPaginationHtml(total, page, size, handler, unit = '경기') {
         <span class="match-pagination-info">${cur} / ${count} 페이지 · ${formatNum(total)}${escapeHTML(unit)}</span>
     </nav>`;
 }
+
+// ---------------------------------------------------------------------------
+// 이미지 저장(엔트리 포스터 · 숲리캡): canvas에 그리는 공용 부품
+// ---------------------------------------------------------------------------
+// 프로필 사진은 다른 도메인이라 CORS가 막히면 null을 돌려 캔버스를 더럽히지 않는다(이니셜 원으로 대신).
+function posterLoadImage(url) {
+    return new Promise(resolve => {
+        if (!url) {
+            resolve(null);
+            return;
+        }
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => resolve(im);
+        im.onerror = () => resolve(null);
+        im.src = url;
+    });
+}
+
+// 포스터는 테마와 상관없이 흰 바탕이라 지금 테마가 아니라 :root(라이트) 토큰 값을 읽는다.
+let posterPaletteCache = null;
+function posterPalette() {
+    if (posterPaletteCache) return posterPaletteCache;
+    const vars = {};
+    for (const sheet of document.styleSheets) {
+        let rules;
+        try {
+            rules = sheet.cssRules;
+        } catch (e) {
+            continue;
+        }
+        for (const r of rules) {
+            if (r.selectorText !== ':root') continue;
+            for (const p of r.style) if (p.startsWith('--')) vars[p] = r.style.getPropertyValue(p).trim();
+        }
+    }
+    const tok = (name, depth = 0) => {
+        const v = vars[name] || '';
+        const ref = v.match(/^var\((--[\w-]+)\)$/);
+        return ref && depth < 5 ? tok(ref[1], depth + 1) : v;
+    };
+    posterPaletteCache = {
+        race: { T: tok('--color-race-t'), Z: tok('--color-race-z'), P: tok('--color-race-p') },
+        raceText: { T: '#fff', Z: '#fff', P: tok('--color-race-p-text') },
+        tier: tok('--color-tier-badge'),
+        bg: tok('--color-card'),
+        navy: tok('--navy'),
+        navyText: tok('--navy-on-text'),
+        navyMuted: tok('--navy-on-muted'),
+        gold: tok('--color-accent-gold'),
+        text: tok('--color-text-main'),
+        sub: tok('--color-text-sub'),
+        faint: tok('--color-text-faint'),
+        empty: tok('--color-icon-faint'),
+        stripe: tok('--color-bg-subtle'),
+        foot: tok('--color-bg'),
+        win: tok('--color-win'),
+        lose: tok('--color-lose'),
+        kammon: tok('--kammon'),
+        line: tok('--color-border'),
+    };
+    return posterPaletteCache;
+}
+
+// .tag-badge를 캔버스로 옮긴 것. 그린 폭을 돌려준다.
+function posterDrawBadge(ctx, text, x, y, h, bg, fg, fixedW) {
+    const label = String(text || '');
+    if (!label) return 0;
+    const fontSize = Math.round(h * 0.6);
+    ctx.save();
+    ctx.font = `800 ${fontSize}px Pretendard, sans-serif`;
+    const w = fixedW || Math.max(h, Math.ceil(ctx.measureText(label).width) + h * 0.7);
+    const cut = Math.round(h * 0.25);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w - cut, y);
+    ctx.lineTo(x + w, y + cut);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.fillStyle = fg;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + w / 2, y + h / 2 + 1);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+    return w;
+}
+
+function posterDrawRaceBadge(ctx, letter, x, y, size) {
+    const pal = posterPalette();
+    const bg = pal.race[letter];
+    if (!bg) return 0;
+    return posterDrawBadge(ctx, letter, x, y, size, bg, pal.raceText[letter] || '#fff', size);
+}
+
+function posterInitialColor(name) {
+    let h = 0;
+    String(name || '?')
+        .split('')
+        .forEach(c => {
+            h = (h * 31 + c.charCodeAt(0)) % 360;
+        });
+    return `hsl(${h} 45% 42%)`;
+}
+
+function posterDrawAvatar(ctx, img, name, x, y, d) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + d / 2, y + d / 2, d / 2, 0, Math.PI * 2);
+    ctx.clip();
+    if (img) {
+        ctx.drawImage(img, x, y, d, d);
+    } else {
+        ctx.fillStyle = posterInitialColor(name);
+        ctx.fillRect(x, y, d, d);
+        ctx.fillStyle = '#fff';
+        ctx.font = `700 ${Math.round(d * 0.42)}px Pretendard, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(name || '?').slice(0, 1), x + d / 2, y + d / 2 + 1);
+    }
+    ctx.restore();
+}

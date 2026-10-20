@@ -1319,106 +1319,14 @@ function renderEntry() {
 // ---------------------------------------------------------------------------
 // 포스터 저장 (canvas -> PNG)
 // ---------------------------------------------------------------------------
-// 프로필 사진은 다른 도메인이라 CORS가 막히면 null을 돌려 캔버스를 더럽히지 않는다(이니셜 원으로 대신).
-function entryLoadImage(url) {
-    return new Promise(resolve => {
-        if (!url) {
-            resolve(null);
-            return;
-        }
-        const im = new Image();
-        im.crossOrigin = 'anonymous';
-        im.onload = () => resolve(im);
-        im.onerror = () => resolve(null);
-        im.src = url;
-    });
-}
-
-// 포스터는 테마와 상관없이 흰 바탕이라 지금 테마가 아니라 :root(라이트) 토큰 값을 읽는다.
-let entryPaletteCache = null;
-function entryPalette() {
-    if (entryPaletteCache) return entryPaletteCache;
-    const vars = {};
-    for (const sheet of document.styleSheets) {
-        let rules;
-        try {
-            rules = sheet.cssRules;
-        } catch (e) {
-            continue;
-        }
-        for (const r of rules) {
-            if (r.selectorText !== ':root') continue;
-            for (const p of r.style) if (p.startsWith('--')) vars[p] = r.style.getPropertyValue(p).trim();
-        }
-    }
-    const tok = (name, depth = 0) => {
-        const v = vars[name] || '';
-        const ref = v.match(/^var\((--[\w-]+)\)$/);
-        return ref && depth < 5 ? tok(ref[1], depth + 1) : v;
-    };
-    entryPaletteCache = {
-        race: { T: tok('--color-race-t'), Z: tok('--color-race-z'), P: tok('--color-race-p') },
-        raceText: { T: '#fff', Z: '#fff', P: tok('--color-race-p-text') },
-        tier: tok('--color-tier-badge'),
-        bg: tok('--color-card'),
-        navy: tok('--navy'),
-        navyText: tok('--navy-on-text'),
-        navyMuted: tok('--navy-on-muted'),
-        gold: tok('--color-accent-gold'),
-        text: tok('--color-text-main'),
-        sub: tok('--color-text-sub'),
-        faint: tok('--color-text-faint'),
-        empty: tok('--color-icon-faint'),
-        stripe: tok('--color-bg-subtle'),
-        foot: tok('--color-bg'),
-        win: tok('--color-win'),
-        lose: tok('--color-lose'),
-    };
-    return entryPaletteCache;
-}
-
-// .tag-badge를 캔버스로 옮긴 것. 그린 폭을 돌려준다.
-function entryDrawBadge(ctx, text, x, y, h, bg, fg, fixedW) {
-    const label = String(text || '');
-    if (!label) return 0;
-    const fontSize = Math.round(h * 0.6);
-    ctx.save();
-    ctx.font = `800 ${fontSize}px Pretendard, sans-serif`;
-    const w = fixedW || Math.max(h, Math.ceil(ctx.measureText(label).width) + h * 0.7);
-    const cut = Math.round(h * 0.25);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + w - cut, y);
-    ctx.lineTo(x + w, y + cut);
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.closePath();
-    ctx.fillStyle = bg;
-    ctx.fill();
-    ctx.fillStyle = fg;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, x + w / 2, y + h / 2 + 1);
-    ctx.restore();
-    ctx.textBaseline = 'alphabetic';
-    return w;
-}
-
-function entryDrawRaceBadge(ctx, letter, x, y, size) {
-    const pal = entryPalette();
-    const bg = pal.race[letter];
-    if (!bg) return 0;
-    return entryDrawBadge(ctx, letter, x, y, size, bg, pal.raceText[letter] || '#fff', size);
-}
-
 function entryDrawTierBadge(ctx, label, x, y, h) {
-    return entryDrawBadge(ctx, label, x, y, h, entryPalette().tier, '#fff');
+    return posterDrawBadge(ctx, label, x, y, h, posterPalette().tier, '#fff');
 }
 
 // align이 'right'면 x에 오른쪽 끝을 맞춘다.
 function entryDrawBadgeRow(ctx, p, x, y, h, align) {
     const gap = 6;
-    const raceW = entryPalette().race[p.r] ? h : 0;
+    const raceW = posterPalette().race[p.r] ? h : 0;
     ctx.save();
     ctx.font = `800 ${Math.round(h * 0.6)}px Pretendard, sans-serif`;
     const tierW = p.t ? Math.max(h, Math.ceil(ctx.measureText(p.t).width) + h * 0.7) : 0;
@@ -1426,40 +1334,11 @@ function entryDrawBadgeRow(ctx, p, x, y, h, align) {
     const total = raceW + (raceW && tierW ? gap : 0) + tierW;
     let cur = align === 'right' ? x - total : x;
     if (raceW) {
-        entryDrawRaceBadge(ctx, p.r, cur, y, h);
+        posterDrawRaceBadge(ctx, p.r, cur, y, h);
         cur += raceW + gap;
     }
     if (tierW) entryDrawTierBadge(ctx, p.t, cur, y, h);
     return total;
-}
-
-function entryInitialColor(name) {
-    let h = 0;
-    String(name || '?')
-        .split('')
-        .forEach(c => {
-            h = (h * 31 + c.charCodeAt(0)) % 360;
-        });
-    return `hsl(${h} 45% 42%)`;
-}
-
-function entryDrawAvatar(ctx, img, name, x, y, d) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(x + d / 2, y + d / 2, d / 2, 0, Math.PI * 2);
-    ctx.clip();
-    if (img) {
-        ctx.drawImage(img, x, y, d, d);
-    } else {
-        ctx.fillStyle = entryInitialColor(name);
-        ctx.fillRect(x, y, d, d);
-        ctx.fillStyle = '#fff';
-        ctx.font = `700 ${Math.round(d * 0.42)}px Pretendard, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(name || '?').slice(0, 1), x + d / 2, y + d / 2 + 1);
-    }
-    ctx.restore();
 }
 
 function entryDrawLogo(ctx, img, x, y, size) {
@@ -1523,11 +1402,11 @@ async function entrySavePoster() {
     // 캔버스는 동기로 그리므로 사진·로고를 먼저 다 받아 둔다
     await loadTeamLogos([ta, tb]);
     const [imgs, logos] = await Promise.all([
-        Promise.all(rows.flatMap(r => [r.a, r.b]).map(p => entryLoadImage(p ? getProfileImgUrl(p.s || '') : null))),
-        Promise.all([ta, tb].map(name => entryLoadImage(teamLogoSrc(name)))),
+        Promise.all(rows.flatMap(r => [r.a, r.b]).map(p => posterLoadImage(p ? getProfileImgUrl(p.s || '') : null))),
+        Promise.all([ta, tb].map(name => posterLoadImage(teamLogoSrc(name)))),
     ]);
 
-    const pal = entryPalette();
+    const pal = posterPalette();
     ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = pal.navy;
@@ -1585,8 +1464,8 @@ async function entrySavePoster() {
         }
         const cy = y + ROW / 2;
         const D = 68;
-        entryDrawAvatar(ctx, imgs[i * 2], r.a && r.a.n, PAD, cy - D / 2, D);
-        entryDrawAvatar(ctx, imgs[i * 2 + 1], r.b && r.b.n, W - PAD - D, cy - D / 2, D);
+        posterDrawAvatar(ctx, imgs[i * 2], r.a && r.a.n, PAD, cy - D / 2, D);
+        posterDrawAvatar(ctx, imgs[i * 2 + 1], r.b && r.b.n, W - PAD - D, cy - D / 2, D);
 
         const BADGE = 26;
         const nameX = PAD + D + 20;
