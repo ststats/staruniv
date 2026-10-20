@@ -22,7 +22,10 @@
         }
     };
     setGraphPart1 = async (_el, _type, data) => {
-        const b = await Promise.all(data.data_stack.map(async x => [x.bj_nick, x.data, await findId(x.bj_nick)]));
+        // '기타'는 여러 방송을 합친 칸이라 찾지 않는다
+        const b = await Promise.all(
+            data.data_stack.map(async x => [x.bj_nick, x.data, x.bj_nick === '기타' ? '' : await findId(x.bj_nick)])
+        );
         location.href = target + encodeURIComponent(JSON.stringify({ v: 1, s: data.date.starttime, b }));
     };
     callWatchAjax(szMethod, szModule);

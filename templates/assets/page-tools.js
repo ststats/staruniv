@@ -305,11 +305,13 @@ function recapDay(start, i) {
     return { m: d.getUTCMonth() + 1, d: d.getUTCDate() };
 }
 
-function recapAvatar(row, cls) {
-    const soopId = row.member ? row.member['SOOP ID'] : row.id;
-    if (soopId) return avatarHtml(soopId, cls);
-    const ch = row.nick.replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 1) || '?';
-    return `<span class="${cls} recap-letter">${escapeHTML(ch)}</span>`;
+function recapPct(sec, total) {
+    return `${((sec / total) * 100).toFixed(1)}%`;
+}
+
+// 사진을 찾을 SOOP 아이디: 멤버는 DB 값, 아니면 검색으로 받아 온 값
+function recapSoopId(row) {
+    return row.member ? row.member['SOOP ID'] : row.id;
 }
 
 // 멤버는 우리 DB 이름, 아니면 방송 닉네임
@@ -317,16 +319,31 @@ function recapName(row) {
     return row.member ? row.member['이름'] : row.nick;
 }
 
+// 이니셜 원에 쓸 이름: 닉네임은 기호를 빼서 첫 글자가 글자가 되게
+function recapLetterName(row) {
+    return row.member ? row.member['이름'] : row.nick.replace(/[^0-9A-Za-z가-힣]/g, '');
+}
+
+function recapAvatar(row, cls) {
+    const soopId = recapSoopId(row);
+    if (soopId) return avatarHtml(soopId, cls);
+    return `<span class="${cls} recap-letter">${escapeHTML(recapLetterName(row).slice(0, 1) || '?')}</span>`;
+}
+
 // 멤버면 이름 옆에 종족 뱃지
 function recapRaceBadge(row) {
     return row.member && row.member['종족'] ? raceBadgeHtml(row.member['종족']) : '';
 }
 
-// 캄몬 멤버 뱃지. 1위 카드는 '캄몬스타즈'·'이전 멤버', 좁은 순위 줄은 '캄몬'·'이전'
+// 캄몬 멤버 뱃지 글자(화면·이미지 같이). 1위 카드는 '캄몬스타즈'·'이전 멤버', 좁은 순위 줄은 '캄몬'·'이전'
+function recapKammonLabel(row, long) {
+    const former = !isActiveMember(row.member);
+    return { former, text: former ? (long ? '이전 멤버' : '이전') : long ? '캄몬스타즈' : '캄몬' };
+}
+
 function recapKammonBadge(row, long) {
     if (!row.member) return '';
-    const former = !isActiveMember(row.member);
-    const text = former ? (long ? '이전 멤버' : '이전') : long ? '캄몬스타즈' : '캄몬';
+    const { former, text } = recapKammonLabel(row, long);
     return `<span class="tag-badge recap-kammon${former ? ' is-former' : ''}">${text}</span>`;
 }
 
@@ -342,14 +359,19 @@ function recapSummary(data) {
     const len = Math.max(...all.map(r => r.days.length));
     const kammon = rows.filter(r => r.member);
     const kammonTotal = kammon.reduce((a, r) => a + r.total, 0);
+    const top = rows[0];
     return {
         rows,
         total,
         len,
         first: recapDay(data.start, 0),
         last: recapDay(data.start, len - 1),
-        top: rows[0],
+        top,
+        topDays: top.days.filter(Boolean).length,
         kammon,
+        // 내가 본 캄몬 멤버: 현재 멤버, 선 아래 이전 멤버
+        current: kammon.filter(r => isActiveMember(r.member)),
+        former: kammon.filter(r => !isActiveMember(r.member)),
         kammonTotal,
         share: (kammonTotal / total) * 100,
     };
@@ -368,8 +390,7 @@ function recapRender() {
         box.innerHTML = '<div class="content-state is-boxed">이 기간에는 시청 기록이 없습니다</div>';
         return;
     }
-    const { rows, total, len, first, last, top, kammon, kammonTotal, share } = sum;
-    const pct = sec => `${((sec / total) * 100).toFixed(1)}%`;
+    const { rows, total, len, first, last, top, topDays, kammon, current, former, kammonTotal, share } = sum;
     const circle = 2 * Math.PI * 52;
 
     const hero = `<div class="section-title has-actions" data-en="SOOP RECAP"><span class="section-title-label">나의 숲리캡</span>
@@ -394,10 +415,10 @@ function recapRender() {
                     <div class="recap-best-name">${escapeHTML(recapName(top))}</div>
                     <div class="recap-best-time">${recapTime(top.total)}</div>
                     <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
-                    <div class="recap-best-share">전체 시청의 ${Math.round((top.total / total) * 100)}%<span class="recap-best-days"> · ${len}일 중 ${top.days.filter(Boolean).length}일</span></div>
+                    <div class="recap-best-share">전체 시청의 ${Math.round((top.total / total) * 100)}%<span class="recap-best-days"> · ${len}일 중 ${topDays}일</span></div>
                 </div>
             </div>
-            <div class="recap-bar recap-best-bar"><i style="width:${((top.total / total) * 100).toFixed(1)}%"></i></div>
+            <div class="recap-bar recap-best-bar"><i style="width:${recapPct(top.total, total)}"></i></div>
         </div>
         <div class="clean-card recap-card recap-share">
             <div class="recap-card-label">캄몬 지분</div>
@@ -418,7 +439,7 @@ function recapRender() {
                 <div class="recap-row-head"><span class="recap-nick">${escapeHTML(recapName(r))}</span>${recapKammonBadge(r, false)}${recapRaceBadge(r)}</div>
                 <div class="recap-bar"><i style="width:${Math.max(1.5, (r.total / top.total) * 100).toFixed(1)}%"></i></div>
             </div>
-            <span class="recap-time">${recapTime(r.total)}<em>${pct(r.total)}</em></span>
+            <span class="recap-time">${recapTime(r.total)}<em>${recapPct(r.total, total)}</em></span>
         </li>`
         )
         .join('');
@@ -432,15 +453,13 @@ function recapRender() {
         `<div class="recap-member-grid${former ? ' is-former' : ''}">${list
             .map(
                 r => `<div class="recap-member">${recapAvatar(r, 'recap-member-av')}
-                <div class="recap-member-name">${escapeHTML(r.member['이름'])}</div><div class="recap-member-time">${recapTime(r.total)}</div></div>`
+                <div class="recap-member-name">${escapeHTML(recapName(r))}</div><div class="recap-member-time">${recapTime(r.total)}</div></div>`
             )
             .join('')}</div>`;
-    const current = kammon.filter(r => isActiveMember(r.member));
-    const former = kammon.filter(r => !isActiveMember(r.member));
     const members = kammon.length
         ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span></div>
         <div class="clean-card recap-members">${current.length ? memberGrid(current, false) : ''}${
-            former.length ? `<hr class="recap-members-line">${memberGrid(former, true)}` : ''
+            former.length ? `${current.length ? '<hr class="recap-members-line">' : ''}${memberGrid(former, true)}` : ''
         }</div>`
         : '';
 
@@ -458,15 +477,15 @@ function recapRender() {
 // 공유용 이미지(1600px 폭): 화면처럼 연한 바탕에 네이비 머리(사선 무늬), 모서리를 깎은 흰 카드.
 // 1위 · 캄몬 지분을 반반, 그 아래 시청 순위 TOP 10 · 내가 본 캄몬 멤버를 두 칸으로 둔다.
 // 사진은 CORS가 막히면 이니셜 원으로 그린다(엔트리 포스터와 같은 부품).
-const RECAP_IMAGE_TOP = 10;
 async function recapSaveImage() {
     const sum = RecapState.data && recapSummary(RecapState.data);
     if (!sum) return;
-    const { rows, total, len, first, last, top, kammon, kammonTotal, share } = sum;
-    const list = rows.slice(0, RECAP_IMAGE_TOP);
-    const soopId = r => (r.member ? r.member['SOOP ID'] : r.id);
+    const { rows, total, len, first, last, top, topDays, kammon, current, former, kammonTotal, share } = sum;
+    const list = rows.slice(0, RECAP_TOP);
     const people = [...new Set([...list, ...kammon])];
-    const loaded = await Promise.all(people.map(r => posterLoadImage(soopId(r) ? getProfileImgUrl(soopId(r)) : null)));
+    const loaded = await Promise.all(
+        people.map(r => posterLoadImage(recapSoopId(r) ? getProfileImgUrl(recapSoopId(r)) : null))
+    );
     const imgOf = new Map(people.map((r, i) => [r, loaded[i]]));
     const pal = posterPalette();
     const font = (weight, size) => `${weight} ${size}px Pretendard, sans-serif`;
@@ -485,9 +504,6 @@ async function recapSaveImage() {
     const innerW = W - PAD * 2;
     const colW = Math.round((innerW - GAP) / 2);
     const col2X = PAD + colW + GAP;
-    // 내가 본 캄몬 멤버: 현재 멤버 칸 아래 선, 그 아래 이전 멤버(흑백)
-    const current = kammon.filter(r => isActiveMember(r.member));
-    const former = kammon.filter(r => !isActiveMember(r.member));
     const CELL_W = 128,
         CELL_H = 172;
     const perRow = Math.max(1, Math.floor((colW - 64) / CELL_W));
@@ -512,7 +528,6 @@ async function recapSaveImage() {
 
     // 네이비 머리: 기간과 총 시청·하루 평균·본 방송
     card(PAD, PAD, innerW, HEAD, pal.navy);
-    posterNotchPath(ctx, PAD, PAD, innerW, HEAD, 18);
     posterNavyPattern(ctx, PAD, PAD, innerW, HEAD);
     const hx = PAD + 44;
     ctx.textAlign = 'left';
@@ -562,16 +577,8 @@ async function recapSaveImage() {
     const BADGE = 30;
     const badgeY = cardY + 154;
     if (top.member) {
-        const was = !isActiveMember(top.member);
-        const w = posterDrawBadge(
-            ctx,
-            was ? '이전 멤버' : '캄몬스타즈',
-            tx,
-            badgeY,
-            BADGE,
-            was ? pal.sub : pal.kammon,
-            '#fff'
-        );
+        const { former: was, text } = recapKammonLabel(top, true);
+        const w = posterDrawBadge(ctx, text, tx, badgeY, BADGE, was ? pal.sub : pal.kammon, '#fff');
         posterDrawRaceBadge(ctx, raceCode(top.member['종족']), tx + w + 6, badgeY, BADGE);
     }
     // 비율 글자는 뱃지 글자와 같은 크기로 뱃지 줄 가운데에
@@ -580,7 +587,7 @@ async function recapSaveImage() {
     ctx.fillStyle = pal.sub;
     ctx.font = font(700, Math.round(BADGE * 0.6));
     ctx.fillText(
-        `전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일`,
+        `전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${topDays}일`,
         right,
         badgeY + BADGE / 2 + 1
     );
@@ -642,8 +649,8 @@ async function recapSaveImage() {
         ctx.fillText(name, nx, y + 42);
         let cx = nx + ctx.measureText(name).width + 10;
         if (r.member) {
-            const was = !isActiveMember(r.member);
-            cx += posterDrawBadge(ctx, was ? '이전' : '캄몬', cx, y + 20, 26, was ? pal.sub : pal.kammon, '#fff') + 6;
+            const { former: was, text } = recapKammonLabel(r, false);
+            cx += posterDrawBadge(ctx, text, cx, y + 20, 26, was ? pal.sub : pal.kammon, '#fff') + 6;
             posterDrawRaceBadge(ctx, raceCode(r.member['종족']), cx, y + 20, 26);
         }
         const barW = right - nx - 170;
@@ -657,7 +664,7 @@ async function recapSaveImage() {
         ctx.fillText(recapTime(r.total), right, y + 44);
         ctx.fillStyle = pal.faint;
         ctx.font = font(600, 19);
-        ctx.fillText(`${((r.total / total) * 100).toFixed(1)}%`, right, y + 72);
+        ctx.fillText(recapPct(r.total, total), right, y + 72);
     });
 
     // 내가 본 캄몬 멤버(오른쪽): 현재 멤버, 선, 이전 멤버(흑백·흐리게)
@@ -682,7 +689,7 @@ async function recapSaveImage() {
                 ctx.textAlign = 'center';
                 ctx.fillStyle = dim ? pal.sub : pal.text;
                 ctx.font = font(700, 22);
-                ctx.fillText(recapFit(ctx, r.member['이름'], CELL_W - 8), cx, cy + 116);
+                ctx.fillText(recapFit(ctx, recapName(r), CELL_W - 8), cx, cy + 116);
                 ctx.fillStyle = pal.sub;
                 ctx.font = font(600, 18);
                 ctx.fillText(recapTime(r.total), cx, cy + 140);
@@ -717,11 +724,6 @@ async function recapSaveImage() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-
-// 이니셜 원에 쓸 이름: 멤버면 멤버 이름, 아니면 방송 닉네임
-function recapLetterName(row) {
-    return row.member ? row.member['이름'] : row.nick.replace(/[^0-9A-Za-z가-힣]/g, '');
 }
 
 // 폭을 넘는 글은 뒤를 줄인다

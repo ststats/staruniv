@@ -456,7 +456,6 @@
         background: transparent;
     }
 
-    /* ----- 화면 폭별 ----- */
     /* ----- 숲리캡: 네이비 머리(14-surfaces.css) + 카드 두 장 + 순위·멤버 두 칸. 사진은 사이트처럼 동그라미 ----- */
     .recap-hero {
         display: flex;
@@ -602,9 +601,6 @@
         font-size: var(--fs-small);
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-    .recap-sub b {
-        color: var(--color-text-main);
     }
     .recap-donut {
         position: relative;
@@ -765,9 +761,6 @@
         border: none;
         border-top: 1px solid var(--color-border);
     }
-    .recap-members-line:first-child {
-        display: none;
-    }
     .recap-member-grid.is-former .recap-member-av {
         opacity: 0.55;
         filter: grayscale(1);
@@ -882,11 +875,10 @@
             font-size: 22px;
         }
         .recap-card {
-            min-width: 0;
             padding: var(--space-7);
         }
         .recap-cards {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
         }
         .recap-best-av {
             width: 56px;
@@ -895,9 +887,7 @@
         .recap-best-body {
             gap: var(--space-5);
         }
-        .recap-best-name {
-            font-size: var(--fs-heading);
-        }
+        .recap-best-name,
         .recap-best-time {
             font-size: var(--fs-heading);
         }
@@ -914,6 +904,7 @@
         }
     }
 
+    /* ----- 화면 폭별 ----- */
     @media (max-width: 767.98px) {
         .tool-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
