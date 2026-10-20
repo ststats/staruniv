@@ -519,15 +519,33 @@
         font-weight: 700;
         letter-spacing: 0.06em;
     }
-    /* 1위 카드: 방송통계 TOP 카드(04-components .top-card)에 이름·뱃지는 왼쪽, 시청 시간·비율은 오른쪽 */
-    .recap-best-row {
+    /* 1위 카드: [사진 | 이름·뱃지 | 시간·비율(오른쪽 정렬)]을 한 줄에 세로 가운데로 맞추고, 아래 막대는 전체 시청 중 비율 */
+    .recap-best-body {
         display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: var(--space-6);
+        flex: 1;
+        align-items: center;
+        gap: var(--space-7);
+        min-width: 0;
+    }
+    .recap-best-av {
+        flex: none;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        font-size: var(--fs-hero);
     }
     .recap-best-who {
+        flex: 1;
         min-width: 0;
+    }
+    .recap-best-name {
+        overflow: hidden;
+        color: var(--color-text-main);
+        font-size: 20px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .recap-badges {
         display: flex;
@@ -536,13 +554,24 @@
         margin-top: var(--space-3);
     }
     .recap-best-stat {
+        display: flex;
         flex: none;
-        text-align: right;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: var(--space-2);
     }
-    .recap-best-share {
-        margin-top: var(--space-1);
-        color: var(--panel-muted);
-        font-size: var(--fs-small);
+    .recap-best-time {
+        color: var(--color-text-main);
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+    .recap-bar.recap-best-bar {
+        margin-top: var(--space-2);
+    }
+    .recap-bar.recap-best-bar i {
+        background: var(--kammon);
     }
     .recap-sub {
         overflow: hidden;
@@ -843,6 +872,23 @@
         }
         .recap-cards {
             grid-template-columns: 1fr;
+        }
+        .recap-best-av {
+            width: 56px;
+            height: 56px;
+        }
+        .recap-best-body {
+            gap: var(--space-5);
+        }
+        .recap-best-name {
+            font-size: var(--fs-heading);
+        }
+        .recap-best-time {
+            font-size: 20px;
+        }
+        /* 폰은 이름·뱃지 자리가 좁아 출석 일수는 뺀다 */
+        .recap-best-days {
+            display: none;
         }
         .recap-row {
             gap: var(--space-4);

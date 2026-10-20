@@ -387,21 +387,19 @@ function recapRender() {
     </div>`;
 
     const cards = `<div class="recap-cards">
-        <div class="clean-card head-plate top-card recap-best">
-            <div class="top-card-photo"></div>
-            <div class="top-card-body">
-                <div class="head-plate-label">가장 많이 본 방송</div>
-                <div class="recap-best-row">
-                    <div class="recap-best-who">
-                        <div class="top-card-name">${escapeHTML(recapName(top))}</div>
-                        <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
-                    </div>
-                    <div class="recap-best-stat">
-                        <div class="top-card-value">${recapTime(top.total)}</div>
-                        <div class="recap-best-share">전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일</div>
-                    </div>
+        <div class="clean-card recap-card recap-best">
+            <div class="recap-card-label">가장 많이 본 방송</div>
+            <div class="recap-best-body">${recapAvatar(top, 'recap-best-av')}
+                <div class="recap-best-who">
+                    <div class="recap-best-name">${escapeHTML(recapName(top))}</div>
+                    <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
+                </div>
+                <div class="recap-best-stat">
+                    <div class="recap-best-time">${recapTime(top.total)}</div>
+                    <div class="recap-sub">전체 시청의 <b>${Math.round((top.total / total) * 100)}%</b><span class="recap-best-days"> · ${len}일 중 ${top.days.filter(Boolean).length}일</span></div>
                 </div>
             </div>
+            <div class="recap-bar recap-best-bar"><i style="width:${((top.total / total) * 100).toFixed(1)}%"></i></div>
         </div>
         <div class="clean-card recap-card recap-share">
             <div class="recap-card-label">캄몬 지분</div>
@@ -459,7 +457,6 @@ function recapRender() {
         <div>${members}</div>
     </div>
     <p class="recap-note">이 기록은 이 브라우저에만 있습니다 · <button type="button" class="text-action"${act('recapClear')}>지우기</button></p>`;
-    renderTopCardPhoto(box.querySelector('.recap-best .top-card-photo'), top.member, top.id);
 }
 
 // 공유용 세로 이미지(1080px 폭): 사이트처럼 연한 바탕에 네이비 머리(사선 무늬)와 모서리를 깎은 흰 카드.

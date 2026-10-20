@@ -270,7 +270,81 @@ function sortSynergyRows(rows) {
 }
 
 function renderSynergyTopPhoto(top) {
-    renderTopCardPhoto(document.getElementById('synergy-top-photo'), top ? top.ourMember : null);
+    const box = document.getElementById('synergy-top-photo');
+    if (!box) return;
+    const ours = top ? top.ourMember : null;
+    const photo = memberPhotoUrl(ours);
+    const avatar = (ours && getProfileImgUrl(ours['SOOP ID'])) || '';
+    const key = photo || avatar || 'none';
+    if (box.dataset.src === key) return; // 같은 사진이면 다시 그리지 않는다(움짤이 처음부터 다시 돌지 않게)
+    box.dataset.src = key;
+    box.innerHTML = '';
+    const alt = (ours && ours['이름']) || '';
+    const show = (src, fallback) => {
+        // 끊김 없이 재생할 만큼 받은 뒤(canplaythrough) 붙인다.
+        if (isVideoUrl(src)) {
+            if (statsPreferStill()) {
+                if (avatar) show(avatar, true);
+                return;
+            }
+            const video = document.createElement('video');
+            Object.assign(video, { muted: true, loop: true, autoplay: true, playsInline: true, preload: 'auto' });
+            video.setAttribute('muted', '');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('aria-label', alt);
+            let done = false;
+            const ready = () => {
+                if (done || box.dataset.src !== key) return;
+                done = true;
+                box.classList.remove('is-fallback');
+                box.replaceChildren(video);
+                video.play().catch(() => {}); // 저전력 모드 등 자동 재생이 막히면 첫 장면이 멈춘 채로 보인다
+                requestAnimationFrame(() => video.classList.add('is-in'));
+            };
+            video.addEventListener('canplaythrough', ready, { once: true });
+            video.addEventListener('loadeddata', () => setTimeout(ready, 1500), { once: true }); // canplaythrough가 안 오는 브라우저 대비
+            video.addEventListener(
+                'error',
+                () => {
+                    if (box.dataset.src === key && avatar) show(avatar, true);
+                },
+                { once: true }
+            );
+            video.src = src;
+            video.load();
+            return;
+        }
+        // 움짤(1~2MB)은 받는 중에 붙이면 끊기며 그려져서 decode 뒤에 붙인다.
+        const img = new Image();
+        img.alt = alt;
+        img.decoding = 'async';
+        img.src = src;
+        const ready = img.decode
+            ? img.decode()
+            : new Promise((ok, no) => {
+                  img.onload = ok;
+                  img.onerror = no;
+              });
+        ready
+            .then(() => {
+                if (box.dataset.src !== key) return; // 그사이 다른 지표·1위로 바뀌었으면 버린다
+                box.classList.toggle('is-fallback', fallback);
+                box.replaceChildren(img);
+                requestAnimationFrame(() => img.classList.add('is-in'));
+            })
+            .catch(() => {
+                if (box.dataset.src === key && !fallback && avatar) show(avatar, true); // 대표 사진이 깨지면 SOOP 사진
+            });
+    };
+    box.classList.remove('is-fallback');
+    if (photo) show(photo, false);
+    else if (avatar) show(avatar, true);
+}
+
+// 데이터 절약 모드(Save-Data)나 '동작 줄이기' 설정이면 움직이는 대표 영상 대신 정지 사진을 쓴다
+function statsPreferStill() {
+    if (navigator.connection && navigator.connection.saveData) return true;
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 
 // 합계·평균은 정렬 기준값(readValue)으로 센다(스폰판수는 승+패).

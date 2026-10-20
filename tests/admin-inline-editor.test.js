@@ -370,12 +370,11 @@ test('방송통계 TOP 카드는 저장소 미디어 파일(media/members/<SOOP 
     const html = read('templates/pages/stats.html');
     assert.match(html, /id="synergy-top-photo"/);
     assert.match(html, /'synergy-sum-avg', 'AVERAGE'/);
-    // TOP 카드 사진은 core.js renderTopCardPhoto가 그린다(숲리캡 1위 카드도 같이 쓴다)
-    assert.match(read('templates/assets/page-stats.js'), /renderTopCardPhoto\(/);
+    const js = read('templates/assets/page-stats.js');
+    assert.match(js, /memberPhotoUrl\(ours\)/);
+    assert.match(js, /muted: true, loop: true, autoplay: true, playsInline: true/);
     // 저장소 파일인지 Storage 경로인지는 core.js 한 곳에서 가리고, 관리자 화면도 같은 함수를 쓴다
     const core = read('templates/assets/core.js');
-    assert.match(core, /memberPhotoUrl\(ours\)/);
-    assert.match(core, /muted: true, loop: true, autoplay: true, playsInline: true/);
     assert.match(core, /\^media\\\/members\\\//);
     assert.match(core, /storageMediaUrl\(raw\)/);
     assert.match(read('supabase/staruniv.sql'), /'대표 사진', coalesce\(m\.photo_path, ''\)/);
