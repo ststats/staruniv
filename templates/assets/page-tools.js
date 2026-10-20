@@ -183,7 +183,8 @@ if (typeof MutationObserver === 'function') {
 // 데이터는 이 브라우저에서만 그리고, 다시 열어 볼 수 있게 마지막 한 번만 localStorage에 둔다.
 const RECAP_STORE = 'recap:last';
 const RECAP_TOP = 10;
-const RecapState = { data: null, showAll: false };
+// tierPlayers: 멤버가 아닌 방송도 사진을 찾으려고 티어표 명단(닉네임 → SOOP ID)을 처음 그릴 때 한 번 받는다
+const RecapState = { data: null, showAll: false, tierPlayers: null };
 
 // 통계 페이지가 차트를 그릴 때 받은 데이터를 가로채 이 페이지로 넘긴다(숲리캡과 같은 방식).
 function recapSnippet() {
@@ -308,8 +309,21 @@ function recapDay(start, i) {
     return { m: d.getUTCMonth() + 1, d: d.getUTCDate() };
 }
 
+// 티어표 선수는 이름이 같거나, 세 글자 이상 이름이 방송 닉네임에 들어 있을 때만 같은 사람으로 본다(짧은 이름은 잘못 붙기 쉽다)
+function recapTierId(nick) {
+    const key = nick.replace(/[^0-9A-Za-z가-힣]/g, '');
+    let best = null;
+    for (const p of RecapState.tierPlayers || []) {
+        const name = String(p.nickname || '').replace(/\s/g, '');
+        if (!p.soop_id || !name || !(key === name || (name.length >= 3 && key.includes(name)))) continue;
+        if (!best || name.length > best.name.length) best = { name, id: p.soop_id };
+    }
+    return best ? best.id : '';
+}
+
 function recapAvatar(row, cls) {
-    if (row.member) return avatarHtml(row.member['SOOP ID'], cls);
+    const soopId = row.member ? row.member['SOOP ID'] : recapTierId(row.nick);
+    if (soopId) return avatarHtml(soopId, cls);
     const ch = row.nick.replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 1) || '?';
     return `<span class="${cls} recap-letter">${escapeHTML(ch)}</span>`;
 }
@@ -331,6 +345,15 @@ function recapRender() {
     if (!data) {
         box.innerHTML = '';
         return;
+    }
+    if (!RecapState.tierPlayers) {
+        RecapState.tierPlayers = [];
+        Api.tierMembers()
+            .then(rows => {
+                RecapState.tierPlayers = Array.isArray(rows) ? rows : [];
+                recapRender();
+            })
+            .catch(e => console.warn('티어표 명단을 받지 못해 멤버 사진만 씁니다', e));
     }
     const all = data.rows.map(r => ({ ...r, total: r.days.reduce((a, b) => a + b, 0) }));
     const rows = all
