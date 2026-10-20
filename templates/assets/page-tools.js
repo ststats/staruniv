@@ -524,50 +524,60 @@ async function recapSaveImage() {
         ctx.fillText(value, x + 20, PAD + 236);
     });
 
-    // 가장 많이 본 방송(왼쪽 넓게) · 캄몬 지분(오른쪽)
-    const bestW = Math.round((innerW - GAP) * 0.64);
+    // 가장 많이 본 방송 · 캄몬 지분(반반). 1위는 화면처럼 사진 옆 두 줄 × 두 칸: 이름 | 시간, 뱃지 | 비율
+    const bestW = Math.round((innerW - GAP) / 2);
     const shareW = innerW - GAP - bestW;
     card(PAD, cardY, bestW, CARD, pal.bg);
     card(PAD + bestW + GAP, cardY, shareW, CARD, pal.bg);
     const bx = PAD + 32;
+    const right = PAD + bestW - 32;
     ctx.fillStyle = pal.sub;
     ctx.font = font(700, 20);
     ctx.fillText('가장 많이 본 방송', bx, cardY + 48);
-    posterDrawAvatar(ctx, imgs[0], recapLetterName(top), bx, cardY + 82, 132);
-    const tx = bx + 160;
+    posterDrawAvatar(ctx, imgs[0], recapLetterName(top), bx, cardY + 92, 96);
+    const tx = bx + 120;
+    const timeText = recapTime(top.total);
+    ctx.font = font(800, 30);
+    const timeW = ctx.measureText(timeText).width;
     ctx.fillStyle = pal.text;
-    ctx.font = font(800, 38);
-    ctx.fillText(recapFit(ctx, recapName(top), bestW - (tx - PAD) - 28), tx, cardY + 122);
+    ctx.fillText(recapFit(ctx, recapName(top), right - tx - timeW - 16), tx, cardY + 136);
+    ctx.textAlign = 'right';
+    ctx.fillText(timeText, right, cardY + 136);
+    ctx.textAlign = 'left';
+    const BADGE = 28;
+    const badgeY = cardY + 156;
     if (top.member) {
         const former = !isActiveMember(top.member);
         const w = posterDrawBadge(
             ctx,
             former ? '이전 멤버' : '캄몬스타즈',
             tx,
-            cardY + 140,
-            30,
+            badgeY,
+            BADGE,
             former ? pal.sub : pal.kammon,
             '#fff'
         );
-        posterDrawRaceBadge(ctx, raceCode(top.member['종족']), tx + w + 6, cardY + 140, 30);
+        posterDrawRaceBadge(ctx, raceCode(top.member['종족']), tx + w + 6, badgeY, BADGE);
     }
-    ctx.fillStyle = pal.text;
-    ctx.font = font(800, 40);
-    ctx.fillText(recapTime(top.total), tx, cardY + 222);
+    // 비율 글자는 뱃지 글자와 같은 크기로 뱃지 줄 가운데에
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
     ctx.fillStyle = pal.sub;
-    ctx.font = font(600, 20);
-    ctx.fillText(
-        `전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일`,
-        tx,
-        cardY + 256
-    );
+    ctx.font = font(700, Math.round(BADGE * 0.6));
+    ctx.fillText(`전체 시청의 ${Math.round((top.total / total) * 100)}%`, right, badgeY + BADGE / 2 + 1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = pal.stripe;
+    ctx.fillRect(bx, cardY + CARD - 52, right - bx, 10);
+    ctx.fillStyle = pal.kammon;
+    ctx.fillRect(bx, cardY + CARD - 52, ((right - bx) * top.total) / total, 10);
 
     const sx = PAD + bestW + GAP;
     ctx.fillStyle = pal.sub;
     ctx.font = font(700, 20);
     ctx.fillText('캄몬 지분', sx + 32, cardY + 48);
     const dx = sx + shareW / 2;
-    const dy = cardY + 160;
+    const dy = cardY + 158;
     ctx.lineWidth = 22;
     ctx.strokeStyle = pal.stripe;
     ctx.beginPath();
