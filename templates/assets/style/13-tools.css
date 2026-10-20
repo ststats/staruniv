@@ -567,18 +567,12 @@
         margin-left: 2px;
         font-size: 15px;
     }
-    .recap-sub,
-    .recap-peak-top {
+    .recap-sub {
         overflow: hidden;
         color: var(--color-text-sub);
         font-size: var(--fs-small);
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-    .recap-peak-top {
-        margin-top: -6px;
-        color: var(--color-text-main);
-        font-weight: 700;
     }
     .recap-sub b {
         color: var(--color-text-main);
@@ -626,20 +620,6 @@
     }
     .recap-share .recap-sub {
         text-align: center;
-    }
-    .recap-peak-day {
-        color: var(--color-text-main);
-        font-size: 26px;
-        font-weight: 800;
-    }
-    .recap-peak-day span {
-        margin-left: var(--space-1);
-        color: var(--color-text-sub);
-        font-size: var(--fs-body);
-        font-weight: 600;
-    }
-    .recap-peak .recap-big {
-        font-size: 24px;
     }
 
     .recap-cols {
@@ -863,9 +843,6 @@
         }
         .recap-big {
             font-size: 22px;
-        }
-        .recap-peak-day {
-            font-size: 20px;
         }
         .recap-row {
             gap: var(--space-4);

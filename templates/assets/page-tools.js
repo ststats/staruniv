@@ -182,7 +182,6 @@ if (typeof MutationObserver === 'function') {
 // SOOP 시청 통계 페이지에 붙여 넣은 코드가 시청 데이터를 주소 #recap=에 담아 이 탭으로 돌아온다.
 // 데이터는 이 브라우저에서만 그리고, 다시 열어 볼 수 있게 마지막 한 번만 localStorage에 둔다.
 const RECAP_STORE = 'recap:last';
-const RECAP_WEEKDAYS = '일월화수목금토';
 const RECAP_TOP = 10;
 const RecapState = { data: null, showAll: false };
 
@@ -306,7 +305,7 @@ function recapBigTime(sec) {
 // 통계는 한국 시간 하루 단위라 시작 시각에 9시간을 더해 날짜를 읽는다
 function recapDay(start, i) {
     const d = new Date(start + 9 * 3600e3 + i * 864e5);
-    return { m: d.getUTCMonth() + 1, d: d.getUTCDate(), w: RECAP_WEEKDAYS[d.getUTCDay()] };
+    return { m: d.getUTCMonth() + 1, d: d.getUTCDate() };
 }
 
 function recapAvatar(row, cls) {
@@ -345,14 +344,13 @@ function recapRender() {
         return;
     }
     const daily = Array.from({ length: len }, (_, i) => all.reduce((a, r) => a + (r.days[i] || 0), 0));
-    const peak = daily.indexOf(Math.max(...daily));
+    const watchedDays = daily.filter(Boolean).length;
     const first = recapDay(data.start, 0);
     const last = recapDay(data.start, len - 1);
     const top = rows[0];
     const kammon = rows.filter(r => r.member);
     const kammonTotal = kammon.reduce((a, r) => a + r.total, 0);
     const share = (kammonTotal / total) * 100;
-    const peakTop = rows.reduce((a, r) => ((r.days[peak] || 0) > (a.days[peak] || 0) ? r : a));
     const pct = sec => `${((sec / total) * 100).toFixed(1)}%`;
     const circle = 2 * Math.PI * 52;
 
@@ -363,9 +361,9 @@ function recapRender() {
             <div class="recap-hero-sub">${len}일 동안 이렇게 봤어요</div>
         </div>
         <div class="recap-hero-stats">
-            <div><span>총 시청</span><b>${recapTime(total)}</b></div>
-            <div><span>하루 평균</span><b>${recapTime(total / len)}</b></div>
             <div><span>본 방송</span><b>${rows.length}명</b></div>
+            <div><span>캄몬 멤버</span><b>${kammon.length}명</b></div>
+            <div><span>시청한 날</span><b>${watchedDays}일</b></div>
         </div>
     </div>`;
 
@@ -389,11 +387,10 @@ function recapRender() {
             </div>
             <div class="recap-sub">${kammon.length ? `멤버 ${kammon.length}명 · ${recapTime(kammonTotal)}` : '본 멤버 방송이 없습니다'}</div>
         </div>
-        <div class="clean-card recap-card recap-peak">
-            <div class="recap-card-label">가장 오래 본 날</div>
-            <div class="recap-peak-day">${recapDay(data.start, peak).m}.${recapDay(data.start, peak).d} <span>${recapDay(data.start, peak).w}요일</span></div>
-            <div class="recap-big">${recapBigTime(daily[peak])}</div>
-            <div class="recap-sub">그날 1위</div><div class="recap-peak-top">${escapeHTML(peakTop.nick)}</div>
+        <div class="clean-card recap-card recap-total">
+            <div class="recap-card-label">전체 시청 시간</div>
+            <div class="recap-big">${recapBigTime(total)}</div>
+            <div class="recap-sub">하루 평균 <b>${recapTime(total / len)}</b></div>
         </div>
     </div>`;
 
