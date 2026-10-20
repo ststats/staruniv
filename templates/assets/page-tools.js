@@ -323,6 +323,14 @@ function recapRaceBadge(row) {
     return row.member && row.member['종족'] ? raceBadgeHtml(row.member['종족']) : '';
 }
 
+// 캄몬 멤버 뱃지. 1위 카드는 '캄몬스타즈'·'이전 멤버', 좁은 순위 줄은 '캄몬'·'이전'
+function recapKammonBadge(row, long) {
+    if (!row.member) return '';
+    const former = !isActiveMember(row.member);
+    const text = former ? (long ? '이전 멤버' : '이전') : long ? '캄몬스타즈' : '캄몬';
+    return `<span class="tag-badge recap-kammon${former ? ' is-former' : ''}">${text}</span>`;
+}
+
 // 화면과 저장 이미지가 같이 쓰는 숫자. 본 방송이 없으면 null
 function recapSummary(data) {
     const all = data.rows.map(r => ({ ...r, total: r.days.reduce((a, b) => a + b, 0) }));
@@ -384,9 +392,13 @@ function recapRender() {
             <div class="recap-card-label">가장 많이 본 방송</div>
             <div class="recap-best-body">${recapAvatar(top, 'recap-best-av')}
                 <div class="recap-best-info">
-                    <div class="recap-best-name"><span>${escapeHTML(top.nick)}</span>${recapRaceBadge(top)}</div>
+                    <div class="recap-best-name">${escapeHTML(top.nick)}</div>
+                    <div class="recap-badges">${recapKammonBadge(top, true)}${recapRaceBadge(top)}</div>
+                    <div class="recap-sub">${len}일 중 ${top.days.filter(Boolean).length}일 시청</div>
+                </div>
+                <div class="recap-best-stat">
                     <div class="recap-big">${recapBigTime(top.total)}</div>
-                    <div class="recap-sub">전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일</div>
+                    <div class="recap-sub">전체 시청의 <b>${Math.round((top.total / total) * 100)}%</b></div>
                 </div>
             </div>
             <div class="recap-bar recap-best-bar"><i style="width:${((top.total / total) * 100).toFixed(1)}%"></i></div>
@@ -407,7 +419,7 @@ function recapRender() {
             (r, i) => `<li class="recap-row${r.member ? ' is-kammon' : ''}">
             <span class="recap-rank">${i + 1}</span>${recapAvatar(r, 'recap-av')}
             <div class="recap-row-main">
-                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(r.nick)}</span>${recapRaceBadge(r)}</div>
+                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(r.nick)}</span>${recapKammonBadge(r, false)}${recapRaceBadge(r)}</div>
                 <div class="recap-bar"><i style="width:${Math.max(1.5, (r.total / top.total) * 100).toFixed(1)}%"></i></div>
             </div>
             <span class="recap-time">${recapTime(r.total)}<em>${pct(r.total)}</em></span>
@@ -419,14 +431,23 @@ function recapRender() {
             ? `<button type="button" class="news-load-more recap-more" aria-expanded="${RecapState.showAll}"${act('recapToggleAll')}>${RecapState.showAll ? '접기' : `나머지 ${rows.length - RECAP_TOP}명 더 보기`}</button>`
             : '';
 
-    const members = kammon.length
-        ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span><span class="title-count">${kammon.length}명</span></div>
-        <div class="clean-card recap-members">${kammon
+    // 이전 멤버는 아래에 따로 묶어 흐리게 둔다
+    const memberGrid = (list, former) =>
+        `<div class="recap-member-grid${former ? ' is-former' : ''}">${list
             .map(
-                r => `<div class="recap-member${isActiveMember(r.member) ? '' : ' is-former'}">${recapAvatar(r, 'recap-member-av')}
+                r => `<div class="recap-member">${recapAvatar(r, 'recap-member-av')}
                 <div class="recap-member-name">${escapeHTML(r.member['이름'])}</div><div class="recap-member-time">${recapTime(r.total)}</div></div>`
             )
-            .join('')}</div>`
+            .join('')}</div>`;
+    const current = kammon.filter(r => isActiveMember(r.member));
+    const former = kammon.filter(r => !isActiveMember(r.member));
+    const members = kammon.length
+        ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span><span class="title-count">${kammon.length}명</span></div>
+        <div class="clean-card recap-members">${current.length ? memberGrid(current, false) : ''}${
+            former.length
+                ? `<div class="recap-members-label">이전 멤버 <span>${former.length}명</span></div>${memberGrid(former, true)}`
+                : ''
+        }</div>`
         : '';
 
     box.innerHTML = `${hero}${cards}

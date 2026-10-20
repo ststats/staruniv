@@ -536,23 +536,30 @@
         font-size: var(--fs-hero);
     }
     .recap-best-info {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--space-2);
         min-width: 0;
     }
     .recap-best-name {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        color: var(--color-text-sub);
-        font-size: var(--fs-card-title);
-        font-weight: 700;
-    }
-    .recap-best-name span {
         overflow: hidden;
+        color: var(--color-text-main);
+        font-size: var(--fs-heading);
+        font-weight: 800;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    .recap-badges {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+    .recap-best-stat {
+        flex: none;
+        text-align: right;
+    }
     .recap-big {
-        margin: 2px 0 var(--space-1);
         color: var(--color-text-main);
         font-size: var(--fs-hero);
         font-weight: 800;
@@ -625,6 +632,12 @@
 
     .recap-cols {
         align-items: start;
+    }
+    .recap-kammon {
+        background: var(--kammon);
+    }
+    .recap-kammon.is-former {
+        background: var(--color-draw);
     }
     .recap-letter {
         display: inline-flex;
@@ -718,10 +731,42 @@
         margin-top: var(--space-5);
     }
     .recap-members {
+        padding: var(--space-8);
+    }
+    .recap-member-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
         gap: var(--space-6) var(--space-3);
-        padding: var(--space-8);
+    }
+    /* 이전 멤버: 선으로 나누고 사진을 작게·흑백으로 */
+    .recap-members-label {
+        margin: var(--space-8) 0 var(--space-6);
+        padding-top: var(--space-6);
+        border-top: 1px solid var(--color-border);
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+    .recap-members-label:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+    .recap-members-label span {
+        color: var(--color-text-faint);
+    }
+    .recap-member-grid.is-former {
+        grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    }
+    .recap-member-grid.is-former .recap-member-av {
+        width: 40px;
+        height: 40px;
+        opacity: 0.6;
+        filter: grayscale(1);
+    }
+    .recap-member-grid.is-former .recap-member-name {
+        color: var(--color-text-sub);
+        font-weight: 600;
     }
     .recap-member {
         display: flex;
@@ -736,10 +781,6 @@
         margin-bottom: var(--space-1);
         border-radius: 50%;
         object-fit: cover;
-    }
-    .recap-member.is-former .recap-member-av {
-        opacity: 0.7;
-        filter: grayscale(1);
     }
     .recap-member-name {
         max-width: 100%;
