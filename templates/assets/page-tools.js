@@ -186,13 +186,13 @@ const RECAP_TOP = 10;
 // tierPlayers: 멤버가 아닌 방송도 사진을 찾으려고 티어표 명단(닉네임 → SOOP ID)을 처음 그릴 때 한 번 받는다
 const RecapState = { data: null, showAll: false, tierPlayers: null };
 
-// 통계 페이지가 차트를 그릴 때 받은 데이터를 가로채 이 페이지로 넘긴다(숲리캡과 같은 방식).
+// 통계 페이지가 차트를 그리는 함수(setGraphPart1)를 바꿔 끼우고 데이터를 다시 불러, 받은 데이터를 이 페이지로 넘긴다.
+// 마지막 식이 값을 돌려주면 javascript: 주소가 그 값으로 화면을 바꾸므로 void로 막는다.
 function recapSnippet() {
-    const target = new URL('tools/?view=recap', document.baseURI).href;
+    const target = new URL('tools/?view=recap#recap=', document.baseURI).href;
     return (
-        '!function(){let a=setGraphPart1;setGraphPart1=(e,t,l)=>{a(e,t,l);if(String(t).includes("Search"))return;' +
-        `location.href=${JSON.stringify(target)}+"#recap="+encodeURIComponent(JSON.stringify({v:1,s:l.date.starttime,` +
-        'b:l.data_stack.map(x=>[x.bj_nick,x.data])}))};callWatchAjax(szMethod,szModule)}();'
+        `setGraphPart1=(e,t,l)=>location.href=${JSON.stringify(target)}+encodeURIComponent(JSON.stringify(` +
+        '{v:1,s:l.date.starttime,b:l.data_stack.map(x=>[x.bj_nick,x.data])}));void callWatchAjax(szMethod,szModule)'
     );
 }
 
