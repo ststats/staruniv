@@ -10,6 +10,7 @@
             <div class="sub-tab active" id="tab-tools-multiviewer" role="tab" tabindex="0" aria-selected="true" data-click="switchToolsView" data-args='["multiviewer"]'>멀티뷰어</div>
             <div class="sub-tab" id="tab-tools-rider" role="tab" tabindex="0" aria-selected="false" data-click="switchToolsView" data-args='["rider"]'>캄몬라이더</div>
             <div class="sub-tab" id="tab-tools-webp" role="tab" tabindex="0" aria-selected="false" data-click="switchToolsView" data-args='["webp"]'>움짤생성기</div>
+            <div class="sub-tab" id="tab-tools-recap" role="tab" tabindex="0" aria-selected="false" data-click="switchToolsView" data-args='["recap"]'>숲리캡</div>
             <div class="sub-tab" id="tab-tools-external" role="tab" tabindex="0" aria-selected="false" data-click="switchToolsView" data-args='["external"]'>외부도구</div>
         </div>
     </div>
@@ -85,7 +86,38 @@
         <iframe class="webp-frame" id="webp-frame" data-src="{{ webp_url }}" title="움짤생성기"></iframe>
     </div>
 
-    {#- 4. 외부도구 뷰(도구/사이트로 구분) #}
+    {#- 4. 숲리캡 뷰: SOOP 시청 통계 페이지에서 꺼낸 데이터를 주소 #recap=으로 받아 이 브라우저에서만 그린다(page-tools.js).
+        서버로 보내거나 DB에 남기지 않고, 마지막 기록만 이 브라우저(localStorage)에 둔다. #}
+    <div id="view-tools-recap" class="d-none">
+        <div id="recap-result"></div>
+        <div id="recap-guide">
+            <div class="section-title" data-en="HOW TO"><span class="section-title-label">숲리캡 만드는 법</span></div>
+            <ol class="clean-card recap-steps">
+                <li>
+                    <b>아래 코드를 복사합니다</b>
+                    <div class="recap-code">
+                        <code id="recap-snippet"></code>
+                        <button type="button" class="recap-copy" id="recap-copy" data-click="recapCopySnippet">복사</button>
+                    </div>
+                </li>
+                <li>
+                    <b><a href="https://m.sooplive.com/statistics/a/watch/?szModule=UserLiveWatchTimeData&amp;szMethod=watch" target="_blank" rel="noopener">SOOP 시청 통계 페이지</a>를 엽니다</b>
+                    <span>로그인한 브라우저에서 엽니다. 휴대폰에서 SOOP 앱이 열리면 링크를 길게 눌러 새 탭에서 엽니다</span>
+                </li>
+                <li>
+                    <b>주소창에 <code>javascript:</code>를 직접 치고 그 뒤에 복사한 코드를 붙여 넣어 실행합니다</b>
+                    <span>붙여 넣을 때 <code>javascript:</code>가 지워지므로 직접 칩니다. 휴대폰은 목록에서 지구본 아이콘 항목을 누릅니다</span>
+                </li>
+                <li>
+                    <b>잠시 뒤 이 페이지로 돌아와 리캡이 그려집니다</b>
+                    <span>통계 페이지에서 기간을 바꾼 뒤 실행하면 그 기간으로 만들어집니다</span>
+                </li>
+            </ol>
+            <p class="recap-note">시청 기록은 주소 뒤(#)에 담겨 이 브라우저에서만 그려집니다. 서버로 보내거나 저장하지 않습니다</p>
+        </div>
+    </div>
+
+    {#- 5. 외부도구 뷰(도구/사이트로 구분) #}
     <div id="view-tools-external" class="d-none">
         <div class="section-title" data-en="TOOLS"><span class="section-title-label">도구</span></div>
         <div class="tool-grid" id="tools-grid-extTools"></div>

@@ -457,6 +457,438 @@
     }
 
     /* ----- 화면 폭별 ----- */
+    /* ----- 숲리캡: 네이비 머리(14-surfaces.css) + 카드 세 장 + 순위·멤버 두 칸. 사진은 사이트처럼 동그라미 ----- */
+    .recap-hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: var(--space-8);
+        margin-bottom: var(--space-card-gap);
+        padding: var(--space-9) var(--space-8);
+        clip-path: var(--notch-12);
+    }
+    .recap-eyebrow {
+        color: var(--panel-muted);
+        font-size: var(--fs-meta);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+    .recap-period {
+        margin-top: var(--space-2);
+        font-size: var(--fs-hero);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+    .recap-hero-sub {
+        margin-top: var(--space-1);
+        color: var(--panel-muted);
+        font-size: var(--fs-body);
+    }
+    .recap-hero-stats {
+        display: flex;
+        gap: var(--space-3);
+    }
+    .recap-hero-stats > div {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: var(--space-3) var(--space-6);
+        background: var(--panel-control);
+        clip-path: var(--notch-4);
+    }
+    .recap-hero-stats span {
+        color: var(--panel-muted);
+        font-size: var(--fs-meta);
+        font-weight: 700;
+    }
+    .recap-hero-stats b {
+        font-size: var(--fs-heading);
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .recap-cards {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        gap: var(--space-card-gap);
+        margin-bottom: var(--space-section-gap);
+    }
+    .recap-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-8);
+    }
+    .recap-card-label {
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+    }
+    .recap-best-body {
+        display: flex;
+        align-items: center;
+        gap: var(--space-8);
+        min-width: 0;
+    }
+    .recap-best-av {
+        flex: none;
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        font-size: 36px;
+    }
+    .recap-best-info {
+        min-width: 0;
+    }
+    .recap-best-name {
+        overflow: hidden;
+        color: var(--color-text-main);
+        font-size: 20px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .recap-tags {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        margin: var(--space-2) 0 var(--space-4);
+    }
+    .recap-big {
+        color: var(--kammon);
+        font-size: var(--fs-hero);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+    .recap-big small {
+        margin-left: 2px;
+        font-size: 15px;
+    }
+    .recap-sub,
+    .recap-peak-top {
+        overflow: hidden;
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .recap-peak-top {
+        margin-top: -6px;
+        color: var(--color-text-main);
+        font-weight: 700;
+    }
+    .recap-sub b {
+        color: var(--color-text-main);
+    }
+    .recap-donut {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    .recap-donut svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+    .recap-donut circle {
+        fill: none;
+        stroke-width: 14;
+    }
+    .recap-donut-track {
+        stroke: var(--color-donut-track);
+    }
+    .recap-donut-value {
+        stroke: var(--kammon);
+    }
+    .recap-donut-text {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .recap-donut-text b {
+        color: var(--color-text-main);
+        font-size: var(--fs-hero);
+        font-weight: 800;
+    }
+    .recap-donut-text small {
+        font-size: var(--fs-card-title);
+    }
+    .recap-donut-text span {
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+    }
+    .recap-share .recap-sub {
+        text-align: center;
+    }
+    .recap-peak-day {
+        color: var(--color-text-main);
+        font-size: 26px;
+        font-weight: 800;
+    }
+    .recap-peak-day span {
+        margin-left: var(--space-1);
+        color: var(--color-text-sub);
+        font-size: var(--fs-body);
+        font-weight: 600;
+    }
+    .recap-peak .recap-big {
+        font-size: 24px;
+    }
+
+    .recap-cols {
+        align-items: start;
+    }
+    .recap-tag {
+        background: var(--kammon);
+    }
+    .recap-tag.is-former {
+        background: var(--color-draw);
+    }
+    .recap-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-bg-subtle);
+        color: var(--color-text-sub);
+        font-weight: 800;
+    }
+    .recap-list {
+        margin: 0;
+        padding: var(--space-2) 0;
+        list-style: none;
+    }
+    .recap-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-5);
+        padding: var(--space-4) var(--space-7);
+    }
+    .recap-row + .recap-row {
+        border-top: 1px solid var(--color-border);
+    }
+    .recap-rank {
+        width: 20px;
+        color: var(--color-text-faint);
+        font-weight: 800;
+        text-align: center;
+    }
+    .recap-row:nth-child(-n + 3) .recap-rank {
+        color: var(--kammon);
+    }
+    .recap-av {
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .recap-row-main {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--space-2);
+        min-width: 0;
+    }
+    .recap-row-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        min-width: 0;
+    }
+    .recap-nick {
+        overflow: hidden;
+        margin-right: var(--space-1);
+        color: var(--color-text-main);
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .recap-bar {
+        height: 6px;
+        overflow: hidden;
+        background: var(--color-bg-subtle);
+    }
+    .recap-bar i {
+        display: block;
+        height: 100%;
+        background: var(--color-border-strong);
+    }
+    .recap-row.is-kammon .recap-bar i {
+        background: var(--kammon);
+    }
+    .recap-time {
+        display: flex;
+        flex-direction: column;
+        color: var(--color-text-main);
+        font-size: var(--fs-small);
+        font-weight: 700;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .recap-time em {
+        color: var(--color-text-faint);
+        font-size: var(--fs-meta);
+        font-style: normal;
+        font-weight: 500;
+    }
+    .recap-more {
+        margin-top: var(--space-5);
+    }
+    .recap-members {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+        gap: var(--space-6) var(--space-3);
+        padding: var(--space-8);
+    }
+    .recap-member {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        text-align: center;
+    }
+    .recap-member-av {
+        width: 56px;
+        height: 56px;
+        margin-bottom: var(--space-1);
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .recap-member.is-former .recap-member-av {
+        opacity: 0.7;
+        filter: grayscale(1);
+    }
+    .recap-member-name {
+        max-width: 100%;
+        overflow: hidden;
+        color: var(--color-text-main);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+    .recap-member-time {
+        color: var(--color-text-sub);
+        font-size: var(--fs-meta);
+    }
+    .recap-note {
+        margin: var(--space-section-gap) 0 0;
+        color: var(--color-text-faint);
+        font-size: var(--fs-meta);
+        text-align: center;
+    }
+    #recap-result:not(:empty) + #recap-guide {
+        margin-top: var(--space-section-gap);
+    }
+    .recap-steps {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-7);
+        margin: 0;
+        padding: var(--space-8) var(--space-8) var(--space-8) var(--space-11);
+    }
+    .recap-steps li {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+    }
+    .recap-steps b {
+        color: var(--color-text-main);
+        font-size: var(--fs-body);
+    }
+    .recap-steps a {
+        color: var(--color-primary);
+    }
+    .recap-steps code {
+        font-size: var(--fs-small);
+    }
+    .recap-code {
+        display: flex;
+        align-items: stretch;
+        gap: var(--space-3);
+        min-width: 0;
+    }
+    .recap-code code {
+        flex: 1;
+        min-width: 0;
+        max-height: 64px;
+        overflow: auto;
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-bg-subtle);
+        color: var(--color-text-body);
+        font-size: var(--fs-meta);
+        word-break: break-all;
+    }
+    .recap-copy {
+        flex: none;
+        padding: 0 var(--space-6);
+        border: none;
+        background: var(--btn-solid-bg);
+        color: #fff;
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+
+    @media (max-width: 767.98px) {
+        .recap-hero {
+            padding: var(--space-8) var(--space-7);
+        }
+        .recap-hero-stats {
+            width: 100%;
+        }
+        .recap-hero-stats > div {
+            flex: 1;
+            min-width: 0;
+            padding: var(--space-3);
+        }
+        .recap-hero-stats b {
+            font-size: var(--fs-body);
+        }
+        .recap-period {
+            font-size: 22px;
+        }
+        .recap-card {
+            min-width: 0;
+            padding: var(--space-7);
+        }
+        .recap-big {
+            font-size: 22px;
+        }
+        .recap-peak-day {
+            font-size: 20px;
+        }
+        .recap-row {
+            gap: var(--space-4);
+            padding: var(--space-4) var(--space-5);
+        }
+        .recap-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+        .recap-best {
+            grid-column: 1 / -1;
+        }
+        .recap-best-av {
+            width: 72px;
+            height: 72px;
+        }
+        .recap-best-body {
+            gap: var(--space-6);
+        }
+        .recap-steps {
+            padding-left: var(--space-10);
+        }
+    }
+
     @media (max-width: 767.98px) {
         .tool-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));

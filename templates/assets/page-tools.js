@@ -1,11 +1,12 @@
 /**
- * 도구 페이지: 멀티뷰어 설정(실행은 multiview.html 새 창) + 외부 도구 링크. (mv-shared.js → core.js → api.js → 이 파일)
+ * 도구 페이지: 멀티뷰어 설정(실행은 multiview.html 새 창) + 숲리캡 + 외부 도구 링크. (mv-shared.js → core.js → api.js → 이 파일)
  */
 
 const TOOLS_TABS = {
     multiviewer: ['tab-tools-multiviewer', 'view-tools-multiviewer'],
     rider: ['tab-tools-rider', 'view-tools-rider'],
     webp: ['tab-tools-webp', 'view-tools-webp'],
+    recap: ['tab-tools-recap', 'view-tools-recap'],
     external: ['tab-tools-external', 'view-tools-external'],
 };
 // 기본 탭은 주소에 안 남기고, 나머지는 ?view=<탭>으로 남긴다.
@@ -177,6 +178,264 @@ if (typeof MutationObserver === 'function') {
     });
 }
 
+// ----- 숲리캡 -----
+// SOOP 시청 통계 페이지에 붙여 넣은 코드가 시청 데이터를 주소 #recap=에 담아 이 탭으로 돌아온다.
+// 데이터는 이 브라우저에서만 그리고, 다시 열어 볼 수 있게 마지막 한 번만 localStorage에 둔다.
+const RECAP_STORE = 'recap:last';
+const RECAP_WEEKDAYS = '일월화수목금토';
+const RECAP_TOP = 10;
+const RecapState = { data: null, showAll: false };
+
+// 통계 페이지가 차트를 그릴 때 받은 데이터를 가로채 이 페이지로 넘긴다(숲리캡과 같은 방식).
+function recapSnippet() {
+    const target = new URL('tools/?view=recap', document.baseURI).href;
+    return (
+        '!function(){let a=setGraphPart1;setGraphPart1=(e,t,l)=>{a(e,t,l);if(String(t).includes("Search"))return;' +
+        `location.href=${JSON.stringify(target)}+"#recap="+encodeURIComponent(JSON.stringify({v:1,s:l.date.starttime,` +
+        'b:l.data_stack.map(x=>[x.bj_nick,x.data])}))};callWatchAjax(szMethod,szModule)}();'
+    );
+}
+
+async function recapCopySnippet() {
+    const btn = document.getElementById('recap-copy');
+    try {
+        await navigator.clipboard.writeText(recapSnippet());
+        if (btn) btn.textContent = '복사했어요';
+    } catch (e) {
+        // 복사가 막힌 브라우저는 코드를 선택해 두어 직접 복사하게 한다
+        const code = document.getElementById('recap-snippet');
+        if (code) window.getSelection().selectAllChildren(code);
+        if (btn) btn.textContent = '선택됨';
+    }
+    setTimeout(() => btn && (btn.textContent = '복사'), 2000);
+}
+
+// 주소로 들어온 글이라 모양을 검사하고 길이를 자른다.
+function recapParse(text) {
+    let raw;
+    try {
+        raw = JSON.parse(text);
+    } catch (e) {
+        return null;
+    }
+    if (!raw || raw.v !== 1 || !Number.isFinite(raw.s) || !Array.isArray(raw.b)) return null;
+    const rows = raw.b
+        .slice(0, 300)
+        .filter(r => Array.isArray(r) && typeof r[0] === 'string' && Array.isArray(r[1]))
+        .map(([nick, days]) => ({
+            nick: nick.slice(0, 40),
+            days: days.slice(0, 62).map(v => Math.max(0, Number(v) || 0)),
+        }));
+    return rows.length ? { start: raw.s, rows } : null;
+}
+
+function recapInit() {
+    const snippet = document.getElementById('recap-snippet');
+    if (snippet) snippet.textContent = recapSnippet();
+    const m = location.hash.match(/^#recap=(.+)$/);
+    if (m) {
+        let text = '';
+        try {
+            text = decodeURIComponent(m[1]);
+        } catch (e) {
+            text = '';
+        }
+        // 시청 기록이 주소·방문 기록에 남지 않게 지운다
+        history.replaceState(null, '', location.pathname + location.search);
+        const data = recapParse(text);
+        if (data) {
+            RecapState.data = data;
+            try {
+                localStorage.setItem(RECAP_STORE, text);
+            } catch (e) {
+                // 저장이 막혀도 이번 화면은 그린다
+            }
+            return;
+        }
+    }
+    try {
+        RecapState.data = recapParse(localStorage.getItem(RECAP_STORE) || '');
+    } catch (e) {
+        RecapState.data = null;
+    }
+}
+
+function recapClear() {
+    try {
+        localStorage.removeItem(RECAP_STORE);
+    } catch (e) {
+        // 지울 것이 없다
+    }
+    RecapState.data = null;
+    recapRender();
+}
+
+function recapToggleAll() {
+    RecapState.showAll = !RecapState.showAll;
+    recapRender();
+}
+
+// 방송 닉네임에 멤버 이름이 들어 있으면 그 멤버로 본다(긴 이름 우선, 같은 이름이면 활동 중인 기록).
+function recapMember(nick) {
+    const key = nick.replace(/[^0-9A-Za-z가-힣]/g, '');
+    let best = null;
+    for (const m of SiteData.members) {
+        const name = String(m['이름'] || '');
+        if (name.length < 2 || !key.includes(name)) continue;
+        const better =
+            !best ||
+            name.length > best['이름'].length ||
+            (name === best['이름'] && isActiveMember(m) && !isActiveMember(best));
+        if (better) best = m;
+    }
+    return best;
+}
+
+function recapTime(sec) {
+    const total = Math.round(sec / 60);
+    const h = Math.floor(total / 60);
+    return h ? `${h}시간 ${total % 60}분` : `${total}분`;
+}
+
+function recapBigTime(sec) {
+    const total = Math.round(sec / 60);
+    const h = Math.floor(total / 60);
+    return h ? `${h}<small>시간</small> ${total % 60}<small>분</small>` : `${total}<small>분</small>`;
+}
+
+// 통계는 한국 시간 하루 단위라 시작 시각에 9시간을 더해 날짜를 읽는다
+function recapDay(start, i) {
+    const d = new Date(start + 9 * 3600e3 + i * 864e5);
+    return { m: d.getUTCMonth() + 1, d: d.getUTCDate(), w: RECAP_WEEKDAYS[d.getUTCDay()] };
+}
+
+function recapAvatar(row, cls) {
+    if (row.member) return avatarHtml(row.member['SOOP ID'], cls);
+    const ch = row.nick.replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 1) || '?';
+    return `<span class="${cls} recap-letter">${escapeHTML(ch)}</span>`;
+}
+
+function recapTags(row, withLabel) {
+    const m = row.member;
+    if (!m) return '';
+    const former = !isActiveMember(m);
+    const label = withLabel
+        ? `<span class="tag-badge recap-tag${former ? ' is-former' : ''}">${former ? '이전 멤버' : '캄몬스타즈'}</span>`
+        : '';
+    return label + (m['종족'] ? raceBadgeHtml(m['종족']) : '');
+}
+
+function recapRender() {
+    const box = document.getElementById('recap-result');
+    if (!box) return;
+    const data = RecapState.data;
+    if (!data) {
+        box.innerHTML = '';
+        return;
+    }
+    const all = data.rows.map(r => ({ ...r, total: r.days.reduce((a, b) => a + b, 0) }));
+    const rows = all
+        .filter(r => r.nick !== '기타' && r.total > 0)
+        .map(r => ({ ...r, member: recapMember(r.nick) }))
+        .sort((a, b) => b.total - a.total);
+    const total = all.reduce((a, r) => a + r.total, 0);
+    const len = Math.max(...all.map(r => r.days.length));
+    if (!rows.length || !total) {
+        box.innerHTML = '<div class="content-state is-boxed">이 기간에는 시청 기록이 없습니다</div>';
+        return;
+    }
+    const daily = Array.from({ length: len }, (_, i) => all.reduce((a, r) => a + (r.days[i] || 0), 0));
+    const peak = daily.indexOf(Math.max(...daily));
+    const first = recapDay(data.start, 0);
+    const last = recapDay(data.start, len - 1);
+    const top = rows[0];
+    const kammon = rows.filter(r => r.member);
+    const kammonTotal = kammon.reduce((a, r) => a + r.total, 0);
+    const share = (kammonTotal / total) * 100;
+    const peakTop = rows.reduce((a, r) => ((r.days[peak] || 0) > (a.days[peak] || 0) ? r : a));
+    const pct = sec => `${((sec / total) * 100).toFixed(1)}%`;
+    const circle = 2 * Math.PI * 52;
+
+    const hero = `<div class="recap-hero">
+        <div class="recap-hero-main">
+            <div class="recap-eyebrow">SOOP RECAP</div>
+            <div class="recap-period">${first.m}월 ${first.d}일 – ${last.m}월 ${last.d}일</div>
+            <div class="recap-hero-sub">${len}일 동안 이렇게 봤어요</div>
+        </div>
+        <div class="recap-hero-stats">
+            <div><span>총 시청</span><b>${recapTime(total)}</b></div>
+            <div><span>하루 평균</span><b>${recapTime(total / len)}</b></div>
+            <div><span>본 방송</span><b>${rows.length}명</b></div>
+        </div>
+    </div>`;
+
+    const cards = `<div class="recap-cards">
+        <div class="clean-card recap-card recap-best">
+            <div class="recap-card-label">가장 많이 본 방송</div>
+            <div class="recap-best-body">${recapAvatar(top, 'recap-best-av')}
+                <div class="recap-best-info">
+                    <div class="recap-best-name">${escapeHTML(top.nick)}</div>
+                    <div class="recap-tags">${recapTags(top, true)}</div>
+                    <div class="recap-big">${recapBigTime(top.total)}</div>
+                    <div class="recap-sub">전체의 <b>${Math.round((top.total / total) * 100)}%</b> · ${top.days.filter(Boolean).length}/${len}일</div>
+                </div>
+            </div>
+        </div>
+        <div class="clean-card recap-card recap-share">
+            <div class="recap-card-label">캄몬 지분</div>
+            <div class="recap-donut">
+                <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="recap-donut-track"/><circle cx="60" cy="60" r="52" class="recap-donut-value" stroke-dasharray="${((circle * share) / 100).toFixed(1)} ${circle.toFixed(1)}"/></svg>
+                <div class="recap-donut-text"><b>${Math.round(share)}<small>%</small></b><span>캄몬스타즈</span></div>
+            </div>
+            <div class="recap-sub">${kammon.length ? `멤버 ${kammon.length}명 · ${recapTime(kammonTotal)}` : '본 멤버 방송이 없습니다'}</div>
+        </div>
+        <div class="clean-card recap-card recap-peak">
+            <div class="recap-card-label">가장 오래 본 날</div>
+            <div class="recap-peak-day">${recapDay(data.start, peak).m}.${recapDay(data.start, peak).d} <span>${recapDay(data.start, peak).w}요일</span></div>
+            <div class="recap-big">${recapBigTime(daily[peak])}</div>
+            <div class="recap-sub">그날 1위</div><div class="recap-peak-top">${escapeHTML(peakTop.nick)}</div>
+        </div>
+    </div>`;
+
+    const shown = RecapState.showAll ? rows : rows.slice(0, RECAP_TOP);
+    const rank = shown
+        .map(
+            (r, i) => `<li class="recap-row${r.member ? ' is-kammon' : ''}">
+            <span class="recap-rank">${i + 1}</span>${recapAvatar(r, 'recap-av')}
+            <div class="recap-row-main">
+                <div class="recap-row-head"><span class="recap-nick">${escapeHTML(r.nick)}</span>${recapTags(r, false)}</div>
+                <div class="recap-bar"><i style="width:${Math.max(1.5, (r.total / top.total) * 100).toFixed(1)}%"></i></div>
+            </div>
+            <span class="recap-time">${recapTime(r.total)}<em>${pct(r.total)}</em></span>
+        </li>`
+        )
+        .join('');
+    const more =
+        rows.length > RECAP_TOP
+            ? `<button type="button" class="news-load-more recap-more" aria-expanded="${RecapState.showAll}"${act('recapToggleAll')}>${RecapState.showAll ? '접기' : `나머지 ${rows.length - RECAP_TOP}명 더 보기`}</button>`
+            : '';
+
+    const members = kammon.length
+        ? `<div class="section-title" data-en="CALMMON STARS"><span class="section-title-label">내가 본 캄몬 멤버</span><span class="title-count">${kammon.length}명</span></div>
+        <div class="clean-card recap-members">${kammon
+            .map(
+                r => `<div class="recap-member${isActiveMember(r.member) ? '' : ' is-former'}">${recapAvatar(r, 'recap-member-av')}
+                <div class="recap-member-name">${escapeHTML(r.member['이름'])}</div><div class="recap-member-time">${recapTime(r.total)}</div></div>`
+            )
+            .join('')}</div>`
+        : '';
+
+    box.innerHTML = `${hero}${cards}
+    <div class="g2 recap-cols">
+        <div>
+            <div class="section-title" data-en="RANKING"><span class="section-title-label">시청 순위</span><span class="title-count">${rows.length}명</span></div>
+            <ol class="clean-card recap-list">${rank}</ol>${more}
+        </div>
+        <div>${members}</div>
+    </div>
+    <p class="recap-note">이 기록은 이 브라우저에만 있습니다 · <button type="button" class="text-action"${act('recapClear')}>지우기</button></p>`;
+}
+
 function switchToolsView(viewType, skipHashUpdate) {
     const wasRider = isToolsTabActive('rider');
     activateTabView(TOOLS_TABS, viewType);
@@ -188,6 +447,7 @@ function switchToolsView(viewType, skipHashUpdate) {
     }
     if (viewType === 'webp') webpEnsureLoaded();
     webpSyncVisibility();
+    if (viewType === 'recap') recapRender();
     if (viewType === 'external' && !toolsExternalLoaded) {
         toolsExternalLoaded = true;
         safeInit('도구 목록', loadToolsData);
@@ -414,6 +674,7 @@ async function loadToolsData() {
 
 bootPage(
     () => {
+        safeInit('숲리캡', recapInit);
         safeInit('멀티뷰어', () => {
             mvRenderAll();
             return mvCheckLiveAndRerenderChips();
