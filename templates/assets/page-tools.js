@@ -455,7 +455,8 @@ function recapRender() {
     <p class="recap-note">이 기록은 이 브라우저에만 있습니다 · <button type="button" class="text-action"${act('recapClear')}>지우기</button></p>`;
 }
 
-// 공유용 세로 이미지(1080px 폭): 사이트처럼 연한 바탕에 네이비 머리(사선 무늬)와 모서리를 깎은 흰 카드.
+// 공유용 이미지(1600px 폭): 화면처럼 연한 바탕에 네이비 머리(사선 무늬), 모서리를 깎은 흰 카드.
+// 1위 · 캄몬 지분을 반반, 그 아래 시청 순위 TOP 10 · 내가 본 캄몬 멤버를 두 칸으로 둔다.
 // 사진은 CORS가 막히면 이니셜 원으로 그린다(엔트리 포스터와 같은 부품).
 const RECAP_IMAGE_TOP = 10;
 async function recapSaveImage() {
@@ -464,7 +465,9 @@ async function recapSaveImage() {
     const { rows, total, len, first, last, top, kammon, kammonTotal, share } = sum;
     const list = rows.slice(0, RECAP_IMAGE_TOP);
     const soopId = r => (r.member ? r.member['SOOP ID'] : r.id);
-    const imgs = await Promise.all(list.map(r => posterLoadImage(soopId(r) ? getProfileImgUrl(soopId(r)) : null)));
+    const people = [...new Set([...list, ...kammon])];
+    const loaded = await Promise.all(people.map(r => posterLoadImage(soopId(r) ? getProfileImgUrl(soopId(r)) : null)));
+    const imgOf = new Map(people.map((r, i) => [r, loaded[i]]));
     const pal = posterPalette();
     const font = (weight, size) => `${weight} ${size}px Pretendard, sans-serif`;
     const card = (x, y, w, h, fill) => {
@@ -473,15 +476,30 @@ async function recapSaveImage() {
         ctx.fill();
     };
 
-    const W = 1080,
+    const W = 1600,
         PAD = 48,
         GAP = 20,
         HEAD = 290,
         CARD = 300,
         ROW = 92;
+    const innerW = W - PAD * 2;
+    const colW = Math.round((innerW - GAP) / 2);
+    const col2X = PAD + colW + GAP;
+    // 내가 본 캄몬 멤버: 현재 멤버 칸 아래 선, 그 아래 이전 멤버(흑백)
+    const current = kammon.filter(r => isActiveMember(r.member));
+    const former = kammon.filter(r => !isActiveMember(r.member));
+    const CELL_W = 128,
+        CELL_H = 172;
+    const perRow = Math.max(1, Math.floor((colW - 64) / CELL_W));
+    const gridRows = n => Math.ceil(n / perRow);
+    const memH =
+        96 +
+        (gridRows(current.length) + gridRows(former.length)) * CELL_H +
+        (current.length && former.length ? 40 : 0) +
+        8;
     const cardY = PAD + HEAD + GAP;
     const listY = cardY + CARD + GAP;
-    const listH = 96 + list.length * ROW + 24;
+    const listH = Math.max(96 + list.length * ROW + 24, kammon.length ? memH : 0);
     const H = listY + listH + PAD;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const cv = document.createElement('canvas');
@@ -493,7 +511,6 @@ async function recapSaveImage() {
     ctx.fillRect(0, 0, W, H);
 
     // 네이비 머리: 기간과 총 시청·하루 평균·본 방송
-    const innerW = W - PAD * 2;
     card(PAD, PAD, innerW, HEAD, pal.navy);
     posterNotchPath(ctx, PAD, PAD, innerW, HEAD, 18);
     posterNavyPattern(ctx, PAD, PAD, innerW, HEAD);
@@ -525,36 +542,34 @@ async function recapSaveImage() {
     });
 
     // 가장 많이 본 방송 · 캄몬 지분(반반). 1위는 화면처럼 사진 옆 두 줄 × 두 칸: 이름 | 시간, 뱃지 | 비율
-    const bestW = Math.round((innerW - GAP) / 2);
-    const shareW = innerW - GAP - bestW;
-    card(PAD, cardY, bestW, CARD, pal.bg);
-    card(PAD + bestW + GAP, cardY, shareW, CARD, pal.bg);
+    card(PAD, cardY, colW, CARD, pal.bg);
+    card(col2X, cardY, colW, CARD, pal.bg);
     const bx = PAD + 32;
-    const right = PAD + bestW - 32;
+    const right = PAD + colW - 32;
     ctx.fillStyle = pal.sub;
     ctx.font = font(700, 20);
     ctx.fillText('가장 많이 본 방송', bx, cardY + 48);
-    posterDrawAvatar(ctx, imgs[0], recapLetterName(top), bx, cardY + 92, 96);
+    posterDrawAvatar(ctx, imgOf.get(top), recapLetterName(top), bx, cardY + 92, 96);
     const tx = bx + 120;
     const timeText = recapTime(top.total);
-    ctx.font = font(800, 30);
+    ctx.font = font(800, 34);
     const timeW = ctx.measureText(timeText).width;
     ctx.fillStyle = pal.text;
     ctx.fillText(recapFit(ctx, recapName(top), right - tx - timeW - 16), tx, cardY + 136);
     ctx.textAlign = 'right';
     ctx.fillText(timeText, right, cardY + 136);
     ctx.textAlign = 'left';
-    const BADGE = 28;
-    const badgeY = cardY + 156;
+    const BADGE = 30;
+    const badgeY = cardY + 154;
     if (top.member) {
-        const former = !isActiveMember(top.member);
+        const was = !isActiveMember(top.member);
         const w = posterDrawBadge(
             ctx,
-            former ? '이전 멤버' : '캄몬스타즈',
+            was ? '이전 멤버' : '캄몬스타즈',
             tx,
             badgeY,
             BADGE,
-            former ? pal.sub : pal.kammon,
+            was ? pal.sub : pal.kammon,
             '#fff'
         );
         posterDrawRaceBadge(ctx, raceCode(top.member['종족']), tx + w + 6, badgeY, BADGE);
@@ -564,7 +579,11 @@ async function recapSaveImage() {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = pal.sub;
     ctx.font = font(700, Math.round(BADGE * 0.6));
-    ctx.fillText(`전체 시청의 ${Math.round((top.total / total) * 100)}%`, right, badgeY + BADGE / 2 + 1);
+    ctx.fillText(
+        `전체 시청의 ${Math.round((top.total / total) * 100)}% · ${len}일 중 ${top.days.filter(Boolean).length}일`,
+        right,
+        badgeY + BADGE / 2 + 1
+    );
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     ctx.fillStyle = pal.stripe;
@@ -572,11 +591,10 @@ async function recapSaveImage() {
     ctx.fillStyle = pal.kammon;
     ctx.fillRect(bx, cardY + CARD - 52, ((right - bx) * top.total) / total, 10);
 
-    const sx = PAD + bestW + GAP;
     ctx.fillStyle = pal.sub;
     ctx.font = font(700, 20);
-    ctx.fillText('캄몬 지분', sx + 32, cardY + 48);
-    const dx = sx + shareW / 2;
+    ctx.fillText('캄몬 지분', col2X + 32, cardY + 48);
+    const dx = col2X + colW / 2;
     const dy = cardY + 158;
     ctx.lineWidth = 22;
     ctx.strokeStyle = pal.stripe;
@@ -599,8 +617,8 @@ async function recapSaveImage() {
         cardY + 274
     );
 
-    // 시청 순위 TOP 10
-    card(PAD, listY, innerW, listH, pal.bg);
+    // 시청 순위 TOP 10(왼쪽)
+    card(PAD, listY, colW, listH, pal.bg);
     ctx.textAlign = 'left';
     ctx.fillStyle = pal.text;
     ctx.font = font(800, 28);
@@ -609,28 +627,26 @@ async function recapSaveImage() {
         const y = listY + 96 + i * ROW;
         if (i) {
             ctx.fillStyle = pal.line;
-            ctx.fillRect(bx, y - 1, innerW - 64, 1);
+            ctx.fillRect(bx, y - 1, colW - 64, 1);
         }
         ctx.textAlign = 'center';
         ctx.fillStyle = i < 3 ? pal.kammon : pal.faint;
         ctx.font = font(800, 26);
         ctx.fillText(String(i + 1), bx + 14, y + 54);
-        posterDrawAvatar(ctx, imgs[i], recapLetterName(r), bx + 44, y + 14, 64);
+        posterDrawAvatar(ctx, imgOf.get(r), recapLetterName(r), bx + 44, y + 14, 64);
         ctx.textAlign = 'left';
         const nx = bx + 128;
         ctx.fillStyle = pal.text;
         ctx.font = font(700, 26);
-        const name = recapFit(ctx, recapName(r), 420);
+        const name = recapFit(ctx, recapName(r), 300);
         ctx.fillText(name, nx, y + 42);
         let cx = nx + ctx.measureText(name).width + 10;
         if (r.member) {
-            const former = !isActiveMember(r.member);
-            cx +=
-                posterDrawBadge(ctx, former ? '이전' : '캄몬', cx, y + 20, 26, former ? pal.sub : pal.kammon, '#fff') +
-                6;
+            const was = !isActiveMember(r.member);
+            cx += posterDrawBadge(ctx, was ? '이전' : '캄몬', cx, y + 20, 26, was ? pal.sub : pal.kammon, '#fff') + 6;
             posterDrawRaceBadge(ctx, raceCode(r.member['종족']), cx, y + 20, 26);
         }
-        const barW = innerW - (nx - PAD) - 210;
+        const barW = right - nx - 170;
         ctx.fillStyle = pal.stripe;
         ctx.fillRect(nx, y + 60, barW, 8);
         ctx.fillStyle = r.member ? pal.kammon : pal.empty;
@@ -638,11 +654,50 @@ async function recapSaveImage() {
         ctx.textAlign = 'right';
         ctx.fillStyle = pal.text;
         ctx.font = font(800, 26);
-        ctx.fillText(recapTime(r.total), W - PAD - 32, y + 44);
+        ctx.fillText(recapTime(r.total), right, y + 44);
         ctx.fillStyle = pal.faint;
         ctx.font = font(600, 19);
-        ctx.fillText(`${((r.total / total) * 100).toFixed(1)}%`, W - PAD - 32, y + 72);
+        ctx.fillText(`${((r.total / total) * 100).toFixed(1)}%`, right, y + 72);
     });
+
+    // 내가 본 캄몬 멤버(오른쪽): 현재 멤버, 선, 이전 멤버(흑백·흐리게)
+    if (kammon.length) {
+        card(col2X, listY, colW, listH, pal.bg);
+        const mx = col2X + 32;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = pal.text;
+        ctx.font = font(800, 28);
+        ctx.fillText(`내가 본 캄몬 멤버 ${kammon.length}명`, mx, listY + 58);
+        const drawGrid = (group, top0, dim) => {
+            group.forEach((r, i) => {
+                const cx = mx + (i % perRow) * CELL_W + CELL_W / 2;
+                const cy = top0 + Math.floor(i / perRow) * CELL_H;
+                ctx.save();
+                if (dim) {
+                    ctx.globalAlpha = 0.55;
+                    ctx.filter = 'grayscale(1)';
+                }
+                posterDrawAvatar(ctx, imgOf.get(r), recapLetterName(r), cx - 42, cy, 84);
+                ctx.restore();
+                ctx.textAlign = 'center';
+                ctx.fillStyle = dim ? pal.sub : pal.text;
+                ctx.font = font(700, 22);
+                ctx.fillText(recapFit(ctx, r.member['이름'], CELL_W - 8), cx, cy + 116);
+                ctx.fillStyle = pal.sub;
+                ctx.font = font(600, 18);
+                ctx.fillText(recapTime(r.total), cx, cy + 140);
+            });
+        };
+        let gy = listY + 96;
+        drawGrid(current, gy, false);
+        gy += gridRows(current.length) * CELL_H;
+        if (current.length && former.length) {
+            ctx.fillStyle = pal.line;
+            ctx.fillRect(mx, gy + 12, colW - 64, 1);
+            gy += 40;
+        }
+        drawGrid(former, gy, true);
+    }
 
     let blob = null;
     try {
