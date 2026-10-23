@@ -1,5 +1,5 @@
 /**
- * 티어표 > 현황판 - 대학마다 머리(로고·창단일·총원·우승·직책 인원)와 선수 카드를 창단일 순(api_team_order)으로 보여준다.
+ * 티어표 > 현황판 - 대학마다 머리(로고·창단일·총원·우승 횟수·직책 인원)와 선수 카드를 창단일 순(api_team_order)으로 보여준다.
  * 명단·바로가기 바는 티어표(page-tier.js)와 같고, 선수 카드를 누르면 멤버 페이지와 같은 프로필 창(core.js openProfileModal)을 연다.
  */
 
@@ -77,11 +77,6 @@ function boardRoleCounts(list) {
 
 function boardTeamHtml(team, id, list) {
     const since = String(team.founded || '').replace(/-/g, '.');
-    const stats = [
-        ['총원', `${list.length}명`],
-        ['우승', `${team.wins || 0}회`],
-        ...boardRoleCounts(list).map(([r, n]) => [r, `${n}명`]),
-    ];
     return `
     <section class="tier-row board-team" id="${id}" aria-labelledby="${id}-name">
         <div class="head-plate board-team-head">
@@ -90,10 +85,16 @@ function boardTeamHtml(team, id, list) {
                 <div class="board-team-title">
                     ${since ? `<div class="head-plate-label">SINCE ${escapeHTML(since)}</div>` : ''}
                     <h2 class="head-plate-value" id="${id}-name">${escapeHTML(team.name)}</h2>
+                    <div class="board-team-meta">
+                        <span>총원 <b>${list.length}</b>명</span>
+                        <span class="board-team-wins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>우승 ${team.wins || 0}회</span>
+                    </div>
                 </div>
             </div>
             <dl class="board-team-stats">
-                ${stats.map(([k, v]) => `<div><dt>${escapeHTML(k)}</dt><dd>${escapeHTML(v)}</dd></div>`).join('')}
+                ${boardRoleCounts(list)
+                    .map(([role, n]) => `<div><dt>${escapeHTML(role)}</dt><dd>${n}명</dd></div>`)
+                    .join('')}
             </dl>
         </div>
         <div class="board-grid">${list.map(boardCardHtml).join('')}</div>

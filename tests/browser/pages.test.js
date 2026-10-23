@@ -135,7 +135,7 @@ test('공개 페이지가 오류 없이 다 그려진다', { timeout: 300000 }, 
             if (url === 'tier/?view=board') {
                 // 대학은 창단일 순, 카드를 누르면 멤버 페이지와 같은 프로필 창(입단 티어·활동기간은 숨김)
                 assert.ok((await page.locator('.board-team').count()) > 0);
-                assert.match(await page.locator('.board-team-stats').first().textContent(), /총원/);
+                assert.match(await page.locator('.board-team-meta').first().textContent(), /총원 \d+명\s*우승 \d+회/);
                 await page.locator('.board-card').first().click();
                 await page.locator('#memberProfileModal.is-open').waitFor({ state: 'visible' });
                 assert.equal(await page.locator('#mp-period-block').isHidden(), true);
