@@ -717,13 +717,18 @@
         .board-team-meta > span + span::before {
             margin-right: var(--space-3);
         }
+        /* 칸 수(총원 + 직책)만큼 한 줄을 나누고, 칸 안은 이름 위·인원 아래로 쌓는다 */
         .board-team-stats {
             display: grid;
             flex-basis: 100%;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-columns: minmax(0, 1fr);
+            grid-auto-flow: column;
         }
         .board-team-stats > div {
             min-width: 0;
+            flex-direction: column;
+            gap: 2px;
+            padding: var(--space-2) var(--space-1);
         }
         .board-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
