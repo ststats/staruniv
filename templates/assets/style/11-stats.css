@@ -2,24 +2,6 @@
    11. 방송통계
    ============================================================================= */
 @layer pages {
-    /* 아래 .synergy-* 카드가 덮어쓰는 기본이라 맨 앞에 둔다 */
-    .head-plate {
-        padding: var(--space-8) var(--space-8) var(--space-8);
-    }
-    .head-plate-label {
-        font-size: var(--fs-eyebrow);
-        font-weight: 600;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--label-accent);
-    }
-    .head-plate-value {
-        font-size: 30px;
-        font-weight: 700;
-        line-height: 1.05;
-        letter-spacing: -0.02em;
-    }
-
     .player-avatar-sm {
         width: 18px;
         height: 18px;
@@ -107,8 +89,8 @@
             padding: var(--space-5) var(--space-7);
         }
         .synergy-tile .head-plate-value {
+            --head-plate-fs: 20px;
             margin-top: 0;
-            font-size: 20px;
         }
     }
     /* 375px 미만은 긴 설명에 값이 잘려 짧게, 330px 미만은 그것도 잘려 영문만 */

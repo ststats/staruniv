@@ -115,7 +115,7 @@ function respond(url) {
       return { total: rows.length, videos: rows.filter(r => !q.get('p_before') || r.published < q.get('p_before')).slice(0, 20) };
     },
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),
-    api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at'),
+    api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at,role,elo_id'),
     api_videos: q => {
       const data = {
       channels: [0, 1, 2].map((k) => ({ channel_url: 'https://www.youtube.com/@fan' + k, title: '팬채널 채널 ' + k, display_name: ['캄몬 팬채널', '스타대학 하이라이트', '아주 긴 이름의 팬 채널입니다'][k], thumb: k === 2 ? '' : 'https://yt3.ggpht.com/fan' + k + '.jpg' })),
@@ -153,7 +153,7 @@ function respond(url) {
   // 멤버 목록·프로필은 siteData()로 만들고 멤버 줄 순서를 _id로 쓴다
   if (fn === 'api_site_members') { const sd = siteData(); return { ...sd.members, members: sd.members.members.map((m, i) => ({ _id: i + 1, ...m })) }; }
   if (fn === 'api_member_profiles') { const sd = siteData(); const q = Object.fromEntries(Object.entries(sd.profiles.profiles).map(([k, v]) => [k, v.slice()])); const out = {}; sd.members.members.forEach((m, i) => { out[i + 1] = (q[m['이름']] || []).shift() || {}; }); return { profiles: out }; }
-  if (fn === 'api_team_order') return [...TEAMS].reverse(); // 인원 순과 다르게
+  if (fn === 'api_team_order') return [...TEAMS].reverse().map((name, i) => ({ name, founded: day(400 * (4 - i)), wins: i })); // 인원 순과 다르게
   if (fn === 'api_holidays') return { '2026-09-24': '추석 연휴', '2026-09-25': '추석', '2026-10-03': '개천절' };
   if (u.pathname.includes('/rpc/') && API[fn]) return API[fn](u.searchParams);
   if (u.pathname.includes('/rpc/') && RPC[fn]) {

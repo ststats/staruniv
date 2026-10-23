@@ -18,9 +18,6 @@ const TierState = {
     byId: {}, // soopId(소문자) -> member
     live: {}, // soopId(소문자) -> { id, member, broadNo, title, viewers }
     liveOnly: true,
-    sections: [], // [{ tier, id, count }]
-    activeId: null,
-    jump: null, // 바로가기로 이동한 직후 { id, y } - 스크롤하기 전까지 그 티어를 강조한다
     visibleThumbs: new Set(),
     thumbObserver: null,
     view: '', // 방송 상태는 list일 때만 갱신
@@ -33,6 +30,7 @@ const TierState = {
 // ---------------------------------------------------------------------------
 const TIER_TABS = {
     list: ['tab-tier-list', 'view-tier-list'],
+    board: ['tab-tier-board', 'view-tier-board'],
     h2h: ['tab-tier-h2h', 'view-tier-h2h'],
     analysis: ['tab-tier-analysis', 'view-tier-analysis'],
     entry: ['tab-tier-entry', 'view-tier-entry'],
@@ -60,6 +58,7 @@ function loadTierScript(name) {
 
 async function loadTierCode(view) {
     if (view === 'list') return;
+    if (view === 'board') return loadTierScript('board');
     await loadTierScript('h2h'); // 분석·엔트리가 상대전적의 선수/기간 처리를 같이 쓴다
     if (view !== 'h2h') await loadTierScript(view);
 }
@@ -92,6 +91,7 @@ function switchTierView(view, restoreParams = null) {
             if (TierState.view !== key || TierState.requestSeq !== sequence) return;
             if (key === 'h2h') return h2hEnter(restoreParams);
             if (key === 'analysis') return analysisEnter(restoreParams);
+            if (key === 'board') return boardEnter();
             return entryEnsureLoaded();
         });
 }
@@ -122,6 +122,8 @@ async function fetchTierMembers() {
                 team: String(r.affiliation || '').trim(),
                 tier: r.tier == null ? '' : String(r.tier).trim(),
                 race: String(r.race || '').trim(),
+                role: String(r.role || '').trim(),
+                eloId: r.elo_id == null ? '' : String(r.elo_id),
             }))
             .filter(m => isValidSoopId(m.id) && m.nickname && !TIER_HIDDEN_TEAMS.has(m.team));
         return members.length ? members : null;
@@ -189,25 +191,31 @@ function tierCardMediaHtml(member, live) {
     return avatarHtml(soopId, 'tier-card-avatar');
 }
 
-function tierCardHtml(member, live) {
+// 티어표 카드는 SOOP 방송국·방송으로 가는 링크다. 현황판은 opts.open(누르면 할 일)으로 프로필을 열고,
+// 소속 줄 자리에 opts.note(직책)를 쓴다.
+function tierCardHtml(member, live, opts = null) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
     const raceLetter = raceShortLabel(member.race || '');
     const raceEdge = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
+    const tag = opts ? 'button' : 'a';
+    const target = opts
+        ? ` type="button"${opts.open}`
+        : ` href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"`;
+    const sub = opts
+        ? `<span class="tier-card-team-name">${escapeHTML(opts.note)}</span>`
+        : `${tierTeamLogoHtml(team)}<span class="tier-card-team-name">${escapeHTML(team)}</span>`;
     return `
-    <a class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
-       href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
+    <${tag} class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"${target}>
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
         <div class="tier-card-body">
             <div class="tier-card-nameline">
                 <span class="tier-card-name">${escapeHTML(member.nickname || soopId)}</span>
                 ${member.race ? raceBadgeHtml(member.race) : ''}
             </div>
-            <div class="tier-card-team">
-                ${tierTeamLogoHtml(team)}<span class="tier-card-team-name">${escapeHTML(team)}</span>
-            </div>
+            <div class="tier-card-team">${sub}</div>
         </div>
-    </a>`;
+    </${tag}>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -384,20 +392,21 @@ function renderTierGroups() {
     });
 
     // id는 선택자로 쓰기 편하게 순번이다. count는 지금 보기('방송중'/'전체')에 그려지는 인원.
-    TierState.sections = tiers.map((tier, i) => ({
+    const sections = tiers.map((tier, i) => ({
         tier,
         id: `tier-sec-${i}`,
+        label: tierDisplayName(tier),
         count: groups.get(tier).length,
     }));
 
     tierPeekHide();
-    document.getElementById('tier-root').innerHTML = TierState.sections.length
-        ? TierState.sections
+    document.getElementById('tier-root').innerHTML = sections.length
+        ? sections
               .map(
                   sec => `
             <div class="tier-row" id="${sec.id}">
                 <div class="section-title" data-en="${tierLatinLabel(sec.tier)}">
-                    <span class="section-title-label">${escapeHTML(tierDisplayName(sec.tier))}</span><span class="title-count">${sec.count}명</span>
+                    <span class="section-title-label">${escapeHTML(sec.label)}</span><span class="title-count">${sec.count}명</span>
                 </div>
                 ${tierRaceBlocksHtml(groups.get(sec.tier))}
             </div>`
@@ -407,11 +416,10 @@ function renderTierGroups() {
 
     observeTierThumbs();
     syncTierCardHeight();
-    renderTierBar();
-    ensureTierPick();
+    tierBar.render(sections);
     restoreTierAnchor(anchor);
-    highlightTierBar();
-    syncTierPickLabel();
+    tierBar.highlight();
+    tierBar.syncPickLabel();
 }
 
 function observeTierThumbs() {
@@ -422,136 +430,157 @@ function observeTierThumbs() {
 }
 
 // ---------------------------------------------------------------------------
-// 티어 바로가기 바
+// 바로가기 바 (티어표의 티어, 현황판의 대학)
 // ---------------------------------------------------------------------------
-function renderTierBar() {
-    const list = document.getElementById('tier-bar-list');
-    if (!list) return;
-    list.innerHTML = TierState.sections
-        .map(
-            sec => `
+// PC는 본문 위 가로 한 줄, 좁은 화면은 접히는 한 줄이다. 바는 화면 위에 붙어 본문을 가려서 높이를 --tier-bar-h로 넘긴다.
+// sections: [{ id, label, count }] - id는 본문 섹션 요소의 id
+class SectionBar {
+    constructor(barId, pickLabel) {
+        this.barId = barId;
+        this.pickLabel = pickLabel;
+        this.sections = [];
+        this.activeId = null;
+        this.jump = null; // 바로가기로 이동한 직후 { id, y } - 스크롤하기 전까지 그 섹션을 강조한다
+    }
+
+    get el() {
+        return document.getElementById(this.barId);
+    }
+
+    // 숨은 탭의 바는 높이·강조를 건드리지 않는다
+    get shown() {
+        return !!(this.el && this.el.offsetParent);
+    }
+
+    render(sections) {
+        this.sections = sections;
+        const list = this.el && this.el.querySelector('.tier-bar-list');
+        if (!list) return;
+        list.innerHTML = sections
+            .map(
+                sec => `
         <button type="button" class="tier-bar-item" data-target="${sec.id}">
-            <span class="tier-bar-name">${escapeHTML(tierDisplayName(sec.tier))}</span>
+            <span class="tier-bar-name">${escapeHTML(sec.label)}</span>
             <span class="tier-bar-count">${sec.count}</span>
         </button>`
-        )
-        .join('');
-    TierState.activeId = null;
-    attachBarScroll(list);
-    syncTierBarHeight();
-}
-
-// 티어 바는 PC·모바일 모두 화면 위에 붙어 본문을 가린다(높이는 --tier-bar-h로 넘긴다).
-function tierBarCoversContent() {
-    return !!document.getElementById('tier-bar');
-}
-
-// 모바일에서는 접히는 한 줄 선택 바로 쓴다(가로는 티어 15개를 계속 밀어야 하고, 펼치면 화면을 다 먹는다).
-function ensureTierPick() {
-    const bar = document.getElementById('tier-bar');
-    if (!bar || bar.querySelector('.tier-bar-pick')) return;
-    const heading = bar.querySelector('.tier-bar-heading');
-    heading.insertBefore(createBarPick(bar, 'tier-bar-pick', '티어 바로가기'), heading.firstChild);
-}
-
-function syncTierPickLabel() {
-    const bar = document.getElementById('tier-bar');
-    if (!bar) return;
-    const pick = bar.querySelector('.tier-bar-pick');
-    if (!pick) return;
-    const active = bar.querySelector('.tier-bar-item.active');
-    const label = pick.querySelector('.tier-bar-pick-label');
-    // 칩 textContent는 '갓12'처럼 붙어 나와서 이름과 인원을 따로 읽는다.
-    if (!label) return;
-    if (!active) {
-        label.textContent = '티어 바로가기';
-        return;
+            )
+            .join('');
+        this.activeId = null;
+        attachBarScroll(list);
+        this.syncHeight();
     }
-    const count = active.querySelector('.tier-bar-count');
-    const name = active.cloneNode(true);
-    const dropCount = name.querySelector('.tier-bar-count');
-    if (dropCount) dropCount.remove();
-    label.textContent = name.textContent.trim() + (count ? ` · ${count.textContent.trim()}명` : '');
-}
 
-function syncTierBarHeight() {
-    const bar = document.getElementById('tier-bar');
-    if (!bar) return;
-    const h = tierBarCoversContent() ? bar.offsetHeight : 0;
-    document.documentElement.style.setProperty('--tier-bar-h', `${h}px`);
-}
-
-function onTierBarClick(event) {
-    const btn = event.target.closest('.tier-bar-item');
-    if (!btn) return;
-    const target = document.getElementById(btn.dataset.target);
-    if (!target) return;
-    // 펼친 목록 높이가 스크롤 여백으로 들어가지 않도록 먼저 접는다.
-    const bar = document.getElementById('tier-bar');
-    bar.classList.add('is-closed');
-    bar.querySelector('.tier-bar-pick')?.setAttribute('aria-expanded', 'false');
-    syncTierBarHeight();
-    scrollTierBarItemIntoView(btn);
-    scrollTierIntoPlace(target);
-}
-
-// content-visibility로 건너뛴 카드가 스크롤 순간 그려지며 위치가 밀려서 두 프레임 더 보정한다.
-function scrollTierIntoPlace(target, tries) {
-    const gap = target.getBoundingClientRect().top - tierStickyOffset() - 12;
-    if (Math.abs(gap) > 1) window.scrollBy({ top: gap, behavior: 'instant' });
-    TierState.jump = { id: target.id, y: window.scrollY };
-    highlightTierBar();
-    const left = tries === undefined ? 2 : tries;
-    if (left > 0 && Math.abs(gap) > 1) requestAnimationFrame(() => scrollTierIntoPlace(target, left - 1));
-}
-
-// 판정선은 보이는 영역 위에서 35%다. 바 바로 아래로 잡으면 화면 대부분이 다음 티어여도 이전 티어가 켜져 있다.
-function currentTierSectionId() {
-    if (TierState.sections.length === 0) return null;
-    const offset = tierStickyOffset();
-    const viewport = window.innerHeight || document.documentElement.clientHeight;
-    // 바로가기 직후에는 누른 티어를 강조한다. 짧은 티어는 다음 티어가 판정선 위로 올라온다.
-    if (TierState.jump && Math.abs(window.scrollY - TierState.jump.y) < 2) return TierState.jump.id;
-    TierState.jump = null;
-    const line = offset + (viewport - offset) * 0.35;
-
-    let currentId = TierState.sections[0].id;
-    for (const sec of TierState.sections) {
-        const el = document.getElementById(sec.id);
-        if (!el) continue;
-        if (el.getBoundingClientRect().top <= line) currentId = sec.id;
-        else break;
+    // 모바일에서는 접히는 한 줄 선택 바로 쓴다(가로는 계속 밀어야 하고, 펼치면 화면을 다 먹는다).
+    // 명단 로딩이 실패해도 바가 펼쳐진 채로 남지 않게 그리기 전에 만든다.
+    ensurePick() {
+        const bar = this.el;
+        if (!bar || bar.querySelector('.tier-bar-pick')) return;
+        const heading = bar.querySelector('.tier-bar-heading');
+        heading.insertBefore(createBarPick(bar, 'tier-bar-pick', this.pickLabel), heading.firstChild);
+        bar.addEventListener('click', e => this.onClick(e));
     }
-    // 맨 아래에서는 짧은 마지막 티어가 판정선까지 못 올라온다.
-    const docHeight = document.documentElement.scrollHeight;
-    if (window.scrollY + viewport >= docHeight - 2) {
-        currentId = TierState.sections[TierState.sections.length - 1].id;
+
+    syncPickLabel() {
+        const label = this.el && this.el.querySelector('.tier-bar-pick-label');
+        if (!label) return;
+        const sec = this.sections.find(x => x.id === this.activeId);
+        label.textContent = sec ? `${sec.label} · ${sec.count}명` : this.pickLabel;
     }
-    return currentId;
+
+    syncHeight() {
+        if (!this.shown) return;
+        document.documentElement.style.setProperty('--tier-bar-h', `${this.el.offsetHeight}px`);
+    }
+
+    stickyOffset() {
+        const nav = document.querySelector('.top-navbar');
+        return (nav ? nav.offsetHeight : 64) + (this.shown ? this.el.offsetHeight : 0);
+    }
+
+    onClick(event) {
+        const btn = event.target.closest('.tier-bar-item');
+        if (!btn) return;
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
+        // 펼친 목록 높이가 스크롤 여백으로 들어가지 않도록 먼저 접는다.
+        const bar = this.el;
+        bar.classList.add('is-closed');
+        bar.querySelector('.tier-bar-pick')?.setAttribute('aria-expanded', 'false');
+        this.syncHeight();
+        centerBarItem(btn);
+        this.scrollIntoPlace(target);
+    }
+
+    // content-visibility로 건너뛴 카드가 스크롤 순간 그려지며 위치가 밀려서 두 프레임 더 보정한다.
+    scrollIntoPlace(target, tries = 2) {
+        const gap = target.getBoundingClientRect().top - this.stickyOffset() - 12;
+        if (Math.abs(gap) > 1) window.scrollBy({ top: gap, behavior: 'instant' });
+        this.jump = { id: target.id, y: window.scrollY };
+        this.highlight();
+        if (tries > 0 && Math.abs(gap) > 1) requestAnimationFrame(() => this.scrollIntoPlace(target, tries - 1));
+    }
+
+    // 판정선은 보이는 영역 위에서 35%다. 바 바로 아래로 잡으면 화면 대부분이 다음 섹션이어도 이전 섹션이 켜져 있다.
+    currentId() {
+        if (this.sections.length === 0) return null;
+        const offset = this.stickyOffset();
+        const viewport = window.innerHeight || document.documentElement.clientHeight;
+        // 바로가기 직후에는 누른 섹션을 강조한다. 짧은 섹션은 다음 섹션이 판정선 위로 올라온다.
+        if (this.jump && Math.abs(window.scrollY - this.jump.y) < 2) return this.jump.id;
+        this.jump = null;
+        const line = offset + (viewport - offset) * 0.35;
+
+        let currentId = this.sections[0].id;
+        for (const sec of this.sections) {
+            const el = document.getElementById(sec.id);
+            if (!el) continue;
+            if (el.getBoundingClientRect().top <= line) currentId = sec.id;
+            else break;
+        }
+        // 맨 아래에서는 짧은 마지막 섹션이 판정선까지 못 올라온다.
+        const docHeight = document.documentElement.scrollHeight;
+        if (window.scrollY + viewport >= docHeight - 2) currentId = this.sections[this.sections.length - 1].id;
+        return currentId;
+    }
+
+    highlight() {
+        if (!this.shown) return;
+        const currentId = this.currentId();
+        // 그대로면 건드리지 않는다. 매번 smooth 스크롤을 다시 부르면 바를 손으로 밀 때 서로 잡아당긴다.
+        if (!currentId || currentId === this.activeId) return;
+        this.activeId = currentId;
+
+        let activeBtn = null;
+        this.el.querySelectorAll('.tier-bar-item').forEach(btn => {
+            const on = btn.dataset.target === currentId;
+            btn.classList.toggle('active', on);
+            if (on) activeBtn = btn;
+        });
+        // scrollIntoView는 조상까지 움직여 페이지가 세로로 튀므로 바의 scrollLeft만 맞춘다.
+        if (activeBtn) centerBarItem(activeBtn);
+        this.syncPickLabel();
+    }
+
+    // 스크롤·크기 변화를 따라간다(프레임당 한 번)
+    watch() {
+        let scheduled = false;
+        window.addEventListener(
+            'scroll',
+            () => {
+                if (scheduled) return;
+                scheduled = true;
+                requestAnimationFrame(() => {
+                    scheduled = false;
+                    this.highlight();
+                });
+            },
+            { passive: true }
+        );
+        window.addEventListener('resize', () => this.syncHeight());
+    }
 }
 
-function highlightTierBar() {
-    const currentId = currentTierSectionId();
-    if (!currentId) return;
-
-    // 그대로면 건드리지 않는다. 매번 smooth 스크롤을 다시 부르면 바를 손으로 밀 때 서로 잡아당긴다.
-    if (currentId === TierState.activeId) return;
-    TierState.activeId = currentId;
-
-    let activeBtn = null;
-    document.querySelectorAll('#tier-bar .tier-bar-item').forEach(btn => {
-        const on = btn.dataset.target === currentId;
-        btn.classList.toggle('active', on);
-        if (on) activeBtn = btn;
-    });
-    if (activeBtn) scrollTierBarItemIntoView(activeBtn);
-    syncTierPickLabel();
-}
-
-// scrollIntoView는 조상까지 움직여 페이지가 세로로 튀므로 바의 scrollLeft만 맞춘다.
-function scrollTierBarItemIntoView(btn) {
-    centerBarItem(btn);
-}
+const tierBar = new SectionBar('tier-bar', '티어 바로가기');
 
 // TIER는 여기서만 붙인다(제목 쪽에서도 붙이면 '1 TIER TIER').
 const TIER_EN = {
@@ -586,13 +615,6 @@ function syncTierCardHeight() {
             }
         })
     );
-}
-
-function tierStickyOffset() {
-    const nav = document.querySelector('.top-navbar');
-    const bar = document.getElementById('tier-bar');
-    const barH = bar && tierBarCoversContent() ? bar.offsetHeight : 0;
-    return (nav ? nav.offsetHeight : 64) + barH;
 }
 
 // ---------------------------------------------------------------------------
@@ -635,8 +657,8 @@ function onTierScopeClick(event) {
 // 보기를 바꾸면 문서 높이가 크게 변해 스크롤이 다른 티어로 튄다. 보던 티어의 위치를 재두고 되돌린다.
 // 섹션 id는 순번이라 티어 이름으로 찾는다.
 function captureTierAnchor() {
-    const id = TierState.activeId || currentTierSectionId();
-    const sec = TierState.sections.find(s => s.id === id);
+    const id = tierBar.activeId || tierBar.currentId();
+    const sec = tierBar.sections.find(s => s.id === id);
     const el = sec && document.getElementById(sec.id);
     if (!el) return null;
     return { tier: sec.tier, top: el.getBoundingClientRect().top };
@@ -644,15 +666,15 @@ function captureTierAnchor() {
 
 function restoreTierAnchor(anchor) {
     if (!anchor) return;
-    const offset = tierStickyOffset() + 16; // .tier-row의 scroll-margin-top과 맞춘다
+    const offset = tierBar.stickyOffset() + 16; // .tier-row의 scroll-margin-top과 맞춘다
+    const sections = tierBar.sections;
 
-    let sec = TierState.sections.find(s => s.tier === anchor.tier);
+    let sec = sections.find(s => s.tier === anchor.tier);
     let keepOffset = true;
     if (!sec) {
         // 보던 티어가 사라졌으면 순서상 다음 티어(없으면 마지막 티어)의 처음으로 간다.
         const idx = tierIndex(anchor.tier);
-        sec =
-            TierState.sections.find(s => tierIndex(s.tier) >= idx) || TierState.sections[TierState.sections.length - 1];
+        sec = sections.find(s => tierIndex(s.tier) >= idx) || sections[sections.length - 1];
         keepOffset = false;
     }
     const el = sec && document.getElementById(sec.id);
@@ -760,6 +782,7 @@ function applyLiveToCards(setChanged) {
 // 이 탭을 처음 열 때 한 번만 한다. 다른 탭 주소로 들어오면 쓰지 않는 명단을 받지 않는다.
 function enterTierList() {
     if (TierState.listInit) {
+        tierBar.syncHeight(); // 현황판 바가 남긴 높이를 되돌린다
         refreshTierLive(); // 다른 탭에 있던 사이에는 방송 상태를 갱신하지 않는다
         return TierState.listInit;
     }
@@ -802,30 +825,13 @@ async function initTierList() {
     }
 
     document.getElementById('tier-scope').addEventListener('click', onTierScopeClick);
-    document.getElementById('tier-bar').addEventListener('click', onTierBarClick);
     initTierPeek();
 
-    // 프레임당 한 번만 계산한다.
-    let highlightScheduled = false;
-    window.addEventListener(
-        'scroll',
-        () => {
-            if (highlightScheduled) return;
-            highlightScheduled = true;
-            requestAnimationFrame(() => {
-                highlightScheduled = false;
-                highlightTierBar();
-            });
-        },
-        { passive: true }
-    );
-
-    window.addEventListener('resize', syncTierBarHeight);
+    tierBar.watch();
     window.addEventListener('resize', syncTierCardHeight);
 
     renderTierScope();
     renderTierGroups();
-    highlightTierBar();
 
     // 다른 탭을 보고 있을 때는 멈추고, 돌아오면 바로 한 번 받는다.
     let tierLiveTimer = null;
@@ -858,8 +864,7 @@ async function initTierList() {
 // 티어표는 우리 팀 멤버·경기 기록을 쓰지 않는다(siteData: false).
 bootPage(
     async () => {
-        // 명단 로딩이 실패하면 renderTierBar가 안 돌아 바가 펼쳐진 채로 남으므로 먼저 만든다.
-        ensureTierPick();
+        tierBar.ensurePick();
 
         safeInit('URL 상태 복원', () =>
             PageState.bindRestore(params => {

@@ -44,7 +44,7 @@
     {% else %}
     <div class="container">
 
-    {#- 소분류: 티어표 / 상대전적 / 분석 / 엔트리. -#}
+    {#- 소분류: 티어표 / 현황판 / 상대전적 / 분석 / 엔트리. -#}
     <div id="view-tier-list">
         {#- '전체 N명'·'방송중 N명'은 같은 축의 두 선택지라 세그먼트 컨트롤 하나로 묶는다.
             PC는 가로 한 줄(고른 칩은 core.js centerBarItem이 가운데로), 920px 아래는 펼치는 한 줄. -#}
@@ -55,11 +55,26 @@
                 <div class="tier-bar-tools">
                     <div class="bar-scope tier-scope" id="tier-scope" role="group" aria-label="보기 전환"></div>
                 </div>
-                <div class="tier-bar-list scroll-area" id="tier-bar-list"></div>
+                <div class="tier-bar-list scroll-area"></div>
             </nav>
 
             <div class="selection-content">
                 <div id="tier-root">
+                    <div class="content-state is-boxed">불러오는 중</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#- 현황판: 대학마다 머리와 선수 카드(page-board.js). 바로가기 바는 티어표와 같은 틀이다. #}
+    <div id="view-tier-board" class="d-none">
+        <div class="selection-layout">
+            <nav class="tier-bar" id="board-bar" aria-label="대학 바로가기">
+                <div class="tier-bar-heading"></div>
+                <div class="tier-bar-list scroll-area"></div>
+            </nav>
+            <div class="selection-content">
+                <div id="board-root">
                     <div class="content-state is-boxed">불러오는 중</div>
                 </div>
             </div>
@@ -179,10 +194,14 @@
     {% endif %}
 </section>
 {% endblock %}
+{% block modals %}
+{% if not admin_mode %}{% include 'partials/profile_modal.html' %}{% endif %}
+{% endblock %}
 {% block scripts %}
 <script src="{{ asset_url('core.js') }}"></script>
 <script src="{{ asset_url('api.js') }}"></script>
 {% if not admin_mode %}<script src="{{ asset_url('page-tier.js') }}"
+        data-board="{{ asset_url('page-board.js') }}"
         data-h2h="{{ asset_url('page-h2h.js') }}"
         data-analysis="{{ asset_url('page-analysis.js') }}"
         data-entry="{{ asset_url('page-entry.js') }}"></script>{% endif %}

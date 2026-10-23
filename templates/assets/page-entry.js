@@ -61,7 +61,9 @@ async function entryLoadIndexFromSupabase() {
     // 랭킹·메타는 기다리지 않는다(보조 쿼리 하나가 느리면 탭 전체가 묶인다). 소속 순서는 작아서 같이 받는다.
     const [playersData, teamOrder] = await Promise.all([
         Api.eloPlayers(entryPaging('선수 목록')),
-        Api.teamOrder().catch(() => []),
+        Api.teamOrder()
+            .then(rows => rows.map(t => t.name))
+            .catch(() => []),
     ]);
 
     const players = {};

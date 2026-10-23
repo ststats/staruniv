@@ -157,7 +157,7 @@ test('명단 밖 상대도 데이터에 보존하지만 선택 검색에는 올�
             { elo_id: 1, nickname: '선수', race: 'T', tier: '1', affiliation: '팀' },
             { elo_id: 9, nickname: null, elo_name: '외부상대', race: 'Z' },
         ],
-        teamOrder: async () => ['팀'],
+        teamOrder: async () => [{ name: '팀' }],
     };
     const index = await run(ctx, 'entryLoadIndexFromSupabase()');
     assert.equal(index.players['9'].r, 'Z');

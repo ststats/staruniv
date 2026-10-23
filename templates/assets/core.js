@@ -1184,6 +1184,96 @@ function formatSponsorRecord(wins, losses) {
     return `${wins}승 ${losses}패 (${rate}%)`;
 }
 
+// =====================================================================
+// 6. 선수 프로필 창 (partials/profile_modal.html) - 멤버 페이지와 티어표 현황판
+// =====================================================================
+// p: { name, soopId, role, tier, race, classGroup, facts: [[이름, 값]], joinTier, period, days, eloId, recordsUrl, youtube }
+// 입단 티어·활동기간(period가 없으면)과 소속 전적(recordsUrl이 없으면)은 숨긴다.
+// activity(): 이번 달 방송통계 한 줄(없으면 null). 값이나 Promise를 돌려준다.
+let _profileSeq = 0;
+function openProfileModal(p, activity) {
+    const seq = ++_profileSeq;
+    document.getElementById('mp-name').innerText = p.name;
+    const roleBadge = document.getElementById('mp-role-badge');
+    applyBadge(roleBadge, p.role || '미정', 'tag-badge role-badge');
+    roleBadge.style.background = roleColor(p.role); // 직책마다 달라지는 동적 색이라 인라인
+    applyBadge(document.getElementById('mp-race-badge'), raceShortLabel(p.race), 'tag-badge' + raceBadgeClass(p.race));
+    applyBadge(document.getElementById('mp-tier-badge'), tierLabel(p.tier), 'tag-badge tier-badge');
+    const classBadge = document.getElementById('mp-class-badge');
+    applyBadge(classBadge, p.classGroup, 'tag-badge' + classBadgeClass(p.classGroup));
+    classBadge.hidden = !p.classGroup;
+    document.getElementById('mp-avatar').innerHTML = profileAvatarInnerHtml(p.soopId);
+
+    document.getElementById('mp-info-body').innerHTML = (p.facts || [])
+        .map(([label, value]) => `<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(value || '-')}</dd></div>`)
+        .join('');
+    document.getElementById('mp-period-block').hidden = !p.period;
+    document.getElementById('mp-period').textContent = p.period || '-';
+    document.getElementById('mp-join-tier').textContent = p.joinTier ? tierLabel(p.joinTier) : '-';
+    const daysEl = document.getElementById('mp-days');
+    daysEl.hidden = !Number.isFinite(p.days);
+    daysEl.textContent = daysEl.hidden ? '' : formatNum(p.days) + '일';
+
+    // href 없는 a에는 target·rel을 둘 수 없다
+    const setLink = (id, url, external) => {
+        const a = document.getElementById(id);
+        a.hidden = !url;
+        ['href', 'target', 'rel'].forEach(k => a.removeAttribute(k));
+        if (url) Object.assign(a, external ? { href: url, target: '_blank', rel: 'noopener' } : { href: url });
+        return a;
+    };
+    // 이 입단 때 쓴 ELO ID로만 간다. 같은 사람의 다른 계정이 섞이지 않게 티어표 메인 계정으로 대신 가지 않는다.
+    const eloId = String(p.eloId ?? '').trim();
+    const analysis = setLink(
+        'mp-analysis-link',
+        /^\d+$/.test(eloId) ? 'tier/?view=analysis&p=' + encodeURIComponent(eloId) : ''
+    );
+    const records = setLink('mp-records-link', p.recordsUrl || '');
+    document.getElementById('mp-site-links').hidden = analysis.hidden && records.hidden;
+    const soopId = String(p.soopId || '').trim();
+    const station = setLink(
+        'mp-station-link',
+        isValidSoopId(soopId) ? 'https://www.sooplive.com/station/' + encodeURIComponent(soopId) : '',
+        true
+    );
+    const youtube = setLink('mp-youtube-link', memberYoutubeUrl(p.youtube), true);
+    document.getElementById('mp-external-links').hidden = station.hidden && youtube.hidden;
+
+    // 받는 중에 안내 줄을 띄우면 줄이 사라질 때 창 높이가 튄다. 늦게 온 이전 선수의 값은 버린다.
+    const status = document.getElementById('mp-activity-status');
+    const show = entry => {
+        if (seq !== _profileSeq) return;
+        status.innerText = '';
+        // 기록이 없으면 '-'로 충분하다(안내 줄은 창 높이만 늘린다).
+        const values = entry
+            ? [
+                  formatCount(entry.balloons, '개'),
+                  formatSecondsToHM(entry.broadcast_seconds),
+                  formatCount(entry.cumulative_viewers, '명'),
+                  formatSponsorRecord(entry.sponsor_wins, entry.sponsor_losses),
+              ]
+            : ['-', '-', '-', '-'];
+        ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-sponsor-record'].forEach((id, i) => {
+            document.getElementById(id).innerText = values[i];
+        });
+    };
+    let result;
+    try {
+        result = activity ? activity() : null;
+    } catch (e) {
+        result = Promise.reject(e);
+    }
+    if (result && typeof result.then === 'function') {
+        show(null);
+        result.then(show, err => {
+            console.error(err);
+            show(null);
+            if (seq === _profileSeq) status.innerText = '불러오지 못했습니다';
+        });
+    } else show(result);
+    showModal('memberProfileModal');
+}
+
 function formatKstDateTime(value, includeTime) {
     if (!value) return '';
     const parsed = new Date(value);
@@ -1367,7 +1457,7 @@ function applySynergyResult(month, result) {
 }
 
 // =====================================================================
-// 6. 페이지 상태(URL 쿼리) / 페이지 시작
+// 7. 페이지 상태(URL 쿼리) / 페이지 시작
 // =====================================================================
 
 // 페이지 안 상태를 쿼리에 반영한다. 뒤로·앞으로 복원 중에는 앞으로가기 기록이 지워지지 않게 replaceState를 쓴다.

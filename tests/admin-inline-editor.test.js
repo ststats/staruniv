@@ -304,7 +304,9 @@ test('멤버 줄은 티어표 선수와 이어지고, 인적 사항은 티어표
     assert.match(sql, /where lower\(btrim\(soop_id\)\) = lower\(btrim\(new\.soop_id\)\) order by id limit 1/);
     assert.match(admin, code('rows.find(r=>r.nickname===name)||rows.find(r=>r.name===name)'));
     const page = read('templates/assets/page-members.js');
-    assert.match(page, /getElementById\('mp-join-tier'\)\.textContent = joinTier \? tierLabel\(joinTier\) : '-'/);
+    assert.match(page, /joinTier: String\(m\['입단 티어'\] \?\? ''\)\.trim\(\)/);
+    const core = read('templates/assets/core.js');
+    assert.match(core, /getElementById\('mp-join-tier'\)\.textContent = p\.joinTier \? tierLabel\(p\.joinTier\) : '-'/);
 });
 
 test('연결된 ELO 계정의 이름·종족은 선수 편집 창에서 고칠 수 있다', () => {

@@ -568,7 +568,7 @@ $$;
 create or replace function public.api_tier_members() returns json
 language sql stable security definer set search_path = public as $$
   select coalesce(json_agg(json_build_object('nickname', nickname, 'soop_id', soop_id, 'race', race, 'tier', tier,
-      'affiliation', affiliation, 'modified_at', modified_at) order by source_order, soop_id), '[]'::json)
+      'affiliation', affiliation, 'modified_at', modified_at, 'role', role, 'elo_id', elo_id) order by source_order, soop_id), '[]'::json)
   from public.tier_members where coalesce(affiliation, '') <> '휴면';
 $$;
 
@@ -687,9 +687,12 @@ language sql stable security definer set search_path = public as $$
   from public.members m;
 $$;
 
+-- 대학 창단일 순. 우승은 대회 이름을 줄마다 적은 칸이라 빈 줄을 뺀 줄 수가 우승 횟수다(현황판).
 create or replace function public.api_team_order() returns json
 language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(team_name order by founded_date nulls last, source_order), '[]'::json) from public.teams;
+  select coalesce(json_agg(json_build_object('name', team_name, 'founded', founded_date,
+      'wins', (select count(*) from regexp_split_to_table(coalesce(championship, ''), E'\n') line where btrim(line) <> ''))
+    order by founded_date nulls last, source_order), '[]'::json) from public.teams;
 $$;
 
 create or replace function public.api_holidays() returns json
@@ -1665,4 +1668,4 @@ language sql set search_path = public as $$
 $$;
 revoke all on function public.stamp_schema(text, text) from public, anon, authenticated;
 
-select public.stamp_schema('staruniv', 'a1cb9a979875');
+select public.stamp_schema('staruniv', '0c92127c0d92');

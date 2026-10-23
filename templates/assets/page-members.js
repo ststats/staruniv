@@ -184,123 +184,45 @@ function toggleFormerMembersSection() {
     if (label) label.textContent = nowOpen ? '접기' : '보기';
 }
 
-let _profileMember = null; // 방송 활동 데이터가 늦게 오면 다시 채우기용
-
 function openMemberProfile(id) {
     const m = findMemberById(id);
     if (!m) return;
     const name = m['이름'];
-    _profileMember = m;
-    loadProfileActivityData(); // 한 번만 받는다
-
-    document.getElementById('mp-name').innerText = name;
-    const mpRoleBadge = document.getElementById('mp-role-badge');
-    applyBadge(mpRoleBadge, m['직책'] || '미정', 'tag-badge role-badge');
-    mpRoleBadge.style.background = roleColor(m['직책']); // 직책마다 달라지는 동적 색이라 인라인
-    applyBadge(
-        document.getElementById('mp-race-badge'),
-        raceShortLabel(m['종족']),
-        'tag-badge' + raceBadgeClass(m['종족'])
-    );
-    applyBadge(document.getElementById('mp-tier-badge'), tierLabel(m['티어']), 'tag-badge tier-badge');
-    const mpClassBadge = document.getElementById('mp-class-badge');
-    applyBadge(mpClassBadge, m['반'], 'tag-badge' + classBadgeClass(m['반']));
-    mpClassBadge.hidden = !m['반'];
-    document.getElementById('mp-avatar').innerHTML = profileAvatarInnerHtml(m['SOOP ID']);
-
     const active = isActiveMember(m);
-    const days = m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : m['퇴단일'] || null) : null;
-    document.getElementById('mp-period').textContent = m['입단일']
-        ? m['입단일'] + ' ~ ' + (active ? '현재' : m['퇴단일'] || '-')
-        : '-';
-    const daysEl = document.getElementById('mp-days');
-    daysEl.hidden = days === null || !Number.isFinite(days);
-    daysEl.textContent = daysEl.hidden ? '' : formatNum(days) + '일';
-    // 티어 뱃지는 현재 티어, 입단 티어는 이 입단 때 티어다.
-    const joinTier = String(m['입단 티어'] ?? '').trim();
-    document.getElementById('mp-join-tier').textContent = joinTier ? tierLabel(joinTier) : '-';
-    const rows = [
-        ['성별', m['성별']],
-        ['생년월일', m['생년월일']],
-        ['MBTI', m['MBTI']],
-    ];
-    document.getElementById('mp-info-body').innerHTML = rows
-        .map(
-            ([label, value]) => '<div><dt>' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value || '-') + '</dd></div>'
-        )
-        .join('');
-    // href 없는 a에는 target·rel을 둘 수 없다
-    const setLink = (a, url) => {
-        a.hidden = !url;
-        ['href', 'target', 'rel'].forEach(k => a.removeAttribute(k));
-        if (url) Object.assign(a, { href: url, target: '_blank', rel: 'noopener' });
-        return a;
-    };
-    const station = setLink(
-        document.getElementById('mp-station-link'),
-        isValidSoopId(m['SOOP ID'])
-            ? 'https://www.sooplive.com/station/' + encodeURIComponent(String(m['SOOP ID']).trim())
-            : ''
-    );
-    const youtube = setLink(document.getElementById('mp-youtube-link'), memberYoutubeUrl(m['YouTube']));
-    document.getElementById('mp-external-links').hidden = station.hidden && youtube.hidden;
-    document.getElementById('mp-records-link').href = 'records/?view=solo&member=' + encodeURIComponent(name);
-    updateMemberAnalysisLink(m);
-
-    renderMemberActivitySummary(m);
-    showModal('memberProfileModal');
-}
-
-// 이 입단 때 쓴 ELO ID로만 간다. 같은 사람의 다른 계정이 섞이지 않게 티어표 메인 계정으로 대신 가지 않는다.
-function updateMemberAnalysisLink(member) {
-    const link = document.getElementById('mp-analysis-link');
-    const eloId = String(member['ELO ID'] ?? '').trim();
-    link.hidden = !/^\d+$/.test(eloId);
-    link.removeAttribute('href');
-    if (!link.hidden) link.href = 'tier/?view=analysis&p=' + encodeURIComponent(eloId);
-}
-
-// "이번 달 방송 활동"은 시너지표(ststats) 데이터로 채운다.
-function renderMemberActivitySummary(m) {
-    const statusEl = document.getElementById('mp-activity-status');
-    const valueEls = ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-sponsor-record'].map(id =>
-        document.getElementById(id)
-    );
-    const setValues = values =>
-        valueEls.forEach((el, i) => {
-            el.innerText = values[i];
-        });
-
-    // 받는 중에 안내 줄을 띄우면 줄이 사라질 때 창 높이가 튄다.
-    if (!SynergyState.data) {
-        statusEl.innerText = SynergyState.failed ? '불러오지 못했습니다' : '';
-        setValues(['-', '-', '-', '-']);
-        return;
-    }
-
     const soopId = String(m['SOOP ID'] || '')
         .trim()
         .toLowerCase();
-    const entry = SynergyState.data.find(
-        s =>
-            String(s.id || '')
-                .trim()
-                .toLowerCase() === soopId
+    // 이번 달 방송 활동은 시너지표(ststats) 데이터로 채운다. 이미 받았으면 바로 쓴다.
+    const entry = () =>
+        SynergyState.data.find(
+            s =>
+                String(s.id || '')
+                    .trim()
+                    .toLowerCase() === soopId
+        ) || null;
+    openProfileModal(
+        {
+            name,
+            soopId: m['SOOP ID'],
+            role: m['직책'],
+            tier: m['티어'],
+            race: m['종족'],
+            classGroup: m['반'],
+            facts: [
+                ['성별', m['성별']],
+                ['생년월일', m['생년월일']],
+                ['MBTI', m['MBTI']],
+            ],
+            // 티어 뱃지는 현재 티어, 입단 티어는 이 입단 때 티어다.
+            joinTier: String(m['입단 티어'] ?? '').trim(),
+            period: m['입단일'] ? m['입단일'] + ' ~ ' + (active ? '현재' : m['퇴단일'] || '-') : '-',
+            days: m['입단일'] ? daysBetween(m['입단일'], active ? todayStr() : m['퇴단일'] || null) : null,
+            eloId: m['ELO ID'],
+            recordsUrl: 'records/?view=solo&member=' + encodeURIComponent(name),
+            youtube: m['YouTube'],
+        },
+        () => (SynergyState.data ? entry() : fetchSynergyData().then(entry))
     );
-    // 기록이 없으면 '-'로 충분하다(안내 줄은 창 높이만 늘린다).
-    if (!entry) {
-        statusEl.innerText = '';
-        setValues(['-', '-', '-', '-']);
-        return;
-    }
-
-    statusEl.innerText = '';
-    setValues([
-        formatCount(entry.balloons, '개'),
-        formatSecondsToHM(entry.broadcast_seconds),
-        formatCount(entry.cumulative_viewers, '명'),
-        formatSponsorRecord(entry.sponsor_wins, entry.sponsor_losses),
-    ]);
 }
 
 // "전체 공지"/"멤버별 공지"가 같은 상태를 쓴다.
@@ -914,18 +836,6 @@ function renderPastNoticeHtml(item) {
         action: act('setNewsFeatured', key),
         extraClass: 'news-past-item',
         dataAttr: `data-news-key="${escapeHTML(key)}"`,
-    });
-}
-
-// 팝업이 이미 열려 있으면 도착하는 대로 다시 채운다.
-function loadProfileActivityData() {
-    const refresh = () => {
-        const modal = document.getElementById('memberProfileModal');
-        if (_profileMember && modal && modal.classList.contains('is-open')) renderMemberActivitySummary(_profileMember);
-    };
-    return fetchSynergyData().then(refresh, err => {
-        console.error(err);
-        refresh();
     });
 }
 

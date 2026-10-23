@@ -142,6 +142,91 @@
         color: var(--color-text-muted);
     }
 
+    /* ----- 현황판: 대학 머리(네이비 판) + 선수 카드. 카드·바로가기 바는 티어표와 같다 ----- */
+    .board-team {
+        display: grid;
+        gap: var(--space-compact-gap);
+    }
+    .board-team-head {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-7);
+    }
+    .board-team-id {
+        display: flex;
+        align-items: center;
+        gap: var(--space-5);
+        min-width: 0;
+    }
+    .board-team-title {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        min-width: 0;
+    }
+    .board-team-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: var(--space-1);
+        margin: 0;
+    }
+    .board-team-stats > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        background: var(--panel-control);
+        font-size: var(--fs-small);
+    }
+    .board-team-stats dt {
+        color: var(--panel-muted);
+        font-weight: 600;
+    }
+    .board-team-stats dd {
+        margin: 0;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    /* 현황판 카드는 프로필 창을 여는 버튼이다(티어표 카드는 링크) */
+    button.tier-card {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border-top: 0;
+        border-right: 0;
+        border-bottom: 0;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+    }
+    /* PC: 왼쪽 머리 판 + 오른쪽 카드. 머리 판은 대학 카드를 내리는 동안 바 아래에 붙어 있다 */
+    @media (min-width: 992px) {
+        .board-team {
+            grid-template-columns: 240px minmax(0, 1fr);
+            align-items: start;
+        }
+        .board-team-head {
+            position: sticky;
+            top: calc(var(--nav-h) + var(--tier-bar-h) + var(--space-5));
+        }
+        .board-team-stats {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+    /* 좁은 화면: 머리 판이 카드 위 가로 띠가 된다 */
+    @media (max-width: 991.98px) {
+        .board-team-head {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .board-team-stats {
+            flex: 1 1 360px;
+        }
+    }
+
     /* ----- 상대전적 (티어표 서브탭) ----- */
     .h2h-topbar {
         display: flex;
@@ -542,6 +627,14 @@
         .tier-card-team-logo {
             width: 14px;
             height: 14px;
+        }
+        .board-team-head {
+            gap: var(--space-5);
+            padding: var(--space-7);
+        }
+        .board-team-stats {
+            flex-basis: 100%;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .h2h-pick {

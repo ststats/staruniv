@@ -244,7 +244,7 @@ const Api = {
         return apiCall('api_tier_members');
     },
 
-    // GET /api/v1/teams/order - 대학 이름, 창단일 순(엔트리 소속 고르기)
+    // GET /api/v1/teams/order - 대학 창단일 순 [{name, founded, wins}](엔트리 소속 순서, 현황판)
     async teamOrder() {
         return apiCall('api_team_order');
     },

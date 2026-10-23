@@ -655,6 +655,25 @@
         }
     }
 
+    /* ----- 네이비 머리 판(방송통계 요약 카드, 현황판 대학 머리). 바탕은 14-surfaces.css ----- */
+    .head-plate {
+        padding: var(--space-8);
+    }
+    .head-plate-label {
+        font-size: var(--fs-eyebrow);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--label-accent);
+    }
+    /* 작은 판은 --head-plate-fs로 줄인다 */
+    .head-plate-value {
+        font-size: var(--head-plate-fs, 30px);
+        font-weight: 700;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+    }
+
     /* ----- 상대 카드 · 승패 글자 · 빈 안내 ----- */
     .h2h-win {
         color: var(--color-win);
