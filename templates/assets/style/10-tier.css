@@ -142,10 +142,11 @@
         color: var(--color-text-muted);
     }
 
-    /* ----- 현황판: 대학 머리(네이비 판) + 선수 카드. 카드·바로가기 바는 티어표와 같다 ----- */
+    /* ----- 현황판: 흰 판 하나에 대학 머리(네이비) + 선수 카드. 바로가기 바는 티어표와 같다 ----- */
     .board-team {
         display: grid;
-        gap: var(--space-compact-gap);
+        background: var(--color-card);
+        clip-path: var(--notch-12);
     }
     .board-team-head {
         display: flex;
@@ -188,17 +189,55 @@
         font-weight: 800;
         white-space: nowrap;
     }
-    /* 현황판 카드는 프로필 창을 여는 버튼이다(티어표 카드는 링크) */
-    button.tier-card {
-        display: block;
-        width: 100%;
-        padding: 0;
-        border-top: 0;
-        border-right: 0;
-        border-bottom: 0;
+    .board-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        align-content: start;
+        gap: var(--space-3);
+        padding: var(--space-8);
+    }
+    /* 선수 카드는 프로필 창을 여는 버튼이다(왼쪽 선은 종족 색 .edge-*) */
+    .board-card {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        min-width: 0;
+        padding: var(--space-4);
+        border: 0;
+        background: var(--color-bg-subtle);
         color: inherit;
         font: inherit;
+        text-align: left;
         cursor: pointer;
+        transition: background 0.15s;
+    }
+    .board-card:hover {
+        background: var(--color-row-hover);
+    }
+    .board-card-av {
+        flex: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .board-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        min-width: 0;
+    }
+    .board-card-badges {
+        display: flex;
+        gap: 2px;
+    }
+    .board-card-name {
+        overflow: hidden;
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     /* PC: 왼쪽 머리 판 + 오른쪽 카드. 머리 판은 대학 카드를 내리는 동안 바 아래에 붙어 있다 */
     @media (min-width: 992px) {
@@ -635,6 +674,19 @@
         .board-team-stats {
             flex-basis: 100%;
             grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .board-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--space-2);
+            padding: var(--space-4);
+        }
+        .board-card {
+            gap: var(--space-3);
+            padding: var(--space-3);
+        }
+        .board-card-av {
+            width: 32px;
+            height: 32px;
         }
 
         .h2h-pick {

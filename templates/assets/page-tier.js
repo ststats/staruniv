@@ -124,6 +124,12 @@ async function fetchTierMembers() {
                 race: String(r.race || '').trim(),
                 role: String(r.role || '').trim(),
                 eloId: r.elo_id == null ? '' : String(r.elo_id),
+                // 현황판 프로필 창 칸(멤버 페이지와 같다). MBTI·유튜브는 캄몬 멤버만 있다
+                gender: r.gender || '',
+                birthDate: r.birth_date || '',
+                mbti: r.mbti || '',
+                youtube: r.youtube_url || '',
+                memberName: r.member_name || '',
             }))
             .filter(m => isValidSoopId(m.id) && m.nickname && !TIER_HIDDEN_TEAMS.has(m.team));
         return members.length ? members : null;
@@ -191,31 +197,25 @@ function tierCardMediaHtml(member, live) {
     return avatarHtml(soopId, 'tier-card-avatar');
 }
 
-// 티어표 카드는 SOOP 방송국·방송으로 가는 링크다. 현황판은 opts.open(누르면 할 일)으로 프로필을 열고,
-// 소속 줄 자리에 opts.note(직책)를 쓴다.
-function tierCardHtml(member, live, opts = null) {
+function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
     const raceLetter = raceShortLabel(member.race || '');
     const raceEdge = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
-    const tag = opts ? 'button' : 'a';
-    const target = opts
-        ? ` type="button"${opts.open}`
-        : ` href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener"`;
-    const sub = opts
-        ? `<span class="tier-card-team-name">${escapeHTML(opts.note)}</span>`
-        : `${tierTeamLogoHtml(team)}<span class="tier-card-team-name">${escapeHTML(team)}</span>`;
     return `
-    <${tag} class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"${target}>
+    <a class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
+       href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
         <div class="tier-card-media">${tierCardMediaHtml(member, live)}</div>
         <div class="tier-card-body">
             <div class="tier-card-nameline">
                 <span class="tier-card-name">${escapeHTML(member.nickname || soopId)}</span>
                 ${member.race ? raceBadgeHtml(member.race) : ''}
             </div>
-            <div class="tier-card-team">${sub}</div>
+            <div class="tier-card-team">
+                ${tierTeamLogoHtml(team)}<span class="tier-card-team-name">${escapeHTML(team)}</span>
+            </div>
         </div>
-    </${tag}>`;
+    </a>`;
 }
 
 // ---------------------------------------------------------------------------

@@ -115,7 +115,7 @@ function respond(url) {
       return { total: rows.length, videos: rows.filter(r => !q.get('p_before') || r.published < q.get('p_before')).slice(0, 20) };
     },
     api_recent_posts: () => POSTS().map((p) => ({ soop_id: p.soop_id, titleName: p.post.titleName, regDate: p.post.regDate, text: p.post.content.textContent, thumb: (p.post.photos[0] || {}).url || null })),
-    api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at,role,elo_id'),
+    api_tier_members: () => T('tier_members', 'nickname,soop_id,race,tier,affiliation,modified_at,role,elo_id,gender,birth_date,mbti,youtube_url,member_name'),
     api_videos: q => {
       const data = {
       channels: [0, 1, 2].map((k) => ({ channel_url: 'https://www.youtube.com/@fan' + k, title: '팬채널 채널 ' + k, display_name: ['캄몬 팬채널', '스타대학 하이라이트', '아주 긴 이름의 팬 채널입니다'][k], thumb: k === 2 ? '' : 'https://yt3.ggpht.com/fan' + k + '.jpg' })),

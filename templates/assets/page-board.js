@@ -1,6 +1,6 @@
 /**
  * 티어표 > 현황판 - 대학마다 머리(로고·창단일·총원·우승·직책 인원)와 선수 카드를 창단일 순(api_team_order)으로 보여준다.
- * 명단·카드·바로가기 바는 티어표(page-tier.js)와 같고, 카드를 누르면 멤버 페이지와 같은 프로필 창(core.js openProfileModal)을 연다.
+ * 명단·바로가기 바는 티어표(page-tier.js)와 같고, 선수 카드를 누르면 멤버 페이지와 같은 프로필 창(core.js openProfileModal)을 연다.
  */
 
 const BoardState = {
@@ -84,7 +84,7 @@ function boardTeamHtml(team, id, list) {
     ];
     return `
     <section class="tier-row board-team" id="${id}" aria-labelledby="${id}-name">
-        <div class="clean-card head-plate board-team-head">
+        <div class="head-plate board-team-head">
             <div class="board-team-id">
                 ${teamLogoHtml(team.name, 48)}
                 <div class="board-team-title">
@@ -96,13 +96,24 @@ function boardTeamHtml(team, id, list) {
                 ${stats.map(([k, v]) => `<div><dt>${escapeHTML(k)}</dt><dd>${escapeHTML(v)}</dd></div>`).join('')}
             </dl>
         </div>
-        <div class="tier-grid">
-            ${list.map(m => tierCardHtml(m, null, { open: act('boardOpenProfile', tierIdKey(m)), note: m.role || '선수' })).join('')}
-        </div>
+        <div class="board-grid">${list.map(boardCardHtml).join('')}</div>
     </section>`;
 }
 
-// 티어표 명단에는 성별·생일이 없다(staruniv.sql 2번 운영 결정). 기본 정보는 소속과 SOOP ID로 채운다.
+// 선수 카드: 사진 옆에 티어·종족 뱃지와 이름. 누르면 프로필 창
+function boardCardHtml(m) {
+    const race = raceShortLabel(m.race || '');
+    return `
+            <button type="button" class="board-card${['T', 'Z', 'P'].includes(race) ? ` edge-${race}` : ''}"${act('boardOpenProfile', tierIdKey(m))}>
+                ${avatarHtml(m.id, 'board-card-av')}
+                <span class="board-card-body">
+                    <span class="board-card-badges">${tierBadgeHtml(m.tier)}${m.race ? raceBadgeHtml(m.race) : ''}</span>
+                    <span class="board-card-name">${escapeHTML(m.nickname)}</span>
+                </span>
+            </button>`;
+}
+
+// 멤버 페이지와 같은 프로필 창. 입단 티어·활동기간은 캄몬 입단 기록이라 없고, 소속 전적은 캄몬 멤버만 있다.
 function boardOpenProfile(key) {
     const m = BoardState.byKey[key];
     if (!m) return;
@@ -114,11 +125,13 @@ function boardOpenProfile(key) {
             tier: m.tier,
             race: m.race,
             facts: [
-                ['소속', m.team],
-                ['직책', m.role || '선수'],
-                ['SOOP ID', m.id],
+                ['성별', m.gender],
+                ['생년월일', m.birthDate],
+                ['MBTI', m.mbti],
             ],
             eloId: m.eloId,
+            recordsUrl: m.memberName ? 'records/?view=solo&member=' + encodeURIComponent(m.memberName) : '',
+            youtube: m.youtube,
         },
         () =>
             Api.statsLatest([m.id]).then(rows => rows.find(r => String(r.soop_id || '').toLowerCase() === key) || null)

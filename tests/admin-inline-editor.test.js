@@ -195,7 +195,7 @@ test('공개 페이지는 표를 읽지 않고 공개 읽기 함수(api_*)만 �
     for (const fn of own)
         assert.match(grant.slice(0, grant.indexOf(';')), new RegExp(`public\\.${fn}\\(`), `${fn}: anon 실행 권한`);
     assert.match(sql, /from public\.history_entries where not hidden or entry_kind = 'override';/);
-    assert.match(sql, /from public\.tier_members where coalesce\(affiliation, ''\) <> '휴면';/);
+    assert.match(sql, /from public\.tier_members t\n[^;]*where coalesce\(t\.affiliation, ''\) <> '휴면';/);
     assert.match(sql, /if p_admin and not coalesce\(public\.is_admin\(\),false\)/);
     assert.match(sql, /from public\.video_channels where p_admin or active/);
     assert.match(sql, /where \(p_admin or not v\.hidden\)/);

@@ -509,7 +509,7 @@ grant usage,select on sequence public.external_tools_id_seq to authenticated;
 
 -- anon은 표를 하나도 읽지 않고 공개 읽기 함수(api_*)만 부른다. 무엇을 내보낼지는 각 함수의 거르기 조건이 정한다.
 -- 새 데이터가 필요하면 표 권한이 아니라 함수를 더한다(방송·통계·공지·ELO 함수는 ststat.sql 14번).
---   · 생일·성별은 공개 정보다(운영 결정 2026-09-26). 티어표 명단(api_tier_members)에는 넣지 않는다.
+--   · 생일·성별은 공개 정보다(운영 결정 2026-09-26). 티어표 명단(api_tier_members)도 현황판 프로필 창에 같이 낸다(2026-10-23).
 --   · 휴면 선수는 사이트에 안 나오므로 SOOP ID 등도 공개하지 않는다(운영 결정 2026-09-27).
 
 revoke all on public.members, public.teams, public.matches, public.rounds, public.tier_members,
@@ -565,11 +565,17 @@ language sql stable security definer set search_path = public as $$
   from public.history_entries where not hidden or entry_kind = 'override';
 $$;
 
+-- 현황판 프로필 창은 멤버 페이지와 같은 칸을 쓴다: 성별·생년월일은 티어표 값, MBTI·유튜브는 이어진 멤버 줄(최근 입단) 값.
 create or replace function public.api_tier_members() returns json
 language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object('nickname', nickname, 'soop_id', soop_id, 'race', race, 'tier', tier,
-      'affiliation', affiliation, 'modified_at', modified_at, 'role', role, 'elo_id', elo_id) order by source_order, soop_id), '[]'::json)
-  from public.tier_members where coalesce(affiliation, '') <> '휴면';
+  select coalesce(json_agg(json_build_object('nickname', t.nickname, 'soop_id', t.soop_id, 'race', t.race, 'tier', t.tier,
+      'affiliation', t.affiliation, 'modified_at', t.modified_at, 'role', t.role, 'elo_id', t.elo_id,
+      'gender', t.gender, 'birth_date', t.birth_date, 'mbti', m.mbti, 'youtube_url', m.youtube_url, 'member_name', m.nickname)
+    order by t.source_order, t.soop_id), '[]'::json)
+  from public.tier_members t
+  left join lateral (select mbti, youtube_url, nickname from public.members
+                     where tier_member_id = t.id order by joined_date desc nulls last, id desc limit 1) m on true
+  where coalesce(t.affiliation, '') <> '휴면';
 $$;
 
 -- 관리자도 같은 함수를 쓰고, 숨긴 항목을 달라고 하면 여기서 권한을 확인한다.
@@ -1668,4 +1674,4 @@ language sql set search_path = public as $$
 $$;
 revoke all on function public.stamp_schema(text, text) from public, anon, authenticated;
 
-select public.stamp_schema('staruniv', '0c92127c0d92');
+select public.stamp_schema('staruniv', '0cc0eced38a8');
