@@ -170,18 +170,16 @@
         --panel-control: rgba(20, 38, 74, 0.1);
         --label-accent: rgba(20, 38, 74, 0.82);
     }
-    /* 로고(PC 60px, 폰 48px)와 두 줄을 한 덩어리로: 이름 위 끝은 로고 위 끝, SINCE·우승 줄 아래 끝은 로고 아래 끝에 맞춘다 */
+    /* 로고(PC 60px, 폰 48px) 옆에 이름과 SINCE·우승 줄을 바짝 붙여 로고 가운데에 둔다 */
     .board-team-id {
         display: flex;
-        align-items: stretch;
+        align-items: center;
         gap: var(--space-6);
         min-width: 0;
     }
     .board-team-title {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        gap: var(--space-1);
         min-width: 0;
     }
     /* 이름 아래 한 줄: SINCE | 우승(트로피). 같은 크기 글씨를 짧은 세로선으로 나눈다 */
