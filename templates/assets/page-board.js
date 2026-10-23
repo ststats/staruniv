@@ -38,7 +38,7 @@ async function boardInit() {
         BoardState.byKey[tierIdKey(m)] = m;
     });
 
-    // 표에 있는 대학만, 창단일 순. 대학 안에서는 티어 순(같은 티어는 명단 순서)
+    // 표에 있는 대학만, 창단일 순. 대학 안에서는 직책 순, 같은 직책은 티어 순(같은 티어는 명단 순서)
     const byTeam = new Map();
     members.forEach(m => {
         if (!byTeam.has(m.team)) byTeam.set(m.team, []);
@@ -52,7 +52,13 @@ async function boardInit() {
                   boardTeamHtml(
                       t,
                       sections[i].id,
-                      byTeam.get(t.name).sort((a, b) => tierIndex(tierGroupKey(a)) - tierIndex(tierGroupKey(b)))
+                      byTeam
+                          .get(t.name)
+                          .sort(
+                              (a, b) =>
+                                  boardRoleRank(boardRole(a)) - boardRoleRank(boardRole(b)) ||
+                                  tierIndex(tierGroupKey(a)) - tierIndex(tierGroupKey(b))
+                          )
                   )
               )
               .join('')
@@ -65,14 +71,23 @@ async function boardInit() {
     boardBar.syncPickLabel();
 }
 
-// 직책이 없는 사람은 선수다. 직책은 적은 순(이사장·총장처럼 한두 명인 자리가 앞), 선수는 맨 끝
+// 직책이 없는 사람은 선수다. 수장 > 교수(코치) > 학생(선수) 순이고, 그 밖의 직책은 맨 끝
+const BOARD_ROLE_RANK = { 수장: 0, 교수: 1, 코치: 1, 학생: 2, 선수: 2 };
+function boardRole(m) {
+    return m.role || '선수';
+}
+function boardRoleRank(role) {
+    return BOARD_ROLE_RANK[role] ?? 3;
+}
+
+// 머리 칸도 같은 직책 순
 function boardRoleCounts(list) {
     const count = new Map();
     list.forEach(m => {
-        const role = m.role || '선수';
+        const role = boardRole(m);
         count.set(role, (count.get(role) || 0) + 1);
     });
-    return [...count].sort(([a, x], [b, y]) => (a === '선수') - (b === '선수') || x - y || a.localeCompare(b, 'ko'));
+    return [...count].sort(([a], [b]) => boardRoleRank(a) - boardRoleRank(b) || a.localeCompare(b, 'ko'));
 }
 
 function boardTeamHtml(team, id, list) {
@@ -142,7 +157,7 @@ function boardOpenProfile(key) {
         {
             name: m.nickname,
             soopId: m.id,
-            role: m.role || '선수',
+            role: boardRole(m),
             tier: m.tier,
             race: m.race,
             facts: [
