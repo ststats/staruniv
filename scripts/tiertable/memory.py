@@ -40,8 +40,9 @@ def classify_tier(feat, memory, known=None, detail=False):
     if value is None or dist > 0.25:
         return (None, None, None) if detail else None
     if value.isdigit():
+        # 숫자끼리는 획 하나(6·8·5·0) 차이라 정규화 상관으로 다시 고른다
         cands = [c for c in cands if c[1].isdigit()]
-        value, dist, alt, margin = nearest(feat, cands, DIGIT_W, detail=True)
+        value, dist, alt, margin = nearest(feat, cands, DIGIT_W, detail=True, ncc=True)
     if not detail:
         return value
     return value, margin, alt

@@ -138,9 +138,9 @@ def match_sections(sections, db):
     return results
 
 
-# 두 번째 후보와의 여유가 이보다 작으면 '확인 필요'.
-# 실측: 틀리게 읽힌 것은 모두 0.027 이하, 안 바뀐 카드는 모두 0.076 이상.
-UNSURE_MARGIN = 0.03
+# 두 번째 후보와의 상대 여유가 이보다 작으면 '확인 필요'.
+# 실측(기억한 글씨끼리 서로 맞춰 봄): 숫자 티어는 하위 1%가 0.35, 이름 티어·종족은 0.37 이상.
+UNSURE_MARGIN = 0.2
 
 
 def compare(sections, fa, db, candidates=None, off_board=()):

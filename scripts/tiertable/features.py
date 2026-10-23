@@ -57,12 +57,32 @@ def _distances(feat: np.ndarray, cands, width=None) -> np.ndarray:
     return best
 
 
-def nearest(feat: np.ndarray, cands, width=None, detail=False):
+def _ncc_distances(feat: np.ndarray, cands, width=None) -> np.ndarray:
+    """후보마다 ±1px 어긋남을 허용한 1 - 정규화 상관. 표 이미지 크기·바탕색이 바뀌어 번진 정도가 달라도
+    획 모양만 본다(평균 차이로는 같은 숫자의 다른 표와 6·8 차이가 비슷하게 나온다)."""
+    w = width or feat.shape[1]
+
+    def z(a):
+        a = a[..., 2:-2, 2:-2]
+        a = a - a.mean(axis=(-2, -1), keepdims=True)
+        return a / (np.sqrt((a * a).sum(axis=(-2, -1), keepdims=True)) + 1e-6)
+
+    stack = z(np.stack([c[0][:, :w] for c in cands]))
+    best = None
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            d = 1 - (stack * z(np.roll(np.roll(feat[:, :w], dy, 0), dx, 1))).sum(axis=(1, 2))
+            best = d if best is None else np.minimum(best, d)
+    return best
+
+
+def nearest(feat: np.ndarray, cands, width=None, detail=False, ncc=False):
     """cands: [(특징 배열, 값)] 중 가장 가까운 값(detail=True면 여유·차순위도).
-    압축 잡음은 모든 후보에 똑같이 끼어 문턱보다 '가장 가까운 후보'가 안정적이다."""
+    압축 잡음은 모든 후보에 똑같이 끼어 문턱보다 '가장 가까운 후보'가 안정적이다.
+    여유는 두 번째 값과의 상대 차이((차순위 - 최선) ÷ 차순위, 0~1)라 비교 방식과 상관없이 같은 문턱을 쓴다."""
     if not cands:
         return (None, 1.0, None, 1.0) if detail else (None, 1.0)
-    best = _distances(feat, cands, width)
+    best = (_ncc_distances if ncc else _distances)(feat, cands, width)
     i = int(best.argmin())
     value, dist = cands[i][1], float(best[i])
     if not detail:
@@ -72,7 +92,8 @@ def nearest(feat: np.ndarray, cands, width=None, detail=False):
     if not others:
         return value, dist, None, 1.0
     alt = others[int(best[others].argmin())]
-    return value, dist, cands[alt][1], float(best[alt]) - dist
+    alt_dist = float(best[alt])
+    return value, dist, cands[alt][1], (alt_dist - dist) / alt_dist if alt_dist > 0 else 0.0
 
 
 PHOTO_SIDE = 32
