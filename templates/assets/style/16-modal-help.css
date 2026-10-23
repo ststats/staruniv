@@ -237,6 +237,11 @@
         font-weight: 700;
         overflow-wrap: anywhere;
     }
+    /* 입단 티어·활동기간이 없는 창(현황판)은 선 없이 그 줄 아래 여백만 둔다 */
+    .profile-modal-facts:has(+ .profile-modal-period[hidden]) {
+        padding-bottom: var(--space-8);
+        border-bottom: 0;
+    }
     /* 위 기본 정보(dd)와 같은 3칸으로 나눠 입단일이 생년월일과 같은 자리에서 시작한다. */
     .profile-modal-period {
         display: grid;

@@ -122,15 +122,15 @@ function boardColorClass(hex) {
     return 1.05 / (l + 0.05) >= (l + 0.05) / 0.07 ? '' : ' is-light';
 }
 
-// 선수 카드: 사진 옆에 티어·종족 뱃지와 이름. 누르면 프로필 창
+// 선수 카드: 사진 옆에 이름, 그 아래 티어·종족 뱃지. 누르면 프로필 창
 function boardCardHtml(m) {
     const race = raceShortLabel(m.race || '');
     return `
             <button type="button" class="board-card${['T', 'Z', 'P'].includes(race) ? ` edge-${race}` : ''}"${act('boardOpenProfile', tierIdKey(m))}>
                 ${avatarHtml(m.id, 'board-card-av')}
                 <span class="board-card-body">
-                    <span class="board-card-badges">${tierBadgeHtml(m.tier)}${m.race ? raceBadgeHtml(m.race) : ''}</span>
                     <span class="board-card-name">${escapeHTML(m.nickname)}</span>
+                    <span class="board-card-badges">${tierBadgeHtml(m.tier)}${m.race ? raceBadgeHtml(m.race) : ''}</span>
                 </span>
             </button>`;
 }
