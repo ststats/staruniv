@@ -81,11 +81,11 @@ function boardTeamHtml(team, id, list) {
     <section class="tier-row board-team" id="${id}" aria-labelledby="${id}-name">
         <div class="board-team-head${boardColorClass(team.color)}"${boardColorStyle(team.color)}>
             <div class="board-team-id">
-                ${teamLogoHtml(team.name, 48)}
+                ${teamLogoHtml(team.name, 60)}
                 <div class="board-team-title">
-                    ${since ? `<div class="head-plate-label">SINCE ${escapeHTML(since)}</div>` : ''}
                     <h2 class="head-plate-value" id="${id}-name">${escapeHTML(team.name)}</h2>
                     <div class="board-team-meta">
+                        ${since ? `<span>SINCE ${escapeHTML(since)}</span>` : ''}
                         <span>총원 <b>${list.length}</b>명</span>
                         <span class="board-team-wins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>우승 ${team.wins || 0}회</span>
                     </div>

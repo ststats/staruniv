@@ -170,31 +170,43 @@
         --panel-control: rgba(20, 38, 74, 0.1);
         --label-accent: rgba(20, 38, 74, 0.82);
     }
+    /* 로고(60px)와 두 줄(이름, 창단·총원·우승)을 가운데로 맞춘다 */
     .board-team-id {
         display: flex;
         align-items: center;
-        gap: var(--space-5);
+        gap: var(--space-7);
         min-width: 0;
     }
     .board-team-title {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
+        gap: var(--space-3);
         min-width: 0;
     }
-    /* 이름 아래 한 줄: 총원 · 우승(트로피) */
+    /* 이름 아래 한 줄: SINCE | 총원 | 우승(트로피). 같은 크기 글씨를 짧은 세로선으로 나눈다 */
     .board-team-meta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--space-1) var(--space-4);
+        gap: var(--space-1) var(--space-5);
         color: var(--panel-muted);
         font-size: var(--fs-small);
+        line-height: 1;
+    }
+    .board-team-meta > span + span::before {
+        content: '';
+        display: inline-block;
+        width: 1px;
+        height: 10px;
+        margin-right: var(--space-5);
+        background: currentColor;
+        opacity: 0.4;
+        vertical-align: middle;
     }
     .board-team-meta b {
         color: var(--panel-text);
     }
-    .board-team-wins {
+    .board-team-meta > .board-team-wins {
         display: inline-flex;
         align-items: center;
         gap: var(--space-1);
@@ -202,7 +214,7 @@
         font-weight: 700;
     }
     /* 금색은 네이비 바탕에서만 읽힌다. 대학 색 바탕에서는 그 판의 글자색 */
-    .board-team-head[style] .board-team-wins {
+    .board-team-head[style] .board-team-meta > .board-team-wins {
         color: var(--panel-text);
     }
     .board-team-wins svg {
@@ -225,6 +237,7 @@
         gap: var(--space-3);
         padding: var(--space-3) var(--space-4);
         background: var(--panel-control);
+        clip-path: var(--notch-4);
         font-size: var(--fs-small);
     }
     .board-team-stats dt {
@@ -252,6 +265,7 @@
         padding: var(--space-4);
         border: 0;
         background: var(--color-bg-subtle);
+        clip-path: var(--notch-10);
         color: inherit;
         font: inherit;
         text-align: left;
@@ -690,6 +704,21 @@
         .board-team-head {
             gap: var(--space-5);
             padding: var(--space-7);
+        }
+        /* 폰: 로고를 줄이고 한 줄이 넘치지 않게 글씨·간격을 줄인다 */
+        .board-team-id {
+            gap: var(--space-5);
+        }
+        .board-team-id :is(.team-logo-icon, .team-logo-fallback) {
+            width: 48px;
+            height: 48px;
+        }
+        .board-team-meta {
+            column-gap: var(--space-3);
+            font-size: var(--fs-meta);
+        }
+        .board-team-meta > span + span::before {
+            margin-right: var(--space-3);
         }
         .board-team-stats {
             display: grid;
