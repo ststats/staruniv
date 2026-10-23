@@ -183,7 +183,7 @@
         gap: var(--space-3);
         min-width: 0;
     }
-    /* 이름 아래 한 줄: SINCE | 총원 | 우승(트로피). 같은 크기 글씨를 짧은 세로선으로 나눈다 */
+    /* 이름 아래 한 줄: SINCE | 우승(트로피). 같은 크기 글씨를 짧은 세로선으로 나눈다 */
     .board-team-meta {
         display: flex;
         flex-wrap: wrap;
@@ -203,9 +203,6 @@
         opacity: 0.4;
         vertical-align: middle;
     }
-    .board-team-meta b {
-        color: var(--panel-text);
-    }
     .board-team-meta > .board-team-wins {
         display: inline-flex;
         align-items: center;
@@ -221,7 +218,7 @@
         width: 14px;
         height: 14px;
     }
-    /* 직책 인원은 띠 오른쪽 끝에 붙인다(모바일은 아래 줄 세 칸) */
+    /* 총원과 직책 인원(직책 칸에 적힌 그대로, 빈 칸은 선수)은 띠 오른쪽 끝에 붙인다(모바일은 아래 줄 세 칸) */
     .board-team-stats {
         display: flex;
         flex-wrap: wrap;
