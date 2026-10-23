@@ -170,17 +170,18 @@
         --panel-control: rgba(20, 38, 74, 0.1);
         --label-accent: rgba(20, 38, 74, 0.82);
     }
-    /* 로고(60px)와 두 줄(이름, 창단·총원·우승)을 가운데로 맞춘다 */
+    /* 로고(PC 60px, 폰 48px)와 두 줄을 한 덩어리로: 이름 위 끝은 로고 위 끝, SINCE·우승 줄 아래 끝은 로고 아래 끝에 맞춘다 */
     .board-team-id {
         display: flex;
-        align-items: center;
-        gap: var(--space-7);
+        align-items: stretch;
+        gap: var(--space-6);
         min-width: 0;
     }
     .board-team-title {
         display: flex;
         flex-direction: column;
-        gap: var(--space-3);
+        justify-content: space-between;
+        gap: var(--space-1);
         min-width: 0;
     }
     /* 이름 아래 한 줄: SINCE | 우승(트로피). 같은 크기 글씨를 짧은 세로선으로 나눈다 */
@@ -704,7 +705,7 @@
         }
         /* 폰: 로고를 줄이고 한 줄이 넘치지 않게 글씨·간격을 줄인다 */
         .board-team-id {
-            gap: var(--space-5);
+            gap: var(--space-4);
         }
         .board-team-id :is(.team-logo-icon, .team-logo-fallback) {
             width: 48px;
