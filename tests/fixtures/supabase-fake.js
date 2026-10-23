@@ -153,7 +153,7 @@ function respond(url) {
   // 멤버 목록·프로필은 siteData()로 만들고 멤버 줄 순서를 _id로 쓴다
   if (fn === 'api_site_members') { const sd = siteData(); return { ...sd.members, members: sd.members.members.map((m, i) => ({ _id: i + 1, ...m })) }; }
   if (fn === 'api_member_profiles') { const sd = siteData(); const q = Object.fromEntries(Object.entries(sd.profiles.profiles).map(([k, v]) => [k, v.slice()])); const out = {}; sd.members.members.forEach((m, i) => { out[i + 1] = (q[m['이름']] || []).shift() || {}; }); return { profiles: out }; }
-  if (fn === 'api_team_order') return [...TEAMS].reverse().map((name, i) => ({ name, founded: day(400 * (4 - i)), wins: i })); // 인원 순과 다르게
+  if (fn === 'api_team_order') return [...TEAMS].reverse().map((name, i) => ({ name, founded: day(400 * (4 - i)), color: ['#c15815', '#f6d059', '#141e4f', null][i], wins: i })); // 인원 순과 다르게
   if (fn === 'api_holidays') return { '2026-09-24': '추석 연휴', '2026-09-25': '추석', '2026-10-03': '개천절' };
   if (u.pathname.includes('/rpc/') && API[fn]) return API[fn](u.searchParams);
   if (u.pathname.includes('/rpc/') && RPC[fn]) {

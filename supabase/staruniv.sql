@@ -36,6 +36,8 @@ create table if not exists public.teams (
   off_board boolean not null default false
 );
 create index if not exists teams_team_name_idx on public.teams (team_name);
+-- 현황판 대학 머리 색: 펨코 티어표의 대학 구역 바탕색. 티어표 갱신을 반영할 때 맞춘다(admin_apply_tier_update).
+alter table public.teams add column if not exists board_color text check (board_color is null or board_color ~ '^#[0-9a-f]{6}$');
 
 create table if not exists public.members (
   -- 내부 행 식별자. 외부 서비스 ID와 섞지 않는다.
@@ -693,10 +695,10 @@ language sql stable security definer set search_path = public as $$
   from public.members m;
 $$;
 
--- 대학 창단일 순. 우승은 대회 이름을 줄마다 적은 칸이라 빈 줄을 뺀 줄 수가 우승 횟수다(현황판).
+-- 대학 창단일 순. 우승은 대회 이름을 줄마다 적은 칸이라 빈 줄을 뺀 줄 수가 우승 횟수다(현황판). 색은 펨코 티어표 구역 색.
 create or replace function public.api_team_order() returns json
 language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object('name', team_name, 'founded', founded_date,
+  select coalesce(json_agg(json_build_object('name', team_name, 'founded', founded_date, 'color', board_color,
       'wins', (select count(*) from regexp_split_to_table(coalesce(championship, ''), E'\n') line where btrim(line) <> ''))
     order by founded_date nulls last, source_order), '[]'::json) from public.teams;
 $$;
@@ -1101,6 +1103,20 @@ grant execute on function public.admin_tier_job_dispatch_status(bigint) to authe
 --   p_date      승급일(보통 티어표 글 날짜)
 -- p_renames: [{from, to}] 새 대학 검토에서 '기존 대학 이름 변경'을 고른 것. 대학 관리 행·로고를 새 이름으로 옮긴다.
 drop function if exists public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date);
+-- 펨코 티어표의 대학 구역 바탕색(분석 결과 카드의 bg, 구역마다 같다)을 대학별로 뽑는다. 현황판 대학 머리 색(teams.board_color).
+create or replace function public.tier_result_team_colors(p_result jsonb)
+returns table (team text, color text)
+language sql immutable set search_path = public as $$
+  select team, '#' || bg from (
+    select m->>'team' as team,
+           mode() within group (order by p_result->'sections'->((m->'ref'->>0)::int)->'cards'->((m->'ref'->>1)::int)->>'bg') as bg
+    from jsonb_array_elements(coalesce(p_result->'matches', '[]'::jsonb)) m
+    where m->>'team' is not null
+    group by m->>'team') x
+  where bg ~ '^[0-9a-f]{6}$';
+$$;
+revoke all on function public.tier_result_team_colors(jsonb) from public, anon, authenticated;
+
 create or replace function public.admin_apply_tier_update(
   p_job_id bigint, p_updates jsonb, p_inserts jsonb, p_confirmed jsonb, p_date date default null,
   p_renames jsonb default '[]'::jsonb)
@@ -1234,6 +1250,11 @@ begin
     end if;
   end loop;
 
+  -- 현황판 대학 머리 색 = 이 표의 대학 구역 바탕색
+  update public.teams t set board_color = c.color
+  from public.tier_result_team_colors((select result from public.tier_update_jobs where id = p_job_id)) c
+  where t.team_name = c.team;
+
   update public.tier_update_jobs set status = 'applied', applied_at = now(),
     applied = jsonb_build_object('date', d, 'updates', coalesce(p_updates, '[]'::jsonb),
                                  'inserts', coalesce(p_inserts, '[]'::jsonb), 'confirmed', conf, 'log', log,
@@ -1246,6 +1267,12 @@ end;
 $$;
 revoke all on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date, jsonb) from public, anon;
 grant execute on function public.admin_apply_tier_update(bigint, jsonb, jsonb, jsonb, date, jsonb) to authenticated;
+
+-- 색이 비어 있는 대학은 가장 최근에 반영한 분석 결과로 채운다(다음 반영부터는 위 함수가 맞춘다)
+update public.teams t set board_color = c.color
+from public.tier_result_team_colors((select result from public.tier_update_jobs
+                                     where status = 'applied' and result is not null order by id desc limit 1)) c
+where t.team_name = c.team and t.board_color is null;
 
 
 -- ############################################################################
@@ -1674,4 +1701,4 @@ language sql set search_path = public as $$
 $$;
 revoke all on function public.stamp_schema(text, text) from public, anon, authenticated;
 
-select public.stamp_schema('staruniv', '0cc0eced38a8');
+select public.stamp_schema('staruniv', 'c3a1fc6013f1');

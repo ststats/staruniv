@@ -79,7 +79,7 @@ function boardTeamHtml(team, id, list) {
     const since = String(team.founded || '').replace(/-/g, '.');
     return `
     <section class="tier-row board-team" id="${id}" aria-labelledby="${id}-name">
-        <div class="head-plate board-team-head">
+        <div class="board-team-head${boardColorClass(team.color)}"${boardColorStyle(team.color)}>
             <div class="board-team-id">
                 ${teamLogoHtml(team.name, 48)}
                 <div class="board-team-title">
@@ -99,6 +99,27 @@ function boardTeamHtml(team, id, list) {
         </div>
         <div class="board-grid">${list.map(boardCardHtml).join('')}</div>
     </section>`;
+}
+
+// 대학 머리는 펨코 티어표의 그 대학 구역 색(teams.board_color)으로 칠한다. 없으면 네이비.
+// 흰 글씨와 네이비 글씨 중 대비가 큰 쪽을 쓴다(노랑·분홍 같은 밝은 색은 네이비 글씨).
+function boardColor(hex) {
+    return /^#[0-9a-f]{6}$/i.test(String(hex || '')) ? hex : '';
+}
+function boardColorStyle(hex) {
+    return boardColor(hex) ? ` style="--board-color:${hex}"` : '';
+}
+function boardColorClass(hex) {
+    const color = boardColor(hex);
+    if (!color) return '';
+    const lum = c => {
+        const v = parseInt(c, 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+    };
+    const [r, g, b] = [1, 3, 5].map(i => lum(color.slice(i, i + 2)));
+    const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    // 흰 글씨 대비 (1.05)/(l+0.05), 네이비(#14264a, 휘도 약 0.02) 글씨 대비 (l+0.05)/0.07
+    return 1.05 / (l + 0.05) >= (l + 0.05) / 0.07 ? '' : ' is-light';
 }
 
 // 선수 카드: 사진 옆에 티어·종족 뱃지와 이름. 누르면 프로필 창

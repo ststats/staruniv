@@ -144,14 +144,30 @@
 
     /* ----- 현황판: 흰 판 하나에 대학 머리(네이비) + 선수 카드. 바로가기 바는 티어표와 같다 ----- */
     .board-team {
+        --head-plate-fs: var(--fs-hero);
         display: grid;
         background: var(--color-card);
         clip-path: var(--notch-12);
     }
+    /* 대학 머리: 그 대학 색(--board-color, page-board.js) 위에 네이비 면과 같은 사선 무늬. 밝은 색은 네이비 글씨 */
     .board-team-head {
+        --panel-text: #fff;
+        --panel-muted: rgba(255, 255, 255, 0.78);
+        --panel-control: rgba(255, 255, 255, 0.16);
+        --label-accent: rgba(255, 255, 255, 0.82);
         display: flex;
         flex-direction: column;
         gap: var(--space-7);
+        padding: var(--space-8);
+        background-color: var(--board-color, var(--navy));
+        background-image: var(--navy-pattern);
+        color: var(--panel-text);
+    }
+    .board-team-head.is-light {
+        --panel-text: var(--navy);
+        --panel-muted: rgba(20, 38, 74, 0.78);
+        --panel-control: rgba(20, 38, 74, 0.1);
+        --label-accent: rgba(20, 38, 74, 0.82);
     }
     .board-team-id {
         display: flex;
@@ -183,6 +199,10 @@
         gap: var(--space-1);
         color: var(--color-accent-gold);
         font-weight: 700;
+    }
+    /* 금색은 네이비 바탕에서만 읽힌다. 대학 색 바탕에서는 그 판의 글자색 */
+    .board-team-head[style] .board-team-wins {
+        color: var(--panel-text);
     }
     .board-team-wins svg {
         width: 14px;
@@ -265,7 +285,7 @@
     /* PC: 왼쪽 머리 판 + 오른쪽 카드. 머리 판은 대학 카드를 내리는 동안 바 아래에 붙어 있다 */
     @media (min-width: 992px) {
         .board-team {
-            grid-template-columns: 240px minmax(0, 1fr);
+            grid-template-columns: 264px minmax(0, 1fr);
             align-items: start;
         }
         .board-team-head {
