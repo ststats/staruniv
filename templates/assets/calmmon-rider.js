@@ -278,7 +278,8 @@ const $ = id => {
     cv = $('game'),
     g = cv.getContext('2d');
 // 출전 명단은 사이트의 현재 멤버(loadRoster). 얼굴은 어드민에서 올린 것(어드민 도구 → 캄몬라이더 → 선수 얼굴),
-// 없으면 헬멧을 그린다. 선수 색은 얼굴 그림 가장자리(카드 바탕)의 평균색이다.
+// 없으면 헬멧을 그린다. 선수 색은 얼굴 그림 가장자리(카드 바탕)의 색 계열을 게스트 색처럼 밝은 파스텔로 맞춘 것이다
+// (평균색 그대로는 카드 무늬가 섞여 칙칙하다).
 const GUEST_COLORS = ['#9ed978', '#f5b263', '#8ccfee', '#d99be7', '#f38eac'];
 // id는 이 배열의 인덱스다. 앞쪽 BASE_DRIVERS명이 멤버, 그 뒤가 게스트.
 const names = [],
@@ -322,7 +323,11 @@ function edgeColor(img) {
         bl += px[i * 4 + 2];
         n++;
     }
-    return `rgb(${Math.round(r / n)}, ${Math.round(gr / n)}, ${Math.round(bl / n)})`;
+    const [R, G, B] = [r / n / 255, gr / n / 255, bl / n / 255];
+    const max = Math.max(R, G, B),
+        d = max - Math.min(R, G, B);
+    const hue = !d ? 0 : max === R ? ((G - B) / d) % 6 : max === G ? (B - R) / d + 2 : (R - G) / d + 4;
+    return `hsl(${Math.round(hue * 60 + 360) % 360}, 70%, 70%)`;
 }
 // 못 받으면 null(시트 그림·헬멧으로). 캔버스에 그려도 오염되지 않게 CORS로 받는다.
 function loadFace(src) {
