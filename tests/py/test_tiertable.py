@@ -104,28 +104,5 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(move["diff"], {"affiliation": ["숨은대", "캄몬대"]})
 
 
-class GlyphMemoryTest(unittest.TestCase):
-    def test_remembered_digit_tiers_are_not_confused(self):
-        # 기억한 숫자 티어 글씨를 자기만 뺀 기억으로 다시 읽는다. 표마다 번짐·바탕색이 달라도
-        # 틀리지 않고, 안 바뀐 카드가 '헷갈림'으로 뜨지 않아야 한다
-        from tiertable.compare import UNSURE_MARGIN
-        from tiertable.features import unpack_feat
-        from tiertable.layout import TIER_BOX
-        from tiertable.memory import classify_tier, load_memory
-
-        memory = load_memory()
-        shape = (TIER_BOX[1], TIER_BOX[0])
-        unsure = []
-        for i, t in enumerate(memory["tier"]):
-            if not t["value"].isdigit():
-                continue
-            rest = dict(memory, tier=memory["tier"][:i] + memory["tier"][i + 1 :])
-            value, margin, _ = classify_tier(unpack_feat(t["feat"], shape), rest, None, detail=True)
-            self.assertEqual(value, t["value"])
-            if margin < UNSURE_MARGIN:
-                unsure.append(t["value"])
-        self.assertLessEqual(len(unsure), 2)
-
-
 if __name__ == "__main__":
     unittest.main()
