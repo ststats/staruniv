@@ -297,8 +297,11 @@
             },
         });
     }
-    async function loadFilterOptions() {
-        const all = await AdminApi.tierMembers.all('tier,affiliation,race');
+    // 명단 탭은 필터 옵션과 신규 인원 비교에 같은 전체 명단을 쓰므로 한 번 받아 나눠 준다(people).
+    const PEOPLE_COLUMNS = 'id,nickname,name,soop_id,elo_id,tier,race,affiliation';
+    const loadPeople = () => AdminApi.tierMembers.all(PEOPLE_COLUMNS);
+    async function loadFilterOptions(people) {
+        const all = await (people || AdminApi.tierMembers.all('tier,affiliation,race'));
         const clean = key =>
             [...new Set(all.map(r => String(r[key] || '').trim()).filter(Boolean))].sort((a, b) =>
                 a.localeCompare(b, 'ko', { numeric: true, sensitivity: 'base' })
@@ -360,7 +363,10 @@
         if (S.view === 'ranking') await showRanking();
         else if (S.view === 'update') await window.AdminTierUpdate.show();
         else if (S.view === 'teams') await window.AdminTeams.show();
-        else await Promise.all([showMembers(), showCandidates()]);
+        else {
+            const people = loadPeople();
+            await Promise.all([showMembers(people), showCandidates(people)]);
+        }
     }
     function render() {
         const root = document.getElementById('adminTierMembersBody');
@@ -613,15 +619,15 @@
 
     // ---- 신규 인원 보기(EloBoard에는 있고 명단엔 없는 선수) ----
     // 무시한 줄은 남겨 둬야 ststat이 같은 ELO ID를 다시 올리지 않는다.
-    async function loadCandidates() {
-        N.members = await AdminApi.tierMembers.all('id,nickname,name,soop_id,elo_id,race,affiliation');
+    async function loadCandidates(people) {
+        N.members = await (people || loadPeople());
         N.rows = await AdminApi.candidates.all(N.status);
     }
-    async function showCandidates() {
+    async function showCandidates(people) {
         N.rows = null;
         renderCandidates();
         try {
-            await loadCandidates();
+            await loadCandidates(people);
             renderCandidates();
         } catch (err) {
             console.error('신규 인원 조회 실패:', err);
@@ -657,7 +663,8 @@
                 const { error } = await AdminApi.candidates.remove(c.id);
                 if (error) throw error;
                 membersLoaded = false;
-                await Promise.all([showMembers(), showCandidates()]);
+                const people = loadPeople();
+                await Promise.all([showMembers(people), showCandidates(people)]);
             }
         );
     }
@@ -804,7 +811,7 @@
     }
 
     let membersLoaded = false;
-    async function showMembers() {
+    async function showMembers(people) {
         render();
         if (membersLoaded) return;
         membersLoaded = true;
@@ -820,7 +827,7 @@
             return;
         }
 
-        loadFilterOptions()
+        loadFilterOptions(people)
             .then(() => render())
             .catch(err => {
                 console.error('티어 필터 옵션 조회 실패:', err);

@@ -341,7 +341,8 @@
         };
         window.histAdminToggleHidden = id => toggle(id).catch(e => C().toast(C().errorText(e), 'error'));
         window.histAdminMove = (id, dir) => move(id, dir).catch(e => C().toast(C().errorText(e), 'error'));
-        await load();
+        // 연혁 탭은 열 때 그린다(page-schedule.js). 로그인 확인 전에 이미 열렸으면 관리자 데이터로 다시 그린다.
+        if (historyRendered) await load();
     }
     document.addEventListener('admin:ready', init);
 })();

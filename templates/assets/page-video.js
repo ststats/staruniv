@@ -665,7 +665,8 @@ bootPage(
             MEMBER_VIDEOS[first].member = new URLSearchParams(location.search).get('member') || '';
             ensureMemberVideos(first);
         }
-        await loadVideoData();
+        // 관리자 화면은 로그인 확인 뒤 숨긴 영상까지 받아 그리므로(admin-video.js) 공개 목록을 따로 받지 않는다
+        if (document.body.dataset.adminPage !== 'video') await loadVideoData();
         bindShortsNav();
         safeInit('URL 상태 복원', () =>
             PageState.bindRestore(params => {

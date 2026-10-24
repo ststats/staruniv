@@ -12,6 +12,7 @@
         members: null,
         siteConfig: null,
         authCheck: null,
+        membersLoading: null,
     };
 
     const $ = id => document.getElementById(id);
@@ -261,12 +262,23 @@
         location.reload();
     }
 
-    async function loadMembers(force = false) {
-        if (state.members && !force) return state.members;
-        const { data, error } = await window.AdminApi.members.list();
-        if (error) throw error;
-        state.members = data || [];
-        return state.members;
+    // 일정 화면은 일정·역사 스크립트가 동시에 부르므로 진행 중인 요청을 같이 쓴다.
+    function loadMembers(force = false) {
+        if (state.members && !force) return Promise.resolve(state.members);
+        if (state.membersLoading && !force) return state.membersLoading;
+        const loading = window.AdminApi.members
+            .list()
+            .then(({ data, error }) => {
+                if (error) throw error;
+                const rows = data || [];
+                if (state.membersLoading === loading) state.members = rows;
+                return rows;
+            })
+            .finally(() => {
+                if (state.membersLoading === loading) state.membersLoading = null;
+            });
+        state.membersLoading = loading;
+        return loading;
     }
 
     async function loadSiteConfig(force = false) {
@@ -281,7 +293,6 @@
         const { error } = await window.AdminApi.siteConfig.save(config, 'nav');
         if (error) throw error;
         state.siteConfig = config;
-        document.dispatchEvent(new CustomEvent('admin:site-config-saved', { detail: config }));
     }
 
     async function nextSourceOrder(table) {

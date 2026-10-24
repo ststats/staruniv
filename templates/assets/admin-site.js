@@ -388,5 +388,4 @@
         );
     }
     document.addEventListener('admin:ready', init);
-    document.addEventListener('admin:site-config-saved', () => enhance().catch(() => {}));
 })();
