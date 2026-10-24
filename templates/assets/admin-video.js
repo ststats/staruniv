@@ -12,7 +12,8 @@
     }
     function soopId(url) {
         const s = String(url || '').trim();
-        const n = (s.match(/(?:vod|player)\/?(\d{1,20})/) || s.match(/(\d{5,20})/) || [])[1];
+        // 숲 다시보기 주소나 VOD 번호만 받는다. 다른 주소 속 숫자(방송국 글 번호 등)는 VOD로 보지 않는다
+        const n = soopVodNoFromUrl(s) || (/^\d{1,20}$/.test(s) ? s : '');
         return n ? `soop:${n}` : '';
     }
     function pickUrl(row) {

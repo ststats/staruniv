@@ -19,8 +19,8 @@ function histVideo(url) {
         /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
     );
     if (yt) return { youtubeId: yt[1] };
-    const soop = s.match(/vod\.(?:sooplive\.(?:co\.kr|com)|afreecatv\.com)\/player\/(\d{1,20})/);
-    return soop ? { soopVodNo: soop[1] } : {};
+    const soop = soopVodNoFromUrl(s);
+    return soop ? { soopVodNo: soop } : {};
 }
 
 // javascript: 같은 값을 막으려고 알려진 경로와 https만 받는다

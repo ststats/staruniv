@@ -861,6 +861,12 @@ function memberYoutubeUrl(value) {
     }
 }
 
+// 숲 다시보기(vod.sooplive·옛 afreecatv) 주소에서 VOD 번호만 꺼낸다(연혁·추천영상 공용). 모르는 주소면 ''
+function soopVodNoFromUrl(url) {
+    const m = String(url || '').match(/vod\.(?:sooplive\.(?:co\.kr|com)|afreecatv\.com)\/player\/(\d{1,20})/);
+    return m ? m[1] : '';
+}
+
 // 많은 멤버를 훑을 때는 종족·티어가 중요해서 프로필 사진은 넣지 않는다
 // onclickFn은 함수 이름이나 [함수 이름, 이름 앞에 넘길 값…]. side는 오른쪽 글자(기본은 티어, ''면 비움)
 function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member, side) {
