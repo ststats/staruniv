@@ -263,9 +263,7 @@
                 all(c =>
                     c
                         .from('tier_member_candidates')
-                        .select(
-                            'id,nickname,elo_id,soop_id,gender,race,tier,affiliation,source,found_at,last_seen_at,status'
-                        )
+                        .select('id,nickname,elo_id,soop_id,gender,race,tier,affiliation,source,found_at,status')
                         .eq('status', status)
                         .order('found_at', { ascending: false, nullsFirst: false })
                         .order('id')
