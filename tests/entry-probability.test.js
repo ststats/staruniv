@@ -27,7 +27,15 @@ function entryContext(setup) {
         vm.runInContext(core.match(re)[0], context);
     }
     const h2h = fs.readFileSync(path.join(__dirname, '..', 'templates', 'assets', 'page-h2h.js'), 'utf8');
-    vm.runInContext(h2h.match(/^function h2hSince\([\s\S]*?^\}$/m)[0], context);
+    for (const re of [
+        /^function h2hSince\([\s\S]*?^\}$/m,
+        /^const eloSourceRequests = .*;$/m,
+        /^function eloSource\([\s\S]*?^\}$/m,
+        /^function eloPlayersSource\([\s\S]*?^\}$/m,
+        /^function eloPlayerMatchesSource\([\s\S]*?^\}$/m,
+    ]) {
+        vm.runInContext(h2h.match(re)[0], context);
+    }
     vm.runInContext(source, context);
     vm.runInContext(
         setup ||

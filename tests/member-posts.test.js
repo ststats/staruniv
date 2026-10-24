@@ -36,9 +36,6 @@ function setup(tableRows, { tableError = null } = {}) {
                 return tableRows;
             },
         },
-        cachedFetchJson: async () => {
-            throw new Error('Browser must not call SOOP');
-        },
     });
     vm.runInContext(SOOP, ctx);
     return {

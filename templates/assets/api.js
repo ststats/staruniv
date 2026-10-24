@@ -3,10 +3,11 @@
 let _publicSupabaseClient = null;
 const SUPABASE_REQUEST_TIMEOUT_MS = 12000;
 // 공개 페이지는 rpc만 부르므로 supabase-js(213KB) 대신 같은 요청을 직접 만든다. 결과는 {data, error}.
+// 공개 키는 헤더 대신 주소(apikey)에 넣는다. 사용자 정의 헤더가 있으면 브라우저가 요청마다 CORS 사전 확인(OPTIONS)을 한 번 더 보낸다.
 class SupabaseReadQuery {
     constructor(restUrl, path, key) {
         this.url = new URL(`${restUrl}/${path}`);
-        this.key = key;
+        this.url.searchParams.set('apikey', key);
     }
     // 빈 값은 빼서 DB 함수의 기본값을 쓰게 한다
     params(values) {
@@ -49,10 +50,7 @@ class SupabaseReadQuery {
     async runOnce(signal) {
         try {
             signal.throwIfAborted();
-            const res = await fetch(this.url.href, {
-                headers: { apikey: this.key, Authorization: `Bearer ${this.key}` },
-                signal,
-            });
+            const res = await fetch(this.url.href, { signal });
             const text = await res.text();
             signal.throwIfAborted();
             let body = null;
@@ -225,8 +223,8 @@ const Api = {
         const url = new URL('/functions/v1/member-notices', cfg.url);
         url.searchParams.set('soop_id', soopId);
         url.searchParams.set('page', String(page));
+        url.searchParams.set('apikey', cfg.key); // 헤더로 보내면 CORS 사전 확인이 붙는다
         const response = await fetch(url, {
-            headers: { apikey: cfg.key },
             cache: 'no-store',
             signal: timeoutSignal(45000),
         });

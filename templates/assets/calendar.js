@@ -81,7 +81,13 @@ const calReadable = (rgb, towards, bgs) => {
     }
     return calMix(towards, towards, 1);
 };
+// 색은 팔레트 8가지뿐이라 색마다 한 번만 계산한다(일정 칸마다 대비 계산 반복문을 돌지 않게)
+const calColorVarsCache = new Map();
 const calEventColorVars = color => {
+    if (!calColorVarsCache.has(color)) calColorVarsCache.set(color, calComputeColorVars(color));
+    return calColorVarsCache.get(color);
+};
+const calComputeColorVars = color => {
     const base = calToRgb(color);
     return Object.entries(CAL_EV_THEME)
         .map(([k, th]) => {

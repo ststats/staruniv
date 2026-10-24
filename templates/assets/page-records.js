@@ -527,6 +527,9 @@ function toggleSummaryFormer(btn) {
     btn.setAttribute('aria-expanded', String(RecordsState.summaryFormerOpen));
 }
 
+// 전적 화면에 나오는 대학('내전'은 캄몬스타즈 로고)
+const recordLogoNames = () => [...SiteData.matches.map(m => m['상대팀']), '캄몬스타즈'];
+
 bootPage(
     () => {
         safeInit('팀 요약 통계', calculateTeamSummaries);
@@ -542,7 +545,9 @@ bootPage(
     },
     {
         siteData: ['members', 'records'],
-        logos: () => [...SiteData.matches.map(m => m['상대팀']), '캄몬스타즈'], // '내전'은 캄몬스타즈 로고
+        logos: recordLogoNames,
+        // 로고 목록은 명단을 기다리지 않고 전적 파일이 오면 바로 묻는다(같은 요청은 loadTeamLogos가 같이 쓴다)
+        prefetch: () => loadSiteData(['records']).then(() => loadTeamLogos(recordLogoNames())),
         view: params => activateTabView(RECORD_TABS, recordViewFromParams(params)),
     }
 );

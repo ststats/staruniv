@@ -200,8 +200,7 @@ function tierCardMediaHtml(member, live) {
 function tierCardHtml(member, live) {
     const soopId = String(member.id).trim();
     const team = String(member.team || '').trim();
-    const raceLetter = raceShortLabel(member.race || '');
-    const raceEdge = ['T', 'Z', 'P'].includes(raceLetter) ? ` edge-${raceLetter}` : '';
+    const raceEdge = raceEdgeClass(member.race);
     return `
     <a class="tier-card${raceEdge}${live ? ' is-live' : ''}${live && !live.isStar ? ' is-offcate' : ''}" data-tier-id="${escapeHTML(tierIdKey(member))}"
        href="https://${live ? 'play' : 'ch'}.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
@@ -276,8 +275,7 @@ function tierPeekShow(card) {
     const member = TierState.byId[key];
     if (!live || !member) return;
     const el = tierPeekEl();
-    const race = raceShortLabel(member.race || '');
-    el.className = `tier-peek live-broadcast-card${['T', 'Z', 'P'].includes(race) ? ` edge-${race}` : ''}${live.isStar ? '' : ' is-offcate'}`;
+    el.className = `tier-peek live-broadcast-card${raceEdgeClass(member.race)}${live.isStar ? '' : ' is-offcate'}`;
     el.innerHTML = tierPeekHtml(member, live);
     el.classList.add('is-open');
     tierPeekPlace();
