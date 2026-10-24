@@ -56,13 +56,24 @@ function renderHomeVideoPreview(box) {
         '<a class="home-video-preview" href="video/" aria-label="캄몬플레이 영상 보기"><span class="home-video-play" aria-hidden="true"></span></a>';
 }
 
+// 오늘 일정은 명단·메뉴 설정이 필요 없어 bootPage prefetch에서 먼저 받아 둔다(한 번만 쓴다)
+let todaySchedulePrefetch = null;
+function prefetchTodaySchedule() {
+    const date = todayStr();
+    todaySchedulePrefetch = { date, request: Api.scheduleOn(date) };
+    todaySchedulePrefetch.request.catch(() => {}); // 실패는 renderTodaySchedulePreview가 처리한다
+}
+
 async function renderTodaySchedulePreview(box) {
     if (!box) return;
     box.innerHTML =
         '<div class="home-preview-label">TODAY SCHEDULE</div><div class="home-preview-loading">오늘 일정을 불러오는 중</div>';
     try {
         const today = todayStr();
-        const events = ((await Api.scheduleOn(today)) || []).map(r => ({
+        const prefetched =
+            todaySchedulePrefetch && todaySchedulePrefetch.date === today && todaySchedulePrefetch.request;
+        todaySchedulePrefetch = null;
+        const events = ((await (prefetched || Api.scheduleOn(today))) || []).map(r => ({
             startDate: r.start_date,
             endDate: r.end_date || r.start_date,
             time: r.event_time || '',
@@ -266,19 +277,13 @@ function moveHomeCarousel(direction) {
     if (homeCarouselTimer) startHomeCarouselAuto(); // 누른 직후 바로 또 넘어가지 않게
 }
 
-// 왼쪽 엣지 종족 색은 멤버 카드와 같은 규칙이다.
-function liveRaceEdgeClass(m) {
-    const letter = raceShortLabel(m['종족'] || '');
-    return ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
-}
-
 function liveCardHtml({ member: m, live }) {
     const { broad, broadStart } = live;
     const soopId = m['SOOP ID'];
     const viewerText = broad.current_sum_viewer != null ? formatNum(broad.current_sum_viewer) + '명' : '-';
     const elapsedText = formatLiveElapsed(broadStart) || '-';
     return `
-            <a class="live-broadcast-card${liveRaceEdgeClass(m)}" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
+            <a class="live-broadcast-card${raceEdgeClass(m['종족'])}" href="https://play.sooplive.co.kr/${encodeURIComponent(soopId)}" target="_blank" rel="noopener">
                 <div class="live-thumb-wrap">
                     <img class="live-thumb" src="https://liveimg.sooplive.co.kr/m/${encodeURIComponent(broad.broad_no)}" alt="방송 화면"${actOn('error', 'imgHide', ACT.el)}>
                     <div class="live-thumb-overlay">
@@ -358,8 +363,11 @@ const HOME_NOTICES_FETCH = 30;
 
 // 모아 둔 표(member_posts)에서 최신 글 몇 개만 받아 고른다.
 // 걸러서 5개가 안 찼는데 받은 수 = 요청 수라 뒤에 글이 더 있을 수 있으면 null을 돌려 멤버별 조회로 넘긴다.
+// 받기는 명단을 기다리지 않고 prefetch에서 시작한다(한 번만 쓴다). 실패하면 null이라 멤버별 조회로 넘어간다.
+let recentPostsPrefetch = null;
 async function recentNoticesFromStore(activeMembers) {
-    const rows = await fetchRecentStoredPosts(HOME_NOTICES_FETCH);
+    const rows = await (recentPostsPrefetch || fetchRecentStoredPosts(HOME_NOTICES_FETCH));
+    recentPostsPrefetch = null;
     if (!rows) return null;
     const bySoop = new Map(activeMembers.map(m => [String(m['SOOP ID']).toLowerCase(), m]));
     const perMember = new Map();
@@ -464,7 +472,7 @@ const annivLabel = e => (e.kind === '생일' ? '생일' : `입단 ${e.text}`);
 function annivCardHtml(e) {
     const m = e.m;
     return `
-        <a class="home-anniv-card${liveRaceEdgeClass(m)}${e.i ? '' : ' is-today'}" href="${annivProfileHref(m)}">
+        <a class="home-anniv-card${raceEdgeClass(m['종족'])}${e.i ? '' : ' is-today'}" href="${annivProfileHref(m)}">
             ${avatarHtml(m['SOOP ID'], 'home-anniv-avatar')}
             <span class="home-anniv-name">${m['종족'] ? raceBadgeHtml(m['종족']) : ''}<span class="home-anniv-name-text">${escapeHTML(m['이름'])}</span></span>
             <span class="home-anniv-dday">${e.i ? `D-${e.i}` : '오늘'}</span>
@@ -584,6 +592,8 @@ bootPage(
     },
     {
         prefetch: () => {
+            prefetchTodaySchedule();
+            recentPostsPrefetch = fetchRecentStoredPosts(HOME_NOTICES_FETCH);
             fetchLiveBroadcasts().catch(() => {});
             loadSiteData(['profiles']);
         },

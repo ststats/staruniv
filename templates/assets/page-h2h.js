@@ -42,8 +42,28 @@ const H2hState = {
     query: ['', ''],
 };
 
+// 선수 목록·선수별 경기 원본은 상대전적·분석·엔트리가 같이 쓴다(탭을 옮겨도 다시 받지 않는다).
+// 목록은 열이 더 많은 ranked 응답 하나로 받는다. 실패하면 비워서 다음에 다시 받는다.
+const eloSourceRequests = new Map();
+function eloSource(key, load) {
+    if (!eloSourceRequests.has(key)) {
+        const request = load();
+        eloSourceRequests.set(key, request);
+        request.catch(() => {
+            if (eloSourceRequests.get(key) === request) eloSourceRequests.delete(key);
+        });
+    }
+    return eloSourceRequests.get(key);
+}
+function eloPlayersSource() {
+    return eloSource('players', () => Api.eloPlayers({ ranked: true, wrap: q => withTimeout(q, '선수 목록') }));
+}
+function eloPlayerMatchesSource(pid) {
+    return eloSource(`matches:${pid}`, () => Api.eloPlayerMatches(pid, { wrap: q => withTimeout(q, '선수 전적') }));
+}
+
 async function h2hLoadIndexFromSupabase() {
-    const playersData = await Api.eloPlayers({ ranked: true, wrap: q => withTimeout(q, '선수 목록') });
+    const playersData = await eloPlayersSource();
     if (!playersData.length) throw new Error('Elo public player view is empty');
 
     const players = {};
@@ -115,7 +135,7 @@ function h2hCategoryIndex(raw) {
 }
 
 async function h2hLoadPlayerFromSupabase(pid) {
-    const data = await Api.eloPlayerMatches(pid, { wrap: q => withTimeout(q, '선수 전적') });
+    const data = await eloPlayerMatchesSource(pid);
     return data.map(r => {
         if (r.map_id != null && r.map_name) H2hState.index.maps[String(r.map_id)] = String(r.map_name);
         return [

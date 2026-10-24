@@ -40,7 +40,7 @@ function switchMemberView(viewType, skipHashUpdate, selectedMember = null) {
 
 function memberCardHtml(m) {
     return `
-        <div class="member-card${isActiveMember(m) ? '' : ' former'}${memberRaceEdgeClass(m)}" data-member="${escapeHTML(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0"${act('openMemberProfile', m._id)}>
+        <div class="member-card${isActiveMember(m) ? '' : ' former'}${raceEdgeClass(m['종족'])}" data-member="${escapeHTML(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0"${act('openMemberProfile', m._id)}>
             <div class="member-card-media tier-card-media">
                 <img class="member-live-thumb" data-member-live-thumb="${escapeHTML(m['SOOP ID'] || '')}" alt="" hidden>
                 <div class="member-profile-media">${avatarHtml(m['SOOP ID'], 'member-avatar-img')}</div>
@@ -54,12 +54,6 @@ function memberCardHtml(m) {
                 </div>
             </div>
         </div>`;
-}
-
-// 종족 색 왼쪽 띠: 뱃지 글자를 읽지 않고도 종족 분포가 한눈에 보인다.
-function memberRaceEdgeClass(m) {
-    const letter = raceShortLabel(m['종족'] || '');
-    return ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
 }
 
 // 섹션 제목 위 라틴 라벨. 없는 직책은 ROSTER로 떨어진다.
@@ -879,7 +873,15 @@ bootPage(
     },
     {
         siteData: ['members', 'profiles'], // profiles: 프로필 창에서만 보이는 칸
-        prefetch: () => fetchLiveBroadcasts().catch(() => {}),
+        prefetch: () => {
+            fetchLiveBroadcasts().catch(() => {});
+            // 전체 공지로 들어오면 공지 묶음을 명단과 같이 받는다(fetchStoredMemberPosts가 1분 동안 같은 요청을 돌려준다).
+            // 개인 공지(?member=)는 그 멤버만 요청하므로 받지 않는다.
+            seedRuntimeConfigFromCache();
+            const params = new URLSearchParams(location.search);
+            const view = params.get('view') || runtimeDefaultSubtab('members', 'status');
+            if (view === 'news' && !params.get('member')) fetchStoredMemberPosts();
+        },
         view: params =>
             activateTabView(
                 MEMBER_TABS,

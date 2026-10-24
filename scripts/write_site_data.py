@@ -123,8 +123,6 @@ def main() -> None:
         )
         temp.replace(path)
 
-    (OUT_DIR / "site_records.json").unlink(missing_ok=True)
-
     print(
         f"✅ 사이트 데이터(전적) 생성 완료: "
         f"matches={len(records_payload['matches'])}, "

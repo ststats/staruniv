@@ -534,56 +534,11 @@ async function refreshSidebarLiveIndicators() {
 }
 
 // =====================================================================
-// 3. API 캐시 (SOOP 게시판)
+// 3. 요청 시간 제한
 // =====================================================================
-// SOOP 게시판 API의 호출 빈도 제한을 피하려고 sessionStorage에 짧게 캐시하고 진행 중 요청을 같이 쓴다.
-const API_CACHE_PREFIX = 'apicache:';
-
 // Api의 wrap 옵션. 재시도·본문 읽기까지 같은 시간 예산으로 취소된다.
 function withTimeout(query, label, ms) {
     return query.run({ timeoutMs: ms, label });
-}
-
-const _inflightRequests = new Map();
-
-function readApiCache(url, ttlMs) {
-    const cacheKey = API_CACHE_PREFIX + url;
-    try {
-        const raw = sessionStorage.getItem(cacheKey);
-        if (!raw) return undefined;
-        const entry = JSON.parse(raw);
-        if (entry && typeof entry.ts === 'number' && Date.now() - entry.ts < ttlMs) return entry.data;
-        sessionStorage.removeItem(cacheKey);
-    } catch (e) {
-        /* 다시 받는다 */
-    }
-    return undefined;
-}
-
-function purgeApiCache() {
-    try {
-        for (let i = sessionStorage.length - 1; i >= 0; i--) {
-            const key = sessionStorage.key(i);
-            if (key && key.startsWith(API_CACHE_PREFIX)) sessionStorage.removeItem(key);
-        }
-    } catch (e) {
-        /* 무시 */
-    }
-}
-
-function writeApiCache(url, data) {
-    const payload = JSON.stringify({ data, ts: Date.now() });
-    try {
-        sessionStorage.setItem(API_CACHE_PREFIX + url, payload);
-    } catch (e) {
-        // 저장 공간이 꽉 찼으면 비우고 한 번만 다시 시도한다
-        purgeApiCache();
-        try {
-            sessionStorage.setItem(API_CACHE_PREFIX + url, payload);
-        } catch (e2) {
-            /* 무시 */
-        }
-    }
 }
 
 // AbortSignal.timeout이 없는 브라우저(iOS 15 이하 사파리와 그 위의 카카오톡 등)에서도 쓰게 직접 만든다.
@@ -593,26 +548,6 @@ function timeoutSignal(ms) {
     const controller = new AbortController();
     setTimeout(() => controller.abort(new DOMException('요청 시간이 초과되었습니다', 'TimeoutError')), ms);
     return controller.signal;
-}
-
-async function cachedFetchJson(url, ttlMs) {
-    const cached = readApiCache(url, ttlMs);
-    if (cached !== undefined) return cached;
-    if (_inflightRequests.has(url)) return _inflightRequests.get(url);
-
-    const request = (async () => {
-        const res = await fetch(url, { signal: timeoutSignal(10000) });
-        if (!res.ok) throw new Error('요청 실패: ' + res.status);
-        const data = await res.json();
-        writeApiCache(url, data);
-        return data;
-    })();
-    _inflightRequests.set(url, request);
-    try {
-        return await request;
-    } finally {
-        _inflightRequests.delete(url);
-    }
 }
 
 // =====================================================================
@@ -804,6 +739,12 @@ function raceBadgeClass(race) {
     return ['T', 'Z', 'P'].includes(letter) ? ` race-badge race-${letter}` : '';
 }
 
+// 카드 왼쪽 종족 색 띠(edge-T/Z/P): 뱃지 글자를 읽지 않고도 종족 분포가 한눈에 보인다. 모르는 종족은 띠가 없다
+function raceEdgeClass(race) {
+    const letter = raceShortLabel(race);
+    return ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
+}
+
 function raceBadgeHtml(race, extraClass = '') {
     return `<span class="tag-badge${raceBadgeClass(race)}${extraClass}">${escapeHTML(raceShortLabel(race))}</span>`;
 }
@@ -926,8 +867,7 @@ function avatarSelectItemHtml(idPrefix, name, soopId, onclickFn, member, side) {
     const m = member || {};
     const [fn, ...lead] = [].concat(onclickFn);
     const race = m['종족'] || '';
-    const letter = raceShortLabel(race);
-    const edgeClass = ['T', 'Z', 'P'].includes(letter) ? ` edge-${letter}` : '';
+    const edgeClass = raceEdgeClass(race);
     const tierText = side ?? tierLabel(m['티어']).replace('티어', '');
     return `<div class="avatar-select-item${edgeClass}" id="${idPrefix}${escapeHTML(name)}" role="button" tabindex="0"${act(fn, ...lead, name)}>
                             ${race ? raceBadgeHtml(race) : ''}

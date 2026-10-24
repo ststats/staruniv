@@ -138,9 +138,8 @@ function boardColorClass(hex) {
 
 // 선수 카드: 사진 옆에 이름, 그 아래 티어·종족 뱃지. 누르면 프로필 창
 function boardCardHtml(m) {
-    const race = raceShortLabel(m.race || '');
     return `
-            <button type="button" class="board-card${['T', 'Z', 'P'].includes(race) ? ` edge-${race}` : ''}"${act('boardOpenProfile', tierIdKey(m))}>
+            <button type="button" class="board-card${raceEdgeClass(m.race)}"${act('boardOpenProfile', tierIdKey(m))}>
                 ${avatarHtml(m.id, 'board-card-av')}
                 <span class="board-card-body">
                     <span class="board-card-name">${escapeHTML(m.nickname)}</span>

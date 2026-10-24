@@ -13,12 +13,6 @@ const ENTRY_DORMANT = '휴면';
 const ENTRY_FA = 'FA';
 
 const entryPaging = label => ({ wrap: q => withTimeout(q, label) });
-const ENTRY_PERIODS = [
-    ['all', '전체'],
-    ['365', '최근 1년'],
-    ['90', '최근 90일'],
-    ['30', '최근 30일'],
-];
 const ENTRY_POSTER_W = 1200;
 // 대학대전은 9경기 5선승이 흔하다.
 const ENTRY_TARGET_DEFAULT = 9;
@@ -60,7 +54,7 @@ const EntryState = {
 async function entryLoadIndexFromSupabase() {
     // 랭킹·메타는 기다리지 않는다(보조 쿼리 하나가 느리면 탭 전체가 묶인다). 소속 순서는 작아서 같이 받는다.
     const [playersData, teamOrder] = await Promise.all([
-        Api.eloPlayers(entryPaging('선수 목록')),
+        eloPlayersSource(),
         Api.teamOrder()
             .then(rows => rows.map(t => t.name))
             .catch(() => []),
@@ -99,11 +93,24 @@ async function entryLoadIndexFromSupabase() {
     };
 }
 
+// 승률 모델은 명단을 기다리지 않고 같이 받기 시작한다(적용은 명단이 온 뒤). 실패하면 비워서 다음에 다시 받는다.
+let entryModelRequest = null;
+function requestEntryPredictionModel() {
+    if (!entryModelRequest) {
+        const request = Api.eloPredictionModel(entryPaging('승률 모델'));
+        entryModelRequest = request;
+        request.catch(() => {
+            if (entryModelRequest === request) entryModelRequest = null;
+        });
+    }
+    return entryModelRequest;
+}
+
 async function entryLoadRatingMetaInBackground() {
     if (!EntryState.index) return;
     if (EntryState.ratingMetaLoading) return EntryState.ratingMetaLoading;
     if (EntryState.ratingMetaLoaded.has('model')) return;
-    EntryState.ratingMetaLoading = Api.eloPredictionModel(entryPaging('승률 모델'))
+    EntryState.ratingMetaLoading = requestEntryPredictionModel()
         .then(model => {
             entryApplyPredictionModel(model);
             EntryState.ratingMetaLoaded.add('model');
@@ -161,6 +168,7 @@ async function entryEnsureLoaded() {
             if (box) box.innerHTML = '<div class="content-state">명단을 불러오는 중</div>';
         });
 
+        if (!EntryState.ratingMetaLoaded.has('model')) requestEntryPredictionModel().catch(() => {});
         EntryState.loading = entryLoadIndexFromSupabase()
             .then(data => {
                 EntryState.index = data;
@@ -323,9 +331,6 @@ function entryModelLogit(aPid, bPid) {
     return (ra.value - rb.value + entryRaceEdge(entryModelRace(a), entryModelRace(b))) * ENTRY_ELO_TO_LOGIT;
 }
 
-const ENTRY_ANALYSIS_SMALL_SAMPLE = 5;
-const ENTRY_ANALYSIS_GOOD_SAMPLE = 12;
-
 function entryClamp(v, lo, hi) {
     return Math.max(lo, Math.min(hi, v));
 }
@@ -357,14 +362,6 @@ function entryMapEdge(aRace, bRace, mapName) {
     if (Number.isFinite(direct)) return direct;
     const reverse = Number(table[bRace + aRace]);
     return Number.isFinite(reverse) ? -reverse : 0;
-}
-
-function entrySampleLabel(n) {
-    const count = Number(n) || 0;
-    if (!count) return '표본 없음';
-    if (count < ENTRY_ANALYSIS_SMALL_SAMPLE) return '표본 적음';
-    if (count < ENTRY_ANALYSIS_GOOD_SAMPLE) return '표본 보통';
-    return '표본 충분';
 }
 
 function entryRaceLabel(code) {
@@ -425,7 +422,7 @@ function entryComputeWinProb(aPid, bPid, mapName) {
 
 // 통산을 받아 두고 기간 탭은 화면에서 걸러 쓰므로 선수마다 한 번만 받는다.
 async function entryLoadPlayerRows(pid) {
-    const rows = await Api.eloPlayerMatches(pid, entryPaging('선수 전적'));
+    const rows = await eloPlayerMatchesSource(pid);
 
     const out = [];
     const maps = (EntryState.index && EntryState.index.maps) || {};
@@ -498,7 +495,7 @@ async function entryLoadH2h(pids) {
 
 function entryPeriodLabel() {
     if (EntryState.period === 'all') return '통산 전적';
-    const found = ENTRY_PERIODS.find(([k]) => k === EntryState.period);
+    const found = H2H_PERIODS.find(([k]) => k === EntryState.period);
     return `${found ? found[1] : '최근'} 전적`;
 }
 
@@ -633,7 +630,7 @@ function entrySetPeriod(period) {
 function renderEntryPeriod() {
     const box = document.getElementById('entry-period');
     if (!box) return;
-    box.innerHTML = `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="맞대결 기간">${ENTRY_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${EntryState.period === key ? ' active' : ''}" aria-pressed="${EntryState.period === key}"${act('entrySetPeriod', key)}>${label}</button>`).join('')}</div></div>`;
+    box.innerHTML = `<div class="h2h-topbar"><div class="filter-nav h2h-period tab-scroll" role="group" aria-label="맞대결 기간">${H2H_PERIODS.map(([key, label]) => `<button type="button" class="filter-item${EntryState.period === key ? ' active' : ''}" aria-pressed="${EntryState.period === key}"${act('entrySetPeriod', key)}>${label}</button>`).join('')}</div></div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -701,15 +698,21 @@ function entryTogglePlayer(side, pid) {
     requestAnimationFrame(() => entryRefreshProbs());
 }
 
+// 펼쳐 둔 분석·맵 선택창은 뒤 경기 번호가 하나씩 당겨지므로 같이 당긴다.
 function entryRemoveMatch(i) {
-    const prev = EntryState.analysisOpen || {};
+    const shift = prev => {
+        const next = {};
+        EntryState.matches.forEach((m, idx) => {
+            const oldIdx = idx >= i ? idx + 1 : idx;
+            if (prev[oldIdx]) next[idx] = true;
+        });
+        return next;
+    };
     EntryState.matches.splice(i, 1);
-    const next = {};
-    EntryState.matches.forEach((m, idx) => {
-        const oldIdx = idx >= i ? idx + 1 : idx;
-        if (prev[oldIdx]) next[idx] = true;
-    });
-    EntryState.analysisOpen = next;
+    EntryState.analysisOpen = shift(EntryState.analysisOpen || {});
+    EntryState.mapPickerAll = shift(EntryState.mapPickerAll || {});
+    const open = EntryState.mapPickerOpen;
+    EntryState.mapPickerOpen = open === null || open === i ? null : open > i ? open - 1 : open;
     renderEntry();
 }
 
@@ -719,8 +722,7 @@ function entryMoveMatch(i, step) {
     const list = EntryState.matches;
     if (j < 0 || j >= list.length) return;
     [list[i], list[j]] = [list[j], list[i]];
-    const open = EntryState.analysisOpen;
-    [open[i], open[j]] = [open[j], open[i]];
+    for (const open of [EntryState.analysisOpen, EntryState.mapPickerAll]) [open[i], open[j]] = [open[j], open[i]];
     if (EntryState.mapPickerOpen === i) EntryState.mapPickerOpen = j;
     else if (EntryState.mapPickerOpen === j) EntryState.mapPickerOpen = i;
     renderEntryResult();
@@ -1380,12 +1382,13 @@ function entryPosterRows() {
 async function entrySavePoster() {
     const ta = entrySideName(0);
     const tb = entrySideName(1);
-    const rows = entryPosterRows();
-    if (!rows.length) {
+    if (!EntryState.matches.length) {
         alert('대진을 먼저 만들어 주세요');
         return;
     }
     await entryLoadH2h(EntryState.matches.flatMap(m => [m.a, m.b]));
+    // 전적을 다시 받은 뒤에 센다(먼저 세면 받기 전의 '맞대결 없음'이 찍힌다)
+    const rows = entryPosterRows();
 
     const W = ENTRY_POSTER_W;
     // 휴대폰에서 줄어들어도 읽히게 글자를 넉넉히 키운다
