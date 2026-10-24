@@ -1,0 +1,507 @@
+/* =============================================================================
+   6. 홈 (넘기는 히어로 · 기념일 카드 · 방송 중 카드 · 최근 공지 카드)
+   ============================================================================= */
+@layer pages {
+    #page-home {
+        padding-top: 0;
+    }
+    #page-home > .container {
+        padding-top: var(--space-page-top);
+    }
+
+    /* ----- 넘기는 히어로: 한 장이 .page-header 하나. 네이비 면 토큰은 14-surfaces.css ----- */
+    .home-carousel {
+        position: relative;
+        overflow: hidden;
+        margin: 0 0 var(--space-hero-gap);
+    }
+    .home-carousel-track {
+        display: flex;
+        transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-carousel-track {
+            transition: none;
+        }
+    }
+    .home-carousel-slide {
+        flex: 0 0 100%;
+        min-width: 0;
+        margin: 0;
+    }
+    .home-carousel .page-header-title {
+        white-space: nowrap;
+    }
+    .home-carousel .page-header-title i {
+        font-style: normal;
+        color: var(--panel-accent);
+    }
+
+    /* 첫 장: 멤버 얼굴 띠 영상을 배경으로 깔고 글자 쪽은 네이비로 덮어 읽히게 한다. */
+    .home-brand-media {
+        position: absolute;
+        inset: 0;
+        background: var(--navy);
+    }
+    .home-carousel-slide.is-brand > .home-brand-media {
+        background-image: url(media/home/members-strip.jpg);
+        background-position: center;
+        background-size: cover;
+    }
+    :is(.home-brand-media, .home-anniv-media) > :is(img, video) {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    /* 글자 쪽을 덮는 네이비 막. 바탕은 첫 장 가로, 좁은 화면은 첫 장·기념일 장 모두 세로(아래 화면 폭별) */
+    :is(.home-brand-media, .home-anniv-media)::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+    }
+    .home-brand-media::after {
+        background: linear-gradient(
+            90deg,
+            var(--navy) 0%,
+            color-mix(in srgb, var(--navy) 86%, transparent) 30%,
+            color-mix(in srgb, var(--navy) 30%, transparent) 62%,
+            transparent 100%
+        );
+    }
+    .home-carousel-slide:is(.is-brand, .is-anniv) > :is(.page-header-main, .home-hero-links) {
+        position: relative;
+    }
+    /* 첫 장은 영상 대신 정지 그림(배경)을 보인다. 기념일 장은 멈춘 첫 화면이 남는다. */
+    @media (prefers-reduced-motion: reduce) {
+        .is-brand > .home-brand-media video {
+            display: none;
+        }
+    }
+
+    .home-hero-links {
+        display: flex;
+        gap: var(--space-inline-gap);
+    }
+    .home-hero-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        height: 40px;
+        padding: 0 var(--space-6);
+        background: #fff;
+        clip-path: var(--notch-6);
+        color: var(--navy);
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+
+    /* 점 묶음은 이 칸의 가운데 정렬로 가로 가운데에 선다 */
+    .home-carousel-controls {
+        position: absolute;
+        z-index: 2;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+    }
+    .home-carousel-controls > button {
+        position: absolute;
+        top: 50%;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        background: var(--panel-control);
+        clip-path: var(--notch-5);
+        color: var(--panel-text);
+        font-size: 18px;
+        line-height: 1;
+        transform: translateY(-50%);
+        pointer-events: auto;
+    }
+    .home-carousel-controls > button:hover {
+        background: var(--color-row-hover);
+    }
+    .home-carousel-controls > button:first-child {
+        left: max(0px, calc((100vw - 1280px) / 4));
+    }
+    .home-carousel-controls > button:last-child {
+        right: max(0px, calc((100vw - 1280px) / 4));
+    }
+    .home-carousel-dots {
+        position: absolute;
+        bottom: 22px;
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        pointer-events: auto;
+    }
+    .home-carousel-dots button {
+        padding: 0;
+        /* 누르는 영역만 25px로 넓히고(투명 테두리 9px만큼 여백을 빼) 보이는 점은 7px */
+        border: 9px solid transparent;
+        margin: -9px;
+        box-sizing: content-box;
+        background-clip: padding-box;
+    }
+
+    /* 기념일 장(page-home.js addAnnivSlide): 배경에 주인공 대표 사진, 뒤로 천천히 떨어지는 색종이 */
+    /* 대표 사진·영상(16:9)은 납작한 머리 전체에 깔면 위아래가 크게 잘려, 높이는 꽉 채우고 폭은 21:9까지만 오른쪽에 세운다.
+       화면 폭과 상관없이 위아래가 조금만 잘리고, 머리 폭보다 넓어지면 전체에 깔린다. 오른쪽은 미리보기 칸과 같은 여백이고
+       양 끝은 투명하게 풀어 뒤 무늬에 잇는다. 여러 명이면 겹쳐 두고 번갈아 보인다. */
+    .home-anniv-media {
+        position: absolute;
+        top: 0;
+        right: max(32px, calc((100vw - 1280px) / 2 + 40px));
+        height: 100%;
+        max-width: 100%;
+        aspect-ratio: 21 / 9;
+        mask-image: linear-gradient(90deg, transparent, rgb(0 0 0 / 0.4) 18%, #000 45%, #000 82%, transparent);
+    }
+    .home-anniv-media > * {
+        position: absolute;
+        inset: 0;
+        object-position: 50% 35%; /* 방송통계 TOP 칸과 같은 자르기(얼굴이 가운데~위쪽) */
+        opacity: 0;
+        transition: opacity 0.8s;
+    }
+    .home-anniv-media > .active {
+        opacity: 1;
+    }
+    .home-anniv-confetti {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+    .home-anniv-confetti i {
+        position: absolute;
+        top: -8%;
+        width: 6px;
+        height: 14px;
+        opacity: 0.5;
+        background: var(--panel-accent);
+        clip-path: var(--notch-2);
+    }
+    .home-anniv-confetti i:nth-child(3n + 1) {
+        background: var(--anniv-today);
+    }
+    .home-anniv-confetti i:nth-child(3n + 2) {
+        background: var(--color-accent-gold);
+    }
+    .home-anniv-confetti i:nth-child(4n) {
+        background: var(--color-hist-event);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        .home-anniv-confetti i {
+            animation: home-anniv-fall 6s linear infinite;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-anniv-confetti {
+            display: none;
+        }
+    }
+    @keyframes home-anniv-fall {
+        from {
+            top: -8%;
+            transform: rotate(0);
+        }
+        to {
+            top: 108%;
+            transform: rotate(260deg);
+        }
+    }
+
+    /* 오른쪽 미리보기 칸(page-home.js renderHomePreviewPanes) */
+    .home-carousel-preview {
+        /* 최대 네 일정만 보여 히어로 높이를 유지한다. */
+        position: absolute;
+        top: 48px;
+        bottom: 60px;
+        right: max(32px, calc((100vw - 1280px) / 2 + 40px));
+        width: 360px;
+        overflow: hidden;
+        padding: var(--space-5) var(--space-8);
+        background: var(--panel-control);
+    }
+    .home-carousel-preview:hover {
+        background: var(--color-row-hover);
+    }
+    .home-carousel-preview[data-preview='0'],
+    .home-carousel-preview[data-preview='1'] {
+        display: grid;
+        grid-template-rows: auto;
+        grid-auto-rows: minmax(0, 1fr);
+    }
+    .home-carousel-preview:has(.home-video-preview) {
+        padding: 0;
+    }
+    .home-preview-link {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+    .home-preview-label {
+        margin-bottom: var(--space-2);
+        color: var(--panel-muted);
+        font-size: var(--fs-eyebrow);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+    }
+    .home-preview-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--panel-muted);
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: center;
+    }
+    /* 첫 줄도 위에 선이 있어 이름표와 나뉜다 */
+    .home-preview-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: baseline;
+        align-content: center;
+        gap: var(--space-4);
+        border-top: 1px solid var(--panel-line);
+    }
+    .home-preview-row > * {
+        line-height: 20px;
+    }
+    .home-preview-row span {
+        color: var(--panel-muted);
+        font-size: var(--fs-small);
+    }
+    .home-preview-row b {
+        font-size: var(--fs-card-title);
+    }
+    /* 일정마다 글자 수가 달라도 시간 · 제목 · 내용의 시작 위치를 맞춘다. */
+    .home-carousel-preview[data-preview='0'] .home-preview-row {
+        grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1.3fr);
+    }
+    .home-video-preview {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #fff;
+    }
+    .home-video-play {
+        width: 0;
+        height: 0;
+        margin-left: var(--space-3);
+        border-top: 22px solid transparent;
+        border-bottom: 22px solid transparent;
+        border-left: 34px solid currentColor;
+    }
+
+    /* ----- 기념일 카드: 오늘부터 7일, 오늘 것은 '오늘'과 종류 뱃지를 분홍으로(카드 공통 모양은 04-components.css) ----- */
+    .home-anniv {
+        margin-bottom: var(--space-block-gap);
+    }
+    .home-anniv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+        gap: var(--space-compact-gap);
+    }
+    /* 두 줄 격자: 이름 줄과 D-day, 종류 줄과 날짜가 각각 한 줄에 선다. 뱃지는 tag-badge(20px · 노치 4px). */
+    .home-anniv-card {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        grid-template-areas:
+            'avatar name dday'
+            'avatar what date';
+        column-gap: var(--space-4);
+        row-gap: var(--space-2);
+        align-items: center;
+        padding: var(--space-card-pad-y) var(--space-card-pad-x);
+        color: var(--color-text-main);
+    }
+    /* 오늘 카드는 카드 공통 규칙의 뱃지 색 토큰만 바꾼다 */
+    .home-anniv-card.is-today {
+        --color-badge-format: var(--anniv-today-badge);
+    }
+    .home-anniv-avatar {
+        grid-area: avatar;
+        width: 36px;
+        height: 36px;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .home-anniv-name,
+    .home-anniv-what {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-width: 0;
+        height: 20px;
+    }
+    .home-anniv-name {
+        grid-area: name;
+        font-size: var(--fs-card-title);
+        font-weight: 700;
+    }
+    .home-anniv-what {
+        grid-area: what;
+        font-size: var(--fs-small);
+        font-weight: 700;
+    }
+    .home-anniv-dday,
+    .home-anniv-date {
+        justify-self: end;
+        line-height: 20px;
+    }
+    .home-anniv-dday {
+        grid-area: dday;
+        font-size: var(--fs-card-title);
+        font-weight: 800;
+    }
+    .home-anniv-card.is-today .home-anniv-dday {
+        color: var(--anniv-today);
+    }
+    .home-anniv-date {
+        grid-area: date;
+        color: var(--color-text-faint);
+        font-size: var(--fs-small);
+    }
+
+    /* ----- 홈 방송 중 구역(카드 공통 모양은 04-components.css) ----- */
+    .live-broadcast-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: var(--space-compact-gap);
+    }
+    .home-live-state {
+        min-height: 58px;
+    }
+    /* 방송 확인 중에는 아래 공지를 숨긴다. 방송 카드가 늦게 들어오면 공지가 밀려나서(CLS)다.
+       확인이 끝나거나 3초가 지나면 보인다. */
+    .home-live-broadcast[data-state='loading'] ~ * {
+        visibility: hidden;
+        animation: view-pending-reveal 0s 3s forwards;
+    }
+    .home-live-broadcast[data-state='partial'] .home-live-state {
+        min-height: auto;
+        align-items: flex-start;
+        padding: 0 0 var(--space-inline-gap);
+        font-size: var(--fs-meta);
+        text-align: left;
+    }
+
+    /* ----- 최근 공지 카드(멤버 공지 탭의 지난 글 목록도 같이 쓴다) ----- */
+    .home-notice-list {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        clip-path: var(--notch-12);
+    }
+    .home-notice-card {
+        display: flex;
+        align-items: stretch;
+        gap: var(--space-compact-gap);
+        padding: var(--space-5) var(--space-6);
+        background: var(--color-card);
+        transition: background 0.15s;
+    }
+    .home-notice-card:hover {
+        background: var(--color-row-hover);
+    }
+    .home-notice-avatar {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+    }
+    .home-notice-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--space-label-gap);
+    }
+    .home-notice-top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+    .home-notice-toptext {
+        flex: 1;
+        min-width: 0;
+    }
+    .home-notice-name {
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+    }
+    .home-notice-title-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        margin-top: 2px;
+    }
+    .home-notice-title {
+        min-width: 0;
+        font-size: var(--fs-list-name);
+        font-weight: 700;
+    }
+    .home-notice-dot {
+        flex-shrink: 0;
+        color: var(--color-icon-faint);
+        font-size: var(--fs-badge);
+    }
+    .home-notice-meta {
+        flex-shrink: 0;
+        color: var(--color-text-faint);
+        font-size: var(--fs-meta);
+        white-space: nowrap;
+    }
+    .home-notice-snippet {
+        color: var(--color-text-sub);
+        font-size: var(--fs-small);
+    }
+    .home-notice-thumb {
+        flex-shrink: 0;
+        align-self: center;
+        height: 64px;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        background: var(--color-placeholder-bg);
+        clip-path: var(--notch-10);
+    }
+
+    /* ----- 화면 폭별 ----- */
+    @media (max-width: 1199.98px) {
+        .home-carousel-preview {
+            width: 300px;
+        }
+    }
+    @media (max-width: 920px) {
+        .live-broadcast-grid {
+            grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+        }
+        .home-carousel-slide > .home-carousel-preview {
+            display: none;
+        } /* 위 data-preview별 display:grid보다 세게 */
+    }
+    @media (max-width: 767.98px) {
+        .home-carousel-controls > button {
+            display: none;
+        }
+        /* 좁은 화면은 글자가 사진 위에 놓여 기념일 사진도 오른쪽 여백 없이 깔고 아래로 갈수록 덮는다 */
+        .home-anniv-media {
+            right: 0;
+        }
+        :is(.home-brand-media, .home-anniv-media)::after {
+            background: linear-gradient(
+                180deg,
+                color-mix(in srgb, var(--navy) 35%, transparent) 0%,
+                color-mix(in srgb, var(--navy) 85%, transparent) 62%,
+                var(--navy) 100%
+            );
+        }
+    }
+}
