@@ -198,16 +198,24 @@
                 const add = [...after].filter(id => !before.has(id));
                 const remove = [...before].filter(id => !after.has(id));
                 if (!add.length && !remove.length) throw new Error('바뀐 내용이 없습니다');
-                if (remove.length) {
-                    const { error } = await AdminApi.schedule.removeOffAir(offDate, remove);
-                    if (error) throw error;
-                }
-                if (add.length) {
-                    const start = await C().nextSourceOrder('calendar_off_air');
-                    const { error } = await AdminApi.schedule.addOffAir(
-                        add.map((soop_id, i) => ({ off_date: offDate, soop_id, source_order: start + i }))
-                    );
-                    if (error) throw error;
+                let removed = false;
+                try {
+                    if (remove.length) {
+                        const { error } = await AdminApi.schedule.removeOffAir(offDate, remove);
+                        if (error) throw error;
+                        removed = true;
+                    }
+                    if (add.length) {
+                        const start = await C().nextSourceOrder('calendar_off_air');
+                        const { error } = await AdminApi.schedule.addOffAir(
+                            add.map((soop_id, i) => ({ off_date: offDate, soop_id, source_order: start + i }))
+                        );
+                        if (error) throw error;
+                    }
+                } catch (err) {
+                    // 빼기는 됐는데 넣기에서 실패하면 DB는 이미 바뀌었으므로 달력을 다시 받아 화면을 맞춘다
+                    if (removed) await refresh(offDate).catch(() => {});
+                    throw err;
                 }
                 C().toast(`휴방을 저장했습니다. (추가 ${add.length} · 삭제 ${remove.length})`);
                 await refresh(offDate);

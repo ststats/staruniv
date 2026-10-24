@@ -178,10 +178,13 @@
       `,
             onSubmit: async () => {
                 const id = row.id || `h-${Date.now().toString(36)}`;
+                const eventDate = C().value('ah_date');
+                const title = C().value('ah_title').trim();
+                // 검사에 걸리면 올린 사진만 남으므로 올리기 전에 확인한다
+                if (!eventDate || !title) throw new Error('날짜와 제목은 필수입니다');
                 let image = row.image || null;
                 const file = document.getElementById('ah_image')?.files?.[0];
                 if (file) image = await C().uploadMedia(file, 'history', id);
-                const eventDate = C().value('ah_date');
                 // 같은 날 순서는 ▲▼로 정한다. 새 항목이나 날짜를 옮긴 항목은 그날 맨 뒤에 붙인다.
                 let order = row.order;
                 if (!row.id || row.date !== eventDate) {
@@ -193,7 +196,7 @@
                     entry_kind: 'manual',
                     event_date: eventDate,
                     event_type: document.querySelector('input[name="ah_type"]:checked')?.value || 'event',
-                    title: C().value('ah_title').trim(),
+                    title,
                     description: C().empty(C().value('ah_desc')),
                     members: collectParticipants(),
                     youtube_url: C().empty(C().value('ah_youtube')),
@@ -202,7 +205,6 @@
                     hidden: !!document.getElementById('ah_hidden')?.checked,
                     updated_at: new Date().toISOString(),
                 };
-                if (!payload.event_date || !payload.title) throw new Error('날짜와 제목은 필수입니다');
                 const { error } = await AdminApi.history.upsert(payload);
                 if (error) throw error;
                 C().toast('연혁을 저장했습니다');
@@ -327,7 +329,7 @@
         await load();
     }
 
-    window.StarUnivAdminHistory = { render, openNew: () => open(null) };
+    window.StarUnivAdminHistory = { render };
 
     async function init() {
         if (document.body.dataset.adminPage !== 'schedule') return;

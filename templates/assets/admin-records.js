@@ -8,6 +8,8 @@
         count: 0,
         rows: [],
         expanded: new Map(),
+        opening: new Set(),
+        loadSeq: 0,
         members: [],
         roundCounts: {},
         options: null,
@@ -223,12 +225,15 @@
         });
         refreshRounds();
     }
+    // 검색을 빨리 바꾸면 늦게 온 앞선 결과가 덮지 않게 마지막 요청만 그린다
     async function load(page = 0) {
+        const seq = ++S.loadSeq;
         S.page = Math.max(0, page);
         let allowed = null;
         const player = C().value('recordsPlayer').trim();
         if (player) {
             const { data, error } = await AdminApi.rounds.matchNosOfPlayer(player);
+            if (seq !== S.loadSeq) return;
             if (error) throw error;
             allowed = [...new Set((data || []).map(x => x.match_no))];
             if (!allowed.length) {
@@ -247,6 +252,7 @@
             format: C().value('recordsFormat').trim(),
             matchNos: allowed,
         });
+        if (seq !== S.loadSeq) return;
         if (error) throw error;
         S.rows = data || [];
         S.count = count || 0;
@@ -254,6 +260,7 @@
         const matchNos = S.rows.map(r => r.match_no).filter(v => v !== null && v !== undefined);
         if (matchNos.length) {
             const { data: roundRows, error: roundError } = await AdminApi.rounds.matchNosIn(matchNos);
+            if (seq !== S.loadSeq) return;
             if (roundError) throw roundError;
             (roundRows || []).forEach(r => {
                 const k = String(r.match_no);
@@ -268,7 +275,16 @@
             tr.nextElementSibling?.remove();
             return;
         }
-        const rows = await getRounds(no);
+        // 받는 동안 다시 누르면 줄이 두 번 붙으므로 무시하고, 그 사이 표를 새로 그렸으면 붙이지 않는다
+        if (S.opening.has(no)) return;
+        S.opening.add(no);
+        let rows;
+        try {
+            rows = await getRounds(no);
+        } finally {
+            S.opening.delete(no);
+        }
+        if (!tr.isConnected) return;
         S.expanded.set(no, rows);
         const detail = document.createElement('tr');
         detail.className = 'admin-expand-row';
