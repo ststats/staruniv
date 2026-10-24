@@ -242,7 +242,12 @@
         img?.addEventListener('change', () => {
             const f = img.files?.[0],
                 box = document.getElementById('ahImagePreview');
-            if (f && box) box.innerHTML = `<img src="${URL.createObjectURL(f)}" alt="">`;
+            if (f && box) {
+                // 그려진 뒤에는 미리보기 주소가 필요 없어 바로 놓아 준다
+                const url = URL.createObjectURL(f);
+                box.innerHTML = `<img src="${url}" alt="">`;
+                box.querySelector('img').onload = () => URL.revokeObjectURL(url);
+            }
         });
     }
 
