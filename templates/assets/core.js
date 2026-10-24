@@ -701,7 +701,7 @@ function teamCellInnerHtml(teamName) {
     return `<span class="team-cell">${teamLogoHtml(teamName)}<span class="ellipsis-text">${escapeHTML(teamName)}</span></span>`;
 }
 
-// staruniv.sql의 tier_ladder·멤버 목록 정렬과 같아야 한다(npm test가 확인한다)
+// staruniv.sql의 tier_ladder·멤버 목록 정렬과 같아야 한다(npm test가 확인한다). ststat의 티어 순서와도 같아야 한다.
 // prettier-ignore
 const SITE_ORDER = {
     "tiers": ["갓", "킹", "잭", "조커", "스페이드", "0", "1", "2", "3", "4", "5", "6", "7", "8", "베이비"],

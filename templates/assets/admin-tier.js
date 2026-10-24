@@ -19,14 +19,8 @@
         options: { tiers: [], affs: [], races: [] },
     };
     const PROMO = [8, 7, 6, 5, 4, 3, 2, 1, 0];
-    // ststat의 티어 순서와도 같아야 한다.
-    const LADDER = SITE_ORDER.tiers;
     // 공개 화면의 core.js tierLabel과 달리 숫자 티어에만 '티어'를 붙인다.
     const adminTierLabel = t => (/^\d$/.test(String(t)) ? `${t}티어` : String(t) === '체크' ? '미분류' : `${t}`);
-    const tierRank = t => {
-        const i = LADDER.indexOf(String(t));
-        return i < 0 ? LADDER.length : i;
-    };
     function affiliationChoices(current, emptyLabel = '선택') {
         const values = [...new Set([...S.options.affs, 'FA', '휴면', current].filter(Boolean))].sort((a, b) =>
             a.localeCompare(b, 'ko')
@@ -306,7 +300,7 @@
             [...new Set(all.map(r => String(r[key] || '').trim()).filter(Boolean))].sort((a, b) =>
                 a.localeCompare(b, 'ko', { numeric: true, sensitivity: 'base' })
             );
-        const tiers = clean('tier').sort((a, b) => tierRank(a) - tierRank(b) || a.localeCompare(b, 'ko'));
+        const tiers = clean('tier').sort((a, b) => tierIndex(a) - tierIndex(b) || a.localeCompare(b, 'ko'));
         S.options = { tiers, affs: clean('affiliation'), races: clean('race') };
     }
 
@@ -451,7 +445,7 @@
                 R.rows = ranks
                     .filter(r => r.tier_rank != null)
                     .map(r => ({ ...r, ...(who[r.elo_id] || {}), se: se[r.elo_id] ?? null }))
-                    .sort((a, b) => tierRank(a.tier) - tierRank(b.tier) || a.tier_rank - b.tier_rank);
+                    .sort((a, b) => tierIndex(a.tier) - tierIndex(b.tier) || a.tier_rank - b.tier_rank);
                 R.loaded = true;
             })().finally(() => {
                 R.loading = null;
@@ -550,7 +544,7 @@
         );
         const tiers = [
             ['', '전체', R.rows.length],
-            ...LADDER.filter(t => counts[t]).map(t => [t, adminTierLabel(t), counts[t]]),
+            ...TIER_ORDER.filter(t => counts[t]).map(t => [t, adminTierLabel(t), counts[t]]),
         ]
             .map(
                 ([k, l, n]) => `<option value="${esc(k)}"${R.tier === k ? ' selected' : ''}>${esc(l)} · ${n}명</option>`
