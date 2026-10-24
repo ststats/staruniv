@@ -11,6 +11,7 @@
         drawer: null,
         members: null,
         siteConfig: null,
+        authCheck: null,
     };
 
     const $ = id => document.getElementById(id);
@@ -185,7 +186,28 @@
         return err?.message || err?.details || err?.hint || String(err || '알 수 없는 오류');
     }
 
+    // 첫 확인과 onAuthStateChange(INITIAL_SESSION·SIGNED_IN)가 겹쳐 오므로 같은 토큰이면 한 번만 확인한다.
     async function requireAdmin() {
+        const {
+            data: { session },
+        } = await window.AdminApi.auth.session();
+        const token = session?.access_token || '';
+        if (token && state.authCheck?.token === token) return state.authCheck.promise;
+        const promise = checkAdmin();
+        state.authCheck = { token, promise };
+        // 실패·거부는 다음 이벤트에서 다시 확인하도록 남기지 않는다.
+        promise.then(
+            ok => {
+                if (!ok && state.authCheck?.promise === promise) state.authCheck = null;
+            },
+            () => {
+                if (state.authCheck?.promise === promise) state.authCheck = null;
+            }
+        );
+        return promise;
+    }
+
+    async function checkAdmin() {
         const {
             data: { user },
             error,

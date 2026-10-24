@@ -317,8 +317,8 @@
                 if (!card) return;
                 ev.preventDefault();
                 ev.stopPropagation();
-                const name = card.dataset.member;
-                const row = rows.find(r => r.nickname === name) || rows.find(r => r.name === name);
+                // 재입단 등으로 같은 이름 기록이 여럿일 수 있어 id로 찾는다
+                const row = rows.find(r => String(r.id) === card.dataset.memberId);
                 if (row) open(row);
             },
             true

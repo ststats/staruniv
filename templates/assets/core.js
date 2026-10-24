@@ -1567,9 +1567,9 @@ function applyNavConfig(data) {
         }
 
         const carousel = data.homeCarousel && typeof data.homeCarousel === 'object' ? data.homeCarousel : {};
-        document.querySelectorAll('.home-carousel-slide').forEach((slide, idx) => {
-            const key = ['members', 'schedule', 'records', 'video'][idx];
-            const cfg = carousel[key];
+        // 기념일 장이 앞에 끼어도 어긋나지 않게 순서가 아니라 data-carousel 키로 찾는다
+        document.querySelectorAll('.home-carousel-slide[data-carousel]').forEach(slide => {
+            const cfg = carousel[slide.dataset.carousel];
             if (!cfg) return;
             const title = slide.querySelector('.page-header-title');
             const desc = slide.querySelector('.page-header-subtitle');

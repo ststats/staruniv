@@ -190,14 +190,13 @@
         });
     }
 
-    async function openHomeSlide(index) {
+    async function openHomeSlide(key) {
         const cfg = configDefaults(await C().loadSiteConfig());
-        const key = ['members', 'schedule', 'records', 'video'][index];
-        if (!key) return;
-        const slide = document.querySelectorAll('.home-carousel-slide')[index];
-        const titleEl = slide?.querySelector('.page-header-title'),
-            descEl = slide?.querySelector('.page-header-subtitle'),
-            linkEl = slide?.querySelector('.home-hero-links a');
+        const slide = document.querySelector(`.home-carousel-slide[data-carousel="${key}"]`);
+        if (!slide) return;
+        const titleEl = slide.querySelector('.page-header-title'),
+            descEl = slide.querySelector('.page-header-subtitle'),
+            linkEl = slide.querySelector('.home-hero-links a');
         const original = {
             title: titleEl?.textContent || '',
             description: descEl?.textContent || '',
@@ -237,12 +236,13 @@
     async function enhanceHome() {
         if (document.body.dataset.adminPage !== 'home') return;
         // PC에서는 오른쪽 미리보기 칸 때문에 바로가기 뒤에 붙도록 그 폭을 --cta-w로 알린다
-        const slides = [...document.querySelectorAll('.home-carousel-slide')];
-        slides.forEach((slide, i) => {
+        // 기념일 장은 설정 대상이 아니라 data-carousel 키가 있는 장에만 단다
+        const slides = [...document.querySelectorAll('.home-carousel-slide[data-carousel]')];
+        slides.forEach(slide => {
             if (slide.querySelector('.admin-home-edit')) return;
             slide.insertAdjacentHTML(
                 'beforeend',
-                `<div class="admin-hero-tools"><button type="button" class="admin-tool-btn admin-home-edit" data-icon="edit" data-admin-home-slide="${i}">히어로 편집</button></div>`
+                `<div class="admin-hero-tools"><button type="button" class="admin-tool-btn admin-home-edit" data-icon="edit" data-admin-home-slide="${slide.dataset.carousel}">히어로 편집</button></div>`
             );
         });
         const fitCta = () =>
@@ -380,7 +380,7 @@
                 if (slide) {
                     ev.preventDefault();
                     ev.stopPropagation();
-                    openHomeSlide(Number(slide.dataset.adminHomeSlide));
+                    openHomeSlide(slide.dataset.adminHomeSlide);
                     return;
                 }
             },

@@ -40,7 +40,7 @@ function switchMemberView(viewType, skipHashUpdate, selectedMember = null) {
 
 function memberCardHtml(m) {
     return `
-        <div class="member-card${isActiveMember(m) ? '' : ' former'}${raceEdgeClass(m['종족'])}" data-member="${escapeHTML(m['이름'])}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0"${act('openMemberProfile', m._id)}>
+        <div class="member-card${isActiveMember(m) ? '' : ' former'}${raceEdgeClass(m['종족'])}" data-member="${escapeHTML(m['이름'])}" data-member-id="${escapeHTML(m._id)}" data-soop-id="${escapeHTML(m['SOOP ID'] || '')}" role="button" tabindex="0"${act('openMemberProfile', m._id)}>
             <div class="member-card-media tier-card-media">
                 <img class="member-live-thumb" data-member-live-thumb="${escapeHTML(m['SOOP ID'] || '')}" alt="" hidden>
                 <div class="member-profile-media">${avatarHtml(m['SOOP ID'], 'member-avatar-img')}</div>

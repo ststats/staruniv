@@ -41,6 +41,8 @@
         auth: {
             // GET /api/v1/admin/me
             user: () => db().auth.getUser(),
+            // 저장된 세션만 읽는다(요청 없음)
+            session: () => db().auth.getSession(),
             // POST /api/v1/admin/login
             signIn: (email, password) => db().auth.signInWithPassword({ email, password }),
             // POST /api/v1/admin/logout
