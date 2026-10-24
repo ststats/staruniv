@@ -90,7 +90,7 @@
             .join('')
             .slice(0, 60);
 
-    async function saveLogo(name, fileBlob, color) {
+    async function saveLogo(name, fileBlob) {
         const bitmap = await createImageBitmap(fileBlob);
         const small = await shrink(bitmap);
         const ext = small.type === 'image/png' ? 'png' : 'webp';
@@ -98,7 +98,7 @@
         const up = await AdminApi.media.upload(path, small, { contentType: small.type, upsert: false });
         if (up.error) throw up.error;
         const prev = T.logos[name];
-        const row = { name, path, color: color || topbarColor(bitmap), updated_at: new Date().toISOString() };
+        const row = { name, path, color: topbarColor(bitmap), updated_at: new Date().toISOString() };
         const { error } = await AdminApi.logos.save(row);
         if (error) {
             await AdminApi.media.remove([path]);
@@ -156,6 +156,9 @@
             onSubmit: async () => {
                 const name = C().value('tm_name').trim();
                 if (!name) throw new Error('팀 이름은 필수입니다');
+                // 팀을 저장한 뒤에 걸리면 저장된 줄 모르게 되므로 로고 파일은 먼저 확인한다
+                const file = document.getElementById('tm_logo')?.files?.[0];
+                if (file && !/^image\//.test(file.type)) throw new Error('로고는 이미지 파일만 올릴 수 있습니다');
                 const dup = T.teams.find(t => t.team_name === name && t.id !== r.id);
                 if (dup) throw new Error(`${name}은(는) 이미 있는 팀입니다`);
                 const row = {
@@ -183,9 +186,7 @@
                 }
                 if (error) throw error;
                 if (r.id && r.team_name && r.team_name !== name) await renameLogo(r.team_name, name);
-                const file = document.getElementById('tm_logo')?.files?.[0];
                 if (file) {
-                    if (!/^image\//.test(file.type)) throw new Error('로고는 이미지 파일만 올릴 수 있습니다');
                     await saveLogo(name, file);
                 } else if (document.getElementById('tm_logo_del')?.checked) {
                     await removeLogo(name);
@@ -210,8 +211,12 @@
             pick.onchange = () => {
                 const f = pick.files && pick.files[0],
                     box = document.querySelector('.admin-tm-logo-edit .admin-tl-logo');
-                if (f && box && /^image\//.test(f.type))
-                    box.innerHTML = `<img src="${esc(URL.createObjectURL(f))}" alt="">`;
+                if (f && box && /^image\//.test(f.type)) {
+                    // 그려진 뒤에는 미리보기 주소가 필요 없어 바로 놓아 준다
+                    const url = URL.createObjectURL(f);
+                    box.innerHTML = `<img src="${esc(url)}" alt="">`;
+                    box.querySelector('img').onload = () => URL.revokeObjectURL(url);
+                }
             };
     }
 
