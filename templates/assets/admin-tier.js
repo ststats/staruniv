@@ -17,13 +17,14 @@
         selected: new Set(),
         filters: { q: '', tier: '', aff: '', race: '' },
         options: { tiers: [], affs: [], races: [] },
+        teamNames: [],
     };
     const PROMO = [8, 7, 6, 5, 4, 3, 2, 1, 0];
     // 공개 화면의 core.js tierLabel과 달리 숫자 티어에만 '티어'를 붙인다.
     const adminTierLabel = t => (/^\d$/.test(String(t)) ? `${t}티어` : String(t) === '체크' ? '미분류' : `${t}`);
     function affiliationChoices(current, emptyLabel = '선택') {
-        const values = [...new Set([...S.options.affs, 'FA', '휴면', current].filter(Boolean))].sort((a, b) =>
-            a.localeCompare(b, 'ko')
+        const values = [...new Set([...S.options.affs, ...S.teamNames, 'FA', '휴면', current].filter(Boolean))].sort(
+            (a, b) => a.localeCompare(b, 'ko')
         );
         return [['', emptyLabel], ...values.map(v => [v, v])];
     }
@@ -148,10 +149,20 @@
         });
         return p;
     }
+    // 소속 목록은 명단에 쓰인 값이라 선수가 아직 없는 새 팀은 빠진다. 창을 열 때마다 팀 관리의 팀(해체 전)을 더한다.
+    // 못 읽으면 명단 값만으로 연다.
+    async function loadChoices() {
+        const [{ data, error }] = await Promise.all([
+            Promise.resolve(AdminApi.teams.list()).catch(error => ({ error })),
+            S.options.affs.length ? null : loadFilterOptions(),
+        ]);
+        if (error) return console.error('팀 목록 조회 실패:', error);
+        S.teamNames = (data || []).filter(t => !t.disbanded_date).map(t => String(t.team_name || '').trim());
+    }
     // after: 새로 저장한 뒤 할 일(신규 인원에서 추가하면 대기 명단 줄을 지운다)
     async function open(r, after) {
         r = r || {};
-        if (!S.options.affs.length) await loadFilterOptions();
+        await loadChoices();
         C().openDrawer({
             eyebrow: 'TIER',
             title: r.id ? '티어 선수 수정' : '새 선수 추가',
@@ -274,7 +285,7 @@
     }
     async function bulk() {
         if (!S.selected.size) return C().toast('선택한 행이 없습니다', 'error');
-        if (!S.options.affs.length) await loadFilterOptions();
+        await loadChoices();
         C().openDrawer({
             eyebrow: 'BULK',
             title: `${S.selected.size}명 일괄 수정`,
