@@ -1097,7 +1097,7 @@ revoke all on function public.admin_tier_job_dispatch_status(bigint) from public
 grant execute on function public.admin_tier_job_dispatch_status(bigint) to authenticated;
 
 -- 고른 변동을 tier_members에 한 번에 적용한다.
---   p_updates   [{id, affiliation?, tier?, race?, nickname?}]  바뀌는 칸만
+--   p_updates   [{id, affiliation?, tier?, race?, nickname?, role?}]  바뀌는 칸만(role은 빈 값이면 직책을 지운다)
 --   p_inserts   [{nickname, tier, race, affiliation, soop_id?, elo_id?}]
 --   p_confirmed [{ref:[구역,카드], id} 또는 {ref, insert:새 선수 순번(0부터)}]  학습용
 --   p_date      승급일(보통 티어표 글 날짜)
@@ -1204,15 +1204,19 @@ begin
       -- 빈 값('-' = 종족미정)으로도 바꾼다(normalize_race가 null로 적는다)
       race = case when u ? 'race' then nullif(btrim(u->>'race'), '') else race end,
       nickname = coalesce(nullif(btrim(u->>'nickname'), ''), nickname),
+      -- 직책은 소속이 바뀐 카드에서만 온다. 빈 값이면 직책을 지운다
+      role = case when u ? 'role' then nullif(btrim(u->>'role'), '') else role end,
       history = hist,
       modified_at = stamp
     where id = r.id;
     n_upd := n_upd + 1;
     log := log || jsonb_build_object('id', r.id, 'nickname', r.nickname,
-      'before', jsonb_build_object('nickname', r.nickname, 'affiliation', r.affiliation, 'tier', r.tier, 'race', r.race),
+      'before', jsonb_build_object('nickname', r.nickname, 'affiliation', r.affiliation, 'tier', r.tier, 'race', r.race,
+                                   'role', r.role),
       'after', jsonb_build_object('nickname', coalesce(nullif(btrim(u->>'nickname'), ''), r.nickname),
                                   'affiliation', new_aff, 'tier', new_tier,
-                                  'race', case when u ? 'race' then nullif(btrim(u->>'race'), '') else r.race end),
+                                  'race', case when u ? 'race' then nullif(btrim(u->>'race'), '') else r.race end,
+                                  'role', case when u ? 'role' then nullif(btrim(u->>'role'), '') else r.role end),
       'promoted', promoted);
   end loop;
 
@@ -1222,8 +1226,9 @@ begin
       raise exception '새 선수 닉네임이 비었습니다.';
     end if;
     next_order := next_order + 1;
+    -- 티어표에 처음 나온 날은 '시작'에 적는다(티어표 등록일은 관리자가 따로 적는다)
     insert into public.tier_members (source_order, nickname, soop_id, elo_id, tier, race, affiliation, history,
-                                     modified_at, tier_table_registered, gender)
+                                     modified_at, started_on, gender)
     values (next_order, btrim(u->>'nickname'), nullif(btrim(u->>'soop_id'), ''),
             case when coalesce(u->>'elo_id', '') ~ '^[0-9]+$' then (u->>'elo_id')::int end,
             nullif(u->>'tier', ''),
@@ -1701,4 +1706,4 @@ language sql set search_path = public as $$
 $$;
 revoke all on function public.stamp_schema(text, text) from public, anon, authenticated;
 
-select public.stamp_schema('staruniv', 'c3a1fc6013f1');
+select public.stamp_schema('staruniv', 'e895947930a6');

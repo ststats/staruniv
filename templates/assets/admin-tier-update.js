@@ -54,7 +54,7 @@
     }
     async function loadPeople() {
         if (U.people) return;
-        U.people = await AdminApi.tierMembers.all('id,nickname,soop_id,tier,race,affiliation');
+        U.people = await AdminApi.tierMembers.all('id,nickname,soop_id,tier,race,affiliation,role');
         U.byId = {};
         U.pickIndex = {};
         U.people.forEach(p => {
@@ -88,13 +88,25 @@
     // ---- 결과 → 관리자 선택(기본값) ----
     function initDecisions() {
         const r = U.job.result || {};
-        const d = { changes: {}, nick: {}, tier: {}, race: {}, teams: {}, cards: {}, missing: {}, faOnly: {} };
+        const d = {
+            changes: {},
+            nick: {},
+            tier: {},
+            race: {},
+            role: {},
+            teams: {},
+            cards: {},
+            missing: {},
+            faOnly: {},
+        };
         (r.changes || []).forEach((c, i) => {
             d.changes[i] = !c.uncertain;
             if (c.diff?.nickname) d.nick[i] = c.diff.nickname[1];
             // 못 읽었으면 지금 값에서 시작한다. 고쳐서 반영하면 그 카드 글씨를 고친 값으로 기억한다.
             if (c.diff?.tier) d.tier[i] = String(c.diff.tier[1] ?? c.diff.tier[0] ?? '');
             if (c.diff?.race) d.race[i] = String(c.diff.race[1] ?? c.diff.race[0] ?? '');
+            // 소속이 바뀌면 직책도 바뀌는 일이 많아 지금 직책에서 시작해 고칠 수 있게 한다
+            if (c.diff?.affiliation) d.role[i] = String(U.byId?.[c.id]?.role ?? '');
         });
         (r.review || []).forEach((x, i) => {
             // from: 이름이 바뀐 기존 대학(비우면 새 대학). 없어진 대학 출신이 대부분이면 그 대학으로 시작한다.
@@ -154,7 +166,10 @@
             }
             if (c.id == null) return;
             const f = {};
-            if (c.diff.affiliation) f.affiliation = teamName(c.diff.affiliation[1]);
+            if (c.diff.affiliation) {
+                f.affiliation = teamName(c.diff.affiliation[1]);
+                f.role = String(U.decide.role[i] ?? '').trim();
+            }
             if (c.diff.tier) f.tier = U.decide.tier[i] ?? c.diff.tier[1];
             if (c.diff.race) f.race = U.decide.race[i] ?? c.diff.race[1];
             if (c.diff.nickname) {
@@ -358,8 +373,13 @@
                         : `<input class="admin-input" data-tu-nick="${i}" value="${esc(U.decide.nick[i] ?? c.diff.nickname[1])}">`
                 }`
             );
-        if (c.diff.affiliation)
+        if (c.diff.affiliation) {
             parts.push(`소속 ${esc(c.diff.affiliation[0] || '-')} → <b>${esc(teamName(c.diff.affiliation[1]))}</b>`);
+            if (i != null)
+                parts.push(
+                    `직책 <input class="admin-input" data-tu-role="${i}" value="${esc(U.decide.role[i] ?? '')}" placeholder="비우면 직책 없음">`
+                );
+        }
         if (c.diff.tier)
             parts.push(
                 `티어 ${esc(tierText(c.diff.tier[0]) || '-')} → ${
@@ -498,9 +518,12 @@
         }
         if (b.race !== a.race) out.push(['종족', `${who} ${b.race || '-'} → ${a.race || '-'}`]);
         if (b.nickname !== a.nickname) out.push(['닉네임', `${b.nickname} → ${a.nickname}`]);
+        // 직책은 이 기능 전 기록에는 없어 둘 다 있을 때만 비교한다
+        if ('role' in b && 'role' in a && (b.role || '') !== (a.role || ''))
+            out.push(['직책', `${who} ${b.role || '-'} → ${a.role || '-'}`]);
         return out;
     }
-    const LOG_ORDER = ['승급', '강등', '입단·복귀', '이적', 'FA', '휴면', '새 선수', '종족', '닉네임'];
+    const LOG_ORDER = ['승급', '강등', '입단·복귀', '이적', 'FA', '휴면', '새 선수', '종족', '닉네임', '직책'];
     function logGroups(log) {
         const g = {};
         log.forEach(e =>
@@ -705,6 +728,9 @@
         });
         on('[data-tu-nick]', 'oninput', n => {
             U.decide.nick[n.dataset.tuNick] = n.value;
+        });
+        on('[data-tu-role]', 'oninput', n => {
+            U.decide.role[n.dataset.tuRole] = n.value;
         });
         on('[data-tu-tier]', 'onchange', n => {
             U.decide.tier[n.dataset.tuTier] = n.value;
