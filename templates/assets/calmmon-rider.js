@@ -654,8 +654,8 @@ function giveItem(r, list) {
               : q > 0.58
                 ? ITEM_POOLS.rear
                 : ITEM_POOLS.middle;
-    r.item = hasAhead && Math.random() < 0.03 ? 'lightning' : pool[Math.floor(Math.random() * pool.length)];
-    r.useIn = 0.45 + Math.random() * 0.9;
+    r.item = hasAhead && raceRandom() < 0.03 ? 'lightning' : pool[Math.floor(raceRandom() * pool.length)];
+    r.useIn = 0.45 + raceRandom() * 0.9;
     r.itemTimer = 1.2;
 }
 const attackTargets = [],
@@ -1105,8 +1105,23 @@ function setRate(n) {
     speedButtons.forEach(b => b.classList.toggle('active', +b.dataset.speed === n));
     saveSetup();
 }
-function start() {
+// 경기 난수. 같은 시드·같은 출전 순서면 같은 경기가 나온다(자동 녹화가 미리 만든 경기를 그대로 재현).
+// 화면 효과는 경기 상태를 따라 그려지므로 시드와 상관없다. 시드를 안 주면(버튼으로 시작) 새로 뽑는다.
+let raceSeed = 0,
+    raceRandom = Math.random;
+function seededRandom(seed) {
+    let a = seed >>> 0;
+    return () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+function start(seed) {
     if (!ready || chosen.size < 2) return false;
+    raceSeed = Number.isInteger(seed) ? seed >>> 0 : Math.floor(Math.random() * 4294967296);
+    raceRandom = seededRandom(raceSeed);
     raceAudio.init();
     raceAudio.restartMusic();
     closeCeremony();
@@ -1130,11 +1145,11 @@ function start() {
         speed: 0,
         form: 0,
         formTarget: 0,
-        decision: 1 + Math.random() * 2,
+        decision: 1 + raceRandom() * 2,
         boost: 0,
-        cooldown: 3 + Math.random() * 5,
+        cooldown: 3 + raceRandom() * 5,
         finish: null,
-        phase: Math.random() * Math.PI * 2,
+        phase: raceRandom() * Math.PI * 2,
         place: index + 1,
         ai: index,
         stun: 0,
@@ -1393,9 +1408,9 @@ function tick(dt) {
             if (r.useIn <= 0) useItem(r, standings);
         }
         if (r.decision <= 0) {
-            r.formTarget = (Math.random() - 0.5) * 0.18;
-            r.laneTarget = (Math.random() - 0.5) * 38;
-            r.decision = 1.5 + Math.random() * 2.8;
+            r.formTarget = (raceRandom() - 0.5) * 0.18;
+            r.laneTarget = (raceRandom() - 0.5) * 38;
+            r.decision = 1.5 + raceRandom() * 2.8;
         }
         r.form += (r.formTarget - r.form) * dt * 0.8;
         const a = (r.progress % 1) * Math.PI * 2,
