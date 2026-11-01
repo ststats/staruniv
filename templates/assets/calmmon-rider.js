@@ -635,36 +635,58 @@ const BOOST_TIME = 3,
     SHIELD_TIME = 2.5,
     SHIELD_HOLD = 6, // 방어막을 들고 공격을 기다리는 시간(그동안 안 오면 그냥 켠다)
     SHIELD_REACT = 0.65, // 들고 있다가 공격을 보고 제때 켤 확률
-    BANANA_ARM = 0.5; // 바나나는 깔고 0.5초 뒤부터 밟힌다
+    BANANA_ARM = 0.5, // 바나나는 깔고 0.5초 뒤부터 밟힌다
+    AIM_RANGE = 0.05, // 자석·미사일 조준 범위(바퀴, 평소 속도로 약 1.2초 거리)
+    AIM_WAIT = 4, // 조준 범위에 아무도 없으면 들고 기다리는 시간(지나면 바로 앞 선수에게 쓴다)
+    FAR_BEHIND = 0.12; // 1등과 이만큼 벌어지면 부스터만 나온다(원작)
+// 순위별 아이템 무게(합 100). 원작(나무위키) 확률: 부스터 중위 20%·하위 60%, 자석 상위 5%·중위 8%·하위 20%.
+// 실드는 1~3위, 바나나는 1위, 미사일·물폭탄·물파리는 2~6위(하위권엔 안 나온다), 우주선·벼락·바리케이드는 4~8위다.
+// 순위 비율로 상위·중위·하위를 나눠 그 성격대로 주고, 원작에 수치가 없는 칸은 나머지를 나눠 정했다.
+// 3명 경기는 2등이 중위, 3등이 하위다(원작 인원별 구분과 같다).
 const ITEM_POOLS = {
-    // 카트라이더처럼 순위에 따라 풀이 갈린다. 선두권은 방어 · 설치류, 후미는 공격류.
-    // 바리케이드와 우주선은 선두를 노리는 아이템이라 후미 전용이다.
-    front: ['shield', 'shield', 'banana', 'banana', 'wisp', 'water', 'magnet'],
-    rear: ['rocket', 'rocket', 'ufo', 'barricade', 'magnet', 'water', 'missile'],
-    middle: ['missile', 'shield', 'rocket', 'magnet', 'water', 'banana', 'wisp', 'ufo'],
     // 1등은 노릴 앞차가 없어 지키고 까는 아이템만 준다.
-    leader: ['shield', 'shield', 'banana', 'banana'],
+    leader: { shield: 50, banana: 50 },
+    front: { shield: 35, missile: 20, water: 20, wisp: 20, magnet: 5 },
+    middle: { rocket: 20, missile: 20, wisp: 20, water: 22, shield: 10, magnet: 8 },
+    // 바리케이드·우주선·벼락은 앞선 선수를 노리는 아이템이라 하위 전용이다.
+    rear: { rocket: 60, magnet: 20, ufo: 8, barricade: 7, lightning: 5 },
 };
+function pickItem(pool) {
+    let x = raceRandom() * 100;
+    for (const kind in pool) if ((x -= pool[kind]) < 0) return kind;
+    return 'rocket';
+}
 function giveItem(r, list) {
     const q = list.indexOf(r) / Math.max(1, list.length - 1),
-        hasAhead = list.some(o => o.finish === null && o !== r && o.progress > r.progress),
-        pool = !hasAhead
-            ? ITEM_POOLS.leader
-            : q < 0.25
-              ? ITEM_POOLS.front
-              : q > 0.58
-                ? ITEM_POOLS.rear
-                : ITEM_POOLS.middle;
-    r.item = hasAhead && raceRandom() < 0.03 ? 'lightning' : pool[Math.floor(raceRandom() * pool.length)];
+        lead = list.find(o => o.finish === null && o !== r && o.progress > r.progress);
+    r.item = !lead
+        ? pickItem(ITEM_POOLS.leader)
+        : lead.progress - r.progress > FAR_BEHIND
+          ? 'rocket'
+          : pickItem(q < 0.25 ? ITEM_POOLS.front : q > 0.58 ? ITEM_POOLS.rear : ITEM_POOLS.middle);
     const wait = 0.45 + raceRandom() * 0.9;
     r.useIn = r.item === 'shield' ? SHIELD_HOLD : wait;
+    r.aimUntil = elapsed + r.useIn + AIM_WAIT;
     r.itemTimer = 1.2;
+}
+// 자석·미사일 조준: 앞쪽 AIM_RANGE 안에 보이는 선수 중 가장 앞선 사람(원작은 조준점이 닿는 가장 앞사람을 노린다)
+function aimTarget(r, list) {
+    for (const o of list)
+        if (o.finish === null && o !== r && o.progress > r.progress && o.progress - r.progress <= AIM_RANGE) return o;
+    return null;
 }
 const attackTargets = [],
     barricadeAhead = [];
 function useItem(r, list) {
     const kind = r.item;
     if (!kind) return;
+    // 자석·미사일은 조준 범위에 아무도 없으면 AIM_WAIT까지 들고 기다린다
+    const aims = kind === 'magnet' || kind === 'missile',
+        aimed = aims ? aimTarget(r, list) : null;
+    if (aims && !aimed && elapsed < r.aimUntil) {
+        r.useIn = 0.2;
+        return;
+    }
     itemStats.used++;
     if (['rocket', 'magnet', 'shield'].includes(kind)) raceAudio.effect(kind);
     r.item = null;
@@ -704,12 +726,13 @@ function useItem(r, list) {
         r.boost = BOOST_TIME;
         if (elapsed - eventAt > 1.8) itemEvent(r.name + ' 부스터! 단숨에 거리를 좁힙니다', r.id);
     } else if (kind === 'magnet') {
-        // 자석은 바로 앞차 한 명에게 붙는다(순위표에서 나보다 앞선 사람 중 마지막).
-        let target = null;
-        for (const o of list) {
-            if (o === r) break;
-            if (o.finish === null && o.progress > r.progress) target = o;
-        }
+        // 조준 범위에서 가장 앞선 사람, 기다려도 없으면 바로 앞차(순위표에서 나보다 앞선 사람 중 마지막)에게 붙는다.
+        let target = aimed;
+        if (!target)
+            for (const o of list) {
+                if (o === r) break;
+                if (o.finish === null && o.progress > r.progress) target = o;
+            }
         if (target) {
             r.magnet = MAGNET_TIME;
             r.magnetTarget = target.id;
@@ -718,7 +741,7 @@ function useItem(r, list) {
             if (elapsed - eventAt > 2) itemEvent(r.name + ' 자석! ' + target.name + '에게 끌려갑니다', target.id);
         } else r.shield = 2;
     } else if (kind === 'missile') {
-        const target = ahead[ahead.length - 1];
+        const target = aimed || ahead[ahead.length - 1];
         if (target) {
             effects.push({ type: 'missile', from: r.id, id: target.id, ttl: 0.65, total: 0.65, owner: r.name });
             if (elapsed - eventAt > 1.8) itemEvent(r.name + ' → ' + target.name + ' 미사일 발사!', target.id);
