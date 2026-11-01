@@ -547,11 +547,19 @@ function itemEvent(text, id) {
         cameraUntil = elapsed + 2.2;
     }
 }
-// 무적은 휘청이는(stun) 동안뿐이라 연달아 맞아 계속 묶이지 않는다. 우주선은 느려지기만 해서 무적이 없다.
-// 느려지기만 하니 무적도 없다. 원작처럼 방어막은 한 번 막으면 끝이고, 부스터에도 무적이 없다.
+// 무적은 휘청이는(stun) 동안뿐이라 연달아 맞아 계속 묶이지 않는다. 우주선은 느려지게만 해서 그 무적을 무시하고,
+// 이미 휘청이던 상태·무적도 건드리지 않는다. 원작처럼 방어막은 한 번 막으면 끝이고, 부스터에도 무적이 없다.
 function strike(target, kind, owner) {
     if (target.finish !== null) return;
-    if (target.immunity > 0 && kind !== 'barricade') return;
+    if (target.immunity > 0 && kind !== 'barricade' && kind !== 'ufo') return;
+    // 들고 있는 방어막은 공격이 오는 걸 보고 켠다(원작도 사람이 보고 켜는 아이템이라 가끔 늦는다)
+    if (!(target.shield > 0) && target.item === 'shield' && raceRandom() < SHIELD_REACT) {
+        itemStats.used++;
+        target.item = null;
+        target.lastItem = 'shield';
+        target.lastItemUntil = elapsed + 1.7;
+        target.shield = SHIELD_TIME;
+    }
     if (target.shield > 0) {
         raceAudio.effect('shield');
         target.shield = 0;
@@ -561,27 +569,33 @@ function strike(target, kind, owner) {
         return;
     }
     raceAudio.effect(kind);
+    if (kind === 'ufo') {
+        target.ufo = UFO_TIME;
+        target.boost = 0;
+        itemStats.hits++;
+        effects.push({ type: 'ufo', id: target.id, ttl: UFO_TIME });
+        if (elapsed - eventAt > 1) itemEvent(owner + ' → ' + target.name + ' 우주선 감속!', target.id);
+        return;
+    }
+    // 원작 수치: 물폭탄 2초(방향키 연타로 줄어듦) · 물파리 1초 · 바나나 2초 · 벼락 1.5초
     target.stun =
-        kind === 'ufo'
-            ? 0
-            : kind === 'water'
-              ? 1.7
-              : kind === 'wisp'
-                ? 1.35
-                : kind === 'barricade'
-                  ? 1.4
-                  : kind === 'banana'
-                    ? 1.2
-                    : kind === 'lightning'
-                      ? 1.05
-                      : 1.45;
-    if (kind === 'ufo') target.ufo = 3;
+        kind === 'water'
+            ? 1.7
+            : kind === 'wisp'
+              ? 1
+              : kind === 'barricade'
+                ? 1.4
+                : kind === 'banana'
+                  ? 2
+                  : kind === 'lightning'
+                    ? 1.5
+                    : 1.45;
     target.hitKind = kind;
     target.hitAt = elapsed;
     target.immunity = target.stun;
     target.boost = 0;
     itemStats.hits++;
-    if (kind !== 'ufo') effects.push({ type: 'hit_' + kind, id: target.id, ttl: 0.85, total: 0.85 });
+    effects.push({ type: 'hit_' + kind, id: target.id, ttl: 0.85, total: 0.85 });
     if (elapsed - eventAt > 1)
         itemEvent(
             owner +
@@ -594,7 +608,6 @@ function strike(target, kind, owner) {
                     water: '물폭탄 적중!',
                     wisp: '물파리에 갇혔습니다!',
                     barricade: '바리케이드 충돌!',
-                    ufo: '우주선 감속!',
                     missile: '미사일 적중!',
                 }[kind],
             target.id
@@ -609,6 +622,19 @@ const BARRICADE_SLOTS = [-17, 0, 17], // 두 칸을 막고 한 칸을 남긴다
     BARRICADE_SPAN = 7, // 조각 하나의 유효 폭
     BARRICADE_WARN = 0.05, // 선수가 앞쪽 조각을 알아보는 거리
     BARRICADE_LEAD = 0.026; // 선두 앞 어디에 세우는가
+// 원작(크레이지레이싱 카트라이더 아이템전) 기준. 부스터 3초, 자석 4초(부스터보다 훨씬 빠르다),
+// 우주선은 1등 위로 날아가 2초 뒤부터 4초간 절반 속도, 방어막은 2초(끝나기 직전 0.5초 여유) 동안 한 번 막는다.
+const BOOST_TIME = 3,
+    BOOST_EXTRA = 0.4, // 부스터 +40%
+    MAGNET_TIME = 4,
+    MAGNET_CLOSE = 0.006, // 앞차에 붙었다고 보는 간격(바퀴)
+    MAGNET_COAST = 1.5, // 자석이 끝난 뒤 붙어 달리던 속도가 빠지는 시간
+    UFO_DELAY = 2,
+    UFO_TIME = 4,
+    SHIELD_TIME = 2.5,
+    SHIELD_HOLD = 6, // 방어막을 들고 공격을 기다리는 시간(그동안 안 오면 그냥 켠다)
+    SHIELD_REACT = 0.65, // 들고 있다가 공격을 보고 제때 켤 확률
+    BANANA_ARM = 0.5; // 바나나는 깔고 0.5초 뒤부터 밟힌다
 const ITEM_POOLS = {
     // 카트라이더처럼 순위에 따라 풀이 갈린다. 선두권은 방어 · 설치류, 후미는 공격류.
     // 바리케이드와 우주선은 선두를 노리는 아이템이라 후미 전용이다.
@@ -629,7 +655,8 @@ function giveItem(r, list) {
                 ? ITEM_POOLS.rear
                 : ITEM_POOLS.middle;
     r.item = hasAhead && raceRandom() < 0.03 ? 'lightning' : pool[Math.floor(raceRandom() * pool.length)];
-    r.useIn = 0.45 + raceRandom() * 0.9;
+    const wait = 0.45 + raceRandom() * 0.9;
+    r.useIn = r.item === 'shield' ? SHIELD_HOLD : wait;
     r.itemTimer = 1.2;
 }
 const attackTargets = [],
@@ -655,14 +682,15 @@ function useItem(r, list) {
             progress: r.progress - 0.008,
             lane: r.lane,
             ttl: 12,
+            armAt: elapsed + BANANA_ARM,
         });
         if (elapsed - eventAt > 1.8) itemEvent(r.name + ' 바나나 설치! 뒤따르는 선수 주의!', r.id);
     } else if (kind === 'ufo') {
+        // 우주선이 1등 위로 날아가 2초 뒤에 감속을 건다(그 사이 방어막을 켜면 막힌다)
         const target = ahead[0];
         if (target) {
-            strike(target, 'ufo', r.name);
-            if (target.ufo > 0) effects.push({ type: 'ufo', id: target.id, ttl: 3 });
-            itemEvent(r.name + ' 우주선! ' + target.name + ' 추격 저지!', target.id);
+            effects.push({ type: 'ufo_call', id: target.id, ttl: UFO_DELAY, total: UFO_DELAY, owner: r.name });
+            itemEvent(r.name + ' 우주선! ' + target.name + ' 위로 날아갑니다', target.id);
         } else r.shield = 2;
     } else if (kind === 'water') {
         const origin = point(r.progress, r.lane),
@@ -670,9 +698,9 @@ function useItem(r, list) {
         effects.push({ type: 'water', from: r.id, origin, landing, ttl: 0.75, total: 0.75, owner: r.name });
         if (elapsed - eventAt > 1.5) itemEvent(r.name + ' 물폭탄 투척!', r.id);
     } else if (kind === 'shield') {
-        r.shield = 4.5;
+        r.shield = SHIELD_TIME;
     } else if (kind === 'rocket') {
-        r.boost = 2.7;
+        r.boost = BOOST_TIME;
         if (elapsed - eventAt > 1.8) itemEvent(r.name + ' 부스터! 단숨에 거리를 좁힙니다', r.id);
     } else if (kind === 'magnet') {
         // 자석은 바로 앞차 한 명에게 붙는다(순위표에서 나보다 앞선 사람 중 마지막).
@@ -682,9 +710,10 @@ function useItem(r, list) {
             if (o.finish === null && o.progress > r.progress) target = o;
         }
         if (target) {
-            r.magnet = 3.2;
+            r.magnet = MAGNET_TIME;
             r.magnetTarget = target.id;
-            r.magnetGap = target.progress - r.progress;
+            // 세기는 쓰는 순간의 간격으로 정해 끝까지 유지한다(멀수록 세다, 1.5~1.8배라 부스터보다 늘 빠르다)
+            r.magnetPull = 1.5 + Math.min(0.3, (target.progress - r.progress) * 6);
             if (elapsed - eventAt > 2) itemEvent(r.name + ' 자석! ' + target.name + '에게 끌려갑니다', target.id);
         } else r.shield = 2;
     } else if (kind === 'missile') {
@@ -1133,6 +1162,9 @@ function start(seed) {
         shield: 0,
         immunity: 0,
         magnet: 0,
+        magnetPull: 1,
+        coast: 0,
+        pulled: false,
         item: null,
         useIn: 0,
         itemTimer: 0,
@@ -1331,19 +1363,22 @@ function tick(dt) {
             active.push(r);
         }
     const frontProgress = active[0]?.progress || 0;
-    // 자석: 뒷차는 앞차와의 간격이 멀수록 세게 끌려가고(가까우면 +20%대, 멀면 최대 +60%), 끌려가는 앞차는 느려진다
-    // (한 명에게 -12%, 여럿이 붙어도 -20%까지). 따라잡거나 대상이 완주하면 끝난다. 뒷차는 앞차 차선으로 붙어 간다.
-    for (const r of racers) r.magnetDrag = 1;
+    // 자석: 원작처럼 4초 동안 앞차를 쫓는다. 따라잡아도 끝나지 않고 앞차 옆 차선에 붙어 가며, 앞지르면 도로 끌려온다.
+    // 끝나면 붙어 달리던 속도가 천천히 빠져(MAGNET_COAST) 그 힘으로 앞지른다. 끌려가는 앞차는 느려지지 않는다.
+    // 대상이 완주하면 끝난다.
+    for (const r of racers) r.pulled = false;
     for (const r of racers) {
         if (!(r.magnet > 0) || r.finish !== null) continue;
         const t = getRacer(r.magnetTarget);
-        if (!t || t.finish !== null || t.progress <= r.progress) {
+        if (!t || t.finish !== null) {
             r.magnet = 0;
             continue;
         }
-        t.magnetDrag = Math.max(0.8, t.magnetDrag * 0.88);
-        r.magnetGap = t.progress - r.progress;
-        r.laneTarget = t.lane;
+        t.pulled = true;
+        r.laneTarget =
+            t.progress - r.progress < MAGNET_CLOSE
+                ? Math.max(-20, Math.min(20, t.lane + (r.lane >= t.lane ? 14 : -14)))
+                : t.lane;
     }
     for (const t of traps) t.ttl -= dt;
     compact(traps, t => t.ttl > 0);
@@ -1360,6 +1395,11 @@ function tick(dt) {
             }
             effects.push({ type: 'water_splash', landing: e.landing, ttl: 0.6, total: 0.6 });
         }
+        if (e.ttl <= 0 && e.type === 'ufo_call' && !e.done) {
+            e.done = true;
+            const target = getRacer(e.id);
+            if (target) strike(target, 'ufo', e.owner);
+        }
         if (e.ttl <= 0 && (e.type === 'missile' || e.type === 'wisp') && !e.done) {
             e.done = true;
             const target = getRacer(e.id);
@@ -1375,6 +1415,8 @@ function tick(dt) {
         r.ufo = Math.max(0, r.ufo - dt);
         r.shield = Math.max(0, r.shield - dt);
         r.immunity = Math.max(0, r.immunity - dt);
+        r.coast = Math.max(0, r.coast - dt);
+        if (r.magnet > 0 && r.magnet <= dt) r.coast = MAGNET_COAST;
         r.magnet = Math.max(0, r.magnet - dt);
         r.itemTimer -= dt;
         if (r.item) {
@@ -1383,7 +1425,8 @@ function tick(dt) {
         }
         if (r.decision <= 0) {
             r.formTarget = (raceRandom() - 0.5) * 0.18;
-            r.laneTarget = (raceRandom() - 0.5) * 38;
+            const lane = (raceRandom() - 0.5) * 38;
+            if (!(r.magnet > 0)) r.laneTarget = lane; // 자석 중에는 앞차를 따라간다
             r.decision = 1.5 + raceRandom() * 2.8;
         }
         r.form += (r.formTarget - r.form) * dt * 0.8;
@@ -1392,9 +1435,15 @@ function tick(dt) {
         let target =
             0.043 *
             (1 + r.form + catchup + 0.035 * Math.sin(a * 2 + r.phase)) *
-            (r.boost > 0 ? 1.68 : r.magnet > 0 ? 1.15 + Math.min(0.45, (r.magnetGap || 0) * 9) : 1) *
-            (r.stun > 0 ? 0.27 : r.ufo > 0 ? 0.52 : 1) *
-            (r.magnetDrag || 1);
+            (1 + (r.boost > 0 ? BOOST_EXTRA : 0) + (r.magnet > 0 ? r.magnetPull - 1 : 0)) * // 자석과 부스터는 겹친다
+            (r.stun > 0 ? 0.27 : r.ufo > 0 ? 0.5 : 1);
+        // 자석으로 앞차에 붙으면 앞차에 묶여 간다(나란히 붙어 있으면 살짝 빠르게, 그보다 더 앞서면 끌려와 느리게)
+        if (r.magnet > 0) {
+            const t = getRacer(r.magnetTarget),
+                d = t.progress - r.progress;
+            if (d < MAGNET_CLOSE)
+                target = Math.min(target, Math.max(t.speed, target / r.magnetPull) * (d > -MAGNET_CLOSE ? 1.1 : 0.92));
+        }
         let front = null;
         for (let j = r.ai - 1; j >= 0; j--) {
             const other = active[j],
@@ -1402,7 +1451,8 @@ function tick(dt) {
             if (d >= 0.011) break;
             if (d > 0 && Math.abs(other.lane - r.lane) < 12) front = other;
         }
-        if (front) {
+        // 자석 중에는 앞차에 막혀 느려지지 않고 끌려 붙는다
+        if (front && !(r.magnet > 0)) {
             target *= 0.92;
             r.laneTarget = r.lane >= 0 ? -18 : 18;
         }
@@ -1442,7 +1492,9 @@ function tick(dt) {
                 r.laneTarget = best !== null ? best : r.lane >= 0 ? -20 : 20;
             }
         }
-        r.speed += (target - r.speed) * Math.min(1, dt * (r.stun > 0 ? 8 : 2.4));
+        // 자석이 끝난 뒤에는 붙어 달리던 속도가 천천히 빠진다(관성)
+        r.speed +=
+            (target - r.speed) * Math.min(1, dt * (r.stun > 0 ? 8 : r.coast > 0 && target < r.speed ? 0.7 : 2.4));
         r.lane += (r.laneTarget - r.lane) * Math.min(1, dt * 1.5);
         const before = r.progress;
         r.progress += r.speed * dt;
@@ -1450,6 +1502,7 @@ function tick(dt) {
             if (
                 t.ttl > 0 &&
                 r.id !== t.owner &&
+                !(elapsed < t.armAt) &&
                 Math.abs(r.lane - t.lane) < (t.span || 20) &&
                 Math.floor(r.progress - t.progress) > Math.floor(before - t.progress)
             ) {
@@ -1562,7 +1615,7 @@ function racerStatus(r) {
     if (r.shield > 0) return '🛡 방어 중';
     if (r.boost > 0) return '🔥 가속 중';
     if (r.magnet > 0) return '🧲 추격 중';
-    if (r.magnetDrag < 1) return '🧲 끌려오는 중';
+    if (r.pulled) return '🧲 끌려오는 중';
     return r.item ? itemNames[r.item] : Math.floor((Math.max(0, r.progress) / laps) * 100) + '%';
 }
 function updateUI() {
@@ -2666,6 +2719,11 @@ function drawEffects() {
         if (e.type !== 'missile' && e.type !== 'water' && e.type !== 'wisp' && !visible(p.x, p.y, 96)) continue;
         if (e.type.startsWith('hit_')) {
             drawImpact(e, p);
+        } else if (e.type === 'ufo_call') {
+            // 우주선이 내려오는 중(다 내려오면 감속)
+            g.font = '30px Pretendard,sans-serif';
+            g.textAlign = 'center';
+            g.fillText('🛸', p.x, p.y - 38 - 90 * (e.ttl / e.total));
         } else if (e.type === 'ufo') {
             g.fillStyle = '#b0a3ff55';
             g.beginPath();
