@@ -565,7 +565,8 @@ function strike(target, kind, owner) {
         target.shield = 0;
         itemStats.blocks++;
         effects.push({ type: 'block', id: target.id, ttl: 0.8 });
-        if (elapsed - eventAt > 1) itemEvent(target.name + ' 방어막으로 공격 방어!', target.id);
+        // 우주선은 호출 알림 0.5초 뒤에 닿아 막혔는지를 늘 알린다
+        if (kind === 'ufo' || elapsed - eventAt > 1) itemEvent(target.name + ' 방어막으로 공격 방어!', target.id);
         return;
     }
     raceAudio.effect(kind);
@@ -574,7 +575,7 @@ function strike(target, kind, owner) {
         target.boost = 0;
         itemStats.hits++;
         effects.push({ type: 'ufo', id: target.id, ttl: UFO_TIME });
-        if (elapsed - eventAt > 1) itemEvent(owner + ' → ' + target.name + ' 우주선 감속!', target.id);
+        itemEvent(owner + ' → ' + target.name + ' 우주선 감속!', target.id);
         return;
     }
     // 원작 수치: 물폭탄 2초(방향키 연타로 줄어듦) · 물파리 1초 · 바나나 2초 · 벼락 1.5초
@@ -623,14 +624,14 @@ const BARRICADE_SLOTS = [-17, 0, 17], // 두 칸을 막고 한 칸을 남긴다
     BARRICADE_WARN = 0.05, // 선수가 앞쪽 조각을 알아보는 거리
     BARRICADE_LEAD = 0.026; // 선두 앞 어디에 세우는가
 // 원작(크레이지레이싱 카트라이더 아이템전) 기준. 부스터 3초, 자석 4초(부스터보다 훨씬 빠르다),
-// 우주선은 1등 위로 날아가 2초 뒤부터 4초간 절반 속도, 방어막은 2초(끝나기 직전 0.5초 여유) 동안 한 번 막는다.
+// 우주선은 1등 위로 날아가 절반 속도(원작은 2초 뒤 4초지만 1바퀴 경기라 0.5초 뒤 3초), 방어막은 2초(끝나기 직전 0.5초 여유) 동안 한 번 막는다.
 const BOOST_TIME = 3,
     BOOST_EXTRA = 0.4, // 부스터 +40%
     MAGNET_TIME = 4,
     MAGNET_CLOSE = 0.006, // 앞차에 붙었다고 보는 간격(바퀴)
     MAGNET_COAST = 1.5, // 자석이 끝난 뒤 붙어 달리던 속도가 빠지는 시간
-    UFO_DELAY = 2,
-    UFO_TIME = 4,
+    UFO_DELAY = 0.5,
+    UFO_TIME = 3,
     SHIELD_TIME = 2.5,
     SHIELD_HOLD = 6, // 방어막을 들고 공격을 기다리는 시간(그동안 안 오면 그냥 켠다)
     SHIELD_REACT = 0.65, // 들고 있다가 공격을 보고 제때 켤 확률
@@ -686,7 +687,7 @@ function useItem(r, list) {
         });
         if (elapsed - eventAt > 1.8) itemEvent(r.name + ' 바나나 설치! 뒤따르는 선수 주의!', r.id);
     } else if (kind === 'ufo') {
-        // 우주선이 1등 위로 날아가 2초 뒤에 감속을 건다(그 사이 방어막을 켜면 막힌다)
+        // 우주선이 1등 위로 날아가 0.5초 뒤에 감속을 건다(그 사이 방어막을 켜면 막힌다)
         const target = ahead[0];
         if (target) {
             effects.push({ type: 'ufo_call', id: target.id, ttl: UFO_DELAY, total: UFO_DELAY, owner: r.name });
