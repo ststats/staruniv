@@ -153,9 +153,7 @@ class NameLookCompareTest(unittest.TestCase):
         c = card("방늬이이", "8", "저그", known={"soop_id": "낭니", "nickname": "낭니"})
         c.pop("name_unchanged")
         c.update({"name_look": card_look(name_cell("낭니", bg), bg), "role": ""})
-        res = compare(
-            [{"y": (0, 100), "title_ocr": ["캄몬대"], "cards": [c, card("가람", "3", "테란")]}], [], self.DB
-        )
+        res = compare([{"y": (0, 100), "title_ocr": ["캄몬대"], "cards": [c, card("가람", "3", "테란")]}], [], self.DB)
         self.assertFalse([x for x in res["changes"] if "nickname" in x["diff"]])
 
     def test_headcount_mismatch_is_reviewed(self):

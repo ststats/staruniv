@@ -157,7 +157,13 @@ def compare(sections, fa, db, candidates=None, off_board=()):
         expected = sections[si].get("headcount")
         if expected and expected != len(sec["cards"]):
             review.append(
-                {"type": "구역 인원 불일치", "section": si, "team": team, "expected": expected, "found": len(sec["cards"])}
+                {
+                    "type": "구역 인원 불일치",
+                    "section": si,
+                    "team": team,
+                    "expected": expected,
+                    "found": len(sec["cards"]),
+                }
             )
         if sec["new_team"]:
             prev = collections.Counter(hit[0]["affiliation"] for hit in sec["match"].values())
