@@ -17,7 +17,7 @@ from PIL import Image
 from tiertable.cards import read_image
 from tiertable.compare import compare, match_sections
 from tiertable.fa import read_fa_text
-from tiertable.job import run_job
+from tiertable.job import READ_ONLY, run_job
 from tiertable.memory import MEMORY_PATH, learn, load_memory, save_memory
 from tiertable.sources import db_connect, load_candidates, load_db, load_image, load_off_board
 
@@ -65,7 +65,9 @@ def main():
             f"기억에 더함: 카드 {len(confirmed)}장 → 사진 {len(memory['photos'])}·티어 모양 {len(memory['tier'])}·종족 모양 {len(memory['race'])}",
             file=sys.stderr,
         )
-    result["sections"] = sections
+    result["sections"] = [
+        {**s, "cards": [{k: v for k, v in c.items() if k not in READ_ONLY} for c in s["cards"]]} for s in sections
+    ]
     result["fa"] = fa
     text = json.dumps(result, ensure_ascii=False, indent=1)
     if args.out:

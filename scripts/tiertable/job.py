@@ -91,6 +91,7 @@ def learn_applied(conn, memory):
     return len(rows)
 
 
+READ_ONLY = ("photo_shifts", "raw", "name_look")  # 분석 때만 쓰고 결과에 저장하지 않는 카드 값
 KEEP_RESULTS = 5  # 결과는 작업당 약 1.6MB라 최근 몇 개만 남긴다
 
 
@@ -132,11 +133,12 @@ def _run_job(conn, job_id: int):
         fa = read_fa_text(fa_text or "")
         db = load_db(conn)
         result = compare(sections, fa, db, load_candidates(conn), load_off_board(conn))
-        # ±2px 지문은 읽을 때만 쓰므로 저장에서 뺀다
+        # ±2px 지문·이름 그림은 읽을 때만 쓰므로 저장에서 뺀다
         result["sections"] = [
             {
                 "y": s["y"],
-                "cards": [{k: v for k, v in c.items() if k not in ("photo_shifts", "raw")} for c in s["cards"]],
+                "headcount": s.get("headcount"),
+                "cards": [{k: v for k, v in c.items() if k not in READ_ONLY} for c in s["cards"]],
             }
             for s in sections
         ]

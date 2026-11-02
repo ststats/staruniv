@@ -622,6 +622,8 @@
         }
         if (x.type === '현황판에 없는 대학 소속(소속 유지)')
             return `<div class="admin-tu-review"><div><b>현황판에 없는 대학 소속</b> · ${esc(x.nickname)} (${esc(x.team)})<br><small>FA 명단에 있지만 팀 관리에서 '현황판에 아직 없음'인 대학이라 소속을 그대로 둡니다</small></div></div>`;
+        if (x.type === '구역 인원 불일치')
+            return `<div class="admin-tu-review"><div><b>구역 인원 불일치</b> · ${esc(teamName(x.team))}<br><small>표 머리에는 ${esc(x.expected)}명인데 카드를 ${esc(x.found)}장 찾았습니다. 구역을 잘못 나눴거나 카드를 놓쳤을 수 있으니 이 대학의 변동은 카드를 보고 확인해 주세요</small></div></div>`;
         if (x.type === '표에서 없어진 대학')
             return `<div class="admin-tu-review"><div><b>표에서 없어진 대학</b> · ${esc(x.team)} (${x.members}명)<br><small>선수들은 FA 명단에 있으면 FA, 없으면 휴면 변동으로 올라가 있습니다</small></div></div>`;
         return `<div class="admin-tu-review"><div><b>${esc(x.type)}</b> · ${esc(x.nickname || x.team || '')}</div></div>`;

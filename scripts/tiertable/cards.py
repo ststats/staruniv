@@ -9,6 +9,7 @@ from PIL import Image, ImageOps
 from .features import glyph_feat, name_distance, pack_feat, photo_hash, unpack_feat
 from .layout import HEADER, NAME_BOX, NAME_SAME, NO_RACE, PHOTO, RACES, RACE_BOX, ROLES, TIER_BOX, TIER_WORDS
 from .memory import classify_race, classify_tier, name_reads, recall_photo
+from .namelook import card_look
 
 
 try:
@@ -21,18 +22,20 @@ def color_dist(a, b):
     return sum(abs(x - y) for x, y in zip(a, b))
 
 
+EDGE_GAP = 4
+
+
 def split_sections(im: Image.Image):
-    """왼쪽 끝 세로줄의 배경색이 바뀌는 곳에서 대학 구역을 나눈다."""
+    """왼쪽 끝 세로줄의 배경색이 바뀌는 곳에서 대학 구역을 나눈다.
+    경계가 3~4px에 걸쳐 번지는 곳(뉴캣슬→DM)은 한 줄씩 보면 차이가 작아 EDGE_GAP줄 위 색과 비교한다."""
     px = im.load()
     W, H = im.size
-    bounds, start, prev = [], 0, px[3, 0]
+    bounds, start = [], 0
     for y in range(1, H):
-        c = px[3, y]
-        if color_dist(c, prev) > 40:
+        if color_dist(px[3, y], px[3, max(0, y - EDGE_GAP)]) > 40:
             if y - start > 150:
                 bounds.append((start, y))
             start = y
-        prev = c
     if H - start > 150:
         bounds.append((start, H))
     return bounds
@@ -116,12 +119,16 @@ def read_name(crop: Image.Image, bg):
 
 
 def cut_badge(crop: Image.Image) -> Image.Image:
+    """닉네임 뒤 흰 뱃지를 잘라 낸다. 뱃지는 칸 높이를 거의 다 채운 흰 기둥이 이어지고, 흰 글씨 획은
+    그렇지 않다(씨나인처럼 밝은 배경에 흰 글씨면 획을 뱃지로 알고 이름을 '히요코'→'ㅎ'처럼 잘랐다)."""
     px = crop.load()
     W, H = crop.size
+    run = 0
     for x in range(W):
         white = sum(1 for y in range(H) if min(px[x, y]) > 235)
-        if white > H * 0.6:
-            return crop.crop((0, 0, max(1, x - 2), H))
+        run = run + 1 if white > H * 0.9 else 0
+        if run >= 2:
+            return crop.crop((0, 0, max(1, x - 3), H))
     return crop
 
 
@@ -288,6 +295,8 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
         tier_img = im.crop((tx, y + 2, tx + tw, y + 2 + TIER_BOX[1]))
         name_img = im.crop((tx, y + 26, tx + tw, y + 50))
         name_f = glyph_feat(name_img, bg, NAME_BOX[0])
+        # 닉네임 그림 확인용(비교 단계에서 DB 닉네임 그림과 맞춰 본다). 저장하지 않는다
+        name_look = card_look(strip_badge(cut_badge(name_img), bg), bg)
         race_img = im.crop((tx, y + 49, tx + tw, y + 49 + RACE_BOX[1]))
         tier_f, race_f = glyph_feat(tier_img, bg, TIER_BOX[0]), glyph_feat(race_img, bg, RACE_BOX[0])
         card = {
@@ -301,6 +310,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             "race_feat": pack_feat(race_f),
             "name_feat": pack_feat(name_f),
             "photo": photo_hash(photo),
+            "name_look": name_look,
             "photo_shifts": [
                 photo_hash(im.crop((x + dx, y + dy, x + side + dx, y + side + dy)).resize((PHOTO, PHOTO)))
                 for dx in (-2, -1, 0, 1, 2)
@@ -378,8 +388,30 @@ def read_title(im: Image.Image, top: int):
     return out
 
 
+def read_headcount(im: Image.Image, top: int):
+    """구역 머리 왼쪽의 인원 표('수장: 2명 / 교수+코치: 4명 / 학생: 9명 / 총: 15명')에서 총원.
+    앞 줄들의 합이 마지막 줄과 맞을 때만 믿는다(잘못 읽은 숫자로 엉뚱한 경고를 내지 않게)."""
+    bg = im.getpixel((3, top + 5))
+    text = ocr_block(name_ink(im.crop((8, top + 10, 300, top + HEADER)), bg, 2))
+    nums = [int(n) for n in re.findall(r"(\d+)\s*[명영]", text)]
+    if len(nums) >= 2 and sum(nums[:-1]) == nums[-1]:
+        return nums[-1]
+    return None
+
+
+def ocr_block(img: Image.Image) -> str:
+    if pytesseract is None:
+        raise SystemExit("pytesseract가 필요합니다: pip install pytesseract (tesseract-ocr, tesseract-ocr-kor 설치)")
+    return pytesseract.image_to_string(img, lang="kor", config="--psm 6")
+
+
 def read_image(im: Image.Image, memory=None):
     return [
-        {"y": (top, bottom), "title_ocr": read_title(im, top), "cards": cards_in_section(im, top, bottom, memory)}
+        {
+            "y": (top, bottom),
+            "title_ocr": read_title(im, top),
+            "headcount": read_headcount(im, top),
+            "cards": cards_in_section(im, top, bottom, memory),
+        }
         for top, bottom in split_sections(im)
     ]

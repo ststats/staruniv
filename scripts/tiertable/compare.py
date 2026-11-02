@@ -4,6 +4,8 @@ import collections
 import difflib
 import re
 
+from .namelook import looks_same
+
 
 def suggest_candidates(card, team, candidates, n=3):
     """모르는 카드와 이름이 비슷한 ELO 대기 명단 선수(같은 대학이면 가산)."""
@@ -151,6 +153,12 @@ def compare(sections, fa, db, candidates=None, off_board=()):
     secs = match_sections(sections, db)
     for si, sec in enumerate(secs):
         team = sec["team"]
+        # 머리 인원 표와 찾은 카드 수가 다르면 구역을 잘못 나눴거나 카드를 놓친 것이라 이 구역 결과를 의심하게 한다
+        expected = sections[si].get("headcount")
+        if expected and expected != len(sec["cards"]):
+            review.append(
+                {"type": "구역 인원 불일치", "section": si, "team": team, "expected": expected, "found": len(sec["cards"])}
+            )
         if sec["new_team"]:
             prev = collections.Counter(hit[0]["affiliation"] for hit in sec["match"].values())
             review.append(
@@ -231,11 +239,13 @@ def compare(sections, fa, db, candidates=None, off_board=()):
                     change["uncertain"] = " / ".join(notes)
                 changes.append(change)
             # 닉네임 변경은 OCR 오류일 수 있어 따로 두고 기본 체크 해제한다.
+            # 이름 칸이 지금 닉네임 그림과 닮았으면 OCR이 틀린 것이라 올리지 않는다
             ocr_nick = (card.get("nickname_ocr") or "").strip()
             if (
                 ocr_nick
                 and not card.get("name_unchanged")
                 and "".join(ocr_nick.split()) != "".join(str(r["nickname"]).split())
+                and not looks_same(card, str(r["nickname"]), r.get("role") or "")
             ):
                 changes.append(
                     {

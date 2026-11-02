@@ -32,7 +32,7 @@ def db_connect():
 
 def load_db(conn):
     """티어표 선수 명단 전체(휴면 포함)."""
-    cur = conn.execute("select id, nickname, soop_id, race, tier, affiliation from public.tier_members")
+    cur = conn.execute("select id, nickname, soop_id, race, tier, affiliation, role from public.tier_members")
     cols = [c.name for c in cur.description]
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
