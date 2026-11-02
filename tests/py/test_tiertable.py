@@ -146,19 +146,21 @@ class ImageTest(unittest.TestCase):
 
 
 class NameLookCompareTest(unittest.TestCase):
-    DB = [player(1, "낭니", "8", "저그", "캄몬대"), player(2, "가람", "3", "테란", "캄몬대")]
+    DB = (player(1, "낭니", "8", "저그", "캄몬대"), player(2, "가람", "3", "테란", "캄몬대"))
 
     def test_bad_ocr_of_same_name_is_not_a_rename(self):
         bg = (2, 155, 195)
         c = card("방늬이이", "8", "저그", known={"soop_id": "낭니", "nickname": "낭니"})
         c.pop("name_unchanged")
         c.update({"name_look": card_look(name_cell("낭니", bg), bg), "role": ""})
-        res = compare([{"y": (0, 100), "title_ocr": ["캄몬대"], "cards": [c, card("가람", "3", "테란")]}], [], self.DB)
+        res = compare(
+            [{"y": (0, 100), "title_ocr": ["캄몬대"], "cards": [c, card("가람", "3", "테란")]}], [], list(self.DB)
+        )
         self.assertFalse([x for x in res["changes"] if "nickname" in x["diff"]])
 
     def test_headcount_mismatch_is_reviewed(self):
         sec = {"y": (0, 100), "title_ocr": ["캄몬대"], "headcount": 3, "cards": [card("낭니", "8", "저그")]}
-        res = compare([sec], [], self.DB)
+        res = compare([sec], [], list(self.DB))
         self.assertIn(
             {"type": "구역 인원 불일치", "section": 0, "team": "캄몬대", "expected": 3, "found": 1}, res["review"]
         )

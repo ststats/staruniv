@@ -12,7 +12,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .layout import ROLES, ROOT
 
-
 FONT = ROOT / "scripts" / "assets" / "fonts" / "Pretendard-Bold.otf"
 LOOK_H = 32  # 비교할 때 맞추는 글씨 높이(px)
 LOOK_MIN = 0.5  # 이 점수 이상 닮아야 같은 이름. 실측 같은 이름은 대부분 0.6 이상
