@@ -64,6 +64,7 @@
     }
     .tag-badge.class-top {
         background: var(--color-medal-gold);
+        color: var(--color-medal-gold-text);
     }
     .tag-badge.class-mid {
         background: var(--color-medal-silver);

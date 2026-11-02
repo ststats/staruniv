@@ -49,8 +49,10 @@
     --select-on-light: var(--navy);
     --kammon: #055df3;
     --color-tier-badge: #1c3563;
-    /* 금·은·동(반 뱃지). 시너지 순위 1·2·3등 색(--c-gold 등)을 흰 글씨 4.5:1이 되게 진하게. 다크도 같은 값 */
-    --color-medal-gold: #926f16;
+    /* 금·은·동(반 뱃지). 시너지 순위 1·2·3등 색(--c-gold 등)을 흰 글씨 4.5:1이 되게 진하게. 다크도 같은 값.
+       금은 진하게 하면 동과 같은 갈색이 돼 밝은 금색에 어두운 글씨(7.9:1)로 둔다 */
+    --color-medal-gold: #f2c230;
+    --color-medal-gold-text: #3d2e00;
     --color-medal-silver: #687588;
     --color-medal-bronze: #a36639;
     --anniv-today: #c2255c; /* 홈 기념일 '오늘' 글자. 흰 카드에서 4.5:1 */
