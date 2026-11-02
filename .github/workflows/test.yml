@@ -18,17 +18,16 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm test
-      # 표준 라이브러리만 쓰는 모듈이라 패키지 설치 없이 돈다
-      - run: python3 -m unittest discover -s tests/py -p 'test_*.py'
-      # 정기 빌드는 코드 모양 때문에 배포가 막히지 않게 건너뛴다. 고칠 땐 npm run format
-      - if: github.event_name == 'pull_request' || github.event_name == 'push'
-        run: npm ci && npm run format:check
-      - if: github.event_name == 'pull_request' || github.event_name == 'push'
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: 'requirements/**/*.txt'
+      # 티어표 테스트가 카드 그림(Pillow·numpy)을 다룬다. OCR(tesseract)은 쓰지 않는다
+      - run: pip install -r requirements/common.txt && python -m unittest discover -s tests/py -p 'test_*.py'
+      # 정기 빌드는 코드 모양 때문에 배포가 막히지 않게 건너뛴다. 고칠 땐 npm run format
+      - if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: npm ci && npm run format:check
       # 파이썬 코드 모양. 고칠 땐 ruff format
       - if: github.event_name == 'pull_request' || github.event_name == 'push'
         run: pip install -r requirements/dev.txt && ruff format --check
