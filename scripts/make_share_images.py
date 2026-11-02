@@ -6,13 +6,13 @@ python scripts/make_share_images.py --html DIR # 카드 HTML만 DIR에 쓴다
 
 import html
 import os
+import subprocess
 import sys
 import tempfile
-import subprocess
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
-from build_html import PAGES  # noqa: E402
+from build_html import PAGES
 
 W, H = 1200, 630
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates", "static")

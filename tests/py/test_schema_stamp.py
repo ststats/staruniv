@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
-from schema_stamp import read_stamp  # noqa: E402
+from schema_stamp import read_stamp
 
 
 class SchemaStampTest(unittest.TestCase):

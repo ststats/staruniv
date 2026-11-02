@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from build_tools.browser_config import write_config
 
 if __name__ == "__main__":

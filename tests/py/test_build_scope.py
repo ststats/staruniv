@@ -2,12 +2,11 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts/build_tools/build_scope.py"
 
@@ -51,6 +50,7 @@ class BuildScopeTests(unittest.TestCase):
             ),
             capture_output=True,
             text=True,
+            check=False,  # 실패 출력(stderr)을 검사 메시지로 보이려고 직접 확인한다
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         return output.read_text(encoding="utf-8").strip()

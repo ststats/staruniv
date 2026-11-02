@@ -45,7 +45,7 @@ SITE_ROUND_FIELDS = [
 STAT_FORMATS = ["대회", "대학", "미니", "CK"]
 STAT_RACES = [("T", "테란전"), ("Z", "저그전"), ("P", "프로토스전")]
 # 붙여넣기로 섞여 드는 폭 없는 공백·BOM 등. '승'에 붙으면 집계에서 조용히 빠진다.
-INVISIBLE_CHARS = re.compile(r"[​-‍⁠﻿ ᠎]")
+INVISIBLE_CHARS = re.compile(r"[\u200b-\u200d\u2060\ufeff\u00a0\u180e]")
 
 
 def clean(value) -> str:

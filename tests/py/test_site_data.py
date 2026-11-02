@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-from write_site_data import clean, player_stats, race_code  # noqa: E402
+from write_site_data import clean, player_stats, race_code
 
 
 def rnd(player, fmt, race, result):
@@ -30,7 +30,7 @@ class PlayerStatsTest(unittest.TestCase):
         self.assertEqual(stats["나"]["CK 전적"], {"wins": 1, "losses": 0})
 
     def test_invisible_characters_and_blank_players(self):
-        rows = [rnd("가​", "대학", "테란", "승 "), rnd("", "대학", "테란", "승"), rnd(None, "대학", "테란", "패")]
+        rows = [rnd("가\u200b", "대학", "테란", "승 "), rnd("", "대학", "테란", "승"), rnd(None, "대학", "테란", "패")]
         stats = player_stats(rows)
         self.assertEqual([s["이름"] for s in stats], ["가"])
         self.assertEqual(stats[0]["대학 전적"], {"wins": 1, "losses": 0})

@@ -13,7 +13,6 @@ import sys
 from pathlib import Path
 
 from PIL import Image
-
 from tiertable.cards import read_image
 from tiertable.compare import compare, match_sections
 from tiertable.fa import read_fa_text

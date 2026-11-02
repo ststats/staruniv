@@ -8,7 +8,6 @@ import numpy as np
 from .features import PHOTO_SAME, _photo_vec, hash_distance, nearest, unpack_feat
 from .layout import DIGIT_W, RACE_BOX, ROOT, TIER_BOX
 
-
 MEMORY_PATH = ROOT / "data" / "tier_table_memory.json"
 TEMPLATES_PER_VALUE = 30
 

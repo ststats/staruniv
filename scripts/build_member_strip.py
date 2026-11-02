@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import itertools
 import json
 import os
@@ -99,7 +100,7 @@ def published(base: str) -> dict[str, bytes] | None:
         return None
     try:
         return {f: fetch(f"{base.rstrip('/')}/media/home/{f}") for f in FILES}
-    except Exception as e:  # 처음 배포라 없거나 네트워크 실패
+    except (OSError, ValueError, http.client.HTTPException) as e:  # 처음 배포라 없거나 네트워크 실패
         print(f"   배포된 띠 영상을 받지 못함: {e}")
         return None
 
@@ -190,9 +191,9 @@ def write_tile(frames: MediaFrames, fps: float, detector, out: Path) -> str:
     fx, fy = (0.5, 0.5) if far else (float(np.median(xs)), float(np.median(ys)))
     zoom = max(1.0, CW / (w * H / h)) if far else ZOOM
     s = H * zoom / h
-    w2, h2 = int(round(w * s)), int(round(h * s))
-    x0 = int(round(min(max(fx * w2 - CW / 2, 0), w2 - CW)))
-    y0 = int(round(min(max(fy * h2 - (H / 2 if far else H * FACE_Y), 0), h2 - H)))
+    w2, h2 = round(w * s), round(h * s)
+    x0 = round(min(max(fx * w2 - CW / 2, 0), w2 - CW))
+    y0 = round(min(max(fy * h2 - (H / 2 if far else H * FACE_Y), 0), h2 - H))
     p = subprocess.Popen(
         [
             FF,
@@ -388,7 +389,7 @@ def main() -> None:
                 (OUT_DIR / name).write_bytes((tmp / name).read_bytes())
         sizes = ", ".join(f"{n} {(OUT_DIR / n).stat().st_size / 1e6:.1f}MB" for n in FILES[:2])
         print(f"✅ 멤버 띠 영상을 새로 만듦: {sizes}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - 어떤 실패든 배포된 영상을 되살리고 끝낸다
         if live:
             for name, data in live.items():
                 (OUT_DIR / name).write_bytes(data)

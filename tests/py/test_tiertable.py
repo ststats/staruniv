@@ -8,10 +8,10 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-from tiertable.cards import cut_badge, split_sections  # noqa: E402
-from tiertable.compare import compare  # noqa: E402
-from tiertable.fa import FA_TIERS, read_fa_text  # noqa: E402
-from tiertable.namelook import FONT, card_look, looks_same  # noqa: E402
+from tiertable.cards import cut_badge, split_sections
+from tiertable.compare import compare
+from tiertable.fa import FA_TIERS, read_fa_text
+from tiertable.namelook import FONT, card_look, looks_same
 
 
 def name_cell(text, bg, size=18, width=125):
@@ -41,7 +41,7 @@ def player(pid, nick, tier, race, team, soop=None):
 
 class FaTextTest(unittest.TestCase):
     def test_reads_tier_race_and_names(self):
-        text = "\n".join(["FA 인원 3명", "갓티어｜ T 가람 Z 나래", "P 다온", "5티어 | Z 라온", "댓글 환영 | 공지 글"])
+        text = "FA 인원 3명\n갓티어｜ T 가람 Z 나래\nP 다온\n5티어 | Z 라온\n댓글 환영 | 공지 글"
         self.assertEqual(
             read_fa_text(text),
             [
@@ -59,12 +59,12 @@ class FaTextTest(unittest.TestCase):
 
 
 class CompareTest(unittest.TestCase):
-    DB = [
+    DB = (
         player(1, "가람", "3", "테란", "캄몬대"),
         player(2, "나래", "4", "저그", "캄몬대"),
         player(3, "다온", "5", "프로토스", "FA"),
         player(4, "라온", "6", "테란", "숨은대"),
-    ]
+    )
 
     def section(self, *cards, title="캄몬대"):
         return {"y": (0, 100), "title_ocr": [title], "cards": list(cards)}

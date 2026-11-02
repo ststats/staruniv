@@ -72,7 +72,7 @@ def decide_teams(sections, by_team):
             out[k] = (title_guess(texts), True)
             continue
 
-        def team_score(team):
+        def team_score(team, sec=sec):
             names = [r["nickname"] for r in by_team[team]]
             return sum(max((similarity(c["nickname_ocr"], n) for n in names), default=0) for c in sec["cards"])
 

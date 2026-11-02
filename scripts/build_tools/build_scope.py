@@ -33,6 +33,7 @@ def main():
             ["git", "cat-file", "-e", f"{before}^{{commit}}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         )
         if baseline.returncode:
             print("Previous commit unavailable; running a full build.")

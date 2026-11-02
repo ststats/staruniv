@@ -12,7 +12,7 @@ def _match_key(row):
     if isinstance(no, float) and no.is_integer():
         no = int(no)
     if isinstance(no, bool) or not isinstance(no, (int, str)):
-        raise ValueError("유효한 매치 번호가 필요합니다")
+        raise TypeError("유효한 매치 번호가 필요합니다")
     try:
         no = int(no)
     except ValueError as exc:

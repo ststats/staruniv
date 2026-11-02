@@ -10,7 +10,6 @@ from .fa import read_fa_text
 from .memory import MEMORY_PATH, learn, load_memory
 from .sources import db_connect, load_candidates, load_db, load_image, load_off_board
 
-
 # name_feat·name_read까지 기억해야 늘 틀리게 읽히는 닉네임이 매번 '닉네임 변경'으로 뜨지 않는다.
 PHOTO_COLS = ("soop_id", "nickname", "hash", "tier", "race", "tier_feat", "race_feat", "name_read", "name_feat")
 

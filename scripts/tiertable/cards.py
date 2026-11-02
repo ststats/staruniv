@@ -1,16 +1,16 @@
 """이미지 → 카드: 대학 구역을 나누고, 카드 자리를 찾아 사진·티어·닉네임·종족을 읽는다."""
 
 import difflib
+import itertools
 import re
 
 import numpy as np
 from PIL import Image, ImageOps
 
 from .features import glyph_feat, name_distance, pack_feat, photo_hash, unpack_feat
-from .layout import HEADER, NAME_BOX, NAME_SAME, NO_RACE, PHOTO, RACES, RACE_BOX, ROLES, TIER_BOX, TIER_WORDS
+from .layout import HEADER, NAME_BOX, NAME_SAME, NO_RACE, PHOTO, RACE_BOX, RACES, ROLES, TIER_BOX, TIER_WORDS
 from .memory import classify_race, classify_tier, name_reads, recall_photo
 from .namelook import card_look
-
 
 try:
     import pytesseract
@@ -29,7 +29,7 @@ def split_sections(im: Image.Image):
     """왼쪽 끝 세로줄의 배경색이 바뀌는 곳에서 대학 구역을 나눈다.
     경계가 3~4px에 걸쳐 번지는 곳(뉴캣슬→DM)은 한 줄씩 보면 차이가 작아 EDGE_GAP줄 위 색과 비교한다."""
     px = im.load()
-    W, H = im.size
+    H = im.height
     bounds, start = [], 0
     for y in range(1, H):
         if color_dist(px[3, y], px[3, max(0, y - EDGE_GAP)]) > 40:
@@ -210,9 +210,9 @@ def _extend(lines, lo, hi):
     """▲ 표시 카드만 있는 줄·칸은 놓칠 수 있어 같은 간격으로 빈 곳과 양 끝을 채운다."""
     if len(lines) < 2:
         return lines
-    step = sorted(b - a for a, b in zip(lines, lines[1:]))[0]
+    step = min(b - a for a, b in itertools.pairwise(lines))
     out = []
-    for a, b in zip(lines, lines[1:]):
+    for a, b in itertools.pairwise(lines):
         out.append(a)
         n = round((b - a) / step)
         out += [a + round((b - a) * k / n) for k in range(1, n)]
@@ -305,7 +305,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
             "x": x,
             "y": y,
             "side": side,
-            "bg": "%02x%02x%02x" % bg,
+            "bg": f"{bg[0]:02x}{bg[1]:02x}{bg[2]:02x}",
             "tier_feat": pack_feat(tier_f),
             "race_feat": pack_feat(race_f),
             "name_feat": pack_feat(name_f),

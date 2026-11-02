@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-from match_link import link_rounds_to_matches  # noqa: E402
+from match_link import link_rounds_to_matches
 
 MATCHES = [
     {"매치 번호": 1, "날짜": "2026-09-01", "상대팀": "A대", "형식": "대학"},

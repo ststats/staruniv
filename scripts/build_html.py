@@ -2,10 +2,10 @@ import hashlib
 import json
 import os
 import re
-from pathlib import Path
 import shutil
 import tempfile
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from urllib.parse import quote, urlsplit
 
 from jinja2 import Environment, FileSystemLoader
@@ -158,7 +158,7 @@ def standalone_html(versions):
         for asset, version in versions.items():
             html = re.sub(
                 r'((?:src|href)=")' + re.escape(asset) + r'(?:\?v=[a-f0-9]+)?"',
-                lambda match: f'{match.group(1)}{asset}?v={version}"',
+                lambda match, asset=asset, version=version: f'{match.group(1)}{asset}?v={version}"',
                 html,
             )
         pages[filename] = html
@@ -172,7 +172,7 @@ def copy_static_assets():
     manifest = output / ".static-assets.json"
     previous = json.loads(manifest.read_text(encoding="utf-8")) if manifest.exists() else {}
     if not isinstance(previous, dict):
-        raise ValueError("정적 자산 생성 목록 형식이 올바르지 않습니다")
+        raise TypeError("정적 자산 생성 목록 형식이 올바르지 않습니다")
 
     def target_path(name):
         target = (output / name).resolve()
