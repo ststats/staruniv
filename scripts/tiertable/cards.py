@@ -9,7 +9,7 @@ from PIL import Image, ImageOps
 
 from .features import glyph_feat, name_distance, pack_feat, photo_hash, unpack_feat
 from .layout import HEADER, NAME_BOX, NAME_SAME, NO_RACE, PHOTO, RACE_BOX, RACES, ROLES, TIER_BOX, TIER_WORDS
-from .memory import classify_race, classify_tier, name_reads, recall_photo
+from .memory import classify_race, classify_tier, recall_photo, same_name_read
 from .namelook import card_look
 
 try:
@@ -337,7 +337,7 @@ def cards_in_section(im: Image.Image, top: int, bottom: int, memory=None):
         else:
             role, nick, name_raw = read_name(name_img, bg)
             card["name_read"] = nick
-            if known and nick and nick in name_reads(known):
+            if known and nick and same_name_read(nick, known):
                 nick = known["nickname"]
                 card["name_unchanged"] = True
         # margin이 작으면 비교 단계에서 '확인 필요'로 올린다

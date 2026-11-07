@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from tiertable.cards import cut_badge, split_sections
 from tiertable.compare import compare
 from tiertable.fa import FA_TIERS, read_fa_text
+from tiertable.memory import same_name_read
 from tiertable.namelook import FONT, card_look, looks_same
 
 
@@ -164,6 +165,18 @@ class NameLookCompareTest(unittest.TestCase):
         self.assertIn(
             {"type": "구역 인원 불일치", "section": 0, "team": "캄몬대", "expected": 3, "found": 1}, res["review"]
         )
+
+
+class NameReadMemoryTest(unittest.TestCase):
+    def test_digits_read_beside_the_name_are_not_a_rename(self):
+        """이름 옆 숫자를 매번 다르게 붙여 읽어도(카히리000·카히리8080·카히리6) 같은 닉네임으로 본다."""
+        known = {"nickname": "카히리", "name_read": "카히리8080\n카히리000\n카히리없2436"}
+        for read in ("카히리6", "카히리80", "카히리", "카히리000"):
+            self.assertTrue(same_name_read(read, known), read)
+        self.assertFalse(same_name_read("카히리리", known))
+        self.assertFalse(same_name_read("0000", known))
+        # 지난 글씨가 없어도 지금 닉네임과 숫자만 다르면 같다
+        self.assertTrue(same_name_read("베트맨08", {"nickname": "베트맨03"}))
 
 
 if __name__ == "__main__":

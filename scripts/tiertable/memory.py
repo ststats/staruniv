@@ -1,6 +1,7 @@
 """기억(학습): 확인된 카드의 사진 지문·티어/종족 글씨 모양을 쌓아 두고 다음 갱신 때 쓴다."""
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -86,6 +87,17 @@ NAME_READS_KEEP = 5  # 줄바꿈으로 이어 name_read 한 칸에 둔다
 
 def name_reads(entry) -> list:
     return [x for x in str((entry or {}).get("name_read") or "").split("\n") if x]
+
+
+def _no_digits(text) -> str:
+    return re.sub(r"[0-9]", "", str(text or "")).strip()
+
+
+def same_name_read(nick, known) -> bool:
+    """사진으로 알아본 카드의 닉네임 글씨가 지난번 글씨·지금 닉네임과 같은가.
+    이름 옆 숫자를 매번 다르게 붙여 읽어(카히리000·카히리8080·카히리6) 숫자는 빼고 견준다."""
+    base = _no_digits(nick)
+    return bool(base) and base in {_no_digits(x) for x in [*name_reads(known), (known or {}).get("nickname")]}
 
 
 def learn(memory, confirmed):
