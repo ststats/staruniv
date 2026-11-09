@@ -82,10 +82,6 @@ const SYNERGY_METRICS = {
 // 합계·평균 칸 이름표 기본값: [긴 이름(앞에 '이번 달'·'8월'이 붙음), 좁은 화면용]
 const SYNERGY_TILE_LABELS = { total: ['합계', '합계'], avg: ['평균', '평균'] };
 
-function formatViewershipHours(seconds) {
-    return formatCount(Math.round(seconds / 3600), '시간');
-}
-
 function sponsorGames(m) {
     return (m.sponsor_wins || 0) + (m.sponsor_losses || 0);
 }

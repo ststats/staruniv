@@ -1121,6 +1121,10 @@ function formatNum(value) {
 function formatCount(value, unit) {
     return formatNum(value || 0) + unit;
 }
+// 뷰어십(시청자 수 × 방송 초)을 시간으로. 통계 페이지와 선수 창이 같이 쓴다
+function formatViewershipHours(seconds) {
+    return formatCount(Math.round(seconds / 3600), '시간');
+}
 
 function formatSponsorRecord(wins, losses) {
     wins = wins || 0;
@@ -1199,10 +1203,12 @@ function openProfileModal(p, activity) {
                   formatCount(entry.balloons, '개'),
                   formatSecondsToHM(entry.broadcast_seconds),
                   formatCount(entry.cumulative_viewers, '명'),
+                  // 집계 시작 전 달은 null
+                  entry.viewership_seconds == null ? '-' : formatViewershipHours(Number(entry.viewership_seconds)),
                   formatSponsorRecord(entry.sponsor_wins, entry.sponsor_losses),
               ]
-            : ['-', '-', '-', '-'];
-        ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-sponsor-record'].forEach((id, i) => {
+            : ['-', '-', '-', '-', '-'];
+        ['mp-balloons', 'mp-broadcast-hours', 'mp-viewers', 'mp-viewership', 'mp-sponsor-record'].forEach((id, i) => {
             document.getElementById(id).innerText = values[i];
         });
     };

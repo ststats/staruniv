@@ -20,8 +20,8 @@
                 <div class="section-title profile-modal-section" data-en="MONTHLY ACTIVITY"><h3 class="section-title-label">이번 달 방송 활동</h3></div>
                 <div class="profile-modal-status" id="mp-activity-status" role="status"></div>
                 <div class="profile-modal-metrics">
-                    {#- 스폰전적은 EloBoard 경기 수집을 멈춰(2026-11-09) 숨긴다. 다시 보이려면 hidden 조건과 아래 세 칸 배치를 되돌린다 #}
-                    {% for stat_id, stat_label in [('mp-balloons', '별풍선'), ('mp-broadcast-hours', '방송시간'), ('mp-viewers', '누적시청자'), ('mp-sponsor-record', '스폰전적')] %}
+                    {#- 스폰전적은 EloBoard 경기 수집을 멈춰(2026-11-09) 숨긴다. 다시 보이려면 hidden 조건을 빼고 칸 배치를 고친다 #}
+                    {% for stat_id, stat_label in [('mp-balloons', '별풍선'), ('mp-broadcast-hours', '방송시간'), ('mp-viewers', '누적시청자'), ('mp-viewership', '뷰어십'), ('mp-sponsor-record', '스폰전적')] %}
                     <div class="profile-modal-metric"{{ ' hidden' if stat_id == 'mp-sponsor-record' else '' }}><div class="profile-modal-label">{{ stat_label }}</div><div class="profile-modal-value" id="{{ stat_id }}">-</div></div>
                     {% endfor %}
                 </div>
