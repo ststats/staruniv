@@ -1169,10 +1169,13 @@ function openProfileModal(p, activity) {
         return a;
     };
     // 이 입단 때 쓴 ELO ID로만 간다. 같은 사람의 다른 계정이 섞이지 않게 티어표 메인 계정으로 대신 가지 않는다.
+    // 어드민에서 티어표 '선수분석' 서브탭을 숨겼으면 바로가기도 숨긴다(관리자 화면은 그대로 보인다).
     const eloId = String(p.eloId ?? '').trim();
+    const analysisHidden =
+        runtimeSubtabConfig('tier').hidden.includes('analysis') && !document.body.classList.contains('admin-mode');
     const analysis = setLink(
         'mp-analysis-link',
-        /^\d+$/.test(eloId) ? 'tier/?view=analysis&p=' + encodeURIComponent(eloId) : ''
+        /^\d+$/.test(eloId) && !analysisHidden ? 'tier/?view=analysis&p=' + encodeURIComponent(eloId) : ''
     );
     const records = setLink('mp-records-link', p.recordsUrl || '');
     document.getElementById('mp-site-links').hidden = analysis.hidden && records.hidden;
