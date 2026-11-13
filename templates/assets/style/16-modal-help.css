@@ -277,11 +277,20 @@
     .profile-modal-status:empty {
         display: none;
     }
-    /* 별풍선·방송시간 / 누적시청자·뷰어십 두 칸씩(스폰전적은 숨김) */
+    /* 별풍선·방송시간·누적시청자 한 줄(뷰어십·스폰전적은 숨김) */
     .profile-modal-metrics {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: var(--space-inline-gap);
+    }
+    /* 휴대폰은 세 칸에 큰 값(999,999개)이 안 들어가 별풍선을 위 한 줄, 나머지를 아래 두 칸으로 */
+    @media (max-width: 575.98px) {
+        .profile-modal-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .profile-modal-metric:first-child {
+            grid-column: 1 / -1;
+        }
     }
     .profile-modal-metric {
         padding: var(--space-6);
