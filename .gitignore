@@ -1,0 +1,29 @@
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node(테스트용)
+node_modules/
+
+# 원자적 쓰기(os.replace) 도중 남을 수 있는 임시 파일. 정상 실행이면 곧바로 교체되어
+# 사라지지만, 스크립트가 중간에 죽은 채로 남아 있으면 실수로 커밋되지 않게 막아준다.
+*.tmp
+*.new/
+
+# 에디터/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 빌드 결과. GitHub Actions가 빌드해서 Pages에 바로 배포한다(저장소에 커밋하지 않음).
+# 로컬 확인은 python scripts/build_html.py 뒤 docs/를 열면 된다.
+# 단 docs/vercel.json만은 저장소에 둔다: Vercel(staruniv.vercel.app)이 docs 폴더를 배포하는데,
+# 이 파일 하나로 모든 주소를 GitHub Pages 사이트로 넘겨서(rewrite) 같은 최신 내용을 보여 준다.
+docs/*
+!docs/vercel.json
+# 빌드 캐시(Supabase export)
+data/db.json
+data/nav_config.json

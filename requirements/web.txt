@@ -1,0 +1,3 @@
+-r common.txt
+jinja2>=3.0,<4
+holidays>=0.80,<1
