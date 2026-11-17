@@ -68,6 +68,7 @@
   .hidden { display: none !important; }
   /* 사진(한 장짜리)은 재생·구간·시간 설정이 없다. 짝이 빠진 칸은 한 줄을 다 쓴다. */
   .is-still .anim-only { display: none !important; }
+  .is-anim-image .video-only { display: none !important; }
   .is-still .grid2 > :has(+ .anim-only) { grid-column: 1 / -1; }
   [data-panel]:not(.is-open) { display: none; }
   input, textarea, button { font: inherit; color: var(--color-text-main); }
@@ -654,7 +655,7 @@
         </div>
         <label class="check"><input type="checkbox" id="lossless"> 무손실 (화질 손실 없음)</label>
         <div class="info" id="qualityHint"></div>
-        <div class="line anim-only">
+        <div class="line anim-only video-only">
           <span class="slot">FPS</span>
           <select id="fps" class="hidden" aria-hidden="true" tabindex="-1">
             <option>10</option><option>15</option><option>24</option><option selected>30</option><option>60</option>

@@ -426,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function sourceReady() {
         const d = media.duration;
         document.body.classList.toggle('is-still', media.still);
+        document.body.classList.toggle('is-anim-image', media.kind === 'image' && !media.still);
         $('start').value = 0;
         $('end').value = round2(d);
         $('srcBadge').textContent = `원본 ${media.width}×${media.height}`;
@@ -483,7 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (media.currentTime < s || media.currentTime >= e) media.currentTime = s;
         media.play();
     });
-    video.addEventListener('play', () => playUI(true));
+    // 변환 중 재생(captureByPlaying)은 재생 버튼에 보이지 않는다
+    video.addEventListener('play', () => !state.converting && playUI(true));
     video.addEventListener('pause', () => playUI(false));
 
     // ---------- 구간: 장면 띠 위 손잡이로 시작·끝을 끈다 ----------
@@ -663,6 +665,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ['start', 'end', 'fps', 'quality'].forEach(id => $(id).addEventListener('input', updateInfo));
     ['fps', 'lossless'].forEach(id => $(id).addEventListener('change', updateInfo));
 
+    // 움짤은 fps 대신 원본 프레임 간격을 그대로 쓴다(framePlan)
+    const rateLabel = () => (media.kind === 'image' ? '원본 간격' : `${$('fps').value}fps`);
+
     function updateInfo() {
         const lossless = $('lossless').checked;
         show($('qualityRow'), !lossless);
@@ -684,10 +689,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const dur = +$('end').value - +$('start').value;
-        const n = Math.max(1, Math.floor(dur * +$('fps').value));
+        const n = dur > 0 ? framePlan(+$('start').value, +$('end').value, +$('fps').value).length : 0;
         $('sumMain').textContent = dur > 0 ? `${dur.toFixed(1)}초 · 약 ${n}프레임` : '구간을 골라 주세요';
         $('sumSub').textContent =
-            `${w}×${h} · ${$('lossless').checked ? '무손실' : `품질 ${$('quality').value}`} · ${$('fps').value}fps`;
+            `${w}×${h} · ${$('lossless').checked ? '무손실' : `품질 ${$('quality').value}`} · ${rateLabel()}`;
         $('frameInfo').innerHTML =
             dur <= 0
                 ? '<span class="err">끝 시간이 시작 시간보다 커야 해요</span>'
@@ -1151,7 +1156,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // clip=false: 모서리 바깥까지 채운 그림(투명 없음). 압축용 색을 얻을 때만 쓴다.
-    function drawFrame(ctx, w, h, t, o = readOpts(), clip = true) {
+    // src: 원본 크기 그림(변환 중 잡아 둔 영상 프레임). 없으면 지금 화면.
+    function drawFrame(ctx, w, h, t, o = readOpts(), clip = true, src = media.image) {
         const c = state.crop || { x: 0, y: 0, w: media.width, h: media.height };
         let sx = c.x,
             sy = c.y,
@@ -1184,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clip) ctx.clip(shape);
         ctx.fillStyle = o.bg;
         ctx.fillRect(0, 0, w, h);
-        drawScaled(ctx, media.image, sx, sy, sw, sh, dx, dy, dw, dh);
+        drawScaled(ctx, src, sx, sy, sw, sh, dx, dy, dw, dh);
         if (o.frame !== 'none') {
             // 클립 안쪽 절반만 보이므로 두께를 두 배로 그림 → 출력 크기는 그대로
             ctx.lineJoin = 'round';
@@ -1573,10 +1579,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 크롬은 seeked를 새 프레임이 화면에 오르기 전에 보내기도 해서, 그대로 그리면 앞 프레임이 찍힌다.
     // 새 프레임이 오를 때(requestVideoFrameCallback)까지 기다린다. 같은 프레임이면 안 올 수 있어 0.5초만.
+    // 미리보기 영상에서 위치를 옮긴 뒤 오른 프레임의 정보(captureByPlaying이 놓친 프레임을 세는 기준)
+    let lastSeekFrame;
     async function seekTo(el, t, signal) {
+        if (el === video) lastSeekFrame = undefined;
         const shown = el.requestVideoFrameCallback
             ? new Promise(resolve => {
-                  el.requestVideoFrameCallback(() => resolve());
+                  el.requestVideoFrameCallback((now, meta) => {
+                      if (el === video) lastSeekFrame = meta;
+                      resolve();
+                  });
                   setTimeout(resolve, 500);
               })
             : null;
@@ -1592,7 +1604,121 @@ document.addEventListener('DOMContentLoaded', () => {
         if (shown) await shown;
     }
 
+    const MAX_ENCODING = 6; // 동시에 걸어 둘 WebP 인코딩 수(그림 복사본이 그만큼 메모리에 남는다)
     const FRAME_NUDGE = 0.002; // 초. 반올림 오차(0.5ms)보다 크고 120fps 한 프레임(8.3ms)보다 충분히 작다
+
+    // 뽑을 프레임 목록 [{t: 그릴 시각(초), duration: 보일 시간(ms)}]. 길이는 구간 시작부터 누적해 반올림한다.
+    // 영상은 fps 간격으로, 움짤은 원본 프레임과 간격 그대로(fps로 다시 뽑으면 간격이 들쭉날쭉하고 빠른 프레임이 빠진다).
+    function framePlan(start, end, fps) {
+        const ms = s => Math.round((s - start) * 1000);
+        if (media.still) return [{ t: 0, duration: 0 }];
+        if (media.kind === 'image') {
+            const plan = [];
+            let from = 0;
+            for (const f of media.frames) {
+                const t = Math.max(start, from),
+                    until = Math.min(end, f.end);
+                from = f.end;
+                if (until <= t || ms(until) === ms(t)) continue;
+                plan.push({ t, duration: ms(until) - ms(t) });
+            }
+            return plan;
+        }
+        const n = Math.max(1, Math.floor((end - start) * fps));
+        // 프레임 시각은 파일에 1ms 단위로 반올림돼 있어 i/fps가 경계에 걸리면 앞 프레임이 잡힌다(30fps→30fps에서
+        // 3장마다 한 장 빠짐). FRAME_NUDGE만큼 프레임 안쪽에서 뽑는다.
+        return Array.from({ length: n }, (_, i) => ({
+            t: Math.min(start + i / fps + FRAME_NUDGE, media.duration - 0.001),
+            duration: Math.round(((i + 1) * 1000) / fps) - Math.round((i * 1000) / fps),
+        }));
+    }
+
+    // 영상을 한 번 재생하며 지나가는 프레임으로 times(오름차순, 초)를 그린다. 프레임마다 위치를 옮기면 그때마다
+    // 키프레임부터 다시 풀어 느리다(1080p 3초에 19~48초). 프레임이 오를 때마다 VideoFrame으로 잡아 두고(hold),
+    // 다음 프레임을 잡으면 그 앞 시각들을 hold로 그린다. 잡은 프레임은 제 시각(timestamp)을 들고 있어 콜백이 늦어
+    // 다음 프레임이 잡혀도 알 수 있다. 사이에 놓친 프레임이 있을 수 있으면(잡은 프레임이 콜백의 프레임이 아니거나,
+    // presentedFrames가 1보다 더 늘거나, droppedVideoFrames가 늘면) 그 시각들은 돌려줘 위치를 옮겨 뽑게 한다.
+    // times[0]으로 옮겨(seekTo) 둔 뒤 부른다. render(i, src): i번째를 그린다. busy()가 참이면 잠깐 멈추고
+    // drain()이 끝나면 이어 재생한다. 반환: 옮겨서 뽑을 번호들.
+    function captureByPlaying(times, render, busy, drain, signal) {
+        return new Promise((resolve, reject) => {
+            const missed = [];
+            const dropped = () => video.getVideoPlaybackQuality?.().droppedVideoFrames ?? 0;
+            const grab = mediaTime => {
+                const frame = new VideoFrame(video);
+                const time = frame.timestamp / 1e6;
+                return { frame, time, exact: mediaTime !== undefined && Math.abs(time - mediaTime) < 1e-4 };
+            };
+            let hold = grab(lastSeekFrame?.mediaTime),
+                p = 0,
+                presented = lastSeekFrame?.presentedFrames,
+                lost = dropped(),
+                request = null,
+                timer = null,
+                done = false;
+            // until 앞의 시각들: 이어진 프레임이면 hold로 그리고, 아니면 놓친 것으로
+            const take = (until, sure) => {
+                for (; p < times.length && times[p] < until; p++) {
+                    if (sure && times[p] >= hold.time) render(p, hold.frame);
+                    else missed.push(p);
+                }
+            };
+            const end = error => {
+                if (done) return;
+                done = true;
+                if (request !== null) video.cancelVideoFrameCallback(request);
+                clearTimeout(timer);
+                video.removeEventListener('ended', onEnded);
+                signal.removeEventListener('abort', onAbort);
+                video.pause();
+                video.playbackRate = 1;
+                hold.frame.close();
+                if (error) return reject(error);
+                for (; p < times.length; p++) missed.push(p);
+                resolve(missed);
+            };
+            // 2초 넘게 새 프레임이 없으면 멈춘 것으로 보고 남은 시각은 옮겨서 뽑는다
+            const watch = () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => end(), 2000);
+            };
+            const onFrame = async (now, meta) => {
+                request = null;
+                if (done) return;
+                const next = grab(meta.mediaTime);
+                const d = dropped();
+                const sure = hold.exact && next.exact && meta.presentedFrames - presented === 1 && d === lost;
+                take(next.time, sure);
+                // 놓쳤으면 그리기·인코딩이 재생을 못 따라간 것이라 천천히 튼다(최소 1/4배속)
+                if (!sure) video.playbackRate = Math.max(0.25, video.playbackRate / 2);
+                hold.frame.close();
+                hold = next;
+                presented = meta.presentedFrames;
+                lost = d;
+                if (p >= times.length) return end();
+                request = video.requestVideoFrameCallback(onFrame);
+                if (busy()) {
+                    clearTimeout(timer);
+                    video.pause();
+                    await drain();
+                    if (done) return;
+                    video.play().catch(() => end());
+                }
+                watch();
+            };
+            // 영상 끝까지 갔으면 마지막 프레임(hold)이 끝까지 보인다
+            const onEnded = () => {
+                take(Infinity, hold.exact && dropped() === lost);
+                end();
+            };
+            const onAbort = () => end(signal.reason);
+            video.addEventListener('ended', onEnded);
+            signal.addEventListener('abort', onAbort, { once: true });
+            request = video.requestVideoFrameCallback(onFrame);
+            watch();
+            video.play().catch(() => end());
+        });
+    }
 
     function cancelConversion() {
         state.conversionController?.abort(new DOMException('취소했어요', 'AbortError'));
@@ -1628,7 +1754,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const fps = +$('fps').value;
             // 브라우저는 품질 1.0을 무손실(VP8L)로 인코딩함
             const q = $('lossless').checked ? 1 : clamp(+$('quality').value || 95, 10, 99) / 100;
-            const n = still ? 1 : Math.max(1, Math.floor((end - start) * fps));
+            const plan = framePlan(start, end, fps);
+            const n = plan.length;
             const opts = readOpts();
             const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
             const ctx = canvas.getContext('2d');
@@ -1646,8 +1773,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const frames = [];
             let prevData = null,
-                prevColor = null,
-                done = 0;
+                prevColor = null;
             const webpBytes = async blobP => {
                 const blob = await blobP;
                 if (blob?.type !== 'image/webp')
@@ -1665,29 +1791,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 else frames.push({ ...mergeAlphaColor(extractImageChunks(data), colorData), duration });
                 prevData = data;
                 prevColor = colorData;
-                $('prog').value = ++done / n;
-                $('progLabel').textContent = `프레임 ${done} / ${n}`;
             };
-            // toBlob은 호출 시점 그림을 복사하므로 기다리지 않고 최대 4장을 동시에 인코딩한다
-            const pending = [];
-            for (let i = 0; i < n; i++) {
-                signal.throwIfAborted();
-                // 프레임 시각은 파일에 1ms 단위로 반올림돼 있어 i/fps가 경계에 걸리면 앞 프레임이 잡힌다(30fps→30fps에서
-                // 3장마다 한 장 빠짐). FRAME_NUDGE만큼 프레임 안쪽에서 뽑는다.
-                const t = still ? 0 : Math.min(start + i / fps + FRAME_NUDGE, media.duration - 0.001);
-                await media.seek(t, signal);
-                signal.throwIfAborted();
-                drawFrame(ctx, w, h, t, opts);
-                if (colorCtx) drawFrame(colorCtx, w, h, t, opts, false);
-                pctx.drawImage(canvas, 0, 0);
-                pending.push({
-                    blobP: new Promise(r => canvas.toBlob(r, 'image/webp', q)),
-                    colorP: colorCanvas && new Promise(r => colorCanvas.toBlob(r, 'image/webp', q)),
-                    duration: Math.round(((i + 1) * 1000) / fps) - Math.round((i * 1000) / fps),
+            // i번째 프레임을 그려 인코딩을 건다. toBlob은 부른 때의 그림을 복사하므로 기다리지 않고
+            // MAX_ENCODING장까지 동시에 인코딩하고, 넘으면 줄 때까지(drain) 기다린다.
+            const results = new Array(n);
+            const wake = [];
+            let encoding = 0,
+                drawn = 0;
+            const encode = c => {
+                encoding++;
+                return new Promise(r => c.toBlob(r, 'image/webp', q)).finally(() => {
+                    encoding--;
+                    wake.splice(0).forEach(r => r());
                 });
-                if (pending.length >= 4) await finish(pending.shift());
+            };
+            const drain = async () => {
+                while (encoding > MAX_ENCODING) await new Promise(r => wake.push(r));
+            };
+            const render = (i, src) => {
+                const { t, duration } = plan[i];
+                drawFrame(ctx, w, h, t, opts, true, src);
+                if (colorCtx) drawFrame(colorCtx, w, h, t, opts, false, src);
+                pctx.drawImage(canvas, 0, 0);
+                results[i] = { blobP: encode(canvas), colorP: colorCanvas && encode(colorCanvas), duration };
+                $('prog').value = ++drawn / n;
+                $('progLabel').textContent = `프레임 ${drawn} / ${n}`;
+            };
+            // 영상은 재생하며 뽑고(captureByPlaying), 놓친 프레임과 움짤·사진은 그 시각으로 옮겨서 뽑는다
+            let seekList = plan.map((_, i) => i);
+            if (media.kind === 'video' && !still && video.requestVideoFrameCallback && window.VideoFrame) {
+                await media.seek(plan[0].t, signal);
+                signal.throwIfAborted();
+                seekList = await captureByPlaying(
+                    plan.map(f => f.t),
+                    render,
+                    () => encoding > MAX_ENCODING,
+                    drain,
+                    signal
+                );
             }
-            while (pending.length) await finish(pending.shift());
+            for (const i of seekList) {
+                signal.throwIfAborted();
+                await media.seek(plan[i].t, signal);
+                signal.throwIfAborted();
+                render(i);
+                await drain();
+            }
+            for (let i = 0; i < n; i++) await finish(results[i]);
             signal.throwIfAborted();
 
             $('progLabel').textContent = '파일 만드는 중';
@@ -1698,7 +1848,7 @@ document.addEventListener('DOMContentLoaded', () => {
             $('resultImg').src = $('download').href = state.resultURL;
             $('download').download = `${state.fileName}_${w}x${h}.webp`;
             $('resultInfo').textContent =
-                `${w}×${h} · ${still ? '사진' : `${n}프레임 · ${fps}fps`} · ${q === 1 ? '무손실' : '품질 ' + Math.round(q * 100)} · ${formatBytes(blob.size)}`;
+                `${w}×${h} · ${still ? '사진' : `${n}프레임 · ${rateLabel()}`} · ${q === 1 ? '무손실' : '품질 ' + Math.round(q * 100)} · ${formatBytes(blob.size)}`;
             show($('result'), true);
             $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (err) {
