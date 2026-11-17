@@ -1,0 +1,14 @@
+/* 노치: 조작 요소는 높이의 약 15%를 정수 px로(최소 4px, 상한 12px) — 20·28px 4px, 30~34px 5px, 40px 6px.
+   카드/모달 외곽 12px·내부 패널 8px 고정, 이미지는 짧은 변 기준, 아주 작은 표시 요소는 2px. 독립 WebP 페이지도 이 파일을 쓴다. */
+@layer tokens {
+    :root {
+        --notch-2: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 0 100%);
+        --notch-4: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+        --notch-5: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+        --notch-6: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+        --notch-7: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+        --notch-8: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+        --notch-10: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+        --notch-12: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    }
+}
