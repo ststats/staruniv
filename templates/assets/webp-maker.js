@@ -1571,8 +1571,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function seekTo(el, t, signal) {
-        return waitForMedia(
+    // 크롬은 seeked를 새 프레임이 화면에 오르기 전에 보내기도 해서, 그대로 그리면 앞 프레임이 찍힌다.
+    // 새 프레임이 오를 때(requestVideoFrameCallback)까지 기다린다. 같은 프레임이면 안 올 수 있어 0.5초만.
+    async function seekTo(el, t, signal) {
+        const shown = el.requestVideoFrameCallback
+            ? new Promise(resolve => {
+                  el.requestVideoFrameCallback(() => resolve());
+                  setTimeout(resolve, 500);
+              })
+            : null;
+        await waitForMedia(
             el,
             ['seeked', 'loadeddata'],
             () => {
@@ -1581,7 +1589,10 @@ document.addEventListener('DOMContentLoaded', () => {
             signal,
             () => !el.seeking && el.readyState >= 2 && Math.abs(el.currentTime - t) < 0.001
         );
+        if (shown) await shown;
     }
+
+    const FRAME_NUDGE = 0.002; // 초. 반올림 오차(0.5ms)보다 크고 120fps 한 프레임(8.3ms)보다 충분히 작다
 
     function cancelConversion() {
         state.conversionController?.abort(new DOMException('취소했어요', 'AbortError'));
@@ -1661,7 +1672,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const pending = [];
             for (let i = 0; i < n; i++) {
                 signal.throwIfAborted();
-                const t = still ? 0 : Math.min(start + i / fps, media.duration - 0.001);
+                // 프레임 시각은 파일에 1ms 단위로 반올림돼 있어 i/fps가 경계에 걸리면 앞 프레임이 잡힌다(30fps→30fps에서
+                // 3장마다 한 장 빠짐). FRAME_NUDGE만큼 프레임 안쪽에서 뽑는다.
+                const t = still ? 0 : Math.min(start + i / fps + FRAME_NUDGE, media.duration - 0.001);
                 await media.seek(t, signal);
                 signal.throwIfAborted();
                 drawFrame(ctx, w, h, t, opts);
